@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+venv/
+.venv/
+*.db
+*.sqlite3
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+media/
+static/uploads/
+
+# Flutter generated
+frontend/.dart_tool/
+frontend/build/
+frontend/ios/
+frontend/android/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+*.freezed.dart
+*.g.dart
+
+# Claude Code
+.claude/

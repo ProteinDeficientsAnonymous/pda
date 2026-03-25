@@ -1,0 +1,32 @@
+# Stage 1: Build Flutter web
+FROM ghcr.io/cirruslabs/flutter:3.41.4 AS flutter-build
+
+WORKDIR /app/frontend
+COPY frontend/pubspec.yaml frontend/pubspec.lock ./
+RUN flutter pub get
+
+COPY frontend/ ./
+RUN flutter build web --release --dart-define=API_URL=
+
+# Stage 2: Python/Django runtime
+FROM python:3.13-slim AS runtime
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-install-project
+
+COPY backend/ ./backend/
+COPY static/ ./static/
+
+COPY --from=flutter-build /app/frontend/build/web/ ./backend/staticfiles/flutter/
+
+RUN DJANGO_SETTINGS_MODULE=config.settings \
+    SECRET_KEY=collectstatic-placeholder \
+    uv run python backend/manage.py collectstatic --noinput
+
+EXPOSE ${PORT:-8000}
+
+CMD ["sh", "-c", "cd backend && uv run python manage.py migrate && uv run gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000}"]
