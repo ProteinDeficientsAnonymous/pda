@@ -70,8 +70,8 @@ class TestEventManagement:
         assert data["location"] == "Online"
         assert "id" in data
 
-    def test_create_event_any_member(self, api_client, auth_headers):
-        """Any authenticated member can create events (no manage_events required)."""
+    def test_create_event_as_regular_member(self, api_client, auth_headers, test_user):
+        """Any authenticated member can create an event."""
         response = api_client.post(
             "/api/community/events/",
             {
@@ -83,7 +83,9 @@ class TestEventManagement:
             **auth_headers,
         )
         assert response.status_code == 201
-        assert response.json()["title"] == "Member Event"
+        data = response.json()
+        assert data["title"] == "Member Event"
+        assert data["created_by_id"] == str(test_user.pk)
 
     def test_create_event_requires_auth(self, api_client):
         response = api_client.post(
@@ -130,9 +132,48 @@ class TestEventManagement:
         assert data["description"] == "Monthly gathering"
 
     def test_update_event_requires_permission(self, api_client, auth_headers, sample_event):
+        """A regular member cannot edit an event they did not create."""
         response = api_client.patch(
             f"/api/community/events/{sample_event.id}/",
             {"title": "Blocked Update"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Permission denied."
+
+    def test_member_can_edit_own_event(self, api_client, auth_headers, test_user):
+        """A regular member can edit an event they created."""
+        event = Event.objects.create(
+            title="My Event",
+            description="Created by member",
+            start_datetime="2026-07-01T18:00:00Z",
+            end_datetime="2026-07-01T20:00:00Z",
+            location="Online",
+            created_by=test_user,
+        )
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"title": "My Updated Event"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["title"] == "My Updated Event"
+
+    def test_member_cannot_edit_others_event(self, api_client, auth_headers, manage_events_user):
+        """A regular member cannot edit an event created by someone else."""
+        event = Event.objects.create(
+            title="Someone Else's Event",
+            description="Created by manager",
+            start_datetime="2026-07-01T18:00:00Z",
+            end_datetime="2026-07-01T20:00:00Z",
+            location="Online",
+            created_by=manage_events_user,
+        )
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"title": "Hijacked Title"},
             content_type="application/json",
             **auth_headers,
         )
@@ -183,8 +224,44 @@ class TestEventManagement:
         assert not Event.objects.filter(id=event_id).exists()
 
     def test_delete_event_requires_permission(self, api_client, auth_headers, sample_event):
+        """A regular member cannot delete an event they did not create."""
         response = api_client.delete(
             f"/api/community/events/{sample_event.id}/",
+            **auth_headers,
+        )
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Permission denied."
+
+    def test_member_can_delete_own_event(self, api_client, auth_headers, test_user):
+        """A regular member can delete an event they created."""
+        event = Event.objects.create(
+            title="My Deletable Event",
+            description="Created by member",
+            start_datetime="2026-08-01T18:00:00Z",
+            end_datetime="2026-08-01T20:00:00Z",
+            location="Online",
+            created_by=test_user,
+        )
+        event_id = event.id
+        response = api_client.delete(
+            f"/api/community/events/{event_id}/",
+            **auth_headers,
+        )
+        assert response.status_code == 204
+        assert not Event.objects.filter(id=event_id).exists()
+
+    def test_member_cannot_delete_others_event(self, api_client, auth_headers, manage_events_user):
+        """A regular member cannot delete an event created by someone else."""
+        event = Event.objects.create(
+            title="Someone Else's Deletable Event",
+            description="Created by manager",
+            start_datetime="2026-08-01T18:00:00Z",
+            end_datetime="2026-08-01T20:00:00Z",
+            location="Online",
+            created_by=manage_events_user,
+        )
+        response = api_client.delete(
+            f"/api/community/events/{event.id}/",
             **auth_headers,
         )
         assert response.status_code == 403
