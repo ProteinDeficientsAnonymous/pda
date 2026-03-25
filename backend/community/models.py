@@ -3,6 +3,12 @@ import uuid
 from django.db import models
 
 
+class JoinRequestStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    APPROVED = "approved", "Approved"
+    REJECTED = "rejected", "Rejected"
+
+
 class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
@@ -11,6 +17,11 @@ class JoinRequest(models.Model):
     how_they_heard = models.TextField(blank=True)
     why_join = models.TextField()
     submitted_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=JoinRequestStatus.choices,
+        default=JoinRequestStatus.PENDING,
+    )
 
     class Meta:
         ordering = ["-submitted_at"]

@@ -417,3 +417,145 @@ class TestEvents:
         response = api_client.get("/api/community/events/", **auth_headers)
         assert response.status_code == 200
         assert isinstance(response.json(), list)
+
+
+# ---------------------------------------------------------------------------
+# Join request management API (#6)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestJoinRequestManagement:
+    @pytest.fixture
+    def vettor_user(self, db):
+        from users.models import User
+
+        user = User.objects.create_user(
+            email="vettor@pda.org",
+            password="vettorpass123",
+        )
+        role = Role.objects.create(name="vettor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
+        user.roles.add(role)
+        return user
+
+    @pytest.fixture
+    def vettor_headers(self, vettor_user):
+        from ninja_jwt.tokens import RefreshToken
+
+        refresh = RefreshToken.for_user(vettor_user)
+        return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+
+    @pytest.fixture
+    def sample_join_request(self, db):
+        from community.models import JoinRequest
+
+        return JoinRequest.objects.create(
+            name="Sprout Seedling",
+            email="sprout@vegan.org",
+            why_join="I believe in collective liberation.",
+        )
+
+    def test_list_join_requests_requires_permission(self, api_client, auth_headers):
+        response = api_client.get("/api/community/join-requests/", **auth_headers)
+        assert response.status_code == 403
+
+    def test_list_join_requests_unauthenticated(self, api_client):
+        response = api_client.get("/api/community/join-requests/")
+        assert response.status_code == 401
+
+    def test_list_join_requests_success(self, api_client, vettor_headers, sample_join_request):
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert data[0]["name"] == "Sprout Seedling"
+        assert data[0]["status"] == "pending"
+
+    def test_list_join_requests_admin_can_access(self, api_client, admin_headers, sample_join_request):
+        response = api_client.get("/api/community/join-requests/", **admin_headers)
+        assert response.status_code == 200
+
+    def test_approve_join_request_success(self, api_client, vettor_headers, sample_join_request):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "approved"
+        assert data["id"] == str(sample_join_request.id)
+
+    def test_reject_join_request_success(self, api_client, vettor_headers, sample_join_request):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "rejected"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "rejected"
+
+    def test_update_join_request_status_persists(self, api_client, vettor_headers, sample_join_request):
+        from community.models import JoinRequest
+
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        sample_join_request.refresh_from_db()
+        assert sample_join_request.status == "approved"
+
+    def test_update_join_request_invalid_status(self, api_client, vettor_headers, sample_join_request):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "pending"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 400
+
+    def test_update_join_request_requires_permission(self, api_client, auth_headers, sample_join_request):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "approved"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_update_join_request_unauthenticated(self, api_client, sample_join_request):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "approved"},
+            content_type="application/json",
+        )
+        assert response.status_code == 401
+
+    def test_update_join_request_not_found(self, api_client, vettor_headers):
+        import uuid
+
+        response = api_client.patch(
+            f"/api/community/join-requests/{uuid.uuid4()}/",
+            {"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 404
+
+    def test_submit_join_request_default_status_is_pending(self, api_client):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "name": "New Sprout",
+                "email": "newsprout@vegan.org",
+                "why_join": "Collective liberation matters.",
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+        assert response.json()["status"] == "pending"
