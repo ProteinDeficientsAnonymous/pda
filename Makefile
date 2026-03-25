@@ -1,6 +1,32 @@
-.PHONY: install run test lint check migrate createsuperuser seed db-start db-stop ci dev \
+.PHONY: help install run test lint check migrate createsuperuser seed db-start db-stop ci dev \
         frontend-install frontend-run frontend-build frontend-codegen frontend-lint \
         frontend-format frontend-test frontend-fix
+
+help:
+	@echo "Backend commands:"
+	@echo "  make install          Install dependencies (uv sync + flutter pub get)"
+	@echo "  make run              Run Django dev server (localhost:8000)"
+	@echo "  make test             Run pytest suite"
+	@echo "  make lint             Run autoflake + isort + black"
+	@echo "  make check            Run Django system checks"
+	@echo "  make migrate          makemigrations + migrate"
+	@echo "  make createsuperuser  Create Django admin user"
+	@echo "  make db-start         Start local PostgreSQL (Docker)"
+	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
+	@echo ""
+	@echo "Frontend commands:"
+	@echo "  make frontend-install   flutter pub get"
+	@echo "  make frontend-run       Run Flutter web server (localhost:3000)"
+	@echo "  make frontend-build     Build Flutter web release"
+	@echo "  make frontend-codegen   Regenerate freezed/riverpod/json code"
+	@echo "  make frontend-lint      Run dart format check + dart analyze"
+	@echo "  make frontend-format    Auto-format Dart files"
+	@echo "  make frontend-fix       Auto-apply dart fix suggestions"
+	@echo "  make frontend-test      Run Flutter test suite"
+	@echo ""
+	@echo "Workflow commands:"
+	@echo "  make dev              Run Django + Flutter concurrently"
+	@echo "  make ci               Run all pre-commit checks (lint, check, test, frontend-lint, frontend-test)"
 
 # Backend
 install:
