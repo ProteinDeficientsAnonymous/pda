@@ -9,7 +9,7 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.permissions import PermissionKey
 
-from community.models import Event, JoinRequest, JoinRequestStatus
+from community.models import Event, EventRSVP, JoinRequest, JoinRequestStatus, RSVPStatus
 
 router = Router()
 
@@ -33,6 +33,12 @@ class JoinRequestStatusIn(BaseModel):
     status: str
 
 
+class RSVPGuestOut(BaseModel):
+    user_id: str
+    name: str
+    status: str
+
+
 class EventOut(BaseModel):
     id: str
     title: str
@@ -47,6 +53,12 @@ class EventOut(BaseModel):
     created_by_name: str | None = None
     co_host_ids: list[str] = []
     co_host_names: list[str] = []
+    guests: list[RSVPGuestOut] = []
+    my_rsvp: str | None = None
+
+
+class RSVPIn(BaseModel):
+    status: str
 
 
 class ErrorOut(BaseModel):
@@ -168,12 +180,27 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     )
 
 
-def _event_out(event: Event) -> EventOut:
+def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
     creator_name = (
         f"{creator.first_name} {creator.last_name}".strip() or creator.email if creator else None
     )
+    rsvps = list(event.rsvps.select_related("user").all()) if event.rsvp_enabled else []
+    guests = [
+        RSVPGuestOut(
+            user_id=str(r.user_id),
+            name=f"{r.user.first_name} {r.user.last_name}".strip() or r.user.email,
+            status=r.status,
+        )
+        for r in rsvps
+    ]
+    my_rsvp = None
+    if requesting_user is not None:
+        for r in rsvps:
+            if r.user_id == requesting_user.pk:
+                my_rsvp = r.status
+                break
     return EventOut(
         id=str(event.id),
         title=event.title,
@@ -188,13 +215,17 @@ def _event_out(event: Event) -> EventOut:
         created_by_name=creator_name,
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[f"{u.first_name} {u.last_name}".strip() or u.email for u in co_hosts],
+        guests=guests,
+        my_rsvp=my_rsvp,
     )
 
 
 @router.get("/events/", response={200: list[EventOut]}, auth=JWTAuth())
 def list_events(request):
-    events = Event.objects.select_related("created_by").prefetch_related("co_hosts").all()
-    return Status(200, [_event_out(e) for e in events])
+    events = (
+        Event.objects.select_related("created_by").prefetch_related("co_hosts", "rsvps__user").all()
+    )
+    return Status(200, [_event_out(e, request.auth) for e in events])
 
 
 @router.post("/events/", response={201: EventOut, 403: ErrorOut}, auth=JWTAuth())
@@ -215,7 +246,7 @@ def create_event(request, payload: EventIn):
     if payload.co_host_ids:
         co_hosts = UserModel.objects.filter(pk__in=payload.co_host_ids)
         event.co_hosts.set(co_hosts)
-    return Status(201, _event_out(event))
+    return Status(201, _event_out(event, request.auth))
 
 
 @router.patch(
@@ -255,7 +286,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         event.co_hosts.set(co_hosts)
 
     event.save()
-    return Status(200, _event_out(event))
+    return Status(200, _event_out(event, request.auth))
 
 
 @router.delete(
@@ -273,4 +304,52 @@ def delete_event(request, event_id: UUID):
         return Status(403, ErrorOut(detail="Permission denied."))
 
     event.delete()
+    return Status(204, None)
+
+
+@router.post(
+    "/events/{event_id}/rsvp/",
+    response={200: EventOut, 400: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
+    try:
+        event = (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "rsvps__user")
+            .get(id=event_id)
+        )
+    except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+
+    if not event.rsvp_enabled:
+        return Status(400, ErrorOut(detail="RSVPs are not enabled for this event."))
+
+    valid_statuses = RSVPStatus.values
+    if payload.status not in valid_statuses:
+        return Status(400, ErrorOut(detail=f"Status must be one of: {', '.join(valid_statuses)}."))
+
+    EventRSVP.objects.update_or_create(
+        event=event,
+        user=request.auth,
+        defaults={"status": payload.status},
+    )
+    event.refresh_from_db()
+    event = (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "rsvps__user")
+        .get(id=event_id)
+    )
+    return Status(200, _event_out(event, request.auth))
+
+
+@router.delete(
+    "/events/{event_id}/rsvp/",
+    response={204: None, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def delete_rsvp(request, event_id: UUID):
+    deleted, _ = EventRSVP.objects.filter(event_id=event_id, user=request.auth).delete()
+    if not deleted:
+        return Status(404, ErrorOut(detail="RSVP not found."))
     return Status(204, None)

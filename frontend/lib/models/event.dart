@@ -4,6 +4,18 @@ part 'event.freezed.dart';
 part 'event.g.dart';
 
 @freezed
+abstract class EventGuest with _$EventGuest {
+  const factory EventGuest({
+    required String userId,
+    required String name,
+    required String status,
+  }) = _EventGuest;
+
+  factory EventGuest.fromJson(Map<String, dynamic> json) =>
+      _$EventGuestFromJson(json);
+}
+
+@freezed
 abstract class Event with _$Event {
   const factory Event({
     required String id,
@@ -19,6 +31,8 @@ abstract class Event with _$Event {
     String? createdByName,
     @Default([]) List<String> coHostIds,
     @Default([]) List<String> coHostNames,
+    @Default([]) List<EventGuest> guests,
+    String? myRsvp,
   }) = _Event;
 
   factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);

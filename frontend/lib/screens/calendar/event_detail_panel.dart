@@ -149,25 +149,10 @@ class _EventDetailContent extends ConsumerWidget {
           ),
         ],
         if (event.rsvpEnabled) ...[
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                Icons.how_to_reg,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'RSVP enabled',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 8),
+          _RSVPSection(event: event),
         ],
         const SizedBox(height: 24),
         const Divider(),
@@ -209,6 +194,235 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
+class _RSVPSection extends ConsumerStatefulWidget {
+  final Event event;
+  const _RSVPSection({required this.event});
+
+  @override
+  ConsumerState<_RSVPSection> createState() => _RSVPSectionState();
+}
+
+class _RSVPSectionState extends ConsumerState<_RSVPSection> {
+  bool _loading = false;
+
+  Future<void> _setRsvp(String status) async {
+    setState(() => _loading = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.post(
+        '/api/community/events/${widget.event.id}/rsvp/',
+        data: {'status': status},
+      );
+      ref.invalidate(eventsProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update RSVP: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _removeRsvp() async {
+    setState(() => _loading = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.delete('/api/community/events/${widget.event.id}/rsvp/');
+      ref.invalidate(eventsProvider);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final myRsvp = widget.event.myRsvp;
+    final guests = widget.event.guests;
+
+    final attending = guests.where((g) => g.status == 'attending').toList();
+    final maybe = guests.where((g) => g.status == 'maybe').toList();
+    final cantGo = guests.where((g) => g.status == 'cant_go').toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('RSVP', style: theme.textTheme.titleSmall),
+        const SizedBox(height: 10),
+        if (_loading)
+          const SizedBox(
+            height: 36,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else
+          Row(
+            children: [
+              _RsvpButton(
+                label: 'Attending',
+                icon: Icons.check_circle_outline,
+                activeColor: Colors.green,
+                isActive: myRsvp == 'attending',
+                onTap:
+                    () =>
+                        myRsvp == 'attending'
+                            ? _removeRsvp()
+                            : _setRsvp('attending'),
+              ),
+              const SizedBox(width: 8),
+              _RsvpButton(
+                label: 'Maybe',
+                icon: Icons.help_outline,
+                activeColor: Colors.orange,
+                isActive: myRsvp == 'maybe',
+                onTap:
+                    () => myRsvp == 'maybe' ? _removeRsvp() : _setRsvp('maybe'),
+              ),
+              const SizedBox(width: 8),
+              _RsvpButton(
+                label: "Can't go",
+                icon: Icons.cancel_outlined,
+                activeColor: Colors.red,
+                isActive: myRsvp == 'cant_go',
+                onTap:
+                    () =>
+                        myRsvp == 'cant_go'
+                            ? _removeRsvp()
+                            : _setRsvp('cant_go'),
+              ),
+            ],
+          ),
+        if (guests.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _GuestGroup(
+            label: 'Attending (${attending.length})',
+            guests: attending,
+            color: Colors.green,
+          ),
+          _GuestGroup(
+            label: 'Maybe (${maybe.length})',
+            guests: maybe,
+            color: Colors.orange,
+          ),
+          _GuestGroup(
+            label: "Can't go (${cantGo.length})",
+            guests: cantGo,
+            color: Colors.red,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _RsvpButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color activeColor;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _RsvpButton({
+    required this.label,
+    required this.icon,
+    required this.activeColor,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color:
+              isActive
+                  ? activeColor.withValues(alpha: 0.15)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? activeColor : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color:
+                  isActive
+                      ? activeColor
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color:
+                    isActive
+                        ? activeColor
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuestGroup extends StatelessWidget {
+  final String label;
+  final List<EventGuest> guests;
+  final Color color;
+
+  const _GuestGroup({
+    required this.label,
+    required this.guests,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (guests.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children:
+                guests
+                    .map(
+                      (g) => Text(g.name, style: const TextStyle(fontSize: 13)),
+                    )
+                    .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _LinkRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -220,8 +434,12 @@ class _LinkRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.primary;
     return InkWell(
-      onTap:
-          () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, webOnlyWindowName: '_blank');
+        }
+      },
       borderRadius: BorderRadius.circular(4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

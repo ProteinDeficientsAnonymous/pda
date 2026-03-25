@@ -59,3 +59,22 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.title} — {self.start_datetime:%Y-%m-%d %H:%M}"
+
+
+class RSVPStatus(models.TextChoices):
+    ATTENDING = "attending", "Attending"
+    MAYBE = "maybe", "Maybe"
+    CANT_GO = "cant_go", "Can't go"
+
+
+class EventRSVP(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvps")
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="event_rsvps")
+    status = models.CharField(max_length=20, choices=RSVPStatus.choices)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("event", "user")]
+
+    def __str__(self):
+        return f"{self.user.email} → {self.event.title}: {self.status}"
