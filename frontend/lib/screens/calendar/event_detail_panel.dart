@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
@@ -126,11 +127,19 @@ class _EventDetailContent extends ConsumerWidget {
         ],
         if (event.whatsappLink.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _DetailRow(icon: Icons.chat, text: event.whatsappLink),
+          _LinkRow(
+            icon: Icons.chat,
+            label: 'WhatsApp group',
+            url: event.whatsappLink,
+          ),
         ],
         if (event.partifulLink.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _DetailRow(icon: Icons.celebration, text: event.partifulLink),
+          _LinkRow(
+            icon: Icons.celebration,
+            label: 'Partiful',
+            url: event.partifulLink,
+          ),
         ],
         if (event.description.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -196,6 +205,42 @@ class _DetailRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LinkRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String url;
+
+  const _LinkRow({required this.icon, required this.label, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return InkWell(
+      onTap:
+          () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+      borderRadius: BorderRadius.circular(4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                color: color,
+                decoration: TextDecoration.underline,
+                decorationColor: color,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -267,7 +312,6 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
         data: result,
       );
       ref.invalidate(eventsProvider);
-      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
