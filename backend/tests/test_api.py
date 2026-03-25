@@ -4,6 +4,59 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def admin_user(db):
+    from users.models import User
+
+    user = User.objects.create_superuser(
+        email="admin@pda.org",
+        password="adminpass123",
+        first_name="Admin",
+        last_name="User",
+    )
+    return user
+
+
+@pytest.fixture
+def admin_headers(admin_user):
+    from ninja_jwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(admin_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+
+
+@pytest.fixture
+def manage_users_user(db):
+    """A non-superuser with only manage_users permission."""
+    from users.models import User
+
+    user = User.objects.create_user(
+        email="manager@pda.org",
+        password="managerpass123",
+    )
+    role = Role.objects.create(name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES])
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def manage_users_headers(manage_users_user):
+    from ninja_jwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(manage_users_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+
+
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+
 @pytest.mark.django_db
 class TestAuth:
     def test_login_valid(self, api_client, test_user):
@@ -28,39 +81,18 @@ class TestAuth:
     def test_me_authenticated(self, api_client, test_user, auth_headers):
         response = api_client.get("/api/auth/me/", **auth_headers)
         assert response.status_code == 200
-        assert response.json()["email"] == "member@pda.org"
+        data = response.json()
+        assert data["email"] == "member@pda.org"
+        assert "roles" in data
 
     def test_me_unauthenticated(self, api_client):
         response = api_client.get("/api/auth/me/")
         assert response.status_code == 401
 
 
-@pytest.mark.django_db
-class TestJoinRequest:
-    def test_submit_join_request(self, api_client):
-        response = api_client.post(
-            "/api/community/join-request/",
-            {
-                "name": "Leafy Green",
-                "email": "leafy@vegan.org",
-                "pronouns": "they/them",
-                "how_they_heard": "Word of mouth",
-                "why_join": "I want to connect with other vegans in collective liberation work.",
-            },
-            content_type="application/json",
-        )
-        assert response.status_code == 201
-        data = response.json()
-        assert data["name"] == "Leafy Green"
-
-    def test_submit_join_request_missing_fields(self, api_client):
-        response = api_client.post(
-            "/api/community/join-request/",
-            {"name": "Leafy", "email": "leafy@vegan.org"},
-            content_type="application/json",
-        )
-        # Django Ninja returns 422 for Pydantic validation errors (missing required fields)
-        assert response.status_code == 422
+# ---------------------------------------------------------------------------
+# Roles and permissions (model-level)
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
@@ -92,15 +124,287 @@ class TestRolesAndPermissions:
         assert superuser.roles.filter(name="admin").exists()
 
     def test_has_permission_uses_prefetch_cache(self, test_user):
-        from django.test.utils import override_settings
         from users.models import User
 
         member_role = Role.objects.get(name="member")
         test_user.roles.add(member_role)
-        # Simulate prefetch by fetching with prefetch_related
         user = User.objects.prefetch_related("roles").get(pk=test_user.pk)
-        # Access prefetch cache path
         assert not user.has_permission(PermissionKey.MANAGE_USERS)
+
+
+# ---------------------------------------------------------------------------
+# User management API (#3)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestUserManagementAPI:
+    def test_create_user_requires_permission(self, api_client, auth_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"email": "new@pda.org"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_create_user_success(self, api_client, admin_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"email": "new@pda.org", "first_name": "New", "last_name": "Member"},
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["email"] == "new@pda.org"
+        assert "temporary_password" in data
+        assert len(data["temporary_password"]) == 16
+
+    def test_create_user_duplicate_email(self, api_client, admin_headers, test_user):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"email": "member@pda.org"},
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 400
+
+    def test_create_user_assigns_member_role_by_default(self, api_client, admin_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"email": "newmember@pda.org"},
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 201
+        from users.models import User
+        user = User.objects.get(email="newmember@pda.org")
+        assert user.roles.filter(name="member").exists()
+
+    def test_list_users_requires_manage_users(self, api_client, auth_headers):
+        response = api_client.get("/api/auth/users/", **auth_headers)
+        assert response.status_code == 403
+
+    def test_list_users_success(self, api_client, admin_headers, test_user):
+        response = api_client.get("/api/auth/users/", **admin_headers)
+        assert response.status_code == 200
+        assert isinstance(response.json(), list)
+
+    def test_update_user(self, api_client, admin_headers, test_user):
+        response = api_client.patch(
+            f"/api/auth/users/{test_user.id}/",
+            {"first_name": "Updated"},
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["first_name"] == "Updated"
+
+    def test_delete_user_cannot_delete_self(self, api_client, admin_headers, admin_user):
+        response = api_client.delete(
+            f"/api/auth/users/{admin_user.id}/",
+            **admin_headers,
+        )
+        assert response.status_code == 400
+        assert "own account" in response.json()["detail"]
+
+    def test_delete_user_cannot_delete_last_admin(self, api_client, manage_users_headers, admin_user):
+        response = api_client.delete(
+            f"/api/auth/users/{admin_user.id}/",
+            **manage_users_headers,
+        )
+        assert response.status_code == 400
+        assert "last admin" in response.json()["detail"]
+
+    def test_delete_user_success(self, api_client, admin_headers):
+        from users.models import User
+        other = User.objects.create_user(email="todelete@pda.org", password="pass123")
+        response = api_client.delete(f"/api/auth/users/{other.id}/", **admin_headers)
+        assert response.status_code == 204
+
+    def test_update_user_roles_cannot_remove_own_admin(self, api_client, admin_headers, admin_user):
+        member_role = Role.objects.get(name="member")
+        response = api_client.patch(
+            f"/api/auth/users/{admin_user.id}/roles/",
+            {"role_ids": [str(member_role.id)]},
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 400
+        assert "own admin role" in response.json()["detail"]
+
+    def test_reset_password(self, api_client, admin_headers, test_user):
+        response = api_client.post(
+            f"/api/auth/users/{test_user.id}/reset-password/",
+            **admin_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "temporary_password" in data
+        assert len(data["temporary_password"]) == 16
+
+    def test_reset_password_requires_manage_users(self, api_client, auth_headers, test_user):
+        response = api_client.post(
+            f"/api/auth/users/{test_user.id}/reset-password/",
+            **auth_headers,
+        )
+        assert response.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Role management API (#4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestRoleManagementAPI:
+    def test_list_roles_authenticated(self, api_client, auth_headers):
+        response = api_client.get("/api/auth/roles/", **auth_headers)
+        assert response.status_code == 200
+        names = [r["name"] for r in response.json()]
+        assert "admin" in names
+        assert "member" in names
+
+    def test_list_roles_unauthenticated(self, api_client):
+        response = api_client.get("/api/auth/roles/")
+        assert response.status_code == 401
+
+    def test_create_role_success(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/roles/",
+            {"name": "vettor", "permissions": ["approve_join_requests"]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["name"] == "vettor"
+
+    def test_create_role_requires_manage_roles(self, api_client, auth_headers):
+        response = api_client.post(
+            "/api/auth/roles/",
+            {"name": "newrole"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_create_role_duplicate_name(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/roles/",
+            {"name": "member"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 400
+
+    def test_patch_role_permissions(self, api_client, manage_users_headers):
+        role = Role.objects.create(name="custom", permissions=[])
+        response = api_client.patch(
+            f"/api/auth/roles/{role.id}/",
+            {"permissions": ["manage_events"]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 200
+        assert "manage_events" in response.json()["permissions"]
+
+    def test_patch_protected_role_name_blocked(self, api_client, manage_users_headers):
+        admin_role = Role.objects.get(name="admin")
+        response = api_client.patch(
+            f"/api/auth/roles/{admin_role.id}/",
+            {"name": "superadmin"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 400
+        assert "protected" in response.json()["detail"]
+
+    def test_delete_role_success(self, api_client, manage_users_headers):
+        role = Role.objects.create(name="deleteme", permissions=[])
+        response = api_client.delete(f"/api/auth/roles/{role.id}/", **manage_users_headers)
+        assert response.status_code == 204
+
+    def test_delete_protected_role_blocked(self, api_client, manage_users_headers):
+        admin_role = Role.objects.get(name="admin")
+        response = api_client.delete(f"/api/auth/roles/{admin_role.id}/", **manage_users_headers)
+        assert response.status_code == 400
+        assert "protected" in response.json()["detail"]
+
+    def test_delete_role_with_users_blocked(self, api_client, manage_users_headers, test_user):
+        role = Role.objects.create(name="occupied", permissions=[])
+        test_user.roles.add(role)
+        response = api_client.delete(f"/api/auth/roles/{role.id}/", **manage_users_headers)
+        assert response.status_code == 400
+        assert "users assigned" in response.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Join request + email notification (#5)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestJoinRequest:
+    def test_submit_join_request(self, api_client):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "name": "Leafy Green",
+                "email": "leafy@vegan.org",
+                "pronouns": "they/them",
+                "how_they_heard": "Word of mouth",
+                "why_join": "I want to connect with other vegans in collective liberation work.",
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+        assert response.json()["name"] == "Leafy Green"
+
+    def test_submit_join_request_missing_fields(self, api_client):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {"name": "Leafy", "email": "leafy@vegan.org"},
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+
+    def test_join_request_sends_email_when_vetting_email_set(self, api_client, settings):
+        settings.VETTING_EMAIL = "vetting@pda.org"
+        from django.core import mail
+
+        api_client.post(
+            "/api/community/join-request/",
+            {
+                "name": "Test Person",
+                "email": "test@vegan.org",
+                "why_join": "Because liberation.",
+            },
+            content_type="application/json",
+        )
+        assert len(mail.outbox) == 1
+        assert "Test Person" in mail.outbox[0].subject
+        assert mail.outbox[0].to == ["vetting@pda.org"]
+
+    def test_join_request_no_email_when_vetting_email_unset(self, api_client, settings):
+        settings.VETTING_EMAIL = ""
+        from django.core import mail
+
+        api_client.post(
+            "/api/community/join-request/",
+            {
+                "name": "Test Person",
+                "email": "test@vegan.org",
+                "why_join": "Because liberation.",
+            },
+            content_type="application/json",
+        )
+        assert len(mail.outbox) == 0
+
+
+# ---------------------------------------------------------------------------
+# Events
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
