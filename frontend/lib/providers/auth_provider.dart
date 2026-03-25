@@ -15,9 +15,9 @@ class AuthNotifier extends AsyncNotifier<User?> {
   @override
   Future<User?> build() async {
     final storage = ref.watch(secureStorageProvider);
-    final token = await storage.getAccessToken();
-    if (token == null) return null;
     try {
+      final token = await storage.getAccessToken();
+      if (token == null) return null;
       final api = ref.watch(apiClientProvider);
       final response = await api.get('/api/auth/me/');
       return User.fromJson(response.data as Map<String, dynamic>);
