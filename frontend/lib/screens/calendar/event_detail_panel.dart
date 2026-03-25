@@ -240,8 +240,18 @@ class _RSVPSectionState extends ConsumerState<_RSVPSection> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final myRsvp = widget.event.myRsvp;
-    final guests = widget.event.guests;
+    // Read live event from provider so RSVP changes are reflected immediately.
+    final liveEvent =
+        ref
+            .watch(eventsProvider)
+            .valueOrNull
+            ?.firstWhere(
+              (e) => e.id == widget.event.id,
+              orElse: () => widget.event,
+            ) ??
+        widget.event;
+    final myRsvp = liveEvent.myRsvp;
+    final guests = liveEvent.guests;
 
     final attending = guests.where((g) => g.status == 'attending').toList();
     final maybe = guests.where((g) => g.status == 'maybe').toList();
