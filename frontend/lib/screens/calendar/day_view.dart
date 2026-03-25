@@ -59,12 +59,17 @@ class _DayViewState extends State<DayView> {
   }
 
   List<Event> _eventsForSelectedDay() {
+    final dayStart = DateTime(
+      _selectedDay.year,
+      _selectedDay.month,
+      _selectedDay.day,
+    );
+    final dayEnd = dayStart.add(const Duration(days: 1));
     final results =
         widget.events.where((e) {
           final start = e.startDatetime.toLocal();
-          return start.year == _selectedDay.year &&
-              start.month == _selectedDay.month &&
-              start.day == _selectedDay.day;
+          final end = e.endDatetime.toLocal();
+          return start.isBefore(dayEnd) && end.isAfter(dayStart);
         }).toList();
     results.sort((a, b) => a.startDatetime.compareTo(b.startDatetime));
     return results;

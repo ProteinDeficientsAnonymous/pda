@@ -102,9 +102,13 @@ class _MonthViewState extends State<MonthView> {
   }
 
   List<Event> _eventsForDay(DateTime day) {
-    return widget.events
-        .where((e) => _isSameDay(e.startDatetime.toLocal(), day))
-        .toList();
+    final dayStart = DateTime(day.year, day.month, day.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    return widget.events.where((e) {
+      final start = e.startDatetime.toLocal();
+      final end = e.endDatetime.toLocal();
+      return start.isBefore(dayEnd) && end.isAfter(dayStart);
+    }).toList();
   }
 
   @override
