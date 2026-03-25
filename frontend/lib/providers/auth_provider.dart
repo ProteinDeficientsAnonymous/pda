@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/services/api_client.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/services/secure_storage.dart';
 
 final secureStorageProvider = Provider<SecureStorageService>(
@@ -43,7 +44,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
       final meResponse = await api.get('/api/auth/me/');
       state = AsyncData(User.fromJson(meResponse.data as Map<String, dynamic>));
     } catch (e, st) {
-      state = AsyncError(e, st);
+      state = AsyncError(ApiError.from(e), st);
     }
   }
 
