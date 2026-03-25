@@ -217,13 +217,10 @@ class _DayEventsColumn extends StatelessWidget {
           right: BorderSide(color: theme.dividerColor, width: 0.5),
         ),
       ),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(3),
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          final event = events[index];
-          return _WeekEventChip(event: event);
-        },
+      padding: const EdgeInsets.all(3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: events.map((e) => _WeekEventChip(event: e)).toList(),
       ),
     );
   }

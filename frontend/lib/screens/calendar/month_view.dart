@@ -113,8 +113,16 @@ class _MonthViewState extends State<MonthView> {
     return Column(
       children: [
         _buildMonthHeader(context, headerLabel),
-        _buildDayOfWeekHeaders(context),
-        Expanded(child: _buildGrid(context, gridDays)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: _buildDayOfWeekHeaders(context),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: _buildGrid(context, gridDays),
+          ),
+        ),
       ],
     );
   }
