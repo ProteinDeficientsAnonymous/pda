@@ -332,6 +332,10 @@ class _EventChip extends StatelessWidget {
           color: bgColor,
           borderRadius: BorderRadius.circular(4),
         ),
+        child: Text(
+          event.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
