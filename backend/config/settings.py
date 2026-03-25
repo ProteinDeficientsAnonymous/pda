@@ -97,7 +97,7 @@ if IS_PRODUCTION:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS
-if DEBUG:
+if not IS_PRODUCTION:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
 
 # Email
