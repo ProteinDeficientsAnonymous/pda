@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:pda/models/event.dart';
+import 'package:pda/screens/calendar/event_detail_panel.dart';
 
 class DayView extends StatefulWidget {
   final List<Event> events;
@@ -321,7 +322,7 @@ class _EventBlock extends StatelessWidget {
     final timeLabel = '${timeFmt.format(start)} – ${timeFmt.format(end)}';
 
     return GestureDetector(
-      onTap: () => debugPrint('Event tapped: ${event.title}'),
+      onTap: () => showEventDetail(context, event),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 1),
         decoration: BoxDecoration(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/screens/calendar/event_detail_panel.dart';
 
 class MonthView extends StatefulWidget {
   final List<Event> events;
@@ -379,10 +380,7 @@ class _EventListItem extends StatelessWidget {
     final endTime = timeFmt.format(event.endDatetime.toLocal());
 
     return ListTile(
-      onTap: () {
-        // TODO(#30): Open event detail panel
-        debugPrint('Event tapped: ${event.id} — ${event.title}');
-      },
+      onTap: () => showEventDetail(context, event),
       leading: Icon(Icons.event, color: Theme.of(context).colorScheme.primary),
       title: Text(event.title, style: Theme.of(context).textTheme.bodyMedium),
       subtitle: Text(

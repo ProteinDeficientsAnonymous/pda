@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/screens/calendar/event_detail_panel.dart';
 
 const double _kHourHeight = 60.0;
 const double _kTimeGutterWidth = 56.0;
@@ -124,9 +125,7 @@ class _WeekViewState extends State<WeekView> {
       right: 1,
       height: height,
       child: GestureDetector(
-        onTap: () => debugPrint(
-          'Event tapped: ${event.title} (id=${event.id})',
-        ),
+        onTap: () => showEventDetail(context, event),
         child: Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.primaryContainer,
