@@ -34,4 +34,4 @@ frontend/.flutter-plugins-dependencies
 *.g.dart
 
 # Claude Code
-.claude/
+.claude/worktrees

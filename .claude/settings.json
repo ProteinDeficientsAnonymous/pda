@@ -1,0 +1,155 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Edit",
+      "MultiEdit",
+      "Write",
+      "Bash(uv:*)",
+      "Bash(make:*)",
+      "Bash(python:*)",
+      "Bash(pytest:*)",
+      "Bash(black:*)",
+      "Bash(isort:*)",
+      "Bash(flake8:*)",
+      "Bash(mypy:*)",
+      "Bash(django-admin:*)",
+      "Bash(gunicorn:*)",
+      "Bash(git:*)",
+      "Bash(docker:*)",
+      "Bash(flutter:*)",
+      "Bash(dart:*)",
+      "Bash(bd:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(rm -rf:*)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "60000",
+    "BASH_MAX_OUTPUT_LENGTH": "20000",
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1"
+  },
+  "includeCoAuthoredBy": true,
+  "cleanupPeriodDays": 30,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"\\(.tool_input.command) - \\(.tool_input.description // \"No description\")\"' >> ~/.claude/bash-command-log.txt"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); CONTENT=$(echo $STDIN_JSON | jq -r '.tool_input.content // \"\"'); if [[ \"$FILE\" =~ \\.py$ ]] && echo \"$CONTENT\" | grep -q 'print('; then echo 'Warning: print() statements should be replaced with logging' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" == \"pyproject.toml\" ]]; then echo 'Checking for vulnerable dependencies...'; if command -v pip-audit >/dev/null 2>&1; then pip-audit; elif command -v safety >/dev/null 2>&1; then safety check; else echo 'No security audit tool found. Install safety or pip-audit'; fi; fi",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.py$ ]]; then cd backend && uv run python -m black \"$FILE\" 2>/dev/null; cd -; fi",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.py$ ]]; then cd backend && uv run python -m isort \"$FILE\" 2>/dev/null; cd -; fi",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.py$ ]]; then RESULT=$(cd backend && uv run python -m flake8 \"$FILE\" 2>&1); if [ $? -ne 0 ]; then echo \"Flake8 issues: $RESULT\" >&2; exit 2; fi; fi",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.py$ ]]; then RESULT=$(cd backend && uv run python -m mypy \"$FILE\" 2>&1); if [ $? -ne 0 ]; then echo \"MyPy issues: $RESULT\" >&2; exit 2; fi; fi",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo $STDIN_JSON | jq -r '.tool_input.file_path // \"\"'); if [[ \"$FILE\" =~ \\.py$ && \"$FILE\" != *\"test_\"* && \"$FILE\" != *\"_test.py\" && \"$FILE\" != *\"/tests/\"* ]]; then BASENAME=$(basename \"$FILE\" .py); for TEST_DIR in backend/tests backend/listings/tests backend/users/tests; do TEST_FILE=\"$TEST_DIR/test_$BASENAME.py\"; if [ -f \"$TEST_FILE\" ]; then echo \"Running $TEST_FILE...\"; cd backend && uv run python -m pytest \"../$TEST_FILE\" -v; cd -; break; fi; done; fi",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Claude Code notification: $(date)\" >> ~/.claude/notifications.log"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CHANGED=$(git diff --name-only --diff-filter=ACMR 2>/dev/null | grep '\\.py$'); if [[ -n \"$CHANGED\" ]]; then echo 'Linting changed Python files...'; cd backend && uv run python -m flake8 $CHANGED 2>&1 || true; cd -; fi",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CHANGED=$(git diff --name-only --diff-filter=ACMR 2>/dev/null | grep '\\.py$'); if [[ -n \"$CHANGED\" ]]; then echo 'Type checking changed files...'; cd backend && uv run python -m mypy $CHANGED 2>&1 || true; cd -; fi",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
