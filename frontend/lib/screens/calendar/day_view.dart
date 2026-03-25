@@ -31,7 +31,11 @@ class _DayViewState extends State<DayView> {
   @override
   void initState() {
     super.initState();
-    _selectedDay = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
+    _selectedDay = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      widget.selectedDate.day,
+    );
     _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrentHour());
   }
@@ -159,10 +163,9 @@ class _DayViewState extends State<DayView> {
                           Icon(
                             Icons.calendar_today_outlined,
                             size: 48,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.3),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.3),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -170,10 +173,9 @@ class _DayViewState extends State<DayView> {
                             style: Theme.of(
                               context,
                             ).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.4),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.4),
                             ),
                           ),
                         ],
@@ -424,4 +426,3 @@ class _EventBlock extends StatelessWidget {
     );
   }
 }
-

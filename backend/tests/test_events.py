@@ -1,9 +1,7 @@
 import pytest
-
 from community.models import Event
 from users.permissions import PermissionKey
 from users.roles import Role
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -1,5 +1,4 @@
 import pytest
-from django.contrib.staticfiles.storage import StaticFilesStorage
 from django.test import Client
 
 

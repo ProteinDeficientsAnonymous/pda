@@ -42,10 +42,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       title: 'Community Calendar',
       child: Column(
         children: [
-          _ViewSwitcher(
-            selected: _view,
-            onSelected: _onViewChanged,
-          ),
+          _ViewSwitcher(selected: _view, onSelected: _onViewChanged),
           Expanded(
             child: eventsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),

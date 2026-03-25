@@ -14,6 +14,7 @@ const List<(Color, Color)> _kEventPalette = [
 
 /// Returns (backgroundColor, foregroundColor) for an event based on its id.
 (Color, Color) eventColors(String eventId) {
-  final index = eventId.codeUnits.fold(0, (sum, c) => sum + c) % _kEventPalette.length;
+  final index =
+      eventId.codeUnits.fold(0, (sum, c) => sum + c) % _kEventPalette.length;
   return _kEventPalette[index];
 }

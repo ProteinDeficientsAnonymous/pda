@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
 from users.models import User
 from users.roles import PROTECTED_ROLE_NAMES, Role
 

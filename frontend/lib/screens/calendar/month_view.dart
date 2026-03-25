@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
-import 'package:pda/screens/calendar/event_colors.dart';
 
 class MonthView extends StatefulWidget {
   final List<Event> events;
@@ -40,7 +39,10 @@ class _MonthViewState extends State<MonthView> {
   @override
   void initState() {
     super.initState();
-    _focusedMonth = DateTime(widget.selectedDate.year, widget.selectedDate.month);
+    _focusedMonth = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+    );
   }
 
   void _goToPreviousMonth() {
@@ -60,7 +62,11 @@ class _MonthViewState extends State<MonthView> {
   /// from the next month to fill complete weeks.
   List<DateTime> _buildGridDays() {
     final firstOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
-    final lastOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
+    final lastOfMonth = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month + 1,
+      0,
+    );
 
     // Sunday = 0, weekday property: Mon=1 … Sun=7, so convert
     final leadingDays = firstOfMonth.weekday % 7;
@@ -94,7 +100,9 @@ class _MonthViewState extends State<MonthView> {
   }
 
   List<Event> _eventsForDay(DateTime day) {
-    return widget.events.where((e) => _isSameDay(e.startDatetime.toLocal(), day)).toList();
+    return widget.events
+        .where((e) => _isSameDay(e.startDatetime.toLocal(), day))
+        .toList();
   }
 
   @override
@@ -152,22 +160,23 @@ class _MonthViewState extends State<MonthView> {
 
   Widget _buildDayOfWeekHeaders(BuildContext context) {
     final textStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        );
+      fontWeight: FontWeight.w600,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
     return Row(
-      children: _dayHeaders
-          .map(
-            (h) => Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(h, style: textStyle),
+      children:
+          _dayHeaders
+              .map(
+                (h) => Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(h, style: textStyle),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          )
-          .toList(),
+              )
+              .toList(),
     );
   }
 
@@ -182,7 +191,10 @@ class _MonthViewState extends State<MonthView> {
         return IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: rowDays.map((day) => Expanded(child: _buildCell(context, day))).toList(),
+            children:
+                rowDays
+                    .map((day) => Expanded(child: _buildCell(context, day)))
+                    .toList(),
           ),
         );
       },
@@ -199,10 +211,7 @@ class _MonthViewState extends State<MonthView> {
       child: Container(
         constraints: const BoxConstraints(minHeight: _minCellHeight),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).dividerColor,
-            width: 0.5,
-          ),
+          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
         ),
         padding: const EdgeInsets.all(4),
         child: Column(
@@ -240,14 +249,12 @@ class _MonthViewState extends State<MonthView> {
       );
     }
 
-    final textColor = isCurrentMonth
-        ? colorScheme.onSurface
-        : colorScheme.onSurface.withValues(alpha: 0.35);
+    final textColor =
+        isCurrentMonth
+            ? colorScheme.onSurface
+            : colorScheme.onSurface.withValues(alpha: 0.35);
 
-    return Text(
-      '${day.day}',
-      style: TextStyle(fontSize: 12, color: textColor),
-    );
+    return Text('${day.day}', style: TextStyle(fontSize: 12, color: textColor));
   }
 
   List<Widget> _buildEventChips(BuildContext context, List<Event> events) {
@@ -259,15 +266,16 @@ class _MonthViewState extends State<MonthView> {
     final visibleEvents = events.take(_maxChipsVisible).toList();
     final overflow = events.length - _maxChipsVisible;
 
-    final chips = visibleEvents
-        .map(
-          (e) => _EventChip(
-            title: e.title,
-            color: eventColors(e.id).$1,
-            textColor: eventColors(e.id).$2,
-          ),
-        )
-        .toList();
+    final chips =
+        visibleEvents
+            .map(
+              (e) => _EventChip(
+                title: e.title,
+                color: colorScheme.primaryContainer,
+                textColor: colorScheme.onPrimaryContainer,
+              ),
+            )
+            .toList();
 
     final result = <Widget>[...chips];
 
@@ -277,10 +285,7 @@ class _MonthViewState extends State<MonthView> {
           padding: const EdgeInsets.only(top: 2),
           child: Text(
             '+$overflow more',
-            style: TextStyle(
-              fontSize: 10,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant),
           ),
         ),
       );
@@ -319,4 +324,3 @@ class _EventChip extends StatelessWidget {
     );
   }
 }
-

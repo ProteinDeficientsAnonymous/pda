@@ -1,8 +1,6 @@
 import pytest
-
 from users.permissions import PermissionKey
 from users.roles import Role
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -39,7 +37,9 @@ def manage_users_user(db):
         email="manager@pda.org",
         password="managerpass123",
     )
-    role = Role.objects.create(name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES])
+    role = Role.objects.create(
+        name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES]
+    )
     user.roles.add(role)
     return user
 
@@ -118,9 +118,7 @@ class TestRolesAndPermissions:
     def test_superuser_gets_admin_role_on_create(self, db):
         from users.models import User
 
-        superuser = User.objects.create_superuser(
-            email="super@pda.org", password="superpass123"
-        )
+        superuser = User.objects.create_superuser(email="super@pda.org", password="superpass123")
         assert superuser.roles.filter(name="admin").exists()
 
     def test_has_permission_uses_prefetch_cache(self, test_user):
@@ -179,6 +177,7 @@ class TestUserManagementAPI:
         )
         assert response.status_code == 201
         from users.models import User
+
         user = User.objects.get(email="newmember@pda.org")
         assert user.roles.filter(name="member").exists()
 
@@ -209,7 +208,9 @@ class TestUserManagementAPI:
         assert response.status_code == 400
         assert "own account" in response.json()["detail"]
 
-    def test_delete_user_cannot_delete_last_admin(self, api_client, manage_users_headers, admin_user):
+    def test_delete_user_cannot_delete_last_admin(
+        self, api_client, manage_users_headers, admin_user
+    ):
         response = api_client.delete(
             f"/api/auth/users/{admin_user.id}/",
             **manage_users_headers,
@@ -219,6 +220,7 @@ class TestUserManagementAPI:
 
     def test_delete_user_success(self, api_client, admin_headers):
         from users.models import User
+
         other = User.objects.create_user(email="todelete@pda.org", password="pass123")
         response = api_client.delete(f"/api/auth/users/{other.id}/", **admin_headers)
         assert response.status_code == 204
@@ -472,7 +474,9 @@ class TestJoinRequestManagement:
         assert data[0]["name"] == "Sprout Seedling"
         assert data[0]["status"] == "pending"
 
-    def test_list_join_requests_admin_can_access(self, api_client, admin_headers, sample_join_request):
+    def test_list_join_requests_admin_can_access(
+        self, api_client, admin_headers, sample_join_request
+    ):
         response = api_client.get("/api/community/join-requests/", **admin_headers)
         assert response.status_code == 200
 
@@ -498,8 +502,10 @@ class TestJoinRequestManagement:
         assert response.status_code == 200
         assert response.json()["status"] == "rejected"
 
-    def test_update_join_request_status_persists(self, api_client, vettor_headers, sample_join_request):
-        from community.models import JoinRequest
+    def test_update_join_request_status_persists(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        pass
 
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
@@ -510,7 +516,9 @@ class TestJoinRequestManagement:
         sample_join_request.refresh_from_db()
         assert sample_join_request.status == "approved"
 
-    def test_update_join_request_invalid_status(self, api_client, vettor_headers, sample_join_request):
+    def test_update_join_request_invalid_status(
+        self, api_client, vettor_headers, sample_join_request
+    ):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": "pending"},
@@ -519,7 +527,9 @@ class TestJoinRequestManagement:
         )
         assert response.status_code == 400
 
-    def test_update_join_request_requires_permission(self, api_client, auth_headers, sample_join_request):
+    def test_update_join_request_requires_permission(
+        self, api_client, auth_headers, sample_join_request
+    ):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": "approved"},
