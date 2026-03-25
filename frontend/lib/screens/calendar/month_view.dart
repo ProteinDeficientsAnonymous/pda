@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/screens/calendar/event_colors.dart';
+import 'package:pda/screens/calendar/event_detail_panel.dart';
 
 class MonthView extends StatefulWidget {
   final List<Event> events;
@@ -227,7 +229,7 @@ class _MonthViewState extends State<MonthView> {
           children: [
             _buildDayLabel(context, day, isToday, isCurrentMonth),
             const SizedBox(height: 2),
-            ..._buildEventChips(context, events),
+            ..._buildEventChips(context, events, day),
           ],
         ),
       ),
@@ -265,35 +267,38 @@ class _MonthViewState extends State<MonthView> {
     return Text('${day.day}', style: TextStyle(fontSize: 12, color: textColor));
   }
 
-  List<Widget> _buildEventChips(BuildContext context, List<Event> events) {
-    if (events.isEmpty) {
-      return [];
-    }
+  List<Widget> _buildEventChips(BuildContext context, List<Event> events, DateTime day) {
+    if (events.isEmpty) return [];
 
-    final colorScheme = Theme.of(context).colorScheme;
     final visibleEvents = events.take(_maxChipsVisible).toList();
     final overflow = events.length - _maxChipsVisible;
 
-    final chips =
-        visibleEvents
-            .map(
-              (e) => _EventChip(
-                title: e.title,
-                color: colorScheme.primaryContainer,
-                textColor: colorScheme.onPrimaryContainer,
-              ),
-            )
-            .toList();
+    final chips = visibleEvents.map((e) {
+      final colors = eventColors(e.id);
+      return _EventChip(
+        event: e,
+        bgColor: colors.$1,
+        fgColor: colors.$2,
+        onTap: () => showEventDetail(context, e),
+      );
+    }).toList();
 
     final result = <Widget>[...chips];
 
     if (overflow > 0) {
       result.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            '+$overflow more',
-            style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant),
+        GestureDetector(
+          onTap: () => widget.onDayTapped(day),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 2, left: 2),
+            child: Text(
+              '+$overflow more',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ),
       );
@@ -304,30 +309,35 @@ class _MonthViewState extends State<MonthView> {
 }
 
 class _EventChip extends StatelessWidget {
-  final String title;
-  final Color color;
-  final Color textColor;
+  final Event event;
+  final Color bgColor;
+  final Color fgColor;
+  final VoidCallback onTap;
 
   const _EventChip({
-    required this.title,
-    required this.color,
-    required this.textColor,
+    required this.event,
+    required this.bgColor,
+    required this.fgColor,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: 10, color: textColor),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(4),
+        ),
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: fgColor,
+          ),
+        ),
       ),
     );
   }
