@@ -1,108 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show DateFormat;
-import 'package:pda/models/event.dart';
 import 'package:pda/providers/event_provider.dart';
+import 'package:pda/screens/calendar/day_view.dart';
+import 'package:pda/screens/calendar/month_view.dart';
+import 'package:pda/screens/calendar/week_view.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
-class CalendarScreen extends ConsumerWidget {
+enum _CalendarView { month, week, day }
+
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
+}
+
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  _CalendarView _view = _CalendarView.month;
+
+  @override
+  Widget build(BuildContext context) {
     final eventsAsync = ref.watch(eventsProvider);
 
     return AppScaffold(
       title: 'Community Calendar',
-      child: eventsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load events: $e')),
-        data: (events) {
-          if (events.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.event_note, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'No upcoming events',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Check back soon!',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(24),
-            itemCount: events.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) => _EventCard(event: events[index]),
-          );
-        },
+      child: Column(
+        children: [
+          _ViewSwitcher(
+            selected: _view,
+            onSelected: (v) => setState(() => _view = v),
+          ),
+          Expanded(
+            child: eventsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Failed to load events: $e')),
+              data: (events) => _buildView(events),
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  Widget _buildView(events) {
+    switch (_view) {
+      case _CalendarView.month:
+        return MonthView(events: events);
+      case _CalendarView.week:
+        return WeekView(events: events);
+      case _CalendarView.day:
+        return DayView(events: events);
+    }
+  }
 }
 
-class _EventCard extends StatelessWidget {
-  final Event event;
+class _ViewSwitcher extends StatelessWidget {
+  final _CalendarView selected;
+  final ValueChanged<_CalendarView> onSelected;
 
-  const _EventCard({required this.event});
+  const _ViewSwitcher({required this.selected, required this.onSelected});
 
   @override
   Widget build(BuildContext context) {
-    final dateFmt = DateFormat('EEE, MMM d · h:mm a');
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(event.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.schedule, size: 16, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(
-                  '${dateFmt.format(event.startDatetime.toLocal())} — ${DateFormat('h:mm a').format(event.endDatetime.toLocal())}',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
-            if (event.location.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.place, size: 16, color: Colors.grey),
-                  const SizedBox(width: 6),
-                  Text(
-                    event.location,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ],
-            if (event.description.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                event.description,
-                style: const TextStyle(fontSize: 15, height: 1.5),
-              ),
-            ],
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SegmentedButton<_CalendarView>(
+        segments: const [
+          ButtonSegment(value: _CalendarView.month, label: Text('Month')),
+          ButtonSegment(value: _CalendarView.week, label: Text('Week')),
+          ButtonSegment(value: _CalendarView.day, label: Text('Day')),
+        ],
+        selected: {selected},
+        onSelectionChanged: (s) => onSelected(s.first),
       ),
     );
   }
