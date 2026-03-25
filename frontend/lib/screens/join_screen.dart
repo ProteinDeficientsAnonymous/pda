@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pda/providers/join_request_provider.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
 class JoinScreen extends ConsumerStatefulWidget {
@@ -129,7 +130,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                     if (state.hasError) ...[
                       const SizedBox(height: 16),
                       Text(
-                        'Something went wrong. Please try again.',
+                        state.error is ApiError
+                            ? (state.error! as ApiError).message
+                            : 'Something went wrong. Please try again.',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                         ),
