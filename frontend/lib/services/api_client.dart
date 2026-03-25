@@ -56,4 +56,8 @@ class ApiClient {
       _dio.get(path, queryParameters: queryParameters);
 
   Future<Response> post(String path, {dynamic data}) => _dio.post(path, data: data);
+
+  Future<Response> patch(String path, {dynamic data}) => _dio.patch(path, data: data);
+
+  Future<Response> delete(String path) => _dio.delete(path);
 }
