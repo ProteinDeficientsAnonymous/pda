@@ -95,6 +95,35 @@ class _EventManagementBody extends ConsumerWidget {
   }
 }
 
+class _HostsLine extends StatelessWidget {
+  final Event event;
+
+  const _HostsLine({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    final names = <String>[];
+    if (event.createdByName != null) names.add(event.createdByName!);
+    names.addAll(event.coHostNames);
+
+    if (names.isEmpty) return const SizedBox.shrink();
+
+    return Row(
+      children: [
+        const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            names.join(', '),
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _EventManagementRow extends ConsumerWidget {
   final Event event;
 
@@ -191,6 +220,8 @@ class _EventManagementRow extends ConsumerWidget {
                       ],
                     ),
                   ],
+                  const SizedBox(height: 4),
+                  _HostsLine(event: event),
                 ],
               ),
             ),
@@ -214,4 +245,3 @@ class _EventManagementRow extends ConsumerWidget {
     );
   }
 }
-

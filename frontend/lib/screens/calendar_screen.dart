@@ -49,9 +49,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ref.invalidate(eventsProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create event: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to create event: $e')));
       }
     }
   }
@@ -70,8 +70,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               _ViewSwitcher(selected: _view, onSelected: _onViewChanged),
               Expanded(
                 child: eventsAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Failed to load events: $e')),
+                  loading:
+                      () => const Center(child: CircularProgressIndicator()),
+                  error:
+                      (e, _) =>
+                          Center(child: Text('Failed to load events: $e')),
                   data: (events) => _buildView(events),
                 ),
               ),

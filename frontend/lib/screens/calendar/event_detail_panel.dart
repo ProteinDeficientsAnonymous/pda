@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/providers/user_management_provider.dart';
 
 /// Shows the event detail panel as a bottom sheet (narrow) or side panel (wide).
 void showEventDetail(BuildContext context, Event event) {
@@ -67,6 +68,15 @@ class _EventDetailContent extends ConsumerWidget {
     final timeFmt = DateFormat('h:mm a');
     final start = event.startDatetime.toLocal();
     final end = event.endDatetime.toLocal();
+    final isSameDay =
+        start.year == end.year &&
+        start.month == end.month &&
+        start.day == end.day;
+
+    // Build host display string
+    final hostNames = <String>[];
+    if (event.createdByName != null) hostNames.add(event.createdByName!);
+    hostNames.addAll(event.coHostNames);
 
     return ListView(
       controller: scrollController,
@@ -90,13 +100,29 @@ class _EventDetailContent extends ConsumerWidget {
         const SizedBox(height: 16),
         _DetailRow(icon: Icons.calendar_today, text: dateFmt.format(start)),
         const SizedBox(height: 8),
-        _DetailRow(
-          icon: Icons.schedule,
-          text: '${timeFmt.format(start)} – ${timeFmt.format(end)}',
-        ),
+        if (isSameDay)
+          _DetailRow(
+            icon: Icons.schedule,
+            text: '${timeFmt.format(start)} – ${timeFmt.format(end)}',
+          )
+        else ...[
+          _DetailRow(
+            icon: Icons.schedule,
+            text: '${dateFmt.format(start)} ${timeFmt.format(start)}',
+          ),
+          const SizedBox(height: 4),
+          _DetailRow(
+            icon: Icons.schedule,
+            text: '${dateFmt.format(end)} ${timeFmt.format(end)}',
+          ),
+        ],
         if (event.location.isNotEmpty) ...[
           const SizedBox(height: 8),
           _DetailRow(icon: Icons.place, text: event.location),
+        ],
+        if (hostNames.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _DetailRow(icon: Icons.person_outline, text: hostNames.join(', ')),
         ],
         if (event.whatsappLink.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -117,7 +143,11 @@ class _EventDetailContent extends ConsumerWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.how_to_reg, size: 16, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.how_to_reg,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 'RSVP enabled',
@@ -289,16 +319,16 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
 
 /// Shared form dialog for creating and editing events.
 /// Pass [event] to pre-fill fields for editing; omit for create mode.
-class EventFormDialog extends StatefulWidget {
+class EventFormDialog extends ConsumerStatefulWidget {
   final Event? event;
 
   const EventFormDialog({super.key, this.event});
 
   @override
-  State<EventFormDialog> createState() => _EventFormDialogState();
+  ConsumerState<EventFormDialog> createState() => _EventFormDialogState();
 }
 
-class _EventFormDialogState extends State<EventFormDialog> {
+class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
   late final TextEditingController _description;
@@ -308,6 +338,9 @@ class _EventFormDialogState extends State<EventFormDialog> {
   late DateTime _start;
   late DateTime _end;
   late bool _rsvpEnabled;
+  late Set<String> _coHostIds;
+  // which field the inline calendar is editing: 'start', 'end', or null (hidden)
+  String? _calendarTarget;
 
   bool get _isEdit => widget.event != null;
 
@@ -324,6 +357,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       _start = e.startDatetime.toLocal();
       _end = e.endDatetime.toLocal();
       _rsvpEnabled = e.rsvpEnabled;
+      _coHostIds = Set<String>.from(e.coHostIds);
     } else {
       _title = TextEditingController();
       _description = TextEditingController();
@@ -334,6 +368,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       _start = DateTime(now.year, now.month, now.day, now.hour + 1);
       _end = _start.add(const Duration(hours: 1));
       _rsvpEnabled = false;
+      _coHostIds = {};
     }
   }
 
@@ -347,38 +382,48 @@ class _EventFormDialogState extends State<EventFormDialog> {
     super.dispose();
   }
 
-  Future<void> _pickDateRange() async {
-    final range = await showDateRangePicker(
-      context: context,
-      initialDateRange: DateTimeRange(start: _start, end: _end),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      helpText: 'Select event dates',
-    );
-    if (range == null) return;
+  void _toggleCalendar(String target) {
+    setState(() => _calendarTarget = _calendarTarget == target ? null : target);
+  }
+
+  void _onCalendarDaySelected(DateTime day) {
     setState(() {
-      _start = DateTime(
-        range.start.year, range.start.month, range.start.day,
-        _start.hour, _start.minute,
-      );
-      _end = DateTime(
-        range.end.year, range.end.month, range.end.day,
-        _end.hour, _end.minute,
-      );
-      if (_end.isBefore(_start)) {
-        _end = _start.add(const Duration(hours: 1));
+      if (_calendarTarget == 'start') {
+        _start = DateTime(
+          day.year,
+          day.month,
+          day.day,
+          _start.hour,
+          _start.minute,
+        );
+        if (_end.isBefore(_start)) {
+          _end = _start.add(const Duration(hours: 1));
+        }
+      } else {
+        _end = DateTime(day.year, day.month, day.day, _end.hour, _end.minute);
+        if (_end.isBefore(_start)) {
+          _start = _end.subtract(const Duration(hours: 1));
+        }
       }
+      _calendarTarget = null;
     });
   }
 
   Future<void> _pickStartTime() async {
+    setState(() => _calendarTarget = null);
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_start),
     );
     if (picked == null) return;
     setState(() {
-      _start = DateTime(_start.year, _start.month, _start.day, picked.hour, picked.minute);
+      _start = DateTime(
+        _start.year,
+        _start.month,
+        _start.day,
+        picked.hour,
+        picked.minute,
+      );
       if (_end.isBefore(_start)) {
         _end = _start.add(const Duration(hours: 1));
       }
@@ -386,13 +431,20 @@ class _EventFormDialogState extends State<EventFormDialog> {
   }
 
   Future<void> _pickEndTime() async {
+    setState(() => _calendarTarget = null);
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_end),
     );
     if (picked == null) return;
     setState(() {
-      _end = DateTime(_end.year, _end.month, _end.day, picked.hour, picked.minute);
+      _end = DateTime(
+        _end.year,
+        _end.month,
+        _end.day,
+        picked.hour,
+        picked.minute,
+      );
     });
   }
 
@@ -407,6 +459,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
       'start_datetime': _start.toUtc().toIso8601String(),
       'end_datetime': _end.toUtc().toIso8601String(),
       'rsvp_enabled': _rsvpEnabled,
+      'co_host_ids': _coHostIds.toList(),
     });
   }
 
@@ -434,7 +487,8 @@ class _EventFormDialogState extends State<EventFormDialog> {
                     border: OutlineInputBorder(),
                   ),
                   textCapitalization: TextCapitalization.sentences,
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator:
+                      (v) => v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 16),
                 // Date/time rows — Google Calendar style
@@ -442,7 +496,8 @@ class _EventFormDialogState extends State<EventFormDialog> {
                   label: 'Start',
                   date: dateFmt.format(_start),
                   time: timeFmt.format(_start),
-                  onDateTap: _pickDateRange,
+                  isActive: _calendarTarget == 'start',
+                  onDateTap: () => _toggleCalendar('start'),
                   onTimeTap: _pickStartTime,
                 ),
                 const SizedBox(height: 8),
@@ -450,9 +505,19 @@ class _EventFormDialogState extends State<EventFormDialog> {
                   label: 'End',
                   date: dateFmt.format(_end),
                   time: timeFmt.format(_end),
-                  onDateTap: _pickDateRange,
+                  isActive: _calendarTarget == 'end',
+                  onDateTap: () => _toggleCalendar('end'),
                   onTimeTap: _pickEndTime,
                 ),
+                if (_calendarTarget != null) ...[
+                  const SizedBox(height: 8),
+                  CalendarDatePicker(
+                    initialDate: _calendarTarget == 'start' ? _start : _end,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                    onDateChanged: _onCalendarDaySelected,
+                  ),
+                ],
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _location,
@@ -494,9 +559,10 @@ class _EventFormDialogState extends State<EventFormDialog> {
                     labelText: 'Partiful link (optional)',
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.celebration_outlined),
-                    helperText: _rsvpEnabled
-                        ? 'Consider using app RSVPs instead of Partiful'
-                        : null,
+                    helperText:
+                        _rsvpEnabled
+                            ? 'Consider using app RSVPs instead of Partiful'
+                            : null,
                     helperStyle: TextStyle(color: theme.colorScheme.tertiary),
                   ),
                   keyboardType: TextInputType.url,
@@ -508,13 +574,24 @@ class _EventFormDialogState extends State<EventFormDialog> {
                   value: _rsvpEnabled,
                   onChanged: (v) => setState(() => _rsvpEnabled = v),
                   title: const Text('Enable RSVPs'),
-                  subtitle: _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
-                      ? Text(
-                          'You have a Partiful link set — consider using one or the other',
-                          style: TextStyle(color: theme.colorScheme.tertiary),
-                        )
-                      : null,
+                  subtitle:
+                      _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
+                          ? Text(
+                            'You have a Partiful link set — consider using one or the other',
+                            style: TextStyle(color: theme.colorScheme.tertiary),
+                          )
+                          : null,
                   contentPadding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                Text('Co-hosts', style: theme.textTheme.labelLarge),
+                const SizedBox(height: 8),
+                _CoHostPicker(
+                  selectedIds: _coHostIds,
+                  creatorId: widget.event?.createdById,
+                  onChanged: (ids) => setState(() => _coHostIds = ids),
                 ),
               ],
             ),
@@ -526,10 +603,7 @@ class _EventFormDialogState extends State<EventFormDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(_isEdit ? 'Save' : 'Add'),
-        ),
+        FilledButton(onPressed: _submit, child: Text(_isEdit ? 'Save' : 'Add')),
       ],
     );
   }
@@ -539,6 +613,7 @@ class _DateTimeRow extends StatelessWidget {
   final String label;
   final String date;
   final String time;
+  final bool isActive;
   final VoidCallback onDateTap;
   final VoidCallback onTimeTap;
 
@@ -548,21 +623,28 @@ class _DateTimeRow extends StatelessWidget {
     required this.time,
     required this.onDateTap,
     required this.onTimeTap,
+    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final chipColor = theme.colorScheme.surfaceContainerHighest;
+    final chipColor =
+        isActive
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surfaceContainerHighest;
     final textStyle = theme.textTheme.bodyMedium;
 
     return Row(
       children: [
         SizedBox(
           width: 40,
-          child: Text(label, style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          )),
+          child: Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
         const SizedBox(width: 8),
         InkWell(
@@ -605,6 +687,66 @@ class _DateTimeRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _CoHostPicker extends ConsumerWidget {
+  final Set<String> selectedIds;
+  final String? creatorId;
+  final ValueChanged<Set<String>> onChanged;
+
+  const _CoHostPicker({
+    required this.selectedIds,
+    required this.onChanged,
+    this.creatorId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usersAsync = ref.watch(usersProvider);
+
+    return usersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error:
+          (e, _) => Text(
+            'Could not load users: $e',
+            style: const TextStyle(fontSize: 13),
+          ),
+      data: (users) {
+        final candidates = users.where((u) => u.id != creatorId).toList();
+        if (candidates.isEmpty) {
+          return const Text(
+            'No other members available.',
+            style: TextStyle(fontSize: 13),
+          );
+        }
+        return Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children:
+              candidates.map((u) {
+                final name =
+                    '${u.firstName} ${u.lastName}'.trim().isNotEmpty
+                        ? '${u.firstName} ${u.lastName}'.trim()
+                        : u.email;
+                final selected = selectedIds.contains(u.id);
+                return FilterChip(
+                  label: Text(name, style: const TextStyle(fontSize: 13)),
+                  selected: selected,
+                  onSelected: (val) {
+                    final next = Set<String>.from(selectedIds);
+                    if (val) {
+                      next.add(u.id);
+                    } else {
+                      next.remove(u.id);
+                    }
+                    onChanged(next);
+                  },
+                );
+              }).toList(),
+        );
+      },
     );
   }
 }

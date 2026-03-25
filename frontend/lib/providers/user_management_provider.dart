@@ -34,19 +34,28 @@ class UserManagementNotifier extends AsyncNotifier<void> {
 
   Future<void> updateUserRoles(String userId, List<String> roleIds) async {
     final api = ref.read(apiClientProvider);
-    await api.patch('/api/auth/users/$userId/roles/', data: {'role_ids': roleIds});
+    await api.patch(
+      '/api/auth/users/$userId/roles/',
+      data: {'role_ids': roleIds},
+    );
     ref.invalidate(usersProvider);
   }
 
   Future<void> createRole(String name, List<String> permissions) async {
     final api = ref.read(apiClientProvider);
-    await api.post('/api/auth/roles/', data: {'name': name, 'permissions': permissions});
+    await api.post(
+      '/api/auth/roles/',
+      data: {'name': name, 'permissions': permissions},
+    );
     ref.invalidate(rolesProvider);
   }
 
   Future<void> updateRole(String roleId, List<String> permissions) async {
     final api = ref.read(apiClientProvider);
-    await api.patch('/api/auth/roles/$roleId/', data: {'permissions': permissions});
+    await api.patch(
+      '/api/auth/roles/$roleId/',
+      data: {'permissions': permissions},
+    );
     ref.invalidate(rolesProvider);
     ref.invalidate(usersProvider);
   }

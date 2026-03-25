@@ -16,6 +16,9 @@ abstract class Event with _$Event {
     @Default('') String partifulLink,
     @Default(false) bool rsvpEnabled,
     String? createdById,
+    String? createdByName,
+    @Default([]) List<String> coHostIds,
+    @Default([]) List<String> coHostNames,
   }) = _Event;
 
   factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);

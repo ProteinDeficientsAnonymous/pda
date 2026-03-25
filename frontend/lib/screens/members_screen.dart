@@ -49,10 +49,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen>
         children: [
           TabBar(
             controller: _tabController,
-            tabs: const [
-              Tab(text: 'Members'),
-              Tab(text: 'Roles'),
-            ],
+            tabs: const [Tab(text: 'Members'), Tab(text: 'Roles')],
           ),
           Expanded(
             child: TabBarView(
@@ -94,7 +91,10 @@ class _MembersTab extends ConsumerWidget {
               children: [
                 Icon(Icons.people_outline, size: 64, color: Colors.grey),
                 SizedBox(height: 16),
-                Text('No members found', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                Text(
+                  'No members found',
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                ),
               ],
             ),
           );
@@ -104,11 +104,12 @@ class _MembersTab extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           itemCount: users.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) => _MemberCard(
-            user: users[index],
-            allRoles: allRoles,
-            canManageRoles: canManageRoles,
-          ),
+          itemBuilder:
+              (context, index) => _MemberCard(
+                user: users[index],
+                allRoles: allRoles,
+                canManageRoles: canManageRoles,
+              ),
         );
       },
     );
@@ -152,14 +153,18 @@ class _MemberCard extends ConsumerWidget {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 2),
-                      Text(user.email, style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        user.email,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
                 if (user.isSuperuser)
                   Chip(
                     label: const Text('Superuser'),
-                    backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.errorContainer,
                     labelStyle: TextStyle(
                       color: Theme.of(context).colorScheme.onErrorContainer,
                       fontSize: 11,
@@ -173,9 +178,7 @@ class _MemberCard extends ConsumerWidget {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: user.roles
-                    .map((r) => _RoleBadge(role: r))
-                    .toList(),
+                children: user.roles.map((r) => _RoleBadge(role: r)).toList(),
               ),
             ],
             const SizedBox(height: 12),
@@ -186,12 +189,13 @@ class _MemberCard extends ConsumerWidget {
                   OutlinedButton.icon(
                     icon: const Icon(Icons.shield_outlined, size: 16),
                     label: const Text('Edit roles'),
-                    onPressed: () => _showRoleEditor(
-                      context,
-                      ref,
-                      notifier,
-                      isOwnAccount,
-                    ),
+                    onPressed:
+                        () => _showRoleEditor(
+                          context,
+                          ref,
+                          notifier,
+                          isOwnAccount,
+                        ),
                   ),
                   const SizedBox(width: 8),
                 ],
@@ -202,9 +206,18 @@ class _MemberCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton.icon(
-                  icon: Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                  label: const Text('Delete', style: TextStyle(color: Colors.red)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    size: 16,
+                    color: Colors.red,
+                  ),
+                  label: const Text(
+                    'Delete',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                  ),
                   onPressed: () => _handleDelete(context, notifier),
                 ),
               ],
@@ -222,9 +235,9 @@ class _MemberCard extends ConsumerWidget {
     bool isOwnAccount,
   ) async {
     if (allRoles.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No roles available')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No roles available')));
       return;
     }
 
@@ -233,36 +246,43 @@ class _MemberCard extends ConsumerWidget {
       (r) => r.name == 'admin' && r.isDefault,
       orElse: () => allRoles.first,
     );
-    final isLastAdmin = user.roles.any((r) => r.id == adminRole.id) &&
-        ref.read(usersProvider).valueOrNull
-            ?.where((u) => u.roles.any((r) => r.id == adminRole.id))
-            .length ==
+    final isLastAdmin =
+        user.roles.any((r) => r.id == adminRole.id) &&
+        ref
+                .read(usersProvider)
+                .valueOrNull
+                ?.where((u) => u.roles.any((r) => r.id == adminRole.id))
+                .length ==
             1;
 
     final result = await showDialog<List<String>>(
       context: context,
-      builder: (ctx) => _RoleEditorDialog(
-        user: user,
-        allRoles: allRoles,
-        isOwnAccount: isOwnAccount,
-        adminRoleId: adminRole.id,
-        isLastAdmin: isLastAdmin,
-        currentUserId: currentUser?.id,
-      ),
+      builder:
+          (ctx) => _RoleEditorDialog(
+            user: user,
+            allRoles: allRoles,
+            isOwnAccount: isOwnAccount,
+            adminRoleId: adminRole.id,
+            isLastAdmin: isLastAdmin,
+            currentUserId: currentUser?.id,
+          ),
     );
     if (result == null) return;
 
     try {
       await notifier.updateUserRoles(user.id, result);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Roles updated')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Roles updated')));
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update roles: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to update roles: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -279,7 +299,10 @@ class _MemberCard extends ConsumerWidget {
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to reset password: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Failed to reset password: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -290,26 +313,30 @@ class _MemberCard extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete member?'),
-        content: Text('Delete ${user.email}? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete member?'),
+            content: Text('Delete ${user.email}? This cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     try {
       await notifier.deleteUser(user.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${user.email} deleted')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${user.email} deleted')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -323,38 +350,46 @@ class _MemberCard extends ConsumerWidget {
   void _showTempPasswordDialog(BuildContext context, String tempPassword) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Temporary password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Temporary password for ${user.email}:'),
-            const SizedBox(height: 12),
-            SelectableText(
-              tempPassword,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 16, fontWeight: FontWeight.bold),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Temporary password'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Temporary password for ${user.email}:'),
+                const SizedBox(height: 12),
+                SelectableText(
+                  tempPassword,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Share with the member — they should change it on next login.',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Share with the member — they should change it on next login.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: tempPassword));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Copied to clipboard')),
-              );
-            },
-            child: const Text('Copy'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: tempPassword));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Copied to clipboard')),
+                  );
+                },
+                child: const Text('Copy'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Done'),
+              ),
+            ],
           ),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Done')),
-        ],
-      ),
     );
   }
 }
@@ -431,39 +466,46 @@ class _RoleEditorDialogState extends State<_RoleEditorDialog> {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: widget.allRoles.map((role) {
-              final locked = _isLocked(role);
-              final checked = _selected.contains(role.id);
-              return CheckboxListTile(
-                value: checked,
-                onChanged: locked
-                    ? null
-                    : (v) => setState(() {
-                          if (v == true) {
-                            _selected.add(role.id);
-                          } else {
-                            _selected.remove(role.id);
-                          }
-                        }),
-                title: Row(
-                  children: [
-                    Text(role.name),
-                    if (locked) ...[
-                      const SizedBox(width: 6),
-                      Icon(Icons.lock_outline, size: 14, color: Colors.grey[500]),
-                    ],
-                  ],
-                ),
-                subtitle: role.permissions.isEmpty
-                    ? null
-                    : Text(
-                        role.permissions
-                            .map((p) => _kPermissionLabels[p] ?? p)
-                            .join(', '),
-                        style: const TextStyle(fontSize: 11),
-                      ),
-              );
-            }).toList(),
+            children:
+                widget.allRoles.map((role) {
+                  final locked = _isLocked(role);
+                  final checked = _selected.contains(role.id);
+                  return CheckboxListTile(
+                    value: checked,
+                    onChanged:
+                        locked
+                            ? null
+                            : (v) => setState(() {
+                              if (v == true) {
+                                _selected.add(role.id);
+                              } else {
+                                _selected.remove(role.id);
+                              }
+                            }),
+                    title: Row(
+                      children: [
+                        Text(role.name),
+                        if (locked) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.lock_outline,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ],
+                      ],
+                    ),
+                    subtitle:
+                        role.permissions.isEmpty
+                            ? null
+                            : Text(
+                              role.permissions
+                                  .map((p) => _kPermissionLabels[p] ?? p)
+                                  .join(', '),
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                  );
+                }).toList(),
           ),
         ),
       ),
@@ -517,10 +559,11 @@ class _RolesTab extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 itemCount: roles.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => _RoleCard(
-                  role: roles[index],
-                  canManageRoles: canManageRoles,
-                ),
+                itemBuilder:
+                    (context, index) => _RoleCard(
+                      role: roles[index],
+                      canManageRoles: canManageRoles,
+                    ),
               ),
             ),
           ],
@@ -529,7 +572,10 @@ class _RolesTab extends ConsumerWidget {
     );
   }
 
-  Future<void> _showCreateRoleDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showCreateRoleDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => const _RoleFormDialog(),
@@ -537,14 +583,16 @@ class _RolesTab extends ConsumerWidget {
     if (result == null) return;
 
     try {
-      await ref.read(userManagementProvider.notifier).createRole(
-        result['name'] as String,
-        List<String>.from(result['permissions'] as List),
-      );
+      await ref
+          .read(userManagementProvider.notifier)
+          .createRole(
+            result['name'] as String,
+            List<String>.from(result['permissions'] as List),
+          );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Role created')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Role created')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -583,7 +631,10 @@ class _RoleCard extends ConsumerWidget {
                       if (role.isDefault) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(4),
@@ -607,7 +658,11 @@ class _RoleCard extends ConsumerWidget {
                     onPressed: () => _showEditDialog(context, notifier),
                   ),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, size: 18, color: theme.colorScheme.error),
+                    icon: Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: theme.colorScheme.error,
+                    ),
                     tooltip: 'Delete role',
                     onPressed: () => _confirmDelete(context, notifier),
                   ),
@@ -619,15 +674,19 @@ class _RoleCard extends ConsumerWidget {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children: role.permissions
-                    .map((p) => _PermissionChip(permission: p))
-                    .toList(),
+                children:
+                    role.permissions
+                        .map((p) => _PermissionChip(permission: p))
+                        .toList(),
               ),
             ] else ...[
               const SizedBox(height: 4),
               Text(
                 'No permissions',
-                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ],
@@ -652,9 +711,9 @@ class _RoleCard extends ConsumerWidget {
         List<String>.from(result['permissions'] as List),
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Role updated')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Role updated')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -671,27 +730,33 @@ class _RoleCard extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete role?'),
-        content: Text('Delete the "${role.name}" role? Users with this role will lose its permissions.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete role?'),
+            content: Text(
+              'Delete the "${role.name}" role? Users with this role will lose its permissions.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirmed != true) return;
 
     try {
       await notifier.deleteRole(role.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('"${role.name}" deleted')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('"${role.name}" deleted')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -777,21 +842,27 @@ class _RoleFormDialogState extends State<_RoleFormDialog> {
                       labelText: 'Role name *',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                    validator:
+                        (v) =>
+                            v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
                 if (!_isEdit) const SizedBox(height: 16),
-                Text('Permissions', style: Theme.of(context).textTheme.labelLarge),
+                Text(
+                  'Permissions',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
                 const SizedBox(height: 4),
                 ..._kPermissionLabels.entries.map((entry) {
                   return CheckboxListTile(
                     value: _selectedPermissions.contains(entry.key),
-                    onChanged: (v) => setState(() {
-                      if (v == true) {
-                        _selectedPermissions.add(entry.key);
-                      } else {
-                        _selectedPermissions.remove(entry.key);
-                      }
-                    }),
+                    onChanged:
+                        (v) => setState(() {
+                          if (v == true) {
+                            _selectedPermissions.add(entry.key);
+                          } else {
+                            _selectedPermissions.remove(entry.key);
+                          }
+                        }),
                     title: Text(entry.value),
                     dense: true,
                     contentPadding: EdgeInsets.zero,

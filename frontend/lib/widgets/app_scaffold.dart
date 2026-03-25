@@ -28,7 +28,7 @@ class AppScaffold extends ConsumerWidget {
               onPressed: () => context.go('/calendar'),
               child: const Text('Calendar'),
             ),
-            if (user.hasPermission('create_user'))
+            if (user.hasPermission('manage_users'))
               TextButton(
                 onPressed: () => context.go('/members'),
                 child: const Text('Members'),

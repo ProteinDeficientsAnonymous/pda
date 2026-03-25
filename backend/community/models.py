@@ -42,10 +42,16 @@ class Event(models.Model):
     rsvp_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
-        'users.User',
-        null=True, blank=True,
+        "users.User",
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
-        related_name='created_events',
+        related_name="created_events",
+    )
+    co_hosts = models.ManyToManyField(
+        "users.User",
+        blank=True,
+        related_name="co_hosted_events",
     )
 
     class Meta:

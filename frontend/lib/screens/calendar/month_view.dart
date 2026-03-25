@@ -225,7 +225,7 @@ class _MonthViewState extends State<MonthView> {
         ),
         padding: const EdgeInsets.all(4),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildDayLabel(context, day, isToday, isCurrentMonth),
             const SizedBox(height: 2),
@@ -267,21 +267,26 @@ class _MonthViewState extends State<MonthView> {
     return Text('${day.day}', style: TextStyle(fontSize: 12, color: textColor));
   }
 
-  List<Widget> _buildEventChips(BuildContext context, List<Event> events, DateTime day) {
+  List<Widget> _buildEventChips(
+    BuildContext context,
+    List<Event> events,
+    DateTime day,
+  ) {
     if (events.isEmpty) return [];
 
     final visibleEvents = events.take(_maxChipsVisible).toList();
     final overflow = events.length - _maxChipsVisible;
 
-    final chips = visibleEvents.map((e) {
-      final colors = eventColors(e.id);
-      return _EventChip(
-        event: e,
-        bgColor: colors.$1,
-        fgColor: colors.$2,
-        onTap: () => showEventDetail(context, e),
-      );
-    }).toList();
+    final chips =
+        visibleEvents.map((e) {
+          final colors = eventColors(e.id);
+          return _EventChip(
+            event: e,
+            bgColor: colors.$1,
+            fgColor: colors.$2,
+            onTap: () => showEventDetail(context, e),
+          );
+        }).toList();
 
     final result = <Widget>[...chips];
 

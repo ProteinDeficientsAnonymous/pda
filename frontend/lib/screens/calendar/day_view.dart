@@ -59,12 +59,13 @@ class _DayViewState extends State<DayView> {
   }
 
   List<Event> _eventsForSelectedDay() {
-    final results = widget.events.where((e) {
-      final start = e.startDatetime.toLocal();
-      return start.year == _selectedDay.year &&
-          start.month == _selectedDay.month &&
-          start.day == _selectedDay.day;
-    }).toList();
+    final results =
+        widget.events.where((e) {
+          final start = e.startDatetime.toLocal();
+          return start.year == _selectedDay.year &&
+              start.month == _selectedDay.month &&
+              start.day == _selectedDay.day;
+        }).toList();
     results.sort((a, b) => a.startDatetime.compareTo(b.startDatetime));
     return results;
   }
@@ -82,9 +83,7 @@ class _DayViewState extends State<DayView> {
           onTap: _openDatePicker,
         ),
         const Divider(height: 1),
-        Expanded(
-          child: _buildBody(context, events),
-        ),
+        Expanded(child: _buildBody(context, events)),
       ],
     );
   }
@@ -226,7 +225,11 @@ class _DayEventCard extends StatelessWidget {
               const SizedBox(height: 2),
               Row(
                 children: [
-                  Icon(Icons.place_outlined, size: 13, color: fgColor.withValues(alpha: 0.7)),
+                  Icon(
+                    Icons.place_outlined,
+                    size: 13,
+                    color: fgColor.withValues(alpha: 0.7),
+                  ),
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(

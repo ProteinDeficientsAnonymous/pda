@@ -45,10 +45,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isAuthenticated) {
         final loc = state.matchedLocation;
-        if (loc == '/members' && !user.hasPermission('create_user')) {
+        if (loc == '/members' && !user.hasPermission('manage_users')) {
           return '/calendar';
         }
-        if (loc == '/join-requests' && !user.hasPermission('approve_join_requests')) {
+        if (loc == '/join-requests' &&
+            !user.hasPermission('approve_join_requests')) {
           return '/calendar';
         }
         if (loc == '/events/manage' && !user.hasPermission('manage_events')) {

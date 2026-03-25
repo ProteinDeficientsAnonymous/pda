@@ -77,11 +77,12 @@ class _WeekViewState extends State<WeekView> {
   List<Event> _eventsForDay(DateTime day) {
     final dayStart = DateTime(day.year, day.month, day.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
-    final results = widget.events.where((e) {
-      final start = e.startDatetime.toLocal();
-      final end = e.endDatetime.toLocal();
-      return start.isBefore(dayEnd) && end.isAfter(dayStart);
-    }).toList();
+    final results =
+        widget.events.where((e) {
+          final start = e.startDatetime.toLocal();
+          final end = e.endDatetime.toLocal();
+          return start.isBefore(dayEnd) && end.isAfter(dayStart);
+        }).toList();
     results.sort((a, b) => a.startDatetime.compareTo(b.startDatetime));
     return results;
   }
@@ -127,14 +128,15 @@ class _WeekViewState extends State<WeekView> {
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: days.map((day) {
-              return Expanded(
-                child: _DayEventsColumn(
-                  day: day,
-                  events: _eventsForDay(day),
-                ),
-              );
-            }).toList(),
+            children:
+                days.map((day) {
+                  return Expanded(
+                    child: _DayEventsColumn(
+                      day: day,
+                      events: _eventsForDay(day),
+                    ),
+                  );
+                }).toList(),
           ),
         ),
       ],
@@ -152,32 +154,45 @@ class _DayHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Row(
-      children: days.map((day) {
-        final today = isToday(day);
-        final bgColor = today ? theme.colorScheme.primary : Colors.transparent;
-        final fgColor = today ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface;
-        return Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  DateFormat('EEE').format(day),
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: fgColor),
+      children:
+          days.map((day) {
+            final today = isToday(day);
+            final bgColor =
+                today ? theme.colorScheme.primary : Colors.transparent;
+            final fgColor =
+                today
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurface;
+            return Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                Text(
-                  '${day.day}',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: fgColor),
+                child: Column(
+                  children: [
+                    Text(
+                      DateFormat('EEE').format(day),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: fgColor,
+                      ),
+                    ),
+                    Text(
+                      '${day.day}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: fgColor,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
+              ),
+            );
+          }).toList(),
     );
   }
 }
@@ -255,13 +270,20 @@ class _WeekEventChip extends StatelessWidget {
               event.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fgColor),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: fgColor,
+              ),
             ),
             Text(
               timeLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 10, color: fgColor.withValues(alpha: 0.8)),
+              style: TextStyle(
+                fontSize: 10,
+                color: fgColor.withValues(alpha: 0.8),
+              ),
             ),
           ],
         ),
