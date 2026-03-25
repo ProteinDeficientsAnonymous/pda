@@ -31,7 +31,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(joinRequestProvider.notifier).submit(
+    await ref
+        .read(joinRequestProvider.notifier)
+        .submit(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           pronouns: _pronounsController.text.trim(),
@@ -77,7 +79,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                         labelText: 'Name *',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                      validator:
+                          (v) =>
+                              v == null || v.trim().isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -118,13 +122,17 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                         alignLabelWithHint: true,
                       ),
                       maxLines: 5,
-                      validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                      validator:
+                          (v) =>
+                              v == null || v.trim().isEmpty ? 'Required' : null,
                     ),
                     if (state.hasError) ...[
                       const SizedBox(height: 16),
                       Text(
                         'Something went wrong. Please try again.',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 24),
@@ -135,13 +143,19 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Submit request', style: TextStyle(fontSize: 16)),
+                        child:
+                            isLoading
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Text(
+                                  'Submit request',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                       ),
                     ),
                   ],

@@ -16,9 +16,7 @@ class PdaApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Protein Deficients Anonymous',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
         useMaterial3: true,
       ),
       routerConfig: router,

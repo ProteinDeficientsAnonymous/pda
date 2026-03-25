@@ -21,7 +21,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isLoading) return null;
 
-      final protectedRoutes = ['/calendar', '/members', '/join-requests', '/events/manage'];
+      final protectedRoutes = [
+        '/calendar',
+        '/members',
+        '/join-requests',
+        '/events/manage',
+      ];
       final isProtected = protectedRoutes.contains(state.matchedLocation);
 
       if (isProtected && !isAuthenticated) {
@@ -33,12 +38,21 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
       GoRoute(path: '/join', builder: (_, __) => const JoinScreen()),
-      GoRoute(path: '/join/success', builder: (_, __) => const JoinSuccessScreen()),
+      GoRoute(
+        path: '/join/success',
+        builder: (_, __) => const JoinSuccessScreen(),
+      ),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen()),
       GoRoute(path: '/members', builder: (_, __) => const MembersScreen()),
-      GoRoute(path: '/join-requests', builder: (_, __) => const JoinRequestsScreen()),
-      GoRoute(path: '/events/manage', builder: (_, __) => const EventManagementScreen()),
+      GoRoute(
+        path: '/join-requests',
+        builder: (_, __) => const JoinRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/events/manage',
+        builder: (_, __) => const EventManagementScreen(),
+      ),
     ],
   );
 });

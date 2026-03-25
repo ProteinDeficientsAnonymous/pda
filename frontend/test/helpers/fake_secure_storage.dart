@@ -30,8 +30,7 @@ class FakeSecureStorage implements FlutterSecureStorage {
     WebOptions? webOptions,
     MacOsOptions? mOptions,
     WindowsOptions? wOptions,
-  }) async =>
-      _store[key];
+  }) async => _store[key];
 
   @override
   Future<void> delete({
@@ -42,8 +41,7 @@ class FakeSecureStorage implements FlutterSecureStorage {
     WebOptions? webOptions,
     MacOsOptions? mOptions,
     WindowsOptions? wOptions,
-  }) async =>
-      _store.remove(key);
+  }) async => _store.remove(key);
 
   @override
   Future<Map<String, String>> readAll({
@@ -53,8 +51,7 @@ class FakeSecureStorage implements FlutterSecureStorage {
     WebOptions? webOptions,
     MacOsOptions? mOptions,
     WindowsOptions? wOptions,
-  }) async =>
-      Map.from(_store);
+  }) async => Map.from(_store);
 
   @override
   Future<void> deleteAll({
@@ -64,8 +61,7 @@ class FakeSecureStorage implements FlutterSecureStorage {
     WebOptions? webOptions,
     MacOsOptions? mOptions,
     WindowsOptions? wOptions,
-  }) async =>
-      _store.clear();
+  }) async => _store.clear();
 
   @override
   Future<bool> containsKey({
@@ -76,8 +72,7 @@ class FakeSecureStorage implements FlutterSecureStorage {
     WebOptions? webOptions,
     MacOsOptions? mOptions,
     WindowsOptions? wOptions,
-  }) async =>
-      _store.containsKey(key);
+  }) async => _store.containsKey(key);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

@@ -26,14 +26,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-    await ref.read(authProvider.notifier).login(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
+    await ref
+        .read(authProvider.notifier)
+        .login(_emailController.text.trim(), _passwordController.text);
     final state = ref.read(authProvider);
     if (state.hasError) return;
     if (mounted) {
-      final redirect = GoRouterState.of(context).uri.queryParameters['redirect'];
+      final redirect =
+          GoRouterState.of(context).uri.queryParameters['redirect'];
       context.go(redirect ?? '/calendar');
     }
   }
@@ -72,7 +72,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                    validator:
+                        (v) =>
+                            v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -82,19 +84,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed:
+                            () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                       ),
                     ),
                     obscureText: _obscurePassword,
-                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    validator:
+                        (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
                   if (state.hasError) ...[
                     const SizedBox(height: 16),
                     Text(
                       'Invalid email or password.',
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 24),
@@ -105,13 +115,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Login', style: TextStyle(fontSize: 16)),
+                      child:
+                          isLoading
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Text(
+                                'Login',
+                                style: TextStyle(fontSize: 16),
+                              ),
                     ),
                   ),
                 ],

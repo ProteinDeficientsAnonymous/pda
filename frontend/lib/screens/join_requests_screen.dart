@@ -35,9 +35,9 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
       ref.invalidate(joinRequestsProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update status: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
       }
     }
   }
@@ -58,7 +58,9 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
           Expanded(
             child: requestsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Failed to load join requests: $e')),
+              error:
+                  (e, _) =>
+                      Center(child: Text('Failed to load join requests: $e')),
               data: (requests) {
                 final filtered = _applyFilter(requests);
                 if (filtered.isEmpty) {
@@ -76,11 +78,14 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
                   padding: const EdgeInsets.all(24),
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) => _JoinRequestCard(
-                    request: filtered[index],
-                    onApprove: () => _updateStatus(filtered[index].id, 'approved'),
-                    onReject: () => _updateStatus(filtered[index].id, 'rejected'),
-                  ),
+                  itemBuilder:
+                      (context, index) => _JoinRequestCard(
+                        request: filtered[index],
+                        onApprove:
+                            () => _updateStatus(filtered[index].id, 'approved'),
+                        onReject:
+                            () => _updateStatus(filtered[index].id, 'rejected'),
+                      ),
                 );
               },
             ),
@@ -103,14 +108,15 @@ class _FilterChips extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Wrap(
         spacing: 8,
-        children: _filters.map((filter) {
-          final isSelected = selected == filter;
-          return FilterChip(
-            label: Text(filter),
-            selected: isSelected,
-            onSelected: (_) => onSelected(filter),
-          );
-        }).toList(),
+        children:
+            _filters.map((filter) {
+              final isSelected = selected == filter;
+              return FilterChip(
+                label: Text(filter),
+                selected: isSelected,
+                onSelected: (_) => onSelected(filter),
+              );
+            }).toList(),
       ),
     );
   }
@@ -157,10 +163,7 @@ class _JoinRequestCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              request.email,
-              style: const TextStyle(color: Colors.grey),
-            ),
+            Text(request.email, style: const TextStyle(color: Colors.grey)),
             if (request.pronouns.isNotEmpty) ...[
               const SizedBox(height: 2),
               Text(
@@ -171,7 +174,10 @@ class _JoinRequestCard extends StatelessWidget {
             const SizedBox(height: 12),
             _InfoRow(label: 'Why they want to join', value: request.whyJoin),
             const SizedBox(height: 6),
-            _InfoRow(label: 'How they heard about us', value: request.howTheyHeard),
+            _InfoRow(
+              label: 'How they heard about us',
+              value: request.howTheyHeard,
+            ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

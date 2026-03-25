@@ -27,4 +27,6 @@ class UserManagementNotifier extends AsyncNotifier<void> {
 }
 
 final userManagementProvider =
-    AsyncNotifierProvider<UserManagementNotifier, void>(UserManagementNotifier.new);
+    AsyncNotifierProvider<UserManagementNotifier, void>(
+      UserManagementNotifier.new,
+    );

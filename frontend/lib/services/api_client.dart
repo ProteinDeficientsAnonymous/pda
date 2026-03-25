@@ -37,10 +37,9 @@ class ApiClient {
     final refresh = await _storage.getRefreshToken();
     if (refresh == null) return false;
     try {
-      final response = await Dio(BaseOptions(baseUrl: apiBaseUrl)).post(
-        '/api/auth/refresh/',
-        data: {'refresh': refresh},
-      );
+      final response = await Dio(
+        BaseOptions(baseUrl: apiBaseUrl),
+      ).post('/api/auth/refresh/', data: {'refresh': refresh});
       await _storage.saveTokens(
         access: response.data['access'] as String,
         refresh: refresh,
@@ -55,9 +54,6 @@ class ApiClient {
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) =>
       _dio.get(path, queryParameters: queryParameters);
 
-  Future<Response> post(String path, {dynamic data}) => _dio.post(path, data: data);
-
-  Future<Response> patch(String path, {dynamic data}) => _dio.patch(path, data: data);
-
-  Future<Response> delete(String path) => _dio.delete(path);
+  Future<Response> post(String path, {dynamic data}) =>
+      _dio.post(path, data: data);
 }

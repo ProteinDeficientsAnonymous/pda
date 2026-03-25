@@ -3,7 +3,9 @@ import 'package:pda/models/user.dart';
 import 'package:pda/services/api_client.dart';
 import 'package:pda/services/secure_storage.dart';
 
-final secureStorageProvider = Provider<SecureStorageService>((_) => SecureStorageService());
+final secureStorageProvider = Provider<SecureStorageService>(
+  (_) => SecureStorageService(),
+);
 
 final apiClientProvider = Provider<ApiClient>(
   (ref) => ApiClient(ref.watch(secureStorageProvider)),
@@ -52,4 +54,6 @@ class AuthNotifier extends AsyncNotifier<User?> {
   }
 }
 
-final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(AuthNotifier.new);
+final authProvider = AsyncNotifierProvider<AuthNotifier, User?>(
+  AuthNotifier.new,
+);

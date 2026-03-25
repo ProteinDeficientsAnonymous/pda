@@ -69,10 +69,7 @@ class _EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              event.title,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(event.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -90,13 +87,19 @@ class _EventCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.place, size: 16, color: Colors.grey),
                   const SizedBox(width: 6),
-                  Text(event.location, style: const TextStyle(color: Colors.grey)),
+                  Text(
+                    event.location,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             ],
             if (event.description.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text(event.description, style: const TextStyle(fontSize: 15, height: 1.5)),
+              Text(
+                event.description,
+                style: const TextStyle(fontSize: 15, height: 1.5),
+              ),
             ],
           ],
         ),
