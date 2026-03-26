@@ -433,13 +433,110 @@ class _GuestGroup extends StatelessWidget {
           Wrap(
             spacing: 6,
             runSpacing: 4,
-            children:
-                guests
-                    .map(
-                      (g) => Text(g.name, style: const TextStyle(fontSize: 13)),
-                    )
-                    .toList(),
+            children: guests.map((g) => _GuestChip(guest: g)).toList(),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuestChip extends StatefulWidget {
+  final EventGuest guest;
+
+  const _GuestChip({required this.guest});
+
+  @override
+  State<_GuestChip> createState() => _GuestChipState();
+}
+
+class _GuestChipState extends State<_GuestChip> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final phone = widget.guest.phone;
+    final isWide = MediaQuery.sizeOf(context).width >= 720;
+
+    if (phone == null) {
+      return Text(widget.guest.name, style: const TextStyle(fontSize: 13));
+    }
+
+    if (isWide) {
+      return Tooltip(
+        richMessage: WidgetSpan(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.phone, size: 13, color: Colors.white),
+                const SizedBox(width: 5),
+                Text(
+                  phone,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          widget.guest.name,
+          style: const TextStyle(
+            fontSize: 13,
+            decoration: TextDecoration.underline,
+            decorationStyle: TextDecorationStyle.dotted,
+          ),
+        ),
+      );
+    }
+
+    // Mobile: tap to reveal
+    return GestureDetector(
+      onTap: () => setState(() => _expanded = !_expanded),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.guest.name,
+            style: const TextStyle(
+              fontSize: 13,
+              decoration: TextDecoration.underline,
+              decorationStyle: TextDecorationStyle.dotted,
+            ),
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.phone,
+                    size: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    phone,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

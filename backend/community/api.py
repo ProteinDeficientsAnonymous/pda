@@ -57,6 +57,7 @@ class RSVPGuestOut(BaseModel):
     user_id: str
     name: str
     status: str
+    phone: str | None = None
 
 
 class EventOut(BaseModel):
@@ -253,11 +254,17 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     creator = event.created_by
     creator_name = creator.display_name or creator.phone_number if creator else None
     rsvps = list(event.rsvps.select_related("user").all()) if event.rsvp_enabled else []
+    co_host_ids = {str(u.id) for u in co_hosts}
+    can_see_phones = requesting_user is not None and (
+        (creator is not None and requesting_user.pk == creator.pk)
+        or str(requesting_user.pk) in co_host_ids
+    )
     guests = [
         RSVPGuestOut(
             user_id=str(r.user_id),
             name=r.user.display_name or r.user.phone_number,
             status=r.status,
+            phone=r.user.phone_number if can_see_phones else None,
         )
         for r in rsvps
     ]

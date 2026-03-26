@@ -65,9 +65,7 @@ class _NavButton extends StatelessWidget {
           isActive
               ? TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.primary,
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
               )
               : null,
       child: Text(label),

@@ -9,6 +9,7 @@ abstract class EventGuest with _$EventGuest {
     required String userId,
     required String name,
     required String status,
+    String? phone,
   }) = _EventGuest;
 
   factory EventGuest.fromJson(Map<String, dynamic> json) =>

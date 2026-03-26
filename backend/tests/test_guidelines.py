@@ -9,8 +9,9 @@ def manage_guidelines_user(db):
     from users.models import User
 
     user = User.objects.create_user(
-        email="editor@pda.org",
+        phone_number="+15550002001",
         password="editorpass123",
+        display_name="Guidelines Editor",
     )
     role = Role.objects.create(
         name="guidelines_editor", permissions=[PermissionKey.MANAGE_GUIDELINES]
