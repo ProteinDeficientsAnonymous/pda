@@ -141,6 +141,7 @@ class _NavDrawer extends ConsumerWidget {
 
     if (user == null) {
       return Drawer(
+        semanticLabel: 'Navigation menu',
         child: SafeArea(
           child: ListTile(
             leading: const Icon(Icons.login),
@@ -187,6 +188,7 @@ class _NavDrawer extends ConsumerWidget {
     ];
 
     return Drawer(
+      semanticLabel: 'Navigation menu',
       child: SafeArea(
         child: Column(
           children: [

@@ -145,5 +145,62 @@ void main() {
 
       handle.dispose();
     });
+
+    testWidgets('join screen meets labeled tap target guideline', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const JoinScreen()),
+          GoRoute(path: '/join/success', builder: (_, __) => const SizedBox()),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authProvider.overrideWith(() => _FakeAuthNotifier()),
+            secureStorageProvider.overrideWithValue(
+              SecureStorageService.withStorage(FakeSecureStorage()),
+            ),
+            homePageNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pump();
+
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+      handle.dispose();
+    });
+
+    testWidgets('login screen meets labeled tap target guideline', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const LoginScreen()),
+          GoRoute(path: '/calendar', builder: (_, __) => const SizedBox()),
+          GoRoute(path: '/login', builder: (_, __) => const SizedBox()),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [authProvider.overrideWith(() => _FakeAuthNotifier())],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pump();
+
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+      handle.dispose();
+    });
   });
 }

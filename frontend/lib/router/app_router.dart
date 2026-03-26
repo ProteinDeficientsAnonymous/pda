@@ -65,34 +65,60 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
-      GoRoute(path: '/join', builder: (_, __) => const JoinScreen()),
+      GoRoute(path: '/', name: 'home', builder: (_, __) => const HomeScreen()),
+      GoRoute(
+        path: '/join',
+        name: 'join',
+        builder: (_, __) => const JoinScreen(),
+      ),
       GoRoute(
         path: '/join/success',
+        name: 'join-success',
         builder: (_, __) => const JoinSuccessScreen(),
       ),
-      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-      GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen()),
-      GoRoute(path: '/members', builder: (_, __) => const MembersScreen()),
+      GoRoute(
+        path: '/login',
+        name: 'login',
+        builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/calendar',
+        name: 'calendar',
+        builder: (_, __) => const CalendarScreen(),
+      ),
+      GoRoute(
+        path: '/members',
+        name: 'members',
+        builder: (_, __) => const MembersScreen(),
+      ),
       GoRoute(
         path: '/join-requests',
+        name: 'join-requests',
         builder: (_, __) => const JoinRequestsScreen(),
       ),
       GoRoute(
         path: '/events/mine',
+        name: 'my-events',
         builder: (_, __) => const EventManagementScreen(myEventsOnly: true),
       ),
       GoRoute(
         path: '/events/manage',
+        name: 'manage-events',
         builder: (_, __) => const EventManagementScreen(),
       ),
       GoRoute(
         path: '/guidelines',
+        name: 'guidelines',
         builder: (_, __) => const GuidelinesScreen(),
       ),
-      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (_, __) => const SettingsScreen(),
+      ),
       GoRoute(
         path: '/events/:id',
+        name: 'event-detail',
         builder:
             (_, state) =>
                 EventDetailScreen(eventId: state.pathParameters['id']!),
