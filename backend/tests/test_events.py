@@ -71,6 +71,20 @@ class TestEventManagement:
         assert data["location"] == "Online"
         assert "id" in data
 
+    def test_created_by_name_uses_display_name(self, api_client, manage_events_headers):
+        response = api_client.post(
+            "/api/community/events/",
+            {
+                "title": "Named Event",
+                "start_datetime": "2026-05-01T18:00:00Z",
+                "end_datetime": "2026-05-01T20:00:00Z",
+            },
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["created_by_name"] == "Event Manager"
+
     def test_create_event_as_regular_member(self, api_client, auth_headers, test_user):
         """Any authenticated member can create an event."""
         response = api_client.post(

@@ -216,14 +216,12 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
-    creator_name = (
-        f"{creator.first_name} {creator.last_name}".strip() or creator.email if creator else None
-    )
+    creator_name = creator.display_name or creator.phone_number if creator else None
     rsvps = list(event.rsvps.select_related("user").all()) if event.rsvp_enabled else []
     guests = [
         RSVPGuestOut(
             user_id=str(r.user_id),
-            name=f"{r.user.first_name} {r.user.last_name}".strip() or r.user.email,
+            name=r.user.display_name or r.user.phone_number,
             status=r.status,
         )
         for r in rsvps
@@ -247,7 +245,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=creator_name,
         co_host_ids=[str(u.id) for u in co_hosts],
-        co_host_names=[f"{u.first_name} {u.last_name}".strip() or u.email for u in co_hosts],
+        co_host_names=[u.display_name or u.phone_number for u in co_hosts],
         guests=guests,
         my_rsvp=my_rsvp,
     )

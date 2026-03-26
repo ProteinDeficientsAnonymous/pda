@@ -78,4 +78,4 @@ class EventRSVP(models.Model):
         unique_together = [("event", "user")]
 
     def __str__(self):
-        return f"{self.user.email} → {self.event.title}: {self.status}"
+        return f"{self.user.display_name or self.user.phone_number} → {self.event.title}: {self.status}"
