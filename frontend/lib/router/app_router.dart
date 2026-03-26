@@ -36,6 +36,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/members',
         '/join-requests',
         '/events/manage',
+        '/events/mine',
       ];
       final isProtected = authRequiredRoutes.contains(state.matchedLocation);
 
@@ -72,6 +73,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/join-requests',
         builder: (_, __) => const JoinRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/events/mine',
+        builder: (_, __) => const EventManagementScreen(myEventsOnly: true),
       ),
       GoRoute(
         path: '/events/manage',

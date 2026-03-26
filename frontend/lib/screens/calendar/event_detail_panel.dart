@@ -756,10 +756,13 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     final timeFmt = DateFormat('h:mm a');
     final theme = Theme.of(context);
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final dialogWidth = screenWidth < 520 ? screenWidth - 48 : 480.0;
+
     return AlertDialog(
       title: Text(_isEdit ? 'Edit event' : 'Add event'),
       content: SizedBox(
-        width: 480,
+        width: dialogWidth,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(

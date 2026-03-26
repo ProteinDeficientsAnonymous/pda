@@ -8,18 +8,36 @@ import 'package:pda/screens/calendar/event_detail_panel.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
 class EventManagementScreen extends ConsumerWidget {
-  const EventManagementScreen({super.key});
+  final bool myEventsOnly;
+
+  const EventManagementScreen({super.key, this.myEventsOnly = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(eventsProvider);
+    final user = ref.watch(authProvider).valueOrNull;
 
     return AppScaffold(
-      title: 'Manage Events',
+      title: myEventsOnly ? 'My Events' : 'Manage Events',
       child: eventsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Failed to load events: $e')),
-        data: (events) => _EventManagementBody(events: events),
+        data: (events) {
+          final filtered =
+              myEventsOnly && user != null
+                  ? events
+                      .where(
+                        (e) =>
+                            e.createdById == user.id ||
+                            e.coHostIds.contains(user.id),
+                      )
+                      .toList()
+                  : events;
+          return _EventManagementBody(
+            events: filtered,
+            myEventsOnly: myEventsOnly,
+          );
+        },
       ),
     );
   }
@@ -27,8 +45,12 @@ class EventManagementScreen extends ConsumerWidget {
 
 class _EventManagementBody extends ConsumerWidget {
   final List<Event> events;
+  final bool myEventsOnly;
 
-  const _EventManagementBody({required this.events});
+  const _EventManagementBody({
+    required this.events,
+    required this.myEventsOnly,
+  });
 
   Future<void> _showCreateDialog(BuildContext context, WidgetRef ref) async {
     final result = await showDialog<Map<String, dynamic>>(
@@ -60,22 +82,28 @@ class _EventManagementBody extends ConsumerWidget {
         Expanded(
           child:
               events.isEmpty
-                  ? const Center(
+                  ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.event_note, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text(
+                          const Icon(
+                            Icons.event_note,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
                             'No events yet',
                             style: TextStyle(fontSize: 18, color: Colors.grey),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
-                            'Create one to get started.',
-                            style: TextStyle(color: Colors.grey),
+                            myEventsOnly
+                                ? "You haven't created or co-hosted any events."
+                                : 'Create one to get started.',
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ],
                       ),

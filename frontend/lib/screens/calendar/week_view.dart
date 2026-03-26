@@ -170,7 +170,12 @@ class _WeekViewState extends State<WeekView> {
         const Divider(height: 1),
         _DayHeaderRow(days: days, isToday: _isToday),
         const Divider(height: 1),
-        Expanded(child: _buildBody(context, days)),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: _buildBody(context, days),
+          ),
+        ),
       ],
     );
   }
