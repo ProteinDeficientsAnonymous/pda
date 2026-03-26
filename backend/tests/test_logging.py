@@ -1,7 +1,10 @@
 import json
 import logging
 
+import pytest
 from config.logging_config import JsonFormatter, SensitiveDataFilter
+from config.middleware import RequestLoggingMiddleware
+from django.test import Client, RequestFactory
 
 
 class TestJsonFormatter:
@@ -153,3 +156,60 @@ class TestSensitiveDataFilter:
         f.filter(record)
         assert "eyJtoken123" not in record.msg
         assert "[REDACTED]" in record.msg
+
+
+class TestRequestLoggingMiddleware:
+    @pytest.fixture(autouse=True)
+    def _enable_propagation(self):
+        """Allow caplog to capture pda.middleware logs during tests."""
+        pda_logger = logging.getLogger("pda")
+        original = pda_logger.propagate
+        pda_logger.propagate = True
+        yield
+        pda_logger.propagate = original
+
+    def test_logs_api_request_with_method_path_status_duration(self, caplog):
+        factory = RequestFactory()
+        request = factory.get("/api/test/")
+
+        def get_response(request):
+            from django.http import JsonResponse
+
+            return JsonResponse({"ok": True})
+
+        middleware = RequestLoggingMiddleware(get_response)
+        with caplog.at_level(logging.INFO, logger="pda.middleware"):
+            middleware(request)
+        assert len(caplog.records) >= 1
+        msg = caplog.records[0].getMessage()
+        assert "GET" in msg
+        assert "/api/test/" in msg
+        assert "200" in msg
+        assert "ms" in msg
+
+    @pytest.mark.django_db
+    def test_skips_static_file_requests(self, caplog):
+        client = Client()
+        with caplog.at_level(logging.INFO, logger="pda.middleware"):
+            client.get("/static/test.css")
+        middleware_logs = [r for r in caplog.records if r.name == "pda.middleware"]
+        assert len(middleware_logs) == 0
+
+    def test_middleware_adds_extra_fields(self, caplog):
+        factory = RequestFactory()
+        request = factory.get("/api/auth/me/")
+
+        def get_response(request):
+            from django.http import JsonResponse
+
+            return JsonResponse({"ok": True})
+
+        middleware = RequestLoggingMiddleware(get_response)
+        with caplog.at_level(logging.INFO, logger="pda.middleware"):
+            middleware(request)
+        assert len(caplog.records) >= 1
+        record = caplog.records[0]
+        assert record.method == "GET"  # type: ignore[attr-defined]
+        assert record.path == "/api/auth/me/"  # type: ignore[attr-defined]
+        assert record.status_code == 200  # type: ignore[attr-defined]
+        assert hasattr(record, "duration_ms")
