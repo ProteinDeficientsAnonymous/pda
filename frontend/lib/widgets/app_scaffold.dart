@@ -36,6 +36,7 @@ class AppScaffold extends ConsumerWidget {
     }
 
     return [
+      const _NavButton(label: 'Home', route: '/'),
       const _NavButton(label: 'Calendar', route: '/calendar'),
       const _NavButton(label: 'My events', route: '/events/mine'),
       if (user.hasPermission('manage_events'))
@@ -63,7 +64,8 @@ class _NavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentPath = GoRouterState.of(context).uri.path;
-    final isActive = currentPath.startsWith(route);
+    final isActive =
+        route == '/' ? currentPath == '/' : currentPath.startsWith(route);
 
     return TextButton(
       onPressed: () => context.go(route),
@@ -105,6 +107,7 @@ class _NavDrawer extends ConsumerWidget {
     }
 
     final mainItems = <_DrawerItem>[
+      const _DrawerItem(icon: Icons.home_outlined, label: 'Home', route: '/'),
       const _DrawerItem(
         icon: Icons.calendar_month,
         label: 'Calendar',
@@ -164,7 +167,10 @@ class _NavDrawer extends ConsumerWidget {
                           (item) => ListTile(
                             leading: Icon(item.icon),
                             title: Text(item.label),
-                            selected: currentPath.startsWith(item.route),
+                            selected:
+                                item.route == '/'
+                                    ? currentPath == '/'
+                                    : currentPath.startsWith(item.route),
                             selectedTileColor:
                                 theme.colorScheme.primaryContainer,
                             onTap: () {
