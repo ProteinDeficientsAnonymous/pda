@@ -1,5 +1,5 @@
 .PHONY: help install run test lint format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop ci dev \
+        createsuperuser seed db-start db-stop ci dev build-dev \
         frontend-install frontend-run frontend-run-html frontend-build frontend-codegen frontend-lint \
         frontend-format frontend-test frontend-fix
 
@@ -28,6 +28,7 @@ help:
 	@echo "  make frontend-test      Run Flutter test suite"
 	@echo ""
 	@echo "Workflow commands:"
+	@echo "  make build-dev        Install deps, codegen, migrate, then run dev"
 	@echo "  make dev              Run Django + Flutter concurrently"
 	@echo "  make ci               Run all pre-commit checks (lint, check, test, typecheck, frontend-lint, frontend-test)"
 
@@ -106,6 +107,9 @@ frontend-test:
 
 # CI (run before every commit)
 ci: lint check test typecheck frontend-lint frontend-test
+
+# Install deps, codegen, migrate, then run dev
+build-dev: install frontend-codegen migrate dev
 
 # Dev (concurrent backend + frontend)
 dev:
