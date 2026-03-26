@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pda/main.dart';
 import 'package:pda/providers/auth_provider.dart';
-import 'package:pda/providers/guidelines_provider.dart';
 import 'package:pda/providers/home_provider.dart';
 import 'package:pda/services/api_client.dart';
 import 'package:pda/services/secure_storage.dart';
@@ -36,7 +35,11 @@ void main() {
 
 class _FakeHomeNotifier extends HomePageNotifier {
   @override
-  Future<Guidelines> build() async {
-    return Guidelines(content: 'Test content', updatedAt: DateTime(2026));
+  Future<HomePage> build() async {
+    return HomePage(
+      content: 'Test content',
+      joinContent: '',
+      updatedAt: DateTime(2026),
+    );
   }
 }

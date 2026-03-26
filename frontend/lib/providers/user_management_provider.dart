@@ -56,12 +56,12 @@ class UserManagementNotifier extends AsyncNotifier<void> {
   }
 
   Future<Map<String, dynamic>> bulkCreateUsers(
-    List<Map<String, dynamic>> users,
+    List<String> phoneNumbers,
   ) async {
     final api = ref.read(apiClientProvider);
     final response = await api.post(
       '/api/auth/bulk-create-users/',
-      data: {'users': users},
+      data: {'phone_numbers': phoneNumbers},
     );
     ref.invalidate(usersProvider);
     return response.data as Map<String, dynamic>;

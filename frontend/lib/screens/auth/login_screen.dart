@@ -103,6 +103,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => isLoading ? null : _login(),
                       validator:
                           (v) => v == null || v.isEmpty ? 'Required' : null,
                     ),

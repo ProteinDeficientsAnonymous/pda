@@ -113,6 +113,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           events: events,
           selectedDate: _selectedDate,
           onDateChanged: _onDateChanged,
+          onDayTapped: (date) {
+            setState(() {
+              _selectedDate = date;
+              _view = _CalendarView.day;
+            });
+          },
         );
       case _CalendarView.day:
         return DayView(

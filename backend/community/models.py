@@ -93,6 +93,7 @@ class HomePage(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 
     content = models.TextField(default="")
+    join_content = models.TextField(default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

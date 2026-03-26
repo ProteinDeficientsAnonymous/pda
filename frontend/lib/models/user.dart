@@ -25,6 +25,7 @@ abstract class User with _$User {
     @Default('') String displayName,
     @Default('') String email,
     @Default(false) bool isSuperuser,
+    @Default(false) bool needsOnboarding,
     @Default([]) List<Role> roles,
   }) = _User;
 

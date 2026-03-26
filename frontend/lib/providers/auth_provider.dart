@@ -74,6 +74,24 @@ class AuthNotifier extends AsyncNotifier<User?> {
     );
   }
 
+  Future<void> completeOnboarding({
+    required String displayName,
+    String? email,
+    required String newPassword,
+  }) async {
+    final api = ref.watch(apiClientProvider);
+    final data = <String, dynamic>{
+      'display_name': displayName,
+      'new_password': newPassword,
+    };
+    if (email != null && email.isNotEmpty) data['email'] = email;
+    final response = await api.post(
+      '/api/auth/complete-onboarding/',
+      data: data,
+    );
+    state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+  }
+
   Future<void> logout() async {
     final storage = ref.watch(secureStorageProvider);
     await storage.clearTokens();

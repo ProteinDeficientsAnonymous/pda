@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,9 +99,9 @@ class _MembersTab extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 OutlinedButton.icon(
-                  onPressed: () => _showImportDialog(context, ref),
-                  icon: const Icon(Icons.upload_file, size: 18),
-                  label: const Text('Import CSV'),
+                  onPressed: () => _showBulkAddDialog(context, ref),
+                  icon: const Icon(Icons.group_add, size: 18),
+                  label: const Text('Bulk add'),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
@@ -239,12 +238,10 @@ class _MembersTab extends ConsumerWidget {
     );
   }
 
-  Future<void> _showImportDialog(BuildContext context, WidgetRef ref) async {
-    final rolesAsync = ref.read(rolesProvider);
-    final allRoles = rolesAsync.valueOrNull ?? [];
+  Future<void> _showBulkAddDialog(BuildContext context, WidgetRef ref) async {
     await showDialog<void>(
       context: context,
-      builder: (_) => _ImportCsvDialog(allRoles: allRoles, ref: ref),
+      builder: (_) => _BulkAddDialog(ref: ref),
     );
   }
 }
@@ -1158,101 +1155,44 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
 }
 
 // ---------------------------------------------------------------------------
-// Import CSV dialog
+// Bulk add dialog — one phone number per line
 // ---------------------------------------------------------------------------
 
-class _ImportCsvDialog extends StatefulWidget {
-  final List<Role> allRoles;
+class _BulkAddDialog extends StatefulWidget {
   final WidgetRef ref;
 
-  const _ImportCsvDialog({required this.allRoles, required this.ref});
+  const _BulkAddDialog({required this.ref});
 
   @override
-  State<_ImportCsvDialog> createState() => _ImportCsvDialogState();
+  State<_BulkAddDialog> createState() => _BulkAddDialogState();
 }
 
-class _ImportCsvDialogState extends State<_ImportCsvDialog> {
-  String? _fileName;
-  List<Map<String, dynamic>>? _parsed;
-  String? _parseError;
+class _BulkAddDialogState extends State<_BulkAddDialog> {
+  final _ctrl = TextEditingController();
   bool _loading = false;
   Map<String, dynamic>? _results;
-  String? _defaultRoleId;
 
-  void _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    final bytes = file.bytes;
-    if (bytes == null) return;
-    final content = String.fromCharCodes(bytes);
-    _parseCsv(file.name, content);
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
   }
 
-  void _parseCsv(String name, String content) {
-    final lines =
-        content
-            .split('\n')
-            .map((l) => l.trim())
-            .where((l) => l.isNotEmpty)
-            .toList();
-    if (lines.isEmpty) {
-      setState(() {
-        _parseError = 'File is empty.';
-        _parsed = null;
-        _fileName = name;
-      });
-      return;
-    }
+  List<String> get _phones =>
+      _ctrl.text
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty)
+          .toList();
 
-    final headers =
-        lines.first.split(',').map((h) => h.trim().toLowerCase()).toList();
-    if (!headers.contains('phone_number')) {
-      setState(() {
-        _parseError = 'CSV must have a "phone_number" column.';
-        _parsed = null;
-        _fileName = name;
-      });
-      return;
-    }
-
-    final rows = <Map<String, dynamic>>[];
-    for (final line in lines.skip(1)) {
-      final cols = line.split(',').map((c) => c.trim()).toList();
-      final row = <String, dynamic>{};
-      for (var i = 0; i < headers.length && i < cols.length; i++) {
-        if (cols[i].isNotEmpty) row[headers[i]] = cols[i];
-      }
-      if (row['phone_number'] != null) rows.add(row);
-    }
-
-    setState(() {
-      _fileName = name;
-      _parsed = rows;
-      _parseError = rows.isEmpty ? 'No valid rows found.' : null;
-      _results = null;
-    });
-  }
-
-  Future<void> _import() async {
-    if (_parsed == null) return;
+  Future<void> _submit() async {
+    final phones = _phones;
+    if (phones.isEmpty) return;
     setState(() => _loading = true);
     try {
-      final users =
-          _parsed!.map((row) {
-            final m = Map<String, dynamic>.from(row);
-            if (_defaultRoleId != null && !m.containsKey('role_id')) {
-              m['role_id'] = _defaultRoleId;
-            }
-            return m;
-          }).toList();
       final data = await widget.ref
           .read(userManagementProvider.notifier)
-          .bulkCreateUsers(users);
+          .bulkCreateUsers(phones);
       setState(() {
         _results = data;
         _loading = false;
@@ -1273,11 +1213,10 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Import members from CSV'),
+      title: const Text('Bulk add members'),
       content: SizedBox(
-        width: 520,
-        child:
-            _results != null ? _buildResults(context) : _buildUploader(context),
+        width: 480,
+        child: _results != null ? _buildResults(context) : _buildForm(context),
       ),
       actions:
           _results != null
@@ -1294,10 +1233,7 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
-                  onPressed:
-                      (_loading || _parsed == null || _parseError != null)
-                          ? null
-                          : _import,
+                  onPressed: (_loading || _phones.isEmpty) ? null : _submit,
                   child:
                       _loading
                           ? const SizedBox(
@@ -1305,59 +1241,36 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                          : Text('Import ${_parsed?.length ?? 0} members'),
+                          : Text(
+                            'Add ${_phones.length} member${_phones.length == 1 ? '' : 's'}',
+                          ),
                 ),
               ],
     );
   }
 
-  Widget _buildUploader(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Expected columns: phone_number, display_name (opt), email (opt), role_id (opt)',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+  Widget _buildForm(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'One phone number per line. Members will be prompted to set a display name and password on first login.',
+          style: TextStyle(fontSize: 13, color: Colors.grey),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _ctrl,
+          maxLines: 8,
+          onChanged: (_) => setState(() {}),
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: '+12125551234\n+13105559876\n…',
+            alignLabelWithHint: true,
           ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: _pickFile,
-            icon: const Icon(Icons.upload_file),
-            label: Text(_fileName ?? 'Choose CSV file'),
-          ),
-          if (_parseError != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _parseError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
-          if (_parsed != null && _parseError == null) ...[
-            const SizedBox(height: 8),
-            Text('${_parsed!.length} rows ready to import.'),
-            if (widget.allRoles.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _defaultRoleId,
-                decoration: const InputDecoration(
-                  labelText: 'Default role (optional)',
-                  border: OutlineInputBorder(),
-                  helperText: 'Applied to rows without a role_id column',
-                ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('— none —')),
-                  ...widget.allRoles.map(
-                    (r) => DropdownMenuItem(value: r.id, child: Text(r.name)),
-                  ),
-                ],
-                onChanged: (val) => setState(() => _defaultRoleId = val),
-              ),
-            ],
-          ],
-        ],
-      ),
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+        ),
+      ],
     );
   }
 
@@ -1365,6 +1278,7 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
     final results = (_results!['results'] as List).cast<Map<String, dynamic>>();
     final created = _results!['created'] as int;
     final failed = _results!['failed'] as int;
+    final tempPassword = _results!['temporary_password'] as String;
 
     return SingleChildScrollView(
       child: Column(
@@ -1372,7 +1286,7 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$created created, $failed failed',
+            '$created created${failed > 0 ? ', $failed failed' : ''}',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color:
@@ -1381,6 +1295,35 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
                       : Theme.of(context).colorScheme.primary,
             ),
           ),
+          if (created > 0) ...[
+            const SizedBox(height: 12),
+            const Text('Temporary password (share with new members):'),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: SelectableText(
+                    tempPassword,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 18),
+                  tooltip: 'Copy',
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: tempPassword));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Copied to clipboard')),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
           if (failed > 0) ...[
             const SizedBox(height: 12),
             const Text(

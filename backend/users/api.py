@@ -86,6 +86,7 @@ class UserOut(BaseModel):
     display_name: str
     email: str = ""
     is_superuser: bool = False
+    needs_onboarding: bool = False
     roles: list[RoleOut]
 
     @classmethod
@@ -96,6 +97,7 @@ class UserOut(BaseModel):
             display_name=user.display_name,
             email=user.email or "",
             is_superuser=user.is_superuser,
+            needs_onboarding=user.needs_onboarding,
             roles=[
                 RoleOut(
                     id=str(r.id), name=r.name, is_default=r.is_default, permissions=r.permissions
@@ -120,14 +122,13 @@ class UserCreateOut(BaseModel):
 
 
 class BulkUserCreateIn(BaseModel):
-    users: list[UserCreateIn]
+    phone_numbers: list[str]
 
 
 class BulkUserResult(BaseModel):
     row: int
     phone_number: str
     success: bool
-    temporary_password: str | None = None
     error: str | None = None
 
 
@@ -135,6 +136,7 @@ class BulkUserCreateOut(BaseModel):
     results: list[BulkUserResult]
     created: int
     failed: int
+    temporary_password: str
 
 
 class UserPatchIn(BaseModel):
@@ -147,6 +149,7 @@ class UserPatchIn(BaseModel):
 class MePatchIn(BaseModel):
     display_name: str | None = None
     email: str | None = None
+    needs_onboarding: bool | None = None
 
 
 class ChangePasswordIn(BaseModel):
@@ -216,6 +219,28 @@ def update_me(request, payload: MePatchIn):
         user.display_name = payload.display_name
     if payload.email is not None:
         user.email = payload.email
+    if payload.needs_onboarding is not None:
+        user.needs_onboarding = payload.needs_onboarding
+    user.save()
+    return Status(200, UserOut.from_user(user))
+
+
+class OnboardingIn(BaseModel):
+    display_name: str
+    new_password: str
+    email: str = ""
+
+
+@router.post("/complete-onboarding/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+def complete_onboarding(request, payload: OnboardingIn):
+    if len(payload.new_password) < 8:
+        return Status(400, ErrorOut(detail="New password must be at least 8 characters."))
+    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user.display_name = payload.display_name.strip()
+    if payload.email:
+        user.email = payload.email
+    user.set_password(payload.new_password)
+    user.needs_onboarding = False
     user.save()
     return Status(200, UserOut.from_user(user))
 
@@ -260,6 +285,7 @@ def create_user(request, payload: UserCreateIn):
         password=temp_password,
         display_name=payload.display_name,
         email=payload.email,
+        needs_onboarding=True,
     )
 
     if payload.role_id:
@@ -298,15 +324,14 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
     results: list[BulkUserResult] = []
     created = 0
     failed = 0
+    temp_password = _generate_temp_password()
 
-    for i, user_in in enumerate(payload.users):
+    for i, raw_phone in enumerate(payload.phone_numbers):
         try:
-            validated_phone = _validate_phone(user_in.phone_number)
+            validated_phone = _validate_phone(raw_phone.strip())
         except ValueError as e:
             results.append(
-                BulkUserResult(
-                    row=i + 1, phone_number=user_in.phone_number, success=False, error=str(e)
-                )
+                BulkUserResult(row=i + 1, phone_number=raw_phone, success=False, error=str(e))
             )
             failed += 1
             continue
@@ -315,7 +340,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
             results.append(
                 BulkUserResult(
                     row=i + 1,
-                    phone_number=user_in.phone_number,
+                    phone_number=raw_phone,
                     success=False,
                     error="Phone number already exists.",
                 )
@@ -323,44 +348,23 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
             failed += 1
             continue
 
-        temp_password = _generate_temp_password()
         user = User.objects.create_user(
             phone_number=validated_phone,
             password=temp_password,
-            display_name=user_in.display_name,
-            email=user_in.email,
+            needs_onboarding=True,
         )
-
-        if user_in.role_id:
-            try:
-                role = Role.objects.get(pk=user_in.role_id)
-                user.roles.add(role)
-            except Role.DoesNotExist:
-                user.delete()
-                results.append(
-                    BulkUserResult(
-                        row=i + 1,
-                        phone_number=user_in.phone_number,
-                        success=False,
-                        error="Role not found.",
-                    )
-                )
-                failed += 1
-                continue
-        elif member_role:
+        if member_role:
             user.roles.add(member_role)
 
-        results.append(
-            BulkUserResult(
-                row=i + 1,
-                phone_number=validated_phone,
-                success=True,
-                temporary_password=temp_password,
-            )
-        )
+        results.append(BulkUserResult(row=i + 1, phone_number=validated_phone, success=True))
         created += 1
 
-    return Status(200, BulkUserCreateOut(results=results, created=created, failed=failed))
+    return Status(
+        200,
+        BulkUserCreateOut(
+            results=results, created=created, failed=failed, temporary_password=temp_password
+        ),
+    )
 
 
 class UserSearchOut(BaseModel):

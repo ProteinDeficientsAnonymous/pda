@@ -160,20 +160,38 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
     return Status(200, GuidelinesOut(content=g.content, updated_at=g.updated_at))
 
 
-@router.get("/home/", response={200: GuidelinesOut}, auth=None)
+class HomePageOut(BaseModel):
+    content: str
+    join_content: str
+    updated_at: datetime
+
+
+class HomePagePatchIn(BaseModel):
+    content: str | None = None
+    join_content: str | None = None
+
+
+@router.get("/home/", response={200: HomePageOut}, auth=None)
 def get_home(request):
     h = HomePage.get()
-    return Status(200, GuidelinesOut(content=h.content, updated_at=h.updated_at))
+    return Status(
+        200, HomePageOut(content=h.content, join_content=h.join_content, updated_at=h.updated_at)
+    )
 
 
-@router.patch("/home/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
-def update_home(request, payload: GuidelinesPatchIn):
+@router.patch("/home/", response={200: HomePageOut, 403: ErrorOut}, auth=JWTAuth())
+def update_home(request, payload: HomePagePatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_GUIDELINES):
         return Status(403, ErrorOut(detail="Permission denied."))
     h = HomePage.get()
-    h.content = payload.content
+    if payload.content is not None:
+        h.content = payload.content
+    if payload.join_content is not None:
+        h.join_content = payload.join_content
     h.save()
-    return Status(200, GuidelinesOut(content=h.content, updated_at=h.updated_at))
+    return Status(
+        200, HomePageOut(content=h.content, join_content=h.join_content, updated_at=h.updated_at)
+    )
 
 
 @router.post("/join-request/", response={201: JoinRequestOut, 400: ErrorOut}, auth=None)
