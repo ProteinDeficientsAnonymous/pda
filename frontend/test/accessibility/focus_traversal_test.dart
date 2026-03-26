@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
-import 'package:pda/providers/guidelines_provider.dart';
 import 'package:pda/providers/home_provider.dart';
 import 'package:pda/screens/auth/login_screen.dart';
 import 'package:pda/screens/join_screen.dart';
@@ -25,8 +24,12 @@ class _FakeAuthNotifier extends AuthNotifier {
 
 class _FakeHomeNotifier extends HomePageNotifier {
   @override
-  Future<Guidelines> build() async {
-    return Guidelines(content: 'Test content', updatedAt: DateTime(2026));
+  Future<HomePage> build() async {
+    return HomePage(
+      content: 'Test content',
+      joinContent: 'Test join content',
+      updatedAt: DateTime(2026),
+    );
   }
 }
 
