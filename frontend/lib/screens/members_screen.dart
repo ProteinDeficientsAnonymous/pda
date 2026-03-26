@@ -316,7 +316,10 @@ class _MemberCard extends ConsumerWidget {
       builder:
           (ctx) => AlertDialog(
             title: const Text('Delete member?'),
-            content: Text('Delete ${user.phoneNumber}? This cannot be undone.'),
+            content: Text(
+              'Delete ${user.displayName.isNotEmpty ? user.displayName : user.phoneNumber}? '
+              'This cannot be undone.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
@@ -334,9 +337,13 @@ class _MemberCard extends ConsumerWidget {
     try {
       await notifier.deleteUser(user.id);
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${user.phoneNumber} deleted')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${user.displayName.isNotEmpty ? user.displayName : user.phoneNumber} deleted',
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (context.mounted) {
@@ -357,7 +364,10 @@ class _MemberCard extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Temporary password for ${user.phoneNumber}:'),
+                Text(
+                  'Temporary password for '
+                  '${user.displayName.isNotEmpty ? user.displayName : user.phoneNumber}:',
+                ),
                 const SizedBox(height: 12),
                 SelectableText(
                   tempPassword,
@@ -460,7 +470,9 @@ class _RoleEditorDialogState extends State<_RoleEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Edit roles — ${widget.user.phoneNumber}'),
+      title: Text(
+        'Edit roles — ${widget.user.displayName.isNotEmpty ? widget.user.displayName : widget.user.phoneNumber}',
+      ),
       content: SizedBox(
         width: 400,
         child: SingleChildScrollView(
