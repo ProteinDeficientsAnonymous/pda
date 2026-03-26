@@ -1,6 +1,6 @@
 .PHONY: help install run test lint format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop ci dev \
-        frontend-install frontend-run frontend-build frontend-codegen frontend-lint \
+        frontend-install frontend-run frontend-run-html frontend-build frontend-codegen frontend-lint \
         frontend-format frontend-test frontend-fix
 
 help:
@@ -82,6 +82,9 @@ frontend-install:
 
 frontend-run:
 	cd frontend && flutter run -d web-server --web-port 3000 --web-hostname 0.0.0.0
+
+frontend-run-html:
+	cd frontend && flutter run -d web-server --web-port 3001 --web-hostname 0.0.0.0 --web-renderer html
 
 frontend-build:
 	cd frontend && flutter build web --dart-define=API_URL=$(API_URL)
