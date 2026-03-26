@@ -197,25 +197,20 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = Theme.of(context).colorScheme.surfaceContainerHighest;
     final iconColor = Theme.of(context).colorScheme.onSurface;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: widget.expands ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        // Custom heading + numbered list sit inside the same background as
-        // the package toolbar, left-aligned before the other buttons.
-        ColoredBox(
-          color: bgColor,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Heading dropdown (H1 / H2 / H3 / remove)
               PopupMenuButton<String>(
                 tooltip: 'Heading',
                 icon: Icon(Icons.title, color: iconColor, size: 20),
-                color: bgColor,
                 onSelected: _applyHeading,
                 itemBuilder:
                     (_) => const [
@@ -225,28 +220,23 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
                       PopupMenuItem(value: '', child: Text('Remove heading')),
                     ],
               ),
-              // Custom numbered list button — line-aware
               IconButton(
                 tooltip: 'Numbered list',
                 iconSize: 20,
                 icon: Icon(Icons.format_list_numbered, color: iconColor),
                 onPressed: _toggleNumberedList,
               ),
-              // Rest of the toolbar (bold, italic, links, etc.)
-              Flexible(
-                child: MarkdownToolbar(
-                  useIncludedTextField: false,
-                  controller: widget.controller,
-                  focusNode: widget.focusNode,
-                  hideImage: true,
-                  hideCheckbox: true,
-                  hideHorizontalRule: true,
-                  hideHeading: true,
-                  hideNumberedList: true,
-                  collapsable: false,
-                  backgroundColor: bgColor,
-                  iconColor: iconColor,
-                ),
+              MarkdownToolbar(
+                useIncludedTextField: false,
+                controller: widget.controller,
+                focusNode: widget.focusNode,
+                hideImage: true,
+                hideCheckbox: true,
+                hideHorizontalRule: true,
+                hideHeading: true,
+                hideNumberedList: true,
+                collapsable: false,
+                iconColor: iconColor,
               ),
             ],
           ),
