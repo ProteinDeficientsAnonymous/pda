@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+import 'package:pda/widgets/phone_form_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -71,21 +71,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 32),
                       FocusTraversalOrder(
                         order: const NumericFocusOrder(1),
-                        child: IntlPhoneField(
-                          initialCountryCode: 'US',
-                          decoration: const InputDecoration(
-                            labelText: 'Phone number',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (phone) {
-                            _phoneNumber = phone.completeNumber;
-                          },
-                          validator: (phone) {
-                            if (phone == null || phone.number.isEmpty) {
-                              return 'Required';
-                            }
-                            return null;
-                          },
+                        child: PhoneFormField(
+                          onChanged: (number) => _phoneNumber = number,
                         ),
                       ),
                       const SizedBox(height: 16),

@@ -12,7 +12,9 @@ import 'package:pda/screens/join_success_screen.dart';
 import 'package:pda/screens/members_screen.dart';
 import 'package:pda/screens/guidelines_screen.dart';
 import 'package:pda/screens/event_detail_screen.dart';
+import 'package:pda/screens/donate_screen.dart';
 import 'package:pda/screens/settings_screen.dart';
+import 'package:pda/screens/volunteer_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Use ref.listen (not ref.watch) so auth state changes trigger redirect
@@ -41,7 +43,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc == '/join-requests' ||
           loc == '/events/manage' ||
           loc == '/events/mine' ||
-          loc == '/settings';
+          loc == '/settings' ||
+          loc == '/volunteer';
 
       if (isProtected && !isAuthenticated) {
         return '/login?redirect=${state.matchedLocation}';
@@ -113,6 +116,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         name: 'settings',
         builder: (_, __) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/donate',
+        name: 'donate',
+        builder: (_, __) => const DonateScreen(),
+      ),
+      GoRoute(
+        path: '/volunteer',
+        name: 'volunteer',
+        builder: (_, __) => const VolunteerScreen(),
       ),
       GoRoute(
         path: '/events/:id',

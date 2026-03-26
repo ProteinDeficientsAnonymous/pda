@@ -8,6 +8,7 @@ import 'package:pda/utils/launcher.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/widgets/phone_form_field.dart';
 
 /// Shows the event detail panel as a bottom sheet (narrow) or side panel (wide).
 void showEventDetail(BuildContext context, Event event) {
@@ -118,12 +119,13 @@ class EventDetailContent extends ConsumerWidget {
               icon: const Icon(Icons.link_outlined),
               onPressed: () {
                 final base = Uri.base;
-                final link = Uri(
-                  scheme: base.scheme,
-                  host: base.host,
-                  port: base.hasPort ? base.port : null,
-                  path: '/events/${liveEvent.id}',
-                ).toString();
+                final link =
+                    Uri(
+                      scheme: base.scheme,
+                      host: base.host,
+                      port: base.hasPort ? base.port : null,
+                      path: '/events/${liveEvent.id}',
+                    ).toString();
                 Clipboard.setData(ClipboardData(text: link));
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Link copied to clipboard')),
@@ -820,7 +822,7 @@ class _LoginOrJoinSection extends ConsumerStatefulWidget {
 }
 
 class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
-  final _phoneCtrl = TextEditingController();
+  String _phoneNumber = '';
   final _passwordCtrl = TextEditingController();
   final _phoneKey = GlobalKey<FormState>();
   final _loginKey = GlobalKey<FormState>();
@@ -832,7 +834,6 @@ class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
@@ -847,7 +848,7 @@ class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
       final api = ref.read(apiClientProvider);
       final res = await api.post(
         '/api/community/check-phone/',
-        data: {'phone_number': _phoneCtrl.text.trim()},
+        data: {'phone_number': _phoneNumber},
       );
       final exists = (res.data as Map<String, dynamic>)['exists'] as bool;
       setState(() => _isMember = exists);
@@ -867,7 +868,7 @@ class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
     try {
       await ref
           .read(authProvider.notifier)
-          .login(_phoneCtrl.text.trim(), _passwordCtrl.text);
+          .login(_phoneNumber, _passwordCtrl.text);
     } catch (e) {
       setState(() => _error = 'Incorrect password. Please try again.');
     } finally {
@@ -896,27 +897,11 @@ class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
           const SizedBox(height: 12),
           Form(
             key: _phoneKey,
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _phoneCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone number',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'Required';
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _checkPhone(),
-                  ),
-                ),
-                const SizedBox(width: 8),
+                PhoneFormField(onChanged: (number) => _phoneNumber = number),
+                const SizedBox(height: 8),
                 FilledButton(
                   onPressed: _loading ? null : _checkPhone,
                   child:
