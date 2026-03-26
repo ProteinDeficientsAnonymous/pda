@@ -863,8 +863,13 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     if (uri == null || !uri.hasAuthority) {
                       return 'Enter a valid URL';
                     }
-                    if (!uri.host.contains('whatsapp.com')) {
-                      return 'Must be a WhatsApp link (chat.whatsapp.com/...)';
+                    final host = uri.host;
+                    final isWhatsApp =
+                        host.contains('whatsapp.com') ||
+                        host == 'wa.me' ||
+                        host == 'whats.app';
+                    if (!isWhatsApp) {
+                      return 'Must be a WhatsApp link';
                     }
                     return null;
                   },

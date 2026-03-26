@@ -35,7 +35,10 @@ class _MonthViewState extends State<MonthView> {
     'Sat',
   ];
 
-  static const int _maxChipsVisible = 3;
+  static const int _maxEventRows = 3;
+  static const double _dayLabelHeight = 28.0;
+  static const double _chipHeight = 18.0;
+  static const double _chipSpacing = 2.0;
   static const double _minCellHeight = 80.0;
 
   @override
@@ -59,9 +62,6 @@ class _MonthViewState extends State<MonthView> {
     });
   }
 
-  /// Returns a list of DateTime values representing the grid cells,
-  /// including leading days from the previous month and trailing days
-  /// from the next month to fill complete weeks.
   List<DateTime> _buildGridDays() {
     final firstOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     final lastOfMonth = DateTime(
@@ -70,12 +70,10 @@ class _MonthViewState extends State<MonthView> {
       0,
     );
 
-    // Sunday = 0, weekday property: Mon=1 … Sun=7, so convert
     final leadingDays = firstOfMonth.weekday % 7;
     final trailingDays = 6 - (lastOfMonth.weekday % 7);
 
     final days = <DateTime>[];
-
     for (var i = leadingDays; i > 0; i--) {
       days.add(firstOfMonth.subtract(Duration(days: i)));
     }
@@ -85,31 +83,16 @@ class _MonthViewState extends State<MonthView> {
     for (var i = 1; i <= trailingDays; i++) {
       days.add(lastOfMonth.add(Duration(days: i)));
     }
-
     return days;
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
-  bool _isToday(DateTime day) {
-    return _isSameDay(day, DateTime.now());
-  }
+  bool _isToday(DateTime day) => _isSameDay(day, DateTime.now());
 
-  bool _isCurrentMonth(DateTime day) {
-    return day.year == _focusedMonth.year && day.month == _focusedMonth.month;
-  }
-
-  List<Event> _eventsForDay(DateTime day) {
-    final dayStart = DateTime(day.year, day.month, day.day);
-    final dayEnd = dayStart.add(const Duration(days: 1));
-    return widget.events.where((e) {
-      final start = e.startDatetime.toLocal();
-      final end = e.endDatetime.toLocal();
-      return start.isBefore(dayEnd) && end.isAfter(dayStart);
-    }).toList();
-  }
+  bool _isCurrentMonth(DateTime day) =>
+      day.year == _focusedMonth.year && day.month == _focusedMonth.month;
 
   @override
   Widget build(BuildContext context) {
@@ -202,153 +185,363 @@ class _MonthViewState extends State<MonthView> {
       itemCount: rowCount,
       itemBuilder: (context, rowIndex) {
         final rowDays = days.sublist(rowIndex * 7, (rowIndex + 1) * 7);
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children:
-                rowDays
-                    .map((day) => Expanded(child: _buildCell(context, day)))
-                    .toList(),
-          ),
+        return _MonthRow(
+          days: rowDays,
+          allEvents: widget.events,
+          isToday: _isToday,
+          isCurrentMonth: _isCurrentMonth,
+          onDayTapped: widget.onDayTapped,
+          onEventTapped: (e) => showEventDetail(context, e),
+          minCellHeight: _minCellHeight,
+          dayLabelHeight: _dayLabelHeight,
+          chipHeight: _chipHeight,
+          chipSpacing: _chipSpacing,
+          maxEventRows: _maxEventRows,
         );
       },
     );
   }
+}
 
-  Widget _buildCell(BuildContext context, DateTime day) {
-    final events = _eventsForDay(day);
-    final isToday = _isToday(day);
-    final isCurrentMonth = _isCurrentMonth(day);
+/// Represents a positioned event span within a week row.
+class _SpanPlacement {
+  final Event event;
+  final int startCol; // 0–6
+  final int endCol; // 0–6 inclusive
+  final int row; // slot row index
 
-    return GestureDetector(
-      onTap: () => widget.onDayTapped(day),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: _minCellHeight),
-        decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
+  const _SpanPlacement({
+    required this.event,
+    required this.startCol,
+    required this.endCol,
+    required this.row,
+  });
+}
+
+class _MonthRow extends StatelessWidget {
+  final List<DateTime> days; // exactly 7
+  final List<Event> allEvents;
+  final bool Function(DateTime) isToday;
+  final bool Function(DateTime) isCurrentMonth;
+  final ValueChanged<DateTime> onDayTapped;
+  final ValueChanged<Event> onEventTapped;
+  final double minCellHeight;
+  final double dayLabelHeight;
+  final double chipHeight;
+  final double chipSpacing;
+  final int maxEventRows;
+
+  const _MonthRow({
+    required this.days,
+    required this.allEvents,
+    required this.isToday,
+    required this.isCurrentMonth,
+    required this.onDayTapped,
+    required this.onEventTapped,
+    required this.minCellHeight,
+    required this.dayLabelHeight,
+    required this.chipHeight,
+    required this.chipSpacing,
+    required this.maxEventRows,
+  });
+
+  bool _dayContains(DateTime day, Event e) {
+    final dayStart = DateTime(day.year, day.month, day.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    final start = e.startDatetime.toLocal();
+    final end = e.endDatetime.toLocal();
+    return start.isBefore(dayEnd) && end.isAfter(dayStart);
+  }
+
+  /// Assign each event that appears in this row to a slot row (0, 1, 2…).
+  /// Multi-day events get clamped to the week boundaries and placed
+  /// consistently across the row.
+  List<_SpanPlacement> _computePlacements() {
+    final rowStart = days.first;
+    final rowEnd = days.last;
+
+    // Collect events that touch this row at all, deduplicated by id.
+    final seen = <String>{};
+    final rowEvents = <Event>[];
+    for (final day in days) {
+      for (final e in allEvents) {
+        if (!seen.contains(e.id) && _dayContains(day, e)) {
+          seen.add(e.id);
+          rowEvents.add(e);
+        }
+      }
+    }
+    // Sort by start time so earlier events get lower slot rows.
+    rowEvents.sort((a, b) => a.startDatetime.compareTo(b.startDatetime));
+
+    final placements = <_SpanPlacement>[];
+    // slots[col] = highest occupied row index for that column
+    final occupied = List.filled(7, -1);
+
+    for (final e in rowEvents) {
+      final eStart = e.startDatetime.toLocal();
+      final eEnd = e.endDatetime.toLocal();
+
+      // Clamp to row boundaries
+      int startCol = 0;
+      for (var c = 0; c < 7; c++) {
+        final d = days[c];
+        final ds = DateTime(d.year, d.month, d.day);
+        final es = DateTime(eStart.year, eStart.month, eStart.day);
+        if (ds.isAtSameMomentAs(es) || ds.isAfter(es)) {
+          startCol = c;
+          break;
+        }
+      }
+      int endCol = 6;
+      for (var c = 6; c >= 0; c--) {
+        final d = days[c];
+        final ds = DateTime(d.year, d.month, d.day);
+        // end is exclusive midnight so last day is eEnd - 1 day (if midnight)
+        final lastDay =
+            eEnd.hour == 0 && eEnd.minute == 0
+                ? DateTime(eEnd.year, eEnd.month, eEnd.day - 1)
+                : DateTime(eEnd.year, eEnd.month, eEnd.day);
+        if (ds.isAtSameMomentAs(lastDay) || ds.isBefore(lastDay)) {
+          endCol = c;
+          break;
+        }
+      }
+
+      // Clamp to rowStart/rowEnd
+      final rs = DateTime(rowStart.year, rowStart.month, rowStart.day);
+      final re = DateTime(rowEnd.year, rowEnd.month, rowEnd.day);
+      final es = DateTime(eStart.year, eStart.month, eStart.day);
+      final ee = DateTime(eEnd.year, eEnd.month, eEnd.day);
+      if (es.isAfter(re) || ee.isBefore(rs)) continue;
+
+      // Find the lowest available slot row for this span
+      int slotRow = 0;
+      while (true) {
+        bool fits = true;
+        for (var c = startCol; c <= endCol; c++) {
+          if (occupied[c] >= slotRow) {
+            fits = false;
+            break;
+          }
+        }
+        if (fits) break;
+        slotRow++;
+      }
+
+      for (var c = startCol; c <= endCol; c++) {
+        occupied[c] = slotRow;
+      }
+
+      placements.add(
+        _SpanPlacement(
+          event: e,
+          startCol: startCol,
+          endCol: endCol,
+          row: slotRow,
         ),
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildDayLabel(context, day, isToday, isCurrentMonth),
-            const SizedBox(height: 2),
-            ..._buildEventChips(context, events, day),
-          ],
-        ),
+      );
+    }
+
+    return placements;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final placements = _computePlacements();
+    final maxRow =
+        placements.isEmpty
+            ? 0
+            : placements.map((p) => p.row).reduce((a, b) => a > b ? a : b);
+    final visibleRows = maxRow.clamp(0, maxEventRows - 1);
+    final overflowByCol = <int, int>{};
+    for (final p in placements) {
+      if (p.row >= maxEventRows) {
+        for (var c = p.startCol; c <= p.endCol; c++) {
+          overflowByCol[c] = (overflowByCol[c] ?? 0) + 1;
+        }
+      }
+    }
+
+    final eventsAreaHeight =
+        visibleRows * (chipHeight + chipSpacing) + chipHeight + chipSpacing;
+    final rowHeight = (dayLabelHeight + eventsAreaHeight + 4).clamp(
+      minCellHeight,
+      double.infinity,
+    );
+
+    return SizedBox(
+      height: rowHeight,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final totalWidth = constraints.maxWidth;
+          final colWidth = totalWidth / 7;
+
+          return Stack(
+            children: [
+              // Day cell backgrounds + date labels + overflow indicators
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: List.generate(7, (col) {
+                  final day = days[col];
+                  final today = isToday(day);
+                  final currentMonth = isCurrentMonth(day);
+                  final overflow = overflowByCol[col] ?? 0;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => onDayTapped(day),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                            width: 0.5,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _DayLabel(
+                              day: day,
+                              isToday: today,
+                              isCurrentMonth: currentMonth,
+                              height: dayLabelHeight,
+                            ),
+                            if (overflow > 0) ...[
+                              SizedBox(
+                                height:
+                                    visibleRows * (chipHeight + chipSpacing),
+                              ),
+                              Text(
+                                '+$overflow more',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+
+              // Event span bars
+              ...placements.where((p) => p.row < maxEventRows).map((p) {
+                final left = p.startCol * colWidth;
+                final width = (p.endCol - p.startCol + 1) * colWidth;
+                final top =
+                    dayLabelHeight + 4 + p.row * (chipHeight + chipSpacing);
+                final colors = eventColors(p.event.id);
+                // continues from previous row if startCol==0 and event started before this row
+                final continuesFromPrev =
+                    p.startCol == 0 &&
+                    p.event.startDatetime.toLocal().isBefore(
+                      DateTime(days[0].year, days[0].month, days[0].day),
+                    );
+                final continuesToNext =
+                    p.endCol == 6 &&
+                    p.event.endDatetime.toLocal().isAfter(
+                      DateTime(days[6].year, days[6].month, days[6].day + 1),
+                    );
+
+                final borderRadius = BorderRadius.horizontal(
+                  left:
+                      continuesFromPrev
+                          ? Radius.zero
+                          : const Radius.circular(3),
+                  right:
+                      continuesToNext ? Radius.zero : const Radius.circular(3),
+                );
+
+                return Positioned(
+                  left: left,
+                  top: top,
+                  width: width,
+                  height: chipHeight,
+                  child: GestureDetector(
+                    onTap: () => onEventTapped(p.event),
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        left: continuesFromPrev ? 0 : 1,
+                        right: continuesToNext ? 0 : 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.$1,
+                        borderRadius: borderRadius,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        p.event.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: colors.$2,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          );
+        },
       ),
     );
   }
-
-  Widget _buildDayLabel(
-    BuildContext context,
-    DateTime day,
-    bool isToday,
-    bool isCurrentMonth,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    if (isToday) {
-      return CircleAvatar(
-        radius: 13,
-        backgroundColor: colorScheme.primary,
-        child: Text(
-          '${day.day}',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onPrimary,
-          ),
-        ),
-      );
-    }
-
-    final textColor =
-        isCurrentMonth
-            ? colorScheme.onSurface
-            : colorScheme.onSurface.withValues(alpha: 0.35);
-
-    return Text('${day.day}', style: TextStyle(fontSize: 12, color: textColor));
-  }
-
-  List<Widget> _buildEventChips(
-    BuildContext context,
-    List<Event> events,
-    DateTime day,
-  ) {
-    if (events.isEmpty) return [];
-
-    final visibleEvents = events.take(_maxChipsVisible).toList();
-    final overflow = events.length - _maxChipsVisible;
-
-    final chips =
-        visibleEvents.map((e) {
-          final colors = eventColors(e.id);
-          return _EventChip(
-            event: e,
-            bgColor: colors.$1,
-            fgColor: colors.$2,
-            onTap: () => showEventDetail(context, e),
-          );
-        }).toList();
-
-    final result = <Widget>[...chips];
-
-    if (overflow > 0) {
-      result.add(
-        GestureDetector(
-          onTap: () => widget.onDayTapped(day),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 2, left: 2),
-            child: Text(
-              '+$overflow more',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return result;
-  }
 }
 
-class _EventChip extends StatelessWidget {
-  final Event event;
-  final Color bgColor;
-  final Color fgColor;
-  final VoidCallback onTap;
+class _DayLabel extends StatelessWidget {
+  final DateTime day;
+  final bool isToday;
+  final bool isCurrentMonth;
+  final double height;
 
-  const _EventChip({
-    required this.event,
-    required this.bgColor,
-    required this.fgColor,
-    required this.onTap,
+  const _DayLabel({
+    required this.day,
+    required this.isToday,
+    required this.isCurrentMonth,
+    required this.height,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          event.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: fgColor,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      height: height,
+      width: height,
+      child: Center(
+        child: Container(
+          width: 22,
+          height: 22,
+          decoration:
+              isToday
+                  ? BoxDecoration(
+                    color: colorScheme.primary,
+                    shape: BoxShape.circle,
+                  )
+                  : null,
+          child: Center(
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                color:
+                    isToday
+                        ? colorScheme.onPrimary
+                        : isCurrentMonth
+                        ? colorScheme.onSurface
+                        : colorScheme.onSurface.withValues(alpha: 0.35),
+              ),
+            ),
           ),
         ),
       ),
