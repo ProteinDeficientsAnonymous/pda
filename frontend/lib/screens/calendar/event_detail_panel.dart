@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -112,6 +113,23 @@ class EventDetailContent extends ConsumerWidget {
                 ),
               ),
             ),
+            IconButton(
+              tooltip: 'Copy link',
+              icon: const Icon(Icons.link_outlined),
+              onPressed: () {
+                final base = Uri.base;
+                final link = Uri(
+                  scheme: base.scheme,
+                  host: base.host,
+                  port: base.hasPort ? base.port : null,
+                  path: '/events/${liveEvent.id}',
+                ).toString();
+                Clipboard.setData(ClipboardData(text: link));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Link copied to clipboard')),
+                );
+              },
+            ),
             if (!fullPage)
               IconButton(
                 tooltip: 'Open full page',
@@ -140,11 +158,17 @@ class EventDetailContent extends ConsumerWidget {
         ],
         if (liveEvent.location.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _DetailRow(icon: Icons.location_on_outlined, text: liveEvent.location),
+          _DetailRow(
+            icon: Icons.location_on_outlined,
+            text: liveEvent.location,
+          ),
         ],
         if (hostNames.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _DetailRow(icon: Icons.person_pin_outlined, text: hostNames.join(', ')),
+          _DetailRow(
+            icon: Icons.person_pin_outlined,
+            text: hostNames.join(', '),
+          ),
         ],
         if (liveEvent.description.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -851,7 +875,6 @@ class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -861,10 +884,7 @@ class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Member access',
-            style: theme.textTheme.titleSmall,
-          ),
+          Text('Member access', style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(
             'Links and RSVP are available to members only.',
@@ -918,10 +938,7 @@ class _LoginOrJoinSectionState extends ConsumerState<_LoginOrJoinSection> {
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.error,
-              ),
+              style: TextStyle(fontSize: 13, color: theme.colorScheme.error),
             ),
           ],
         ],
