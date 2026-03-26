@@ -365,7 +365,8 @@ class TestJoinRequest:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "name": "Leafy Green",
+                "display_name": "Leafy G",
+                "phone_number": "+12025551234",
                 "email": "leafy@vegan.org",
                 "pronouns": "they/them",
                 "how_they_heard": "Word of mouth",
@@ -374,15 +375,53 @@ class TestJoinRequest:
             content_type="application/json",
         )
         assert response.status_code == 201
-        assert response.json()["name"] == "Leafy Green"
+        data = response.json()
+        assert data["display_name"] == "Leafy G"
+        assert data["phone_number"] == "+12025551234"
 
     def test_submit_join_request_missing_fields(self, api_client):
         response = api_client.post(
             "/api/community/join-request/",
-            {"name": "Leafy", "email": "leafy@vegan.org"},
+            {"display_name": "Leafy", "phone_number": "+12025551234"},
             content_type="application/json",
         )
         assert response.status_code == 422
+
+    def test_submit_join_request_invalid_display_name(self, api_client):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Leafy123",
+                "phone_number": "+12025551234",
+                "why_join": "Liberation.",
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+
+    def test_submit_join_request_invalid_phone(self, api_client):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Leafy G",
+                "phone_number": "not-a-number",
+                "why_join": "Liberation.",
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+
+    def test_submit_join_request_email_optional(self, api_client):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Leafy G",
+                "phone_number": "+13105551234",
+                "why_join": "Liberation.",
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
 
     def test_join_request_sends_email_when_vetting_email_set(self, api_client, settings):
         settings.VETTING_EMAIL = "vetting@pda.org"
@@ -391,8 +430,8 @@ class TestJoinRequest:
         api_client.post(
             "/api/community/join-request/",
             {
-                "name": "Test Person",
-                "email": "test@vegan.org",
+                "display_name": "Test Person",
+                "phone_number": "+14155551234",
                 "why_join": "Because liberation.",
             },
             content_type="application/json",
@@ -408,8 +447,8 @@ class TestJoinRequest:
         api_client.post(
             "/api/community/join-request/",
             {
-                "name": "Test Person",
-                "email": "test@vegan.org",
+                "display_name": "Test Person",
+                "phone_number": "+14155551234",
                 "why_join": "Because liberation.",
             },
             content_type="application/json",
@@ -466,8 +505,8 @@ class TestJoinRequestManagement:
         from community.models import JoinRequest
 
         return JoinRequest.objects.create(
-            name="Sprout Seedling",
-            email="sprout@vegan.org",
+            display_name="Sprout Seedling",
+            phone_number="+16505551234",
             why_join="I believe in collective liberation.",
         )
 
@@ -485,7 +524,7 @@ class TestJoinRequestManagement:
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 1
-        assert data[0]["name"] == "Sprout Seedling"
+        assert data[0]["display_name"] == "Sprout Seedling"
         assert data[0]["status"] == "pending"
 
     def test_list_join_requests_admin_can_access(
@@ -573,8 +612,8 @@ class TestJoinRequestManagement:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "name": "New Sprout",
-                "email": "newsprout@vegan.org",
+                "display_name": "New Sprout",
+                "phone_number": "+19175551234",
                 "why_join": "Collective liberation matters.",
             },
             content_type="application/json",

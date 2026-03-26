@@ -11,8 +11,9 @@ class JoinRequestStatus(models.TextChoices):
 
 class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=200)
-    email = models.EmailField()
+    display_name = models.CharField(max_length=64)
+    phone_number = models.CharField(max_length=20)
+    email = models.EmailField(blank=True)
     pronouns = models.CharField(max_length=100, blank=True)
     how_they_heard = models.TextField(blank=True)
     why_join = models.TextField()
@@ -27,7 +28,7 @@ class JoinRequest(models.Model):
         ordering = ["-submitted_at"]
 
     def __str__(self):
-        return f"{self.name} ({self.email}) — {self.submitted_at:%Y-%m-%d}"
+        return f"{self.display_name} ({self.phone_number}) — {self.submitted_at:%Y-%m-%d}"
 
 
 class Event(models.Model):

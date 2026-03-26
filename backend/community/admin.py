@@ -5,9 +5,9 @@ from community.models import Event, JoinRequest
 
 @admin.register(JoinRequest)
 class JoinRequestAdmin(admin.ModelAdmin):
-    list_display = ("name", "email", "pronouns", "submitted_at")
+    list_display = ("display_name", "phone_number", "email", "pronouns", "submitted_at")
     list_filter = ("submitted_at",)
-    search_fields = ("name", "email")
+    search_fields = ("display_name", "phone_number", "email")
     ordering = ("-submitted_at",)
     readonly_fields = ("id", "submitted_at")
 

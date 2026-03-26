@@ -1,6 +1,8 @@
+import re
 from datetime import datetime
 from uuid import UUID
 
+import phonenumbers
 from django.conf import settings
 from django.core.mail import send_mail
 from ninja import Router
@@ -15,8 +17,9 @@ router = Router()
 
 
 class JoinRequestIn(BaseModel):
-    name: str
-    email: str
+    display_name: str
+    phone_number: str
+    email: str = ""
     pronouns: str = ""
     how_they_heard: str = ""
     why_join: str
@@ -24,7 +27,8 @@ class JoinRequestIn(BaseModel):
 
 class JoinRequestOut(BaseModel):
     id: str
-    name: str
+    display_name: str
+    phone_number: str
     email: str
     status: str
 
@@ -89,13 +93,38 @@ class EventPatchIn(BaseModel):
     co_host_ids: list[str] | None = None
 
 
+DISPLAY_NAME_RE = re.compile(r"^[a-zA-Z ]+$")
+
+
+def _validate_phone(raw: str) -> str:
+    try:
+        parsed = phonenumbers.parse(raw, None)
+    except phonenumbers.phonenumberutil.NumberParseException as e:
+        raise ValueError(str(e)) from e
+    if not phonenumbers.is_valid_number(parsed):
+        raise ValueError(f"Invalid phone number: {raw}")
+    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+
+
 @router.post("/join-request/", response={201: JoinRequestOut, 400: ErrorOut}, auth=None)
 def submit_join_request(request, payload: JoinRequestIn):
-    if not payload.name.strip() or not payload.email.strip() or not payload.why_join.strip():
-        return Status(400, ErrorOut(detail="Name, email, and why_join are required."))
+    display_name = payload.display_name.strip()
+    if not display_name or not payload.why_join.strip():
+        return Status(400, ErrorOut(detail="display_name and why_join are required."))
+    if not DISPLAY_NAME_RE.match(display_name) or len(display_name) > 64:
+        return Status(
+            400,
+            ErrorOut(detail="Display name must contain only letters and spaces (max 64 chars)."),
+        )
+
+    try:
+        validated_phone = _validate_phone(payload.phone_number)
+    except ValueError as e:
+        return Status(400, ErrorOut(detail=str(e)))
 
     join_request = JoinRequest.objects.create(
-        name=payload.name,
+        display_name=display_name,
+        phone_number=validated_phone,
         email=payload.email,
         pronouns=payload.pronouns,
         how_they_heard=payload.how_they_heard,
@@ -104,10 +133,11 @@ def submit_join_request(request, payload: JoinRequestIn):
 
     if settings.VETTING_EMAIL:
         send_mail(
-            subject=f"New PDA Join Request: {payload.name}",
+            subject=f"New PDA Join Request: {display_name}",
             message=(
-                f"Name: {payload.name}\n"
-                f"Email: {payload.email}\n"
+                f"Display Name: {display_name}\n"
+                f"Phone: {validated_phone}\n"
+                f"Email: {payload.email or '(not provided)'}\n"
                 f"Pronouns: {payload.pronouns}\n"
                 f"How they heard: {payload.how_they_heard}\n\n"
                 f"Why they want to join:\n{payload.why_join}"
@@ -121,7 +151,8 @@ def submit_join_request(request, payload: JoinRequestIn):
         201,
         JoinRequestOut(
             id=str(join_request.id),
-            name=join_request.name,
+            display_name=join_request.display_name,
+            phone_number=join_request.phone_number,
             email=join_request.email,
             status=join_request.status,
         ),
@@ -139,7 +170,8 @@ def list_join_requests(request):
         [
             JoinRequestOut(
                 id=str(jr.id),
-                name=jr.name,
+                display_name=jr.display_name,
+                phone_number=jr.phone_number,
                 email=jr.email,
                 status=jr.status,
             )
@@ -173,7 +205,8 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         200,
         JoinRequestOut(
             id=str(join_request.id),
-            name=join_request.name,
+            display_name=join_request.display_name,
+            phone_number=join_request.phone_number,
             email=join_request.email,
             status=join_request.status,
         ),
