@@ -35,19 +35,20 @@ Validator maxLength(int max) {
 Validator minLength(int min, [String? message]) {
   return (v) {
     if (v == null || v.trim().isEmpty) return null;
-    if (v.trim().length < min)
+    if (v.trim().length < min) {
       return message ?? 'At least $min characters required';
+    }
     return null;
   };
 }
 
 /// Letters and spaces only (matches backend display name rule).
 Validator displayName() {
-  final _re = RegExp(r'^[a-zA-Z ]+$');
+  final re = RegExp(r'^[a-zA-Z ]+$');
   return all([
     required(),
     (v) =>
-        (v != null && !_re.hasMatch(v.trim()))
+        (v != null && !re.hasMatch(v.trim()))
             ? 'Letters and spaces only'
             : null,
     maxLength(64),
@@ -58,8 +59,9 @@ Validator displayName() {
 Validator optionalEmail() {
   return (v) {
     if (v == null || v.trim().isEmpty) return null;
-    if (!v.contains('@') || !v.contains('.'))
+    if (!v.contains('@') || !v.contains('.')) {
       return 'Enter a valid email address';
+    }
     return null;
   };
 }
@@ -80,11 +82,11 @@ Validator optionalUrl({bool httpsOnly = false}) {
 
 /// Role name: required, alphanumeric + underscores/hyphens, max 50 chars.
 Validator roleName() {
-  final _re = RegExp(r'^[a-zA-Z0-9_\-]+$');
+  final re = RegExp(r'^[a-zA-Z0-9_\-]+$');
   return all([
     required(),
     (v) =>
-        (v != null && v.trim().isNotEmpty && !_re.hasMatch(v.trim()))
+        (v != null && v.trim().isNotEmpty && !re.hasMatch(v.trim()))
             ? 'Letters, numbers, underscores and hyphens only'
             : null,
     maxLength(50),
