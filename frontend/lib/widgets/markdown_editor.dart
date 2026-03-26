@@ -114,8 +114,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     );
   }
 
-  /// Cycle heading level on the current line: no heading → `## ` → `### ` → remove.
-  void _toggleHeading() {
+  static final _headingRe = RegExp(r'^#{1,3} ');
+
+  /// Apply a specific heading prefix (`# `, `## `, `### `, or `''`) to the current line.
+  void _applyHeading(String prefix) {
     final text = widget.controller.text;
     final sel = widget.controller.selection;
     if (!sel.isValid) return;
@@ -126,16 +128,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         text.contains('\n', pos) ? text.indexOf('\n', pos) : text.length;
     final line = text.substring(lineStart, lineEnd);
 
-    String newLine;
-    if (line.startsWith('### ')) {
-      newLine = line.substring(4); // remove heading
-    } else if (line.startsWith('## ')) {
-      newLine = '### ${line.substring(3)}'; // h2 → h3
-    } else if (line.startsWith('# ')) {
-      newLine = '## ${line.substring(2)}'; // h1 → h2
-    } else {
-      newLine = '## $line'; // no heading → h2
-    }
+    // Strip any existing heading prefix, then apply the chosen one
+    final stripped = line.replaceFirst(_headingRe, '');
+    final newLine = '$prefix$stripped';
 
     final delta = newLine.length - line.length;
     final newText =
@@ -209,12 +204,36 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: widget.expands ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        // Toolbar: package toolbar (buggy buttons hidden) + custom line-aware buttons
+        // Custom heading + numbered list sit inside the same background as
+        // the package toolbar, left-aligned before the other buttons.
         ColoredBox(
           color: bgColor,
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
+              // Heading dropdown (H1 / H2 / H3 / remove)
+              PopupMenuButton<String>(
+                tooltip: 'Heading',
+                icon: Icon(Icons.title, color: iconColor, size: 20),
+                color: bgColor,
+                onSelected: _applyHeading,
+                itemBuilder:
+                    (_) => const [
+                      PopupMenuItem(value: '# ', child: Text('H1')),
+                      PopupMenuItem(value: '## ', child: Text('H2')),
+                      PopupMenuItem(value: '### ', child: Text('H3')),
+                      PopupMenuItem(value: '', child: Text('Remove heading')),
+                    ],
+              ),
+              // Custom numbered list button — line-aware
+              IconButton(
+                tooltip: 'Numbered list',
+                iconSize: 20,
+                icon: Icon(Icons.format_list_numbered, color: iconColor),
+                onPressed: _toggleNumberedList,
+              ),
+              // Rest of the toolbar (bold, italic, links, etc.)
+              Flexible(
                 child: MarkdownToolbar(
                   useIncludedTextField: false,
                   controller: widget.controller,
@@ -228,18 +247,6 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
                   backgroundColor: bgColor,
                   iconColor: iconColor,
                 ),
-              ),
-              // Custom heading button — prepends/cycles ## on current line
-              IconButton(
-                tooltip: 'Heading',
-                icon: Icon(Icons.title, color: iconColor),
-                onPressed: _toggleHeading,
-              ),
-              // Custom numbered list button — line-aware
-              IconButton(
-                tooltip: 'Numbered list',
-                icon: Icon(Icons.format_list_numbered, color: iconColor),
-                onPressed: _toggleNumberedList,
               ),
             ],
           ),
