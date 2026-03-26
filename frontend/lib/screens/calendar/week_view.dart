@@ -102,12 +102,24 @@ class _WeekViewState extends State<WeekView> {
                 tooltip: 'Previous week',
               ),
               Expanded(
-                child: GestureDetector(
-                  onTap: _openDatePicker,
-                  child: Text(
-                    _weekRangeLabel(),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium,
+                child: Semantics(
+                  button: true,
+                  label: 'Pick week',
+                  excludeSemantics: true,
+                  child: InkWell(
+                    onTap: _openDatePicker,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      child: Text(
+                        _weekRangeLabel(),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -438,56 +450,64 @@ class _WeekGrid extends StatelessWidget {
                               top: top,
                               width: width,
                               height: chipHeight,
-                              child: GestureDetector(
-                                onTap: () => onEventTapped(p.event),
-                                child: Container(
-                                  margin: EdgeInsets.only(
-                                    left: continuesFromPrev ? 0 : 2,
-                                    right: continuesToNext ? 0 : 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colors.$1,
-                                    borderRadius: BorderRadius.horizontal(
-                                      left:
-                                          continuesFromPrev
-                                              ? Radius.zero
-                                              : const Radius.circular(4),
-                                      right:
-                                          continuesToNext
-                                              ? Radius.zero
-                                              : const Radius.circular(4),
+                              child: Semantics(
+                                button: true,
+                                label: p.event.title,
+                                excludeSemantics: true,
+                                child: InkWell(
+                                  onTap: () => onEventTapped(p.event),
+                                  splashColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                  child: Container(
+                                    margin: EdgeInsets.only(
+                                      left: continuesFromPrev ? 0 : 2,
+                                      right: continuesToNext ? 0 : 2,
                                     ),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          p.event.title,
+                                    decoration: BoxDecoration(
+                                      color: colors.$1,
+                                      borderRadius: BorderRadius.horizontal(
+                                        left:
+                                            continuesFromPrev
+                                                ? Radius.zero
+                                                : const Radius.circular(4),
+                                        right:
+                                            continuesToNext
+                                                ? Radius.zero
+                                                : const Radius.circular(4),
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            p.event.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: colors.$2,
+                                            ),
+                                          ),
+                                        ),
+                                        if (isMultiDay)
+                                          const SizedBox(width: 4),
+                                        Text(
+                                          subLabel,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: colors.$2,
+                                            fontSize: 10,
+                                            color: colors.$2.withValues(
+                                              alpha: 0.8,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      if (isMultiDay) const SizedBox(width: 4),
-                                      Text(
-                                        subLabel,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: colors.$2.withValues(
-                                            alpha: 0.8,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

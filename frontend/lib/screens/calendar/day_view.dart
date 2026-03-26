@@ -144,9 +144,21 @@ class _DayHeader extends StatelessWidget {
             tooltip: 'Previous day',
             onPressed: onPrev,
           ),
-          GestureDetector(
-            onTap: onTap,
-            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+          Semantics(
+            button: true,
+            label: 'Pick date',
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
@@ -209,78 +221,86 @@ class _DayEventCard extends StatelessWidget {
             ? '${timeFmt.format(start)} \u2013 ${timeFmt.format(end)}'
             : '${dateFmt.format(start)} ${timeFmt.format(start)} \u2013 ${dateFmt.format(end)} ${timeFmt.format(end)}';
 
-    return GestureDetector(
-      onTap: () => showEventDetail(context, event),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: theme.shadowColor.withValues(alpha: 0.08),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              event.title,
-              style: TextStyle(
-                color: fgColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              timeRange,
-              style: TextStyle(
-                color: fgColor.withValues(alpha: 0.85),
-                fontSize: 13,
-              ),
-            ),
-            if (event.location.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Icon(
-                    Icons.place_outlined,
-                    size: 13,
-                    color: fgColor.withValues(alpha: 0.7),
-                  ),
-                  const SizedBox(width: 3),
-                  Expanded(
-                    child: Text(
-                      event.location,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: fgColor.withValues(alpha: 0.7),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
+    return Semantics(
+      button: true,
+      label: event.title,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => showEventDetail(context, event),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: theme.shadowColor.withValues(alpha: 0.08),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
             ],
-            if (event.description.isNotEmpty) ...[
-              const SizedBox(height: 4),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                event.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                event.title,
                 style: TextStyle(
-                  color: fgColor.withValues(alpha: 0.75),
-                  fontSize: 12,
+                  color: fgColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
               ),
+              const SizedBox(height: 4),
+              Text(
+                timeRange,
+                style: TextStyle(
+                  color: fgColor.withValues(alpha: 0.85),
+                  fontSize: 13,
+                ),
+              ),
+              if (event.location.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.place_outlined,
+                      size: 13,
+                      color: fgColor.withValues(alpha: 0.7),
+                    ),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        event.location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: fgColor.withValues(alpha: 0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (event.description.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  event.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: fgColor.withValues(alpha: 0.75),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

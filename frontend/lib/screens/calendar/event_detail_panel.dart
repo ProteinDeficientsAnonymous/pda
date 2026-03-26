@@ -561,44 +561,51 @@ class _GuestChipState extends State<_GuestChip> {
     }
 
     // Mobile: tap to reveal
-    return GestureDetector(
-      onTap: () => setState(() => _expanded = !_expanded),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            widget.guest.name,
-            style: const TextStyle(
-              fontSize: 13,
-              decoration: TextDecoration.underline,
-              decorationStyle: TextDecorationStyle.dotted,
-            ),
-          ),
-          if (_expanded)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.phone,
-                    size: 11,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 3),
-                  SelectableText(
-                    phone,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+    return Semantics(
+      button: true,
+      label: _expanded ? 'Hide details' : 'Show details',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => setState(() => _expanded = !_expanded),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.guest.name,
+              style: const TextStyle(
+                fontSize: 13,
+                decoration: TextDecoration.underline,
+                decorationStyle: TextDecorationStyle.dotted,
               ),
             ),
-        ],
+            if (_expanded)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.phone,
+                      size: 11,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 3),
+                    SelectableText(
+                      phone,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
