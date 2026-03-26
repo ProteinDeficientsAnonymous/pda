@@ -210,42 +210,29 @@ class _EventManagementRow extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    event.title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.schedule, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${dateFmt.format(event.startDatetime.toLocal())} — '
-                          '${DateFormat('h:mm a').format(event.endDatetime.toLocal())}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (event.location.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.place, size: 14, color: Colors.grey),
+                        const Icon(
+                          Icons.schedule,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            event.location,
+                            '${dateFmt.format(event.startDatetime.toLocal())} — '
+                            '${DateFormat('h:mm a').format(event.endDatetime.toLocal())}',
                             style: const TextStyle(
                               fontSize: 13,
                               color: Colors.grey,
@@ -254,29 +241,46 @@ class _EventManagementRow extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    if (event.location.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.place, size: 14, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              event.location,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    _HostsLine(event: event),
                   ],
-                  const SizedBox(height: 4),
-                  _HostsLine(event: event),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: 'Edit',
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => _showEditDialog(context, ref),
-            ),
-            IconButton(
-              tooltip: 'Delete',
-              icon: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Edit',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _showEditDialog(context, ref),
               ),
-              onPressed: () => _confirmDelete(context, ref),
-            ),
-          ],
+              IconButton(
+                tooltip: 'Delete',
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () => _confirmDelete(context, ref),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

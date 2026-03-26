@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/user_management_provider.dart';
+import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/app_scaffold.dart';
 
 // All permission keys and their display labels
@@ -852,9 +853,7 @@ class _RoleFormDialogState extends State<_RoleFormDialog> {
                       labelText: 'Role name *',
                       border: OutlineInputBorder(),
                     ),
-                    validator:
-                        (v) =>
-                            v == null || v.trim().isEmpty ? 'Required' : null,
+                    validator: v.roleName(),
                   ),
                 if (!_isEdit) const SizedBox(height: 16),
                 Text(

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:markdown_toolbar/markdown_toolbar.dart';
@@ -169,6 +170,7 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody> {
         maxLines: null,
         expands: true,
         textAlignVertical: TextAlignVertical.top,
+        inputFormatters: [LengthLimitingTextInputFormatter(50000)],
         decoration: const InputDecoration(
           border: OutlineInputBorder(),
           hintText: 'Write community guidelines in Markdown…',

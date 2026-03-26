@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/utils/launcher.dart';
+import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
 
@@ -950,8 +951,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     border: OutlineInputBorder(),
                   ),
                   textCapitalization: TextCapitalization.sentences,
-                  validator:
-                      (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: v.all([v.required(), v.maxLength(300)]),
                 ),
                 const SizedBox(height: 16),
                 // Date/time rows — Google Calendar style
@@ -989,6 +989,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.place_outlined),
                   ),
+                  validator: v.maxLength(300),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -1000,6 +1001,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                   ),
                   maxLines: 3,
                   textCapitalization: TextCapitalization.sentences,
+                  validator: v.maxLength(2000),
                 ),
                 const SizedBox(height: 16),
                 const Divider(),
@@ -1068,14 +1070,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     prefixIcon: Icon(Icons.link),
                   ),
                   keyboardType: TextInputType.url,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return null;
-                    final uri = Uri.tryParse(_normalizeUrl(v.trim()));
-                    if (uri == null || !uri.hasAuthority) {
-                      return 'Enter a valid URL';
-                    }
-                    return null;
-                  },
+                  validator: v.optionalUrl(httpsOnly: true),
                 ),
                 const SizedBox(height: 16),
                 const Divider(),

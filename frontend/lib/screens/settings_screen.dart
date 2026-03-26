@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
+import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/app_scaffold.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -121,6 +122,7 @@ class SettingsScreen extends ConsumerWidget {
             label: 'Display name',
             initialValue: current ?? '',
             keyboardType: TextInputType.name,
+            validator: v.displayName(),
           ),
     );
     if (result == null || !context.mounted) return;
@@ -153,11 +155,7 @@ class SettingsScreen extends ConsumerWidget {
             label: 'Email address',
             initialValue: current ?? '',
             keyboardType: TextInputType.emailAddress,
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return null;
-              if (!v.contains('@')) return 'Enter a valid email address';
-              return null;
-            },
+            validator: v.optionalEmail(),
           ),
     );
     if (result == null || !context.mounted) return;
@@ -369,11 +367,21 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
               controller: _newCtrl,
               obscureText: true,
               decoration: const InputDecoration(labelText: 'New password'),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Required';
-                if (v.length < 8) return 'Must be at least 8 characters';
-                return null;
-              },
+              validator: v.all([
+                v.required(),
+                (val) =>
+                    (val != null && val.length < 8)
+                        ? 'Must be at least 8 characters'
+                        : null,
+                (val) =>
+                    (val != null && val.length > 128)
+                        ? 'Max 128 characters'
+                        : null,
+                (val) =>
+                    (val != null && val == _currentCtrl.text)
+                        ? 'New password must differ from current'
+                        : null,
+              ]),
             ),
             const SizedBox(height: 12),
             TextFormField(

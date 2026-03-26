@@ -4,9 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:pda/providers/join_request_provider.dart';
 import 'package:pda/services/api_error.dart';
+import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/app_scaffold.dart';
-
-final _displayNameRegex = RegExp(r'^[a-zA-Z ]+$');
 
 class JoinScreen extends ConsumerStatefulWidget {
   const JoinScreen({super.key});
@@ -90,14 +89,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                             'last initial',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Required';
-                        if (!_displayNameRegex.hasMatch(v.trim())) {
-                          return 'Letters and spaces only';
-                        }
-                        if (v.trim().length > 64) return 'Max 64 characters';
-                        return null;
-                      },
+                      validator: v.displayName(),
                     ),
                     const SizedBox(height: 16),
                     IntlPhoneField(
@@ -128,6 +120,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.emailAddress,
+                      validator: v.optionalEmail(),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -136,6 +129,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                         labelText: 'Pronouns (optional)',
                         border: OutlineInputBorder(),
                       ),
+                      validator: v.maxLength(100),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -144,6 +138,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                         labelText: 'How did you hear about us? (optional)',
                         border: OutlineInputBorder(),
                       ),
+                      validator: v.maxLength(500),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -154,9 +149,14 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                         alignLabelWithHint: true,
                       ),
                       maxLines: 5,
-                      validator:
-                          (v) =>
-                              v == null || v.trim().isEmpty ? 'Required' : null,
+                      validator: v.all([
+                        v.required(),
+                        v.minLength(
+                          20,
+                          'Please tell us a bit more (min 20 characters)',
+                        ),
+                        v.maxLength(2000),
+                      ]),
                     ),
                     if (state.hasError) ...[
                       const SizedBox(height: 16),
