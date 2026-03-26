@@ -1,4 +1,8 @@
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
 import pytest
+from community.api import _build_guest_list, _can_see_phones, _find_my_rsvp
 from community.models import Event
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -227,6 +231,15 @@ class TestEventManagement:
         assert data["title"] == "Community Meetup"
         assert data["location"] == "The Vegan Cafe"
 
+    def test_event_patch_fields_match_model(self):
+        """All EventPatchIn fields (except co_host_ids) must exist on Event model."""
+        from community.api import EventPatchIn
+
+        schema_fields = set(EventPatchIn.model_fields.keys()) - {"co_host_ids"}
+        model_fields = {f.name for f in Event._meta.get_fields()}
+        missing = schema_fields - model_fields
+        assert not missing, f"EventPatchIn fields not on Event model: {missing}"
+
     # DELETE /api/community/events/{id}/
 
     def test_delete_event_success(self, api_client, manage_events_headers, sample_event):
@@ -295,3 +308,88 @@ class TestEventManagement:
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "Event not found."
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for _event_out helpers
+# ---------------------------------------------------------------------------
+
+
+class TestCanSeePhones:
+    def test_returns_false_when_no_requesting_user(self):
+        assert _can_see_phones(None, MagicMock(), {"id1"}) is False
+
+    def test_returns_true_when_user_is_creator(self):
+        creator = MagicMock()
+        creator.pk = "user-1"
+        requesting = MagicMock()
+        requesting.pk = "user-1"
+        assert _can_see_phones(requesting, creator, set()) is True
+
+    def test_returns_true_when_user_is_co_host(self):
+        creator = MagicMock()
+        creator.pk = "user-1"
+        requesting = MagicMock()
+        requesting.pk = "user-2"
+        assert _can_see_phones(requesting, creator, {"user-2"}) is True
+
+    def test_returns_false_when_user_is_neither(self):
+        creator = MagicMock()
+        creator.pk = "user-1"
+        requesting = MagicMock()
+        requesting.pk = "user-3"
+        assert _can_see_phones(requesting, creator, {"user-2"}) is False
+
+    def test_returns_false_when_creator_is_none(self):
+        requesting = MagicMock()
+        requesting.pk = "user-1"
+        assert _can_see_phones(requesting, None, set()) is False
+
+
+class TestBuildGuestList:
+    def _make_rsvp(self, user_id, name, status, phone):
+        rsvp = SimpleNamespace(
+            user_id=user_id,
+            user=SimpleNamespace(display_name=name, phone_number=phone),
+            status=status,
+        )
+        return rsvp
+
+    def test_empty_rsvps(self):
+        assert _build_guest_list([], can_see_phones=True) == []
+
+    def test_hides_phones_when_not_allowed(self):
+        rsvp = self._make_rsvp("u1", "Alice", "attending", "+1555000")
+        result = _build_guest_list([rsvp], can_see_phones=False)
+        assert result[0].phone is None
+
+    def test_shows_phones_when_allowed(self):
+        rsvp = self._make_rsvp("u1", "Alice", "attending", "+1555000")
+        result = _build_guest_list([rsvp], can_see_phones=True)
+        assert result[0].phone == "+1555000"
+
+    def test_uses_phone_as_name_fallback(self):
+        rsvp = self._make_rsvp("u1", None, "attending", "+1555000")
+        result = _build_guest_list([rsvp], can_see_phones=False)
+        assert result[0].name == "+1555000"
+
+
+class TestFindMyRsvp:
+    def _make_rsvp(self, user_id, status):
+        return SimpleNamespace(user_id=user_id, status=status)
+
+    def test_returns_none_when_no_user(self):
+        assert _find_my_rsvp([self._make_rsvp("u1", "attending")], None) is None
+
+    def test_returns_none_when_user_not_in_rsvps(self):
+        user = SimpleNamespace(pk="u2")
+        assert _find_my_rsvp([self._make_rsvp("u1", "attending")], user) is None
+
+    def test_returns_status_when_user_found(self):
+        user = SimpleNamespace(pk="u1")
+        assert _find_my_rsvp([self._make_rsvp("u1", "maybe")], user) == "maybe"
+
+    def test_returns_first_match(self):
+        user = SimpleNamespace(pk="u1")
+        rsvps = [self._make_rsvp("u1", "attending"), self._make_rsvp("u1", "maybe")]
+        assert _find_my_rsvp(rsvps, user) == "attending"

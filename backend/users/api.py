@@ -50,6 +50,64 @@ def _validate_phone(raw: str) -> str:
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
+def _create_user_with_role(
+    phone: str,
+    display_name: str,
+    email: str | None,
+    role_id: str | None,
+    *,
+    needs_onboarding: bool = True,
+) -> tuple[User, str]:
+    """Validate phone, create user, assign role. Returns (user, temp_password).
+
+    Raises ValueError on validation failure (bad phone, duplicate, bad role).
+    """
+    validated_phone = _validate_phone(phone)
+    if User.objects.filter(phone_number=validated_phone).exists():
+        raise ValueError("A user with that phone number already exists.")
+    temp_password = _generate_temp_password()
+    user = User.objects.create_user(
+        phone_number=validated_phone,
+        password=temp_password,
+        display_name=display_name,
+        email=email,
+        needs_onboarding=needs_onboarding,
+    )
+    try:
+        if role_id:
+            role = Role.objects.get(pk=role_id)
+            user.roles.add(role)
+        else:
+            member_role = Role.objects.filter(name="member", is_default=True).first()
+            if member_role:
+                user.roles.add(member_role)
+    except Role.DoesNotExist:
+        user.delete()
+        raise ValueError("Role not found.")
+    return user, temp_password
+
+
+def _validate_admin_role_change(
+    user: User, requesting_user_pk, new_roles: list[Role]
+) -> str | None:
+    """Return error message if admin role change is invalid, None if OK."""
+    admin_role = Role.objects.filter(name="admin", is_default=True).first()
+    if not admin_role:
+        return None
+
+    is_self = str(user.pk) == str(requesting_user_pk)
+    is_current_admin = user.roles.filter(pk=admin_role.pk).exists()
+    removing_admin = admin_role not in new_roles
+
+    if is_self and is_current_admin and removing_admin:
+        return "You cannot remove your own admin role."
+
+    if _is_last_admin(user) and removing_admin:
+        return "Cannot remove admin from the last admin."
+
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Schemas
 # ---------------------------------------------------------------------------
@@ -276,34 +334,12 @@ def create_user(request, payload: UserCreateIn):
     if not request.auth.has_permission(PermissionKey.CREATE_USER):
         return Status(403, ErrorOut(detail="Permission denied."))
 
-    if User.objects.filter(phone_number=payload.phone_number).exists():
-        return Status(400, ErrorOut(detail="A user with that phone number already exists."))
-
     try:
-        validated_phone = _validate_phone(payload.phone_number)
+        user, temp_password = _create_user_with_role(
+            payload.phone_number, payload.display_name, payload.email, payload.role_id
+        )
     except ValueError as e:
         return Status(400, ErrorOut(detail=str(e)))
-
-    temp_password = _generate_temp_password()
-    user = User.objects.create_user(
-        phone_number=validated_phone,
-        password=temp_password,
-        display_name=payload.display_name,
-        email=payload.email,
-        needs_onboarding=True,
-    )
-
-    if payload.role_id:
-        try:
-            role = Role.objects.get(pk=payload.role_id)
-            user.roles.add(role)
-        except Role.DoesNotExist:
-            user.delete()
-            return Status(400, ErrorOut(detail="Role not found."))
-    else:
-        member_role = Role.objects.filter(name="member", is_default=True).first()
-        if member_role:
-            user.roles.add(member_role)
 
     return Status(
         201,
@@ -321,7 +357,7 @@ def create_user(request, payload: UserCreateIn):
     response={200: BulkUserCreateOut, 403: ErrorOut},
     auth=JWTAuth(),
 )
-def bulk_create_users(request, payload: BulkUserCreateIn):  # noqa: CCR001 — see violation fix plan
+def bulk_create_users(request, payload: BulkUserCreateIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
         return Status(403, ErrorOut(detail="Permission denied."))
 
@@ -463,7 +499,7 @@ def delete_user(request, user_id: str):
     response={200: UserOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=JWTAuth(),
 )
-def update_user_roles(request, user_id: str, payload: UserRolesIn):  # noqa: CCR001 — see violation fix plan
+def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
@@ -475,13 +511,9 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):  # noqa: CCR
     if len(roles) != len(payload.role_ids):
         return Status(400, ErrorOut(detail="One or more role IDs not found."))
 
-    admin_role = Role.objects.filter(name="admin", is_default=True).first()
-    if admin_role:
-        if str(user.pk) == str(request.auth.pk) and user.roles.filter(pk=admin_role.pk).exists():
-            if admin_role not in roles:
-                return Status(400, ErrorOut(detail="You cannot remove your own admin role."))
-        if _is_last_admin(user) and admin_role not in roles:
-            return Status(400, ErrorOut(detail="Cannot remove admin from the last admin."))
+    error = _validate_admin_role_change(user, request.auth.pk, roles)
+    if error:
+        return Status(400, ErrorOut(detail=error))
 
     user.roles.set(roles)
     user = User.objects.prefetch_related("roles").get(pk=user.pk)

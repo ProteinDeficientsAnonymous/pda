@@ -111,33 +111,32 @@ class Command(BaseCommand):
         self._seed_join_requests()
         self._print_summary()
 
-    def _seed_users(self) -> User:  # noqa: CCR001 — see violation fix plan
+    def _create_or_skip_user(self, data, admin_role, member_role) -> tuple[User, bool]:
+        """Create user from seed data or return existing. Returns (user, created)."""
+        defaults: dict[str, object] = {"display_name": data.display_name}
+        if data.is_superuser:
+            defaults["is_superuser"] = True
+            defaults["is_staff"] = True
+        user, created = User.objects.get_or_create(
+            phone_number=data.phone_number, defaults=defaults
+        )
+        if created:
+            user.set_password(PASSWORD)
+            user.save()
+            user.roles.add(admin_role if data.is_superuser else member_role)
+            self.stdout.write(f"  Created user: {user.display_name}")
+        else:
+            self.stdout.write(f"  Already exists: {user.display_name}")
+        return user, created
+
+    def _seed_users(self) -> User:
         # Ensure roles exist before creating users (post_save signal needs admin role)
         admin_role, _ = Role.objects.get_or_create(name="admin", defaults={"is_default": True})
         member_role, _ = Role.objects.get_or_create(name="member", defaults={"is_default": True})
 
         admin_user: User | None = None
         for data in SEED_USERS:
-            defaults: dict[str, object] = {"display_name": data.display_name}
-            if data.is_superuser:
-                defaults["is_superuser"] = True
-                defaults["is_staff"] = True
-
-            user, created = User.objects.get_or_create(
-                phone_number=data.phone_number,
-                defaults=defaults,
-            )
-            if created:
-                user.set_password(PASSWORD)
-                user.save()
-                if data.is_superuser:
-                    user.roles.add(admin_role)
-                else:
-                    user.roles.add(member_role)
-                self.stdout.write(f"  Created user: {user.display_name}")
-            else:
-                self.stdout.write(f"  Already exists: {user.display_name}")
-
+            user, _ = self._create_or_skip_user(data, admin_role, member_role)
             if data.is_superuser:
                 admin_user = user
 

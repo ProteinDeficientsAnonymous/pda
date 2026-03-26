@@ -1,4 +1,5 @@
 import pytest
+from users.api import _create_user_with_role, _validate_admin_role_change
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -265,6 +266,89 @@ class TestUserManagementAPI:
             **auth_headers,
         )
         assert response.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for _create_user_with_role helper
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestCreateUserWithRole:
+    def test_creates_user_with_default_member_role(self):
+        Role.objects.get_or_create(name="member", defaults={"is_default": True})
+        user, temp_password = _create_user_with_role("+12025559999", "Test User", "t@e.com", None)
+        assert user.phone_number == "+12025559999"
+        assert len(temp_password) == 16
+        assert user.roles.filter(name="member").exists()
+
+    def test_creates_user_with_specific_role(self):
+        role = Role.objects.create(name="custom_role")
+        user, _ = _create_user_with_role("+12025558888", "Custom User", "c@e.com", str(role.pk))
+        assert user.roles.filter(pk=role.pk).exists()
+
+    def test_raises_on_duplicate_phone(self):
+        from users.models import User
+
+        User.objects.create_user(phone_number="+12025557777", password="pass123")
+        with pytest.raises(ValueError, match="already exists"):
+            _create_user_with_role("+12025557777", "Dup", None, None)
+
+    def test_raises_on_invalid_phone(self):
+        with pytest.raises(ValueError):
+            _create_user_with_role("not-a-phone", "Bad Phone", None, None)
+
+    def test_raises_on_bad_role_and_deletes_user(self):
+        from users.models import User
+
+        with pytest.raises(ValueError, match="Role not found"):
+            _create_user_with_role(
+                "+12025556666", "Bad Role User", "b@e.com", "00000000-0000-0000-0000-000000000000"
+            )
+        assert not User.objects.filter(phone_number="+12025556666").exists()
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for _validate_admin_role_change
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestValidateAdminRoleChange:
+    def test_returns_none_when_no_admin_role_exists(self):
+        from users.models import User
+
+        user = User.objects.create_user(phone_number="+12025550101", password="p", email="a@e.com")
+        assert _validate_admin_role_change(user, "other-pk", []) is None
+
+    def test_returns_error_when_removing_own_admin(self):
+        from users.models import User
+
+        admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
+        member_role = Role.objects.get_or_create(name="member", defaults={"is_default": True})[0]
+        user = User.objects.create_user(phone_number="+12025550102", password="p", email="b@e.com")
+        user.roles.add(admin_role)
+        result = _validate_admin_role_change(user, str(user.pk), [member_role])
+        assert result == "You cannot remove your own admin role."
+
+    def test_returns_none_when_keeping_own_admin(self):
+        from users.models import User
+
+        admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
+        user = User.objects.create_user(phone_number="+12025550103", password="p", email="c@e.com")
+        user.roles.add(admin_role)
+        assert _validate_admin_role_change(user, str(user.pk), [admin_role]) is None
+
+    def test_returns_error_when_removing_last_admin(self):
+        from users.models import User
+
+        admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
+        member_role = Role.objects.get_or_create(name="member", defaults={"is_default": True})[0]
+        user = User.objects.create_user(phone_number="+12025550104", password="p", email="d@e.com")
+        user.roles.add(admin_role)
+        # Request from a different user (not self-removal)
+        result = _validate_admin_role_change(user, "someone-else", [member_role])
+        assert result == "Cannot remove admin from the last admin."
 
 
 # ---------------------------------------------------------------------------

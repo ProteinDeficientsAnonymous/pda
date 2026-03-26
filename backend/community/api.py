@@ -460,7 +460,39 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     )
 
 
-def _event_out(event: Event, requesting_user=None) -> EventOut:  # noqa: CCR001 — see violation fix plan
+def _can_see_phones(requesting_user, creator, co_host_ids: set[str]) -> bool:
+    """Check if requesting user can see guest phone numbers."""
+    if requesting_user is None:
+        return False
+    if creator is not None and requesting_user.pk == creator.pk:
+        return True
+    return str(requesting_user.pk) in co_host_ids
+
+
+def _build_guest_list(rsvps, can_see_phones: bool) -> list[RSVPGuestOut]:
+    """Build guest list with optional phone visibility."""
+    return [
+        RSVPGuestOut(
+            user_id=str(r.user_id),
+            name=r.user.display_name or r.user.phone_number,
+            status=r.status,
+            phone=r.user.phone_number if can_see_phones else None,
+        )
+        for r in rsvps
+    ]
+
+
+def _find_my_rsvp(rsvps, user) -> str | None:
+    """Find requesting user's RSVP status."""
+    if user is None:
+        return None
+    for r in rsvps:
+        if r.user_id == user.pk:
+            return r.status
+    return None
+
+
+def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
     creator_name = creator.display_name or creator.phone_number if creator else None
@@ -475,24 +507,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:  # noqa: CCR001 
         else []
     )
     co_host_ids = {str(u.id) for u in co_hosts}
-    can_see_phones = auth_user is not None and (
-        (creator is not None and auth_user.pk == creator.pk) or str(auth_user.pk) in co_host_ids
-    )
-    guests = [
-        RSVPGuestOut(
-            user_id=str(r.user_id),
-            name=r.user.display_name or r.user.phone_number,
-            status=r.status,
-            phone=r.user.phone_number if can_see_phones else None,
-        )
-        for r in rsvps
-    ]
-    my_rsvp = None
-    if auth_user is not None:
-        for r in rsvps:
-            if r.user_id == auth_user.pk:
-                my_rsvp = r.status
-                break
+    phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
     return EventOut(
         id=str(event.id),
         title=event.title,
@@ -508,8 +523,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:  # noqa: CCR001 
         created_by_name=creator_name,
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[u.display_name or u.phone_number for u in co_hosts],
-        guests=guests if auth_user is not None else [],
-        my_rsvp=my_rsvp,
+        guests=_build_guest_list(rsvps, phones_visible) if auth_user is not None else [],
+        my_rsvp=_find_my_rsvp(rsvps, auth_user),
     )
 
 
@@ -579,7 +594,7 @@ def create_event(request, payload: EventIn):
 @router.patch(
     "/events/{event_id}/", response={200: EventOut, 403: ErrorOut, 404: ErrorOut}, auth=JWTAuth()
 )
-def update_event(request, event_id: UUID, payload: EventPatchIn):  # noqa: C901, CCR001 — see violation fix plan
+def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
         event = Event.objects.get(id=event_id)
     except Event.DoesNotExist:
@@ -590,28 +605,14 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):  # noqa: C901,
     if not is_manager and not is_creator:
         return Status(403, ErrorOut(detail="Permission denied."))
 
-    if payload.title is not None:
-        event.title = payload.title
-    if payload.description is not None:
-        event.description = payload.description
-    if payload.start_datetime is not None:
-        event.start_datetime = payload.start_datetime
-    if payload.end_datetime is not None:
-        event.end_datetime = payload.end_datetime
-    if payload.location is not None:
-        event.location = payload.location
-    if payload.whatsapp_link is not None:
-        event.whatsapp_link = payload.whatsapp_link
-    if payload.partiful_link is not None:
-        event.partiful_link = payload.partiful_link
-    if payload.other_link is not None:
-        event.other_link = payload.other_link
-    if payload.rsvp_enabled is not None:
-        event.rsvp_enabled = payload.rsvp_enabled
-    if payload.co_host_ids is not None:
+    updates = payload.model_dump(exclude_unset=True)
+    co_host_ids = updates.pop("co_host_ids", None)
+    for field, value in updates.items():
+        setattr(event, field, value)
+    if co_host_ids is not None:
         from users.models import User as UserModel
 
-        co_hosts = UserModel.objects.filter(pk__in=payload.co_host_ids)
+        co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
         event.co_hosts.set(co_hosts)
 
     event.save()
