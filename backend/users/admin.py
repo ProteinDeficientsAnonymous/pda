@@ -39,7 +39,7 @@ class RoleAdmin(admin.ModelAdmin):
     def permission_count(self, obj):
         return len(obj.permissions)
 
-    permission_count.short_description = "Permissions"
+    setattr(permission_count, "short_description", "Permissions")
 
     def has_delete_permission(self, request, obj=None):
         if obj and obj.name in PROTECTED_ROLE_NAMES:

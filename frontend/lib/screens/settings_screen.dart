@@ -24,7 +24,7 @@ class SettingsScreen extends ConsumerWidget {
                   backgroundColor:
                       Theme.of(context).colorScheme.primaryContainer,
                   child: Text(
-                    _initials(user?.firstName, user?.lastName, user?.email),
+                    _initials(user?.displayName, user?.email),
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -63,11 +63,9 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.person_outline,
             label: 'Name',
             value:
-                '${user?.firstName ?? ''} ${user?.lastName ?? ''}'
-                        .trim()
-                        .isEmpty
+                (user?.displayName ?? '').trim().isEmpty
                     ? 'Not set'
-                    : '${user?.firstName ?? ''} ${user?.lastName ?? ''}'.trim(),
+                    : user!.displayName,
             onTap: () => _showComingSoon(context),
           ),
           _SettingsTile(
@@ -94,10 +92,11 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  String _initials(String? first, String? last, String? email) {
-    if (first != null && first.isNotEmpty) {
-      final f = first[0].toUpperCase();
-      final l = (last != null && last.isNotEmpty) ? last[0].toUpperCase() : '';
+  String _initials(String? displayName, String? email) {
+    if (displayName != null && displayName.isNotEmpty) {
+      final parts = displayName.trim().split(RegExp(r'\s+'));
+      final f = parts.first[0].toUpperCase();
+      final l = parts.length > 1 ? parts.last[0].toUpperCase() : '';
       return '$f$l';
     }
     if (email != null && email.isNotEmpty) return email[0].toUpperCase();

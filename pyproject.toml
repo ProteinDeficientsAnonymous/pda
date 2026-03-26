@@ -19,6 +19,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "django-stubs[compatible-mypy]>=6.0.1",
     "pytest>=8.4",
     "pytest-django>=4.11",
     "ruff",
@@ -41,8 +42,8 @@ filterwarnings = [
 ]
 
 [tool.ty.rules]
-# Django uses metaprogramming for Model.objects, Model.DoesNotExist, etc.
-# ty (beta) can't resolve these yet — ignore until ty ships Django support.
+# django-stubs resolves most Django metaclass issues (Model.objects, DoesNotExist, etc.).
+# Remaining warnings are from ninja_jwt (no stubs) — suppressed with inline # type: ignore.
 unresolved-attribute = "warn"
 invalid-argument-type = "warn"
 

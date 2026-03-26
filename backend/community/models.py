@@ -1,6 +1,10 @@
 import uuid
+from typing import TYPE_CHECKING
 
 from django.db import models
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
 
 
 class JoinRequestStatus(models.TextChoices):
@@ -42,6 +46,9 @@ class Event(models.Model):
     partiful_link = models.URLField(blank=True)
     rsvp_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    if TYPE_CHECKING:
+        created_by_id: uuid.UUID | None
+        rsvps: "Manager[EventRSVP]"
     created_by = models.ForeignKey(
         "users.User",
         null=True,
@@ -69,6 +76,8 @@ class RSVPStatus(models.TextChoices):
 
 
 class EventRSVP(models.Model):
+    if TYPE_CHECKING:
+        user_id: uuid.UUID
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvps")
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="event_rsvps")
     status = models.CharField(max_length=20, choices=RSVPStatus.choices)

@@ -24,7 +24,7 @@ def admin_headers(admin_user):
     from ninja_jwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(admin_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def manage_users_headers(manage_users_user):
     from ninja_jwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(manage_users_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 # ---------------------------------------------------------------------------
@@ -498,7 +498,7 @@ class TestJoinRequestManagement:
         from ninja_jwt.tokens import RefreshToken
 
         refresh = RefreshToken.for_user(vettor_user)
-        return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
     @pytest.fixture
     def sample_join_request(self, db):

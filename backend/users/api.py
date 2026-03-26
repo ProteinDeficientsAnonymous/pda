@@ -159,7 +159,7 @@ def login(request, payload: LoginIn):
     if user is None:
         return Status(401, ErrorOut(detail="Invalid credentials"))
     refresh = RefreshToken.for_user(user)
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))
+    return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)

@@ -28,7 +28,7 @@ def manage_events_headers(manage_events_user):
     from ninja_jwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(manage_events_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
