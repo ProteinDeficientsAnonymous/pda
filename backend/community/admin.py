@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from community.models import Event, JoinRequest
+from community.models import CommunityGuidelines, Event, JoinRequest
+
+
+@admin.register(CommunityGuidelines)
+class CommunityGuidelinesAdmin(admin.ModelAdmin):
+    readonly_fields = ("updated_at",)
+
+    def has_add_permission(self, request):
+        return not CommunityGuidelines.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(JoinRequest)

@@ -108,22 +108,18 @@ class _EventDetailContent extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _DetailRow(icon: Icons.calendar_today, text: dateFmt.format(start)),
-        const SizedBox(height: 8),
-        if (isSameDay)
+        if (isSameDay) ...[
+          _DetailRow(icon: Icons.calendar_today, text: dateFmt.format(start)),
+          const SizedBox(height: 8),
           _DetailRow(
             icon: Icons.schedule,
             text: '${timeFmt.format(start)} – ${timeFmt.format(end)}',
-          )
-        else ...[
-          _DetailRow(
-            icon: Icons.schedule,
-            text: '${dateFmt.format(start)} ${timeFmt.format(start)}',
           ),
-          const SizedBox(height: 4),
+        ] else ...[
           _DetailRow(
-            icon: Icons.schedule,
-            text: '${dateFmt.format(end)} ${timeFmt.format(end)}',
+            icon: Icons.calendar_today,
+            text:
+                '${dateFmt.format(start)}, ${timeFmt.format(start)} – ${dateFmt.format(end)}, ${timeFmt.format(end)}',
           ),
         ],
         if (liveEvent.location.isNotEmpty) ...[

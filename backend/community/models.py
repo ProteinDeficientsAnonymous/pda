@@ -70,6 +70,25 @@ class Event(models.Model):
         return f"{self.title} — {self.start_datetime:%Y-%m-%d %H:%M}"
 
 
+class CommunityGuidelines(models.Model):
+    """Singleton model — only one row ever exists (pk=1)."""
+
+    content = models.TextField(default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Community Guidelines"
+        verbose_name_plural = "Community Guidelines"
+
+    def __str__(self):
+        return "Community Guidelines"
+
+    @classmethod
+    def get(cls) -> "CommunityGuidelines":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class RSVPStatus(models.TextChoices):
     ATTENDING = "attending", "Attending"
     MAYBE = "maybe", "Maybe"

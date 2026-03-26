@@ -31,6 +31,7 @@ class AppScaffold extends ConsumerWidget {
 
     return [
       const _NavButton(label: 'Calendar', route: '/calendar'),
+      const _NavButton(label: 'Guidelines', route: '/guidelines'),
       const _NavButton(label: 'My events', route: '/events/mine'),
       if (user.hasPermission('manage_events'))
         const _NavButton(label: 'Manage events', route: '/events/manage'),
@@ -66,7 +67,6 @@ class _NavButton extends StatelessWidget {
                 foregroundColor: Theme.of(context).colorScheme.primary,
                 textStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
                 ),
               )
               : null,
@@ -105,6 +105,11 @@ class _NavDrawer extends ConsumerWidget {
         icon: Icons.calendar_month,
         label: 'Calendar',
         route: '/calendar',
+      ),
+      const _DrawerItem(
+        icon: Icons.menu_book_outlined,
+        label: 'Guidelines',
+        route: '/guidelines',
       ),
       const _DrawerItem(
         icon: Icons.event_note,

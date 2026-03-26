@@ -11,9 +11,25 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.permissions import PermissionKey
 
-from community.models import Event, EventRSVP, JoinRequest, JoinRequestStatus, RSVPStatus
+from community.models import (
+    CommunityGuidelines,
+    Event,
+    EventRSVP,
+    JoinRequest,
+    JoinRequestStatus,
+    RSVPStatus,
+)
 
 router = Router()
+
+
+class GuidelinesOut(BaseModel):
+    content: str
+    updated_at: datetime
+
+
+class GuidelinesPatchIn(BaseModel):
+    content: str
 
 
 class JoinRequestIn(BaseModel):
@@ -107,6 +123,22 @@ def _validate_phone(raw: str) -> str:
     if not phonenumbers.is_valid_number(parsed):
         raise ValueError(f"Invalid phone number: {raw}")
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+
+
+@router.get("/guidelines/", response={200: GuidelinesOut}, auth=JWTAuth())
+def get_guidelines(request):
+    g = CommunityGuidelines.get()
+    return Status(200, GuidelinesOut(content=g.content, updated_at=g.updated_at))
+
+
+@router.patch("/guidelines/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
+def update_guidelines(request, payload: GuidelinesPatchIn):
+    if not request.auth.has_permission(PermissionKey.MANAGE_GUIDELINES):
+        return Status(403, ErrorOut(detail="Permission denied."))
+    g = CommunityGuidelines.get()
+    g.content = payload.content
+    g.save()
+    return Status(200, GuidelinesOut(content=g.content, updated_at=g.updated_at))
 
 
 @router.post("/join-request/", response={201: JoinRequestOut, 400: ErrorOut}, auth=None)

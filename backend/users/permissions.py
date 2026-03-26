@@ -7,3 +7,4 @@ class PermissionKey(models.TextChoices):
     MANAGE_ROLES = "manage_roles", "Manage roles"
     APPROVE_JOIN_REQUESTS = "approve_join_requests", "Approve join requests"
     MANAGE_EVENTS = "manage_events", "Manage events"
+    MANAGE_GUIDELINES = "manage_guidelines", "Manage community guidelines"

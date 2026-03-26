@@ -10,6 +10,7 @@ import 'package:pda/screens/join_requests_screen.dart';
 import 'package:pda/screens/join_screen.dart';
 import 'package:pda/screens/join_success_screen.dart';
 import 'package:pda/screens/members_screen.dart';
+import 'package:pda/screens/guidelines_screen.dart';
 import 'package:pda/screens/settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -34,6 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final authRequiredRoutes = [
         '/calendar',
+        '/guidelines',
         '/members',
         '/join-requests',
         '/events/manage',
@@ -83,6 +85,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/events/manage',
         builder: (_, __) => const EventManagementScreen(),
+      ),
+      GoRoute(
+        path: '/guidelines',
+        builder: (_, __) => const GuidelinesScreen(),
       ),
       GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
     ],

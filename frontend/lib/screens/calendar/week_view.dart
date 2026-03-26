@@ -233,7 +233,7 @@ class _WeekGrid extends StatelessWidget {
     rowEvents.sort((a, b) => a.startDatetime.compareTo(b.startDatetime));
 
     final placements = <_SpanPlacement>[];
-    final occupied = List.filled(7, -1);
+    final occupied = List.generate(7, (_) => <int>{});
 
     for (final e in rowEvents) {
       final eStart = e.startDatetime.toLocal();
@@ -266,18 +266,15 @@ class _WeekGrid extends StatelessWidget {
 
       int slotRow = 0;
       while (true) {
-        bool fits = true;
-        for (var c = startCol; c <= endCol; c++) {
-          if (occupied[c] >= slotRow) {
-            fits = false;
-            break;
-          }
-        }
-        if (fits) break;
+        final blocked = List.generate(
+          endCol - startCol + 1,
+          (i) => occupied[startCol + i].contains(slotRow),
+        );
+        if (!blocked.any((b) => b)) break;
         slotRow++;
       }
       for (var c = startCol; c <= endCol; c++) {
-        occupied[c] = slotRow;
+        occupied[c].add(slotRow);
       }
 
       placements.add(
