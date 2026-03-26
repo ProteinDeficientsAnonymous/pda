@@ -8,12 +8,14 @@ class WeekView extends StatefulWidget {
   final List<Event> events;
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateChanged;
+  final ValueChanged<DateTime>? onDayTapped;
 
   const WeekView({
     super.key,
     required this.events,
     required this.selectedDate,
     required this.onDateChanged,
+    this.onDayTapped,
   });
 
   @override
@@ -53,6 +55,7 @@ class _WeekViewState extends State<WeekView> {
       initialDate: _weekStart,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
     );
     if (picked == null) return;
     setState(() => _weekStart = _mondayOf(picked));
@@ -140,6 +143,7 @@ class _WeekViewState extends State<WeekView> {
                       chipSpacing: _chipSpacing,
                       maxEventRows: _maxEventRows,
                       onEventTapped: (e) => showEventDetail(context, e),
+                      onDayTapped: widget.onDayTapped,
                     ),
                     if (!hasAnyEvents)
                       Center(
@@ -199,6 +203,7 @@ class _WeekGrid extends StatelessWidget {
   final double chipSpacing;
   final int maxEventRows;
   final ValueChanged<Event> onEventTapped;
+  final ValueChanged<DateTime>? onDayTapped;
 
   const _WeekGrid({
     required this.days,
@@ -209,6 +214,7 @@ class _WeekGrid extends StatelessWidget {
     required this.chipSpacing,
     required this.maxEventRows,
     required this.onEventTapped,
+    this.onDayTapped,
   });
 
   bool _dayContains(DateTime day, Event e) {
@@ -319,31 +325,38 @@ class _WeekGrid extends StatelessWidget {
                               ? theme.colorScheme.onPrimary
                               : theme.colorScheme.onSurface;
                       return Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                DateFormat('EEE').format(day),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: fgColor,
+                        child: InkWell(
+                          onTap:
+                              onDayTapped != null
+                                  ? () => onDayTapped!(day)
+                                  : null,
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  DateFormat('EEE').format(day),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: fgColor,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${day.day}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: fgColor,
+                                Text(
+                                  '${day.day}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: fgColor,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );

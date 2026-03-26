@@ -122,6 +122,7 @@ class _MonthViewState extends State<MonthView> {
       initialDate: _focusedMonth,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
     );
     if (picked == null) return;
     setState(() {
