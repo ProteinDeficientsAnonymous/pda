@@ -20,7 +20,7 @@ class AppScaffold extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title ?? 'Protein Deficients Anonymous'),
+        title: isWide ? null : Text(title ?? 'Protein Deficients Anonymous'),
         actions: isWide ? navItems : null,
       ),
       drawer: isWide ? null : _NavDrawer(items: navItems),
