@@ -65,134 +65,158 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
               child: Form(
                 key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Request to join PDA',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'We review all requests. You\'ll hear from us once a '
-                      'vetting member has reviewed your submission.',
-                      style: TextStyle(color: Colors.grey[700], fontSize: 15),
-                    ),
-                    const SizedBox(height: 32),
-                    TextFormField(
-                      controller: _displayNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Display name *',
-                        hintText: 'e.g. Alex R',
-                        helperText:
-                            'Letters and spaces only; at least first name + '
-                            'last initial',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: v.displayName(),
-                    ),
-                    const SizedBox(height: 16),
-                    IntlPhoneField(
-                      initialCountryCode: 'US',
-                      decoration: const InputDecoration(
-                        labelText: 'WhatsApp phone number *',
-                        border: OutlineInputBorder(),
-                        helperText:
-                            'Use the same phone number you use (or will use) '
-                            'in the PDA WhatsApp community.',
-                        helperMaxLines: 2,
-                      ),
-                      onChanged: (phone) {
-                        _phoneNumber = phone.completeNumber;
-                      },
-                      validator: (phone) {
-                        if (phone == null || phone.number.isEmpty) {
-                          return 'Required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email (optional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: v.optionalEmail(),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _pronounsController,
-                      decoration: const InputDecoration(
-                        labelText: 'Pronouns (optional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: v.maxLength(100),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _howController,
-                      decoration: const InputDecoration(
-                        labelText: 'How did you hear about us? (optional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: v.maxLength(500),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _whyController,
-                      decoration: const InputDecoration(
-                        labelText: 'Why do you want to join? *',
-                        border: OutlineInputBorder(),
-                        alignLabelWithHint: true,
-                      ),
-                      maxLines: 5,
-                      validator: v.all([
-                        v.required(),
-                        v.minLength(
-                          20,
-                          'Please tell us a bit more (min 20 characters)',
-                        ),
-                        v.maxLength(2000),
-                      ]),
-                    ),
-                    if (state.hasError) ...[
-                      const SizedBox(height: 16),
+                child: FocusTraversalGroup(
+                  policy: OrderedTraversalPolicy(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        state.error is ApiError
-                            ? (state.error! as ApiError).message
-                            : 'Something went wrong. Please try again.',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                        'Request to join PDA',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'We review all requests. You\'ll hear from us once a '
+                        'vetting member has reviewed your submission.',
+                        style: TextStyle(color: Colors.grey[700], fontSize: 15),
+                      ),
+                      const SizedBox(height: 32),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(1),
+                        child: TextFormField(
+                          controller: _displayNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Display name *',
+                            hintText: 'e.g. Alex R',
+                            helperText:
+                                'Letters and spaces only; at least first name + '
+                                'last initial',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: v.displayName(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(2),
+                        child: IntlPhoneField(
+                          initialCountryCode: 'US',
+                          decoration: const InputDecoration(
+                            labelText: 'WhatsApp phone number *',
+                            border: OutlineInputBorder(),
+                            helperText:
+                                'Use the same phone number you use (or will use) '
+                                'in the PDA WhatsApp community.',
+                            helperMaxLines: 2,
+                          ),
+                          onChanged: (phone) {
+                            _phoneNumber = phone.completeNumber;
+                          },
+                          validator: (phone) {
+                            if (phone == null || phone.number.isEmpty) {
+                              return 'Required';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(3),
+                        child: TextFormField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email (optional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: v.optionalEmail(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(4),
+                        child: TextFormField(
+                          controller: _pronounsController,
+                          decoration: const InputDecoration(
+                            labelText: 'Pronouns (optional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: v.maxLength(100),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(5),
+                        child: TextFormField(
+                          controller: _howController,
+                          decoration: const InputDecoration(
+                            labelText: 'How did you hear about us? (optional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: v.maxLength(500),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(6),
+                        child: TextFormField(
+                          controller: _whyController,
+                          decoration: const InputDecoration(
+                            labelText: 'Why do you want to join? *',
+                            border: OutlineInputBorder(),
+                            alignLabelWithHint: true,
+                          ),
+                          maxLines: 5,
+                          validator: v.all([
+                            v.required(),
+                            v.minLength(
+                              20,
+                              'Please tell us a bit more (min 20 characters)',
+                            ),
+                            v.maxLength(2000),
+                          ]),
+                        ),
+                      ),
+                      if (state.hasError) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          state.error is ApiError
+                              ? (state.error! as ApiError).message
+                              : 'Something went wrong. Please try again.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(7),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: isLoading ? null : _submit,
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child:
+                                isLoading
+                                    ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text(
+                                      'Submit request',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                          ),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: isLoading ? null : _submit,
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child:
-                            isLoading
-                                ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text(
-                                  'Submit request',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

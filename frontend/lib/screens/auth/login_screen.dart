@@ -54,99 +54,111 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Form(
               key: _formKey,
               child: AutofillGroup(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Member login',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'This area is for approved PDA members only.',
-                      style: TextStyle(color: Colors.grey[700]),
-                    ),
-                    const SizedBox(height: 32),
-                    IntlPhoneField(
-                      initialCountryCode: 'US',
-                      decoration: const InputDecoration(
-                        labelText: 'Phone number',
-                        border: OutlineInputBorder(),
+                child: FocusTraversalGroup(
+                  policy: OrderedTraversalPolicy(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Member login',
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
-                      onChanged: (phone) {
-                        _phoneNumber = phone.completeNumber;
-                      },
-                      validator: (phone) {
-                        if (phone == null || phone.number.isEmpty) {
-                          return 'Required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      autofillHints: const [AutofillHints.password],
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                      const SizedBox(height: 8),
+                      Text(
+                        'This area is for approved PDA members only.',
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                      const SizedBox(height: 32),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(1),
+                        child: IntlPhoneField(
+                          initialCountryCode: 'US',
+                          decoration: const InputDecoration(
+                            labelText: 'Phone number',
+                            border: OutlineInputBorder(),
                           ),
-                          tooltip:
-                              _obscurePassword
-                                  ? 'Show password'
-                                  : 'Hide password',
-                          onPressed:
-                              () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
+                          onChanged: (phone) {
+                            _phoneNumber = phone.completeNumber;
+                          },
+                          validator: (phone) {
+                            if (phone == null || phone.number.isEmpty) {
+                              return 'Required';
+                            }
+                            return null;
+                          },
                         ),
                       ),
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => isLoading ? null : _login(),
-                      validator:
-                          (v) => v == null || v.isEmpty ? 'Required' : null,
-                    ),
-                    if (state.hasError) ...[
                       const SizedBox(height: 16),
-                      Text(
-                        state.error is ApiError
-                            ? (state.error! as ApiError).message
-                            : 'Something went wrong. Please try again.',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(2),
+                        child: TextFormField(
+                          controller: _passwordController,
+                          autofillHints: const [AutofillHints.password],
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              tooltip:
+                                  _obscurePassword
+                                      ? 'Show password'
+                                      : 'Hide password',
+                              onPressed:
+                                  () => setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
+                            ),
+                          ),
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => isLoading ? null : _login(),
+                          validator:
+                              (v) => v == null || v.isEmpty ? 'Required' : null,
+                        ),
+                      ),
+                      if (state.hasError) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          state.error is ApiError
+                              ? (state.error! as ApiError).message
+                              : 'Something went wrong. Please try again.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      FocusTraversalOrder(
+                        order: const NumericFocusOrder(3),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: isLoading ? null : _login,
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child:
+                                isLoading
+                                    ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Text(
+                                      'Login',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                          ),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: isLoading ? null : _login,
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child:
-                            isLoading
-                                ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text(
-                                  'Login',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
