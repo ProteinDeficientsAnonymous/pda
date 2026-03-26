@@ -9,6 +9,7 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/home_provider.dart';
 import 'package:pda/utils/launcher.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+import 'package:pda/widgets/autosave_mixin.dart';
 
 const _defaultContent = '''
 # Protein Deficients Anonymous
@@ -292,7 +293,8 @@ class _EditableSection extends ConsumerStatefulWidget {
   ConsumerState<_EditableSection> createState() => _EditableSectionState();
 }
 
-class _EditableSectionState extends ConsumerState<_EditableSection> {
+class _EditableSectionState extends ConsumerState<_EditableSection>
+    with AutosaveMixin {
   bool _editing = false;
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
@@ -303,10 +305,14 @@ class _EditableSectionState extends ConsumerState<_EditableSection> {
     super.initState();
     _controller = TextEditingController(text: widget.content);
     _focusNode = FocusNode();
+    if (widget.canEdit) {
+      initAutosave(controller: _controller, onSave: widget.onSave);
+    }
   }
 
   @override
   void dispose() {
+    disposeAutosave();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -344,6 +350,10 @@ class _EditableSectionState extends ConsumerState<_EditableSection> {
             child: Row(
               children: [
                 const Spacer(),
+                if (_editing) ...[
+                  AutosaveIndicator(status: autosaveStatus),
+                  const SizedBox(width: 12),
+                ],
                 if (!_editing)
                   FilledButton.tonal(
                     onPressed: () => setState(() => _editing = true),
@@ -380,6 +390,7 @@ class _EditableSectionState extends ConsumerState<_EditableSection> {
               hideImage: true,
               hideCheckbox: true,
               hideHorizontalRule: true,
+              hideHeading: true,
               collapsable: false,
               backgroundColor:
                   Theme.of(context).colorScheme.surfaceContainerHighest,

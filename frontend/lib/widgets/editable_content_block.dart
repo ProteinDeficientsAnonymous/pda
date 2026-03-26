@@ -7,6 +7,7 @@ import 'package:markdown_toolbar/markdown_toolbar.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/editable_page_provider.dart';
+import 'autosave_mixin.dart';
 
 class EditableContentBlock extends ConsumerStatefulWidget {
   const EditableContentBlock({super.key, required this.slug});
@@ -18,11 +19,13 @@ class EditableContentBlock extends ConsumerStatefulWidget {
       _EditableContentBlockState();
 }
 
-class _EditableContentBlockState extends ConsumerState<EditableContentBlock> {
+class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
+    with AutosaveMixin {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   bool _editing = false;
   bool _saving = false;
+  bool _autosaveInitialized = false;
 
   @override
   void initState() {
@@ -31,8 +34,21 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock> {
     _focusNode = FocusNode();
   }
 
+  void _maybeInitAutosave(bool canEdit) {
+    if (_autosaveInitialized || !canEdit) return;
+    _autosaveInitialized = true;
+    initAutosave(
+      controller: _controller,
+      onSave:
+          (text) => ref
+              .read(editablePageProvider(widget.slug).notifier)
+              .saveContent(text),
+    );
+  }
+
   @override
   void dispose() {
+    disposeAutosave();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -84,6 +100,7 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
     final canEdit = user?.hasPermission('manage_guidelines') ?? false;
+    _maybeInitAutosave(canEdit);
     final pageAsync = ref.watch(editablePageProvider(widget.slug));
 
     return pageAsync.when(
@@ -109,6 +126,7 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock> {
                   onVisibilityChange: _changeVisibility,
                   editing: _editing,
                   saving: _saving,
+                  autosaveStatus: autosaveStatus,
                   onEdit: () {
                     _controller.text = page.content;
                     setState(() => _editing = true);
@@ -189,6 +207,7 @@ class _AdminToolbar extends StatelessWidget {
     required this.onVisibilityChange,
     required this.editing,
     required this.saving,
+    required this.autosaveStatus,
     required this.onEdit,
     required this.onSave,
     required this.onCancel,
@@ -198,6 +217,7 @@ class _AdminToolbar extends StatelessWidget {
   final void Function(String) onVisibilityChange;
   final bool editing;
   final bool saving;
+  final AutosaveStatus autosaveStatus;
   final VoidCallback onEdit;
   final VoidCallback onSave;
   final VoidCallback onCancel;
@@ -228,6 +248,10 @@ class _AdminToolbar extends StatelessWidget {
             },
           ),
           const Spacer(),
+          if (editing) ...[
+            AutosaveIndicator(status: autosaveStatus),
+            const SizedBox(width: 12),
+          ],
           if (!editing)
             FilledButton.tonal(onPressed: onEdit, child: const Text('Edit'))
           else ...[

@@ -7,6 +7,7 @@ import 'package:markdown_toolbar/markdown_toolbar.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/guidelines_provider.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+import 'package:pda/widgets/autosave_mixin.dart';
 
 class GuidelinesScreen extends ConsumerWidget {
   const GuidelinesScreen({super.key});
@@ -45,7 +46,8 @@ class _GuidelinesBody extends ConsumerStatefulWidget {
   ConsumerState<_GuidelinesBody> createState() => _GuidelinesBodyState();
 }
 
-class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody> {
+class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody>
+    with AutosaveMixin {
   bool _editing = false;
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
@@ -56,10 +58,19 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody> {
     super.initState();
     _controller = TextEditingController(text: widget.content);
     _focusNode = FocusNode();
+    if (widget.canEdit) {
+      initAutosave(
+        controller: _controller,
+        onSave:
+            (text) =>
+                ref.read(guidelinesNotifierProvider.notifier).saveContent(text),
+      );
+    }
   }
 
   @override
   void dispose() {
+    disposeAutosave();
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -116,6 +127,8 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody> {
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
+          if (_editing) AutosaveIndicator(status: autosaveStatus),
+          if (_editing) const SizedBox(width: 12),
           if (widget.canEdit && !_editing)
             FilledButton.tonal(
               onPressed: () => setState(() => _editing = true),
@@ -154,6 +167,7 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody> {
         hideImage: true,
         hideCheckbox: true,
         hideHorizontalRule: true,
+        hideHeading: true,
         collapsable: false,
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         iconColor: Theme.of(context).colorScheme.onSurface,

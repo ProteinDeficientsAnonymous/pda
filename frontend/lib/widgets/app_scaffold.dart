@@ -144,24 +144,130 @@ class _NavDrawer extends ConsumerWidget {
     final theme = Theme.of(context);
     final currentPath = GoRouterState.of(context).uri.path;
 
-    if (user == null) {
-      return Drawer(
-        semanticLabel: 'Navigation menu',
-        child: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(),
-              const Divider(),
+    final mainItems =
+        user == null
+            ? <_DrawerItem>[]
+            : <_DrawerItem>[
+              const _DrawerItem(
+                icon: Icons.eco_outlined,
+                label: 'PDA',
+                route: '/',
+              ),
+              const _DrawerItem(
+                icon: Icons.calendar_month_outlined,
+                label: 'Calendar',
+                route: '/calendar',
+              ),
+              const _DrawerItem(
+                icon: Icons.bookmark_outline,
+                label: 'My events',
+                route: '/events/mine',
+              ),
+              if (user!.hasPermission('manage_events'))
+                const _DrawerItem(
+                  icon: Icons.event_available_outlined,
+                  label: 'Manage events',
+                  route: '/events/manage',
+                ),
+              if (user!.hasPermission('manage_users'))
+                const _DrawerItem(
+                  icon: Icons.groups_outlined,
+                  label: 'Members',
+                  route: '/members',
+                ),
+              if (user!.hasPermission('approve_join_requests'))
+                const _DrawerItem(
+                  icon: Icons.person_search_outlined,
+                  label: 'Join requests',
+                  route: '/join-requests',
+                ),
+            ];
+
+    return Drawer(
+      semanticLabel: 'Navigation menu',
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Shared header
+            _DrawerHeader(theme: theme),
+            const Divider(),
+            // Main nav (empty for logged-out → Spacer fills the gap)
+            mainItems.isEmpty
+                ? const Spacer()
+                : Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children:
+                        mainItems
+                            .map(
+                              (item) => _DrawerNavTile(
+                                item: item,
+                                currentPath: currentPath,
+                                theme: theme,
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ),
+            // Shared bottom section
+            const Divider(),
+            _DrawerNavTile(
+              item: const _DrawerItem(
+                icon: Icons.volunteer_activism_outlined,
+                label: 'Donate',
+                route: '/donate',
+              ),
+              currentPath: currentPath,
+              theme: theme,
+            ),
+            if (user != null) ...[
+              _DrawerNavTile(
+                item: const _DrawerItem(
+                  icon: Icons.handshake_outlined,
+                  label: 'Volunteer',
+                  route: '/volunteer',
+                ),
+                currentPath: currentPath,
+                theme: theme,
+              ),
+              _DrawerNavTile(
+                item: const _DrawerItem(
+                  icon: Icons.auto_stories_outlined,
+                  label: 'Guidelines',
+                  route: '/guidelines',
+                ),
+                currentPath: currentPath,
+                theme: theme,
+              ),
+              _DrawerNavTile(
+                item: const _DrawerItem(
+                  icon: Icons.tune_outlined,
+                  label: 'Settings',
+                  route: '/settings',
+                ),
+                currentPath: currentPath,
+                theme: theme,
+              ),
               ListTile(
-                leading: const Icon(Icons.volunteer_activism_outlined),
-                title: const Text('Donate'),
-                selected: currentPath.startsWith('/donate'),
-                selectedTileColor: theme.colorScheme.primaryContainer,
-                onTap: () {
+                leading: Icon(
+                  Icons.logout_outlined,
+                  color: theme.colorScheme.error,
+                ),
+                title: Text(
+                  'Logout',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
+                onTap: () async {
                   Navigator.of(context).pop();
-                  context.go('/donate');
+                  await ref.read(authProvider.notifier).logout();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('Logged out')));
+                  }
                 },
               ),
+            ] else
               ListTile(
                 leading: const Icon(Icons.login_outlined),
                 title: const Text('Member login'),
@@ -170,153 +276,62 @@ class _NavDrawer extends ConsumerWidget {
                   context.go('/login');
                 },
               ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final mainItems = <_DrawerItem>[
-      const _DrawerItem(icon: Icons.eco_outlined, label: 'PDA', route: '/'),
-      const _DrawerItem(
-        icon: Icons.calendar_month_outlined,
-        label: 'Calendar',
-        route: '/calendar',
-      ),
-      const _DrawerItem(
-        icon: Icons.bookmark_outline,
-        label: 'My events',
-        route: '/events/mine',
-      ),
-      if (user!.hasPermission('manage_events'))
-        const _DrawerItem(
-          icon: Icons.event_available_outlined,
-          label: 'Manage events',
-          route: '/events/manage',
-        ),
-      if (user!.hasPermission('manage_users'))
-        const _DrawerItem(
-          icon: Icons.groups_outlined,
-          label: 'Members',
-          route: '/members',
-        ),
-      if (user!.hasPermission('approve_join_requests'))
-        const _DrawerItem(
-          icon: Icons.person_search_outlined,
-          label: 'Join requests',
-          route: '/join-requests',
-        ),
-    ];
-
-    return Drawer(
-      semanticLabel: 'Navigation menu',
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Compact header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'PDA',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-            const Divider(),
-            // Main nav
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children:
-                    mainItems
-                        .map(
-                          (item) => ListTile(
-                            leading: Icon(item.icon),
-                            title: Text(item.label),
-                            selected:
-                                item.route == '/'
-                                    ? currentPath == '/'
-                                    : currentPath.startsWith(item.route),
-                            selectedTileColor:
-                                theme.colorScheme.primaryContainer,
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              context.go(item.route);
-                            },
-                          ),
-                        )
-                        .toList(),
-              ),
-            ),
-            // Bottom actions
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.volunteer_activism_outlined),
-              title: const Text('Donate'),
-              selected: currentPath.startsWith('/donate'),
-              selectedTileColor: theme.colorScheme.primaryContainer,
-              onTap: () {
-                Navigator.of(context).pop();
-                context.go('/donate');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.handshake_outlined),
-              title: const Text('Volunteer'),
-              selected: currentPath.startsWith('/volunteer'),
-              selectedTileColor: theme.colorScheme.primaryContainer,
-              onTap: () {
-                Navigator.of(context).pop();
-                context.go('/volunteer');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.auto_stories_outlined),
-              title: const Text('Guidelines'),
-              selected: currentPath.startsWith('/guidelines'),
-              selectedTileColor: theme.colorScheme.primaryContainer,
-              onTap: () {
-                Navigator.of(context).pop();
-                context.go('/guidelines');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.tune_outlined),
-              title: const Text('Settings'),
-              selected: currentPath.startsWith('/settings'),
-              selectedTileColor: theme.colorScheme.primaryContainer,
-              onTap: () {
-                Navigator.of(context).pop();
-                context.go('/settings');
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.logout_outlined,
-                color: theme.colorScheme.error,
-              ),
-              title: Text(
-                'Logout',
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-              onTap: () async {
-                Navigator.of(context).pop();
-                await ref.read(authProvider.notifier).logout();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Logged out')));
-                }
-              },
-            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DrawerHeader extends StatelessWidget {
+  const _DrawerHeader({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'PDA',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerNavTile extends StatelessWidget {
+  const _DrawerNavTile({
+    required this.item,
+    required this.currentPath,
+    required this.theme,
+  });
+
+  final _DrawerItem item;
+  final String currentPath;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected =
+        item.route == '/'
+            ? currentPath == '/'
+            : currentPath.startsWith(item.route);
+    return ListTile(
+      leading: Icon(item.icon),
+      title: Text(item.label),
+      selected: isSelected,
+      selectedTileColor: theme.colorScheme.primaryContainer,
+      onTap: () {
+        Navigator.of(context).pop();
+        context.go(item.route);
+      },
     );
   }
 }
