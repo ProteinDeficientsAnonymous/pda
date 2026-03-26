@@ -10,6 +10,7 @@ import 'package:pda/screens/join_requests_screen.dart';
 import 'package:pda/screens/join_screen.dart';
 import 'package:pda/screens/join_success_screen.dart';
 import 'package:pda/screens/members_screen.dart';
+import 'package:pda/screens/settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Use ref.listen (not ref.watch) so auth state changes trigger redirect
@@ -37,6 +38,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/join-requests',
         '/events/manage',
         '/events/mine',
+        '/settings',
       ];
       final isProtected = authRequiredRoutes.contains(state.matchedLocation);
 
@@ -82,6 +84,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/events/manage',
         builder: (_, __) => const EventManagementScreen(),
       ),
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
     ],
   );
 });

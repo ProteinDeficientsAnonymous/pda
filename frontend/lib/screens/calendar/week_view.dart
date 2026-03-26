@@ -167,9 +167,6 @@ class _WeekViewState extends State<WeekView> {
             ],
           ),
         ),
-        const Divider(height: 1),
-        _DayHeaderRow(days: days, isToday: _isToday),
-        const Divider(height: 1),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8),
@@ -183,7 +180,13 @@ class _WeekViewState extends State<WeekView> {
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: _buildBody(context, days),
+                child: Column(
+                  children: [
+                    _DayHeaderRow(days: days, isToday: _isToday),
+                    Divider(height: 1, color: Theme.of(context).dividerColor),
+                    Expanded(child: _buildBody(context, days)),
+                  ],
+                ),
               ),
             ),
           ),
