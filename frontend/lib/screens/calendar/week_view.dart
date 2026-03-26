@@ -173,7 +173,19 @@ class _WeekViewState extends State<WeekView> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8),
-            child: _buildBody(context, days),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 0.5,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: _buildBody(context, days),
+              ),
+            ),
           ),
         ),
       ],
