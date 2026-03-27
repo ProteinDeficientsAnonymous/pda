@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:pda/widgets/phone_form_field.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/user_management_provider.dart';
@@ -1060,22 +1060,7 @@ class _AddMemberDialogState extends State<_AddMemberDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IntlPhoneField(
-                  initialCountryCode: 'US',
-                  decoration: const InputDecoration(
-                    labelText: 'Phone number *',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (phone) {
-                    _phoneNumber = phone.completeNumber;
-                  },
-                  validator: (phone) {
-                    if (phone == null || phone.number.isEmpty) {
-                      return 'Required';
-                    }
-                    return null;
-                  },
-                ),
+                PhoneFormField(onChanged: (number) => _phoneNumber = number),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _displayNameCtrl,

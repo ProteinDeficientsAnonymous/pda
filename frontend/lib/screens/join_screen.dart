@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:pda/providers/join_request_provider.dart';
+import 'package:pda/widgets/phone_form_field.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/app_scaffold.dart';
@@ -99,25 +99,12 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                       const SizedBox(height: 16),
                       FocusTraversalOrder(
                         order: const NumericFocusOrder(2),
-                        child: IntlPhoneField(
-                          initialCountryCode: 'US',
-                          decoration: const InputDecoration(
-                            labelText: 'Phone number *',
-                            border: OutlineInputBorder(),
-                            helperText:
-                                'Use the phone number you use (or will use) '
-                                'to connect with the PDA community.',
-                            helperMaxLines: 2,
-                          ),
-                          onChanged: (phone) {
-                            _phoneNumber = phone.completeNumber;
-                          },
-                          validator: (phone) {
-                            if (phone == null || phone.number.isEmpty) {
-                              return 'Required';
-                            }
-                            return null;
-                          },
+                        child: PhoneFormField(
+                          labelText: 'Phone number *',
+                          helperText:
+                              'Use the phone number you use (or will use) '
+                              'to connect with the PDA community.',
+                          onChanged: (number) => _phoneNumber = number,
                         ),
                       ),
                       const SizedBox(height: 16),
