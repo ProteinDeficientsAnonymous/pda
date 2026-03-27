@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
-import 'package:pda/utils/launcher.dart';
+import 'package:pda/utils/share.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
@@ -611,14 +611,20 @@ class _LinkRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String url;
+  final String? subject;
 
-  const _LinkRow({required this.icon, required this.label, required this.url});
+  const _LinkRow({
+    required this.icon,
+    required this.label,
+    required this.url,
+    this.subject,
+  });
 
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.primary;
     return InkWell(
-      onTap: () => openUrl(url),
+      onTap: () => shareUrl(url, subject: subject),
       borderRadius: BorderRadius.circular(4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,6 +782,7 @@ class _MemberSection extends ConsumerWidget {
               icon: Icons.chat_bubble_outline,
               label: 'WhatsApp group',
               url: event.whatsappLink,
+              subject: event.title,
             ),
             const SizedBox(height: 8),
           ],
@@ -784,6 +791,7 @@ class _MemberSection extends ConsumerWidget {
               icon: Icons.celebration,
               label: 'Partiful',
               url: event.partifulLink,
+              subject: event.title,
             ),
             const SizedBox(height: 8),
           ],
@@ -792,6 +800,7 @@ class _MemberSection extends ConsumerWidget {
               icon: Icons.link_outlined,
               label: event.otherLink,
               url: event.otherLink,
+              subject: event.title,
             ),
             const SizedBox(height: 8),
           ],
@@ -1058,6 +1067,7 @@ class EventFormDialog extends ConsumerStatefulWidget {
 
 class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
   late final TextEditingController _title;
   late final TextEditingController _description;
   late final TextEditingController _location;
@@ -1111,6 +1121,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _title.dispose();
     _description.dispose();
     _location.dispose();
@@ -1377,6 +1388,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
         selectedIds: _coHostIds,
         selectedNames: _coHostNames,
         onChanged: (ids) => setState(() => _coHostIds = ids),
+        scrollController: _scrollController,
       ),
     ];
   }
@@ -1397,6 +1409,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1527,11 +1540,13 @@ class _CoHostPicker extends ConsumerStatefulWidget {
   /// Map of id → displayName for already-selected co-hosts (populated from event).
   final Map<String, String> selectedNames;
   final ValueChanged<Set<String>> onChanged;
+  final ScrollController? scrollController;
 
   const _CoHostPicker({
     required this.selectedIds,
     required this.selectedNames,
     required this.onChanged,
+    this.scrollController,
   });
 
   @override
@@ -1582,6 +1597,19 @@ class _CoHostPickerState extends ConsumerState<_CoHostPicker> {
                 )
                 .toList();
       });
+      // Scroll to bottom so the results list is visible.
+      if (_results.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final sc = widget.scrollController;
+          if (sc != null && sc.hasClients) {
+            sc.animateTo(
+              sc.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
     } catch (_) {
       setState(() => _results = []);
     } finally {
