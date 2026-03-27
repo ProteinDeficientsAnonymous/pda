@@ -655,6 +655,26 @@ class TestJoinRequestManagement:
         assert data["status"] == "approved"
         assert data["id"] == str(sample_join_request.id)
 
+    def test_approve_join_request_creates_user(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        from users.models import User
+
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["temporary_password"] is not None
+        assert len(data["temporary_password"]) == 16
+        user = User.objects.get(phone_number=sample_join_request.phone_number)
+        assert user.display_name == "Sprout Seedling"
+        assert user.needs_onboarding is True
+        assert user.roles.filter(name="member").exists()
+
     def test_reject_join_request_success(self, api_client, vettor_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",

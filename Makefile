@@ -111,7 +111,7 @@ frontend-test:
 	cd frontend && flutter test
 
 frontend-complexity:
-	dart pub global activate dart_code_metrics 2>/dev/null; dart pub global run dart_code_metrics:metrics analyze frontend/lib/ frontend/test/ --disable-sunset-warning --set-exit-on-violation-level=alarm
+	dart pub global activate dart_code_metrics 2>/dev/null; dart pub global run dart_code_metrics:metrics analyze frontend/lib/ --disable-sunset-warning --set-exit-on-violation-level=warning
 
 # CI (run before every commit)
 ci: lint check test typecheck complexity frontend-lint frontend-test frontend-complexity

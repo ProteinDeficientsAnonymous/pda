@@ -407,9 +407,8 @@ def list_join_requests(request):
     auth=JWTAuth(),
 )
 def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
-    from users.api import _generate_temp_password, _validate_phone
+    from users.api import _create_user_with_role
     from users.models import User
-    from users.roles import Role
 
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
         return Status(403, ErrorOut(detail="Permission denied."))
@@ -432,21 +431,12 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     temp_password = None
     if payload.status == JoinRequestStatus.APPROVED:
         if not User.objects.filter(phone_number=join_request.phone_number).exists():
-            try:
-                validated_phone = _validate_phone(join_request.phone_number)
-            except ValueError:
-                validated_phone = join_request.phone_number
-            temp_password = _generate_temp_password()
-            user = User.objects.create_user(
-                phone_number=validated_phone,
-                password=temp_password,
-                display_name=join_request.display_name,
-                email=join_request.email,
-                needs_onboarding=True,
+            _, temp_password = _create_user_with_role(
+                join_request.phone_number,
+                join_request.display_name,
+                join_request.email,
+                None,
             )
-            member_role = Role.objects.filter(name="member", is_default=True).first()
-            if member_role:
-                user.roles.add(member_role)
 
     return Status(
         200,
@@ -492,19 +482,26 @@ def _find_my_rsvp(rsvps, user) -> str | None:
     return None
 
 
+def _authenticated_user(requesting_user) -> object | None:
+    """Return the user if authenticated, None if anonymous."""
+    if requesting_user is None or isinstance(requesting_user, AnonymousUser):
+        return None
+    return requesting_user
+
+
+def _members_only(value, default, is_authed: bool):
+    """Return value if user is authenticated, default otherwise."""
+    return value if is_authed else default
+
+
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
     creator_name = creator.display_name or creator.phone_number if creator else None
-    auth_user = (
-        requesting_user
-        if (requesting_user is not None and not isinstance(requesting_user, AnonymousUser))
-        else None
-    )
+    auth_user = _authenticated_user(requesting_user)
+    is_authed = auth_user is not None
     rsvps = (
-        list(event.rsvps.select_related("user").all())
-        if (event.rsvp_enabled and auth_user is not None)
-        else []
+        list(event.rsvps.select_related("user").all()) if (event.rsvp_enabled and is_authed) else []
     )
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
@@ -515,15 +512,15 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         start_datetime=event.start_datetime,
         end_datetime=event.end_datetime,
         location=event.location,
-        whatsapp_link=event.whatsapp_link if auth_user is not None else "",
-        partiful_link=event.partiful_link if auth_user is not None else "",
-        other_link=event.other_link if auth_user is not None else "",
-        rsvp_enabled=event.rsvp_enabled if auth_user is not None else False,
+        whatsapp_link=_members_only(event.whatsapp_link, "", is_authed),
+        partiful_link=_members_only(event.partiful_link, "", is_authed),
+        other_link=_members_only(event.other_link, "", is_authed),
+        rsvp_enabled=_members_only(event.rsvp_enabled, False, is_authed),
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=creator_name,
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[u.display_name or u.phone_number for u in co_hosts],
-        guests=_build_guest_list(rsvps, phones_visible) if auth_user is not None else [],
+        guests=_members_only(_build_guest_list(rsvps, phones_visible), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
     )
 

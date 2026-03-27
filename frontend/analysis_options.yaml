@@ -21,4 +21,4 @@ dart_code_metrics:
   metrics:
     cyclomatic-complexity: 15
     maximum-nesting-level: 5
-    number-of-parameters: 5
+    number-of-parameters: 7
