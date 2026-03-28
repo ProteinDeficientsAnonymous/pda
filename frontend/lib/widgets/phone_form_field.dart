@@ -52,6 +52,7 @@ class PhoneFormField extends StatelessWidget {
         helperMaxLines: 2,
       ),
       keyboardType: TextInputType.phone,
+      autofillHints: const [AutofillHints.telephoneNumber],
       inputFormatters: [_UsPhoneFormatter()],
       onChanged: (value) {
         final digits = value.replaceAll(RegExp(r'\D'), '');
