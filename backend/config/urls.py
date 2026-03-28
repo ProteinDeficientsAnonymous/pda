@@ -1,5 +1,4 @@
 from community.api import router as community_router
-from django.contrib import admin
 from django.urls import path, re_path
 from django.views.generic import TemplateView
 from ninja import NinjaAPI
@@ -10,7 +9,6 @@ api.add_router("/auth/", auth_router, tags=["auth"])
 api.add_router("/community/", community_router, tags=["community"])
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path("api/", api.urls),
     # Flutter SPA catch-all (MUST BE LAST)
     re_path(
