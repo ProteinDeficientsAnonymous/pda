@@ -34,8 +34,8 @@ class AuthNotifier extends AsyncNotifier<User?> {
 
   Future<void> login(String phoneNumber, String password) async {
     state = const AsyncLoading();
-    final api = ref.watch(apiClientProvider);
-    final storage = ref.watch(secureStorageProvider);
+    final api = ref.read(apiClientProvider);
+    final storage = ref.read(secureStorageProvider);
     try {
       final response = await api.post(
         '/api/auth/login/',
@@ -45,9 +45,17 @@ class AuthNotifier extends AsyncNotifier<User?> {
         access: response.data['access'] as String,
         refresh: response.data['refresh'] as String,
       );
-      final meResponse = await api.get('/api/auth/me/');
-      state = AsyncData(User.fromJson(meResponse.data as Map<String, dynamic>));
-      _log.info('Login successful');
+      try {
+        final meResponse = await api.get('/api/auth/me/');
+        state = AsyncData(
+          User.fromJson(meResponse.data as Map<String, dynamic>),
+        );
+        _log.info('Login successful');
+      } catch (e, st) {
+        await storage.clearTokens();
+        _log.warning('Login failed during /me/ fetch', e);
+        state = AsyncError(ApiError.from(e), st);
+      }
     } catch (e, st) {
       _log.warning('Login failed', e);
       state = AsyncError(ApiError.from(e), st);
@@ -55,7 +63,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
   }
 
   Future<void> updateProfile({String? displayName, String? email}) async {
-    final api = ref.watch(apiClientProvider);
+    final api = ref.read(apiClientProvider);
     final data = <String, dynamic>{};
     if (displayName != null) data['display_name'] = displayName;
     if (email != null) data['email'] = email;
@@ -67,7 +75,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final api = ref.watch(apiClientProvider);
+    final api = ref.read(apiClientProvider);
     await api.post(
       '/api/auth/change-password/',
       data: {'current_password': currentPassword, 'new_password': newPassword},
@@ -79,7 +87,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     String? email,
     required String newPassword,
   }) async {
-    final api = ref.watch(apiClientProvider);
+    final api = ref.read(apiClientProvider);
     final data = <String, dynamic>{
       'display_name': displayName,
       'new_password': newPassword,
@@ -93,7 +101,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
   }
 
   Future<void> logout() async {
-    final storage = ref.watch(secureStorageProvider);
+    final storage = ref.read(secureStorageProvider);
     await storage.clearTokens();
     state = const AsyncData(null);
     _log.info('User logged out');
