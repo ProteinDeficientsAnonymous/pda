@@ -49,6 +49,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (loc != targetRoute) return targetRoute;
       }
       if (user != null && !user.needsOnboarding) {
+        debugPrint('post-onboarding redirect: loc=$loc');
         if (loc == '/onboarding') return '/guidelines';
         if (loc == '/new-password') return '/calendar';
       }
