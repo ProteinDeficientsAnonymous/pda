@@ -26,24 +26,21 @@ Widget _buildApp(AuthNotifier authNotifier) {
 }
 
 void main() {
-  testWidgets(
-    'unauthenticated user can access /calendar',
-    (tester) async {
-      final notifier = _GuestAuthNotifier();
+  testWidgets('unauthenticated user can access /calendar', (tester) async {
+    final notifier = _GuestAuthNotifier();
 
-      await tester.pumpWidget(_buildApp(notifier));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(_buildApp(notifier));
+    await tester.pumpAndSettle();
 
-      final container = ProviderScope.containerOf(
-        tester.element(find.byType(Consumer)),
-      );
-      final goRouter = container.read(routerProvider);
-      goRouter.go('/calendar');
-      await tester.pumpAndSettle();
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(Consumer)),
+    );
+    final goRouter = container.read(routerProvider);
+    goRouter.go('/calendar');
+    await tester.pumpAndSettle();
 
-      expect(goRouter.routerDelegate.currentConfiguration.uri.path, '/calendar');
-    },
-  );
+    expect(goRouter.routerDelegate.currentConfiguration.uri.path, '/calendar');
+  });
 
   testWidgets('authenticated user can access /calendar', (tester) async {
     // Use a viewport < 720px wide (drawer nav) but wide enough for CalendarToolbar.
