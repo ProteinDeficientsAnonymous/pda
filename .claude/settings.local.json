@@ -9,5 +9,9 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:flutter-quill.gitbook.io)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "dart-flutter",
+    "github"
+  ]
 }

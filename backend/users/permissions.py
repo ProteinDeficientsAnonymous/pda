@@ -10,3 +10,5 @@ class PermissionKey(models.TextChoices):
     MANAGE_EVENTS = "manage_events", "Manage events"
     MANAGE_GUIDELINES = "manage_guidelines", "Manage community guidelines"
     MANAGE_WHATSAPP = "manage_whatsapp", "Manage WhatsApp configuration"
+    EDIT_FAQ = "edit_faq", "Edit FAQ"
+    EDIT_HOMEPAGE = "edit_homepage", "Edit homepage"

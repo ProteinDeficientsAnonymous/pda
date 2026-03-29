@@ -16,12 +16,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
   String _phoneNumber = '';
   bool _obscurePassword = true;
 
   @override
   void dispose() {
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -73,6 +75,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         order: const NumericFocusOrder(1),
                         child: PhoneFormField(
                           onChanged: (number) => _phoneNumber = number,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted:
+                              (_) => _passwordFocusNode.requestFocus(),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -80,6 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         order: const NumericFocusOrder(2),
                         child: TextFormField(
                           controller: _passwordController,
+                          focusNode: _passwordFocusNode,
                           autofillHints: const [AutofillHints.password],
                           decoration: InputDecoration(
                             labelText: 'Password',

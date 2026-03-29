@@ -15,6 +15,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _newPwCtrl = TextEditingController();
   final _confirmPwCtrl = TextEditingController();
+  final _confirmPwFocusNode = FocusNode();
   bool _saving = false;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
@@ -23,6 +24,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
   void dispose() {
     _newPwCtrl.dispose();
     _confirmPwCtrl.dispose();
+    _confirmPwFocusNode.dispose();
     super.dispose();
   }
 
@@ -92,6 +94,9 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                                     setState(() => _obscureNew = !_obscureNew),
                           ),
                         ),
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            _confirmPwFocusNode.requestFocus(),
                         validator:
                             (v) =>
                                 (v == null || v.length < 8)
@@ -101,6 +106,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _confirmPwCtrl,
+                        focusNode: _confirmPwFocusNode,
                         obscureText: _obscureConfirm,
                         decoration: InputDecoration(
                           labelText: 'Confirm new password',
@@ -121,6 +127,8 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                                 ),
                           ),
                         ),
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _saving ? null : _save(),
                         validator:
                             (v) =>
                                 v != _newPwCtrl.text

@@ -17,6 +17,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _emailCtrl = TextEditingController();
   final _newPwCtrl = TextEditingController();
   final _confirmPwCtrl = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _newPwFocusNode = FocusNode();
+  final _confirmPwFocusNode = FocusNode();
   bool _saving = false;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
@@ -27,6 +30,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _emailCtrl.dispose();
     _newPwCtrl.dispose();
     _confirmPwCtrl.dispose();
+    _emailFocusNode.dispose();
+    _newPwFocusNode.dispose();
+    _confirmPwFocusNode.dispose();
     super.dispose();
   }
 
@@ -88,6 +94,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           labelText: 'Display name',
                           border: OutlineInputBorder(),
                         ),
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            _emailFocusNode.requestFocus(),
                         validator:
                             (v) =>
                                 (v == null || v.trim().isEmpty)
@@ -97,15 +106,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _emailCtrl,
+                        focusNode: _emailFocusNode,
                         decoration: const InputDecoration(
                           labelText: 'Email (optional)',
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            _newPwFocusNode.requestFocus(),
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
                         controller: _newPwCtrl,
+                        focusNode: _newPwFocusNode,
                         obscureText: _obscureNew,
                         decoration: InputDecoration(
                           labelText: 'New password',
@@ -123,6 +137,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     setState(() => _obscureNew = !_obscureNew),
                           ),
                         ),
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            _confirmPwFocusNode.requestFocus(),
                         validator:
                             (v) =>
                                 (v == null || v.length < 8)
@@ -132,6 +149,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _confirmPwCtrl,
+                        focusNode: _confirmPwFocusNode,
                         obscureText: _obscureConfirm,
                         decoration: InputDecoration(
                           labelText: 'Confirm new password',
@@ -152,6 +170,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 ),
                           ),
                         ),
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _saving ? null : _save(),
                         validator:
                             (v) =>
                                 v != _newPwCtrl.text

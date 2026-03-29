@@ -4,12 +4,14 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-PDA (Protein Deficients Anonymous) is a vegan collective liberation community platform. The Django backend is API-only (Django Ninja) + admin panel. The Flutter web frontend (Riverpod + GoRouter + Dio) handles all UI.
+PDA (Protein Deficients Anonymous) is a vegan collective liberation community platform. The Django backend is API-only (Django Ninja). The Flutter web frontend (Riverpod + GoRouter + Dio) handles all UI.
 
 **Key design decisions:**
-- No user self-signup — accounts are created by admins via Django admin only
+- No user self-signup — accounts are created by admins via the members screen
 - Join requests are submitted publicly and routed to a vetting group via email
-- The community calendar is members-only (JWT auth required)
+- The community calendar is publicly accessible; member-only details (location, links, RSVP) are gated behind login
+- New users are redirected to `/onboarding` to set display name + password on first login
+- Password resets redirect to `/new-password` (password only, no display name)
 
 ## Development Commands
 
@@ -68,7 +70,7 @@ frontend/
 
 ### Key Models
 
-- **User** (`users/models.py`): `AbstractUser` with email as `USERNAME_FIELD`, UUID PK. Created by admins only.
+- **User** (`users/models.py`): `AbstractUser` with phone number as `USERNAME_FIELD`, UUID PK. Created by admins only via members screen.
 - **JoinRequest** (`community/models.py`): name, email, pronouns, how_they_heard, why_join, submitted_at
 - **Event** (`community/models.py`): title, description, start_datetime, end_datetime, location
 
@@ -90,7 +92,17 @@ frontend/
 | `/join` | No | Join request form |
 | `/join/success` | No | Success confirmation |
 | `/login` | No | Member login |
-| `/calendar` | Yes → redirect to `/login` | Community calendar |
+| `/calendar` | No (member details gated inline) | Community calendar |
+| `/events/:id` | No (member details gated inline) | Event detail |
+| `/onboarding` | JWT (first login) | Set display name + password |
+| `/new-password` | JWT (password reset) | Set new password |
+| `/guidelines` | Yes | Community guidelines |
+| `/settings` | Yes | Account settings |
+| `/events/mine` | Yes | My events |
+| `/events/manage` | Yes + manage_events | Manage events |
+| `/members` | Yes + manage_users | Members admin |
+| `/join-requests` | Yes + approve_join_requests | Join requests |
+| `/admin/whatsapp` | Yes + manage_whatsapp | WhatsApp config |
 
 ## Environment
 

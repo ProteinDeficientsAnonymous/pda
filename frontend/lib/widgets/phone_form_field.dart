@@ -33,12 +33,16 @@ class PhoneFormField extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final String? labelText;
   final String? helperText;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
 
   const PhoneFormField({
     super.key,
     required this.onChanged,
     this.labelText = 'Phone number',
     this.helperText,
+    this.textInputAction = TextInputAction.next,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -52,6 +56,8 @@ class PhoneFormField extends StatelessWidget {
         helperMaxLines: 2,
       ),
       keyboardType: TextInputType.phone,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onFieldSubmitted,
       autofillHints: const [AutofillHints.telephoneNumber],
       inputFormatters: [_UsPhoneFormatter()],
       onChanged: (value) {

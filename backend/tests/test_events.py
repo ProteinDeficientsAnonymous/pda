@@ -89,18 +89,18 @@ class TestEventManagement:
         assert response.status_code == 201
         assert response.json()["created_by_name"] == "Event Manager"
 
-    def test_create_event_requires_permission(self, api_client, db):
-        """Members without create_events or manage_events permission cannot create events."""
+    def test_create_event_any_member(self, api_client, db):
+        """Any authenticated member can create events."""
         from ninja_jwt.tokens import RefreshToken
         from users.models import User
 
-        no_perm_user = User.objects.create_user(
+        member = User.objects.create_user(
             phone_number="+12025550199",
-            password="nopermpass",
-            display_name="No Perm",
+            password="memberpass",
+            display_name="Regular Member",
         )
         headers = {
-            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(no_perm_user).access_token}"  # type: ignore
+            "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"  # type: ignore
         }
         response = api_client.post(
             "/api/community/events/",
@@ -112,7 +112,7 @@ class TestEventManagement:
             content_type="application/json",
             **headers,
         )
-        assert response.status_code == 403
+        assert response.status_code == 201
 
     def test_create_event_requires_auth(self, api_client):
         response = api_client.post(

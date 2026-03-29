@@ -22,6 +22,8 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
   final _formKey = GlobalKey<FormState>();
   final _displayNameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _displayNameFocus = FocusNode();
+  final _emailFocus = FocusNode();
   String _phoneNumber = '';
   String? _selectedRoleId;
 
@@ -29,6 +31,8 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
   void dispose() {
     _displayNameCtrl.dispose();
     _emailCtrl.dispose();
+    _displayNameFocus.dispose();
+    _emailFocus.dispose();
     super.dispose();
   }
 
@@ -44,11 +48,18 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                PhoneFormField(onChanged: (number) => _phoneNumber = number),
+                PhoneFormField(
+                  onChanged: (number) => _phoneNumber = number,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _displayNameFocus.requestFocus(),
+                ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _displayNameCtrl,
+                  focusNode: _displayNameFocus,
                   keyboardType: TextInputType.name,
+                  textInputAction: TextInputAction.next,
+                  onEditingComplete: () => _emailFocus.requestFocus(),
                   decoration: const InputDecoration(
                     labelText: 'Display name (optional)',
                     border: OutlineInputBorder(),
@@ -58,7 +69,9 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _emailCtrl,
+                  focusNode: _emailFocus,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
                     labelText: 'Email (optional)',
                     border: OutlineInputBorder(),

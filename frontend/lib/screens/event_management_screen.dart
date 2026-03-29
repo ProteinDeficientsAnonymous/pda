@@ -6,7 +6,9 @@ import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/screens/calendar/event_detail_panel.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+import 'package:pda/utils/snackbar.dart';
 
 class EventManagementScreen extends ConsumerWidget {
   final bool myEventsOnly;
@@ -58,9 +60,15 @@ class _EventManagementBody extends ConsumerWidget {
       builder: (_) => const EventFormDialog(),
     );
     if (result == null) return;
-    final api = ref.read(apiClientProvider);
-    await api.post('/api/community/events/', data: result);
-    ref.invalidate(eventsProvider);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.post('/api/community/events/', data: result);
+      ref.invalidate(eventsProvider);
+    } catch (e) {
+      if (context.mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    }
   }
 
   @override
@@ -163,9 +171,15 @@ class _EventManagementRow extends ConsumerWidget {
       builder: (_) => EventFormDialog(event: event),
     );
     if (result == null) return;
-    final api = ref.read(apiClientProvider);
-    await api.patch('/api/community/events/${event.id}/', data: result);
-    ref.invalidate(eventsProvider);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.patch('/api/community/events/${event.id}/', data: result);
+      ref.invalidate(eventsProvider);
+    } catch (e) {
+      if (context.mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
@@ -193,9 +207,15 @@ class _EventManagementRow extends ConsumerWidget {
 
     if (confirmed != true) return;
 
-    final api = ref.read(apiClientProvider);
-    await api.delete('/api/community/events/${event.id}/');
-    ref.invalidate(eventsProvider);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.delete('/api/community/events/${event.id}/');
+      ref.invalidate(eventsProvider);
+    } catch (e) {
+      if (context.mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    }
   }
 
   @override

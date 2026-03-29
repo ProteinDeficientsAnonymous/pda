@@ -17,7 +17,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).valueOrNull;
-    final canEdit = user?.hasPermission('manage_guidelines') ?? false;
+    final canEdit = user?.hasPermission('edit_homepage') ?? false;
     final isLoggedIn = user != null;
     final homeAsync = ref.watch(homePageNotifierProvider);
 

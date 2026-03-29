@@ -1,0 +1,46 @@
+name: Promote staging → main
+
+on:
+  workflow_dispatch: # manual trigger from GitHub UI
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if staging is ahead of main
+        id: check
+        run: |
+          git fetch origin main staging
+          AHEAD=$(git rev-list origin/main..origin/staging --count)
+          echo "ahead=$AHEAD" >> $GITHUB_OUTPUT
+          echo "Staging is $AHEAD commit(s) ahead of main"
+
+      - name: Open PR (if staging is ahead and no PR exists)
+        if: steps.check.outputs.ahead != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list --base main --head staging --json number --jq '.[0].number')
+          if [ -z "$EXISTING" ]; then
+            AHEAD=$(git rev-list origin/main..origin/staging --count)
+            gh pr create \
+              --base main \
+              --head staging \
+              --title "chore: promote staging → main" \
+              --body "Promotion of staging to main — ${AHEAD} commit(s) ahead. Review and merge when ready to deploy."
+            echo "PR created. Review it on GitHub, then merge to deploy."
+          else
+            echo "PR #$EXISTING already open — review and merge when ready."
+          fi
+
+      - name: Nothing to promote
+        if: steps.check.outputs.ahead == '0'
+        run: echo "staging is up to date with main — nothing to promote"
