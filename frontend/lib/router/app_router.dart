@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/screens/auth/login_screen.dart';
 import 'package:pda/screens/auth/onboarding_screen.dart';
+import 'package:pda/screens/auth/new_password_screen.dart';
 import 'package:pda/screens/calendar_screen.dart';
 import 'package:pda/screens/event_management_screen.dart';
 import 'package:pda/screens/home_screen.dart';
@@ -40,12 +41,16 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final loc = state.matchedLocation;
 
-      // First-time users must complete onboarding before accessing anything else.
-      if (user != null && user.needsOnboarding && loc != '/onboarding') {
-        return '/onboarding';
+      // Users with needs_onboarding are routed based on whether they're
+      // first-time (no display name yet) or just resetting their password.
+      if (user != null && user.needsOnboarding) {
+        final isPasswordReset = user.displayName.isNotEmpty;
+        final targetRoute = isPasswordReset ? '/new-password' : '/onboarding';
+        if (loc != targetRoute) return targetRoute;
       }
-      if (user != null && !user.needsOnboarding && loc == '/onboarding') {
-        return '/calendar';
+      if (user != null && !user.needsOnboarding) {
+        if (loc == '/onboarding') return '/guidelines';
+        if (loc == '/new-password') return '/calendar';
       }
 
       final isProtected =
@@ -106,6 +111,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         name: 'onboarding',
         builder: (_, __) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/new-password',
+        name: 'new-password',
+        builder: (_, __) => const NewPasswordScreen(),
       ),
       GoRoute(
         path: '/calendar',

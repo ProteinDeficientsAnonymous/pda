@@ -4,17 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
-class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key});
+class NewPasswordScreen extends ConsumerStatefulWidget {
+  const NewPasswordScreen({super.key});
 
   @override
-  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<NewPasswordScreen> createState() => _NewPasswordScreenState();
 }
 
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _displayNameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
   final _newPwCtrl = TextEditingController();
   final _confirmPwCtrl = TextEditingController();
   bool _saving = false;
@@ -23,8 +21,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   void dispose() {
-    _displayNameCtrl.dispose();
-    _emailCtrl.dispose();
     _newPwCtrl.dispose();
     _confirmPwCtrl.dispose();
     super.dispose();
@@ -36,13 +32,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       await ref
           .read(authProvider.notifier)
-          .completeOnboarding(
-            displayName: _displayNameCtrl.text.trim(),
-            email:
-                _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
-            newPassword: _newPwCtrl.text,
-          );
-      // Router redirect will navigate to /guidelines once needsOnboarding becomes false.
+          .completeOnboarding(newPassword: _newPwCtrl.text);
+      // Router redirect will navigate to /calendar once needsOnboarding becomes false.
     } on DioException catch (e) {
       if (!mounted) return;
       final detail =
@@ -74,37 +65,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Welcome! Set up your account',
+                        'Set a new password',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Choose a display name and a new password to get started.',
+                        'Your password was reset. Choose a new one to continue.',
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
-                      TextFormField(
-                        controller: _displayNameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Display name',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Display name is required'
-                                    : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _emailCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Email (optional)',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 20),
                       TextFormField(
                         controller: _newPwCtrl,
                         obscureText: _obscureNew,

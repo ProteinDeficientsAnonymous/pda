@@ -130,11 +130,9 @@ void main() {
       },
     );
 
-    testWidgets('is redirected to /login when visiting /calendar', (
-      tester,
-    ) async {
+    testWidgets('can access calendar page (/calendar)', (tester) async {
       final router = await navigate(tester, '/calendar');
-      expect(_currentPath(router), '/login');
+      expect(_currentPath(router), '/calendar');
     });
 
     testWidgets('is redirected to /login when visiting /guidelines', (
