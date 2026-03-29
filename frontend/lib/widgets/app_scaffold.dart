@@ -63,6 +63,7 @@ List<Widget> _buildWideNavItems(
     const _NavButton(label: 'Donate', route: '/donate'),
     const _NavButton(label: 'Volunteer', route: '/volunteer'),
     const _NavButton(label: 'Guidelines', route: '/guidelines'),
+    const _NavButton(label: 'FAQ', route: '/faq'),
     const _NavButton(label: 'Settings', route: '/settings'),
     TextButton(
       onPressed: () async {
@@ -221,6 +222,15 @@ class _NavDrawer extends ConsumerWidget {
                   icon: Icons.auto_stories_outlined,
                   label: 'Guidelines',
                   route: '/guidelines',
+                ),
+                currentPath: currentPath,
+                theme: theme,
+              ),
+              _DrawerNavTile(
+                item: const _DrawerItem(
+                  icon: Icons.quiz_outlined,
+                  label: 'FAQ',
+                  route: '/faq',
                 ),
                 currentPath: currentPath,
                 theme: theme,

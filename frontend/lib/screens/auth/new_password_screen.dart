@@ -95,8 +95,8 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                           ),
                         ),
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) =>
-                            _confirmPwFocusNode.requestFocus(),
+                        onFieldSubmitted:
+                            (_) => _confirmPwFocusNode.requestFocus(),
                         validator:
                             (v) =>
                                 (v == null || v.length < 8)

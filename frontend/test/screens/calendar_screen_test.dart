@@ -118,7 +118,7 @@ void main() {
     expect(find.text('Add event'), findsOneWidget);
   });
 
-  testWidgets('FAB hidden for guest', (tester) async {
+  testWidgets('FAB shown for guest', (tester) async {
     tester.view.physicalSize = _kTestSize;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -127,7 +127,8 @@ void main() {
     await tester.pumpWidget(_buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Add event'), findsNothing);
+    // FAB is always visible — tapping it opens the guest login dialog.
+    expect(find.text('Add event'), findsOneWidget);
   });
 }
 

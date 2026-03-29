@@ -149,12 +149,10 @@ class _DonateCtaState extends ConsumerState<_DonateCta> {
     setState(() => _saving = true);
     try {
       final raw = _controller.text.trim();
-      final url = raw.isNotEmpty && !raw.contains('://')
-          ? 'https://$raw'
-          : raw;
-      await ProviderScope.containerOf(context)
-          .read(homePageNotifierProvider.notifier)
-          .saveDonateUrl(url);
+      final url = raw.isNotEmpty && !raw.contains('://') ? 'https://$raw' : raw;
+      await ProviderScope.containerOf(
+        context,
+      ).read(homePageNotifierProvider.notifier).saveDonateUrl(url);
       if (mounted) setState(() => _editing = false);
     } catch (e) {
       if (!mounted) return;

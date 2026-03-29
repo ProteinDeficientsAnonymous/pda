@@ -12,6 +12,7 @@ import 'package:pda/screens/join_requests_screen.dart';
 import 'package:pda/screens/join_screen.dart';
 import 'package:pda/screens/join_success_screen.dart';
 import 'package:pda/screens/members_screen.dart';
+import 'package:pda/screens/faq_screen.dart';
 import 'package:pda/screens/guidelines_screen.dart';
 import 'package:pda/screens/event_detail_screen.dart';
 import 'package:pda/screens/donate_screen.dart';
@@ -54,6 +55,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       final isProtected =
+          loc == '/faq' ||
           loc == '/guidelines' ||
           loc == '/members' ||
           loc == '/join-requests' ||
@@ -147,6 +149,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'guidelines',
         builder: (_, __) => const GuidelinesScreen(),
       ),
+      GoRoute(path: '/faq', name: 'faq', builder: (_, __) => const FAQScreen()),
       GoRoute(
         path: '/settings',
         name: 'settings',

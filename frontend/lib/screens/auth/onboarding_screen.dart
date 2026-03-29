@@ -95,8 +95,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           border: OutlineInputBorder(),
                         ),
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) =>
-                            _emailFocusNode.requestFocus(),
+                        onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
                         validator:
                             (v) =>
                                 (v == null || v.trim().isEmpty)
@@ -113,8 +112,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) =>
-                            _newPwFocusNode.requestFocus(),
+                        onFieldSubmitted: (_) => _newPwFocusNode.requestFocus(),
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
@@ -138,8 +136,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                         ),
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted: (_) =>
-                            _confirmPwFocusNode.requestFocus(),
+                        onFieldSubmitted:
+                            (_) => _confirmPwFocusNode.requestFocus(),
                         validator:
                             (v) =>
                                 (v == null || v.length < 8)

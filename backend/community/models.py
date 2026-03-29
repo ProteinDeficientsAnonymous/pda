@@ -89,6 +89,25 @@ class CommunityGuidelines(models.Model):
         return obj
 
 
+class FAQ(models.Model):
+    """Singleton model — only one row ever exists (pk=1)."""
+
+    content = models.TextField(default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "FAQ"
+        verbose_name_plural = "FAQ"
+
+    def __str__(self):
+        return "FAQ"
+
+    @classmethod
+    def get(cls) -> "FAQ":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class HomePage(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 

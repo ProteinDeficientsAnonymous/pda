@@ -17,6 +17,7 @@ from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community.models import (
+    FAQ,
     CommunityGuidelines,
     EditablePage,
     Event,
@@ -207,6 +208,22 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
     return Status(200, GuidelinesOut(content=g.content, updated_at=g.updated_at))
 
 
+@router.get("/faq/", response={200: GuidelinesOut}, auth=JWTAuth())
+def get_faq(request):
+    f = FAQ.get()
+    return Status(200, GuidelinesOut(content=f.content, updated_at=f.updated_at))
+
+
+@router.patch("/faq/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
+def update_faq(request, payload: GuidelinesPatchIn):
+    if not request.auth.has_permission(PermissionKey.EDIT_FAQ):
+        return Status(403, ErrorOut(detail="Permission denied."))
+    f = FAQ.get()
+    f.content = payload.content
+    f.save()
+    return Status(200, GuidelinesOut(content=f.content, updated_at=f.updated_at))
+
+
 class HomePageOut(BaseModel):
     content: str
     join_content: str
@@ -236,7 +253,7 @@ def get_home(request):
 
 @router.patch("/home/", response={200: HomePageOut, 403: ErrorOut}, auth=JWTAuth())
 def update_home(request, payload: HomePagePatchIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_GUIDELINES):
+    if not request.auth.has_permission(PermissionKey.EDIT_HOMEPAGE):
         return Status(403, ErrorOut(detail="Permission denied."))
     h = HomePage.get()
     if payload.content is not None:

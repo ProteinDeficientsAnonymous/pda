@@ -105,7 +105,7 @@ void main() {
     expect(find.text('Donate'), findsNothing);
   });
 
-  testWidgets('shows Edit buttons for admin user with manage_guidelines', (
+  testWidgets('shows Edit buttons for user with edit_homepage permission', (
     tester,
   ) async {
     tester.view.physicalSize = _kTestSize;
@@ -113,7 +113,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(_buildSubject(authNotifier: _AdminAuthNotifier()));
+    await tester.pumpWidget(_buildSubject(authNotifier: _HomepageEditorAuthNotifier()));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit'), findsWidgets);
@@ -137,14 +137,14 @@ class _MemberAuthNotifier extends AuthNotifier {
   Future<void> logout() async {}
 }
 
-class _AdminAuthNotifier extends AuthNotifier {
+class _HomepageEditorAuthNotifier extends AuthNotifier {
   @override
   Future<User?> build() async => const User(
     id: 'u2',
     phoneNumber: '+12025559999',
-    displayName: 'Admin',
+    displayName: 'Homepage Editor',
     roles: [
-      Role(id: 'r1', name: 'admin', permissions: ['manage_guidelines']),
+      Role(id: 'r1', name: 'homepage_editor', permissions: ['edit_homepage']),
     ],
   );
 
