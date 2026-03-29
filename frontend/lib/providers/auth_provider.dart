@@ -41,12 +41,16 @@ class AuthNotifier extends AsyncNotifier<User?> {
         '/api/auth/login/',
         data: {'phone_number': phoneNumber, 'password': password},
       );
+      final accessToken = response.data['access'] as String;
       await storage.saveTokens(
-        access: response.data['access'] as String,
+        access: accessToken,
         refresh: response.data['refresh'] as String,
       );
       try {
-        final meResponse = await api.get('/api/auth/me/');
+        final meResponse = await api.get(
+          '/api/auth/me/',
+          accessToken: accessToken,
+        );
         state = AsyncData(
           User.fromJson(meResponse.data as Map<String, dynamic>),
         );

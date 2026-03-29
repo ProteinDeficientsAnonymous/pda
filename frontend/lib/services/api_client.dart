@@ -42,20 +42,33 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _storage.getAccessToken();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
+          try {
+            final token = await _storage.getAccessToken();
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+          } catch (e) {
+            _log.warning('Failed to read access token from storage', e);
           }
           return handler.next(options);
         },
         onError: (error, handler) async {
           if (error.response?.statusCode == 401) {
+            if (error.requestOptions.extra['_retried'] == true) {
+              return handler.next(error);
+            }
             final refreshed = await _tryRefresh();
             if (refreshed) {
-              final token = await _storage.getAccessToken();
-              error.requestOptions.headers['Authorization'] = 'Bearer $token';
-              final response = await _dio.fetch(error.requestOptions);
-              return handler.resolve(response);
+              try {
+                final token = await _storage.getAccessToken();
+                final opts = error.requestOptions;
+                opts.headers['Authorization'] = 'Bearer $token';
+                opts.extra['_retried'] = true;
+                final response = await _dio.fetch(opts);
+                return handler.resolve(response);
+              } catch (e) {
+                _log.warning('Failed to retry after token refresh', e);
+              }
             }
           }
           return handler.next(error);
@@ -86,8 +99,17 @@ class ApiClient {
     }
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) =>
-      _dio.get(path, queryParameters: queryParameters);
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    String? accessToken,
+  }) {
+    final options =
+        accessToken != null
+            ? Options(headers: {'Authorization': 'Bearer $accessToken'})
+            : null;
+    return _dio.get(path, queryParameters: queryParameters, options: options);
+  }
 
   Future<Response> post(String path, {dynamic data}) =>
       _dio.post(path, data: data);

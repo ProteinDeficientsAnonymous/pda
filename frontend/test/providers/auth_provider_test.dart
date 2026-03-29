@@ -65,7 +65,12 @@ void main() {
           data: {'access': 'access-tok', 'refresh': 'refresh-tok'},
         ),
       );
-      when(() => mockApi.get('/api/auth/me/')).thenAnswer(
+      when(
+        () => mockApi.get(
+          '/api/auth/me/',
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(path: '/api/auth/me/'),
           statusCode: 200,
@@ -88,6 +93,44 @@ void main() {
       final state = container.read(authProvider);
       expect(state.hasError, isFalse);
       expect(state.value?.displayName, 'Alice');
+    });
+
+    test('sets error state when login succeeds but /me fails', () async {
+      await container.read(authProvider.future);
+
+      when(
+        () => mockApi.post('/api/auth/login/', data: any(named: 'data')),
+      ).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: '/api/auth/login/'),
+          statusCode: 200,
+          data: {'access': 'access-tok', 'refresh': 'refresh-tok'},
+        ),
+      );
+      when(
+        () => mockApi.get(
+          '/api/auth/me/',
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '/api/auth/me/'),
+          type: DioExceptionType.badResponse,
+          response: Response(
+            requestOptions: RequestOptions(path: '/api/auth/me/'),
+            statusCode: 401,
+            data: {'detail': 'Unauthorized'},
+          ),
+        ),
+      );
+
+      await container
+          .read(authProvider.notifier)
+          .login('+12025551234', 'correctpass');
+
+      final state = container.read(authProvider);
+      expect(state.hasError, isTrue);
+      expect(state.error, isA<InvalidCredentials>());
     });
   });
 
