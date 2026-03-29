@@ -30,3 +30,13 @@ make dev  # runs Django :8000 + Flutter :3000
 ## Commands
 
 See [CLAUDE.md](./CLAUDE.md) for full command reference.
+
+## Contributing
+
+All changes go through `staging` before `main`.
+
+1. Branch off `staging`: `git checkout staging && git pull && git checkout -b your-feature`
+2. Open a pull request targeting `staging` (not `main`)
+3. Get at least one approval before merging
+
+Direct pushes to `staging` and `main` are not allowed for contributors.

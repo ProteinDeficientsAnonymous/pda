@@ -13,6 +13,7 @@ from ninja.responses import Status
 from ninja.security import HttpBearer
 from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication
 from pydantic import BaseModel, Field
+from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community.models import (
@@ -557,8 +558,6 @@ class CheckPhoneIn(BaseModel):
 
 @router.post("/check-phone/", response={200: CheckPhoneOut}, auth=None)
 def check_phone(request, payload: CheckPhoneIn):
-    from users.models import User as UserModel
-
     try:
         normalized = _validate_phone(payload.phone_number)
     except ValueError:
@@ -569,16 +568,11 @@ def check_phone(request, payload: CheckPhoneIn):
 
 @router.post("/events/", response={201: EventOut, 400: ErrorOut, 403: ErrorOut}, auth=JWTAuth())
 def create_event(request, payload: EventIn):
-    can_create = request.auth.has_permission(
-        PermissionKey.CREATE_EVENTS
-    ) or request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    if not can_create:
-        return Status(403, ErrorOut(detail="Permission denied."))
+    # Any authenticated member can create events.
+    # manage_events is still required for editing/deleting others' events.
 
     if payload.end_datetime is not None and payload.end_datetime <= payload.start_datetime:
         return Status(400, ErrorOut(detail="end_datetime must be after start_datetime."))
-
-    from users.models import User as UserModel
 
     event = Event.objects.create(
         title=payload.title,
@@ -623,8 +617,6 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     for field, value in updates.items():
         setattr(event, field, value)
     if co_host_ids is not None:
-        from users.models import User as UserModel
-
         co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
         event.co_hosts.set(co_hosts)
 
