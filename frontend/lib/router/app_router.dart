@@ -62,6 +62,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login?redirect=${state.matchedLocation}';
       }
 
+      if (isAuthenticated && loc == '/login') {
+        return '/calendar';
+      }
+
       if (isAuthenticated) {
         if (loc == '/members' && !user.hasPermission('manage_users')) {
           return '/calendar';
