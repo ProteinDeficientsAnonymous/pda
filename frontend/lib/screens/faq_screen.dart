@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/providers/auth_provider.dart';
-import 'package:pda/providers/guidelines_provider.dart';
+import 'package:pda/providers/faq_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
@@ -24,13 +24,11 @@ class FAQScreen extends ConsumerWidget {
         error:
             (e, _) => Center(
               child: Text(
-                'Failed to load guidelines.',
+                'Failed to load FAQ.',
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
-        data:
-            (guidelines) =>
-                _FAQBody(content: guidelines.content, canEdit: canEdit),
+        data: (faq) => _FAQBody(content: faq.content, canEdit: canEdit),
       ),
     );
   }
@@ -43,11 +41,10 @@ class _FAQBody extends ConsumerStatefulWidget {
   const _FAQBody({required this.content, required this.canEdit});
 
   @override
-  ConsumerState<_FAQBody> createState() => _GuidelinesBodyState();
+  ConsumerState<_FAQBody> createState() => _FAQBodyState();
 }
 
-class _GuidelinesBodyState extends ConsumerState<_FAQBody>
-    with AutosaveMixin {
+class _FAQBodyState extends ConsumerState<_FAQBody> with AutosaveMixin {
   bool _editing = false;
   late String _json;
   bool _saving = false;
@@ -59,8 +56,7 @@ class _GuidelinesBodyState extends ConsumerState<_FAQBody>
     if (widget.canEdit) {
       initAutosaveCallback(
         onSave:
-            (text) =>
-                ref.read(faqNotifierProvider.notifier).saveContent(text),
+            (text) => ref.read(faqNotifierProvider.notifier).saveContent(text),
       );
     }
   }
@@ -86,8 +82,7 @@ class _GuidelinesBodyState extends ConsumerState<_FAQBody>
 
   void _cancelEdit() {
     final saved =
-        ref.read(faqNotifierProvider).valueOrNull?.content ??
-        widget.content;
+        ref.read(faqNotifierProvider).valueOrNull?.content ?? widget.content;
     setState(() {
       _json = saved;
       _editing = false;
@@ -105,7 +100,7 @@ class _GuidelinesBodyState extends ConsumerState<_FAQBody>
             jsonContent: _json,
             editing: _editing,
             expands: true,
-            hintText: 'Write community guidelines…',
+            hintText: 'Write FAQ content…',
             onChanged:
                 widget.canEdit
                     ? (v) {
