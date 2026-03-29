@@ -75,6 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         order: const NumericFocusOrder(1),
                         child: PhoneFormField(
                           onChanged: (number) => _phoneNumber = number,
+                          textInputAction: TextInputAction.done,
                           onFieldSubmitted:
                               (_) => _passwordFocusNode.requestFocus(),
                         ),

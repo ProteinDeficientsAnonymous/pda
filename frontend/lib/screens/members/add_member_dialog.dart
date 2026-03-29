@@ -50,6 +50,7 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
               children: [
                 PhoneFormField(
                   onChanged: (number) => _phoneNumber = number,
+                  textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _displayNameFocus.requestFocus(),
                 ),
                 const SizedBox(height: 12),
