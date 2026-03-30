@@ -19,21 +19,21 @@ class JoinSuccessScreen extends StatelessWidget {
                 const Icon(Icons.check_circle, size: 72, color: Colors.green),
                 const SizedBox(height: 24),
                 Text(
-                  'Request received!',
+                  'request received! 🌱',
                   style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Thanks for reaching out. A member of our vetting group will review your request '
-                  'and get back to you via email.',
+                  'thanks for reaching out — a member of our vetting group will review your request '
+                  'and get back to you',
                   style: TextStyle(fontSize: 16, height: 1.6),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
                 TextButton(
                   onPressed: () => context.go('/'),
-                  child: const Text('Back to home'),
+                  child: const Text('back to home'),
                 ),
               ],
             ),

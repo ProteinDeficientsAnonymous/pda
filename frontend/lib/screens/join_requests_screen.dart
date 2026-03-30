@@ -62,7 +62,7 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
       context: context,
       builder:
           (_) => ApprovalCredentialsDialog(
-            title: '$displayName approved!',
+            title: '$displayName approved! 🎉',
             body: 'Share these login credentials with them:',
             tempPassword: tempPassword,
             phoneNumber: phoneNumber,
@@ -86,8 +86,11 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
             child: requestsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error:
-                  (e, _) =>
-                      Center(child: Text('Failed to load join requests: $e')),
+                  (e, _) => const Center(
+                    child: Text(
+                      'couldn\'t load join requests — try refreshing',
+                    ),
+                  ),
               data: (requests) {
                 final filtered = _applyFilter(requests);
                 if (filtered.isEmpty) {
@@ -95,7 +98,7 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(32),
                       child: Text(
-                        'No join requests found.',
+                        'no join requests yet',
                         style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                     ),
@@ -205,24 +208,12 @@ class _JoinRequestCard extends StatelessWidget {
               request.phoneNumber,
               style: const TextStyle(color: Colors.grey),
             ),
-            if (request.email.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(request.email, style: const TextStyle(color: Colors.grey)),
-            ],
-            if (request.pronouns.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(
-                request.pronouns,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ],
             const SizedBox(height: 12),
-            _InfoRow(label: 'Why they want to join', value: request.whyJoin),
-            const SizedBox(height: 6),
-            _InfoRow(
-              label: 'How they heard about us',
-              value: request.howTheyHeard,
-            ),
+            for (final answer in request.answers)
+              if (answer.answer.isNotEmpty) ...[
+                _InfoRow(label: answer.label, value: answer.answer),
+                const SizedBox(height: 6),
+              ],
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

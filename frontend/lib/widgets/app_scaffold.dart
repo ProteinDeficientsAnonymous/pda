@@ -44,37 +44,33 @@ List<Widget> _buildWideNavItems(
 ) {
   if (user == null) {
     return [
-      const _NavButton(label: 'Donate', route: '/donate'),
-      const _NavButton(label: 'Member login', route: '/login'),
+      const _NavButton(label: 'calendar', route: '/calendar'),
+      const _NavButton(label: 'faq', route: '/faq'),
+      const _NavButton(label: 'donate', route: '/donate'),
+      const _NavButton(label: 'log in', route: '/login'),
     ];
   }
 
   return [
-    const _NavButton(label: 'Calendar', route: '/calendar'),
-    const _NavButton(label: 'My events', route: '/events/mine'),
-    if (user.hasPermission('manage_events'))
-      const _NavButton(label: 'Manage events', route: '/events/manage'),
-    if (user.hasPermission('manage_users'))
-      const _NavButton(label: 'Members', route: '/members'),
-    if (user.hasPermission('approve_join_requests'))
-      const _NavButton(label: 'Join requests', route: '/join-requests'),
-    if (user.hasPermission('manage_whatsapp'))
-      const _NavButton(label: 'WhatsApp', route: '/admin/whatsapp'),
-    const _NavButton(label: 'Donate', route: '/donate'),
-    const _NavButton(label: 'Volunteer', route: '/volunteer'),
-    const _NavButton(label: 'Guidelines', route: '/guidelines'),
-    const _NavButton(label: 'FAQ', route: '/faq'),
-    const _NavButton(label: 'Settings', route: '/settings'),
+    const _NavButton(label: 'calendar', route: '/calendar'),
+    const _NavButton(label: 'my events', route: '/events/mine'),
+    const _NavButton(label: 'guidelines', route: '/guidelines'),
+    const _NavButton(label: 'faq', route: '/faq'),
+    const _NavButton(label: 'volunteer', route: '/volunteer'),
+    const _NavButton(label: 'donate', route: '/donate'),
+    if (user.hasAnyAdminPermission)
+      const _NavButton(label: 'admin', route: '/admin'),
+    const _NavButton(label: 'settings', route: '/settings'),
     TextButton(
       onPressed: () async {
         await ref.read(authProvider.notifier).logout();
         if (context.mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Logged out')));
+          ).showSnackBar(const SnackBar(content: Text('you\'re logged out')));
         }
       },
-      child: const Text('Logout'),
+      child: const Text('log out'),
     ),
   ];
 }
@@ -125,50 +121,20 @@ class _NavDrawer extends ConsumerWidget {
     final theme = Theme.of(context);
     final currentPath = GoRouterState.of(context).uri.path;
 
-    final mainItems =
-        user == null
-            ? <_DrawerItem>[]
-            : <_DrawerItem>[
-              const _DrawerItem(
-                icon: Icons.eco_outlined,
-                label: 'PDA',
-                route: '/',
-              ),
-              const _DrawerItem(
-                icon: Icons.calendar_month_outlined,
-                label: 'Calendar',
-                route: '/calendar',
-              ),
-              const _DrawerItem(
-                icon: Icons.bookmark_outline,
-                label: 'My events',
-                route: '/events/mine',
-              ),
-              if (user!.hasPermission('manage_events'))
-                const _DrawerItem(
-                  icon: Icons.event_available_outlined,
-                  label: 'Manage events',
-                  route: '/events/manage',
-                ),
-              if (user!.hasPermission('manage_users'))
-                const _DrawerItem(
-                  icon: Icons.groups_outlined,
-                  label: 'Members',
-                  route: '/members',
-                ),
-              if (user!.hasPermission('approve_join_requests'))
-                const _DrawerItem(
-                  icon: Icons.person_search_outlined,
-                  label: 'Join requests',
-                  route: '/join-requests',
-                ),
-              if (user!.hasPermission('manage_whatsapp'))
-                const _DrawerItem(
-                  icon: Icons.chat_outlined,
-                  label: 'WhatsApp',
-                  route: '/admin/whatsapp',
-                ),
-            ];
+    final mainItems = <_DrawerItem>[
+      const _DrawerItem(icon: Icons.eco_outlined, label: 'PDA', route: '/'),
+      const _DrawerItem(
+        icon: Icons.calendar_month_outlined,
+        label: 'calendar',
+        route: '/calendar',
+      ),
+      if (user != null)
+        const _DrawerItem(
+          icon: Icons.event_outlined,
+          label: 'my events',
+          route: '/events/mine',
+        ),
+    ];
 
     return Drawer(
       semanticLabel: 'Navigation menu',
@@ -178,31 +144,37 @@ class _NavDrawer extends ConsumerWidget {
             // Shared header
             _DrawerHeader(theme: theme),
             const Divider(),
-            // Main nav (empty for logged-out → Spacer fills the gap)
-            mainItems.isEmpty
-                ? const Spacer()
-                : Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children:
-                        mainItems
-                            .map(
-                              (item) => _DrawerNavTile(
-                                item: item,
-                                currentPath: currentPath,
-                                theme: theme,
-                              ),
-                            )
-                            .toList(),
-                  ),
-                ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children:
+                    mainItems
+                        .map(
+                          (item) => _DrawerNavTile(
+                            item: item,
+                            currentPath: currentPath,
+                            theme: theme,
+                          ),
+                        )
+                        .toList(),
+              ),
+            ),
             // Shared bottom section
             const Divider(),
             _DrawerNavTile(
               item: const _DrawerItem(
-                icon: Icons.volunteer_activism_outlined,
-                label: 'Donate',
-                route: '/donate',
+                icon: Icons.spa_outlined,
+                label: 'guidelines',
+                route: '/guidelines',
+              ),
+              currentPath: currentPath,
+              theme: theme,
+            ),
+            _DrawerNavTile(
+              item: const _DrawerItem(
+                icon: Icons.chat_bubble_outline,
+                label: 'faq',
+                route: '/faq',
               ),
               currentPath: currentPath,
               theme: theme,
@@ -210,8 +182,8 @@ class _NavDrawer extends ConsumerWidget {
             if (user != null) ...[
               _DrawerNavTile(
                 item: const _DrawerItem(
-                  icon: Icons.handshake_outlined,
-                  label: 'Volunteer',
+                  icon: Icons.favorite_outline,
+                  label: 'volunteer',
                   route: '/volunteer',
                 ),
                 currentPath: currentPath,
@@ -219,26 +191,27 @@ class _NavDrawer extends ConsumerWidget {
               ),
               _DrawerNavTile(
                 item: const _DrawerItem(
-                  icon: Icons.auto_stories_outlined,
-                  label: 'Guidelines',
-                  route: '/guidelines',
+                  icon: Icons.local_florist_outlined,
+                  label: 'donate',
+                  route: '/donate',
                 ),
                 currentPath: currentPath,
                 theme: theme,
               ),
-              _DrawerNavTile(
-                item: const _DrawerItem(
-                  icon: Icons.quiz_outlined,
-                  label: 'FAQ',
-                  route: '/faq',
+              if (user!.hasAnyAdminPermission)
+                _DrawerNavTile(
+                  item: const _DrawerItem(
+                    icon: Icons.dashboard_outlined,
+                    label: 'admin',
+                    route: '/admin',
+                  ),
+                  currentPath: currentPath,
+                  theme: theme,
                 ),
-                currentPath: currentPath,
-                theme: theme,
-              ),
               _DrawerNavTile(
                 item: const _DrawerItem(
                   icon: Icons.tune_outlined,
-                  label: 'Settings',
+                  label: 'settings',
                   route: '/settings',
                 ),
                 currentPath: currentPath,
@@ -250,23 +223,23 @@ class _NavDrawer extends ConsumerWidget {
                   color: theme.colorScheme.error,
                 ),
                 title: Text(
-                  'Logout',
+                  'log out',
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
                 onTap: () async {
                   Navigator.of(context).pop();
                   await ref.read(authProvider.notifier).logout();
                   if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Logged out')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('you\'re logged out')),
+                    );
                   }
                 },
               ),
             ] else
               ListTile(
                 leading: const Icon(Icons.login_outlined),
-                title: const Text('Member login'),
+                title: const Text('log in'),
                 onTap: () {
                   Navigator.of(context).pop();
                   context.go('/login');

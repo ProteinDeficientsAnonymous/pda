@@ -90,7 +90,7 @@ void main() {
 
       // Verify grey subtitle text contrast (was fixed from grey[600] to grey[700])
       expect(
-        find.text('This area is for approved PDA members only.'),
+        find.text('this area is for approved PDA members only'),
         findsOneWidget,
       );
 

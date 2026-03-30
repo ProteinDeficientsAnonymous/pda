@@ -45,9 +45,9 @@ void main() {
     await tester.pumpWidget(_buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Month'), findsOneWidget);
-    expect(find.text('Week'), findsOneWidget);
-    expect(find.text('Day'), findsOneWidget);
+    expect(find.text('month'), findsOneWidget);
+    expect(find.text('week'), findsOneWidget);
+    expect(find.text('day'), findsOneWidget);
   });
 
   testWidgets('renders Today button', (tester) async {
@@ -59,7 +59,8 @@ void main() {
     await tester.pumpWidget(_buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Today'), findsOneWidget);
+    // Toolbar has a visible 'today' button + an invisible spacer with same text
+    expect(find.text('today'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('shows loading indicator while events are loading', (
@@ -92,10 +93,10 @@ void main() {
     await tester.pumpWidget(_buildSubject());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Week'));
+    await tester.tap(find.text('week'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Week'), findsOneWidget);
+    expect(find.text('week'), findsOneWidget);
   });
 
   testWidgets('FAB shown for user with create_events permission', (
@@ -115,7 +116,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Add event'), findsOneWidget);
+    expect(find.text('add event'), findsOneWidget);
   });
 
   testWidgets('FAB shown for guest', (tester) async {
@@ -128,7 +129,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // FAB is always visible — tapping it opens the guest login dialog.
-    expect(find.text('Add event'), findsOneWidget);
+    expect(find.text('add event'), findsOneWidget);
   });
 }
 

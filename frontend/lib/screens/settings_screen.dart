@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/providers/calendar_provider.dart'
+    show calendarTokenProvider;
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/utils/validators.dart' as v;
@@ -18,82 +21,47 @@ class SettingsScreen extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          // Profile photo
-          Center(
-            child: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 48,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  child: Text(
-                    _initials(user?.displayName, user?.email),
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Tooltip(
-                    message: 'Coming soon',
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Theme.of(context).colorScheme.surface,
-                      child: Icon(
-                        Icons.add_a_photo_outlined,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _ProfileAvatar(initials: _initials(user?.displayName, user?.email)),
           const SizedBox(height: 32),
-          Text(
-            'Profile',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
+          const _SectionHeader(label: 'profile'),
           const SizedBox(height: 12),
           _SettingsTile(
-            icon: Icons.badge_outlined,
-            label: 'Name',
+            icon: Icons.face_outlined,
+            label: 'name',
             value:
                 (user?.displayName ?? '').trim().isEmpty
-                    ? 'Not set'
+                    ? 'not set'
                     : user!.displayName,
             onTap: () => _showEditNameDialog(context, ref, user?.displayName),
           ),
           _SettingsTile(
-            icon: Icons.smartphone_outlined,
-            label: 'Phone',
+            icon: Icons.phone_iphone_outlined,
+            label: 'phone',
             value: user?.phoneNumber ?? '',
           ),
           _SettingsTile(
-            icon: Icons.mail_outline,
-            label: 'Email',
-            value: (user?.email ?? '').trim().isEmpty ? 'Not set' : user!.email,
+            icon: Icons.alternate_email_outlined,
+            label: 'email',
+            value: (user?.email ?? '').trim().isEmpty ? 'not set' : user!.email,
             onTap: () => _showEditEmailDialog(context, ref, user?.email),
           ),
           const SizedBox(height: 24),
-          Text(
-            'Security',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
+          const _SectionHeader(label: 'security'),
           const SizedBox(height: 12),
           _SettingsTile(
-            icon: Icons.lock_outline,
-            label: 'Change password',
+            icon: Icons.key_outlined,
+            label: 'change password',
             onTap: () => _showChangePasswordDialog(context, ref),
+          ),
+          const SizedBox(height: 24),
+          const _SectionHeader(label: 'calendar'),
+          const SizedBox(height: 12),
+          _SettingsTile(
+            icon: Icons.event_outlined,
+            label: 'subscribe to PDA calendar',
+            value:
+                'get a personal link for Google Calendar, Apple Calendar, etc.',
+            onTap: () => _handleCalendarSubscribe(context, ref),
           ),
         ],
       ),
@@ -120,7 +88,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder:
           (_) => _EditFieldDialog(
-            title: 'Edit name',
+            title: 'edit name',
             label: 'Display name',
             initialValue: current ?? '',
             keyboardType: TextInputType.name,
@@ -131,7 +99,7 @@ class SettingsScreen extends ConsumerWidget {
     try {
       await ref.read(authProvider.notifier).updateProfile(displayName: result);
       if (context.mounted) {
-        showSnackBar(context, 'Name updated');
+        showSnackBar(context, 'name updated ✓');
       }
     } catch (e) {
       if (context.mounted) {
@@ -149,7 +117,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder:
           (_) => _EditFieldDialog(
-            title: 'Edit email',
+            title: 'edit email',
             label: 'Email address',
             initialValue: current ?? '',
             keyboardType: TextInputType.emailAddress,
@@ -160,7 +128,39 @@ class SettingsScreen extends ConsumerWidget {
     try {
       await ref.read(authProvider.notifier).updateProfile(email: result);
       if (context.mounted) {
-        showSnackBar(context, 'Email updated');
+        showSnackBar(context, 'email updated ✓');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    }
+  }
+
+  Future<void> _handleCalendarSubscribe(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final existingToken = await ref.read(calendarTokenProvider.future);
+      String feedUrl;
+      if (existingToken.isNotEmpty) {
+        final resp = await api.get('/api/community/calendar/token/');
+        final data = resp.data as Map<String, dynamic>;
+        feedUrl = data['feed_url'] as String;
+      } else {
+        final resp = await api.post('/api/community/calendar/token/');
+        final data = resp.data as Map<String, dynamic>;
+        feedUrl = data['feed_url'] as String;
+        ref.invalidate(calendarTokenProvider);
+      }
+      await Clipboard.setData(ClipboardData(text: feedUrl));
+      if (context.mounted) {
+        showSnackBar(
+          context,
+          'calendar feed URL copied! paste it into your calendar app to subscribe',
+        );
       }
     } catch (e) {
       if (context.mounted) {
@@ -176,6 +176,67 @@ class SettingsScreen extends ConsumerWidget {
     await showDialog<void>(
       context: context,
       builder: (_) => _ChangePasswordDialog(ref: ref),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  final String initials;
+
+  const _ProfileAvatar({required this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 48,
+            backgroundColor: cs.primaryContainer,
+            child: Text(
+              initials,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: cs.onPrimaryContainer,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Tooltip(
+              message: 'coming soon',
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: cs.surface,
+                child: Icon(
+                  Icons.add_a_photo_outlined,
+                  size: 16,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String label;
+
+  const _SectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        color: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 }
@@ -318,7 +379,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
           );
       if (mounted) {
         Navigator.of(context).pop();
-        showSnackBar(context, 'Password updated');
+        showSnackBar(context, 'password updated ✓');
       }
     } catch (e) {
       setState(() {
@@ -331,7 +392,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Change password'),
+      title: const Text('change password'),
       content: Form(
         key: _formKey,
         child: Column(

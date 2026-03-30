@@ -112,7 +112,7 @@ void main() {
     await tester.pumpWidget(_buildSubject(users: []));
     await tester.pumpAndSettle();
 
-    expect(find.text('No members found'), findsOneWidget);
+    expect(find.text('no members found'), findsOneWidget);
   });
 }
 

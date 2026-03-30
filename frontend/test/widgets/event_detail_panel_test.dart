@@ -38,6 +38,7 @@ Widget _buildSubject(Event event, {AuthNotifier? authNotifier}) {
   return ProviderScope(
     overrides: [
       eventsProvider.overrideWith((_) async => [event]),
+      eventDetailProvider.overrideWith((ref, id) async => event),
       authProvider.overrideWith(() => authNotifier ?? _GuestAuthNotifier()),
     ],
     child: MaterialApp.router(routerConfig: router),

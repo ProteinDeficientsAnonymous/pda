@@ -228,6 +228,10 @@ class TestApplicationEventLogging:
 
     @pytest.mark.django_db
     def test_join_request_submission_logs_at_info(self, caplog):
+        from community.models import JoinFormQuestion
+
+        q = JoinFormQuestion.objects.filter(required=True).first()
+        answers = {str(q.id): "I love veganism"} if q else {}
         client = Client()
         with caplog.at_level(logging.INFO, logger="pda.community"):
             client.post(
@@ -235,7 +239,7 @@ class TestApplicationEventLogging:
                 data={
                     "display_name": "Alice",
                     "phone_number": "+12025551234",
-                    "why_join": "I love veganism",
+                    "answers": answers,
                 },
                 content_type="application/json",
             )
@@ -265,8 +269,12 @@ class TestApplicationEventLogging:
 
     @pytest.mark.django_db
     def test_email_failure_logs_at_error(self, caplog, settings):
+        from community.models import JoinFormQuestion
+
         settings.VETTING_EMAIL = "test@example.com"
         settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+        q = JoinFormQuestion.objects.filter(required=True).first()
+        answers = {str(q.id): "Community"} if q else {}
         client = Client()
 
         def _fail_send_mail(*args, **kwargs):
@@ -282,7 +290,7 @@ class TestApplicationEventLogging:
                 data={
                     "display_name": "Bob",
                     "phone_number": "+13105551234",
-                    "why_join": "Community",
+                    "answers": answers,
                 },
                 content_type="application/json",
             )

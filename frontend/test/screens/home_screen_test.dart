@@ -64,7 +64,7 @@ void main() {
     await tester.pumpWidget(_buildSubject());
     await tester.pumpAndSettle();
 
-    expect(find.text('Request to join'), findsOneWidget);
+    expect(find.text('request to join'), findsOneWidget);
   });
 
   testWidgets('does not show join CTA for authenticated user', (tester) async {
@@ -76,7 +76,7 @@ void main() {
     await tester.pumpWidget(_buildSubject(authNotifier: _MemberAuthNotifier()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Request to join'), findsNothing);
+    expect(find.text('request to join'), findsNothing);
   });
 
   testWidgets('shows Donate button when donateUrl is set', (tester) async {
@@ -113,7 +113,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(_buildSubject(authNotifier: _HomepageEditorAuthNotifier()));
+    await tester.pumpWidget(
+      _buildSubject(authNotifier: _HomepageEditorAuthNotifier()),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Edit'), findsWidgets);

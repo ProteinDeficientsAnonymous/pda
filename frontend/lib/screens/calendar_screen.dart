@@ -68,9 +68,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ref.invalidate(eventsProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to create event: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('something went wrong creating that event'),
+          ),
+        );
       }
     }
   }
@@ -78,7 +80,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final eventsAsync = ref.watch(eventsProvider);
-    ref.watch(authProvider); // rebuild when auth changes (FAB tap checks auth)
+    // Rebuild when auth changes (FAB tap checks auth) and re-fetch events
+    // so authenticated users see member-only fields (location, links, RSVP).
+    ref.listen(authProvider, (_, __) => ref.invalidate(eventsProvider));
 
     return AppScaffold(
       child: Stack(
@@ -95,8 +99,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   loading:
                       () => const Center(child: CircularProgressIndicator()),
                   error:
-                      (e, _) =>
-                          Center(child: Text('Failed to load events: $e')),
+                      (e, _) => const Center(
+                        child: Text('couldn\'t load events — try refreshing'),
+                      ),
                   data: (events) => _buildView(events),
                 ),
               ),
@@ -108,7 +113,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             child: FloatingActionButton.extended(
               onPressed: _openCreateEvent,
               icon: const Icon(Icons.add_circle_outline),
-              label: const Text('Add event'),
+              label: const Text('add event'),
             ),
           ),
         ],
@@ -167,20 +172,20 @@ class _CalendarToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           SegmentedButton<_CalendarView>(
             segments: const [
-              ButtonSegment(value: _CalendarView.month, label: Text('Month')),
-              ButtonSegment(value: _CalendarView.week, label: Text('Week')),
-              ButtonSegment(value: _CalendarView.day, label: Text('Day')),
+              ButtonSegment(value: _CalendarView.month, label: Text('month')),
+              ButtonSegment(value: _CalendarView.week, label: Text('week')),
+              ButtonSegment(value: _CalendarView.day, label: Text('day')),
             ],
             selected: {selected},
             onSelectionChanged: (s) => onSelected(s.first),
           ),
-          const SizedBox(width: 12),
-          OutlinedButton(onPressed: onToday, child: const Text('Today')),
+          const SizedBox(height: 6),
+          OutlinedButton(onPressed: onToday, child: const Text('today')),
         ],
       ),
     );
@@ -285,7 +290,7 @@ class _GuestAddEventDialogState extends ConsumerState<_GuestAddEventDialog> {
     final isPhone = _step == _GuestStep.phone;
 
     return AlertDialog(
-      title: const Text('Add an event'),
+      title: const Text('add an event'),
       content: SizedBox(
         width: 360,
         child: Form(
@@ -296,8 +301,8 @@ class _GuestAddEventDialogState extends ConsumerState<_GuestAddEventDialog> {
             children: [
               Text(
                 isPhone
-                    ? 'You need to be logged in to add events. Enter your phone number and we\'ll get you sorted.'
-                    : 'Welcome back! Enter your password to log in.',
+                    ? 'you need to be logged in to add events — pop in your number and we\'ll sort you out'
+                    : 'welcome back! enter your password to get in',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -307,7 +312,7 @@ class _GuestAddEventDialogState extends ConsumerState<_GuestAddEventDialog> {
                 PhoneFormField(
                   onChanged: (v) => setState(() => _phoneNumber = v),
                   helperText:
-                      'Not a member yet? We\'ll send you to the join form.',
+                      'not a member yet? we\'ll send you to the join form',
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _loading ? null : _checkPhone(),
                 )
@@ -341,7 +346,7 @@ class _GuestAddEventDialogState extends ConsumerState<_GuestAddEventDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('cancel'),
         ),
         if (_step == _GuestStep.password)
           TextButton(
@@ -352,7 +357,7 @@ class _GuestAddEventDialogState extends ConsumerState<_GuestAddEventDialog> {
                       _step = _GuestStep.phone;
                       _error = null;
                     }),
-            child: const Text('Back'),
+            child: const Text('back'),
           ),
         FilledButton(
           onPressed: _loading ? null : (isPhone ? _checkPhone : _login),
@@ -363,7 +368,7 @@ class _GuestAddEventDialogState extends ConsumerState<_GuestAddEventDialog> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                  : Text(isPhone ? 'Continue' : 'Log in'),
+                  : Text(isPhone ? 'continue' : 'log in'),
         ),
       ],
     );

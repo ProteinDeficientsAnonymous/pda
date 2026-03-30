@@ -11,20 +11,13 @@ import 'package:pda/screens/faq_screen.dart';
 
 const _kTestSize = Size(700, 900);
 
-Widget _buildSubject({
-  FaqNotifier? faqNotifier,
-  AuthNotifier? authNotifier,
-}) {
+Widget _buildSubject({FaqNotifier? faqNotifier, AuthNotifier? authNotifier}) {
   final router = GoRouter(
-    routes: [
-      GoRoute(path: '/', builder: (_, __) => const FAQScreen()),
-    ],
+    routes: [GoRoute(path: '/', builder: (_, __) => const FAQScreen())],
   );
   return ProviderScope(
     overrides: [
-      faqNotifierProvider.overrideWith(
-        () => faqNotifier ?? _FakeFaqNotifier(),
-      ),
+      faqNotifierProvider.overrideWith(() => faqNotifier ?? _FakeFaqNotifier()),
       authProvider.overrideWith(() => authNotifier ?? _MemberAuthNotifier()),
     ],
     child: MaterialApp.router(routerConfig: router),
@@ -38,9 +31,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      _buildSubject(faqNotifier: _LoadingFaqNotifier()),
-    );
+    await tester.pumpWidget(_buildSubject(faqNotifier: _LoadingFaqNotifier()));
     await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);

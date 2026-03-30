@@ -13,14 +13,35 @@ class JoinRequestStatus(models.TextChoices):
     REJECTED = "rejected", "Rejected"
 
 
+class JoinFormQuestionType(models.TextChoices):
+    TEXT = "text", "Text"
+    SELECT = "select", "Select"
+
+
+class JoinFormQuestion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    label = models.CharField(max_length=300)
+    field_type = models.CharField(
+        max_length=10,
+        choices=JoinFormQuestionType.choices,
+        default=JoinFormQuestionType.TEXT,
+    )
+    options = models.JSONField(default=list, blank=True)
+    required = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["display_order"]
+
+    def __str__(self):
+        return self.label
+
+
 class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     display_name = models.CharField(max_length=64)
     phone_number = models.CharField(max_length=20)
-    email = models.EmailField(blank=True)
-    pronouns = models.CharField(max_length=100, blank=True)
-    how_they_heard = models.TextField(blank=True)
-    why_join = models.TextField()
+    custom_answers = models.JSONField(default=dict, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=20,

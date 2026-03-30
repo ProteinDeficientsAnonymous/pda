@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/utils/file_download.dart';
+import 'package:pda/utils/ics_generator.dart';
 import 'package:pda/utils/share.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/providers/event_provider.dart';
@@ -115,13 +117,10 @@ class EventDetailContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Always use the live event so RSVP state and edits are reflected immediately.
-    final liveEvent =
-        ref
-            .watch(eventsProvider)
-            .valueOrNull
-            ?.firstWhere((e) => e.id == event.id, orElse: () => event) ??
-        event;
+    // Fetch the full event detail (with links, RSVP, guests) from the detail
+    // endpoint. Falls back to the list-level event while loading.
+    final detailAsync = ref.watch(eventDetailProvider(event.id));
+    final liveEvent = detailAsync.valueOrNull ?? event;
 
     final dateFmt = DateFormat('EEEE, MMMM d, y');
     final timeFmt = DateFormat('h:mm a');
@@ -151,9 +150,18 @@ class EventDetailContent extends ConsumerWidget {
                   ),
                 ),
               ),
-              IconButton(
-                tooltip: 'Share event',
-                icon: const Icon(Icons.ios_share_outlined),
+              _ActionChip(
+                tooltip: 'add to calendar',
+                icon: Icons.event_outlined,
+                onPressed: () {
+                  final ics = generateEventIcs(liveEvent);
+                  downloadFile(ics, '${liveEvent.title}.ics', 'text/calendar');
+                },
+              ),
+              const SizedBox(width: 4),
+              _ActionChip(
+                tooltip: 'share event',
+                icon: Icons.ios_share_outlined,
                 onPressed: () {
                   final link =
                       Uri.base
@@ -162,15 +170,17 @@ class EventDetailContent extends ConsumerWidget {
                   shareUrl(link, subject: liveEvent.title);
                 },
               ),
-              if (!fullPage)
-                IconButton(
-                  tooltip: 'Open full page',
-                  icon: const Icon(Icons.open_in_new_outlined),
+              if (!fullPage) ...[
+                const SizedBox(width: 4),
+                _ActionChip(
+                  tooltip: 'open full page',
+                  icon: Icons.open_in_new_outlined,
                   onPressed: () {
                     Navigator.of(context).pop();
                     context.push('/events/${liveEvent.id}');
                   },
                 ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -226,6 +236,38 @@ class _DetailRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _ActionChip({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 18, color: cs.onSurfaceVariant),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -308,6 +350,7 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
       final api = ref.read(apiClientProvider);
       await api.delete('/api/community/events/${widget.event.id}/');
       ref.invalidate(eventsProvider);
+      ref.invalidate(eventDetailProvider(widget.event.id));
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -333,6 +376,7 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
         data: result,
       );
       ref.invalidate(eventsProvider);
+      ref.invalidate(eventDetailProvider(widget.event.id));
     } catch (e) {
       if (mounted) {
         showErrorSnackBar(context, 'Failed to update event: $e');

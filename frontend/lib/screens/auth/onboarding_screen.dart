@@ -51,7 +51,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // Router redirect will navigate to /guidelines once needsOnboarding becomes false.
     } on DioException catch (e) {
       if (!mounted) return;
-      final detail = (e.response?.data as Map?)?['detail'] ?? 'Failed to save.';
+      final detail =
+          (e.response?.data as Map?)?['detail'] ?? 'couldn\'t save — try again';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(detail.toString())));
@@ -79,12 +80,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Welcome! Set up your account',
+                        'welcome! let\'s get you set up 🎉',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Choose a display name and a new password to get started.',
+                        'choose a display name and a new password to get started',
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
@@ -188,7 +189,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                                : const Text('Save & continue'),
+                                : const Text('save & continue'),
                       ),
                     ],
                   ),

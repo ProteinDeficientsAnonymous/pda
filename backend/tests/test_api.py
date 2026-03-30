@@ -445,16 +445,20 @@ class TestRoleManagementAPI:
 
 @pytest.mark.django_db
 class TestJoinRequest:
-    def test_submit_join_request(self, api_client):
+    @pytest.fixture
+    def why_join_id(self, db):
+        from community.models import JoinFormQuestion
+
+        q = JoinFormQuestion.objects.filter(required=True).first()
+        return str(q.id) if q else ""
+
+    def test_submit_join_request(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Leafy G",
                 "phone_number": "+12025551234",
-                "email": "leafy@vegan.org",
-                "pronouns": "they/them",
-                "how_they_heard": "Word of mouth",
-                "why_join": "I want to connect with other vegans in collective liberation work.",
+                "answers": {why_join_id: "I want to connect with other vegans."},
             },
             content_type="application/json",
         )
@@ -462,52 +466,59 @@ class TestJoinRequest:
         data = response.json()
         assert data["display_name"] == "Leafy G"
         assert data["phone_number"] == "+12025551234"
+        assert len(data["answers"]) >= 1
 
-    def test_submit_join_request_missing_fields(self, api_client):
+    def test_submit_join_request_missing_required_answer(self, api_client):
         response = api_client.post(
             "/api/community/join-request/",
-            {"display_name": "Leafy", "phone_number": "+12025551234"},
+            {
+                "display_name": "Leafy G",
+                "phone_number": "+12025551234",
+                "answers": {},
+            },
             content_type="application/json",
         )
-        assert response.status_code == 422
+        assert response.status_code == 400
 
-    def test_submit_join_request_invalid_display_name(self, api_client):
+    def test_submit_join_request_invalid_display_name(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Leafy123",
                 "phone_number": "+12025551234",
-                "why_join": "Liberation.",
+                "answers": {why_join_id: "Liberation."},
             },
             content_type="application/json",
         )
         assert response.status_code == 400
 
-    def test_submit_join_request_invalid_phone(self, api_client):
+    def test_submit_join_request_invalid_phone(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Leafy G",
                 "phone_number": "not-a-number",
-                "why_join": "Liberation.",
+                "answers": {why_join_id: "Liberation."},
             },
             content_type="application/json",
         )
         assert response.status_code == 400
 
-    def test_submit_join_request_email_optional(self, api_client):
+    def test_submit_join_request_optional_answers(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Leafy G",
                 "phone_number": "+13105551234",
-                "why_join": "Liberation.",
+                "answers": {why_join_id: "Liberation."},
             },
             content_type="application/json",
         )
         assert response.status_code == 201
 
-    def test_join_request_sends_email_when_vetting_email_set(self, api_client, settings):
+    def test_join_request_sends_email_when_vetting_email_set(
+        self, api_client, settings, why_join_id
+    ):
         settings.VETTING_EMAIL = "vetting@pda.org"
         from django.core import mail
 
@@ -516,7 +527,7 @@ class TestJoinRequest:
             {
                 "display_name": "Test Person",
                 "phone_number": "+14155551234",
-                "why_join": "Because liberation.",
+                "answers": {why_join_id: "Because liberation."},
             },
             content_type="application/json",
         )
@@ -524,7 +535,9 @@ class TestJoinRequest:
         assert "Test Person" in mail.outbox[0].subject
         assert mail.outbox[0].to == ["vetting@pda.org"]
 
-    def test_join_request_no_email_when_vetting_email_unset(self, api_client, settings):
+    def test_join_request_no_email_when_vetting_email_unset(
+        self, api_client, settings, why_join_id
+    ):
         settings.VETTING_EMAIL = ""
         from django.core import mail
 
@@ -533,7 +546,7 @@ class TestJoinRequest:
             {
                 "display_name": "Test Person",
                 "phone_number": "+14155551234",
-                "why_join": "Because liberation.",
+                "answers": {why_join_id: "Because liberation."},
             },
             content_type="application/json",
         )
@@ -612,12 +625,16 @@ class TestJoinRequestManagement:
 
     @pytest.fixture
     def sample_join_request(self, db):
-        from community.models import JoinRequest
+        from community.models import JoinFormQuestion, JoinRequest
 
+        q = JoinFormQuestion.objects.filter(required=True).first()
+        answers = {}
+        if q:
+            answers[str(q.id)] = {"label": q.label, "answer": "I believe in collective liberation."}
         return JoinRequest.objects.create(
             display_name="Sprout Seedling",
             phone_number="+16505551234",
-            why_join="I believe in collective liberation.",
+            custom_answers=answers,
         )
 
     def test_list_join_requests_requires_permission(self, api_client, auth_headers):
@@ -739,12 +756,16 @@ class TestJoinRequestManagement:
         assert response.status_code == 404
 
     def test_submit_join_request_default_status_is_pending(self, api_client):
+        from community.models import JoinFormQuestion
+
+        q = JoinFormQuestion.objects.filter(required=True).first()
+        answers = {str(q.id): "Collective liberation matters."} if q else {}
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "New Sprout",
                 "phone_number": "+19175551234",
-                "why_join": "Collective liberation matters.",
+                "answers": answers,
             },
             content_type="application/json",
         )

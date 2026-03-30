@@ -9,10 +9,7 @@ class JoinRequestNotifier extends AsyncNotifier<void> {
   Future<void> submit({
     required String displayName,
     required String phoneNumber,
-    String email = '',
-    required String pronouns,
-    required String howTheyHeard,
-    required String whyJoin,
+    required Map<String, String> answers,
   }) async {
     state = const AsyncLoading();
     final api = ref.read(apiClientProvider);
@@ -22,10 +19,7 @@ class JoinRequestNotifier extends AsyncNotifier<void> {
         data: {
           'display_name': displayName,
           'phone_number': phoneNumber,
-          'email': email,
-          'pronouns': pronouns,
-          'how_they_heard': howTheyHeard,
-          'why_join': whyJoin,
+          'answers': answers,
         },
       );
       state = const AsyncData(null);

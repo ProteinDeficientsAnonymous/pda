@@ -25,9 +25,10 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
         data: {'status': status},
       );
       ref.invalidate(eventsProvider);
+      ref.invalidate(eventDetailProvider(widget.event.id));
     } catch (e) {
       if (mounted) {
-        showErrorSnackBar(context, 'Failed to update RSVP: $e');
+        showErrorSnackBar(context, 'couldn\'t update your rsvp — try again');
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -40,6 +41,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
       final api = ref.read(apiClientProvider);
       await api.delete('/api/community/events/${widget.event.id}/rsvp/');
       ref.invalidate(eventsProvider);
+      ref.invalidate(eventDetailProvider(widget.event.id));
     } catch (_) {
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -50,13 +52,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final liveEvent =
-        ref
-            .watch(eventsProvider)
-            .valueOrNull
-            ?.firstWhere(
-              (e) => e.id == widget.event.id,
-              orElse: () => widget.event,
-            ) ??
+        ref.watch(eventDetailProvider(widget.event.id)).valueOrNull ??
         widget.event;
     final myRsvp = liveEvent.myRsvp;
     final guests = liveEvent.guests;
@@ -68,7 +64,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('RSVP', style: theme.textTheme.titleSmall),
+        Text('rsvp', style: theme.textTheme.titleSmall),
         const SizedBox(height: 10),
         if (_loading)
           const SizedBox(
@@ -79,7 +75,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
           Row(
             children: [
               RsvpButton(
-                label: 'Attending',
+                label: "i'm going",
                 icon: Icons.sentiment_very_satisfied_outlined,
                 activeColor: theme.colorScheme.primary,
                 isActive: myRsvp == 'attending',
@@ -91,7 +87,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
               ),
               const SizedBox(width: 8),
               RsvpButton(
-                label: 'Maybe',
+                label: 'maybe',
                 icon: Icons.sentiment_neutral_outlined,
                 activeColor: theme.colorScheme.tertiary,
                 isActive: myRsvp == 'maybe',
@@ -100,7 +96,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
               ),
               const SizedBox(width: 8),
               RsvpButton(
-                label: "Can't go",
+                label: "can't make it",
                 icon: Icons.sentiment_dissatisfied_outlined,
                 activeColor: theme.colorScheme.error,
                 isActive: myRsvp == 'cant_go',
@@ -115,17 +111,17 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
         if (guests.isNotEmpty) ...[
           const SizedBox(height: 16),
           _GuestGroup(
-            label: 'Attending (${attending.length})',
+            label: 'going (${attending.length})',
             guests: attending,
             color: theme.colorScheme.primary,
           ),
           _GuestGroup(
-            label: 'Maybe (${maybe.length})',
+            label: 'maybe (${maybe.length})',
             guests: maybe,
             color: theme.colorScheme.tertiary,
           ),
           _GuestGroup(
-            label: "Can't go (${cantGo.length})",
+            label: "can't make it (${cantGo.length})",
             guests: cantGo,
             color: theme.colorScheme.error,
           ),

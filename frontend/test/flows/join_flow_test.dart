@@ -2,11 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pda/models/join_form_question.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/providers/join_form_provider.dart';
 import 'package:pda/providers/join_request_provider.dart';
 import 'package:pda/screens/join_screen.dart';
 import 'package:pda/screens/join_success_screen.dart';
+
+const _testQuestions = [
+  JoinFormQuestion(
+    id: 'q1',
+    label: 'Why do you want to join?',
+    fieldType: 'text',
+    required: true,
+    displayOrder: 0,
+  ),
+];
 
 Widget _buildApp() {
   final router = GoRouter(
@@ -23,6 +35,7 @@ Widget _buildApp() {
   return ProviderScope(
     overrides: [
       joinRequestProvider.overrideWith(() => _InstantSuccessJoinNotifier()),
+      joinFormProvider.overrideWith((ref) async => _testQuestions),
       authProvider.overrideWith(() => _GuestAuthNotifier()),
     ],
     child: MaterialApp.router(routerConfig: router),
@@ -33,21 +46,18 @@ void main() {
   testWidgets('filling form and submitting navigates to /join/success', (
     tester,
   ) async {
-    // Tall viewport so the submit button is reachable.
     tester.view.physicalSize = const Size(700, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(_buildApp());
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    // Fill required fields
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Display name *'),
       'Alex R',
     );
-    // Phone field (second TextFormField)
     final phoneField = find.byType(TextFormField).at(1);
     await tester.enterText(phoneField, '2025551234');
     await tester.pump();
@@ -56,10 +66,9 @@ void main() {
       'I really love animals and want to be part of this community.',
     );
 
-    await tester.tap(find.text('Submit request'));
+    await tester.tap(find.text('submit request'));
     await tester.pumpAndSettle();
 
-    // Should now be on success screen
     expect(find.byType(JoinSuccessScreen), findsOneWidget);
   });
 }
@@ -80,10 +89,7 @@ class _InstantSuccessJoinNotifier extends JoinRequestNotifier {
   Future<void> submit({
     required String displayName,
     required String phoneNumber,
-    String email = '',
-    required String pronouns,
-    required String howTheyHeard,
-    required String whyJoin,
+    required Map<String, String> answers,
   }) async {
     state = const AsyncData(null);
   }

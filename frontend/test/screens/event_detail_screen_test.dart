@@ -41,6 +41,12 @@ Widget _buildSubject({Event? event, AuthNotifier? authNotifier}) {
   return ProviderScope(
     overrides: [
       eventsProvider.overrideWith((_) async => [resolvedEvent]),
+      eventDetailProvider.overrideWith(
+        (ref, id) async =>
+            id == resolvedEvent.id
+                ? resolvedEvent
+                : (throw Exception('not found')),
+      ),
       authProvider.overrideWith(() => authNotifier ?? _GuestAuthNotifier()),
     ],
     child: MaterialApp.router(routerConfig: router),
@@ -145,6 +151,9 @@ void main() {
       ProviderScope(
         overrides: [
           eventsProvider.overrideWith((_) async => [_event]),
+          eventDetailProvider.overrideWith(
+            (ref, id) async => throw Exception('not found'),
+          ),
           authProvider.overrideWith(() => _GuestAuthNotifier()),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -152,7 +161,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Event not found.'), findsOneWidget);
+    expect(find.textContaining('couldn\'t load event'), findsOneWidget);
   });
 }
 

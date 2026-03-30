@@ -1,13 +1,15 @@
 import logging
 import re
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
 from uuid import UUID
 
 import phonenumbers
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.mail import send_mail
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja.security import HttpBearer
@@ -23,6 +25,7 @@ from community.models import (
     Event,
     EventRSVP,
     HomePage,
+    JoinFormQuestion,
     JoinRequest,
     JoinRequestStatus,
     PageVisibility,
@@ -67,22 +70,42 @@ class GuidelinesPatchIn(BaseModel):
 class JoinRequestIn(BaseModel):
     display_name: str
     phone_number: str
-    email: str = ""
-    pronouns: str = ""
-    how_they_heard: str = ""
-    why_join: str
+    answers: dict[str, str] = {}
+
+
+class JoinRequestAnswerOut(BaseModel):
+    question_id: str
+    label: str
+    answer: str
 
 
 class JoinRequestOut(BaseModel):
     id: str
     display_name: str
     phone_number: str
-    email: str
-    pronouns: str
-    how_they_heard: str
-    why_join: str
+    answers: list[JoinRequestAnswerOut] = []
     submitted_at: datetime
     status: str
+
+
+class JoinFormQuestionOut(BaseModel):
+    id: str
+    label: str
+    field_type: str
+    options: list[str] = []
+    required: bool
+    display_order: int
+
+
+class JoinFormQuestionIn(BaseModel):
+    label: str
+    field_type: str = "text"
+    options: list[str] = []
+    required: bool = False
+
+
+class JoinFormQuestionOrderIn(BaseModel):
+    question_ids: list[str]
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -102,6 +125,15 @@ class RSVPGuestOut(BaseModel):
     name: str
     status: str
     phone: str | None = None
+
+
+class EventListOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    start_datetime: datetime
+    end_datetime: datetime | None = None
+    location: str
 
 
 class EventOut(BaseModel):
@@ -319,11 +351,202 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
     )
 
 
+def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
+    answers = [
+        JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
+        for qid, data in (jr.custom_answers or {}).items()
+    ]
+    return JoinRequestOut(
+        id=str(jr.id),
+        display_name=jr.display_name,
+        phone_number=jr.phone_number,
+        answers=answers,
+        submitted_at=jr.submitted_at,
+        status=jr.status,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Join form configuration
+# ---------------------------------------------------------------------------
+
+
+@router.get("/join-form/", response={200: list[JoinFormQuestionOut]}, auth=None)
+def get_join_form(request):
+    questions = JoinFormQuestion.objects.all()
+    return Status(
+        200,
+        [
+            JoinFormQuestionOut(
+                id=str(q.id),
+                label=q.label,
+                field_type=q.field_type,
+                options=q.options or [],
+                required=q.required,
+                display_order=q.display_order,
+            )
+            for q in questions
+        ],
+    )
+
+
+@router.post(
+    "/join-form/questions/",
+    response={201: JoinFormQuestionOut, 403: ErrorOut},
+    auth=JWTAuth(),
+)
+def create_join_form_question(request, payload: JoinFormQuestionIn):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        return Status(403, ErrorOut(detail="Permission denied."))
+    max_order = JoinFormQuestion.objects.count()
+    q = JoinFormQuestion.objects.create(
+        label=payload.label,
+        field_type=payload.field_type,
+        options=payload.options,
+        required=payload.required,
+        display_order=max_order,
+    )
+    return Status(
+        201,
+        JoinFormQuestionOut(
+            id=str(q.id),
+            label=q.label,
+            field_type=q.field_type,
+            options=q.options or [],
+            required=q.required,
+            display_order=q.display_order,
+        ),
+    )
+
+
+@router.patch(
+    "/join-form/questions/{question_id}/",
+    response={200: JoinFormQuestionOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def update_join_form_question(request, question_id: UUID, payload: JoinFormQuestionIn):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        return Status(403, ErrorOut(detail="Permission denied."))
+    try:
+        q = JoinFormQuestion.objects.get(id=question_id)
+    except JoinFormQuestion.DoesNotExist:
+        return Status(404, ErrorOut(detail="Question not found."))
+    q.label = payload.label
+    q.field_type = payload.field_type
+    q.options = payload.options
+    q.required = payload.required
+    q.save()
+    return Status(
+        200,
+        JoinFormQuestionOut(
+            id=str(q.id),
+            label=q.label,
+            field_type=q.field_type,
+            options=q.options or [],
+            required=q.required,
+            display_order=q.display_order,
+        ),
+    )
+
+
+@router.delete(
+    "/join-form/questions/{question_id}/",
+    response={204: None, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def delete_join_form_question(request, question_id: UUID):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        return Status(403, ErrorOut(detail="Permission denied."))
+    try:
+        q = JoinFormQuestion.objects.get(id=question_id)
+    except JoinFormQuestion.DoesNotExist:
+        return Status(404, ErrorOut(detail="Question not found."))
+    q.delete()
+    return Status(204, None)
+
+
+@router.put(
+    "/join-form/questions/order/",
+    response={200: list[JoinFormQuestionOut], 403: ErrorOut},
+    auth=JWTAuth(),
+)
+def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
+    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        return Status(403, ErrorOut(detail="Permission denied."))
+    for idx, qid in enumerate(payload.question_ids):
+        JoinFormQuestion.objects.filter(id=qid).update(display_order=idx)
+    questions = JoinFormQuestion.objects.all()
+    return Status(
+        200,
+        [
+            JoinFormQuestionOut(
+                id=str(q.id),
+                label=q.label,
+                field_type=q.field_type,
+                options=q.options or [],
+                required=q.required,
+                display_order=q.display_order,
+            )
+            for q in questions
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Join request submission
+# ---------------------------------------------------------------------------
+
+
+def _validate_answers(
+    answers: dict[str, str],
+    questions: dict[str, JoinFormQuestion],
+) -> str | None:
+    """Validate answers against questions. Returns error message or None."""
+    for q_id, q in questions.items():
+        answer = answers.get(q_id, "").strip()
+        if q.required and not answer:
+            return f'"{q.label}" is required.'
+        if q.field_type == "select" and answer and answer not in (q.options or []):
+            return f'Invalid option for "{q.label}".'
+    return None
+
+
+def _build_custom_answers(
+    answers: dict[str, str],
+    questions: dict[str, JoinFormQuestion],
+) -> dict:
+    """Snapshot answers with their labels."""
+    result = {}
+    for q_id, q in questions.items():
+        answer = answers.get(q_id, "").strip()
+        if answer:
+            result[q_id] = {"label": q.label, "answer": answer}
+    return result
+
+
+def _send_join_request_email(display_name: str, phone: str, custom_answers: dict) -> None:
+    """Send vetting email for a new join request."""
+    if not settings.VETTING_EMAIL:
+        return
+    try:
+        answer_lines = "\n".join(
+            f"{data['label']}: {data['answer']}" for data in custom_answers.values()
+        )
+        send_mail(
+            subject=f"New PDA Join Request: {display_name}",
+            message=f"Display Name: {display_name}\nPhone: {phone}\n\n{answer_lines}",
+            from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
+            recipient_list=[settings.VETTING_EMAIL],
+        )
+    except Exception:
+        logger.exception("Failed to send vetting email for join request")
+
+
 @router.post("/join-request/", response={201: JoinRequestOut, 400: ErrorOut}, auth=None)
 def submit_join_request(request, payload: JoinRequestIn):
     display_name = payload.display_name.strip()
-    if not display_name or not payload.why_join.strip():
-        return Status(400, ErrorOut(detail="display_name and why_join are required."))
+    if not display_name:
+        return Status(400, ErrorOut(detail="display_name is required."))
     if not DISPLAY_NAME_RE.match(display_name) or len(display_name) > 64:
         return Status(
             400,
@@ -335,49 +558,23 @@ def submit_join_request(request, payload: JoinRequestIn):
     except ValueError as e:
         return Status(400, ErrorOut(detail=str(e)))
 
+    questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
+    error = _validate_answers(payload.answers, questions)
+    if error:
+        return Status(400, ErrorOut(detail=error))
+
+    custom_answers = _build_custom_answers(payload.answers, questions)
+
     join_request = JoinRequest.objects.create(
         display_name=display_name,
         phone_number=validated_phone,
-        email=payload.email,
-        pronouns=payload.pronouns,
-        how_they_heard=payload.how_they_heard,
-        why_join=payload.why_join,
+        custom_answers=custom_answers,
     )
 
     logger.info("Join request submitted by %s", display_name)
+    _send_join_request_email(display_name, validated_phone, custom_answers)
 
-    if settings.VETTING_EMAIL:
-        try:
-            send_mail(
-                subject=f"New PDA Join Request: {display_name}",
-                message=(
-                    f"Display Name: {display_name}\n"
-                    f"Phone: {validated_phone}\n"
-                    f"Email: {payload.email or '(not provided)'}\n"
-                    f"Pronouns: {payload.pronouns}\n"
-                    f"How they heard: {payload.how_they_heard}\n\n"
-                    f"Why they want to join:\n{payload.why_join}"
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
-                recipient_list=[settings.VETTING_EMAIL],
-            )
-        except Exception:
-            logger.exception("Failed to send vetting email for join request")
-
-    return Status(
-        201,
-        JoinRequestOut(
-            id=str(join_request.id),
-            display_name=join_request.display_name,
-            phone_number=join_request.phone_number,
-            email=join_request.email,
-            pronouns=join_request.pronouns,
-            how_they_heard=join_request.how_they_heard,
-            why_join=join_request.why_join,
-            submitted_at=join_request.submitted_at,
-            status=join_request.status,
-        ),
-    )
+    return Status(201, _join_request_out(join_request))
 
 
 frontend_logger = logging.getLogger("pda.frontend")
@@ -401,23 +598,7 @@ def list_join_requests(request):
         return Status(403, ErrorOut(detail="Permission denied."))
 
     join_requests = JoinRequest.objects.all()
-    return Status(
-        200,
-        [
-            JoinRequestOut(
-                id=str(jr.id),
-                display_name=jr.display_name,
-                phone_number=jr.phone_number,
-                email=jr.email,
-                pronouns=jr.pronouns,
-                how_they_heard=jr.how_they_heard,
-                why_join=jr.why_join,
-                submitted_at=jr.submitted_at,
-                status=jr.status,
-            )
-            for jr in join_requests
-        ],
-    )
+    return Status(200, [_join_request_out(jr) for jr in join_requests])
 
 
 @router.patch(
@@ -453,7 +634,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             _, temp_password = _create_user_with_role(
                 join_request.phone_number,
                 join_request.display_name,
-                join_request.email,
+                "",
                 None,
             )
 
@@ -519,9 +700,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     creator_name = creator.display_name or creator.phone_number if creator else None
     auth_user = _authenticated_user(requesting_user)
     is_authed = auth_user is not None
-    rsvps = (
-        list(event.rsvps.select_related("user").all()) if (event.rsvp_enabled and is_authed) else []
-    )
+    rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
     return EventOut(
@@ -548,12 +727,23 @@ class CheckPhoneOut(BaseModel):
     exists: bool
 
 
-@router.get("/events/", response={200: list[EventOut]}, auth=_optional_jwt)
+@router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
 def list_events(request):
-    events = (
-        Event.objects.select_related("created_by").prefetch_related("co_hosts", "rsvps__user").all()
+    events = Event.objects.all()
+    return Status(
+        200,
+        [
+            EventListOut(
+                id=str(e.id),
+                title=e.title,
+                description=e.description,
+                start_datetime=e.start_datetime,
+                end_datetime=e.end_datetime,
+                location=e.location,
+            )
+            for e in events
+        ],
     )
-    return Status(200, [_event_out(e, request.auth) for e in events])
 
 
 @router.get("/events/{event_id}/", response={200: EventOut, 404: ErrorOut}, auth=_optional_jwt)
@@ -705,6 +895,93 @@ def delete_rsvp(request, event_id: UUID):
     if not deleted:
         return Status(404, ErrorOut(detail="RSVP not found."))
     return Status(204, None)
+
+
+# ---------------------------------------------------------------------------
+# Calendar feed (subscribable .ics)
+# ---------------------------------------------------------------------------
+
+
+class CalendarTokenOut(BaseModel):
+    token: str
+    feed_url: str
+
+
+def _build_feed_url(request: HttpRequest, token: str) -> str:
+    return request.build_absolute_uri(f"/api/community/calendar/feed/?token={token}")
+
+
+@router.get("/calendar/token/", response={200: CalendarTokenOut}, auth=JWTAuth())
+def get_calendar_token(request):
+    user = request.auth
+    return Status(
+        200,
+        CalendarTokenOut(
+            token=user.calendar_token,
+            feed_url=_build_feed_url(request, user.calendar_token) if user.calendar_token else "",
+        ),
+    )
+
+
+@router.post("/calendar/token/", response={200: CalendarTokenOut}, auth=JWTAuth())
+def generate_calendar_token(request):
+    user = request.auth
+    user.calendar_token = secrets.token_urlsafe(32)
+    user.save(update_fields=["calendar_token"])
+    return Status(
+        200,
+        CalendarTokenOut(
+            token=user.calendar_token,
+            feed_url=_build_feed_url(request, user.calendar_token),
+        ),
+    )
+
+
+@router.get("/calendar/feed/", auth=None)
+def calendar_feed(request, token: str = ""):
+    if not token:
+        return HttpResponse("Missing token.", status=403, content_type="text/plain")
+
+    try:
+        user = UserModel.objects.get(calendar_token=token)
+    except UserModel.DoesNotExist:
+        return HttpResponse("Invalid token.", status=403, content_type="text/plain")
+
+    # Ignore tokens that are empty strings (not yet generated)
+    if not user.calendar_token:
+        return HttpResponse("Invalid token.", status=403, content_type="text/plain")
+
+    import icalendar
+
+    cal = icalendar.Calendar()
+    cal.add("prodid", "-//PDA//PDA Calendar//EN")
+    cal.add("version", "2.0")
+    cal.add("x-wr-calname", "PDA Events")
+
+    cutoff = timezone.now() - timedelta(days=30)
+    events = (
+        Event.objects.filter(start_datetime__gte=cutoff)
+        .select_related("created_by")
+        .order_by("start_datetime")
+    )
+
+    for event in events:
+        vevent = icalendar.Event()
+        vevent.add("uid", f"{event.id}@pda")
+        vevent.add("dtstamp", timezone.now())
+        vevent.add("dtstart", event.start_datetime)
+        if event.end_datetime:
+            vevent.add("dtend", event.end_datetime)
+        vevent.add("summary", event.title)
+        if event.description:
+            vevent.add("description", event.description)
+        if event.location:
+            vevent.add("location", event.location)
+        cal.add_component(vevent)
+
+    response = HttpResponse(cal.to_ical(), content_type="text/calendar")
+    response["Content-Disposition"] = 'inline; filename="pda-calendar.ics"'
+    return response
 
 
 # ---------------------------------------------------------------------------

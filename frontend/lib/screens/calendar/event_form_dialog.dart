@@ -192,8 +192,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'All events must be free or at direct cost only (e.g. cost of food). '
-              'No fees or markups are permitted on this calendar.',
+              'keep it accessible \u{2728} events should be free or at-cost only '
+              '(e.g. splitting the grocery bill). no fees or markups please!',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSecondaryContainer,
               ),
@@ -208,7 +208,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     return TextFormField(
       controller: _title,
       decoration: const InputDecoration(
-        labelText: 'Title *',
+        labelText: 'what\'s the event? *',
         border: OutlineInputBorder(),
       ),
       textCapitalization: TextCapitalization.sentences,
@@ -235,7 +235,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       return [
         Semantics(
           button: true,
-          label: 'Add end time',
+          label: 'add end time',
           child: InkWell(
             onTap: _addEndTime,
             borderRadius: BorderRadius.circular(8),
@@ -251,7 +251,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Add end time',
+                    'add end time',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -268,7 +268,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
         children: [
           Expanded(
             child: _DateTimeRow(
-              label: 'End',
+              label: 'end',
               date: dateFmt.format(_end!),
               time: timeFmt.format(_end!),
               isActive: _calendarTarget == 'end',
@@ -289,7 +289,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   List<Widget> _buildDateTimeSection(DateFormat dateFmt, DateFormat timeFmt) {
     return [
       _DateTimeRow(
-        label: 'Start',
+        label: 'start',
         date: dateFmt.format(_start),
         time: timeFmt.format(_start),
         isActive: _calendarTarget == 'start',
@@ -314,7 +314,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     return TextFormField(
       controller: _location,
       decoration: const InputDecoration(
-        labelText: 'Location',
+        labelText: 'where?',
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.place_outlined),
       ),
@@ -326,7 +326,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     return TextFormField(
       controller: _description,
       decoration: const InputDecoration(
-        labelText: 'Description',
+        labelText: 'tell us more',
         border: OutlineInputBorder(),
         alignLabelWithHint: true,
       ),
@@ -340,12 +340,12 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     return [
       const Divider(),
       const SizedBox(height: 8),
-      Text('Links', style: theme.textTheme.labelLarge),
+      Text('links', style: theme.textTheme.labelLarge),
       const SizedBox(height: 12),
       TextFormField(
         controller: _whatsappLink,
         decoration: const InputDecoration(
-          labelText: 'WhatsApp group link (optional)',
+          labelText: 'whatsapp group link (optional)',
           border: OutlineInputBorder(),
           prefixIcon: Icon(Icons.chat_outlined),
         ),
@@ -372,12 +372,12 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       TextFormField(
         controller: _partifulLink,
         decoration: InputDecoration(
-          labelText: 'Partiful link (optional)',
+          labelText: 'partiful link (optional)',
           border: const OutlineInputBorder(),
           prefixIcon: const Icon(Icons.celebration_outlined),
           helperText:
               _rsvpEnabled
-                  ? 'Consider using app RSVPs instead of Partiful'
+                  ? 'consider using app RSVPs instead of partiful'
                   : null,
           helperStyle: TextStyle(color: theme.colorScheme.tertiary),
         ),
@@ -399,7 +399,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       TextFormField(
         controller: _otherLink,
         decoration: const InputDecoration(
-          labelText: 'Other link (optional)',
+          labelText: 'other link (optional)',
           border: OutlineInputBorder(),
           prefixIcon: Icon(Icons.link),
         ),
@@ -413,11 +413,11 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     return SwitchListTile(
       value: _rsvpEnabled,
       onChanged: (v) => setState(() => _rsvpEnabled = v),
-      title: const Text('Enable RSVPs'),
+      title: const Text('enable RSVPs'),
       subtitle:
           _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
               ? Text(
-                'You have a Partiful link set — consider using one or the other',
+                'you have a partiful link set — consider using one or the other',
                 style: TextStyle(color: theme.colorScheme.tertiary),
               )
               : null,
@@ -429,7 +429,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     return [
       const Divider(),
       const SizedBox(height: 8),
-      Text('Co-hosts', style: theme.textTheme.labelLarge),
+      Text('co-hosts', style: theme.textTheme.labelLarge),
       const SizedBox(height: 8),
       _CoHostPicker(
         selectedIds: _coHostIds,
@@ -450,7 +450,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     final dialogWidth = screenWidth < 520 ? screenWidth - 48 : 480.0;
 
     return AlertDialog(
-      title: Text(_isEdit ? 'Edit event' : 'Add event'),
+      title: Text(_isEdit ? 'edit event' : 'new event \u{1F331}'),
       content: SizedBox(
         width: dialogWidth,
         child: Form(
@@ -488,7 +488,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _submit, child: Text(_isEdit ? 'Save' : 'Add')),
+        FilledButton(onPressed: _submit, child: Text(_isEdit ? 'save' : 'add')),
       ],
     );
   }
@@ -520,56 +520,72 @@ class _DateTimeRow extends StatelessWidget {
             : theme.colorScheme.surfaceContainerHighest;
     final textStyle = theme.textTheme.bodyMedium;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 40,
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(width: 8),
-        InkWell(
-          onTap: onDateTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: chipColor,
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Flexible(
+              child: InkWell(
+                onTap: onDateTap,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: chipColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.calendar_today_outlined, size: 14),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          date,
+                          style: textStyle,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: onTimeTap,
               borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: chipColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.schedule_outlined, size: 14),
+                    const SizedBox(width: 6),
+                    Text(time, style: textStyle),
+                  ],
+                ),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.calendar_today_outlined, size: 14),
-                const SizedBox(width: 6),
-                Text(date, style: textStyle),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        InkWell(
-          onTap: onTimeTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: chipColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.schedule_outlined, size: 14),
-                const SizedBox(width: 6),
-                Text(time, style: textStyle),
-              ],
-            ),
-          ),
+          ],
         ),
       ],
     );

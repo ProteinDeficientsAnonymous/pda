@@ -38,7 +38,8 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
       // Router redirect will navigate to /calendar once needsOnboarding becomes false.
     } on DioException catch (e) {
       if (!mounted) return;
-      final detail = (e.response?.data as Map?)?['detail'] ?? 'Failed to save.';
+      final detail =
+          (e.response?.data as Map?)?['detail'] ?? 'couldn\'t save — try again';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(detail.toString())));
@@ -66,12 +67,12 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Set a new password',
+                        'set a new password',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Your password was reset. Choose a new one to continue.',
+                        'your password was reset — choose a new one to continue',
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
@@ -147,7 +148,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                                : const Text('Save & continue'),
+                                : const Text('save & continue'),
                       ),
                     ],
                   ),

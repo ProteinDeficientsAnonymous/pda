@@ -36,9 +36,7 @@ void main() {
         .submit(
           displayName: 'Test Person',
           phoneNumber: '+12025551234',
-          pronouns: '',
-          howTheyHeard: '',
-          whyJoin: 'Testing',
+          answers: {'q1': 'Testing'},
         );
   }
 

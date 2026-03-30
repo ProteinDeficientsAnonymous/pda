@@ -372,7 +372,22 @@ class _ResourcesBodyState extends ConsumerState<_ResourcesBody>
 
 ---
 
-## Step 8 — Frontend Router: `frontend/lib/router/app_router.dart`
+## Step 8 — Frontend Permission Label: `frontend/lib/screens/members/role_form_dialog.dart`
+
+Add the new permission to the `kPermissionLabels` map so it appears in the role creation/editing dialog:
+
+```dart
+const kPermissionLabels = {
+  // ... existing entries ...
+  'edit_resources': 'Edit Resources',
+};
+```
+
+---
+
+## Step 9 — Frontend Router: `frontend/lib/router/app_router.dart`
+
+(Note: steps 9-12 were originally numbered 8-11 — renumbered after inserting Step 8 above.)
 
 Add the import with the other screen imports (alphabetical order):
 

@@ -102,7 +102,7 @@ class _HomeBody extends StatelessWidget {
                                 ),
                               ),
                               child: const Text(
-                                'Request to join',
+                                'request to join',
                                 style: TextStyle(fontSize: 16),
                               ),
                             ),

@@ -63,7 +63,7 @@ void main() {
       await tester.pump();
 
       // The submit button should be findable by its text semantics
-      expect(find.text('Submit request'), findsOneWidget);
+      expect(find.text('submit request'), findsOneWidget);
 
       // Form fields should have labels in the semantics tree
       expect(find.text('Display name *'), findsOneWidget);
@@ -93,8 +93,8 @@ void main() {
       );
       await tester.pump();
 
-      // Login button should be findable
-      expect(find.text('Login'), findsOneWidget);
+      // Login button should be findable (nav bar + form button both say 'log in')
+      expect(find.text('log in'), findsAtLeastNWidgets(1));
 
       // Password field label should be visible
       expect(find.text('Password'), findsOneWidget);

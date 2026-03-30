@@ -31,8 +31,6 @@ class SeedEvent:
 class SeedJoinRequest:
     display_name: str
     phone_number: str
-    email: str
-    pronouns: str
     why_join: str
     status: str
 
@@ -78,24 +76,18 @@ SEED_JOIN_REQUESTS = [
     SeedJoinRequest(
         display_name="Alex Rivera",
         phone_number="+15550990010",
-        email="alex@example.com",
-        pronouns="they/them",
         why_join="I've been vegan for two years and want to connect with community.",
         status=JoinRequestStatus.PENDING,
     ),
     SeedJoinRequest(
         display_name="Jordan Chen",
         phone_number="+15550990011",
-        email="jordan@example.com",
-        pronouns="he/him",
         why_join="Looking for local vegan friends and events.",
         status=JoinRequestStatus.APPROVED,
     ),
     SeedJoinRequest(
         display_name="Sam Taylor",
         phone_number="+15550990012",
-        email="sam@example.com",
-        pronouns="she/her",
         why_join="Curious about veganism.",
         status=JoinRequestStatus.REJECTED,
     ),
@@ -162,14 +154,18 @@ class Command(BaseCommand):
             self.stdout.write(f"  {label} event: {data.title}")
 
     def _seed_join_requests(self) -> None:
+        from community.models import JoinFormQuestion
+
+        why_q = JoinFormQuestion.objects.filter(required=True).first()
         for data in SEED_JOIN_REQUESTS:
+            answers = {}
+            if why_q:
+                answers[str(why_q.id)] = {"label": why_q.label, "answer": data.why_join}
             _, created = JoinRequest.objects.get_or_create(
                 display_name=data.display_name,
                 phone_number=data.phone_number,
                 defaults={
-                    "email": data.email,
-                    "pronouns": data.pronouns,
-                    "why_join": data.why_join,
+                    "custom_answers": answers,
                     "status": data.status,
                 },
             )

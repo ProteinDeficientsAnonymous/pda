@@ -8,6 +8,11 @@ const kPermissionLabels = {
   'manage_roles': 'Manage roles',
   'approve_join_requests': 'Approve join requests',
   'manage_events': 'Manage events',
+  'manage_guidelines': 'Manage community guidelines',
+  'manage_whatsapp': 'Manage WhatsApp',
+  'edit_faq': 'Edit FAQ',
+  'edit_homepage': 'Edit homepage',
+  'edit_join_questions': 'Edit join form questions',
 };
 
 // Dialog to create or edit a role (name + permission checkboxes)

@@ -2,14 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pda/models/join_form_question.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/providers/join_form_provider.dart';
 import 'package:pda/providers/join_request_provider.dart';
 import 'package:pda/screens/join_screen.dart';
 import 'package:pda/services/api_error.dart';
 
-// Join form is long — use a tall viewport so the submit button is reachable.
 const _kTestSize = Size(700, 1200);
+
+const _testQuestions = [
+  JoinFormQuestion(
+    id: 'q1',
+    label: 'Why do you want to join?',
+    fieldType: 'text',
+    required: true,
+    displayOrder: 0,
+  ),
+];
 
 Widget _buildSubject({JoinRequestNotifier? notifier}) {
   final router = GoRouter(
@@ -24,6 +35,7 @@ Widget _buildSubject({JoinRequestNotifier? notifier}) {
       joinRequestProvider.overrideWith(
         () => notifier ?? _FakeJoinRequestNotifier(),
       ),
+      joinFormProvider.overrideWith((ref) async => _testQuestions),
       authProvider.overrideWith(() => _GuestAuthNotifier()),
     ],
     child: MaterialApp.router(routerConfig: router),
@@ -31,8 +43,6 @@ Widget _buildSubject({JoinRequestNotifier? notifier}) {
 }
 
 void main() {
-  setUp(() {});
-
   testWidgets('renders form fields', (tester) async {
     tester.view.physicalSize = _kTestSize;
     tester.view.devicePixelRatio = 1.0;
@@ -40,11 +50,11 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(_buildSubject());
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Request to join PDA'), findsOneWidget);
+    expect(find.text('request to join PDA'), findsOneWidget);
     expect(find.byType(TextFormField), findsWidgets);
-    expect(find.text('Submit request'), findsOneWidget);
+    expect(find.text('submit request'), findsOneWidget);
   });
 
   testWidgets('shows validation error when required fields are empty', (
@@ -56,9 +66,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(_buildSubject());
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Submit request'));
+    await tester.tap(find.text('submit request'));
     await tester.pump();
 
     expect(find.textContaining('Required'), findsWidgets);
@@ -71,13 +81,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(_buildSubject(notifier: _ErrorJoinNotifier()));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Display name *'),
       'Alex R',
     );
-    // Enter a valid phone number in the phone field (first TextFormField after display name)
     final phoneField = find.byType(TextFormField).at(1);
     await tester.enterText(phoneField, '2025551234');
     await tester.pump();
@@ -86,10 +95,9 @@ void main() {
       'I really love animals and want to be part of this community.',
     );
 
-    await tester.tap(find.text('Submit request'));
+    await tester.tap(find.text('submit request'));
     await tester.pump();
 
-    // NetworkError.message = 'Could not connect to server. Check your internet connection.'
     expect(find.textContaining('Could not connect'), findsOneWidget);
   });
 
@@ -119,18 +127,18 @@ void main() {
       ProviderScope(
         overrides: [
           joinRequestProvider.overrideWith(() => _FakeJoinRequestNotifier()),
+          joinFormProvider.overrideWith((ref) async => _testQuestions),
           authProvider.overrideWith(() => _GuestAuthNotifier()),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Display name *'),
       'Alex R',
     );
-    // Enter a valid phone number
     final phoneField = find.byType(TextFormField).at(1);
     await tester.enterText(phoneField, '2025551234');
     await tester.pump();
@@ -139,7 +147,7 @@ void main() {
       'I really love animals and want to be part of this community.',
     );
 
-    await tester.tap(find.text('Submit request'));
+    await tester.tap(find.text('submit request'));
     await tester.pumpAndSettle();
 
     expect(landedOnSuccess, isTrue);
@@ -162,10 +170,7 @@ class _FakeJoinRequestNotifier extends JoinRequestNotifier {
   Future<void> submit({
     required String displayName,
     required String phoneNumber,
-    String email = '',
-    required String pronouns,
-    required String howTheyHeard,
-    required String whyJoin,
+    required Map<String, String> answers,
   }) async {
     state = const AsyncData(null);
   }
@@ -179,10 +184,7 @@ class _ErrorJoinNotifier extends JoinRequestNotifier {
   Future<void> submit({
     required String displayName,
     required String phoneNumber,
-    String email = '',
-    required String pronouns,
-    required String howTheyHeard,
-    required String whyJoin,
+    required Map<String, String> answers,
   }) async {
     state = AsyncError(const NetworkError(), StackTrace.current);
   }

@@ -43,8 +43,8 @@ void main() {
       scaffoldState.openDrawer();
       await tester.pumpAndSettle();
 
-      expect(find.text('Member login'), findsOneWidget);
-      expect(find.text('Logout'), findsNothing);
+      expect(find.text('log in'), findsOneWidget);
+      expect(find.text('log out'), findsNothing);
     });
 
     testWidgets('drawer contains logout item for authenticated user', (
@@ -82,8 +82,8 @@ void main() {
       scaffoldState.openDrawer();
       await tester.pumpAndSettle();
 
-      expect(find.text('Logout'), findsOneWidget);
-      expect(find.text('Member login'), findsNothing);
+      expect(find.text('log out'), findsOneWidget);
+      expect(find.text('log in'), findsNothing);
     });
   });
 
@@ -117,8 +117,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Member login'), findsOneWidget);
-      expect(find.text('Logout'), findsNothing);
+      expect(find.text('log in'), findsOneWidget);
+      expect(find.text('log out'), findsNothing);
     });
 
     testWidgets('shows Logout button for authenticated user', (tester) async {
@@ -175,8 +175,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Logout'), findsOneWidget);
-      expect(find.text('Member login'), findsNothing);
+      expect(find.text('log out'), findsOneWidget);
+      expect(find.text('log in'), findsNothing);
     });
   });
 }

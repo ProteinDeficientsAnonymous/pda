@@ -15,10 +15,13 @@ final _requestJson = {
   'id': 'jr-1',
   'display_name': 'Sam Green',
   'phone_number': '+12025559999',
-  'email': 'sam@example.com',
-  'pronouns': 'they/them',
-  'how_they_heard': 'A friend',
-  'why_join': 'I love animals',
+  'answers': [
+    {
+      'question_id': 'q1',
+      'label': 'Why do you want to join?',
+      'answer': 'I love animals',
+    },
+  ],
   'submitted_at': '2026-03-01T10:00:00Z',
   'status': 'pending',
 };

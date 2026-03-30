@@ -16,9 +16,7 @@ Widget _buildSubject({
   AuthNotifier? authNotifier,
 }) {
   final router = GoRouter(
-    routes: [
-      GoRoute(path: '/', builder: (_, __) => const GuidelinesScreen()),
-    ],
+    routes: [GoRoute(path: '/', builder: (_, __) => const GuidelinesScreen())],
   );
   return ProviderScope(
     overrides: [

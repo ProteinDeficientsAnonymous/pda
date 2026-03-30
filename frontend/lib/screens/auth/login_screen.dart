@@ -62,12 +62,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Member login',
+                        'member login',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'This area is for approved PDA members only.',
+                        'this area is for approved PDA members only',
                         style: TextStyle(color: Colors.grey[700]),
                       ),
                       const SizedBox(height: 32),
@@ -118,7 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Text(
                           state.error is ApiError
                               ? (state.error! as ApiError).message
-                              : 'Something went wrong. Please try again.',
+                              : 'something went wrong — try again',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.error,
                           ),
@@ -144,7 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       ),
                                     )
                                     : const Text(
-                                      'Login',
+                                      'log in',
                                       style: TextStyle(fontSize: 16),
                                     ),
                           ),

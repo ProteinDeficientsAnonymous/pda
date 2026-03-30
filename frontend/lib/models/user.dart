@@ -39,4 +39,11 @@ abstract class User with _$User {
           r.permissions.contains(permission),
     );
   }
+
+  bool get hasAnyAdminPermission =>
+      hasPermission('manage_events') ||
+      hasPermission('manage_users') ||
+      hasPermission('approve_join_requests') ||
+      hasPermission('manage_whatsapp') ||
+      hasPermission('edit_join_questions');
 }

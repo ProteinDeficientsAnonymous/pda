@@ -97,7 +97,7 @@ class _WeekViewState extends State<WeekView> {
               IconButton(
                 icon: const Icon(Icons.chevron_left),
                 onPressed: _goToPreviousWeek,
-                tooltip: 'Previous week',
+                tooltip: 'previous week',
               ),
               Expanded(
                 child: Text(
@@ -109,7 +109,7 @@ class _WeekViewState extends State<WeekView> {
               IconButton(
                 icon: const Icon(Icons.chevron_right),
                 onPressed: _goToNextWeek,
-                tooltip: 'Next week',
+                tooltip: 'next week',
               ),
             ],
           ),
@@ -118,14 +118,16 @@ class _WeekViewState extends State<WeekView> {
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).dividerColor,
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.4),
                     width: 0.5,
                   ),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Stack(
                   children: [
@@ -154,7 +156,7 @@ class _WeekViewState extends State<WeekView> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'No events this week',
+                              'all quiet this week 🌿',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurface.withValues(
                                   alpha: 0.3,
@@ -233,11 +235,11 @@ class _WeekGrid extends StatelessWidget {
                               onDayTapped != null
                                   ? () => onDayTapped!(day)
                                   : null,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                           child: Container(
                             decoration: BoxDecoration(
                               color: bgColor,
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -254,7 +256,7 @@ class _WeekGrid extends StatelessWidget {
                                   '${day.day}',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w600,
                                     color: fgColor,
                                   ),
                                 ),
@@ -266,7 +268,10 @@ class _WeekGrid extends StatelessWidget {
                     }).toList(),
               ),
             ),
-            Divider(height: 1, color: theme.dividerColor),
+            Divider(
+              height: 1,
+              color: theme.dividerColor.withValues(alpha: 0.4),
+            ),
             // Event area
             Expanded(
               child: Stack(
@@ -281,7 +286,9 @@ class _WeekGrid extends StatelessWidget {
                               right:
                                   col < 6
                                       ? BorderSide(
-                                        color: theme.dividerColor,
+                                        color: theme.dividerColor.withValues(
+                                          alpha: 0.4,
+                                        ),
                                         width: 0.5,
                                       )
                                       : BorderSide.none,
@@ -374,36 +381,33 @@ Widget _buildEventChip(
           decoration: BoxDecoration(
             color: colors.$1,
             borderRadius: BorderRadius.horizontal(
-              left: continuesFromPrev ? Radius.zero : const Radius.circular(4),
-              right: continuesToNext ? Radius.zero : const Radius.circular(4),
+              left: continuesFromPrev ? Radius.zero : const Radius.circular(6),
+              right: continuesToNext ? Radius.zero : const Radius.circular(6),
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  p.event.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: p.event.title,
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
                     color: colors.$2,
                   ),
                 ),
-              ),
-              if (isMultiDay) const SizedBox(width: 4),
-              Text(
-                subLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: colors.$2.withValues(alpha: 0.8),
+                TextSpan(
+                  text: '  $subLabel',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: colors.$2.withValues(alpha: 0.8),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),

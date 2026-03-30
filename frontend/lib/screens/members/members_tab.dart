@@ -59,7 +59,7 @@ class MembersTab extends ConsumerWidget {
                       Icon(Icons.groups_outlined, size: 64, color: Colors.grey),
                       SizedBox(height: 16),
                       Text(
-                        'No members found',
+                        'no members found',
                         style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
                     ],
@@ -124,7 +124,7 @@ class MembersTab extends ConsumerWidget {
       context: context,
       builder:
           (_) => ApprovalCredentialsDialog(
-            title: 'Member created',
+            title: 'member created',
             body:
                 '$displayName has been added. Share their temporary password:',
             tempPassword: tempPassword,
@@ -185,7 +185,7 @@ class MemberCard extends ConsumerWidget {
                             if (user.needsOnboarding) ...[
                               const SizedBox(width: 6),
                               Tooltip(
-                                message: 'Hasn\'t logged in yet',
+                                message: 'hasn\'t logged in yet',
                                 child: Container(
                                   width: 8,
                                   height: 8,

@@ -6,8 +6,6 @@ import 'package:pda/providers/auth_provider.dart';
 final _log = Logger('EventProvider');
 
 final eventsProvider = FutureProvider<List<Event>>((ref) async {
-  // Re-fetch when auth state changes so authenticated users see private fields.
-  ref.watch(authProvider);
   final api = ref.watch(apiClientProvider);
   try {
     final response = await api.get('/api/community/events/');
@@ -18,6 +16,20 @@ final eventsProvider = FutureProvider<List<Event>>((ref) async {
     return events;
   } catch (e) {
     _log.warning('Failed to load events', e);
+    rethrow;
+  }
+});
+
+final eventDetailProvider = FutureProvider.family<Event, String>((
+  ref,
+  eventId,
+) async {
+  final api = ref.watch(apiClientProvider);
+  try {
+    final response = await api.get('/api/community/events/$eventId/');
+    return Event.fromJson(response.data as Map<String, dynamic>);
+  } catch (e) {
+    _log.warning('Failed to load event $eventId', e);
     rethrow;
   }
 });

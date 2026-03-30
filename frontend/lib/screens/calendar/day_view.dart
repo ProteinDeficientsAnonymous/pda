@@ -126,7 +126,7 @@ class _DayHeader extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            tooltip: 'Previous day',
+            tooltip: 'previous day',
             onPressed: onPrev,
           ),
           Expanded(
@@ -138,7 +138,7 @@ class _DayHeader extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            tooltip: 'Next day',
+            tooltip: 'next day',
             onPressed: onNext,
           ),
         ],
@@ -162,7 +162,7 @@ class _EmptyDayState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'No events',
+            'nothing on today 🌿',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),

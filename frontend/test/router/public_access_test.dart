@@ -26,6 +26,10 @@ Widget _buildApp(AuthNotifier authNotifier) {
     overrides: [
       authProvider.overrideWith(() => authNotifier),
       eventsProvider.overrideWith((_) async => <Event>[_fakeEvent]),
+      eventDetailProvider.overrideWith(
+        (ref, id) async =>
+            id == _fakeEvent.id ? _fakeEvent : (throw Exception('not found')),
+      ),
       homePageNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
       editablePageProvider.overrideWith(() => _FakeEditablePageNotifier()),
     ],

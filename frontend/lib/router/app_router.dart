@@ -18,6 +18,8 @@ import 'package:pda/screens/event_detail_screen.dart';
 import 'package:pda/screens/donate_screen.dart';
 import 'package:pda/screens/settings_screen.dart';
 import 'package:pda/screens/volunteer_screen.dart';
+import 'package:pda/screens/admin_screen.dart';
+import 'package:pda/screens/join_form_config_screen.dart';
 import 'package:pda/screens/whatsapp_config_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -63,6 +65,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc == '/events/mine' ||
           loc == '/settings' ||
           loc == '/volunteer' ||
+          loc == '/admin' ||
+          loc == '/admin/join-form' ||
           loc == '/admin/whatsapp';
 
       if (isProtected && !isAuthenticated) {
@@ -84,8 +88,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (loc == '/events/manage' && !user.hasPermission('manage_events')) {
           return '/calendar';
         }
+        if (loc == '/admin' && !user.hasAnyAdminPermission) {
+          return '/calendar';
+        }
         if (loc == '/admin/whatsapp' &&
             !user.hasPermission('manage_whatsapp')) {
+          return '/calendar';
+        }
+        if (loc == '/admin/join-form' &&
+            !user.hasPermission('edit_join_questions')) {
           return '/calendar';
         }
       }
@@ -164,6 +175,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/volunteer',
         name: 'volunteer',
         builder: (_, __) => const VolunteerScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        name: 'admin',
+        builder: (_, __) => const AdminScreen(),
+      ),
+      GoRoute(
+        path: '/admin/join-form',
+        name: 'join-form-config',
+        builder: (_, __) => const JoinFormConfigScreen(),
       ),
       GoRoute(
         path: '/admin/whatsapp',

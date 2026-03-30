@@ -121,4 +121,5 @@ build-dev: install frontend-codegen migrate dev
 
 # Dev (concurrent backend + frontend)
 dev:
-	trap 'kill 0' SIGINT; make run & make frontend-run & wait
+	make run & make frontend-run
+

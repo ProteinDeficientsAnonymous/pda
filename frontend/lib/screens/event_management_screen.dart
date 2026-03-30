@@ -23,7 +23,10 @@ class EventManagementScreen extends ConsumerWidget {
     return AppScaffold(
       child: eventsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load events: $e')),
+        error:
+            (e, _) => const Center(
+              child: Text('couldn\'t load events — try refreshing'),
+            ),
         data: (events) {
           final filtered =
               myEventsOnly && user != null
@@ -83,7 +86,7 @@ class _EventManagementBody extends ConsumerWidget {
             child: FilledButton.icon(
               onPressed: () => _showCreateDialog(context, ref),
               icon: const Icon(Icons.add_circle_outline),
-              label: const Text('New event'),
+              label: const Text('new event'),
             ),
           ),
         ),
@@ -103,14 +106,14 @@ class _EventManagementBody extends ConsumerWidget {
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'No events yet',
+                            'no events yet',
                             style: TextStyle(fontSize: 18, color: Colors.grey),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             myEventsOnly
-                                ? "You haven't created or co-hosted any events."
-                                : 'Create one to get started.',
+                                ? "you haven't created or co-hosted any events yet"
+                                : 'create one to get started',
                             style: const TextStyle(color: Colors.grey),
                           ),
                         ],

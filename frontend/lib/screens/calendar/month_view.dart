@@ -37,9 +37,9 @@ class _MonthViewState extends State<MonthView> {
   ];
 
   static const int _maxEventRows = 3;
-  static const double _dayLabelHeight = 28.0;
-  static const double _chipHeight = 18.0;
-  static const double _chipSpacing = 2.0;
+  static const double _dayLabelHeight = 26.0;
+  static const double _chipHeight = 20.0;
+  static const double _chipSpacing = 3.0;
   @override
   void initState() {
     super.initState();
@@ -118,7 +118,21 @@ class _MonthViewState extends State<MonthView> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: _buildGrid(context, gridDays),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.4),
+                    width: 0.5,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: _buildGrid(context, gridDays),
+              ),
+            ),
           ),
         ),
       ],
@@ -159,7 +173,7 @@ class _MonthViewState extends State<MonthView> {
                 (h) => Expanded(
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(h, style: textStyle),
                     ),
                   ),
@@ -363,12 +377,23 @@ class _MonthRow extends StatelessWidget {
           highlightColor: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
-              border: Border.all(
-                color: Theme.of(context).dividerColor,
-                width: 0.5,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                  width: 0.5,
+                ),
+                right:
+                    col < 6
+                        ? BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.4),
+                          width: 0.5,
+                        )
+                        : BorderSide.none,
               ),
             ),
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -417,8 +442,8 @@ class _MonthRow extends StatelessWidget {
           DateTime(days[6].year, days[6].month, days[6].day + 1),
         );
     final borderRadius = BorderRadius.horizontal(
-      left: continuesFromPrev ? Radius.zero : const Radius.circular(3),
-      right: continuesToNext ? Radius.zero : const Radius.circular(3),
+      left: continuesFromPrev ? Radius.zero : const Radius.circular(6),
+      right: continuesToNext ? Radius.zero : const Radius.circular(6),
     );
 
     return Positioned(
@@ -435,22 +460,22 @@ class _MonthRow extends StatelessWidget {
           highlightColor: Colors.transparent,
           child: Container(
             margin: EdgeInsets.only(
-              left: continuesFromPrev ? 0 : 1,
-              right: continuesToNext ? 0 : 1,
+              left: continuesFromPrev ? 0 : 2,
+              right: continuesToNext ? 0 : 2,
             ),
             decoration: BoxDecoration(
               color: colors.$1,
               borderRadius: borderRadius,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6),
             alignment: Alignment.centerLeft,
             child: Text(
               p.event.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
                 color: colors.$2,
               ),
             ),
@@ -515,8 +540,8 @@ class _DayLabel extends StatelessWidget {
       width: height,
       child: Center(
         child: Container(
-          width: 22,
-          height: 22,
+          width: 24,
+          height: 24,
           decoration:
               isToday
                   ? BoxDecoration(
@@ -528,14 +553,14 @@ class _DayLabel extends StatelessWidget {
             child: Text(
               '${day.day}',
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                fontSize: 12.5,
+                fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
                 color:
                     isToday
                         ? colorScheme.onPrimary
                         : isCurrentMonth
                         ? colorScheme.onSurface
-                        : colorScheme.onSurface.withValues(alpha: 0.35),
+                        : colorScheme.onSurface.withValues(alpha: 0.30),
               ),
             ),
           ),

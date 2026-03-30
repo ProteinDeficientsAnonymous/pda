@@ -112,10 +112,16 @@ def approve_requests_headers(approve_requests_user):
 
 @pytest.fixture
 def pending_join_request(db):
+    from community.models import JoinFormQuestion
+
+    q = JoinFormQuestion.objects.filter(required=True).first()
+    answers = {}
+    if q:
+        answers[str(q.id)] = {"label": q.label, "answer": "I love veganism"}
     return JoinRequest.objects.create(
         display_name="Alice Smith",
         phone_number="+12025550601",
-        why_join="I love veganism",
+        custom_answers=answers,
         status=JoinRequestStatus.PENDING,
     )
 
@@ -247,49 +253,56 @@ class TestGuidelines:
 
 @pytest.mark.django_db
 class TestJoinRequests:
-    def test_submit_empty_display_name(self, api_client):
+    @pytest.fixture
+    def why_join_id(self, db):
+        from community.models import JoinFormQuestion
+
+        q = JoinFormQuestion.objects.filter(required=True).first()
+        return str(q.id) if q else ""
+
+    def test_submit_empty_display_name(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "   ",
                 "phone_number": "+12025550701",
-                "why_join": "I care",
+                "answers": {why_join_id: "I care"},
             },
             content_type="application/json",
         )
         assert response.status_code == 400
 
-    def test_submit_empty_why_join(self, api_client):
+    def test_submit_missing_required_answer(self, api_client):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Alice",
                 "phone_number": "+12025550702",
-                "why_join": "   ",
+                "answers": {},
             },
             content_type="application/json",
         )
         assert response.status_code == 400
 
-    def test_submit_display_name_too_long(self, api_client):
+    def test_submit_display_name_too_long(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "A" * 65,
                 "phone_number": "+12025550703",
-                "why_join": "I care",
+                "answers": {why_join_id: "I care"},
             },
             content_type="application/json",
         )
         assert response.status_code == 400
 
-    def test_submit_display_name_with_numbers(self, api_client):
+    def test_submit_display_name_with_numbers(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Alice2",
                 "phone_number": "+12025550704",
-                "why_join": "I care",
+                "answers": {why_join_id: "I care"},
             },
             content_type="application/json",
         )
