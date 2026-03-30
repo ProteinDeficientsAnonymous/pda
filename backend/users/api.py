@@ -416,14 +416,21 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 class UserSearchOut(BaseModel):
     id: str
     display_name: str
+    phone_number: str
 
 
 @router.get("/users/search/", response={200: list[UserSearchOut]}, auth=JWTAuth())
 def search_users(request, q: str = ""):
+    import re
+
     qs = User.objects.filter(is_active=True).exclude(pk=request.auth.pk)
     q = q.strip()
     if q:
-        qs = qs.filter(models.Q(display_name__icontains=q) | models.Q(phone_number__icontains=q))
+        digits = re.sub(r"\D", "", q)
+        phone_q = models.Q(phone_number__icontains=q)
+        if digits and digits != q:
+            phone_q = phone_q | models.Q(phone_number__icontains=digits)
+        qs = qs.filter(models.Q(display_name__icontains=q) | phone_q)
     qs = qs.order_by("display_name")[:10]
     return Status(
         200,
@@ -431,6 +438,7 @@ def search_users(request, q: str = ""):
             UserSearchOut(
                 id=str(u.id),
                 display_name=u.display_name or u.phone_number,
+                phone_number=u.phone_number,
             )
             for u in qs
         ],

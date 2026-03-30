@@ -598,7 +598,12 @@ class _DateTimeRow extends StatelessWidget {
 class _CoHostResult {
   final String id;
   final String displayName;
-  const _CoHostResult({required this.id, required this.displayName});
+  final String phone;
+  const _CoHostResult({
+    required this.id,
+    required this.displayName,
+    required this.phone,
+  });
 }
 
 class _CoHostPicker extends ConsumerStatefulWidget {
@@ -656,6 +661,7 @@ class _CoHostPickerState extends ConsumerState<_CoHostPicker> {
                   (item) => _CoHostResult(
                     id: item['id'] as String,
                     displayName: item['display_name'] as String,
+                    phone: item['phone_number'] as String,
                   ),
                 )
                 .toList();
@@ -717,7 +723,7 @@ class _CoHostPickerState extends ConsumerState<_CoHostPicker> {
         TextField(
           controller: _controller,
           decoration: InputDecoration(
-            hintText: 'Search by name…',
+            hintText: 'search by name or phone…',
             border: const OutlineInputBorder(),
             isDense: true,
             suffixIcon:
@@ -751,6 +757,13 @@ class _CoHostPickerState extends ConsumerState<_CoHostPicker> {
                       title: Text(
                         r.displayName,
                         style: const TextStyle(fontSize: 13),
+                      ),
+                      subtitle: Text(
+                        r.phone,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       trailing:
                           isSelected
