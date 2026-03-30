@@ -38,7 +38,8 @@ class AdminScreen extends ConsumerWidget {
                     subtitle: 'View and manage member accounts',
                     onTap: () => context.go('/members'),
                   ),
-                if (user?.hasPermission(Permission.approveJoinRequests) ?? false)
+                if (user?.hasPermission(Permission.approveJoinRequests) ??
+                    false)
                   _AdminCard(
                     icon: Icons.person_search_outlined,
                     title: 'Join requests',

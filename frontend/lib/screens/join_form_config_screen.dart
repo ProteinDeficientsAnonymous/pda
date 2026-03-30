@@ -381,8 +381,8 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
                     child: Text('Dropdown'),
                   ),
                 ],
-                onChanged: (val) =>
-                    setState(() => _fieldType = val ?? FieldType.text),
+                onChanged:
+                    (val) => setState(() => _fieldType = val ?? FieldType.text),
               ),
               const SizedBox(height: 12),
               SwitchListTile(

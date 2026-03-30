@@ -321,8 +321,10 @@ class _CreateSurveyDialogState extends State<_CreateSurveyDialog> {
                     child: Text('members only'),
                   ),
                 ],
-                onChanged: (v) =>
-                    setState(() => _visibility = v ?? PageVisibility.public_),
+                onChanged:
+                    (v) => setState(
+                      () => _visibility = v ?? PageVisibility.public_,
+                    ),
               ),
             ],
           ),

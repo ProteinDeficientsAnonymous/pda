@@ -61,8 +61,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     final attending =
         guests.where((g) => g.status == RsvpStatus.attending).toList();
     final maybe = guests.where((g) => g.status == RsvpStatus.maybe).toList();
-    final cantGo =
-        guests.where((g) => g.status == RsvpStatus.cantGo).toList();
+    final cantGo = guests.where((g) => g.status == RsvpStatus.cantGo).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,9 +94,10 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                 activeColor: theme.colorScheme.tertiary,
                 isActive: myRsvp == RsvpStatus.maybe,
                 onTap:
-                    () => myRsvp == RsvpStatus.maybe
-                        ? _removeRsvp()
-                        : _setRsvp(RsvpStatus.maybe),
+                    () =>
+                        myRsvp == RsvpStatus.maybe
+                            ? _removeRsvp()
+                            : _setRsvp(RsvpStatus.maybe),
               ),
               const SizedBox(width: 8),
               RsvpButton(
