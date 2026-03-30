@@ -84,7 +84,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Display name *'),
+      find.widgetWithText(TextFormField, 'display name *'),
       'Alex R',
     );
     final phoneField = find.byType(TextFormField).at(1);
@@ -136,7 +136,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Display name *'),
+      find.widgetWithText(TextFormField, 'display name *'),
       'Alex R',
     );
     final phoneField = find.byType(TextFormField).at(1);

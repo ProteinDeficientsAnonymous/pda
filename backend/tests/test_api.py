@@ -520,6 +520,7 @@ class TestJoinRequest:
         self, api_client, settings, why_join_id
     ):
         settings.VETTING_EMAIL = "vetting@pda.org"
+        settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         from django.core import mail
 
         api_client.post(

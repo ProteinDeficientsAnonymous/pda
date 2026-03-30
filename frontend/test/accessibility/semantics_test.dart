@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pda/models/user.dart';
+import 'package:pda/models/join_form_question.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/home_provider.dart';
+import 'package:pda/providers/join_form_provider.dart';
 import 'package:pda/screens/auth/login_screen.dart';
 import 'package:pda/screens/join_screen.dart';
 import 'package:pda/services/secure_storage.dart';
@@ -56,17 +58,28 @@ void main() {
               SecureStorageService.withStorage(FakeSecureStorage()),
             ),
             homePageNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
+            joinFormProvider.overrideWith(
+              (ref) async => const [
+                JoinFormQuestion(
+                  id: 'q1',
+                  label: 'Why do you want to join?',
+                  fieldType: 'text',
+                  required: true,
+                  displayOrder: 0,
+                ),
+              ],
+            ),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // The submit button should be findable by its text semantics
       expect(find.text('submit request'), findsOneWidget);
 
       // Form fields should have labels in the semantics tree
-      expect(find.text('Display name *'), findsOneWidget);
+      expect(find.text('display name *'), findsOneWidget);
       expect(find.text('Why do you want to join? *'), findsOneWidget);
 
       handle.dispose();

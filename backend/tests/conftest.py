@@ -25,7 +25,7 @@ def test_user(db):
     )
     role = Role.objects.create(
         name="test_member_role",
-        permissions=[PermissionKey.CREATE_EVENTS],
+        permissions=[PermissionKey.MANAGE_EVENTS],
     )
     user.roles.add(role)
     return user

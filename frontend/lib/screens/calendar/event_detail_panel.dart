@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/utils/time_format.dart';
 import 'package:pda/utils/file_download.dart';
 import 'package:pda/utils/ics_generator.dart';
 import 'package:pda/utils/share.dart';
@@ -67,16 +68,15 @@ void _showSidePanel(BuildContext context, Event event) {
 }
 
 List<Widget> _buildDateTimeRows(
-  DateFormat dateFmt,
-  DateFormat timeFmt,
+  String Function(DateTime) dateFmt,
   DateTime start,
   DateTime? end,
 ) {
   if (end == null) {
     return [
-      _DetailRow(icon: Icons.today_outlined, text: dateFmt.format(start)),
+      _DetailRow(icon: Icons.today_outlined, text: dateFmt(start)),
       const SizedBox(height: 8),
-      _DetailRow(icon: Icons.schedule_outlined, text: timeFmt.format(start)),
+      _DetailRow(icon: Icons.schedule_outlined, text: formatTime(start)),
     ];
   }
   final sameDay =
@@ -85,11 +85,11 @@ List<Widget> _buildDateTimeRows(
       start.day == end.day;
   if (sameDay) {
     return [
-      _DetailRow(icon: Icons.today_outlined, text: dateFmt.format(start)),
+      _DetailRow(icon: Icons.today_outlined, text: dateFmt(start)),
       const SizedBox(height: 8),
       _DetailRow(
         icon: Icons.schedule_outlined,
-        text: '${timeFmt.format(start)} \u2013 ${timeFmt.format(end)}',
+        text: '${formatTime(start)} \u2013 ${formatTime(end)}',
       ),
     ];
   }
@@ -97,8 +97,8 @@ List<Widget> _buildDateTimeRows(
     _DetailRow(
       icon: Icons.calendar_today,
       text:
-          '${dateFmt.format(start)}, ${timeFmt.format(start)} \u2013 '
-          '${dateFmt.format(end)}, ${timeFmt.format(end)}',
+          '${dateFmt(start)}, ${formatTime(start)} \u2013 '
+          '${dateFmt(end)}, ${formatTime(end)}',
     ),
   ];
 }
@@ -122,10 +122,10 @@ class EventDetailContent extends ConsumerWidget {
     final detailAsync = ref.watch(eventDetailProvider(event.id));
     final liveEvent = detailAsync.valueOrNull ?? event;
 
-    final dateFmt = DateFormat('EEEE, MMMM d, y');
-    final timeFmt = DateFormat('h:mm a');
     final start = liveEvent.startDatetime.toLocal();
     final end = liveEvent.endDatetime?.toLocal();
+    String formatDate(DateTime d) =>
+        DateFormat('EEEE, MMMM d, y').format(d).toLowerCase();
 
     final hostNames = <String>[];
     if (liveEvent.createdByName != null) {
@@ -184,7 +184,7 @@ class EventDetailContent extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          ..._buildDateTimeRows(dateFmt, timeFmt, start, end),
+          ..._buildDateTimeRows(formatDate, start, end),
           if (hostNames.isNotEmpty) ...[
             const SizedBox(height: 8),
             _DetailRow(

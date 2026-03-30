@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:pda/models/event.dart';
+import 'package:pda/utils/time_format.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/screens/calendar/event_detail_panel.dart';
@@ -223,7 +224,7 @@ class _EventManagementRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dateFmt = DateFormat('EEE, MMM d · h:mm a');
+    final dateFmt = DateFormat('EEE, MMM d');
 
     return Card(
       elevation: 2,
@@ -255,9 +256,9 @@ class _EventManagementRow extends ConsumerWidget {
                         Flexible(
                           child: Text(
                             event.endDatetime == null
-                                ? dateFmt.format(event.startDatetime.toLocal())
-                                : '${dateFmt.format(event.startDatetime.toLocal())} — '
-                                    '${DateFormat('h:mm a').format(event.endDatetime!.toLocal())}',
+                                ? '${dateFmt.format(event.startDatetime.toLocal()).toLowerCase()} · ${formatTime(event.startDatetime.toLocal())}'
+                                : '${dateFmt.format(event.startDatetime.toLocal()).toLowerCase()} · ${formatTime(event.startDatetime.toLocal())} — '
+                                    '${formatTime(event.endDatetime!.toLocal())}',
                             style: const TextStyle(
                               fontSize: 13,
                               color: Colors.grey,

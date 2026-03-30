@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/utils/time_format.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/utils/validators.dart' as v;
 
@@ -230,7 +231,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     });
   }
 
-  List<Widget> _buildEndTimeSection(DateFormat dateFmt, DateFormat timeFmt) {
+  List<Widget> _buildEndTimeSection(String Function(DateTime) dateFmt) {
     if (_end == null) {
       return [
         Semantics(
@@ -269,8 +270,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           Expanded(
             child: _DateTimeRow(
               label: 'end',
-              date: dateFmt.format(_end!),
-              time: timeFmt.format(_end!),
+              date: dateFmt(_end!),
+              time: formatTime(_end!),
               isActive: _calendarTarget == 'end',
               onDateTap: () => _toggleCalendar('end'),
               onTimeTap: _pickEndTime,
@@ -286,18 +287,18 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     ];
   }
 
-  List<Widget> _buildDateTimeSection(DateFormat dateFmt, DateFormat timeFmt) {
+  List<Widget> _buildDateTimeSection(String Function(DateTime) dateFmt) {
     return [
       _DateTimeRow(
         label: 'start',
-        date: dateFmt.format(_start),
-        time: timeFmt.format(_start),
+        date: dateFmt(_start),
+        time: formatTime(_start),
         isActive: _calendarTarget == 'start',
         onDateTap: () => _toggleCalendar('start'),
         onTimeTap: _pickStartTime,
       ),
       const SizedBox(height: 8),
-      ..._buildEndTimeSection(dateFmt, timeFmt),
+      ..._buildEndTimeSection(dateFmt),
       if (_calendarTarget != null) ...[
         const SizedBox(height: 8),
         CalendarDatePicker(
@@ -442,8 +443,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFmt = DateFormat('EEE, MMM d, y');
-    final timeFmt = DateFormat('h:mm a');
+    String dateFmt(DateTime d) =>
+        DateFormat('EEE, MMM d, y').format(d).toLowerCase();
     final theme = Theme.of(context);
 
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -465,7 +466,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 const SizedBox(height: 12),
                 _buildNoFeesNote(theme),
                 const SizedBox(height: 16),
-                ..._buildDateTimeSection(dateFmt, timeFmt),
+                ..._buildDateTimeSection(dateFmt),
                 const SizedBox(height: 16),
                 _buildLocationField(),
                 const SizedBox(height: 12),

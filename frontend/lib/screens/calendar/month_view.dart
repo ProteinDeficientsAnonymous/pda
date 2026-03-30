@@ -27,13 +27,13 @@ class _MonthViewState extends State<MonthView> {
   late DateTime _focusedMonth;
 
   static const List<String> _dayHeaders = [
-    'Sun',
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
+    'sun',
+    'mon',
+    'tue',
+    'wed',
+    'thu',
+    'fri',
+    'sat',
   ];
 
   static const int _maxEventRows = 3;
@@ -106,7 +106,8 @@ class _MonthViewState extends State<MonthView> {
   @override
   Widget build(BuildContext context) {
     final gridDays = _buildGridDays();
-    final headerLabel = DateFormat('MMMM yyyy').format(_focusedMonth);
+    final headerLabel =
+        DateFormat('MMMM yyyy').format(_focusedMonth).toLowerCase();
 
     return Column(
       children: [

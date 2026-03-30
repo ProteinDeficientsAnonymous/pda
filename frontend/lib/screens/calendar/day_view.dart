@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:pda/models/event.dart';
+import 'package:pda/utils/time_format.dart';
 import 'package:pda/screens/calendar/event_colors.dart';
 import 'package:pda/screens/calendar/event_detail_panel.dart';
 
@@ -118,7 +119,8 @@ class _DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = DateFormat('EEEE, MMMM d, y').format(selectedDay);
+    final label =
+        DateFormat('EEEE, MMMM d, y').format(selectedDay).toLowerCase();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Row(
@@ -162,7 +164,7 @@ class _EmptyDayState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'nothing on today 🌿',
+            'nothing today 🌿',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
             ),
@@ -173,10 +175,10 @@ class _EmptyDayState extends StatelessWidget {
   }
 }
 
-String _buildTimeRange(Event event, DateFormat timeFmt, DateFormat dateFmt) {
+String _buildTimeRange(Event event, DateFormat dateFmt) {
   final start = event.startDatetime.toLocal();
   if (event.endDatetime == null) {
-    return timeFmt.format(start);
+    return formatTime(start);
   }
   final end = event.endDatetime!.toLocal();
   final isSameDay =
@@ -184,9 +186,9 @@ String _buildTimeRange(Event event, DateFormat timeFmt, DateFormat dateFmt) {
       start.month == end.month &&
       start.day == end.day;
   if (isSameDay) {
-    return '${timeFmt.format(start)} \u2013 ${timeFmt.format(end)}';
+    return '${formatTime(start)} \u2013 ${formatTime(end)}';
   }
-  return '${dateFmt.format(start)} ${timeFmt.format(start)} \u2013 ${dateFmt.format(end)} ${timeFmt.format(end)}';
+  return '${dateFmt.format(start).toLowerCase()} ${formatTime(start)} \u2013 ${dateFmt.format(end).toLowerCase()} ${formatTime(end)}';
 }
 
 class _DayEventCard extends StatelessWidget {
@@ -200,9 +202,8 @@ class _DayEventCard extends StatelessWidget {
     final colors = eventColors(event.id);
     final bgColor = colors.$1;
     final fgColor = colors.$2;
-    final timeFmt = DateFormat('h:mm a');
     final dateFmt = DateFormat('MMM d');
-    final timeRange = _buildTimeRange(event, timeFmt, dateFmt);
+    final timeRange = _buildTimeRange(event, dateFmt);
 
     return Semantics(
       button: true,

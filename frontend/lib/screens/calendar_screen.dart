@@ -85,31 +85,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     ref.listen(authProvider, (_, __) => ref.invalidate(eventsProvider));
 
     return AppScaffold(
-      child: Stack(
+      child: Column(
         children: [
-          Column(
-            children: [
-              _CalendarToolbar(
-                selected: _view,
-                onSelected: _onViewChanged,
-                onToday: _goToToday,
-              ),
-              Expanded(
-                child: eventsAsync.when(
-                  loading:
-                      () => const Center(child: CircularProgressIndicator()),
-                  error:
-                      (e, _) => const Center(
-                        child: Text('couldn\'t load events — try refreshing'),
-                      ),
-                  data: (events) => _buildView(events),
-                ),
-              ),
-            ],
+          _CalendarToolbar(
+            selected: _view,
+            onSelected: _onViewChanged,
+            onToday: _goToToday,
           ),
-          Positioned(
-            bottom: 24,
-            right: 24,
+          Expanded(
+            child: eventsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error:
+                  (e, _) => const Center(
+                    child: Text('couldn\'t load events — try refreshing'),
+                  ),
+              data: (events) => _buildView(events),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16, top: 8),
             child: FloatingActionButton.extended(
               onPressed: _openCreateEvent,
               icon: const Icon(Icons.add_circle_outline),
