@@ -733,7 +733,7 @@ class CheckPhoneOut(BaseModel):
 
 @router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
 def list_events(request):
-    is_authed = request.auth is not None
+    is_authed = not isinstance(request.auth, AnonymousUser)
     events = Event.objects.select_related("created_by").prefetch_related("co_hosts").all()
     return Status(
         200,
@@ -979,11 +979,22 @@ def calendar_feed(request, token: str = ""):
         vevent.add("uid", f"{event.id}@pda")
         vevent.add("dtstamp", timezone.now())
         vevent.add("dtstart", event.start_datetime)
-        if event.end_datetime:
-            vevent.add("dtend", event.end_datetime)
+        vevent.add(
+            "dtend",
+            event.end_datetime or event.start_datetime + timedelta(hours=2),
+        )
         vevent.add("summary", event.title)
+        desc_parts = []
         if event.description:
-            vevent.add("description", event.description)
+            desc_parts.append(event.description)
+        if event.whatsapp_link:
+            desc_parts.append(f"WhatsApp: {event.whatsapp_link}")
+        if event.partiful_link:
+            desc_parts.append(f"Partiful: {event.partiful_link}")
+        if event.other_link:
+            desc_parts.append(f"Link: {event.other_link}")
+        if desc_parts:
+            vevent.add("description", "\n".join(desc_parts))
         if event.location:
             vevent.add("location", event.location)
         cal.add_component(vevent)
