@@ -21,6 +21,7 @@ abstract class Permission {
   static const editHomepage = 'edit_homepage';
   static const editJoinQuestions = 'edit_join_questions';
   static const manageSurveys = 'manage_surveys';
+  static const tagOfficialEvent = 'tag_official_event';
 }
 
 abstract class JoinRequestStatus {

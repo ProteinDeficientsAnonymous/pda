@@ -809,9 +809,9 @@ def check_phone(request, payload: CheckPhoneIn):
 @router.post("/events/", response={201: EventOut, 400: ErrorOut, 403: ErrorOut}, auth=JWTAuth())
 def create_event(request, payload: EventIn):
     # Any authenticated member can create community events.
-    # Official events require manage_events permission.
+    # Official events require tag_official_event permission.
     if payload.event_type == EventType.OFFICIAL:
-        if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
+        if not request.auth.has_permission(PermissionKey.TAG_OFFICIAL_EVENT):
             return Status(403, ErrorOut(detail="Permission denied."))
 
     if payload.end_datetime is not None and payload.end_datetime <= payload.start_datetime:
@@ -853,7 +853,9 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         return Status(403, ErrorOut(detail="Permission denied."))
 
     updates = payload.model_dump(exclude_unset=True)
-    if updates.get("event_type") == EventType.OFFICIAL and not is_manager:
+    if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
+        PermissionKey.TAG_OFFICIAL_EVENT
+    ):
         return Status(403, ErrorOut(detail="Permission denied."))
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)

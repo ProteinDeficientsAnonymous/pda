@@ -15,6 +15,7 @@ const kPermissionLabels = {
   Permission.editHomepage: 'Edit homepage',
   Permission.editJoinQuestions: 'Edit join form questions',
   Permission.manageSurveys: 'Manage surveys',
+  Permission.tagOfficialEvent: 'Tag official event',
 };
 
 // Dialog to create or edit a role (name + permission checkboxes)

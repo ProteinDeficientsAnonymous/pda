@@ -491,7 +491,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 if (ref
                         .watch(authProvider)
                         .valueOrNull
-                        ?.hasPermission(Permission.manageEvents) ??
+                        ?.hasPermission(Permission.tagOfficialEvent) ??
                     false) ...[
                   const SizedBox(height: 8),
                   SwitchListTile(
@@ -503,8 +503,11 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     contentPadding: EdgeInsets.zero,
                     onChanged:
                         (val) => setState(
-                          () => _eventType =
-                              val ? EventType.official : EventType.community,
+                          () =>
+                              _eventType =
+                                  val
+                                      ? EventType.official
+                                      : EventType.community,
                         ),
                   ),
                 ],
