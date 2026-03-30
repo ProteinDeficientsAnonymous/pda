@@ -134,6 +134,10 @@ class EventListOut(BaseModel):
     start_datetime: datetime
     end_datetime: datetime | None = None
     location: str
+    whatsapp_link: str = ""
+    partiful_link: str = ""
+    created_by_id: str | None = None
+    co_host_ids: list[str] = []
 
 
 class EventOut(BaseModel):
@@ -729,7 +733,8 @@ class CheckPhoneOut(BaseModel):
 
 @router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
 def list_events(request):
-    events = Event.objects.all()
+    is_authed = request.auth is not None
+    events = Event.objects.select_related("created_by").prefetch_related("co_hosts").all()
     return Status(
         200,
         [
@@ -740,6 +745,10 @@ def list_events(request):
                 start_datetime=e.start_datetime,
                 end_datetime=e.end_datetime,
                 location=e.location,
+                whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
+                partiful_link=_members_only(e.partiful_link, "", is_authed),
+                created_by_id=str(e.created_by_id) if e.created_by_id else None,
+                co_host_ids=[str(c.id) for c in e.co_hosts.all()],
             )
             for e in events
         ],

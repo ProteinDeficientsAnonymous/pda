@@ -15,19 +15,12 @@ def api_client():
 @pytest.fixture
 def test_user(db):
     from users.models import User
-    from users.permissions import PermissionKey
-    from users.roles import Role
 
     user = User.objects.create_user(
         phone_number="+12025550101",
         password="testpass123",
         display_name="Test Member",
     )
-    role = Role.objects.create(
-        name="test_member_role",
-        permissions=[PermissionKey.MANAGE_EVENTS],
-    )
-    user.roles.add(role)
     return user
 
 
