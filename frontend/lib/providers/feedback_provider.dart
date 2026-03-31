@@ -20,38 +20,49 @@ class FeedbackAttachment {
   };
 }
 
+class FeedbackSubmission {
+  final String title;
+  final String description;
+  final String currentRoute;
+  final String userAgent;
+  final String userDisplayName;
+  final String userPhone;
+  final String appVersion;
+  final List<FeedbackAttachment> attachments;
+
+  const FeedbackSubmission({
+    required this.title,
+    this.description = '',
+    this.currentRoute = '',
+    this.userAgent = '',
+    this.userDisplayName = '',
+    this.userPhone = '',
+    this.appVersion = '',
+    this.attachments = const [],
+  });
+}
+
 class FeedbackNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<void> submit({
-    required String title,
-    String description = '',
-    String currentRoute = '',
-    String userAgent = '',
-    String userDisplayName = '',
-    String userPhone = '',
-    String appVersion = '',
-    List<FeedbackAttachment> attachments = const [],
-  }) async {
+  Future<void> submit(FeedbackSubmission submission) async {
     state = const AsyncLoading();
     final api = ref.read(apiClientProvider);
     try {
-      final metadata = <String, dynamic>{
-        'route': currentRoute,
-        'user_agent': userAgent,
-        'user_display_name': userDisplayName,
-        'user_phone': userPhone,
-        'app_version': appVersion,
-      };
-
       await api.post(
         '/api/community/feedback/',
         data: {
-          'title': title,
-          'description': description,
-          'metadata': metadata,
-          'attachments': attachments.map((a) => a.toJson()).toList(),
+          'title': submission.title,
+          'description': submission.description,
+          'metadata': {
+            'route': submission.currentRoute,
+            'user_agent': submission.userAgent,
+            'user_display_name': submission.userDisplayName,
+            'user_phone': submission.userPhone,
+            'app_version': submission.appVersion,
+          },
+          'attachments': submission.attachments.map((a) => a.toJson()).toList(),
         },
       );
       state = const AsyncData(null);

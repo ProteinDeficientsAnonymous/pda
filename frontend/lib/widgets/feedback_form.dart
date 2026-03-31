@@ -93,14 +93,16 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
     await ref
         .read(feedbackProvider.notifier)
         .submit(
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          currentRoute: widget.currentRoute,
-          userAgent: widget.userAgent,
-          userDisplayName: user?.displayName ?? '',
-          userPhone: user?.phoneNumber ?? '',
-          appVersion: widget.appVersion,
-          attachments: _attachments,
+          FeedbackSubmission(
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            currentRoute: widget.currentRoute,
+            userAgent: widget.userAgent,
+            userDisplayName: user?.displayName ?? '',
+            userPhone: user?.phoneNumber ?? '',
+            appVersion: widget.appVersion,
+            attachments: _attachments,
+          ),
         );
 
     if (!mounted) return;

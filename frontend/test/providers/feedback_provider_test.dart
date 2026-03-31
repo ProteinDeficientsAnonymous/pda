@@ -48,11 +48,13 @@ void main() {
       await container
           .read(feedbackProvider.notifier)
           .submit(
-            title: 'Bug report',
-            description: 'Something broke',
-            currentRoute: '/calendar',
-            userAgent: 'Mozilla/5.0',
-            appVersion: '1.0.0+1',
+            const FeedbackSubmission(
+              title: 'Bug report',
+              description: 'Something broke',
+              currentRoute: '/calendar',
+              userAgent: 'Mozilla/5.0',
+              appVersion: '1.0.0+1',
+            ),
           );
 
       final state = container.read(feedbackProvider);
@@ -91,15 +93,17 @@ void main() {
       await container
           .read(feedbackProvider.notifier)
           .submit(
-            title: 'Bug with screenshot',
-            description: 'See attached',
-            attachments: [
-              const FeedbackAttachment(
-                filename: 'screenshot.png',
-                contentType: 'image/png',
-                base64Data: 'iVBORw0KGgoAAAANS',
-              ),
-            ],
+            const FeedbackSubmission(
+              title: 'Bug with screenshot',
+              description: 'See attached',
+              attachments: [
+                FeedbackAttachment(
+                  filename: 'screenshot.png',
+                  contentType: 'image/png',
+                  base64Data: 'iVBORw0KGgoAAAANS',
+                ),
+              ],
+            ),
           );
 
       final captured =
@@ -137,7 +141,12 @@ void main() {
 
       await container
           .read(feedbackProvider.notifier)
-          .submit(title: 'Bug report', description: 'Details');
+          .submit(
+            const FeedbackSubmission(
+              title: 'Bug report',
+              description: 'Details',
+            ),
+          );
 
       final state = container.read(feedbackProvider);
       expect(state.hasError, isTrue);

@@ -16,6 +16,8 @@ void main() {
       'lib/screens/calendar/event_detail_panel.dart',
       // Phone tooltip overlay dismiss — not a user-facing interactive element
       'lib/screens/calendar/rsvp_section.dart',
+      // Feedback overlay backdrop dismiss — not a user-facing interactive element
+      'lib/widgets/feedback_button.dart',
     };
 
     final libDir = Directory('lib');

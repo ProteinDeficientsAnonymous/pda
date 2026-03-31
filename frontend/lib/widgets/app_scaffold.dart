@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pda/config/api_config.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/widgets/feedback_button.dart';
 import 'package:pda/widgets/profile_avatar.dart';
 
 class AppScaffold extends ConsumerWidget {
@@ -34,7 +36,17 @@ class AppScaffold extends ConsumerWidget {
         title: _LogoButton(onTap: () => _showPdaMenu(context, user)),
         actions: actions,
       ),
-      body: body,
+      body:
+          enableFeedback
+              ? Stack(
+                children: [
+                  body,
+                  FeedbackButton(
+                    currentRoute: GoRouterState.of(context).uri.toString(),
+                  ),
+                ],
+              )
+              : body,
       bottomNavigationBar: _BottomNav(user: user),
     );
   }
