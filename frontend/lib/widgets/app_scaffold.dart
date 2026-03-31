@@ -54,6 +54,7 @@ List<Widget> _buildWideNavItems(
   return [
     const _NavButton(label: 'calendar', route: '/calendar'),
     const _NavButton(label: 'my events', route: '/events/mine'),
+    const _NavButton(label: 'chat', route: '/chat'),
     const _NavButton(label: 'guidelines', route: '/guidelines'),
     const _NavButton(label: 'faq', route: '/faq'),
     const _NavButton(label: 'volunteer', route: '/volunteer'),
@@ -133,6 +134,12 @@ class _NavDrawer extends ConsumerWidget {
           icon: Icons.event_outlined,
           label: 'my events',
           route: '/events/mine',
+        ),
+      if (user != null)
+        const _DrawerItem(
+          icon: Icons.forum_outlined,
+          label: 'chat',
+          route: '/chat',
         ),
     ];
 

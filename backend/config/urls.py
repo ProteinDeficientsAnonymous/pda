@@ -1,3 +1,4 @@
+from chat.api import router as chat_router
 from community.api import router as community_router
 from django.urls import path, re_path
 from django.views.generic import TemplateView
@@ -7,6 +8,7 @@ from users.api import router as auth_router
 api = NinjaAPI(title="PDA API", version="1.0.0")
 api.add_router("/auth/", auth_router, tags=["auth"])
 api.add_router("/community/", community_router, tags=["community"])
+api.add_router("/chat/", chat_router, tags=["chat"])
 
 urlpatterns = [
     path("api/", api.urls),

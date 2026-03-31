@@ -30,6 +30,7 @@ dependencies:
   share_plus: ^10.1.4
   flutter_quill: ^11.5.0
   mcp_toolkit: ^0.4.0
+  stream_chat_flutter: ^9.4.0
 
 dev_dependencies:
   flutter_test:

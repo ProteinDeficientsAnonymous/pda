@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "users",
     "community",
     "notifications",
+    "chat",
 ]
 
 MIDDLEWARE = [
@@ -116,6 +117,10 @@ else:
 
 # Email
 VETTING_EMAIL = os.environ.get("VETTING_EMAIL", "")
+
+# Stream Chat
+STREAM_CHAT_API_KEY = os.environ.get("STREAM_CHAT_API_KEY", "")
+STREAM_CHAT_API_SECRET = os.environ.get("STREAM_CHAT_API_SECRET", "")
 
 # WhatsApp bot
 WHATSAPP_BOT_URL = os.environ.get("WHATSAPP_BOT_URL", "http://localhost:3001")

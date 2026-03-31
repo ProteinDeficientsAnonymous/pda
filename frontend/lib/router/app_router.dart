@@ -24,6 +24,8 @@ import 'package:pda/screens/survey_admin_screen.dart';
 import 'package:pda/screens/survey_builder_screen.dart';
 import 'package:pda/screens/survey_responses_screen.dart';
 import 'package:pda/screens/survey_screen.dart';
+import 'package:pda/screens/chat_screen.dart';
+import 'package:pda/screens/chat_channel_screen.dart';
 import 'package:pda/screens/whatsapp_config_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -63,6 +65,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isProtected =
           loc == '/faq' ||
           loc == '/guidelines' ||
+          loc == '/chat' ||
+          loc.startsWith('/chat/') ||
           loc == '/members' ||
           loc == '/join-requests' ||
           loc == '/events/manage' ||
@@ -224,6 +228,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'survey',
         builder:
             (_, state) => SurveyScreen(slug: state.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/chat',
+        name: 'chat',
+        builder: (_, __) => const ChatScreen(),
+      ),
+      GoRoute(
+        path: '/chat/:channelId',
+        name: 'chat-channel',
+        builder: (_, state) => ChatChannelScreen(
+          channelId: state.pathParameters['channelId']!,
+        ),
       ),
       GoRoute(
         path: '/events/:id',
