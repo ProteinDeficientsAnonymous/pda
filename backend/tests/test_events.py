@@ -407,7 +407,7 @@ class TestBuildGuestList:
     def _make_rsvp(self, user_id, name, status, phone):
         rsvp = SimpleNamespace(
             user_id=user_id,
-            user=SimpleNamespace(display_name=name, phone_number=phone),
+            user=SimpleNamespace(display_name=name, phone_number=phone, profile_photo=""),
             status=status,
         )
         return rsvp
