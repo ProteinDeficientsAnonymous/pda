@@ -1,4 +1,4 @@
-.PHONY: help install run test lint format typecheck lint-file typecheck-file check migrate \
+.PHONY: help install run test lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop ci dev build-dev complexity \
         frontend-install frontend-run frontend-run-html frontend-build frontend-codegen frontend-lint \
         frontend-format frontend-test frontend-fix frontend-complexity
@@ -47,6 +47,9 @@ test:
 
 lint:
 	cd backend && uv run ruff check --fix . && uv run ruff format .
+
+lint-check:
+	cd backend && uv run ruff check . && uv run ruff format --check .
 
 format:
 	cd backend && uv run ruff format .
@@ -114,7 +117,7 @@ frontend-complexity:
 	dart pub global activate dart_code_metrics 2>/dev/null; dart pub global run dart_code_metrics:metrics analyze frontend/lib/ --disable-sunset-warning --set-exit-on-violation-level=warning
 
 # CI (run before every commit)
-ci: lint check test typecheck complexity frontend-lint frontend-test frontend-complexity
+ci: lint-check check test typecheck complexity frontend-lint frontend-test frontend-complexity
 
 # Install deps, codegen, migrate, then run dev
 build-dev: install frontend-codegen migrate dev
