@@ -1,3 +1,4 @@
+import base64
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -137,7 +138,7 @@ if IS_PRODUCTION:
     _cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
     CORS_ALLOWED_ORIGINS = _cors_env.split(",") if _cors_env else []
 else:
-    CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+    CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://0.0.0.0:3000"]
 
 # Email
 VETTING_EMAIL = os.environ.get("VETTING_EMAIL", "")
@@ -182,6 +183,14 @@ LOGGING = {
         },
     },
 }
+
+GITHUB_APP_ID = os.environ.get("GITHUB_APP_ID", "")
+GITHUB_APP_INSTALLATION_ID = os.environ.get("GITHUB_APP_INSTALLATION_ID", "")
+_github_app_private_key_b64 = os.environ.get("GITHUB_APP_PRIVATE_KEY", "")
+GITHUB_APP_PRIVATE_KEY = (
+    base64.b64decode(_github_app_private_key_b64).decode() if _github_app_private_key_b64 else ""
+)
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 if IS_PRODUCTION and os.environ.get("EMAIL_HOST"):

@@ -20,6 +20,8 @@ make createsuperuser
 make dev  # runs Django :8000 + Flutter :3000
 ```
 
+See [docs/local-environment-setup.md](docs/local-environment-setup.md) for prerequisites and first-time setup details.
+
 ## Features
 
 - Public landing page with group info and values

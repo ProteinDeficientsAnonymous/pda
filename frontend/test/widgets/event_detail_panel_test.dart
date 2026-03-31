@@ -156,8 +156,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Edit'), findsOneWidget);
-    expect(find.text('Delete'), findsOneWidget);
+    expect(find.text('edit'), findsOneWidget);
+    expect(find.text('delete'), findsOneWidget);
   });
 
   testWidgets('admin actions hidden for non-creator member', (tester) async {
@@ -174,8 +174,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Edit'), findsNothing);
-    expect(find.text('Delete'), findsNothing);
+    expect(find.text('edit'), findsNothing);
+    expect(find.text('delete'), findsNothing);
   });
 }
 

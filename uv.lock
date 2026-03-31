@@ -476,6 +476,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
+    { name = "pyjwt" },
     { name = "python-dotenv" },
     { name = "whitenoise" },
 ]
@@ -504,6 +505,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=11.0,<12.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4.0" },
     { name = "pydantic", specifier = ">=2.12,<3.0" },
+    { name = "pyjwt", extras = ["cryptography"], specifier = ">=2.0,<3.0" },
     { name = "python-dotenv", specifier = ">=1.1,<2.0" },
     { name = "whitenoise", specifier = ">=6.11,<7.0" },
 ]

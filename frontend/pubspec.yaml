@@ -28,9 +28,9 @@ dependencies:
   web: ^1.1.0
   intl_phone_field: ^3.2.0
   share_plus: ^10.1.4
+  image_picker: ^1.2.1
   flutter_quill: ^11.5.0
   mcp_toolkit: ^0.4.0
-  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

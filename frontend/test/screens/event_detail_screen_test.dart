@@ -92,13 +92,15 @@ void main() {
     expect(find.textContaining('Watch a great film'), findsOneWidget);
   });
 
-  testWidgets('shows host name', (tester) async {
+  testWidgets('shows host name for authenticated member', (tester) async {
     tester.view.physicalSize = _kTestSize;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(_buildSubject());
+    await tester.pumpWidget(
+      _buildSubject(authNotifier: _MemberAuthNotifier(userId: 'u-other')),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Alice'), findsOneWidget);

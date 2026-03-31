@@ -94,7 +94,7 @@ class _GuidelinesEditorAuthNotifier extends AuthNotifier {
       Role(
         id: 'r1',
         name: 'guidelines_editor',
-        permissions: ['manage_guidelines'],
+        permissions: ['edit_guidelines'],
       ),
     ],
   );

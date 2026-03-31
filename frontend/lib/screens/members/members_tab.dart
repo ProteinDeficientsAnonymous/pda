@@ -38,7 +38,7 @@ class _MembersTabState extends ConsumerState<MembersTab> {
   }
 
   List<User> _filterAndSort(List<User> users) {
-    var filtered = users;
+    var filtered = [...users];
     if (_query.isNotEmpty) {
       final q = _query.toLowerCase();
       filtered =
