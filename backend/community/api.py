@@ -2,11 +2,13 @@ import json as json_module
 import logging
 import re
 import secrets
+import time
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from urllib.request import Request, urlopen
 from uuid import UUID
 
+import jwt as pyjwt
 import phonenumbers
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -660,6 +662,21 @@ def _build_feedback_metadata(meta: FeedbackMetadataIn) -> str:
     return "\n".join(lines) if len(lines) > 2 else ""
 
 
+def _get_github_app_token(app_id: str, private_key_pem: str, installation_id: str) -> str:
+    now = int(time.time())
+    app_jwt = pyjwt.encode(
+        {"iat": now - 60, "exp": now + 540, "iss": app_id},
+        private_key_pem,
+        algorithm="RS256",
+    )
+    result = _github_request(
+        f"https://api.github.com/app/installations/{installation_id}/access_tokens",
+        app_jwt,
+        {},
+    )
+    return result["token"]
+
+
 def _github_request(url: str, token: str, data: dict) -> dict:
     req = Request(
         url,
@@ -708,22 +725,25 @@ def _issue_labels(feedback_types: list[str]) -> list[str]:
     auth=_optional_jwt,
 )
 def submit_feedback(request, payload: FeedbackIn):
-    token = settings.GITHUB_TOKEN
+    app_id = settings.GITHUB_APP_ID
+    private_key = settings.GITHUB_APP_PRIVATE_KEY
+    installation_id = settings.GITHUB_APP_INSTALLATION_ID
     repo = settings.GITHUB_REPO
     logger.info(
-        "Feedback submission received: title=%r, token_set=%s, repo=%r",
+        "Feedback submission received: title=%r, app_configured=%s, repo=%r",
         payload.title,
-        bool(token),
+        bool(app_id and private_key and installation_id),
         repo,
     )
-    if not token or not repo:
-        logger.warning("Feedback submission rejected: GITHUB_TOKEN or GITHUB_REPO not configured")
+    if not all([app_id, private_key, installation_id, repo]):
+        logger.warning("Feedback submission rejected: GitHub App not configured")
         return Status(503, ErrorOut(detail="Feedback submission is not configured."))
 
     issue_body = _build_issue_body(payload, request.auth)
 
     logger.info("Submitting feedback issue to GitHub repo: %s", repo)
     try:
+        token = _get_github_app_token(app_id, private_key, installation_id)
         result = _github_request(
             f"https://api.github.com/repos/{repo}/issues",
             token,

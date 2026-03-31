@@ -1,3 +1,4 @@
+import base64
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -183,7 +184,12 @@ LOGGING = {
     },
 }
 
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_APP_ID = os.environ.get("GITHUB_APP_ID", "")
+GITHUB_APP_INSTALLATION_ID = os.environ.get("GITHUB_APP_INSTALLATION_ID", "")
+_github_app_private_key_b64 = os.environ.get("GITHUB_APP_PRIVATE_KEY", "")
+GITHUB_APP_PRIVATE_KEY = (
+    base64.b64decode(_github_app_private_key_b64).decode() if _github_app_private_key_b64 else ""
+)
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

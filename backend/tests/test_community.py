@@ -473,13 +473,22 @@ def _mock_urlopen(monkeypatch, issue_url="https://github.com/leahpeker/pda/issue
     return captured
 
 
+_APP_SETTINGS = {
+    "GITHUB_APP_ID": "12345",
+    "GITHUB_APP_INSTALLATION_ID": "67890",
+    "GITHUB_APP_PRIVATE_KEY": "fake-key",
+    "GITHUB_REPO": "ProteinDeficientsAnonymous/pda",
+}
+
+
 @pytest.mark.django_db
 class TestFeedback:
     def test_feedback_success_creates_github_issue(
         self, api_client, auth_headers, settings, monkeypatch
     ):
-        settings.GITHUB_TOKEN = "ghp_test123"
-        settings.GITHUB_REPO = "leahpeker/pda"
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr("community.api._get_github_app_token", lambda *_: "ghs_inst_token")
         captured = _mock_urlopen(monkeypatch)
 
         response = api_client.post(
@@ -500,12 +509,15 @@ class TestFeedback:
         assert "html_url" in response.json()
 
         issue_request = captured["calls"][-1]
-        assert "api.github.com/repos/leahpeker/pda/issues" in issue_request.full_url
-        assert issue_request.get_header("Authorization") == "Bearer ghp_test123"
+        assert (
+            "api.github.com/repos/ProteinDeficientsAnonymous/pda/issues" in issue_request.full_url
+        )
+        assert issue_request.get_header("Authorization") == "Bearer ghs_inst_token"
 
     def test_feedback_works_without_auth(self, api_client, settings, monkeypatch):
-        settings.GITHUB_TOKEN = "ghp_test123"
-        settings.GITHUB_REPO = "leahpeker/pda"
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr("community.api._get_github_app_token", lambda *_: "ghs_inst_token")
         _mock_urlopen(monkeypatch)
 
         response = api_client.post(
@@ -518,8 +530,10 @@ class TestFeedback:
         )
         assert response.status_code == 201
 
-    def test_feedback_returns_503_when_token_not_configured(self, api_client, settings):
-        settings.GITHUB_TOKEN = ""
+    def test_feedback_returns_503_when_app_not_configured(self, api_client, settings):
+        settings.GITHUB_APP_ID = ""
+        settings.GITHUB_APP_INSTALLATION_ID = ""
+        settings.GITHUB_APP_PRIVATE_KEY = ""
         settings.GITHUB_REPO = ""
 
         response = api_client.post(
@@ -533,8 +547,8 @@ class TestFeedback:
         assert response.status_code == 503
 
     def test_feedback_requires_title(self, api_client, settings):
-        settings.GITHUB_TOKEN = "ghp_test123"
-        settings.GITHUB_REPO = "leahpeker/pda"
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
 
         response = api_client.post(
             "/api/community/feedback/",
@@ -546,9 +560,9 @@ class TestFeedback:
     def test_feedback_returns_503_on_github_api_failure(self, api_client, settings, monkeypatch):
         from urllib.error import URLError
 
-        settings.GITHUB_TOKEN = "ghp_test123"
-        settings.GITHUB_REPO = "leahpeker/pda"
-
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr("community.api._get_github_app_token", lambda *_: "ghs_inst_token")
         monkeypatch.setattr(
             "community.api.urlopen",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(URLError("Connection refused")),
