@@ -79,16 +79,25 @@ class _DayViewState extends State<DayView> {
   Widget build(BuildContext context) {
     final events = _eventsForSelectedDay();
 
-    return Column(
-      children: [
-        _DayHeader(
-          selectedDay: _selectedDay,
-          onPrev: _goToPrevDay,
-          onNext: _goToNextDay,
-        ),
-        const Divider(height: 1),
-        Expanded(child: _buildBody(context, events)),
-      ],
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) > 0) {
+          _goToPrevDay();
+        } else if ((details.primaryVelocity ?? 0) < 0) {
+          _goToNextDay();
+        }
+      },
+      child: Column(
+        children: [
+          _DayHeader(
+            selectedDay: _selectedDay,
+            onPrev: _goToPrevDay,
+            onNext: _goToNextDay,
+          ),
+          const Divider(height: 1),
+          Expanded(child: _buildBody(context, events)),
+        ],
+      ),
     );
   }
 

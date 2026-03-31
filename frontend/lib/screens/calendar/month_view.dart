@@ -110,34 +110,43 @@ class _MonthViewState extends State<MonthView> {
     final headerLabel =
         DateFormat('MMMM yyyy').format(_focusedMonth).toLowerCase();
 
-    return Column(
-      children: [
-        _buildMonthHeader(context, headerLabel),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: _buildDayOfWeekHeaders(context),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).dividerColor.withValues(alpha: 0.4),
-                    width: 0.5,
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) > 0) {
+          _goToPreviousMonth();
+        } else if ((details.primaryVelocity ?? 0) < 0) {
+          _goToNextMonth();
+        }
+      },
+      child: Column(
+        children: [
+          _buildMonthHeader(context, headerLabel),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: _buildDayOfWeekHeaders(context),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.4),
+                      width: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  child: _buildGrid(context, gridDays),
                 ),
-                child: _buildGrid(context, gridDays),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

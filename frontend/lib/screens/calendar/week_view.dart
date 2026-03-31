@@ -76,52 +76,61 @@ class _WeekViewState extends State<WeekView> {
     final days = _weekDays;
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: _goToPreviousWeek,
-                tooltip: 'previous week',
-              ),
-              Expanded(
-                child: Text(
-                  _weekRangeLabel(),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium,
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if ((details.primaryVelocity ?? 0) > 0) {
+          _goToPreviousWeek();
+        } else if ((details.primaryVelocity ?? 0) < 0) {
+          _goToNextWeek();
+        }
+      },
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: _goToPreviousWeek,
+                  tooltip: 'previous week',
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: _goToNextWeek,
-                tooltip: 'next week',
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child:
-              isWide
-                  ? _WideWeekGrid(
-                    days: days,
-                    events: widget.events,
-                    isToday: _isToday,
-                    onEventTapped: (e) => showEventDetail(context, e),
-                    onDayTapped: widget.onDayTapped,
-                  )
-                  : _NarrowWeekGrid(
-                    days: days,
-                    events: widget.events,
-                    isToday: _isToday,
-                    onEventTapped: (e) => showEventDetail(context, e),
-                    onDayTapped: widget.onDayTapped,
+                Expanded(
+                  child: Text(
+                    _weekRangeLabel(),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium,
                   ),
-        ),
-      ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: _goToNextWeek,
+                  tooltip: 'next week',
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child:
+                isWide
+                    ? _WideWeekGrid(
+                      days: days,
+                      events: widget.events,
+                      isToday: _isToday,
+                      onEventTapped: (e) => showEventDetail(context, e),
+                      onDayTapped: widget.onDayTapped,
+                    )
+                    : _NarrowWeekGrid(
+                      days: days,
+                      events: widget.events,
+                      isToday: _isToday,
+                      onEventTapped: (e) => showEventDetail(context, e),
+                      onDayTapped: widget.onDayTapped,
+                    ),
+          ),
+        ],
+      ),
     );
   }
 }
