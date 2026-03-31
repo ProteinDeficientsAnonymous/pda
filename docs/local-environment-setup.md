@@ -10,7 +10,7 @@ Everything you need to install manually before `make` commands will work.
 | **uv** | Python package manager | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | **Flutter 3.x** | Frontend SDK | [flutter.dev/docs/get-started/install](https://flutter.dev/docs/get-started/install) |
 | **Docker** | Runs PostgreSQL locally | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
-| **1Password CLI** (`op`) | Pull dev credentials from 1Password | [docs/1password-cli.md](1password-cli.md) *(optional)* |
+| **1Password CLI** (`op`) | Pull dev credentials from 1Password | `brew install 1password-cli` *(optional)* |
 
 Verify everything is on your PATH:
 
@@ -69,7 +69,40 @@ Visit http://localhost:3000 for the app, http://localhost:8000/admin for Django 
 
 The GitHub App credentials for the feedback button are stored in 1Password. Without them the feedback button is simply disabled — you don't need them for general development.
 
-To populate them, see [docs/1password-cli.md](1password-cli.md).
+### 1. Install and authenticate 1Password CLI
+
+```bash
+brew install 1password-cli
+```
+
+Then link it to the desktop app so it uses your existing session — no separate sign-in needed:
+
+1. Open **1Password** → **Settings** → **Developer**
+2. Enable **"Integrate with 1Password CLI"**
+
+Verify: `op whoami`
+
+Full guide: https://developer.1password.com/docs/cli/app-integration
+
+### 2. Populate `.env`
+
+Credentials are in the **PDAFeedbackForm** item (Shared vault):
+
+```bash
+echo "GITHUB_APP_ID=$(op item get PDAFeedbackForm --fields 'App ID')" >> .env
+echo "GITHUB_APP_INSTALLATION_ID=$(op item get PDAFeedbackForm --fields 'PDA Installation ID')" >> .env
+echo "GITHUB_APP_PRIVATE_KEY=$(op read 'op://Shared/PDAFeedbackForm/add more/pdafeedbackform.2026-03-31.private-key.pem' | base64 | tr -d '\n')" >> .env
+echo "GITHUB_REPO=ProteinDeficientsAnonymous/pda" >> .env
+```
+
+Or as shell exports for a single session:
+
+```bash
+export GITHUB_APP_ID=$(op item get PDAFeedbackForm --fields "App ID")
+export GITHUB_APP_INSTALLATION_ID=$(op item get PDAFeedbackForm --fields "PDA Installation ID")
+export GITHUB_APP_PRIVATE_KEY=$(op read "op://Shared/PDAFeedbackForm/add more/pdafeedbackform.2026-03-31.private-key.pem" | base64 | tr -d '\n')
+export GITHUB_REPO=ProteinDeficientsAnonymous/pda
+```
 
 ## Worktrees
 
