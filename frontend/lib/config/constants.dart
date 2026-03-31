@@ -49,3 +49,12 @@ abstract class FieldType {
 abstract class RoleName {
   static const admin = 'admin';
 }
+
+abstract class EventDetailLabel {
+  static const when = 'when';
+  static const about = 'about';
+  static const host = 'host';
+  static const coHosts = 'co-hosts';
+  static const details = 'details';
+  static const rsvp = 'rsvp';
+}

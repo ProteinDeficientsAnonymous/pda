@@ -186,7 +186,7 @@ class EventDetailContent extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _SectionCard(
-            label: 'when',
+            label: EventDetailLabel.when,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: _buildDateTimeRows(formatDate, start, end),
@@ -195,7 +195,7 @@ class EventDetailContent extends ConsumerWidget {
           if (liveEvent.description.isNotEmpty) ...[
             const SizedBox(height: 12),
             _SectionCard(
-              label: 'about',
+              label: EventDetailLabel.about,
               child: Text(
                 liveEvent.description,
                 style: const TextStyle(fontSize: 15, height: 1.6),
@@ -678,7 +678,10 @@ class _MemberSection extends ConsumerWidget {
         children: [
           if (hosts.isNotEmpty)
             _SectionCard(
-              label: hosts.length > 1 ? 'co-hosts' : 'host',
+              label:
+                  hosts.length > 1
+                      ? EventDetailLabel.coHosts
+                      : EventDetailLabel.host,
               child: Wrap(
                 spacing: 12,
                 runSpacing: 8,
@@ -688,7 +691,7 @@ class _MemberSection extends ConsumerWidget {
           if (detailRows.isNotEmpty) ...[
             const SizedBox(height: 12),
             _SectionCard(
-              label: 'details',
+              label: EventDetailLabel.details,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -702,7 +705,10 @@ class _MemberSection extends ConsumerWidget {
           ],
           if (event.rsvpEnabled) ...[
             const SizedBox(height: 12),
-            RSVPSection(event: event),
+            _SectionCard(
+              label: EventDetailLabel.rsvp,
+              child: RSVPSection(event: event),
+            ),
           ],
           const SizedBox(height: 12),
           _AdminActions(event: event),
