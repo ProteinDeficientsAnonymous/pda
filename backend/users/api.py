@@ -4,7 +4,6 @@ import string
 
 import phonenumbers
 from django.db import models
-from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
@@ -12,7 +11,7 @@ from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 from pydantic import BaseModel
 
-from users.models import MagicLoginToken, User
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import PROTECTED_ROLE_NAMES, Role
 
@@ -29,27 +28,6 @@ router = Router()
 def _generate_temp_password(length: int = 16) -> str:
     alphabet = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
-
-
-def _create_magic_token(user: User) -> str:
-    """Create a one-time magic login token for the given user (valid 7 days)."""
-    from datetime import timedelta
-
-    token = MagicLoginToken.objects.create(
-        user=user,
-        expires_at=timezone.now() + timedelta(days=7),
-    )
-    return str(token.token)
-
-
-def _absolute_photo_url(user: User, request) -> str:
-    """Return an absolute URL for the user's profile photo, or empty string."""
-    if not user.profile_photo:
-        return ""
-    url = user.profile_photo.url
-    if url.startswith("/"):
-        return request.build_absolute_uri(url)
-    return url
 
 
 def _is_last_admin(user: User) -> bool:
@@ -85,16 +63,17 @@ def _create_user_with_role(
     *,
     needs_onboarding: bool = True,
 ) -> tuple[User, str]:
-    """Validate phone, create user, assign role. Returns (user, magic_link_token).
+    """Validate phone, create user, assign role. Returns (user, temp_password).
 
     Raises ValueError on validation failure (bad phone, duplicate, bad role).
     """
     validated_phone = _validate_phone(phone)
     if User.objects.filter(phone_number=validated_phone).exists():
         raise ValueError("A user with that phone number already exists.")
+    temp_password = _generate_temp_password()
     user = User.objects.create_user(
         phone_number=validated_phone,
-        password=None,
+        password=temp_password,
         display_name=display_name,
         email=email,
         needs_onboarding=needs_onboarding,
@@ -110,8 +89,7 @@ def _create_user_with_role(
     except Role.DoesNotExist:
         user.delete()
         raise ValueError("Role not found.")
-    magic_token = _create_magic_token(user)
-    return user, magic_token
+    return user, temp_password
 
 
 def _validate_admin_role_change(
@@ -178,7 +156,7 @@ class UserOut(BaseModel):
     roles: list[RoleOut]
 
     @classmethod
-    def from_user(cls, user: User, request) -> "UserOut":
+    def from_user(cls, user: User) -> "UserOut":
         return cls(
             id=str(user.id),
             phone_number=user.phone_number,
@@ -186,7 +164,7 @@ class UserOut(BaseModel):
             email=user.email or "",
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
-            profile_photo_url=_absolute_photo_url(user, request),
+            profile_photo_url=user.profile_photo.url if user.profile_photo else "",
             show_phone=user.show_phone,
             show_email=user.show_email,
             roles=[
@@ -217,7 +195,7 @@ class UserCreateOut(BaseModel):
     id: str
     phone_number: str
     display_name: str
-    magic_link_token: str
+    temporary_password: str
 
 
 class BulkUserCreateIn(BaseModel):
@@ -231,16 +209,11 @@ class BulkUserResult(BaseModel):
     error: str | None = None
 
 
-class BulkMagicLink(BaseModel):
-    phone_number: str
-    magic_link_token: str
-
-
 class BulkUserCreateOut(BaseModel):
     results: list[BulkUserResult]
     created: int
     failed: int
-    magic_links: list[BulkMagicLink]
+    temporary_password: str
 
 
 class UserPatchIn(BaseModel):
@@ -269,7 +242,7 @@ class UserRolesIn(BaseModel):
 
 class ResetPasswordOut(BaseModel):
     detail: str
-    magic_link_token: str
+    temporary_password: str
 
 
 class RoleIn(BaseModel):
@@ -303,24 +276,6 @@ def login(request, payload: LoginIn):
     return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
 
 
-@router.get(
-    "/magic-login/{token}/", response={200: TokenOut, 400: ErrorOut, 404: ErrorOut}, auth=None
-)
-def magic_login(request, token: str):
-    try:
-        magic_token = MagicLoginToken.objects.select_related("user").get(token=token)
-    except (MagicLoginToken.DoesNotExist, Exception):
-        return Status(404, ErrorOut(detail="invalid or expired link"))
-    if magic_token.used:
-        return Status(400, ErrorOut(detail="this link has already been used"))
-    if magic_token.is_expired:
-        return Status(400, ErrorOut(detail="this link has expired"))
-    magic_token.used = True
-    magic_token.save(update_fields=["used"])
-    refresh = RefreshToken.for_user(magic_token.user)
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
-
-
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
 def refresh_token(request, payload: RefreshIn):
     from ninja_jwt.exceptions import TokenError
@@ -338,7 +293,7 @@ def refresh_token(request, payload: RefreshIn):
 @router.get("/me/", response={200: UserOut, 401: ErrorOut}, auth=JWTAuth())
 def me(request):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    return Status(200, UserOut.from_user(user, request))
+    return Status(200, UserOut.from_user(user))
 
 
 @router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
@@ -355,7 +310,7 @@ def update_me(request, payload: MePatchIn):
     if payload.show_email is not None:
         user.show_email = payload.show_email
     user.save()
-    return Status(200, UserOut.from_user(user, request))
+    return Status(200, UserOut.from_user(user))
 
 
 _MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
@@ -381,7 +336,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):
     name = photo.name or ""
     ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
     user.profile_photo.save(f"{user.pk}.{ext}", photo, save=True)
-    return Status(200, UserOut.from_user(user, request))
+    return Status(200, UserOut.from_user(user))
 
 
 @router.delete("/me/photo/", response={200: UserOut}, auth=JWTAuth())
@@ -391,7 +346,7 @@ def delete_photo(request):
         user.profile_photo.delete(save=False)
         user.profile_photo = ""
         user.save(update_fields=["profile_photo"])
-    return Status(200, UserOut.from_user(user, request))
+    return Status(200, UserOut.from_user(user))
 
 
 @router.get(
@@ -412,7 +367,7 @@ def get_member_profile(request, user_id: str):
             display_name=user.display_name,
             phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
             email=(user.email or "") if (user.show_email or is_own_profile) else "",
-            profile_photo_url=_absolute_photo_url(user, request),
+            profile_photo_url=user.profile_photo.url if user.profile_photo else "",
         ),
     )
 
@@ -435,7 +390,7 @@ def complete_onboarding(request, payload: OnboardingIn):
     user.set_password(payload.new_password)
     user.needs_onboarding = False
     user.save()
-    return Status(200, UserOut.from_user(user, request))
+    return Status(200, UserOut.from_user(user))
 
 
 @router.post("/change-password/", response={200: ErrorOut, 400: ErrorOut}, auth=JWTAuth())
@@ -465,7 +420,7 @@ def create_user(request, payload: UserCreateIn):
         return Status(403, ErrorOut(detail="Permission denied."))
 
     try:
-        user, magic_token = _create_user_with_role(
+        user, temp_password = _create_user_with_role(
             payload.phone_number, payload.display_name, payload.email, payload.role_id
         )
     except ValueError as e:
@@ -477,7 +432,7 @@ def create_user(request, payload: UserCreateIn):
             id=str(user.id),
             phone_number=user.phone_number,
             display_name=user.display_name,
-            magic_link_token=magic_token,
+            temporary_password=temp_password,
         ),
     )
 
@@ -493,9 +448,9 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 
     member_role = Role.objects.filter(name="member", is_default=True).first()
     results: list[BulkUserResult] = []
-    magic_links: list[BulkMagicLink] = []
     created = 0
     failed = 0
+    temp_password = _generate_temp_password()
 
     for i, raw_phone in enumerate(payload.phone_numbers):
         try:
@@ -521,22 +476,20 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 
         user = User.objects.create_user(
             phone_number=validated_phone,
-            password=None,
+            password=temp_password,
             needs_onboarding=True,
         )
         if member_role:
             user.roles.add(member_role)
 
-        magic_token = _create_magic_token(user)
-        magic_links.append(
-            BulkMagicLink(phone_number=validated_phone, magic_link_token=magic_token)
-        )
         results.append(BulkUserResult(row=i + 1, phone_number=validated_phone, success=True))
         created += 1
 
     return Status(
         200,
-        BulkUserCreateOut(results=results, created=created, failed=failed, magic_links=magic_links),
+        BulkUserCreateOut(
+            results=results, created=created, failed=failed, temporary_password=temp_password
+        ),
     )
 
 
@@ -581,7 +534,7 @@ def list_users(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
         return Status(403, ErrorOut(detail="Permission denied."))
     users = User.objects.prefetch_related("roles").order_by("phone_number")
-    return Status(200, [UserOut.from_user(u, request) for u in users])
+    return Status(200, [UserOut.from_user(u) for u in users])
 
 
 @router.patch(
@@ -611,7 +564,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     if payload.is_active is not None:
         user.is_active = payload.is_active
     user.save()
-    return Status(200, UserOut.from_user(user, request))
+    return Status(200, UserOut.from_user(user))
 
 
 @router.delete(
@@ -657,7 +610,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
 
     user.roles.set(roles)
     user = User.objects.prefetch_related("roles").get(pk=user.pk)
-    return Status(200, UserOut.from_user(user, request))
+    return Status(200, UserOut.from_user(user))
 
 
 @router.post(
@@ -672,15 +625,15 @@ def reset_password(request, user_id: str):
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
         return Status(404, ErrorOut(detail="User not found."))
-    user.set_unusable_password()
+    temp_password = _generate_temp_password()
+    user.set_password(temp_password)
     user.needs_onboarding = True
     user.save()
-    magic_token = _create_magic_token(user)
     return Status(
         200,
         ResetPasswordOut(
-            detail="Password reset. Share the magic login link with the user.",
-            magic_link_token=magic_token,
+            detail="Password reset. Share the temporary password with the user.",
+            temporary_password=temp_password,
         ),
     )
 
