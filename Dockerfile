@@ -7,7 +7,7 @@ RUN flutter pub get
 
 COPY frontend/ ./
 RUN dart run build_runner build --delete-conflicting-outputs
-RUN flutter build web --release --dart-define=API_URL=
+RUN flutter build web --release --dart-define=API_URL= --no-pub --no-wasm-dry-run
 
 # Stage 2: Python/Django runtime
 FROM python:3.13-slim AS runtime
