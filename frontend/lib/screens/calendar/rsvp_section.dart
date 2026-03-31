@@ -67,8 +67,6 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('rsvp', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 10),
         if (_loading)
           const SizedBox(
             height: 36,

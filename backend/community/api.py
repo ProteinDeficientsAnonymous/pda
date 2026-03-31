@@ -268,7 +268,7 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
     return Status(200, GuidelinesOut(content=g.content, updated_at=g.updated_at))
 
 
-@router.get("/faq/", response={200: GuidelinesOut}, auth=JWTAuth())
+@router.get("/faq/", response={200: GuidelinesOut}, auth=None)
 def get_faq(request):
     f = FAQ.get()
     return Status(200, GuidelinesOut(content=f.content, updated_at=f.updated_at))
