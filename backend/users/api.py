@@ -151,6 +151,8 @@ class UserOut(BaseModel):
     is_superuser: bool = False
     needs_onboarding: bool = False
     profile_photo_url: str = ""
+    show_phone: bool = True
+    show_email: bool = True
     roles: list[RoleOut]
 
     @classmethod
@@ -163,6 +165,8 @@ class UserOut(BaseModel):
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             profile_photo_url=user.profile_photo.url if user.profile_photo else "",
+            show_phone=user.show_phone,
+            show_email=user.show_email,
             roles=[
                 RoleOut(
                     id=str(r.id), name=r.name, is_default=r.is_default, permissions=r.permissions
@@ -223,6 +227,8 @@ class MePatchIn(BaseModel):
     display_name: str | None = None
     email: str | None = None
     needs_onboarding: bool | None = None
+    show_phone: bool | None = None
+    show_email: bool | None = None
 
 
 class ChangePasswordIn(BaseModel):
@@ -299,6 +305,10 @@ def update_me(request, payload: MePatchIn):
         user.email = payload.email
     if payload.needs_onboarding is not None:
         user.needs_onboarding = payload.needs_onboarding
+    if payload.show_phone is not None:
+        user.show_phone = payload.show_phone
+    if payload.show_email is not None:
+        user.show_email = payload.show_email
     user.save()
     return Status(200, UserOut.from_user(user))
 
@@ -349,13 +359,14 @@ def get_member_profile(request, user_id: str):
         user = User.objects.get(pk=user_id, is_active=True)
     except User.DoesNotExist:
         return Status(404, ErrorOut(detail="Member not found."))
+    is_own_profile = str(request.auth.pk) == user_id
     return Status(
         200,
         MemberProfileOut(
             id=str(user.id),
             display_name=user.display_name,
-            phone_number=user.phone_number,
-            email=user.email or "",
+            phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
+            email=(user.email or "") if (user.show_email or is_own_profile) else "",
             profile_photo_url=user.profile_photo.url if user.profile_photo else "",
         ),
     )

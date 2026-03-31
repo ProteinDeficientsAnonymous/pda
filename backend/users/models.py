@@ -32,6 +32,8 @@ class User(AbstractUser):
     needs_onboarding = models.BooleanField(default=False)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
+    show_phone = models.BooleanField(default=True)
+    show_email = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Remove inherited AbstractUser fields

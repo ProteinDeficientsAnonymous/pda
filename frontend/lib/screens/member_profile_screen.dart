@@ -77,6 +77,19 @@ class _ProfileBody extends StatelessWidget {
             value: email,
             copyable: true,
           ),
+        if (phone.isEmpty && email.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'contact info is private',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
