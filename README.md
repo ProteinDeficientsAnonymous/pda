@@ -20,7 +20,7 @@ make createsuperuser
 make dev  # runs Django :8000 + Flutter :3000
 ```
 
-Optional credentials (GitHub App for feedback button) are stored in 1Password — see [docs/1password-cli.md](docs/1password-cli.md).
+See [docs/local-environment-setup.md](docs/local-environment-setup.md) for prerequisites and first-time setup details.
 
 ## Features
 
