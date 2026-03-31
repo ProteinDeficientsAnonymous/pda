@@ -11,7 +11,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.mail import send_mail
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
-from ninja import Router
+from ninja import File, Router
+from ninja.files import UploadedFile
 from ninja.responses import Status
 from ninja.security import HttpBearer
 from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication
@@ -143,6 +144,7 @@ class EventListOut(BaseModel):
     end_datetime: datetime | None = None
     location: str
     event_type: str = EventType.COMMUNITY
+    photo_url: str = ""
     whatsapp_link: str = ""
     partiful_link: str = ""
     other_link: str = ""
@@ -169,6 +171,7 @@ class EventOut(BaseModel):
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
     event_type: str = EventType.COMMUNITY
+    photo_url: str = ""
     survey_slugs: list[str] = []
 
 
@@ -744,6 +747,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         guests=_members_only(_build_guest_list(rsvps, phones_visible), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
         event_type=event.event_type,
+        photo_url=event.photo.url if event.photo else "",
         survey_slugs=list(event.surveys.filter(is_active=True).values_list("slug", flat=True)),
     )
 
@@ -767,6 +771,7 @@ def list_events(request):
                 end_datetime=e.end_datetime,
                 location=e.location,
                 event_type=e.event_type,
+                photo_url=e.photo.url if e.photo else "",
                 whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
                 partiful_link=_members_only(e.partiful_link, "", is_authed),
                 other_link=_members_only(e.other_link, "", is_authed),
@@ -886,8 +891,67 @@ def delete_event(request, event_id: UUID):
     if not is_manager and not is_creator:
         return Status(403, ErrorOut(detail="Permission denied."))
 
+    if event.photo:
+        event.photo.delete(save=False)
     event.delete()
     return Status(204, None)
+
+
+_MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+}
+
+
+@router.post(
+    "/events/{event_id}/photo/",
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...)):
+    if photo.content_type not in _ALLOWED_IMAGE_TYPES:
+        return Status(400, ErrorOut(detail="File must be a JPEG, PNG, WebP, or GIF image."))
+    if photo.size and photo.size > _MAX_EVENT_PHOTO_SIZE:
+        return Status(400, ErrorOut(detail="Photo must be under 10 MB."))
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
+    is_creator = event.created_by_id == request.auth.pk
+    if not is_manager and not is_creator:
+        return Status(403, ErrorOut(detail="Permission denied."))
+    if event.photo:
+        event.photo.delete(save=False)
+    ext = photo.name.rsplit(".", 1)[-1] if "." in photo.name else "jpg"
+    event.photo.save(f"{event_id}.{ext}", photo, save=True)
+    return Status(200, _event_out(event, request.auth))
+
+
+@router.delete(
+    "/events/{event_id}/photo/",
+    response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def delete_event_photo(request, event_id: UUID):
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
+    is_creator = event.created_by_id == request.auth.pk
+    if not is_manager and not is_creator:
+        return Status(403, ErrorOut(detail="Permission denied."))
+    if event.photo:
+        event.photo.delete(save=False)
+        event.photo = ""
+        event.save(update_fields=["photo"])
+    return Status(200, _event_out(event, request.auth))
 
 
 @router.post(

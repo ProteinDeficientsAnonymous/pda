@@ -72,6 +72,7 @@ class Event(models.Model):
     partiful_link = models.URLField(blank=True)
     other_link = models.URLField(blank=True)
     rsvp_enabled = models.BooleanField(default=False)
+    photo = models.ImageField(upload_to="event_photos/", blank=True)
     event_type = models.CharField(
         max_length=20,
         choices=EventType.choices,

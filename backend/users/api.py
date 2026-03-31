@@ -296,7 +296,14 @@ def update_me(request, payload: MePatchIn):
 
 
 _MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
-_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+}
 
 
 @router.post("/me/photo/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())

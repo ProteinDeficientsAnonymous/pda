@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/utils/time_format.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:pda/utils/file_download.dart';
 import 'package:pda/utils/ics_generator.dart';
 import 'package:pda/utils/launcher.dart';
@@ -141,6 +142,19 @@ class EventDetailContent extends ConsumerWidget {
         controller: scrollController,
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         children: [
+          if (liveEvent.photoUrl.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  liveEvent.photoUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -376,6 +390,41 @@ class _AdminActions extends ConsumerStatefulWidget {
 class _AdminActionsState extends ConsumerState<_AdminActions> {
   bool _loading = false;
 
+  Future<void> _pickPhoto() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (image == null) return;
+    setState(() => _loading = true);
+    try {
+      await uploadEventPhoto(ref, widget.event.id, image);
+      if (mounted) showSnackBar(context, 'photo updated ✓');
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, 'couldn\'t upload photo — try again');
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    setState(() => _loading = true);
+    try {
+      await deleteEventPhoto(ref, widget.event.id);
+      if (mounted) showSnackBar(context, 'photo removed');
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, 'couldn\'t remove photo — try again');
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -453,14 +502,33 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
     final isManager = user.hasPermission(Permission.manageEvents);
     if (!isCreator && !isManager) return const SizedBox.shrink();
 
-    return Row(
+    final hasPhoto = widget.event.photoUrl.isNotEmpty;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
+        OutlinedButton.icon(
+          onPressed: _pickPhoto,
+          icon: Icon(
+            hasPhoto
+                ? Icons.photo_outlined
+                : Icons.add_photo_alternate_outlined,
+            size: 16,
+          ),
+          label: Text(hasPhoto ? 'change photo' : 'add photo'),
+        ),
+        if (hasPhoto)
+          OutlinedButton.icon(
+            onPressed: _removePhoto,
+            icon: const Icon(Icons.hide_image_outlined, size: 16),
+            label: const Text('remove photo'),
+          ),
         OutlinedButton.icon(
           onPressed: _edit,
           icon: const Icon(Icons.edit_outlined, size: 16),
-          label: const Text('Edit'),
+          label: const Text('edit'),
         ),
-        const SizedBox(width: 12),
         OutlinedButton.icon(
           onPressed: _delete,
           icon: Icon(
@@ -469,7 +537,7 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
             color: Theme.of(context).colorScheme.error,
           ),
           label: Text(
-            'Delete',
+            'delete',
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
           style: OutlinedButton.styleFrom(
