@@ -172,6 +172,14 @@ class UserOut(BaseModel):
         )
 
 
+class MemberProfileOut(BaseModel):
+    id: str
+    display_name: str
+    phone_number: str
+    email: str = ""
+    profile_photo_url: str = ""
+
+
 class UserCreateIn(BaseModel):
     phone_number: str
     display_name: str = ""
@@ -329,6 +337,28 @@ def delete_photo(request):
         user.profile_photo = ""
         user.save(update_fields=["profile_photo"])
     return Status(200, UserOut.from_user(user))
+
+
+@router.get(
+    "/users/{user_id}/profile/",
+    response={200: MemberProfileOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def get_member_profile(request, user_id: str):
+    try:
+        user = User.objects.get(pk=user_id, is_active=True)
+    except User.DoesNotExist:
+        return Status(404, ErrorOut(detail="Member not found."))
+    return Status(
+        200,
+        MemberProfileOut(
+            id=str(user.id),
+            display_name=user.display_name,
+            phone_number=user.phone_number,
+            email=user.email or "",
+            profile_photo_url=user.profile_photo.url if user.profile_photo else "",
+        ),
+    )
 
 
 class OnboardingIn(BaseModel):

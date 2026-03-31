@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
@@ -249,24 +250,32 @@ class _GuestAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget avatar;
     if (guest.photoUrl.isNotEmpty) {
-      return CircleAvatar(
+      avatar = CircleAvatar(
         radius: radius,
         backgroundImage: NetworkImage(guest.photoUrl),
       );
-    }
-    final initials = guest.name.isNotEmpty ? guest.name[0].toUpperCase() : '?';
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      child: Text(
-        initials,
-        style: TextStyle(
-          fontSize: radius * 0.9,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.onPrimaryContainer,
+    } else {
+      final initials =
+          guest.name.isNotEmpty ? guest.name[0].toUpperCase() : '?';
+      avatar = CircleAvatar(
+        radius: radius,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        child: Text(
+          initials,
+          style: TextStyle(
+            fontSize: radius * 0.9,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
         ),
-      ),
+      );
+    }
+    return InkWell(
+      onTap: () => context.push('/members/${guest.userId}'),
+      customBorder: const CircleBorder(),
+      child: avatar,
     );
   }
 }

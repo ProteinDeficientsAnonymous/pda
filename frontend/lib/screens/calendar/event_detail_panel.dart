@@ -245,7 +245,7 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _HostChip extends StatelessWidget {
-  final ({String name, String photoUrl}) host;
+  final ({String id, String name, String photoUrl}) host;
 
   const _HostChip({required this.host});
 
@@ -255,27 +255,35 @@ class _HostChip extends StatelessWidget {
     final hasPhoto = host.photoUrl.isNotEmpty;
     final initials = host.name.isNotEmpty ? host.name[0].toUpperCase() : '?';
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (hasPhoto)
-          CircleAvatar(radius: 14, backgroundImage: NetworkImage(host.photoUrl))
-        else
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: cs.primaryContainer,
-            child: Text(
-              initials,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: cs.onPrimaryContainer,
+    return InkWell(
+      onTap:
+          host.id.isNotEmpty ? () => context.push('/members/${host.id}') : null,
+      borderRadius: BorderRadius.circular(20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasPhoto)
+            CircleAvatar(
+              radius: 14,
+              backgroundImage: NetworkImage(host.photoUrl),
+            )
+          else
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: cs.primaryContainer,
+              child: Text(
+                initials,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onPrimaryContainer,
+                ),
               ),
             ),
-          ),
-        const SizedBox(width: 8),
-        Text(host.name, style: TextStyle(fontSize: 15, color: cs.onSurface)),
-      ],
+          const SizedBox(width: 8),
+          Text(host.name, style: TextStyle(fontSize: 15, color: cs.onSurface)),
+        ],
+      ),
     );
   }
 }
@@ -599,12 +607,17 @@ class _MemberSection extends ConsumerWidget {
     final user = ref.watch(authProvider).valueOrNull;
     if (user != null) {
       // Build host list: creator first (no photo), then co-hosts (with photos)
-      final hosts = <({String name, String photoUrl})>[];
+      final hosts = <({String id, String name, String photoUrl})>[];
       if (event.createdByName != null) {
-        hosts.add((name: event.createdByName!, photoUrl: ''));
+        hosts.add((
+          id: event.createdById ?? '',
+          name: event.createdByName!,
+          photoUrl: '',
+        ));
       }
       for (var i = 0; i < event.coHostNames.length; i++) {
         hosts.add((
+          id: i < event.coHostIds.length ? event.coHostIds[i] : '',
           name: event.coHostNames[i],
           photoUrl:
               i < event.coHostPhotoUrls.length ? event.coHostPhotoUrls[i] : '',
