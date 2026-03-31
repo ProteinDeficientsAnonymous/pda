@@ -12,7 +12,7 @@ RUN flutter build web --release --dart-define=API_URL= --no-pub --no-wasm-dry-ru
 # Stage 2: Python/Django runtime
 FROM python:3.13-slim AS runtime
 
-COPY --from=ghcr.io/astral-sh/uv:0.11.2 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
