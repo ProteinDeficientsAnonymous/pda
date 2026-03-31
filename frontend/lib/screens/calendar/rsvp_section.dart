@@ -74,44 +74,47 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           )
         else
-          Row(
-            children: [
-              RsvpButton(
-                label: "i'm going",
-                icon: Icons.sentiment_very_satisfied_outlined,
-                activeColor: theme.colorScheme.primary,
-                isActive: myRsvp == RsvpStatus.attending,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.attending
-                            ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.attending),
-              ),
-              const SizedBox(width: 8),
-              RsvpButton(
-                label: 'maybe',
-                icon: Icons.sentiment_neutral_outlined,
-                activeColor: theme.colorScheme.tertiary,
-                isActive: myRsvp == RsvpStatus.maybe,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.maybe
-                            ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.maybe),
-              ),
-              const SizedBox(width: 8),
-              RsvpButton(
-                label: "can't make it",
-                icon: Icons.sentiment_dissatisfied_outlined,
-                activeColor: theme.colorScheme.error,
-                isActive: myRsvp == RsvpStatus.cantGo,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.cantGo
-                            ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.cantGo),
-              ),
-            ],
+          Center(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                RsvpButton(
+                  label: "i'm going",
+                  icon: Icons.sentiment_very_satisfied_outlined,
+                  activeColor: theme.colorScheme.primary,
+                  isActive: myRsvp == RsvpStatus.attending,
+                  onTap:
+                      () =>
+                          myRsvp == RsvpStatus.attending
+                              ? _removeRsvp()
+                              : _setRsvp(RsvpStatus.attending),
+                ),
+                RsvpButton(
+                  label: 'maybe',
+                  icon: Icons.sentiment_neutral_outlined,
+                  activeColor: theme.colorScheme.tertiary,
+                  isActive: myRsvp == RsvpStatus.maybe,
+                  onTap:
+                      () =>
+                          myRsvp == RsvpStatus.maybe
+                              ? _removeRsvp()
+                              : _setRsvp(RsvpStatus.maybe),
+                ),
+                RsvpButton(
+                  label: "can't make it",
+                  icon: Icons.sentiment_dissatisfied_outlined,
+                  activeColor: theme.colorScheme.error,
+                  isActive: myRsvp == RsvpStatus.cantGo,
+                  onTap:
+                      () =>
+                          myRsvp == RsvpStatus.cantGo
+                              ? _removeRsvp()
+                              : _setRsvp(RsvpStatus.cantGo),
+                ),
+              ],
+            ),
           ),
         if (guests.isNotEmpty) ...[
           const SizedBox(height: 16),

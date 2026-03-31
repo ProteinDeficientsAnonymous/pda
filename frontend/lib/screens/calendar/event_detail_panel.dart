@@ -19,7 +19,7 @@ import 'event_form_dialog.dart';
 import 'rsvp_section.dart';
 import 'package:pda/config/constants.dart';
 
-export 'event_form_dialog.dart' show EventFormDialog;
+export 'event_form_dialog.dart' show EventFormDialog, EventFormResult;
 
 /// Shows the event detail panel as a bottom sheet (narrow) or side panel (wide).
 void showEventDetail(BuildContext context, Event event) {
@@ -516,7 +516,7 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
   }
 
   Future<void> _edit() async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (ctx) => EventFormDialog(event: widget.event),
     );
@@ -527,8 +527,13 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
       final api = ref.read(apiClientProvider);
       await api.patch(
         '/api/community/events/${widget.event.id}/',
-        data: result,
+        data: result.data,
       );
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, widget.event.id, result.photo!);
+      } else if (result.removePhoto) {
+        await deleteEventPhoto(ref, widget.event.id);
+      }
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
     } catch (e) {

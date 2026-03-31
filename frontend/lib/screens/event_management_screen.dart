@@ -99,14 +99,21 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
   }
 
   Future<void> _showCreateDialog() async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (_) => const EventFormDialog(),
     );
     if (result == null) return;
     try {
       final api = ref.read(apiClientProvider);
-      await api.post('/api/community/events/', data: result);
+      final response = await api.post(
+        '/api/community/events/',
+        data: result.data,
+      );
+      final eventId = (response.data as Map<String, dynamic>)['id'] as String;
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, eventId, result.photo!);
+      }
       ref.invalidate(eventsProvider);
     } catch (e) {
       if (mounted) {
@@ -268,14 +275,19 @@ class _EventManagementRow extends ConsumerWidget {
   const _EventManagementRow({required this.event});
 
   Future<void> _showEditDialog(BuildContext context, WidgetRef ref) async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (_) => EventFormDialog(event: event),
     );
     if (result == null) return;
     try {
       final api = ref.read(apiClientProvider);
-      await api.patch('/api/community/events/${event.id}/', data: result);
+      await api.patch('/api/community/events/${event.id}/', data: result.data);
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, event.id, result.photo!);
+      } else if (result.removePhoto) {
+        await deleteEventPhoto(ref, event.id);
+      }
       ref.invalidate(eventsProvider);
     } catch (e) {
       if (context.mounted) {

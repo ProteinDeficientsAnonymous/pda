@@ -56,7 +56,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       if (loggedIn != true || !mounted) return;
     }
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (_) => const EventFormDialog(),
     );
@@ -64,7 +64,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     try {
       final api = ref.read(apiClientProvider);
-      await api.post('/api/community/events/', data: result);
+      final response = await api.post(
+        '/api/community/events/',
+        data: result.data,
+      );
+      final eventId = (response.data as Map<String, dynamic>)['id'] as String;
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, eventId, result.photo!);
+      }
       ref.invalidate(eventsProvider);
     } catch (e) {
       if (mounted) {

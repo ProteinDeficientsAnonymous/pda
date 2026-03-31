@@ -4,11 +4,22 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/utils/time_format.dart';
-import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
-import 'package:pda/utils/snackbar.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/config/constants.dart';
+
+/// Result returned by [EventFormDialog] — JSON data + optional photo.
+class EventFormResult {
+  final Map<String, dynamic> data;
+  final XFile? photo;
+  final bool removePhoto;
+
+  const EventFormResult({
+    required this.data,
+    this.photo,
+    this.removePhoto = false,
+  });
+}
 
 /// Shared form dialog for creating and editing events.
 /// Pass [event] to pre-fill fields for editing; omit for create mode.
@@ -39,7 +50,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late Map<String, String> _coHostNames;
   // which field the inline calendar is editing: 'start', 'end', or null (hidden)
   String? _calendarTarget;
-  bool _photoLoading = false;
+  XFile? _selectedPhoto;
+  bool _removePhoto = false;
 
   bool get _isEdit => widget.event != null;
 
@@ -172,20 +184,41 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    Navigator.of(context).pop({
-      'title': _title.text.trim(),
-      'description': _description.text.trim(),
-      'location': _location.text.trim(),
-      'whatsapp_link': _normalizeUrl(_whatsappLink.text),
-      'partiful_link': _normalizeUrl(_partifulLink.text),
-      'other_link': _normalizeUrl(_otherLink.text),
-      'start_datetime': _start.toUtc().toIso8601String(),
-      'end_datetime': _end?.toUtc().toIso8601String(),
-      'rsvp_enabled': _rsvpEnabled,
-      'event_type': _eventType,
-      'visibility': _visibility,
-      'co_host_ids': _coHostIds.toList(),
-    });
+    Navigator.of(context).pop(
+      EventFormResult(
+        data: {
+          'title': _title.text.trim(),
+          'description': _description.text.trim(),
+          'location': _location.text.trim(),
+          'whatsapp_link': _normalizeUrl(_whatsappLink.text),
+          'partiful_link': _normalizeUrl(_partifulLink.text),
+          'other_link': _normalizeUrl(_otherLink.text),
+          'start_datetime': _start.toUtc().toIso8601String(),
+          'end_datetime': _end?.toUtc().toIso8601String(),
+          'rsvp_enabled': _rsvpEnabled,
+          'event_type': _eventType,
+          'visibility': _visibility,
+          'co_host_ids': _coHostIds.toList(),
+        },
+        photo: _selectedPhoto,
+        removePhoto: _removePhoto,
+      ),
+    );
+  }
+
+  Future<void> _pickPhoto() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (image != null) {
+      setState(() {
+        _selectedPhoto = image;
+        _removePhoto = false;
+      });
+    }
   }
 
   Widget _buildNoFeesNote(ThemeData theme) {
@@ -218,54 +251,12 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     );
   }
 
-  Future<void> _pickPhoto() async {
-    final event = widget.event;
-    if (event == null) return;
-    final image = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1200,
-      maxHeight: 800,
-      imageQuality: 85,
-    );
-    if (image == null) return;
-    setState(() => _photoLoading = true);
-    try {
-      await uploadEventPhoto(ref, event.id, image);
-      if (mounted) showSnackBar(context, 'photo updated ✓');
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackBar(context, 'couldn\'t upload photo — try again');
-      }
-    } finally {
-      if (mounted) setState(() => _photoLoading = false);
-    }
-  }
-
-  Future<void> _removePhoto() async {
-    final event = widget.event;
-    if (event == null) return;
-    setState(() => _photoLoading = true);
-    try {
-      await deleteEventPhoto(ref, event.id);
-      if (mounted) showSnackBar(context, 'photo removed');
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackBar(context, 'couldn\'t remove photo — try again');
-      }
-    } finally {
-      if (mounted) setState(() => _photoLoading = false);
-    }
-  }
-
   Widget _buildPhotoSection() {
-    final event = widget.event;
-    if (event == null) return const SizedBox.shrink();
-
-    final detailAsync = ref.watch(eventDetailProvider(event.id));
-    final hasPhoto =
-        (detailAsync.valueOrNull?.photoUrl ?? event.photoUrl).isNotEmpty;
-    final photoUrl = detailAsync.valueOrNull?.photoUrl ?? event.photoUrl;
     final cs = Theme.of(context).colorScheme;
+    final existingUrl = widget.event?.photoUrl ?? '';
+    final hasExisting = existingUrl.isNotEmpty && !_removePhoto;
+    final hasSelected = _selectedPhoto != null;
+    final hasPhoto = hasSelected || hasExisting;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,9 +266,27 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child:
-                  hasPhoto
+                  hasSelected
+                      ? FutureBuilder<List<int>>(
+                        future: _selectedPhoto!.readAsBytes(),
+                        builder: (ctx, snap) {
+                          if (!snap.hasData) {
+                            return const SizedBox(
+                              height: 160,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          return Image.memory(
+                            snap.data! as dynamic,
+                            height: 160,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                      : hasExisting
                       ? Image.network(
-                        photoUrl,
+                        existingUrl,
                         height: 160,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -322,19 +331,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                         ),
                       ),
             ),
-            if (_photoLoading)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                ),
-              ),
-            if (hasPhoto && !_photoLoading)
+            if (hasPhoto)
               Positioned(
                 top: 8,
                 right: 8,
@@ -350,7 +347,12 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     _PhotoButton(
                       tooltip: 'remove photo',
                       icon: Icons.close,
-                      onPressed: _removePhoto,
+                      onPressed: () {
+                        setState(() {
+                          _selectedPhoto = null;
+                          _removePhoto = true;
+                        });
+                      },
                     ),
                   ],
                 ),
