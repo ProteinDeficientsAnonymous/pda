@@ -690,21 +690,19 @@ def _upload_attachment(attachment, token: str, repo: str) -> str:
     from urllib.parse import quote
 
     raw = _base64.b64decode(attachment.data)
-    safe_name = attachment.filename.encode("ascii", errors="replace").decode("ascii")
+    safe_name = "".join(c if c.isascii() and c.isprintable() else "_" for c in attachment.filename)
     boundary = uuid.uuid4().hex
-    multipart_body = (
-        (
-            f"--{boundary}\r\n"
-            f'Content-Disposition: form-data; name="asset"; filename="{safe_name}"\r\n'
-            f"Content-Type: {attachment.content_type}\r\n"
-            "\r\n"
-        ).encode()
-        + raw
-        + f"\r\n--{boundary}--\r\n".encode()
-    )
+    part_headers = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="asset"; filename="{safe_name}"\r\n'
+        f"Content-Type: {attachment.content_type}\r\n"
+        f"Content-Length: {len(raw)}\r\n"
+        "\r\n"
+    ).encode()
+    multipart_body = part_headers + raw + f"\r\n--{boundary}--\r\n".encode()
 
     url = f"https://uploads.github.com/repos/{repo}/issues/assets?name={quote(safe_name)}"
-    logger.debug(
+    logger.info(
         "Uploading attachment: url=%s content_type=%s size=%d",
         url,
         attachment.content_type,
@@ -717,6 +715,7 @@ def _upload_attachment(attachment, token: str, repo: str) -> str:
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
             "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "X-GitHub-Api-Version": "2022-11-28",
         },
         method="POST",
     )
