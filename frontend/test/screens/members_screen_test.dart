@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Bob'), findsOneWidget);
   });
 
-  testWidgets('Add member button shown for user with manage_users permission', (
+  testWidgets('add member button shown for user with manage_users permission', (
     tester,
   ) async {
     tester.view.physicalSize = _kTestSize;
@@ -87,7 +87,7 @@ void main() {
     expect(find.text('add member'), findsOneWidget);
   });
 
-  testWidgets('Add member button hidden for user without manage_users', (
+  testWidgets('add member button hidden for user without manage_users', (
     tester,
   ) async {
     tester.view.physicalSize = _kTestSize;
@@ -100,7 +100,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Add member'), findsNothing);
+    expect(find.text('add member'), findsNothing);
   });
 
   testWidgets('shows empty state when no members exist', (tester) async {
