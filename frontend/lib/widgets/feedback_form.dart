@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:pda/config/api_config.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/feedback_provider.dart';
 import 'package:pda/utils/user_agent.dart';
@@ -41,22 +41,7 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
     super.initState();
     _userAgent =
         widget.userAgent.isNotEmpty ? widget.userAgent : getUserAgent();
-    _loadAppVersion();
-  }
-
-  Future<void> _loadAppVersion() async {
-    if (widget.appVersion.isNotEmpty) {
-      _appVersion = widget.appVersion;
-      return;
-    }
-    try {
-      final info = await PackageInfo.fromPlatform();
-      if (mounted) {
-        setState(() => _appVersion = '${info.version}+${info.buildNumber}');
-      }
-    } on Exception {
-      // PackageInfo may be unavailable in test environments
-    }
+    _appVersion = widget.appVersion.isNotEmpty ? widget.appVersion : gitSha;
   }
 
   @override

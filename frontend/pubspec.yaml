@@ -31,7 +31,6 @@ dependencies:
   flutter_quill: ^11.5.0
   mcp_toolkit: ^0.4.0
   image_picker: ^1.2.1
-  package_info_plus: ^9.0.1
   file_picker: ^10.3.10
 
 dev_dependencies:
