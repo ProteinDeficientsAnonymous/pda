@@ -7,7 +7,7 @@ RUN flutter pub get
 
 COPY frontend/ ./
 RUN dart run build_runner build --delete-conflicting-outputs
-RUN flutter build web --release --dart-define=API_URL=
+RUN flutter build web --release --dart-define=API_URL= --no-pub --no-wasm-dry-run
 
 # Stage 2: Python/Django runtime
 FROM python:3.13-slim AS runtime
@@ -27,7 +27,7 @@ COPY --from=flutter-build /app/frontend/build/web/index.html ./backend/templates
 
 RUN DJANGO_SETTINGS_MODULE=config.settings \
     SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))") \
-    uv run python backend/manage.py collectstatic --noinput
+    uv run --no-dev python backend/manage.py collectstatic --noinput
 
 EXPOSE ${PORT:-8000}
 
