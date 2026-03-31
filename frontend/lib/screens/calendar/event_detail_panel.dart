@@ -20,36 +20,15 @@ import 'package:pda/config/constants.dart';
 
 export 'event_form_dialog.dart' show EventFormDialog, EventFormResult;
 
-/// Shows the event detail panel as a bottom sheet (narrow) or side panel (wide).
+/// Shows the event detail panel as a side panel (wide) or navigates to the
+/// full event page (narrow).
 void showEventDetail(BuildContext context, Event event) {
   final width = MediaQuery.sizeOf(context).width;
   if (width >= 720) {
     _showSidePanel(context, event);
   } else {
-    _showBottomSheet(context, event);
+    context.push('/events/${event.id}');
   }
-}
-
-void _showBottomSheet(BuildContext context, Event event) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder:
-        (_) => DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder:
-              (ctx, controller) => EventDetailContent(
-                event: event,
-                scrollController: controller,
-              ),
-        ),
-  );
 }
 
 void _showSidePanel(BuildContext context, Event event) {
