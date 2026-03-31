@@ -14,6 +14,7 @@ class EventDetailScreen extends ConsumerWidget {
     final eventAsync = ref.watch(eventDetailProvider(eventId));
 
     return AppScaffold(
+      maxWidth: 800,
       child: eventAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error:

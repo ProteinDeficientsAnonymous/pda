@@ -50,6 +50,8 @@ filterwarnings = [
 # Remaining warnings are from ninja_jwt (no stubs) — suppressed with inline # type: ignore.
 unresolved-attribute = "warn"
 invalid-argument-type = "warn"
+# ninja.File is a GenericAlias used as a default value — valid at runtime but ty can't verify it.
+call-non-callable = "warn"
 
 [tool.ruff]
 line-length = 100

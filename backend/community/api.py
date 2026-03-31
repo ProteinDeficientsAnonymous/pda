@@ -11,7 +11,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.mail import send_mail
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
-from ninja import Router
+from ninja import File, Router
+from ninja.files import UploadedFile
 from ninja.responses import Status
 from ninja.security import HttpBearer
 from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication
@@ -133,6 +134,7 @@ class RSVPGuestOut(BaseModel):
     name: str
     status: str
     phone: str | None = None
+    photo_url: str = ""
 
 
 class EventListOut(BaseModel):
@@ -143,6 +145,8 @@ class EventListOut(BaseModel):
     end_datetime: datetime | None = None
     location: str
     event_type: str = EventType.COMMUNITY
+    visibility: str = PageVisibility.PUBLIC
+    photo_url: str = ""
     whatsapp_link: str = ""
     partiful_link: str = ""
     other_link: str = ""
@@ -166,9 +170,12 @@ class EventOut(BaseModel):
     created_by_name: str | None = None
     co_host_ids: list[str] = []
     co_host_names: list[str] = []
+    co_host_photo_urls: list[str] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
     event_type: str = EventType.COMMUNITY
+    visibility: str = PageVisibility.PUBLIC
+    photo_url: str = ""
     survey_slugs: list[str] = []
 
 
@@ -213,6 +220,7 @@ class EventIn(BaseModel):
     other_link: str = ""
     rsvp_enabled: bool = False
     event_type: str = EventType.COMMUNITY
+    visibility: str = PageVisibility.PUBLIC
     co_host_ids: list[str] = []
 
 
@@ -227,6 +235,7 @@ class EventPatchIn(BaseModel):
     other_link: str | None = None
     rsvp_enabled: bool | None = None
     event_type: str | None = None
+    visibility: str | None = None
     co_host_ids: list[str] | None = None
 
 
@@ -251,7 +260,7 @@ def get_guidelines(request):
 
 @router.patch("/guidelines/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
 def update_guidelines(request, payload: GuidelinesPatchIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_GUIDELINES):
+    if not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
         return Status(403, ErrorOut(detail="Permission denied."))
     g = CommunityGuidelines.get()
     g.content = payload.content
@@ -347,7 +356,7 @@ def get_page(request, slug: str):
 
 @router.patch("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=JWTAuth())
 def update_page(request, slug: str, payload: EditablePagePatchIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_GUIDELINES):
+    if not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
         return Status(403, ErrorOut(detail="Permission denied."))
 
     default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
@@ -690,6 +699,7 @@ def _build_guest_list(rsvps, can_see_phones: bool) -> list[RSVPGuestOut]:
             name=r.user.display_name or r.user.phone_number,
             status=r.status,
             phone=r.user.phone_number if can_see_phones else None,
+            photo_url=r.user.profile_photo.url if r.user.profile_photo else "",
         )
         for r in rsvps
     ]
@@ -741,9 +751,12 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         created_by_name=creator_name,
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[u.display_name or u.phone_number for u in co_hosts],
+        co_host_photo_urls=[u.profile_photo.url if u.profile_photo else "" for u in co_hosts],
         guests=_members_only(_build_guest_list(rsvps, phones_visible), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
         event_type=event.event_type,
+        visibility=event.visibility,
+        photo_url=event.photo.url if event.photo else "",
         survey_slugs=list(event.surveys.filter(is_active=True).values_list("slug", flat=True)),
     )
 
@@ -756,6 +769,8 @@ class CheckPhoneOut(BaseModel):
 def list_events(request):
     events = Event.objects.prefetch_related("co_hosts").all()
     is_authed = _authenticated_user(request.auth) is not None
+    if not is_authed:
+        events = events.filter(visibility=PageVisibility.PUBLIC)
     return Status(
         200,
         [
@@ -767,6 +782,8 @@ def list_events(request):
                 end_datetime=e.end_datetime,
                 location=e.location,
                 event_type=e.event_type,
+                visibility=e.visibility,
+                photo_url=e.photo.url if e.photo else "",
                 whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
                 partiful_link=_members_only(e.partiful_link, "", is_authed),
                 other_link=_members_only(e.other_link, "", is_authed),
@@ -788,6 +805,11 @@ def get_event(request, event_id: UUID):
             .get(id=event_id)
         )
     except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+    if (
+        event.visibility == PageVisibility.MEMBERS_ONLY
+        and _authenticated_user(request.auth) is None
+    ):
         return Status(404, ErrorOut(detail="Event not found."))
     return Status(200, _event_out(event, request.auth))
 
@@ -828,6 +850,7 @@ def create_event(request, payload: EventIn):
         other_link=payload.other_link,
         rsvp_enabled=payload.rsvp_enabled,
         event_type=payload.event_type,
+        visibility=payload.visibility,
         created_by=request.auth,
     )
     if payload.co_host_ids:
@@ -886,8 +909,68 @@ def delete_event(request, event_id: UUID):
     if not is_manager and not is_creator:
         return Status(403, ErrorOut(detail="Permission denied."))
 
+    if event.photo:
+        event.photo.delete(save=False)
     event.delete()
     return Status(204, None)
+
+
+_MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+}
+
+
+@router.post(
+    "/events/{event_id}/photo/",
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...)):
+    if photo.content_type not in _ALLOWED_IMAGE_TYPES:
+        return Status(400, ErrorOut(detail="File must be a JPEG, PNG, WebP, or GIF image."))
+    if photo.size and photo.size > _MAX_EVENT_PHOTO_SIZE:
+        return Status(400, ErrorOut(detail="Photo must be under 10 MB."))
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
+    is_creator = event.created_by_id == request.auth.pk
+    if not is_manager and not is_creator:
+        return Status(403, ErrorOut(detail="Permission denied."))
+    if event.photo:
+        event.photo.delete(save=False)
+    name = photo.name or ""
+    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
+    event.photo.save(f"{event_id}.{ext}", photo, save=True)
+    return Status(200, _event_out(event, request.auth))
+
+
+@router.delete(
+    "/events/{event_id}/photo/",
+    response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def delete_event_photo(request, event_id: UUID):
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
+    is_creator = event.created_by_id == request.auth.pk
+    if not is_manager and not is_creator:
+        return Status(403, ErrorOut(detail="Permission denied."))
+    if event.photo:
+        event.photo.delete(save=False)
+        event.photo = ""
+        event.save(update_fields=["photo"])
+    return Status(200, _event_out(event, request.auth))
 
 
 @router.post(

@@ -25,6 +25,8 @@ import 'package:pda/screens/survey_builder_screen.dart';
 import 'package:pda/screens/survey_responses_screen.dart';
 import 'package:pda/screens/survey_screen.dart';
 import 'package:pda/screens/whatsapp_config_screen.dart';
+import 'package:pda/screens/profile_screen.dart';
+import 'package:pda/screens/member_profile_screen.dart';
 import 'package:pda/config/constants.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -62,9 +64,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       final isProtected =
-          loc == '/faq' ||
           loc == '/guidelines' ||
-          loc == '/members' ||
+          loc.startsWith('/members') ||
           loc == '/join-requests' ||
           loc == '/events/manage' ||
           loc == '/events/mine' ||
@@ -220,6 +221,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/whatsapp',
         name: 'whatsapp-config',
         builder: (_, __) => const WhatsAppConfigScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (_, __) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/members/:id',
+        name: 'member-profile',
+        builder:
+            (_, state) =>
+                MemberProfileScreen(userId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/surveys/:slug',

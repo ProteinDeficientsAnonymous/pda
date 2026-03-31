@@ -8,6 +8,9 @@ class VolunteerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppScaffold(child: EditableContentBlock(slug: 'volunteer'));
+    return const AppScaffold(
+      maxWidth: 800,
+      child: EditableContentBlock(slug: 'volunteer'),
+    );
   }
 }

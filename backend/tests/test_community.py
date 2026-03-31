@@ -21,7 +21,7 @@ def manage_guidelines_user(db):
     )
     role = Role.objects.create(
         name="content_manager",
-        permissions=[PermissionKey.MANAGE_GUIDELINES],
+        permissions=[PermissionKey.EDIT_GUIDELINES],
     )
     user.roles.add(role)
     return user

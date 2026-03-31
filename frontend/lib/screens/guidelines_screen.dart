@@ -16,10 +16,11 @@ class GuidelinesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).valueOrNull;
-    final canEdit = user?.hasPermission(Permission.manageGuidelines) ?? false;
+    final canEdit = user?.hasPermission(Permission.editGuidelines) ?? false;
     final guidelinesAsync = ref.watch(guidelinesNotifierProvider);
 
     return AppScaffold(
+      maxWidth: 800,
       child: guidelinesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error:

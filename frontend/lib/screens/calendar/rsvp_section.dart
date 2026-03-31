@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
@@ -74,44 +75,47 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
             child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
           )
         else
-          Row(
-            children: [
-              RsvpButton(
-                label: "i'm going",
-                icon: Icons.sentiment_very_satisfied_outlined,
-                activeColor: theme.colorScheme.primary,
-                isActive: myRsvp == RsvpStatus.attending,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.attending
-                            ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.attending),
-              ),
-              const SizedBox(width: 8),
-              RsvpButton(
-                label: 'maybe',
-                icon: Icons.sentiment_neutral_outlined,
-                activeColor: theme.colorScheme.tertiary,
-                isActive: myRsvp == RsvpStatus.maybe,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.maybe
-                            ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.maybe),
-              ),
-              const SizedBox(width: 8),
-              RsvpButton(
-                label: "can't make it",
-                icon: Icons.sentiment_dissatisfied_outlined,
-                activeColor: theme.colorScheme.error,
-                isActive: myRsvp == RsvpStatus.cantGo,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.cantGo
-                            ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.cantGo),
-              ),
-            ],
+          Center(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                RsvpButton(
+                  label: "i'm going",
+                  icon: Icons.sentiment_very_satisfied_outlined,
+                  activeColor: theme.colorScheme.primary,
+                  isActive: myRsvp == RsvpStatus.attending,
+                  onTap:
+                      () =>
+                          myRsvp == RsvpStatus.attending
+                              ? _removeRsvp()
+                              : _setRsvp(RsvpStatus.attending),
+                ),
+                RsvpButton(
+                  label: 'maybe',
+                  icon: Icons.sentiment_neutral_outlined,
+                  activeColor: theme.colorScheme.tertiary,
+                  isActive: myRsvp == RsvpStatus.maybe,
+                  onTap:
+                      () =>
+                          myRsvp == RsvpStatus.maybe
+                              ? _removeRsvp()
+                              : _setRsvp(RsvpStatus.maybe),
+                ),
+                RsvpButton(
+                  label: "can't make it",
+                  icon: Icons.sentiment_dissatisfied_outlined,
+                  activeColor: theme.colorScheme.error,
+                  isActive: myRsvp == RsvpStatus.cantGo,
+                  onTap:
+                      () =>
+                          myRsvp == RsvpStatus.cantGo
+                              ? _removeRsvp()
+                              : _setRsvp(RsvpStatus.cantGo),
+                ),
+              ],
+            ),
           ),
         if (guests.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -238,6 +242,44 @@ class _GuestGroup extends StatelessWidget {
   }
 }
 
+class _GuestAvatar extends StatelessWidget {
+  final EventGuest guest;
+  const _GuestAvatar({required this.guest});
+
+  static const double radius = 10;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget avatar;
+    if (guest.photoUrl.isNotEmpty) {
+      avatar = CircleAvatar(
+        radius: radius,
+        backgroundImage: NetworkImage(guest.photoUrl),
+      );
+    } else {
+      final initials =
+          guest.name.isNotEmpty ? guest.name[0].toUpperCase() : '?';
+      avatar = CircleAvatar(
+        radius: radius,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        child: Text(
+          initials,
+          style: TextStyle(
+            fontSize: radius * 0.9,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
+      );
+    }
+    return InkWell(
+      onTap: () => context.push('/members/${guest.userId}'),
+      customBorder: const CircleBorder(),
+      child: avatar,
+    );
+  }
+}
+
 class _GuestChip extends StatefulWidget {
   final EventGuest guest;
 
@@ -319,7 +361,14 @@ class _GuestChipState extends State<_GuestChip> {
     final isWide = MediaQuery.sizeOf(context).width >= 720;
 
     if (phone == null) {
-      return Text(widget.guest.name, style: const TextStyle(fontSize: 13));
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _GuestAvatar(guest: widget.guest),
+          const SizedBox(width: 6),
+          Text(widget.guest.name, style: const TextStyle(fontSize: 13)),
+        ],
+      );
     }
 
     if (isWide) {
@@ -329,13 +378,20 @@ class _GuestChipState extends State<_GuestChip> {
           onEnter: (_) => _showOverlay(phone),
           onExit: (_) => _removeOverlay(),
           cursor: SystemMouseCursors.basic,
-          child: Text(
-            widget.guest.name,
-            style: const TextStyle(
-              fontSize: 13,
-              decoration: TextDecoration.underline,
-              decorationStyle: TextDecorationStyle.dotted,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _GuestAvatar(guest: widget.guest),
+              const SizedBox(width: 6),
+              Text(
+                widget.guest.name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  decoration: TextDecoration.underline,
+                  decorationStyle: TextDecorationStyle.dotted,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -354,13 +410,20 @@ class _GuestChipState extends State<_GuestChip> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              widget.guest.name,
-              style: const TextStyle(
-                fontSize: 13,
-                decoration: TextDecoration.underline,
-                decorationStyle: TextDecorationStyle.dotted,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _GuestAvatar(guest: widget.guest),
+                const SizedBox(width: 6),
+                Text(
+                  widget.guest.name,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    decoration: TextDecoration.underline,
+                    decorationStyle: TextDecorationStyle.dotted,
+                  ),
+                ),
+              ],
             ),
             if (_expanded)
               Padding(

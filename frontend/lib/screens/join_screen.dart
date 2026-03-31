@@ -75,6 +75,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     final questionsAsync = ref.watch(joinFormProvider);
 
     return AppScaffold(
+      maxWidth: 600,
       child: questionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Failed to load form: $e')),

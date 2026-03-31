@@ -72,66 +72,85 @@ class _MembersTabState extends ConsumerState<MembersTab> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'search members...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    isDense: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    suffixIcon:
-                        _query.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.close, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _query = '');
-                              },
-                            )
-                            : null,
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'search members...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  onChanged: (v) => setState(() => _query = v),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  suffixIcon:
+                      _query.isNotEmpty
+                          ? IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            tooltip: 'clear search',
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                          )
+                          : null,
+                ),
+                onChanged: (v) => setState(() => _query = v),
+              ),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    SegmentedButton<_SortField>(
+                      segments: const [
+                        ButtonSegment(
+                          value: _SortField.name,
+                          label: Text('name'),
+                        ),
+                        ButtonSegment(
+                          value: _SortField.phone,
+                          label: Text('phone'),
+                        ),
+                        ButtonSegment(
+                          value: _SortField.role,
+                          label: Text('role'),
+                        ),
+                      ],
+                      selected: {_sort},
+                      onSelectionChanged:
+                          (s) => setState(() => _sort = s.first),
+                      style: ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        textStyle: WidgetStatePropertyAll(
+                          Theme.of(context).textTheme.labelSmall,
+                        ),
+                      ),
+                    ),
+                    if (widget.canManageUsers) ...[
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _showBulkAddDialog(context, ref),
+                        icon: const Icon(Icons.group_add_outlined, size: 18),
+                        label: const Text('Bulk add'),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        onPressed: () => _showAddMemberDialog(context, ref),
+                        icon: const Icon(
+                          Icons.person_add_alt_1_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Add member'),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              SegmentedButton<_SortField>(
-                segments: const [
-                  ButtonSegment(value: _SortField.name, label: Text('name')),
-                  ButtonSegment(value: _SortField.phone, label: Text('phone')),
-                  ButtonSegment(value: _SortField.role, label: Text('role')),
-                ],
-                selected: {_sort},
-                onSelectionChanged: (s) => setState(() => _sort = s.first),
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: WidgetStatePropertyAll(
-                    Theme.of(context).textTheme.labelSmall,
-                  ),
-                ),
-              ),
-              if (widget.canManageUsers) ...[
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: () => _showBulkAddDialog(context, ref),
-                  icon: const Icon(Icons.group_add_outlined, size: 18),
-                  label: const Text('Bulk add'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () => _showAddMemberDialog(context, ref),
-                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
-                  label: const Text('Add member'),
-                ),
-              ],
             ],
           ),
         ),

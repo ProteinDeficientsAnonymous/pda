@@ -81,7 +81,7 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
-    final canEdit = user?.hasPermission(Permission.manageGuidelines) ?? false;
+    final canEdit = user?.hasPermission(Permission.editGuidelines) ?? false;
     _maybeInitAutosave(canEdit);
     final pageAsync = ref.watch(editablePageProvider(widget.slug));
 

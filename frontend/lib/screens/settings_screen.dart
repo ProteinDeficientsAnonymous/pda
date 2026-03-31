@@ -19,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
     final user = ref.watch(authProvider).valueOrNull;
 
     return AppScaffold(
+      maxWidth: 600,
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -56,6 +57,41 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.key_outlined,
             label: 'change password',
             onTap: () => _showChangePasswordDialog(context, ref),
+          ),
+          const SizedBox(height: 24),
+          const _SectionHeader(label: 'privacy'),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              'only logged-in PDA members can see your profile',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          _PrivacyToggle(
+            icon: Icons.phone_outlined,
+            label: 'show phone number on profile',
+            value: user?.showPhone ?? true,
+            onChanged: (val) async {
+              await ref
+                  .read(authProvider.notifier)
+                  .updateProfile(showPhone: val);
+            },
+          ),
+          _PrivacyToggle(
+            icon: Icons.email_outlined,
+            label: 'show email on profile',
+            value: user?.showEmail ?? true,
+            onChanged: (val) async {
+              await ref
+                  .read(authProvider.notifier)
+                  .updateProfile(showEmail: val);
+            },
           ),
           const SizedBox(height: 24),
           const _SectionHeader(label: 'calendar'),
@@ -292,6 +328,32 @@ class _SectionHeader extends StatelessWidget {
       style: Theme.of(context).textTheme.labelLarge?.copyWith(
         color: Theme.of(context).colorScheme.primary,
       ),
+    );
+  }
+}
+
+class _PrivacyToggle extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _PrivacyToggle({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      secondary: Icon(icon, size: 20),
+      title: Text(label, style: const TextStyle(fontSize: 14)),
+      value: value,
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      onChanged: onChanged,
     );
   }
 }

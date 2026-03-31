@@ -9,7 +9,7 @@ const kPermissionLabels = {
   Permission.manageRoles: 'Manage roles',
   Permission.approveJoinRequests: 'Approve join requests',
   Permission.manageEvents: 'Manage events',
-  Permission.manageGuidelines: 'Manage community guidelines',
+  Permission.editGuidelines: 'Edit community guidelines',
   Permission.manageWhatsapp: 'Manage WhatsApp',
   Permission.editFaq: 'Edit FAQ',
   Permission.editHomepage: 'Edit homepage',

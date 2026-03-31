@@ -15,7 +15,7 @@ abstract class Permission {
   static const manageRoles = 'manage_roles';
   static const approveJoinRequests = 'approve_join_requests';
   static const manageEvents = 'manage_events';
-  static const manageGuidelines = 'manage_guidelines';
+  static const editGuidelines = 'edit_guidelines';
   static const manageWhatsapp = 'manage_whatsapp';
   static const editFaq = 'edit_faq';
   static const editHomepage = 'edit_homepage';

@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
@@ -34,3 +36,21 @@ final eventDetailProvider = FutureProvider.family<Event, String>((
     rethrow;
   }
 });
+
+Future<void> uploadEventPhoto(WidgetRef ref, String eventId, XFile file) async {
+  final api = ref.read(apiClientProvider);
+  final bytes = await file.readAsBytes();
+  final formData = FormData.fromMap({
+    'photo': MultipartFile.fromBytes(bytes, filename: file.name),
+  });
+  await api.post('/api/community/events/$eventId/photo/', data: formData);
+  ref.invalidate(eventsProvider);
+  ref.invalidate(eventDetailProvider(eventId));
+}
+
+Future<void> deleteEventPhoto(WidgetRef ref, String eventId) async {
+  final api = ref.read(apiClientProvider);
+  await api.delete('/api/community/events/$eventId/photo/');
+  ref.invalidate(eventsProvider);
+  ref.invalidate(eventDetailProvider(eventId));
+}

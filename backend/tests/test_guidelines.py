@@ -14,7 +14,7 @@ def manage_guidelines_user(db):
         display_name="Guidelines Editor",
     )
     role = Role.objects.create(
-        name="guidelines_editor", permissions=[PermissionKey.MANAGE_GUIDELINES]
+        name="guidelines_editor", permissions=[PermissionKey.EDIT_GUIDELINES]
     )
     user.roles.add(role)
     return user

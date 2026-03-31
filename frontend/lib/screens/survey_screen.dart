@@ -17,6 +17,7 @@ class SurveyScreen extends ConsumerWidget {
     final surveyAsync = ref.watch(surveyBySlugProvider(slug));
 
     return AppScaffold(
+      maxWidth: 600,
       child: surveyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error:

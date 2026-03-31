@@ -20,6 +20,7 @@ class FAQScreen extends ConsumerWidget {
     final faqAsync = ref.watch(faqNotifierProvider);
 
     return AppScaffold(
+      maxWidth: 800,
       child: faqAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error:

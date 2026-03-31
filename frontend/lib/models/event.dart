@@ -11,6 +11,7 @@ abstract class EventGuest with _$EventGuest {
     required String name,
     required String status,
     String? phone,
+    @Default('') String photoUrl,
   }) = _EventGuest;
 
   factory EventGuest.fromJson(Map<String, dynamic> json) =>
@@ -34,9 +35,12 @@ abstract class Event with _$Event {
     String? createdByName,
     @Default([]) List<String> coHostIds,
     @Default([]) List<String> coHostNames,
+    @Default([]) List<String> coHostPhotoUrls,
     @Default([]) List<EventGuest> guests,
     String? myRsvp,
     @Default(EventType.community) String eventType,
+    @Default(PageVisibility.public_) String visibility,
+    @Default('') String photoUrl,
     @Default([]) List<String> surveySlugs,
   }) = _Event;
 

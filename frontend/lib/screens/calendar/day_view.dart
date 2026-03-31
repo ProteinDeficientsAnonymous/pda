@@ -244,8 +244,16 @@ class _DayEventCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (event.visibility == PageVisibility.membersOnly) ...[
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.lock_outline,
+                      size: 14,
+                      color: fgColor.withValues(alpha: 0.7),
+                    ),
+                  ],
                   if (event.eventType == EventType.official) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 5,

@@ -1,11 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/utils/time_format.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/config/constants.dart';
+
+/// Result returned by [EventFormDialog] — JSON data + optional photo.
+class EventFormResult {
+  final Map<String, dynamic> data;
+  final XFile? photo;
+  final bool removePhoto;
+
+  const EventFormResult({
+    required this.data,
+    this.photo,
+    this.removePhoto = false,
+  });
+}
 
 /// Shared form dialog for creating and editing events.
 /// Pass [event] to pre-fill fields for editing; omit for create mode.
@@ -31,10 +45,13 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late DateTime? _end;
   late bool _rsvpEnabled;
   late String _eventType;
+  late String _visibility;
   late Set<String> _coHostIds;
   late Map<String, String> _coHostNames;
   // which field the inline calendar is editing: 'start', 'end', or null (hidden)
   String? _calendarTarget;
+  XFile? _selectedPhoto;
+  bool _removePhoto = false;
 
   bool get _isEdit => widget.event != null;
 
@@ -53,6 +70,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _end = e.endDatetime?.toLocal();
       _rsvpEnabled = e.rsvpEnabled;
       _eventType = e.eventType;
+      _visibility = e.visibility;
       _coHostIds = Set<String>.from(e.coHostIds);
       _coHostNames = {
         for (var i = 0; i < e.coHostIds.length; i++)
@@ -70,6 +88,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _end = null;
       _rsvpEnabled = false;
       _eventType = EventType.community;
+      _visibility = PageVisibility.public_;
       _coHostIds = {};
       _coHostNames = {};
     }
@@ -165,19 +184,41 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    Navigator.of(context).pop({
-      'title': _title.text.trim(),
-      'description': _description.text.trim(),
-      'location': _location.text.trim(),
-      'whatsapp_link': _normalizeUrl(_whatsappLink.text),
-      'partiful_link': _normalizeUrl(_partifulLink.text),
-      'other_link': _normalizeUrl(_otherLink.text),
-      'start_datetime': _start.toUtc().toIso8601String(),
-      'end_datetime': _end?.toUtc().toIso8601String(),
-      'rsvp_enabled': _rsvpEnabled,
-      'event_type': _eventType,
-      'co_host_ids': _coHostIds.toList(),
-    });
+    Navigator.of(context).pop(
+      EventFormResult(
+        data: {
+          'title': _title.text.trim(),
+          'description': _description.text.trim(),
+          'location': _location.text.trim(),
+          'whatsapp_link': _normalizeUrl(_whatsappLink.text),
+          'partiful_link': _normalizeUrl(_partifulLink.text),
+          'other_link': _normalizeUrl(_otherLink.text),
+          'start_datetime': _start.toUtc().toIso8601String(),
+          'end_datetime': _end?.toUtc().toIso8601String(),
+          'rsvp_enabled': _rsvpEnabled,
+          'event_type': _eventType,
+          'visibility': _visibility,
+          'co_host_ids': _coHostIds.toList(),
+        },
+        photo: _selectedPhoto,
+        removePhoto: _removePhoto,
+      ),
+    );
+  }
+
+  Future<void> _pickPhoto() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1200,
+      maxHeight: 800,
+      imageQuality: 85,
+    );
+    if (image != null) {
+      setState(() {
+        _selectedPhoto = image;
+        _removePhoto = false;
+      });
+    }
   }
 
   Widget _buildNoFeesNote(ThemeData theme) {
@@ -207,6 +248,119 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPhotoSection() {
+    final cs = Theme.of(context).colorScheme;
+    final existingUrl = widget.event?.photoUrl ?? '';
+    final hasExisting = existingUrl.isNotEmpty && !_removePhoto;
+    final hasSelected = _selectedPhoto != null;
+    final hasPhoto = hasSelected || hasExisting;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child:
+                  hasSelected
+                      ? FutureBuilder<List<int>>(
+                        future: _selectedPhoto!.readAsBytes(),
+                        builder: (ctx, snap) {
+                          if (!snap.hasData) {
+                            return const SizedBox(
+                              height: 160,
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+                          return Image.memory(
+                            snap.data! as dynamic,
+                            height: 160,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                      : hasExisting
+                      ? Image.network(
+                        existingUrl,
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                      : InkWell(
+                        onTap: _pickPhoto,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 130,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainerHighest.withValues(
+                              alpha: 0.3,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: cs.outline.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 32,
+                                color: cs.onSurfaceVariant.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'add a cover photo',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: cs.onSurfaceVariant.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+            ),
+            if (hasPhoto)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _PhotoButton(
+                      tooltip: 'change photo',
+                      icon: Icons.photo_outlined,
+                      onPressed: _pickPhoto,
+                    ),
+                    const SizedBox(width: 4),
+                    _PhotoButton(
+                      tooltip: 'remove photo',
+                      icon: Icons.close,
+                      onPressed: () {
+                        setState(() {
+                          _selectedPhoto = null;
+                          _removePhoto = true;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
@@ -472,7 +626,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 4),
+                _buildPhotoSection(),
                 _buildTitleField(),
                 const SizedBox(height: 12),
                 _buildNoFeesNote(theme),
@@ -488,6 +642,21 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 const Divider(),
                 const SizedBox(height: 8),
                 _buildRsvpToggle(theme),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('members only'),
+                  subtitle: const Text('only visible to logged-in members'),
+                  value: _visibility == PageVisibility.membersOnly,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged:
+                      (val) => setState(
+                        () =>
+                            _visibility =
+                                val
+                                    ? PageVisibility.membersOnly
+                                    : PageVisibility.public_,
+                      ),
+                ),
                 if (ref
                         .watch(authProvider)
                         .valueOrNull
@@ -819,6 +988,37 @@ class _CoHostPickerState extends ConsumerState<_CoHostPicker> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _PhotoButton extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _PhotoButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, size: 16, color: Colors.white),
+          ),
+        ),
+      ),
     );
   }
 }

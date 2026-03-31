@@ -8,6 +8,9 @@ class DonateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppScaffold(child: EditableContentBlock(slug: 'donate'));
+    return const AppScaffold(
+      maxWidth: 800,
+      child: EditableContentBlock(slug: 'donate'),
+    );
   }
 }

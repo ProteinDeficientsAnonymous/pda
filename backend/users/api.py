@@ -151,6 +151,8 @@ class UserOut(BaseModel):
     is_superuser: bool = False
     needs_onboarding: bool = False
     profile_photo_url: str = ""
+    show_phone: bool = True
+    show_email: bool = True
     roles: list[RoleOut]
 
     @classmethod
@@ -163,6 +165,8 @@ class UserOut(BaseModel):
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             profile_photo_url=user.profile_photo.url if user.profile_photo else "",
+            show_phone=user.show_phone,
+            show_email=user.show_email,
             roles=[
                 RoleOut(
                     id=str(r.id), name=r.name, is_default=r.is_default, permissions=r.permissions
@@ -170,6 +174,14 @@ class UserOut(BaseModel):
                 for r in user.roles.all()
             ],
         )
+
+
+class MemberProfileOut(BaseModel):
+    id: str
+    display_name: str
+    phone_number: str
+    email: str = ""
+    profile_photo_url: str = ""
 
 
 class UserCreateIn(BaseModel):
@@ -215,6 +227,8 @@ class MePatchIn(BaseModel):
     display_name: str | None = None
     email: str | None = None
     needs_onboarding: bool | None = None
+    show_phone: bool | None = None
+    show_email: bool | None = None
 
 
 class ChangePasswordIn(BaseModel):
@@ -291,12 +305,23 @@ def update_me(request, payload: MePatchIn):
         user.email = payload.email
     if payload.needs_onboarding is not None:
         user.needs_onboarding = payload.needs_onboarding
+    if payload.show_phone is not None:
+        user.show_phone = payload.show_phone
+    if payload.show_email is not None:
+        user.show_email = payload.show_email
     user.save()
     return Status(200, UserOut.from_user(user))
 
 
 _MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
-_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+}
 
 
 @router.post("/me/photo/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
@@ -308,7 +333,9 @@ def upload_photo(request, photo: UploadedFile = File(...)):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.profile_photo:
         user.profile_photo.delete(save=False)
-    user.profile_photo.save(f"{user.pk}.{photo.name.rsplit('.', 1)[-1]}", photo, save=True)
+    name = photo.name or ""
+    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
+    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=True)
     return Status(200, UserOut.from_user(user))
 
 
@@ -320,6 +347,29 @@ def delete_photo(request):
         user.profile_photo = ""
         user.save(update_fields=["profile_photo"])
     return Status(200, UserOut.from_user(user))
+
+
+@router.get(
+    "/users/{user_id}/profile/",
+    response={200: MemberProfileOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def get_member_profile(request, user_id: str):
+    try:
+        user = User.objects.get(pk=user_id, is_active=True)
+    except User.DoesNotExist:
+        return Status(404, ErrorOut(detail="Member not found."))
+    is_own_profile = str(request.auth.pk) == user_id
+    return Status(
+        200,
+        MemberProfileOut(
+            id=str(user.id),
+            display_name=user.display_name,
+            phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
+            email=(user.email or "") if (user.show_email or is_own_profile) else "",
+            profile_photo_url=user.profile_photo.url if user.profile_photo else "",
+        ),
+    )
 
 
 class OnboardingIn(BaseModel):

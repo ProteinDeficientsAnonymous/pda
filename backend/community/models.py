@@ -7,6 +7,11 @@ if TYPE_CHECKING:
     from django.db.models import Manager
 
 
+class PageVisibility(models.TextChoices):
+    PUBLIC = "public", "Public"
+    MEMBERS_ONLY = "members_only", "Members only"
+
+
 class EventType(models.TextChoices):
     OFFICIAL = "official", "Official"
     COMMUNITY = "community", "Community"
@@ -72,10 +77,16 @@ class Event(models.Model):
     partiful_link = models.URLField(blank=True)
     other_link = models.URLField(blank=True)
     rsvp_enabled = models.BooleanField(default=False)
+    photo = models.ImageField(upload_to="event_photos/", blank=True)
     event_type = models.CharField(
         max_length=20,
         choices=EventType.choices,
         default=EventType.COMMUNITY,
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=PageVisibility.choices,
+        default=PageVisibility.PUBLIC,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
@@ -159,11 +170,6 @@ class HomePage(models.Model):
     def get(cls) -> "HomePage":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
-
-
-class PageVisibility(models.TextChoices):
-    PUBLIC = "public", "Public"
-    MEMBERS_ONLY = "members_only", "Members only"
 
 
 class EditablePage(models.Model):

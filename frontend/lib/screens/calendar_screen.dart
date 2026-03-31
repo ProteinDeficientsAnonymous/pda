@@ -56,7 +56,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       if (loggedIn != true || !mounted) return;
     }
 
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (_) => const EventFormDialog(),
     );
@@ -64,7 +64,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     try {
       final api = ref.read(apiClientProvider);
-      await api.post('/api/community/events/', data: result);
+      final response = await api.post(
+        '/api/community/events/',
+        data: result.data,
+      );
+      final eventId = (response.data as Map<String, dynamic>)['id'] as String;
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, eventId, result.photo!);
+      }
       ref.invalidate(eventsProvider);
     } catch (e) {
       if (mounted) {
@@ -84,28 +91,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // so authenticated users see member-only fields (location, links, RSVP).
     ref.listen(authProvider, (_, __) => ref.invalidate(eventsProvider));
 
-    final isNarrow = MediaQuery.sizeOf(context).width < 720;
-
     return AppScaffold(
-      actions:
-          isNarrow
-              ? [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: OutlinedButton(
-                    onPressed: _goToToday,
-                    child: const Text('today'),
-                  ),
-                ),
-              ]
-              : null,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: OutlinedButton(
+            onPressed: _goToToday,
+            child: const Text('today'),
+          ),
+        ),
+      ],
       child: Column(
         children: [
           _CalendarToolbar(
             selected: _view,
             onSelected: _onViewChanged,
             onToday: _goToToday,
-            compact: isNarrow,
+            compact: true,
           ),
           Expanded(
             child: eventsAsync.when(
@@ -182,7 +184,7 @@ class _CalendarToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -51,7 +51,9 @@ class EventManagementScreen extends ConsumerWidget {
   }
 }
 
-class _EventManagementBody extends ConsumerWidget {
+enum _SortField { date, title, type }
+
+class _EventManagementBody extends ConsumerStatefulWidget {
   final List<Event> events;
   final bool myEventsOnly;
 
@@ -60,42 +62,133 @@ class _EventManagementBody extends ConsumerWidget {
     required this.myEventsOnly,
   });
 
-  Future<void> _showCreateDialog(BuildContext context, WidgetRef ref) async {
-    final result = await showDialog<Map<String, dynamic>>(
+  @override
+  ConsumerState<_EventManagementBody> createState() =>
+      _EventManagementBodyState();
+}
+
+class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
+  final _searchController = TextEditingController();
+  String _query = '';
+  _SortField _sort = _SortField.date;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Event> _filterAndSort(List<Event> events) {
+    var filtered = events;
+    if (_query.isNotEmpty) {
+      final q = _query.toLowerCase();
+      filtered =
+          events.where((e) => e.title.toLowerCase().contains(q)).toList();
+    }
+    filtered = List.of(filtered);
+    filtered.sort((a, b) {
+      return switch (_sort) {
+        _SortField.date => b.startDatetime.compareTo(a.startDatetime),
+        _SortField.title => a.title.toLowerCase().compareTo(
+          b.title.toLowerCase(),
+        ),
+        _SortField.type => a.eventType.compareTo(b.eventType),
+      };
+    });
+    return filtered;
+  }
+
+  Future<void> _showCreateDialog() async {
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (_) => const EventFormDialog(),
     );
     if (result == null) return;
     try {
       final api = ref.read(apiClientProvider);
-      await api.post('/api/community/events/', data: result);
+      final response = await api.post(
+        '/api/community/events/',
+        data: result.data,
+      );
+      final eventId = (response.data as Map<String, dynamic>)['id'] as String;
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, eventId, result.photo!);
+      }
       ref.invalidate(eventsProvider);
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final filtered = _filterAndSort(widget.events);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              onPressed: () => _showCreateDialog(context, ref),
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('new event'),
-            ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'search events...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    suffixIcon:
+                        _query.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _query = '');
+                              },
+                            )
+                            : null,
+                  ),
+                  onChanged: (v) => setState(() => _query = v),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SegmentedButton<_SortField>(
+                segments: const [
+                  ButtonSegment(value: _SortField.date, label: Text('date')),
+                  ButtonSegment(value: _SortField.title, label: Text('title')),
+                  ButtonSegment(value: _SortField.type, label: Text('type')),
+                ],
+                selected: {_sort},
+                onSelectionChanged: (s) => setState(() => _sort = s.first),
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: WidgetStatePropertyAll(
+                    Theme.of(context).textTheme.labelSmall,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: _showCreateDialog,
+                icon: const Icon(Icons.add_circle_outline),
+                label: const Text('new event'),
+              ),
+            ],
           ),
         ),
         Expanded(
           child:
-              events.isEmpty
+              filtered.isEmpty
                   ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
@@ -108,28 +201,35 @@ class _EventManagementBody extends ConsumerWidget {
                             color: Colors.grey,
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'no events yet',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 8),
                           Text(
-                            myEventsOnly
-                                ? "you haven't created or co-hosted any events yet"
-                                : 'create one to get started',
-                            style: const TextStyle(color: Colors.grey),
+                            _query.isNotEmpty
+                                ? 'no matches for "$_query"'
+                                : 'no events yet',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey,
+                            ),
                           ),
+                          if (_query.isEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.myEventsOnly
+                                  ? "you haven't created or co-hosted any events yet"
+                                  : 'create one to get started',
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   )
                   : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    itemCount: events.length,
+                    itemCount: filtered.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder:
                         (context, index) =>
-                            _EventManagementRow(event: events[index]),
+                            _EventManagementRow(event: filtered[index]),
                   ),
         ),
       ],
@@ -175,14 +275,19 @@ class _EventManagementRow extends ConsumerWidget {
   const _EventManagementRow({required this.event});
 
   Future<void> _showEditDialog(BuildContext context, WidgetRef ref) async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (_) => EventFormDialog(event: event),
     );
     if (result == null) return;
     try {
       final api = ref.read(apiClientProvider);
-      await api.patch('/api/community/events/${event.id}/', data: result);
+      await api.patch('/api/community/events/${event.id}/', data: result.data);
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, event.id, result.photo!);
+      } else if (result.removePhoto) {
+        await deleteEventPhoto(ref, event.id);
+      }
       ref.invalidate(eventsProvider);
     } catch (e) {
       if (context.mounted) {

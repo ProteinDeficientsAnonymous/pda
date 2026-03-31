@@ -7,194 +7,113 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
 void main() {
-  group('narrow layout (drawer)', () {
-    setUp(() {});
-
-    testWidgets('drawer contains login item for guest', (tester) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(
-            path: '/',
-            name: 'home',
-            builder: (_, __) => const AppScaffold(child: Placeholder()),
-          ),
-          GoRoute(
-            path: '/login',
-            name: 'login',
-            builder: (_, __) => const SizedBox(),
-          ),
-        ],
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [authProvider.overrideWith(() => _GuestAuthNotifier())],
-          child: MaterialApp.router(routerConfig: router),
+  testWidgets('shows bottom navigation bar with 3 destinations', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          name: 'home',
+          builder: (_, __) => const AppScaffold(child: Placeholder()),
         ),
-      );
-      await tester.pumpAndSettle();
-
-      final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
-      scaffoldState.openDrawer();
-      await tester.pumpAndSettle();
-
-      expect(find.text('log in'), findsOneWidget);
-      expect(find.text('log out'), findsNothing);
-    });
-
-    testWidgets('drawer contains logout item for authenticated user', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(
-            path: '/',
-            name: 'home',
-            builder: (_, __) => const AppScaffold(child: Placeholder()),
-          ),
-          GoRoute(
-            path: '/calendar',
-            name: 'calendar',
-            builder: (_, __) => const SizedBox(),
-          ),
-        ],
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [authProvider.overrideWith(() => _MemberAuthNotifier())],
-          child: MaterialApp.router(routerConfig: router),
+        GoRoute(
+          path: '/calendar',
+          name: 'calendar',
+          builder: (_, __) => const SizedBox(),
         ),
-      );
-      await tester.pumpAndSettle();
+        GoRoute(
+          path: '/profile',
+          name: 'profile',
+          builder: (_, __) => const SizedBox(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
 
-      final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold));
-      scaffoldState.openDrawer();
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authProvider.overrideWith(() => _GuestAuthNotifier())],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.text('log out'), findsOneWidget);
-      expect(find.text('log in'), findsNothing);
-    });
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
   });
 
-  group('wide layout (app bar nav)', () {
-    testWidgets('shows Member login button for guest', (tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(
-            path: '/',
-            name: 'home',
-            builder: (_, __) => const AppScaffold(child: Placeholder()),
-          ),
-          GoRoute(
-            path: '/login',
-            name: 'login',
-            builder: (_, __) => const SizedBox(),
-          ),
-        ],
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [authProvider.overrideWith(() => _GuestAuthNotifier())],
-          child: MaterialApp.router(routerConfig: router),
+  testWidgets('navigates to calendar on icon tap', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          name: 'home',
+          builder: (_, __) => const AppScaffold(child: Placeholder()),
         ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('log in'), findsOneWidget);
-      expect(find.text('log out'), findsNothing);
-    });
-
-    testWidgets('shows Logout button for authenticated user', (tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final router = GoRouter(
-        initialLocation: '/',
-        routes: [
-          GoRoute(
-            path: '/',
-            name: 'home',
-            builder: (_, __) => const AppScaffold(child: Placeholder()),
-          ),
-          GoRoute(
-            path: '/calendar',
-            name: 'calendar',
-            builder: (_, __) => const SizedBox(),
-          ),
-          GoRoute(
-            path: '/events/mine',
-            name: 'my-events',
-            builder: (_, __) => const SizedBox(),
-          ),
-          GoRoute(
-            path: '/donate',
-            name: 'donate',
-            builder: (_, __) => const SizedBox(),
-          ),
-          GoRoute(
-            path: '/volunteer',
-            name: 'volunteer',
-            builder: (_, __) => const SizedBox(),
-          ),
-          GoRoute(
-            path: '/guidelines',
-            name: 'guidelines',
-            builder: (_, __) => const SizedBox(),
-          ),
-          GoRoute(
-            path: '/settings',
-            name: 'settings',
-            builder: (_, __) => const SizedBox(),
-          ),
-        ],
-      );
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [authProvider.overrideWith(() => _MemberAuthNotifier())],
-          child: MaterialApp.router(routerConfig: router),
+        GoRoute(
+          path: '/calendar',
+          name: 'calendar',
+          builder: (_, __) => const AppScaffold(child: Text('calendar screen')),
         ),
-      );
-      await tester.pumpAndSettle();
+        GoRoute(
+          path: '/profile',
+          name: 'profile',
+          builder: (_, __) => const SizedBox(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
 
-      expect(find.text('log out'), findsOneWidget);
-      expect(find.text('log in'), findsNothing);
-    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authProvider.overrideWith(() => _GuestAuthNotifier())],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('calendar screen'), findsOneWidget);
+  });
+
+  testWidgets('bottom nav is shown at all widths', (tester) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          name: 'home',
+          builder: (_, __) => const AppScaffold(child: Placeholder()),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authProvider.overrideWith(() => _GuestAuthNotifier())],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NavigationBar), findsOneWidget);
   });
 }
 
 class _GuestAuthNotifier extends AuthNotifier {
   @override
   Future<User?> build() async => null;
-
-  @override
-  Future<void> logout() async {
-    state = const AsyncData(null);
-  }
-}
-
-class _MemberAuthNotifier extends AuthNotifier {
-  @override
-  Future<User?> build() async =>
-      const User(id: 'u1', phoneNumber: '+12025551234', displayName: 'Alice');
 
   @override
   Future<void> logout() async {

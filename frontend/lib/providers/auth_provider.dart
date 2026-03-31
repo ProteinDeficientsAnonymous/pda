@@ -68,11 +68,18 @@ class AuthNotifier extends AsyncNotifier<User?> {
     }
   }
 
-  Future<void> updateProfile({String? displayName, String? email}) async {
+  Future<void> updateProfile({
+    String? displayName,
+    String? email,
+    bool? showPhone,
+    bool? showEmail,
+  }) async {
     final api = ref.read(apiClientProvider);
     final data = <String, dynamic>{};
     if (displayName != null) data['display_name'] = displayName;
     if (email != null) data['email'] = email;
+    if (showPhone != null) data['show_phone'] = showPhone;
+    if (showEmail != null) data['show_email'] = showEmail;
     final response = await api.patch('/api/auth/me/', data: data);
     state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
   }

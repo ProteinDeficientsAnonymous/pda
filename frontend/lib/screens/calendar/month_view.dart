@@ -37,8 +37,8 @@ class _MonthViewState extends State<MonthView> {
     'sat',
   ];
 
-  static const int _maxEventRows = 3;
-  static const double _dayLabelHeight = 26.0;
+  static const int _maxEventRows = 10;
+  static const double _dayLabelHeight = 20.0;
   static const double _chipHeight = 20.0;
   static const double _chipSpacing = 3.0;
   @override
@@ -119,7 +119,7 @@ class _MonthViewState extends State<MonthView> {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Container(
@@ -143,7 +143,7 @@ class _MonthViewState extends State<MonthView> {
 
   Widget _buildMonthHeader(BuildContext context, String label) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -175,7 +175,7 @@ class _MonthViewState extends State<MonthView> {
                 (h) => Expanded(
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Text(h, style: textStyle),
                     ),
                   ),
@@ -482,7 +482,7 @@ class _MonthRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6),
             alignment: Alignment.centerLeft,
             child: Text(
-              '${p.event.eventType == EventType.official ? '✦ ' : ''}${p.event.title}',
+              '${p.event.visibility == PageVisibility.membersOnly ? '🔒 ' : ''}${p.event.eventType == EventType.official ? '✦ ' : ''}${p.event.title}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -552,8 +552,8 @@ class _DayLabel extends StatelessWidget {
       width: height,
       child: Center(
         child: Container(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           decoration:
               isToday
                   ? BoxDecoration(
@@ -565,7 +565,7 @@ class _DayLabel extends StatelessWidget {
             child: Text(
               '${day.day}',
               style: TextStyle(
-                fontSize: 12.5,
+                fontSize: 11,
                 fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
                 color:
                     isToday

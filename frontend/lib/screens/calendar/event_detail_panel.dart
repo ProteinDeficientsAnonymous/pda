@@ -19,7 +19,7 @@ import 'event_form_dialog.dart';
 import 'rsvp_section.dart';
 import 'package:pda/config/constants.dart';
 
-export 'event_form_dialog.dart' show EventFormDialog;
+export 'event_form_dialog.dart' show EventFormDialog, EventFormResult;
 
 /// Shows the event detail panel as a bottom sheet (narrow) or side panel (wide).
 void showEventDetail(BuildContext context, Event event) {
@@ -75,11 +75,12 @@ List<Widget> _buildDateTimeRows(
   DateTime start,
   DateTime? end,
 ) {
+  final style = const TextStyle(fontSize: 15, height: 1.4);
   if (end == null) {
     return [
-      _DetailRow(icon: Icons.today_outlined, text: dateFmt(start)),
-      const SizedBox(height: 8),
-      _DetailRow(icon: Icons.schedule_outlined, text: formatTime(start)),
+      Text(dateFmt(start), style: style),
+      const SizedBox(height: 4),
+      Text(formatTime(start), style: style),
     ];
   }
   final sameDay =
@@ -88,20 +89,16 @@ List<Widget> _buildDateTimeRows(
       start.day == end.day;
   if (sameDay) {
     return [
-      _DetailRow(icon: Icons.today_outlined, text: dateFmt(start)),
-      const SizedBox(height: 8),
-      _DetailRow(
-        icon: Icons.schedule_outlined,
-        text: '${formatTime(start)} \u2013 ${formatTime(end)}',
-      ),
+      Text(dateFmt(start), style: style),
+      const SizedBox(height: 4),
+      Text('${formatTime(start)} \u2013 ${formatTime(end)}', style: style),
     ];
   }
   return [
-    _DetailRow(
-      icon: Icons.calendar_today,
-      text:
-          '${dateFmt(start)}, ${formatTime(start)} \u2013 '
-          '${dateFmt(end)}, ${formatTime(end)}',
+    Text(
+      '${dateFmt(start)}, ${formatTime(start)} \u2013 '
+      '${dateFmt(end)}, ${formatTime(end)}',
+      style: style,
     ),
   ];
 }
@@ -130,29 +127,37 @@ class EventDetailContent extends ConsumerWidget {
     String formatDate(DateTime d) =>
         DateFormat('EEEE, MMMM d, y').format(d).toLowerCase();
 
-    final hostNames = <String>[];
-    if (liveEvent.createdByName != null) {
-      hostNames.add(liveEvent.createdByName!);
-    }
-    hostNames.addAll(liveEvent.coHostNames);
-
     return SelectionArea(
       child: ListView(
         controller: scrollController,
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         children: [
+          _EventPhoto(event: liveEvent),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    liveEvent.title,
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      liveEvent.title,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               _CalendarMenuChip(event: liveEvent),
               const SizedBox(width: 4),
               _ActionChip(
@@ -180,25 +185,103 @@ class EventDetailContent extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          ..._buildDateTimeRows(formatDate, start, end),
-          if (hostNames.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            _DetailRow(
-              icon: Icons.person_pin_outlined,
-              text: hostNames.join(', '),
+          _SectionCard(
+            label: 'when',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _buildDateTimeRows(formatDate, start, end),
             ),
-          ],
+          ),
           if (liveEvent.description.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(
-              liveEvent.description,
-              style: const TextStyle(fontSize: 15, height: 1.6),
+            const SizedBox(height: 12),
+            _SectionCard(
+              label: 'about',
+              child: Text(
+                liveEvent.description,
+                style: const TextStyle(fontSize: 15, height: 1.6),
+              ),
             ),
           ],
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _MemberSection(event: liveEvent, location: liveEvent.location),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String label;
+  final Widget child;
+
+  const _SectionCard({required this.label, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _HostChip extends StatelessWidget {
+  final ({String id, String name, String photoUrl}) host;
+
+  const _HostChip({required this.host});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final hasPhoto = host.photoUrl.isNotEmpty;
+    final initials = host.name.isNotEmpty ? host.name[0].toUpperCase() : '?';
+
+    return InkWell(
+      onTap:
+          host.id.isNotEmpty ? () => context.push('/members/${host.id}') : null,
+      borderRadius: BorderRadius.circular(20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasPhoto)
+            CircleAvatar(
+              radius: 14,
+              backgroundImage: NetworkImage(host.photoUrl),
+            )
+          else
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: cs.primaryContainer,
+              child: Text(
+                initials,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onPrimaryContainer,
+                ),
+              ),
+            ),
+          const SizedBox(width: 8),
+          Text(host.name, style: TextStyle(fontSize: 15, color: cs.onSurface)),
         ],
       ),
     );
@@ -232,6 +315,30 @@ class _DetailRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _EventPhoto extends StatelessWidget {
+  final Event event;
+
+  const _EventPhoto({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    if (event.photoUrl.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          event.photoUrl,
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
+      ),
     );
   }
 }
@@ -284,6 +391,7 @@ class _CalendarMenuChip extends StatelessWidget {
         color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
         child: PopupMenuButton<_CalendarOption>(
+          tooltip: 'add to calendar',
           onSelected: (option) {
             switch (option) {
               case _CalendarOption.google:
@@ -416,7 +524,7 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
   }
 
   Future<void> _edit() async {
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<EventFormResult>(
       context: context,
       builder: (ctx) => EventFormDialog(event: widget.event),
     );
@@ -427,8 +535,13 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
       final api = ref.read(apiClientProvider);
       await api.patch(
         '/api/community/events/${widget.event.id}/',
-        data: result,
+        data: result.data,
       );
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, widget.event.id, result.photo!);
+      } else if (result.removePhoto) {
+        await deleteEventPhoto(ref, widget.event.id);
+      }
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
     } catch (e) {
@@ -454,11 +567,12 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
     if (!isCreator && !isManager) return const SizedBox.shrink();
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         OutlinedButton.icon(
           onPressed: _edit,
           icon: const Icon(Icons.edit_outlined, size: 16),
-          label: const Text('Edit'),
+          label: const Text('edit'),
         ),
         const SizedBox(width: 12),
         OutlinedButton.icon(
@@ -469,7 +583,7 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
             color: Theme.of(context).colorScheme.error,
           ),
           label: Text(
-            'Delete',
+            'delete',
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
           style: OutlinedButton.styleFrom(
@@ -492,76 +606,105 @@ class _MemberSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).valueOrNull;
     if (user != null) {
+      // Build host list: creator first (no photo), then co-hosts (with photos)
+      final hosts = <({String id, String name, String photoUrl})>[];
+      if (event.createdByName != null) {
+        hosts.add((
+          id: event.createdById ?? '',
+          name: event.createdByName!,
+          photoUrl: '',
+        ));
+      }
+      for (var i = 0; i < event.coHostNames.length; i++) {
+        hosts.add((
+          id: i < event.coHostIds.length ? event.coHostIds[i] : '',
+          name: event.coHostNames[i],
+          photoUrl:
+              i < event.coHostPhotoUrls.length ? event.coHostPhotoUrls[i] : '',
+        ));
+      }
+
+      final detailRows = <Widget>[
+        if (location.isNotEmpty)
+          _DetailRow(icon: Icons.location_on_outlined, text: location),
+        if (event.whatsappLink.isNotEmpty)
+          _LinkRow(
+            icon: Icons.chat_bubble_outline,
+            label: 'WhatsApp group',
+            url: event.whatsappLink,
+          ),
+        if (event.partifulLink.isNotEmpty)
+          _LinkRow(
+            icon: Icons.celebration,
+            label: 'Partiful',
+            url: event.partifulLink,
+          ),
+        if (event.otherLink.isNotEmpty)
+          _LinkRow(
+            icon: Icons.link_outlined,
+            label: event.otherLink,
+            url: event.otherLink,
+          ),
+        ...event.surveySlugs.map(
+          (slug) => InkWell(
+            onTap: () => context.go('/surveys/$slug'),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.rate_review_rounded,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'give feedback',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ];
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (location.isNotEmpty) ...[
-            _DetailRow(icon: Icons.location_on_outlined, text: location),
-            const SizedBox(height: 8),
-          ],
-          if (event.whatsappLink.isNotEmpty) ...[
-            _LinkRow(
-              icon: Icons.chat_bubble_outline,
-              label: 'WhatsApp group',
-              url: event.whatsappLink,
+          if (hosts.isNotEmpty)
+            _SectionCard(
+              label: hosts.length > 1 ? 'co-hosts' : 'host',
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [for (final host in hosts) _HostChip(host: host)],
+              ),
             ),
-            const SizedBox(height: 8),
-          ],
-          if (event.partifulLink.isNotEmpty) ...[
-            _LinkRow(
-              icon: Icons.celebration,
-              label: 'Partiful',
-              url: event.partifulLink,
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (event.otherLink.isNotEmpty) ...[
-            _LinkRow(
-              icon: Icons.link_outlined,
-              label: event.otherLink,
-              url: event.otherLink,
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (event.surveySlugs.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ...event.surveySlugs.map(
-              (slug) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: InkWell(
-                  onTap: () => context.go('/surveys/$slug'),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.rate_review_rounded,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'give feedback',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+          if (detailRows.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _SectionCard(
+              label: 'details',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < detailRows.length; i++) ...[
+                    detailRows[i],
+                    if (i < detailRows.length - 1) const SizedBox(height: 8),
+                  ],
+                ],
               ),
             ),
           ],
           if (event.rsvpEnabled) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             RSVPSection(event: event),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
           ],
+          const SizedBox(height: 12),
           _AdminActions(event: event),
         ],
       );
