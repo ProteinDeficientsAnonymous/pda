@@ -28,8 +28,15 @@ class _FeedbackButtonState extends ConsumerState<FeedbackButton> {
     ref.listen(feedbackProvider, (previous, next) {
       if (_wasLoading && next.hasValue && !next.isLoading) {
         setState(() => _isOpen = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('feedback submitted — thanks! 🌱')),
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: GestureDetector(
+              onTap: messenger.hideCurrentSnackBar,
+              child: const Text('feedback submitted — thanks! 🌱'),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
         );
       }
       _wasLoading = next.isLoading;

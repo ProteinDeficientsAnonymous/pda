@@ -685,11 +685,18 @@ def _github_request(url: str, token: str, data: dict) -> dict:
 def _upload_attachment(attachment, token: str, repo: str) -> str:
     """Upload one file to GitHub's issue asset endpoint and return its markdown snippet."""
     import base64 as _base64
+    from urllib.error import HTTPError
     from urllib.parse import quote
 
     raw = _base64.b64decode(attachment.data)
     safe_name = attachment.filename.encode("ascii", errors="replace").decode("ascii")
     url = f"https://uploads.github.com/repos/{repo}/issues/assets?name={quote(safe_name)}"
+    logger.debug(
+        "Uploading attachment: url=%s content_type=%s size=%d",
+        url,
+        attachment.content_type,
+        len(raw),
+    )
     req = Request(
         url,
         data=raw,
@@ -700,11 +707,14 @@ def _upload_attachment(attachment, token: str, repo: str) -> str:
         },
         method="POST",
     )
-    with urlopen(req) as response:
-        result = json_module.loads(response.read())
-        return result[
-            "markdown"
-        ]  # e.g. "![filename](https://github.com/user-attachments/assets/...)"
+    try:
+        with urlopen(req) as response:
+            result = json_module.loads(response.read())
+            return result["markdown"]
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        logger.error("Asset upload failed: status=%d body=%s url=%s", exc.code, body, url)
+        raise
 
 
 def _build_issue_body(

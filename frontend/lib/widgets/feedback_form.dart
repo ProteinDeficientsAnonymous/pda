@@ -163,6 +163,7 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       const Text('this is a:'),
                       Checkbox(
                         value: _isBug,
+                        semanticLabel: 'bug',
                         onChanged:
                             isLoading
                                 ? null
@@ -171,6 +172,7 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       const Text('bug'),
                       Checkbox(
                         value: _isFeatureRequest,
+                        semanticLabel: 'feature request',
                         onChanged:
                             isLoading
                                 ? null
