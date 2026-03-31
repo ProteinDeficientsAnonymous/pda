@@ -1,8 +1,6 @@
 name: CI & Build
 
 on:
-  push:
-    branches: [main, staging]
   workflow_dispatch:
 
 permissions:
