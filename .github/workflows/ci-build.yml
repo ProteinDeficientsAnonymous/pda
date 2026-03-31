@@ -12,9 +12,6 @@ jobs:
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v6
 
@@ -27,29 +24,26 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: uv sync --locked
+        run: cd backend && uv sync --locked
 
       - name: Lint
-        run: uv run ruff check . && uv run ruff format --check .
+        run: make lint-check
 
       - name: Django checks
-        run: uv run python manage.py check
+        run: make check
 
       - name: Tests
-        run: uv run python -m pytest tests/ -q
+        run: make test
 
       - name: Type check
-        run: uv run ty check .
+        run: make typecheck
 
       - name: Complexity
-        run: uvx --with flake8-cognitive-complexity flake8 --max-cognitive-complexity 10 --select CCR001 .
+        run: make complexity
 
   frontend-ci:
     name: Frontend CI
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v6
 
@@ -59,16 +53,13 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        run: flutter pub get
+        run: make frontend-install
 
-      - name: Format check
-        run: dart format --set-exit-if-changed lib/ test/
-
-      - name: Analyze
-        run: dart analyze
+      - name: Lint
+        run: make frontend-lint
 
       - name: Tests
-        run: flutter test
+        run: make frontend-test
 
       - name: Cache pub global packages
         uses: actions/cache@v4
@@ -77,7 +68,7 @@ jobs:
           key: pub-global-${{ runner.os }}-dart-code-metrics
 
       - name: Complexity
-        run: dart pub global activate dart_code_metrics 2>/dev/null; dart pub global run dart_code_metrics:metrics analyze lib/ --disable-sunset-warning --set-exit-on-violation-level=warning
+        run: make frontend-complexity
 
   build-and-push:
     name: Build & Push Image
