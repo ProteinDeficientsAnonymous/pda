@@ -15,7 +15,9 @@ Widget _app(Widget child) => ProviderScope(
 void main() {
   group('FeedbackButton', () {
     testWidgets('renders ? FAB', (tester) async {
-      await tester.pumpWidget(_app(FeedbackButton(currentRoute: '/calendar')));
+      await tester.pumpWidget(
+        _app(const FeedbackButton(currentRoute: '/calendar')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
@@ -23,7 +25,9 @@ void main() {
     });
 
     testWidgets('opens feedback form on tap', (tester) async {
-      await tester.pumpWidget(_app(FeedbackButton(currentRoute: '/calendar')));
+      await tester.pumpWidget(
+        _app(const FeedbackButton(currentRoute: '/calendar')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -33,7 +37,9 @@ void main() {
     });
 
     testWidgets('closes feedback form on cancel', (tester) async {
-      await tester.pumpWidget(_app(FeedbackButton(currentRoute: '/calendar')));
+      await tester.pumpWidget(
+        _app(const FeedbackButton(currentRoute: '/calendar')),
+      );
       await tester.pumpAndSettle();
 
       // Open

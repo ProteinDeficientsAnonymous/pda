@@ -78,10 +78,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
       access: accessToken,
       refresh: response.data['refresh'] as String,
     );
-    final meResponse = await api.get(
-      '/api/auth/me/',
-      accessToken: accessToken,
-    );
+    final meResponse = await api.get('/api/auth/me/', accessToken: accessToken);
     state = AsyncData(User.fromJson(meResponse.data as Map<String, dynamic>));
   }
 

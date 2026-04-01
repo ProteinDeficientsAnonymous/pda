@@ -65,10 +65,6 @@ class _MagicLoginScreenState extends ConsumerState<MagicLoginScreen> {
       );
     }
 
-    return const Scaffold(
-      body: Center(
-        child: Text('signing you in…'),
-      ),
-    );
+    return const Scaffold(body: Center(child: Text('signing you in…')));
   }
 }

@@ -35,10 +35,7 @@ void main() {
       var closed = false;
       await tester.pumpWidget(
         _app(
-          FeedbackForm(
-            currentRoute: '/calendar',
-            onClose: () => closed = true,
-          ),
+          FeedbackForm(currentRoute: '/calendar', onClose: () => closed = true),
         ),
       );
       await tester.pumpAndSettle();

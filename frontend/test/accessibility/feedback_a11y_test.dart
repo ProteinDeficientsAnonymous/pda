@@ -9,7 +9,7 @@ void main() {
     testWidgets('meets labeled tap target guideline', (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
             home: Scaffold(body: FeedbackButton(currentRoute: '/calendar')),
           ),
@@ -23,7 +23,7 @@ void main() {
     testWidgets('meets android tap target guideline', (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
             home: Scaffold(body: FeedbackButton(currentRoute: '/calendar')),
           ),
