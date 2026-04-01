@@ -79,6 +79,12 @@ class UserManagementNotifier extends AsyncNotifier<void> {
     return response.data['magic_link_token'] as String;
   }
 
+  Future<String> generateMagicLink(String userId) async {
+    final api = ref.read(apiClientProvider);
+    final response = await api.post('/api/auth/users/$userId/magic-link/');
+    return response.data['magic_link_token'] as String;
+  }
+
   Future<void> togglePause(String userId, {required bool paused}) async {
     final api = ref.read(apiClientProvider);
     await api.patch('/api/auth/users/$userId/', data: {'is_paused': paused});

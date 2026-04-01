@@ -665,6 +665,28 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
 
 
 @router.post(
+    "/users/{user_id}/magic-link/",
+    response={200: ResetPasswordOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def generate_magic_link(request, user_id: str):
+    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        return Status(403, ErrorOut(detail="Permission denied."))
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return Status(404, ErrorOut(detail="User not found."))
+    magic_token = _create_magic_token(user)
+    return Status(
+        200,
+        ResetPasswordOut(
+            detail="Magic login link generated.",
+            magic_link_token=magic_token,
+        ),
+    )
+
+
+@router.post(
     "/users/{user_id}/reset-password/",
     response={200: ResetPasswordOut, 403: ErrorOut, 404: ErrorOut},
     auth=JWTAuth(),

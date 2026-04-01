@@ -10,7 +10,6 @@ import 'package:pda/utils/ics_generator.dart';
 import 'package:pda/utils/launcher.dart';
 import 'package:pda/utils/app_icons.dart';
 import 'package:pda/utils/share.dart';
-import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';

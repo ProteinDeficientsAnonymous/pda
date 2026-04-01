@@ -397,6 +397,12 @@ class MemberCard extends ConsumerWidget {
                             ),
                       ),
                     OutlinedButton.icon(
+                      icon: const Icon(Icons.link_outlined, size: 16),
+                      label: const Text('magic link'),
+                      onPressed:
+                          () => _handleGenerateMagicLink(context, notifier),
+                    ),
+                    OutlinedButton.icon(
                       icon: const Icon(Icons.key_outlined, size: 16),
                       label: const Text('Reset password'),
                       onPressed: () => _handleResetPassword(context, notifier),
@@ -489,6 +495,30 @@ class MemberCard extends ConsumerWidget {
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
+    }
+  }
+
+  Future<void> _handleGenerateMagicLink(
+    BuildContext context,
+    UserManagementNotifier notifier,
+  ) async {
+    try {
+      final token = await notifier.generateMagicLink(user.id);
+      if (!context.mounted) return;
+      final name =
+          user.displayName.isNotEmpty ? user.displayName : user.phoneNumber;
+      showDialog<void>(
+        context: context,
+        builder:
+            (_) => ApprovalCredentialsDialog(
+              title: 'magic sign-in link',
+              body: 'share this login link with $name:',
+              magicLinkToken: token,
+            ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      showErrorSnackBar(context, ApiError.from(e).message);
     }
   }
 
