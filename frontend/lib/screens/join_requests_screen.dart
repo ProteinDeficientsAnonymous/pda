@@ -4,6 +4,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:pda/models/join_request.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/join_request_management_provider.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/approval_credentials_dialog.dart';
@@ -49,7 +50,7 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showErrorSnackBar(context, 'Failed to update status: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }

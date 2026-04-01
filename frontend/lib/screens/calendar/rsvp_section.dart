@@ -44,7 +44,10 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
       await api.delete('/api/community/events/${widget.event.id}/rsvp/');
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
-    } catch (_) {
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, 'couldn\'t remove your rsvp — try again');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

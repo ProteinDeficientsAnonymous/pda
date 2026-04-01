@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/models/join_form_question.dart';
 import 'package:pda/providers/join_form_admin_provider.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/config/constants.dart';
@@ -16,7 +17,10 @@ class JoinFormConfigScreen extends ConsumerWidget {
     return AppScaffold(
       child: questionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load: $e')),
+        error:
+            (e, _) => const Center(
+              child: Text('couldn\'t load questions — try refreshing'),
+            ),
         data: (questions) => _JoinFormConfigBody(questions: questions),
       ),
     );
@@ -67,7 +71,7 @@ class _JoinFormConfigBodyState extends ConsumerState<_JoinFormConfigBody> {
           );
       if (mounted) showSnackBar(context, 'question added');
     } catch (e) {
-      if (mounted) showErrorSnackBar(context, 'Failed to add question: $e');
+      if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     }
   }
 
@@ -90,7 +94,7 @@ class _JoinFormConfigBodyState extends ConsumerState<_JoinFormConfigBody> {
       if (mounted) showSnackBar(context, 'question updated');
     } catch (e) {
       if (mounted) {
-        showErrorSnackBar(context, 'Failed to update question: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }
@@ -123,7 +127,7 @@ class _JoinFormConfigBodyState extends ConsumerState<_JoinFormConfigBody> {
       if (mounted) showSnackBar(context, 'question deleted');
     } catch (e) {
       if (mounted) {
-        showErrorSnackBar(context, 'Failed to delete question: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }
@@ -138,7 +142,7 @@ class _JoinFormConfigBodyState extends ConsumerState<_JoinFormConfigBody> {
           .read(joinFormAdminProvider.notifier)
           .reorder(_questions.map((q) => q.id).toList());
     } catch (e) {
-      if (mounted) showErrorSnackBar(context, 'Failed to reorder: $e');
+      if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     }
   }
 

@@ -153,7 +153,10 @@ class _MembersTabState extends ConsumerState<MembersTab> {
         Expanded(
           child: usersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Failed to load members: $e')),
+            error:
+                (e, _) => const Center(
+                  child: Text('couldn\'t load members — try refreshing'),
+                ),
             data: (users) {
               final filtered = _filterAndSort(users);
               if (filtered.isEmpty) {
@@ -484,7 +487,7 @@ class MemberCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, 'Failed to update roles: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }
@@ -499,7 +502,7 @@ class MemberCard extends ConsumerWidget {
       _showTempPasswordDialog(context, tempPassword);
     } catch (e) {
       if (!context.mounted) return;
-      showErrorSnackBar(context, 'Failed to reset password: $e');
+      showErrorSnackBar(context, ApiError.from(e).message);
     }
   }
 
@@ -542,7 +545,7 @@ class MemberCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, 'Failed: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }

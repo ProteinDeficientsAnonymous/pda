@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/time_format.dart';
 import 'package:pda/utils/file_download.dart';
 import 'package:pda/utils/ics_generator.dart';
 import 'package:pda/utils/launcher.dart';
 import 'package:pda/utils/app_icons.dart';
 import 'package:pda/utils/share.dart';
-import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
@@ -304,30 +304,40 @@ class _HostChip extends StatelessWidget {
       onTap:
           host.id.isNotEmpty ? () => context.push('/members/${host.id}') : null,
       borderRadius: BorderRadius.circular(20),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (hasPhoto)
-            CircleAvatar(
-              radius: 14,
-              backgroundImage: NetworkImage(host.photoUrl),
-            )
-          else
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: cs.primaryContainer,
-              child: Text(
-                initials,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onPrimaryContainer,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasPhoto)
+              CircleAvatar(
+                radius: 14,
+                backgroundImage: NetworkImage(host.photoUrl),
+              )
+            else
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: cs.primaryContainer,
+                child: Text(
+                  initials,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onPrimaryContainer,
+                  ),
                 ),
               ),
+            const SizedBox(width: 8),
+            Text(
+              host.name,
+              style: TextStyle(fontSize: 15, color: cs.onSurface),
             ),
-          const SizedBox(width: 8),
-          Text(host.name, style: TextStyle(fontSize: 15, color: cs.onSurface)),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -557,7 +567,7 @@ class _AdminActionsState extends ConsumerState<_AdminActions> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
-        showErrorSnackBar(context, 'Failed to delete event: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     } finally {
       if (mounted) setState(() => _loading = false);

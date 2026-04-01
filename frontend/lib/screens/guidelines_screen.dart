@@ -26,7 +26,7 @@ class GuidelinesScreen extends ConsumerWidget {
         error:
             (e, _) => Center(
               child: Text(
-                'Failed to load guidelines.',
+                'couldn\'t load guidelines — try refreshing',
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/user_management_provider.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'role_form_dialog.dart';
 
@@ -16,7 +17,10 @@ class RolesTab extends ConsumerWidget {
 
     return rolesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Failed to load roles: $e')),
+      error:
+          (e, _) => const Center(
+            child: Text('couldn\'t load roles — try refreshing'),
+          ),
       data: (roles) {
         return Column(
           children: [
@@ -72,7 +76,7 @@ class RolesTab extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, 'Failed: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }
@@ -189,7 +193,7 @@ class RoleCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, 'Failed: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }
@@ -230,7 +234,7 @@ class RoleCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, 'Failed: $e');
+        showErrorSnackBar(context, ApiError.from(e).message);
       }
     }
   }

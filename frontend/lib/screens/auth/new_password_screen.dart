@@ -1,7 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/services/api_error.dart';
+import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
 class NewPasswordScreen extends ConsumerStatefulWidget {
@@ -36,13 +37,9 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
           .read(authProvider.notifier)
           .completeOnboarding(newPassword: _newPwCtrl.text);
       // Router redirect will navigate to /calendar once needsOnboarding becomes false.
-    } on DioException catch (e) {
+    } catch (e) {
       if (!mounted) return;
-      final detail =
-          (e.response?.data as Map?)?['detail'] ?? 'couldn\'t save — try again';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(detail.toString())));
+      showErrorSnackBar(context, ApiError.from(e).message);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

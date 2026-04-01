@@ -78,7 +78,10 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       maxWidth: 600,
       child: questionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load form: $e')),
+        error:
+            (e, _) => const Center(
+              child: Text('couldn\'t load the form — try refreshing'),
+            ),
         data:
             (questions) =>
                 _buildForm(context, questions, isLoading, submitState),
