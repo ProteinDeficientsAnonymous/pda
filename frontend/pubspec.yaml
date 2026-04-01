@@ -31,6 +31,8 @@ dependencies:
   image_picker: ^1.2.1
   flutter_quill: ^11.5.0
   mcp_toolkit: ^0.4.0
+  shared_preferences: ^2.3.0
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:

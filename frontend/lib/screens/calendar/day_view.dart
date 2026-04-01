@@ -177,7 +177,7 @@ class _EmptyDayState extends StatelessWidget {
           Text(
             'nothing today 🌿',
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -276,7 +276,7 @@ class _DayEventCard extends StatelessWidget {
                       child: Text(
                         'official',
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: fgColor,
                         ),
@@ -286,32 +286,19 @@ class _DayEventCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
-                timeRange,
-                style: TextStyle(
-                  color: fgColor.withValues(alpha: 0.85),
-                  fontSize: 13,
-                ),
-              ),
+              Text(timeRange, style: TextStyle(color: fgColor, fontSize: 13)),
               if (event.location.isNotEmpty) ...[
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Icon(
-                      Icons.place_outlined,
-                      size: 13,
-                      color: fgColor.withValues(alpha: 0.7),
-                    ),
+                    Icon(Icons.place_outlined, size: 13, color: fgColor),
                     const SizedBox(width: 3),
                     Expanded(
                       child: Text(
                         event.location,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: fgColor.withValues(alpha: 0.7),
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: fgColor, fontSize: 12),
                       ),
                     ),
                   ],
@@ -323,10 +310,7 @@ class _DayEventCard extends StatelessWidget {
                   event.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: fgColor.withValues(alpha: 0.75),
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: fgColor, fontSize: 12),
                 ),
               ],
             ],

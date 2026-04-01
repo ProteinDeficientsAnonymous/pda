@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pda/providers/accessibility_preferences_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/calendar_provider.dart'
     show calendarTokenProvider;
@@ -70,9 +71,7 @@ class SettingsScreen extends ConsumerWidget {
               'only logged-in PDA members can see your profile',
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -104,6 +103,20 @@ class SettingsScreen extends ConsumerWidget {
                 'get a personal link for Google Calendar, Apple Calendar, etc.',
             onTap: () => _handleCalendarSubscribe(context, ref),
           ),
+          const SizedBox(height: 24),
+          const _SectionHeader(label: 'accessibility'),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              'adjust text settings for easier reading',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          _AccessibilitySection(),
         ],
       ),
     );
@@ -461,6 +474,63 @@ class _EditFieldDialogState extends State<_EditFieldDialog> {
             }
           },
           child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _AccessibilitySection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefsAsync = ref.watch(accessibilityPreferencesNotifierProvider);
+    final prefs = prefsAsync.valueOrNull;
+    final dyslexiaOn = prefs?.dyslexiaFriendlyFont ?? false;
+    final textScale = prefs?.textScaleFactor ?? 1.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _PrivacyToggle(
+          icon: Icons.text_fields_outlined,
+          label: 'dyslexia-friendly font',
+          value: dyslexiaOn,
+          onChanged: (_) {
+            ref
+                .read(accessibilityPreferencesNotifierProvider.notifier)
+                .toggleDyslexiaFont();
+          },
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.format_size_outlined, size: 20),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('text size', style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 8),
+                  SegmentedButton<double>(
+                    segments: const [
+                      ButtonSegment(value: 1.0, label: Text('normal')),
+                      ButtonSegment(value: 1.15, label: Text('medium')),
+                      ButtonSegment(value: 1.3, label: Text('large')),
+                    ],
+                    selected: {textScale},
+                    onSelectionChanged: (selection) {
+                      ref
+                          .read(
+                            accessibilityPreferencesNotifierProvider.notifier,
+                          )
+                          .setTextScale(selection.first);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );

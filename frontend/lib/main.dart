@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:mcp_toolkit/mcp_toolkit.dart';
+import 'package:pda/config/app_theme.dart';
+import 'package:pda/providers/accessibility_preferences_provider.dart';
 import 'package:pda/router/app_router.dart';
 import 'package:pda/services/app_logger.dart';
 import 'package:pda/services/error_reporter.dart';
@@ -11,6 +14,7 @@ import 'package:pda/services/secure_storage.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  SemanticsBinding.instance.ensureSemantics();
   MCPToolkitBinding.instance
     ..initialize()
     ..initializeFlutterToolkit();
@@ -31,30 +35,25 @@ class PdaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final prefsAsync = ref.watch(accessibilityPreferencesNotifierProvider);
+    final prefs = prefsAsync.valueOrNull;
+    final dyslexiaMode = prefs?.dyslexiaFriendlyFont ?? false;
+    final textScaleFactor = prefs?.textScaleFactor ?? 1.0;
 
-    return MaterialApp.router(
-      title: 'protein deficients anonymous',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(scrolledUnderElevation: 0),
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: const Color(0xFF2E7D32),
-          contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
-        ),
+    return MediaQuery(
+      data: MediaQueryData(textScaler: TextScaler.linear(textScaleFactor)),
+      child: MaterialApp.router(
+        title: 'protein deficients anonymous',
+        theme: buildAppTheme(dyslexiaMode: dyslexiaMode),
+        routerConfig: router,
+        localizationsDelegates: const [
+          FlutterQuillLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: FlutterQuillLocalizations.supportedLocales,
       ),
-      routerConfig: router,
-      localizationsDelegates: const [
-        FlutterQuillLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: FlutterQuillLocalizations.supportedLocales,
     );
   }
 }

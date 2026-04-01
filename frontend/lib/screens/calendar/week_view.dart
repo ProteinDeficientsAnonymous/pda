@@ -312,7 +312,7 @@ class _WideWeekGrid extends StatelessWidget {
                                                     child: Text(
                                                       '+$overflow more',
                                                       style: TextStyle(
-                                                        fontSize: 10,
+                                                        fontSize: 11,
                                                         fontWeight:
                                                             FontWeight.w600,
                                                         color:
@@ -370,9 +370,7 @@ class _WideWeekGrid extends StatelessWidget {
                       Text(
                         'all quiet this week 🌿',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.3,
-                          ),
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -447,27 +445,24 @@ class _WideWeekGrid extends StatelessWidget {
                   if (p.event.visibility == PageVisibility.membersOnly)
                     TextSpan(
                       text: '🔒 ',
-                      style: TextStyle(fontSize: 9, color: colors.$2),
+                      style: TextStyle(fontSize: 11, color: colors.$2),
                     ),
                   if (p.event.eventType == EventType.official)
                     TextSpan(
                       text: '✦ ',
-                      style: TextStyle(fontSize: 10, color: colors.$2),
+                      style: TextStyle(fontSize: 11, color: colors.$2),
                     ),
                   TextSpan(
                     text: p.event.title,
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: colors.$2,
                     ),
                   ),
                   TextSpan(
                     text: '  $subLabel',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: colors.$2.withValues(alpha: 0.8),
-                    ),
+                    style: TextStyle(fontSize: 11, color: colors.$2),
                   ),
                 ],
               ),
@@ -654,7 +649,7 @@ class _NarrowDayRow extends StatelessWidget {
                                       child: Text(
                                         '+$overflow more',
                                         style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                           color: theme.colorScheme.primary,
                                         ),
@@ -699,7 +694,7 @@ class _NarrowDayLabel extends StatelessWidget {
             Text(
               dayName,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: theme.colorScheme.onPrimary,
               ),
@@ -723,9 +718,9 @@ class _NarrowDayLabel extends StatelessWidget {
         Text(
           dayName,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         Text(

@@ -434,7 +434,7 @@ class _MonthRow extends StatelessWidget {
                   Text(
                     '+$overflow more',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -496,7 +496,7 @@ class _MonthRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: colors.$2,
               ),
@@ -582,7 +582,7 @@ class _DayLabel extends StatelessWidget {
                         ? colorScheme.onPrimary
                         : isCurrentMonth
                         ? colorScheme.onSurface
-                        : colorScheme.onSurface.withValues(alpha: 0.30),
+                        : colorScheme.onSurfaceVariant,
               ),
             ),
           ),

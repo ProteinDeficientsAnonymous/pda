@@ -153,9 +153,7 @@ class _EventListViewState extends State<EventListView> {
                 ? 'no events'
                 : '${filtered.length} event${filtered.length == 1 ? '' : 's'}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -198,7 +196,7 @@ class _EmptyState extends StatelessWidget {
         child: Text(
           message,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+            color: theme.colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
         ),
@@ -276,30 +274,19 @@ class _EventListRow extends StatelessWidget {
                     ],
                     if (event.visibility == PageVisibility.membersOnly) ...[
                       const SizedBox(width: 6),
-                      Icon(
-                        Icons.lock_outline,
-                        size: 14,
-                        color: fg.withValues(alpha: 0.6),
-                      ),
+                      Icon(Icons.lock_outline, size: 14, color: fg),
                     ],
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
-                      Icons.schedule_outlined,
-                      size: 14,
-                      color: fg.withValues(alpha: 0.6),
-                    ),
+                    Icon(Icons.schedule_outlined, size: 14, color: fg),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         timeStr,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: fg.withValues(alpha: 0.6),
-                        ),
+                        style: TextStyle(fontSize: 13, color: fg),
                       ),
                     ),
                   ],
@@ -308,21 +295,14 @@ class _EventListRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: fg.withValues(alpha: 0.6),
-                      ),
+                      Icon(Icons.location_on_outlined, size: 14, color: fg),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           event.location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: fg.withValues(alpha: 0.6),
-                          ),
+                          style: TextStyle(fontSize: 13, color: fg),
                         ),
                       ),
                     ],
@@ -332,21 +312,14 @@ class _EventListRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.person_pin_outlined,
-                        size: 14,
-                        color: fg.withValues(alpha: 0.6),
-                      ),
+                      Icon(Icons.person_pin_outlined, size: 14, color: fg),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           hostNames.join(', '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: fg.withValues(alpha: 0.6),
-                          ),
+                          style: TextStyle(fontSize: 13, color: fg),
                         ),
                       ),
                     ],
