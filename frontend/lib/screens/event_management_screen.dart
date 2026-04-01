@@ -170,6 +170,7 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
                 ],
                 selected: {_sort},
                 onSelectionChanged: (s) => setState(() => _sort = s.first),
+                showSelectedIcon: false,
                 style: ButtonStyle(
                   visualDensity: VisualDensity.compact,
                   textStyle: WidgetStatePropertyAll(

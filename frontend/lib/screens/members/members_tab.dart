@@ -105,6 +105,7 @@ class _MembersTabState extends ConsumerState<MembersTab> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
+                alignment: WrapAlignment.center,
                 children: [
                   SegmentedButton<_SortField>(
                     segments: const [
@@ -123,6 +124,7 @@ class _MembersTabState extends ConsumerState<MembersTab> {
                     ],
                     selected: {_sort},
                     onSelectionChanged: (s) => setState(() => _sort = s.first),
+                    showSelectedIcon: false,
                     style: ButtonStyle(
                       visualDensity: VisualDensity.compact,
                       textStyle: WidgetStatePropertyAll(

@@ -442,16 +442,6 @@ class _WideWeekGrid extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 children: [
-                  if (p.event.visibility == PageVisibility.membersOnly)
-                    TextSpan(
-                      text: '🔒 ',
-                      style: TextStyle(fontSize: 11, color: colors.$2),
-                    ),
-                  if (p.event.eventType == EventType.official)
-                    TextSpan(
-                      text: '✦ ',
-                      style: TextStyle(fontSize: 11, color: colors.$2),
-                    ),
                   TextSpan(
                     text: p.event.title,
                     style: TextStyle(
@@ -460,6 +450,16 @@ class _WideWeekGrid extends StatelessWidget {
                       color: colors.$2,
                     ),
                   ),
+                  if (p.event.visibility == PageVisibility.membersOnly)
+                    TextSpan(
+                      text: ' 🔒',
+                      style: TextStyle(fontSize: 11, color: colors.$2),
+                    ),
+                  if (p.event.eventType == EventType.official)
+                    TextSpan(
+                      text: ' ✦',
+                      style: TextStyle(fontSize: 11, color: colors.$2),
+                    ),
                   TextSpan(
                     text: '  $subLabel',
                     style: TextStyle(fontSize: 11, color: colors.$2),
@@ -743,16 +743,16 @@ class _NarrowEventChip extends StatelessWidget {
   const _NarrowEventChip({required this.event, required this.onTap});
 
   String _buildLabel() {
-    final lockPrefix =
-        event.visibility == PageVisibility.membersOnly ? '🔒 ' : '';
-    final prefix =
-        '$lockPrefix${event.eventType == EventType.official ? '✦ ' : ''}';
+    final lockSuffix =
+        event.visibility == PageVisibility.membersOnly ? ' 🔒' : '';
+    final officialSuffix = event.eventType == EventType.official ? ' ✦' : '';
+    final suffix = '$lockSuffix$officialSuffix';
     final dateFmt = DateFormat('MMM d');
     final start = event.startDatetime.toLocal();
     final end = event.endDatetime?.toLocal();
 
     if (end == null) {
-      return '$prefix${event.title} \u00b7 ${formatTime(start)}';
+      return '${event.title}$suffix \u00b7 ${formatTime(start)}';
     }
 
     final sameDay =
@@ -761,10 +761,10 @@ class _NarrowEventChip extends StatelessWidget {
         start.day == end.day;
 
     if (sameDay) {
-      return '$prefix${event.title} \u00b7 ${formatTime(start)} \u2013 ${formatTime(end)}';
+      return '${event.title}$suffix \u00b7 ${formatTime(start)} \u2013 ${formatTime(end)}';
     }
 
-    return '$prefix${event.title} \u00b7 ${dateFmt.format(start).toLowerCase()} \u2013 ${dateFmt.format(end).toLowerCase()}';
+    return '${event.title}$suffix \u00b7 ${dateFmt.format(start).toLowerCase()} \u2013 ${dateFmt.format(end).toLowerCase()}';
   }
 
   @override

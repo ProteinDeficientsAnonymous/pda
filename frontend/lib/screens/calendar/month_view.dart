@@ -492,7 +492,7 @@ class _MonthRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6),
             alignment: Alignment.centerLeft,
             child: Text(
-              '${p.event.visibility == PageVisibility.membersOnly ? '🔒 ' : ''}${p.event.eventType == EventType.official ? '✦ ' : ''}${p.event.title}',
+              '${p.event.title}${p.event.visibility == PageVisibility.membersOnly ? ' 🔒' : ''}${p.event.eventType == EventType.official ? ' ✦' : ''}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

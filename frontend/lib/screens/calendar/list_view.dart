@@ -122,6 +122,7 @@ class _EventListViewState extends State<EventListView> {
                 selected: {_typeFilter},
                 onSelectionChanged:
                     (s) => setState(() => _typeFilter = s.first),
+                showSelectedIcon: false,
                 style: const ButtonStyle(visualDensity: VisualDensity.compact),
               ),
               SegmentedButton<bool>(
@@ -132,6 +133,7 @@ class _EventListViewState extends State<EventListView> {
                 selected: {_showUpcoming},
                 onSelectionChanged:
                     (s) => setState(() => _showUpcoming = s.first),
+                showSelectedIcon: false,
                 style: const ButtonStyle(visualDensity: VisualDensity.compact),
               ),
               IconButton(

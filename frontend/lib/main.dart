@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +13,6 @@ import 'package:pda/services/secure_storage.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SemanticsBinding.instance.ensureSemantics();
   MCPToolkitBinding.instance
     ..initialize()
     ..initializeFlutterToolkit();
@@ -40,20 +38,25 @@ class PdaApp extends ConsumerWidget {
     final dyslexiaMode = prefs?.dyslexiaFriendlyFont ?? false;
     final textScaleFactor = prefs?.textScaleFactor ?? 1.0;
 
-    return MediaQuery(
-      data: MediaQueryData(textScaler: TextScaler.linear(textScaleFactor)),
-      child: MaterialApp.router(
-        title: 'protein deficients anonymous',
-        theme: buildAppTheme(dyslexiaMode: dyslexiaMode),
-        routerConfig: router,
-        localizationsDelegates: const [
-          FlutterQuillLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: FlutterQuillLocalizations.supportedLocales,
-      ),
+    return MaterialApp.router(
+      title: 'protein deficients anonymous',
+      theme: buildAppTheme(dyslexiaMode: dyslexiaMode),
+      routerConfig: router,
+      localizationsDelegates: const [
+        FlutterQuillLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: FlutterQuillLocalizations.supportedLocales,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScaleFactor)),
+          child: child!,
+        );
+      },
     );
   }
 }

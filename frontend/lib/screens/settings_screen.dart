@@ -519,6 +519,7 @@ class _AccessibilitySection extends ConsumerWidget {
                       ButtonSegment(value: 1.3, label: Text('large')),
                     ],
                     selected: {textScale},
+                    showSelectedIcon: false,
                     onSelectionChanged: (selection) {
                       ref
                           .read(
