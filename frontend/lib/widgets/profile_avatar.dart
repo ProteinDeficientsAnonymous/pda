@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('ProfileAvatar');
 
 /// Small circular profile photo, used in the bottom nav bar and elsewhere.
 class ProfileAvatar extends StatelessWidget {
@@ -26,7 +29,13 @@ class ProfileAvatar extends StatelessWidget {
               : null,
       child: CircleAvatar(
         radius: radius,
-        backgroundImage: NetworkImage(photoUrl),
+        backgroundImage:
+            photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+        onBackgroundImageError:
+            photoUrl.isNotEmpty
+                ? (exception, stackTrace) =>
+                    _log.warning('failed to load profile photo', exception)
+                : null,
         backgroundColor: theme.colorScheme.surfaceContainerHighest,
       ),
     );

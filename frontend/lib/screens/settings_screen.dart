@@ -247,6 +247,10 @@ class _ProfileAvatarState extends ConsumerState<_ProfileAvatar> {
     setState(() => _uploading = true);
     try {
       await ref.read(authProvider.notifier).uploadProfilePhoto(image);
+      // Evict old cached image so the new one loads immediately.
+      if (widget.photoUrl.isNotEmpty) {
+        imageCache.evict(NetworkImage(widget.photoUrl));
+      }
       if (mounted) showSnackBar(context, 'photo updated ✓');
     } catch (e) {
       if (mounted) {
