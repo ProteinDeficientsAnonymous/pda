@@ -141,6 +141,15 @@ void _showPdaMenu(BuildContext context, User? user) {
             ),
             if (user != null)
               ListTile(
+                leading: const Icon(Icons.library_books_outlined),
+                title: const Text('docs'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.go('/docs');
+                },
+              ),
+            if (user != null)
+              ListTile(
                 leading: const Icon(Icons.favorite_outline),
                 title: const Text('volunteer'),
                 onTap: () {
@@ -187,7 +196,9 @@ class _BottomNav extends StatelessWidget {
         currentPath.startsWith('/admin/') ||
         currentPath == '/join-requests' ||
         currentPath == '/members' ||
-        currentPath.startsWith('/surveys');
+        currentPath.startsWith('/surveys') ||
+        currentPath == '/docs' ||
+        currentPath.startsWith('/docs/');
 
     int selectedIndex;
     if (isCalendar) {

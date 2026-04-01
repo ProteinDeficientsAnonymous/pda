@@ -25,6 +25,8 @@ import 'package:pda/screens/survey_admin_screen.dart';
 import 'package:pda/screens/survey_builder_screen.dart';
 import 'package:pda/screens/survey_responses_screen.dart';
 import 'package:pda/screens/survey_screen.dart';
+import 'package:pda/screens/docs_screen.dart';
+import 'package:pda/screens/doc_detail_screen.dart';
 import 'package:pda/screens/whatsapp_config_screen.dart';
 import 'package:pda/screens/profile_screen.dart';
 import 'package:pda/screens/member_profile_screen.dart';
@@ -75,7 +77,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc == '/admin' ||
           loc == '/admin/join-form' ||
           loc == '/admin/whatsapp' ||
-          loc.startsWith('/admin/surveys');
+          loc.startsWith('/admin/surveys') ||
+          loc == '/docs' ||
+          loc.startsWith('/docs/');
 
       if (isProtected && !isAuthenticated) {
         return '/login?redirect=${state.matchedLocation}';
@@ -229,6 +233,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/whatsapp',
         name: 'whatsapp-config',
         builder: (_, __) => const WhatsAppConfigScreen(),
+      ),
+      GoRoute(
+        path: '/docs',
+        name: 'docs',
+        builder: (_, __) => const DocsScreen(),
+      ),
+      GoRoute(
+        path: '/docs/:id',
+        name: 'doc-detail',
+        builder:
+            (_, state) => DocDetailScreen(docId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/profile',

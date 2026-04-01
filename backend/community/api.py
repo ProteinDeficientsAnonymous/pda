@@ -3,6 +3,7 @@
 from ninja import Router
 
 from community._calendar import router as calendar_router
+from community._docs import router as docs_router
 
 # Re-export symbols imported directly in tests
 from community._events import (  # noqa: F401
@@ -30,3 +31,4 @@ router.add_router("", events_router)
 router.add_router("", calendar_router)
 router.add_router("", whatsapp_router)
 router.add_router("", surveys_router)
+router.add_router("", docs_router)
