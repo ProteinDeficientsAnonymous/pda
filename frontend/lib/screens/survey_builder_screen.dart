@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/providers/survey_admin_provider.dart';
 import 'package:pda/utils/app_icons.dart';
@@ -18,6 +19,7 @@ const _fieldTypeLabels = {
   FieldType.number: 'number',
   FieldType.yesNo: 'yes / no',
   FieldType.rating: 'rating (1–5)',
+  FieldType.datetimePoll: 'datetime poll',
 };
 
 const _fieldTypesWithOptions = {
@@ -25,6 +27,15 @@ const _fieldTypesWithOptions = {
   FieldType.multiselect,
   FieldType.dropdown,
 };
+
+String _formatDatetimeOption(String iso) {
+  try {
+    final dt = DateTime.parse(iso).toLocal();
+    return DateFormat('EEE, MMM d · h:mm a').format(dt).toLowerCase();
+  } catch (_) {
+    return iso;
+  }
+}
 
 IconData _fieldTypeIcon(String type) {
   return switch (type) {
@@ -35,6 +46,7 @@ IconData _fieldTypeIcon(String type) {
     FieldType.number => Icons.pin_outlined,
     FieldType.yesNo => Icons.toggle_on_outlined,
     FieldType.rating => Icons.star_outline_rounded,
+    FieldType.datetimePoll => Icons.event_outlined,
     _ => Icons.short_text_outlined,
   };
 }
@@ -398,6 +410,8 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
   late bool _required;
   late List<TextEditingController> _optionCtrls;
   late List<TextEditingController> _ratingLabelCtrls;
+  // For datetime_poll: list of ISO strings (UTC)
+  late List<DateTime> _datetimeOptions;
 
   @override
   void initState() {
@@ -418,6 +432,20 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
                 : '',
       ),
     );
+    // For datetime_poll, parse existing ISO options
+    _datetimeOptions =
+        (_fieldType == FieldType.datetimePoll)
+            ? existingOptions
+                .map((s) {
+                  try {
+                    return DateTime.parse(s).toLocal();
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .whereType<DateTime>()
+                .toList()
+            : [];
   }
 
   @override
@@ -445,10 +473,34 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
     });
   }
 
+  Future<void> _addDatetimeOption() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(now),
+    );
+    if (time == null || !mounted) return;
+    setState(() {
+      _datetimeOptions.add(
+        DateTime(date.year, date.month, date.day, time.hour, time.minute),
+      );
+    });
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     List<String> options;
-    if (_fieldType == FieldType.rating) {
+    if (_fieldType == FieldType.datetimePoll) {
+      options =
+          _datetimeOptions.map((dt) => dt.toUtc().toIso8601String()).toList();
+    } else if (_fieldType == FieldType.rating) {
       options = _ratingLabelCtrls.map((c) => c.text.trim()).toList();
     } else if (_showOptions) {
       options =
@@ -560,6 +612,58 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
                     onPressed: _addOption,
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('add option'),
+                  ),
+                ],
+                if (_fieldType == FieldType.datetimePoll) ...[
+                  const SizedBox(height: 12),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'datetime options',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'add the date/time options members will vote on',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  for (var i = 0; i < _datetimeOptions.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.event_outlined, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _formatDatetimeOption(
+                                _datetimeOptions[i].toIso8601String(),
+                              ),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'remove option',
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed:
+                                () => setState(
+                                  () => _datetimeOptions.removeAt(i),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  TextButton.icon(
+                    onPressed: _addDatetimeOption,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('add date & time'),
                   ),
                 ],
                 if (_fieldType == FieldType.rating) ...[

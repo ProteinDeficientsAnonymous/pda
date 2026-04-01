@@ -12,6 +12,7 @@ from users.permissions import PermissionKey
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community.models import (
+    DatetimePollResult,
     Event,
     Survey,
     SurveyQuestion,
@@ -32,6 +33,19 @@ class SurveyQuestionOut(BaseModel):
     display_order: int
 
 
+class PollResultOut(BaseModel):
+    id: str
+    winning_datetime: datetime
+    finalized_by_id: str | None = None
+    finalized_at: datetime
+
+
+class TallyOut(BaseModel):
+    question_id: str
+    tallies: dict[str, int]
+    total_responses: int
+
+
 class SurveyOut(BaseModel):
     id: str
     title: str
@@ -39,11 +53,14 @@ class SurveyOut(BaseModel):
     slug: str
     visibility: str
     is_active: bool
+    one_response_per_user: bool = False
     linked_event_id: str | None = None
     created_by_id: str | None = None
     created_at: datetime
     questions: list[SurveyQuestionOut] = []
     response_count: int = 0
+    poll_result: PollResultOut | None = None
+    my_response_id: str | None = None
 
 
 class SurveyListOut(BaseModel):
@@ -63,6 +80,7 @@ class SurveyIn(BaseModel):
     slug: str
     visibility: str = SurveyVisibility.PUBLIC
     is_active: bool = True
+    one_response_per_user: bool = False
     linked_event_id: str | None = None
 
 
@@ -72,7 +90,12 @@ class SurveyPatchIn(BaseModel):
     slug: str | None = None
     visibility: str | None = None
     is_active: bool | None = None
+    one_response_per_user: bool | None = None
     linked_event_id: str | None = None
+
+
+class FinalizePollIn(BaseModel):
+    winning_datetime: datetime
 
 
 class SurveyQuestionIn(BaseModel):
@@ -109,10 +132,33 @@ def _survey_question_out(q: SurveyQuestion) -> SurveyQuestionOut:
     )
 
 
-def _survey_out(survey: Survey, include_questions: bool = False) -> SurveyOut:
+def _poll_result_out(result: "DatetimePollResult") -> PollResultOut:
+    return PollResultOut(
+        id=str(result.id),
+        winning_datetime=result.winning_datetime,
+        finalized_by_id=str(result.finalized_by_id) if result.finalized_by_id else None,
+        finalized_at=result.finalized_at,
+    )
+
+
+def _survey_out(
+    survey: Survey,
+    include_questions: bool = False,
+    requesting_user=None,
+) -> SurveyOut:
     questions = (
         [_survey_question_out(q) for q in survey.questions.all()] if include_questions else []
     )
+    poll_result = None
+    try:
+        poll_result = _poll_result_out(survey.poll_result)
+    except DatetimePollResult.DoesNotExist:
+        pass
+    my_response_id = None
+    if requesting_user is not None:
+        existing = survey.responses.filter(user=requesting_user).first()
+        if existing:
+            my_response_id = str(existing.id)
     return SurveyOut(
         id=str(survey.id),
         title=survey.title,
@@ -120,11 +166,14 @@ def _survey_out(survey: Survey, include_questions: bool = False) -> SurveyOut:
         slug=survey.slug,
         visibility=survey.visibility,
         is_active=survey.is_active,
+        one_response_per_user=survey.one_response_per_user,
         linked_event_id=str(survey.linked_event_id) if survey.linked_event_id else None,
         created_by_id=str(survey.created_by_id) if survey.created_by_id else None,
         created_at=survey.created_at,
         questions=questions,
         response_count=survey.responses.count(),
+        poll_result=poll_result,
+        my_response_id=my_response_id,
     )
 
 
@@ -165,6 +214,13 @@ def _validate_rating_answer(answer: str, q: SurveyQuestion) -> str | None:
     return None
 
 
+def _validate_datetime_poll_answer(answer: str, q: SurveyQuestion) -> str | None:
+    for val in answer.split(","):
+        if val.strip() and val.strip() not in (q.options or []):
+            return f'Invalid datetime option for "{q.label}".'
+    return None
+
+
 _SURVEY_VALIDATORS: dict[str, Callable[[str, SurveyQuestion], str | None]] = {
     SurveyQuestionType.SELECT: _validate_choice_answer,
     SurveyQuestionType.DROPDOWN: _validate_choice_answer,
@@ -172,6 +228,7 @@ _SURVEY_VALIDATORS: dict[str, Callable[[str, SurveyQuestion], str | None]] = {
     SurveyQuestionType.NUMBER: _validate_number_answer,
     SurveyQuestionType.YES_NO: _validate_yes_no_answer,
     SurveyQuestionType.RATING: _validate_rating_answer,
+    SurveyQuestionType.DATETIME_POLL: _validate_datetime_poll_answer,
 }
 
 
@@ -275,6 +332,7 @@ def create_survey(request, payload: SurveyIn):
         slug=payload.slug,
         visibility=payload.visibility,
         is_active=payload.is_active,
+        one_response_per_user=payload.one_response_per_user,
         linked_event=linked_event,
         created_by=request.auth,
     )
@@ -450,6 +508,47 @@ def list_survey_responses(request, survey_id: UUID):
     )
 
 
+def _response_out(response: SurveyResponse, user_name: str | None) -> SurveyResponseOut:
+    return SurveyResponseOut(
+        id=str(response.id),
+        user_id=str(response.user_id) if response.user_id else None,
+        user_name=user_name,
+        answers=response.answers,
+        submitted_at=response.submitted_at,
+    )
+
+
+def _tally_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> TallyOut:
+    counts: dict[str, int] = {opt: 0 for opt in (q.options or [])}
+    for r in responses:
+        answer_data = r.answers.get(str(q.id))
+        if not answer_data:
+            continue
+        for val in answer_data.get("answer", "").split(","):
+            val = val.strip()
+            if val in counts:
+                counts[val] += 1
+    return TallyOut(
+        question_id=str(q.id),
+        tallies=counts,
+        total_responses=len(responses),
+    )
+
+
+def _has_finalize_permission(request, survey: Survey, event: Event | None) -> bool:
+    if request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        return True
+    if request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    if survey.created_by_id == request.auth.pk:
+        return True
+    if event and event.created_by_id == request.auth.pk:
+        return True
+    if event and event.co_hosts.filter(pk=request.auth.pk).exists():
+        return True
+    return False
+
+
 # -- Public endpoints --
 
 
@@ -466,12 +565,12 @@ def get_survey_public(request, slug: str):
     auth_user = _authenticated_user(request.auth)
     if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
         return Status(404, ErrorOut(detail="Survey not found."))
-    return Status(200, _survey_out(survey, include_questions=True))
+    return Status(200, _survey_out(survey, include_questions=True, requesting_user=auth_user))
 
 
 @router.post(
     "/surveys/view/{slug}/respond/",
-    response={201: SurveyResponseOut, 400: ErrorOut, 404: ErrorOut},
+    response={200: SurveyResponseOut, 201: SurveyResponseOut, 400: ErrorOut, 404: ErrorOut},
     auth=_optional_jwt,
 )
 def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
@@ -487,18 +586,80 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     if error:
         return Status(400, ErrorOut(detail=error))
     answers = _build_survey_answers(payload.answers, questions)
-    response = SurveyResponse.objects.create(
+    user_name = (auth_user.display_name or auth_user.phone_number) if auth_user else None
+    if survey.one_response_per_user and auth_user is not None:
+        existing = SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
+        if existing:
+            existing.answers = answers
+            existing.save(update_fields=["answers"])
+            return Status(200, _response_out(existing, user_name))
+    response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
+    return Status(201, _response_out(response, user_name))
+
+
+@router.get(
+    "/surveys/{survey_id}/tallies/",
+    response={200: list[TallyOut], 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def get_survey_tallies(request, survey_id: UUID):
+    try:
+        survey = Survey.objects.prefetch_related("questions", "responses").get(id=survey_id)
+    except Survey.DoesNotExist:
+        return Status(404, ErrorOut(detail="Survey not found."))
+    poll_questions = [
+        q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
+    ]
+    responses = list(survey.responses.all())
+    tallies = [_tally_question(q, responses) for q in poll_questions]
+    return Status(200, tallies)
+
+
+@router.post(
+    "/surveys/{survey_id}/finalize/",
+    response={200: SurveyOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
+    try:
+        survey = (
+            Survey.objects.select_related("linked_event", "created_by")
+            .prefetch_related("questions")
+            .get(id=survey_id)
+        )
+    except Survey.DoesNotExist:
+        return Status(404, ErrorOut(detail="Survey not found."))
+
+    event = survey.linked_event
+    if not _has_finalize_permission(request, survey, event):
+        return Status(403, ErrorOut(detail="Permission denied."))
+
+    if hasattr(survey, "poll_result"):
+        return Status(400, ErrorOut(detail="This poll has already been finalized."))
+
+    poll_questions = [
+        q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
+    ]
+    if not poll_questions:
+        return Status(400, ErrorOut(detail="Survey has no datetime poll question."))
+
+    winning_iso = payload.winning_datetime.isoformat()
+    all_options = poll_questions[0].options or []
+    if winning_iso not in all_options:
+        return Status(400, ErrorOut(detail="Winning datetime is not one of the poll options."))
+
+    DatetimePollResult.objects.create(
         survey=survey,
-        user=auth_user,
-        answers=answers,
+        winning_datetime=payload.winning_datetime,
+        finalized_by=request.auth,
     )
-    return Status(
-        201,
-        SurveyResponseOut(
-            id=str(response.id),
-            user_id=str(response.user_id) if response.user_id else None,
-            user_name=(auth_user.display_name or auth_user.phone_number) if auth_user else None,
-            answers=response.answers,
-            submitted_at=response.submitted_at,
-        ),
-    )
+    survey.is_active = False
+    survey.save(update_fields=["is_active"])
+
+    if event:
+        event.start_datetime = payload.winning_datetime
+        event.datetime_tbd = False
+        event.save(update_fields=["start_datetime", "datetime_tbd"])
+
+    survey.refresh_from_db()
+    return Status(200, _survey_out(survey, include_questions=True, requesting_user=request.auth))

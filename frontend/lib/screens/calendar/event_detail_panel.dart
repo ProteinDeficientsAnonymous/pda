@@ -234,7 +234,15 @@ class EventDetailContent extends ConsumerWidget {
             label: EventDetailLabel.when,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: _buildDateTimeRows(formatDate, start, end),
+              children:
+                  liveEvent.datetimeTbd
+                      ? [
+                        const Text(
+                          'date & time tbd',
+                          style: TextStyle(fontSize: 15, height: 1.4),
+                        ),
+                      ]
+                      : _buildDateTimeRows(formatDate, start, end),
             ),
           ),
           if (liveEvent.description.isNotEmpty) ...[

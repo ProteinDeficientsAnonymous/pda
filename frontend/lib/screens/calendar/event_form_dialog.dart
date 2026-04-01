@@ -53,6 +53,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late DateTime _start;
   late DateTime? _end;
   late bool _rsvpEnabled;
+  late bool _datetimeTbd;
   late String _eventType;
   late String _visibility;
   late Set<String> _coHostIds;
@@ -98,6 +99,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _start = e.startDatetime.toLocal();
       _end = e.endDatetime?.toLocal();
       _rsvpEnabled = e.rsvpEnabled;
+      _datetimeTbd = e.datetimeTbd;
       _eventType = e.eventType;
       _visibility = e.visibility;
       _coHostIds = Set<String>.from(e.coHostIds);
@@ -129,6 +131,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _start = DateTime(base.year, base.month, base.day, now.hour + 1);
       _end = null;
       _rsvpEnabled = false;
+      _datetimeTbd = false;
       _eventType = EventType.community;
       _visibility = PageVisibility.public_;
       _coHostIds = {};
@@ -269,6 +272,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           'start_datetime': _start.toUtc().toIso8601String(),
           'end_datetime': _end?.toUtc().toIso8601String(),
           'rsvp_enabled': _rsvpEnabled,
+          'datetime_tbd': _datetimeTbd,
           'event_type': _eventType,
           'visibility': _visibility,
           'co_host_ids': _coHostIds.toList(),
@@ -638,18 +642,14 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                   _locationResults.map((r) {
                     return ListTile(
                       dense: true,
-                      title: Text(
-                        r.name,
-                        style: const TextStyle(fontSize: 13),
-                      ),
+                      title: Text(r.name, style: const TextStyle(fontSize: 13)),
                       subtitle:
                           r.city != null
                               ? Text(
                                 r.city!,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color:
-                                      theme.colorScheme.onSurfaceVariant,
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               )
                               : null,
@@ -941,6 +941,16 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 ..._buildCostSection(theme),
                 const SizedBox(height: 16),
                 const Divider(),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  value: _datetimeTbd,
+                  onChanged: (v) => setState(() => _datetimeTbd = v),
+                  title: const Text('date & time tbd'),
+                  subtitle: const Text(
+                    'show as tbd on the calendar — use a datetime poll to finalize',
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                ),
                 const SizedBox(height: 8),
                 _buildRsvpToggle(theme),
                 const SizedBox(height: 8),

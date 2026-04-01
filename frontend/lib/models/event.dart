@@ -37,6 +37,7 @@ abstract class Event with _$Event {
     @Default('') String cashappLink,
     @Default('') String zelleInfo,
     @Default(false) bool rsvpEnabled,
+    @Default(false) bool datetimeTbd,
     String? createdById,
     String? createdByName,
     @Default([]) List<String> coHostIds,

@@ -83,6 +83,7 @@ class Event(models.Model):
     cashapp_link = models.URLField(blank=True)
     zelle_info = models.CharField(max_length=200, blank=True)
     rsvp_enabled = models.BooleanField(default=False)
+    datetime_tbd = models.BooleanField(default=False)
     photo = models.ImageField(upload_to="event_photos/", blank=True)
     event_type = models.CharField(
         max_length=20,
@@ -251,6 +252,7 @@ class SurveyQuestionType(models.TextChoices):
     NUMBER = "number", "Number"
     YES_NO = "yes_no", "Yes / No"
     RATING = "rating", "Rating"
+    DATETIME_POLL = "datetime_poll", "Datetime poll"
 
 
 class Survey(models.Model):
@@ -264,6 +266,7 @@ class Survey(models.Model):
         default=SurveyVisibility.PUBLIC,
     )
     is_active = models.BooleanField(default=True)
+    one_response_per_user = models.BooleanField(default=False)
     linked_event = models.ForeignKey(
         "community.Event",
         null=True,
@@ -285,6 +288,7 @@ class Survey(models.Model):
         created_by_id: uuid.UUID | None
         questions: "Manager[SurveyQuestion]"
         responses: "Manager[SurveyResponse]"
+        poll_result: "DatetimePollResult"
 
     class Meta:
         ordering = ["-created_at"]
@@ -333,6 +337,80 @@ class SurveyResponse(models.Model):
 
     def __str__(self):
         return f"Response to {self.survey.title} ({self.submitted_at:%Y-%m-%d})"
+
+
+class DatetimePollResult(models.Model):
+    if TYPE_CHECKING:
+        finalized_by_id: uuid.UUID | None
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    survey = models.OneToOneField(Survey, on_delete=models.CASCADE, related_name="poll_result")
+    winning_datetime = models.DateTimeField()
+    finalized_by = models.ForeignKey(
+        "users.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="finalized_polls",
+    )
+    finalized_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Poll result for {self.survey.title}: {self.winning_datetime:%Y-%m-%d %H:%M}"
+
+
+class DocFolder(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="children",
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    if TYPE_CHECKING:
+        children: "Manager[DocFolder]"
+        documents: "Manager[Document]"
+
+    class Meta:
+        ordering = ["display_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Document(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=300)
+    content = models.TextField(default="")
+    folder = models.ForeignKey(
+        DocFolder,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        "users.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_documents",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    if TYPE_CHECKING:
+        created_by_id: uuid.UUID | None
+        folder_id: uuid.UUID
+
+    class Meta:
+        ordering = ["display_order", "title"]
+
+    def __str__(self):
+        return self.title
 
 
 class RSVPStatus(models.TextChoices):

@@ -22,6 +22,7 @@ abstract class Permission {
   static const editJoinQuestions = 'edit_join_questions';
   static const manageSurveys = 'manage_surveys';
   static const tagOfficialEvent = 'tag_official_event';
+  static const manageDocs = 'manage_documents';
 }
 
 abstract class JoinRequestStatus {
@@ -44,6 +45,7 @@ abstract class FieldType {
   static const number = 'number';
   static const yesNo = 'yes_no';
   static const rating = 'rating';
+  static const datetimePoll = 'datetime_poll';
 }
 
 abstract class RoleName {
