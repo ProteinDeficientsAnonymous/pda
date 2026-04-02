@@ -84,7 +84,7 @@ def _folder_to_out(folder: DocFolder) -> DocFolderOut:
     return DocFolderOut(
         id=str(folder.id),
         name=folder.name,
-        parent_id=str(folder.parent_id) if folder.parent_id else None,
+        parent_id=str(folder.parent_id) if folder.parent_id else None,  # ty: ignore[unresolved-attribute]
         display_order=folder.display_order,
         children=[_folder_to_out(c) for c in children],
         documents=[
