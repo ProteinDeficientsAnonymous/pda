@@ -1086,7 +1086,9 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       Text('invite members', style: theme.textTheme.labelLarge),
       const SizedBox(height: 4),
       Text(
-        'invited list is only visible to you and co-hosts',
+        _visibility == PageVisibility.inviteOnly
+            ? 'only invited members (plus you and co-hosts) will see this event'
+            : 'invited list is only visible to you and co-hosts',
         style: TextStyle(
           fontSize: 12,
           color: theme.colorScheme.onSurfaceVariant,
@@ -1149,18 +1151,26 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 const SizedBox(height: 8),
                 _buildRsvpToggle(theme),
                 const SizedBox(height: 8),
-                SwitchListTile(
-                  title: const Text('members only'),
-                  subtitle: const Text('only visible to logged-in members'),
-                  value: _visibility == PageVisibility.membersOnly,
-                  contentPadding: EdgeInsets.zero,
+                DropdownButtonFormField<String>(
+                  initialValue: _visibility,
+                  decoration: const InputDecoration(labelText: 'visibility'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: PageVisibility.public_,
+                      child: Text('public'),
+                    ),
+                    DropdownMenuItem(
+                      value: PageVisibility.membersOnly,
+                      child: Text('members only'),
+                    ),
+                    DropdownMenuItem(
+                      value: PageVisibility.inviteOnly,
+                      child: Text('invite only'),
+                    ),
+                  ],
                   onChanged:
                       (val) => setState(
-                        () =>
-                            _visibility =
-                                val
-                                    ? PageVisibility.membersOnly
-                                    : PageVisibility.public_,
+                        () => _visibility = val ?? PageVisibility.public_,
                       ),
                 ),
                 if (ref

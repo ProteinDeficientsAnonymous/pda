@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 class PageVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"
+    INVITE_ONLY = "invite_only", "Invite only"
 
 
 class EventType(models.TextChoices):

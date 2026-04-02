@@ -11,8 +11,9 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.models import User as UserModel
 
+from community._events import _can_see_invite_only
 from community._shared import ErrorOut  # noqa: F401
-from community.models import Event
+from community.models import Event, PageVisibility
 
 router = Router()
 
@@ -77,10 +78,16 @@ def calendar_feed(request, token: str = ""):
     events = (
         Event.objects.filter(start_datetime__gte=cutoff)
         .select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users")
         .order_by("start_datetime")
     )
 
     for event in events:
+        if event.visibility == PageVisibility.INVITE_ONLY:
+            co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+            invited_user_ids = {str(u.id) for u in event.invited_users.all()}
+            if not _can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
+                continue
         cal.add_component(_build_vevent(event))
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")

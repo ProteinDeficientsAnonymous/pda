@@ -66,7 +66,13 @@ def _find_my_rsvp(rsvps, user) -> str | None:
     return None
 
 
-def _can_see_invited(requesting_user, creator, co_host_ids: set[str]) -> bool:
+def _can_see_invited(
+    requesting_user,
+    creator,
+    co_host_ids: set[str],
+    visibility: str = "",
+    invited_user_ids: set[str] | None = None,
+) -> bool:
     """Check if requesting user can see invited users list."""
     if requesting_user is None:
         return False
@@ -74,7 +80,27 @@ def _can_see_invited(requesting_user, creator, co_host_ids: set[str]) -> bool:
         return True
     if str(requesting_user.pk) in co_host_ids:
         return True
-    return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
+    if requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    # Invited users can see the list for invite-only events
+    if visibility == PageVisibility.INVITE_ONLY and invited_user_ids is not None:
+        return str(requesting_user.pk) in invited_user_ids
+    return False
+
+
+def _can_see_invite_only(
+    user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
+) -> bool:
+    """Check if user can see an invite-only event (using prefetched sets)."""
+    if user is None:
+        return False
+    if created_by_id is not None and str(user.pk) == str(created_by_id):
+        return True
+    if str(user.pk) in co_host_ids:
+        return True
+    if str(user.pk) in invited_user_ids:
+        return True
+    return user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
 def _get_creator_name(creator) -> str | None:
@@ -103,8 +129,12 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
+    all_invited = list(event.invited_users.all())
+    invited_user_ids = {str(u.id) for u in all_invited}
     invited = (
-        list(event.invited_users.all()) if _can_see_invited(auth_user, creator, co_host_ids) else []
+        all_invited
+        if _can_see_invited(auth_user, creator, co_host_ids, event.visibility, invited_user_ids)
+        else []
     )
     return EventOut(
         id=str(event.id),
@@ -145,10 +175,24 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
 
 @router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
 def list_events(request):
-    events = Event.objects.prefetch_related("co_hosts", "invited_users").all()
-    is_authed = _authenticated_user(request.auth) is not None
+    auth_user = _authenticated_user(request.auth)
+    is_authed = auth_user is not None
+    events_qs = Event.objects.prefetch_related("co_hosts", "invited_users").all()
     if not is_authed:
-        events = events.filter(visibility=PageVisibility.PUBLIC)
+        events_qs = events_qs.filter(visibility=PageVisibility.PUBLIC)
+    events = list(events_qs)
+    if is_authed:
+        events = [
+            e
+            for e in events
+            if e.visibility != PageVisibility.INVITE_ONLY
+            or _can_see_invite_only(
+                auth_user,
+                {str(c.id) for c in e.co_hosts.all()},
+                {str(u.id) for u in e.invited_users.all()},
+                e.created_by_id,
+            )
+        ]
     return Status(
         200,
         [
@@ -191,11 +235,14 @@ def get_event(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
-    if (
-        event.visibility == PageVisibility.MEMBERS_ONLY
-        and _authenticated_user(request.auth) is None
-    ):
+    auth_user = _authenticated_user(request.auth)
+    if event.visibility == PageVisibility.MEMBERS_ONLY and auth_user is None:
         return Status(404, ErrorOut(detail="Event not found."))
+    if event.visibility == PageVisibility.INVITE_ONLY:
+        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
+        if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
+            return Status(404, ErrorOut(detail="Event not found."))
     return Status(200, _event_out(event, request.auth))
 
 
@@ -365,6 +412,14 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         )
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
+
+    if event.visibility == PageVisibility.INVITE_ONLY:
+        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
+        if not _can_see_invite_only(
+            request.auth, co_host_ids, invited_user_ids, event.created_by_id
+        ):
+            return Status(404, ErrorOut(detail="Event not found."))
 
     if not event.rsvp_enabled:
         return Status(400, ErrorOut(detail="RSVPs are not enabled for this event."))

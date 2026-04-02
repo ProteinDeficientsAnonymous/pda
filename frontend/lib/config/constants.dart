@@ -34,6 +34,7 @@ abstract class JoinRequestStatus {
 abstract class PageVisibility {
   static const public_ = 'public';
   static const membersOnly = 'members_only';
+  static const inviteOnly = 'invite_only';
 }
 
 abstract class FieldType {

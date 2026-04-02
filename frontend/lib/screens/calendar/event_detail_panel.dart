@@ -140,8 +140,9 @@ class EventDetailContent extends ConsumerWidget {
                         ),
                       ),
                       if (liveEvent.eventType == EventType.official ||
+                          liveEvent.visibility == PageVisibility.membersOnly ||
                           liveEvent.visibility ==
-                              PageVisibility.membersOnly) ...[
+                              PageVisibility.inviteOnly) ...[
                         const SizedBox(height: 6),
                         Wrap(
                           spacing: 6,
@@ -194,6 +195,32 @@ class EventDetailContent extends ConsumerWidget {
                                         Theme.of(
                                           context,
                                         ).colorScheme.onTertiaryContainer,
+                                  ),
+                                ),
+                              ),
+                            if (liveEvent.visibility ==
+                                PageVisibility.inviteOnly)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.errorContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'invite only',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onErrorContainer,
                                   ),
                                 ),
                               ),
