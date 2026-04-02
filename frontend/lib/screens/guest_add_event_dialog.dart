@@ -43,9 +43,9 @@ class _GuestAddEventDialogState extends ConsumerState<GuestAddEventDialog> {
         '/api/community/check-phone/',
         data: {'phone_number': _phoneNumber},
       );
-      final exists = (resp.data as Map<String, dynamic>)['exists'] as bool;
+      final status = (resp.data as Map<String, dynamic>)['status'] as String;
       if (!mounted) return;
-      if (exists) {
+      if (status == 'member') {
         setState(() {
           _step = GuestStep.password;
           _loading = false;
