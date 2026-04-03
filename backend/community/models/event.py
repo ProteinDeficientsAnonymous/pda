@@ -85,7 +85,9 @@ class EventRSVP(models.Model):
 
     class Meta:
         app_label = "community"
-        unique_together = [("event", "user")]
+        constraints = [
+            models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
+        ]
 
     def __str__(self):
         return f"{self.user.display_name or self.user.phone_number} → {self.event.title}: {self.status}"

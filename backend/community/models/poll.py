@@ -64,7 +64,11 @@ class PollOption(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["datetime"]
-        unique_together = [("poll", "datetime")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["poll", "datetime"], name="unique_poll_option_datetime"
+            ),
+        ]
 
     def __str__(self):
         return f"{self.poll.event.title}: {self.datetime:%Y-%m-%d %H:%M}"
@@ -83,8 +87,10 @@ class PollVote(models.Model):
 
     class Meta:
         app_label = "community"
-        unique_together = [("option", "user")]
         ordering = ["-voted_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["option", "user"], name="unique_poll_vote"),
+        ]
 
     def __str__(self):
         return f"{self.user} → {self.option}: {self.availability}"

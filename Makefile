@@ -124,5 +124,5 @@ build-dev: install frontend-codegen migrate dev
 
 # Dev (concurrent backend + frontend)
 dev:
-	make run & make frontend-run
+	./dev.sh
 

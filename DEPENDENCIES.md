@@ -1,6 +1,6 @@
 # Dependency Update Tracker
 
-Last reviewed: 2026-04-03
+Last reviewed: 2026-04-03 (Django 6.0.3 upgrade complete)
 
 ---
 
@@ -13,6 +13,7 @@ Last reviewed: 2026-04-03
 | riverpod_generator | 2.6.5 | 4.0.3 | ✅ migrated |
 | riverpod_lint | 2.6.5 | 3.1.3 | ✅ migrated |
 | freezed | 3.1.0 | 3.2.5 | ✅ auto-updated with Riverpod 3 |
+| Django | 5.2.12 | 6.0.3 | ✅ migrated (STATICFILES_STORAGE → STORAGES, unique_together → UniqueConstraint) |
 
 ---
 
@@ -41,7 +42,7 @@ Last reviewed: 2026-04-03
 
 | Package | Current | Latest | Notes |
 |---------|---------|--------|-------|
-| Django | 5.2.12 | 6.0.3 | breaking changes — review changelog before upgrading |
+| ~~Django~~ | ~~5.2.12~~ | ~~6.0.3~~ | ~~breaking changes~~ — done, see Done section |
 | gunicorn | 23.0.0 | 25.3.0 | review changelog |
 | icalendar | 6.3.2 | 7.0.3 | API changes possible |
 | phonenumbers | 8.13.55 | 9.0.27 | API changes possible |
