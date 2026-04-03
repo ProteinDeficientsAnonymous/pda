@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/event.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/time_format.dart';
 import 'package:pda/utils/app_icons.dart';
 import 'package:pda/utils/share.dart';

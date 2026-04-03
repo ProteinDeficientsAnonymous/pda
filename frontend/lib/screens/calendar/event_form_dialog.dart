@@ -1088,6 +1088,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 const SizedBox(height: 16),
                 ..._buildLinksSection(theme),
                 const SizedBox(height: 16),
+                ..._buildCostSection(theme),
+                const SizedBox(height: 16),
                 const Divider(),
                 const SizedBox(height: 8),
                 ..._buildCostSection(theme),
