@@ -9,6 +9,8 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/faq_provider.dart';
 import 'package:pda/screens/faq_screen.dart';
 
+import '../helpers/provider_overrides.dart';
+
 const _kTestSize = Size(700, 900);
 
 Widget _buildSubject({FaqNotifier? faqNotifier, AuthNotifier? authNotifier}) {
@@ -19,6 +21,7 @@ Widget _buildSubject({FaqNotifier? faqNotifier, AuthNotifier? authNotifier}) {
     overrides: [
       faqNotifierProvider.overrideWith(() => faqNotifier ?? _FakeFaqNotifier()),
       authProvider.overrideWith(() => authNotifier ?? _MemberAuthNotifier()),
+      silentNotificationsOverride,
     ],
     child: MaterialApp.router(routerConfig: router),
   );

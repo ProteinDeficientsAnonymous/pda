@@ -7,6 +7,8 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/user_management_provider.dart';
 import 'package:pda/screens/members_screen.dart';
 
+import '../helpers/provider_overrides.dart';
+
 // Narrow viewport → drawer nav, avoiding wide AppBar overflow.
 const _kTestSize = Size(700, 900);
 
@@ -24,6 +26,7 @@ Widget _buildSubject({AuthNotifier? authNotifier, List<User>? users}) {
       ),
       usersProvider.overrideWith((_) async => users ?? _defaultUsers),
       rolesProvider.overrideWith((_) async => const []),
+      silentNotificationsOverride,
     ],
     child: MaterialApp.router(routerConfig: router),
   );

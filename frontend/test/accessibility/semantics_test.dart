@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,9 +10,21 @@ import 'package:pda/providers/home_provider.dart';
 import 'package:pda/providers/join_form_provider.dart';
 import 'package:pda/screens/auth/login_screen.dart';
 import 'package:pda/screens/join_screen.dart';
+import 'package:pda/services/api_client.dart';
 import 'package:pda/services/secure_storage.dart';
 
 import '../helpers/fake_secure_storage.dart';
+
+class _CheckPhoneMemberApiClient extends Fake implements ApiClient {
+  @override
+  Future<Response> post(String path, {dynamic data}) async {
+    return Response(
+      requestOptions: RequestOptions(path: path),
+      statusCode: 200,
+      data: {'status': 'member'},
+    );
+  }
+}
 
 class _FakeAuthNotifier extends AuthNotifier {
   @override
@@ -100,21 +113,20 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [authProvider.overrideWith(() => _FakeAuthNotifier())],
+          overrides: [
+            authProvider.overrideWith(() => _FakeAuthNotifier()),
+            apiClientProvider.overrideWithValue(_CheckPhoneMemberApiClient()),
+          ],
           child: MaterialApp.router(routerConfig: router),
         ),
       );
       await tester.pump();
 
-      // Login button should be findable (nav bar + form button both say 'log in')
-      expect(find.text('log in'), findsAtLeastNWidgets(1));
+      // Phone step is shown initially — the continue button must be in the tree
+      expect(find.text('continue'), findsOneWidget);
 
-      // Password field label should be visible
-      expect(find.text('Password'), findsOneWidget);
-
-      // Visibility toggle should have a tooltip
-      final iconButtons = find.byType(IconButton);
-      expect(iconButtons, findsWidgets);
+      // Phone number field should be in the semantics tree
+      expect(find.text('Phone number'), findsOneWidget);
 
       handle.dispose();
     });

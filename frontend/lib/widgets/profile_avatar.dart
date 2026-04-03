@@ -20,21 +20,19 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      decoration:
-          selected
-              ? BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: theme.colorScheme.primary, width: 2),
-              )
-              : null,
+      decoration: selected
+          ? BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: theme.colorScheme.primary, width: 2),
+            )
+          : null,
       child: CircleAvatar(
         radius: radius,
         backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-        onBackgroundImageError:
-            photoUrl.isNotEmpty
-                ? (exception, stackTrace) =>
-                    _log.warning('failed to load profile photo', exception)
-                : null,
+        onBackgroundImageError: photoUrl.isNotEmpty
+            ? (exception, stackTrace) =>
+                  _log.warning('failed to load profile photo', exception)
+            : null,
         backgroundColor: theme.colorScheme.surfaceContainerHighest,
       ),
     );

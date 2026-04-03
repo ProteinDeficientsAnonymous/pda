@@ -4,7 +4,10 @@ from django.test import Client
 
 @pytest.fixture(autouse=True)
 def use_plain_staticfiles(settings):
-    settings.STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    settings.STORAGES = {
+        **settings.STORAGES,
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
 
 
 @pytest.fixture

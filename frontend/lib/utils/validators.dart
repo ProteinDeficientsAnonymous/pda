@@ -47,10 +47,9 @@ Validator displayName() {
   final re = RegExp(r'^[a-zA-Z ]+$');
   return all([
     required(),
-    (v) =>
-        (v != null && !re.hasMatch(v.trim()))
-            ? 'Letters and spaces only'
-            : null,
+    (v) => (v != null && !re.hasMatch(v.trim()))
+        ? 'Letters and spaces only'
+        : null,
     maxLength(64),
   ]);
 }
@@ -85,10 +84,9 @@ Validator roleName() {
   final re = RegExp(r'^[a-zA-Z0-9_\-]+$');
   return all([
     required(),
-    (v) =>
-        (v != null && v.trim().isNotEmpty && !re.hasMatch(v.trim()))
-            ? 'Letters, numbers, underscores and hyphens only'
-            : null,
+    (v) => (v != null && v.trim().isNotEmpty && !re.hasMatch(v.trim()))
+        ? 'Letters, numbers, underscores and hyphens only'
+        : null,
     maxLength(50),
   ]);
 }

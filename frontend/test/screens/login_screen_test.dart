@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,9 +8,29 @@ import 'package:go_router/go_router.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/screens/auth/login_screen.dart';
+import 'package:pda/services/api_client.dart';
 import 'package:pda/services/api_error.dart';
 
-Widget _buildSubject({AuthNotifier? notifier}) {
+import '../helpers/provider_overrides.dart';
+
+// A fake ApiClient that responds to check-phone with {"status": "member"}.
+class _CheckPhoneMemberApiClient extends Fake implements ApiClient {
+  @override
+  Future<Response> post(String path, {dynamic data}) async {
+    if (path == '/api/community/check-phone/') {
+      return Response(
+        requestOptions: RequestOptions(path: path),
+        statusCode: 200,
+        data: {'status': 'member'},
+      );
+    }
+    throw UnimplementedError('Unexpected POST to $path');
+  }
+}
+
+const _fakeUser = User(id: 'u1', phoneNumber: '+12025551234');
+
+Widget _buildSubject({AuthNotifier? notifier, ApiClient? apiClient}) {
   final router = GoRouter(
     routes: [
       GoRoute(path: '/', builder: (_, __) => const LoginScreen()),
@@ -20,17 +41,27 @@ Widget _buildSubject({AuthNotifier? notifier}) {
   return ProviderScope(
     overrides: [
       authProvider.overrideWith(() => notifier ?? _FakeAuthNotifier()),
+      apiClientProvider.overrideWithValue(
+        apiClient ?? _CheckPhoneMemberApiClient(),
+      ),
+      silentNotificationsOverride,
     ],
     child: MaterialApp.router(routerConfig: router),
   );
 }
 
-/// Fills the phone and password fields so the form passes validation.
-Future<void> _fillForm(WidgetTester tester) async {
-  // Phone field is the first TextFormField (PhoneFormField widget)
+/// Step 1: enter phone and advance to the password step.
+Future<void> _advanceToPasswordStep(WidgetTester tester) async {
   await tester.enterText(find.byType(TextFormField).first, '2025551234');
-  // Password field is the last TextFormField
-  await tester.enterText(find.byType(TextFormField).last, 'password123');
+  await tester.pump();
+  await tester.tap(find.byType(FilledButton));
+  await tester.pumpAndSettle();
+}
+
+/// Full two-step form fill: phone step → password step → enter password.
+Future<void> _fillForm(WidgetTester tester) async {
+  await _advanceToPasswordStep(tester);
+  await tester.enterText(find.byType(TextFormField).first, 'password123');
   await tester.pump();
 }
 
@@ -41,10 +72,10 @@ void main() {
     await tester.pumpWidget(_buildSubject());
     await tester.pump();
 
+    await _advanceToPasswordStep(tester);
+
     final textFields = find.byType(TextField);
-    final phoneField = tester.widget<TextField>(textFields.first);
-    final passwordField = tester.widget<TextField>(textFields.last);
-    expect(phoneField.autofillHints, contains(AutofillHints.telephoneNumber));
+    final passwordField = tester.widget<TextField>(textFields.first);
     expect(passwordField.autofillHints, contains(AutofillHints.password));
     expect(find.byType(AutofillGroup), findsOneWidget);
   });
@@ -54,6 +85,8 @@ void main() {
   ) async {
     await tester.pumpWidget(_buildSubject());
     await tester.pump();
+
+    await _advanceToPasswordStep(tester);
 
     final iconButtons = find.byType(IconButton);
     final visibilityToggle = tester.widget<IconButton>(iconButtons.last);
@@ -88,7 +121,11 @@ void main() {
     );
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authProvider.overrideWith(() => _FakeAuthNotifier())],
+        overrides: [
+          authProvider.overrideWith(() => _FakeAuthNotifier()),
+          apiClientProvider.overrideWithValue(_CheckPhoneMemberApiClient()),
+          silentNotificationsOverride,
+        ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );
@@ -118,7 +155,7 @@ void main() {
 
     await _fillForm(tester);
     await tester.tap(find.byType(FilledButton));
-    // One pump to trigger loading state
+    // One pump to trigger loading state — notifier never completes
     await tester.pump();
 
     final button = tester.widget<FilledButton>(find.byType(FilledButton));
@@ -132,8 +169,7 @@ class _FakeAuthNotifier extends AuthNotifier {
 
   @override
   Future<void> login(String phoneNumber, String password) async {
-    // Simulate success — no state change needed; the screen just navigates
-    // because state.hasError is false after login.
+    state = const AsyncData(_fakeUser);
   }
 
   @override

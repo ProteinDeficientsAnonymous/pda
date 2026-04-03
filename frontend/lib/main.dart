@@ -4,6 +4,8 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:mcp_toolkit/mcp_toolkit.dart';
+import 'package:pda/config/app_theme.dart';
+import 'package:pda/providers/accessibility_preferences_provider.dart';
 import 'package:pda/router/app_router.dart';
 import 'package:pda/services/app_logger.dart';
 import 'package:pda/services/error_reporter.dart';
@@ -31,22 +33,14 @@ class PdaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final prefsAsync = ref.watch(accessibilityPreferencesProvider);
+    final prefs = prefsAsync.value;
+    final dyslexiaMode = prefs?.dyslexiaFriendlyFont ?? false;
+    final textScaleFactor = prefs?.textScaleFactor ?? 1.0;
 
     return MaterialApp.router(
       title: 'protein deficients anonymous',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(scrolledUnderElevation: 0),
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: const Color(0xFF2E7D32),
-          contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
-        ),
-      ),
+      theme: buildAppTheme(dyslexiaMode: dyslexiaMode),
       routerConfig: router,
       localizationsDelegates: const [
         FlutterQuillLocalizations.delegate,
@@ -55,6 +49,14 @@ class PdaApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: FlutterQuillLocalizations.supportedLocales,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScaleFactor)),
+          child: child!,
+        );
+      },
     );
   }
 }

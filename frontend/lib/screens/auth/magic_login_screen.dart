@@ -28,9 +28,8 @@ class _MagicLoginScreenState extends ConsumerState<MagicLoginScreen> {
     } catch (_) {
       if (mounted) {
         setState(
-          () =>
-              _error =
-                  'this link is invalid or has expired — ask an admin to resend it',
+          () => _error =
+              'this link is invalid or has expired — ask an admin to resend it',
         );
       }
     }

@@ -9,6 +9,8 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/guidelines_provider.dart';
 import 'package:pda/screens/guidelines_screen.dart';
 
+import '../helpers/provider_overrides.dart';
+
 const _kTestSize = Size(700, 900);
 
 Widget _buildSubject({
@@ -24,6 +26,7 @@ Widget _buildSubject({
         () => guidelinesNotifier ?? _FakeGuidelinesNotifier(),
       ),
       authProvider.overrideWith(() => authNotifier ?? _MemberAuthNotifier()),
+      silentNotificationsOverride,
     ],
     child: MaterialApp.router(routerConfig: router),
   );

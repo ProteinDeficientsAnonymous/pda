@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/config/constants.dart';
+import 'rsvp_guest_list.dart';
 
 class RSVPSection extends ConsumerStatefulWidget {
   final Event event;
@@ -37,6 +37,39 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
   }
 
+  Future<void> _confirmAndSetRsvp(String status, String label) async {
+    final user = ref.read(authProvider).value;
+    final isCoHost =
+        user != null &&
+        (widget.event.coHostIds.contains(user.id) ||
+            widget.event.createdById == user.id);
+
+    if (isCoHost) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('change your rsvp?'),
+          content: Text(
+            'you\'re a co-host of this event — are you sure you want to rsvp as "$label"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('yes, update'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    await _setRsvp(status);
+  }
+
   Future<void> _removeRsvp() async {
     setState(() => _loading = true);
     try {
@@ -55,400 +88,151 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
     final liveEvent =
-        ref.watch(eventDetailProvider(widget.event.id)).valueOrNull ??
-        widget.event;
+        ref.watch(eventDetailProvider(widget.event.id)).value ?? widget.event;
     final myRsvp = liveEvent.myRsvp;
     final guests = liveEvent.guests;
 
-    final attending =
-        guests.where((g) => g.status == RsvpStatus.attending).toList();
-    final maybe = guests.where((g) => g.status == RsvpStatus.maybe).toList();
-    final cantGo = guests.where((g) => g.status == RsvpStatus.cantGo).toList();
+    final attendingCount = guests
+        .where((g) => g.status == RsvpStatus.attending)
+        .length;
+    final maybeCount = guests.where((g) => g.status == RsvpStatus.maybe).length;
+
+    final summaryParts = [
+      if (attendingCount > 0) '$attendingCount going',
+      if (maybeCount > 0) '$maybeCount maybe',
+    ];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if (_loading)
-          const SizedBox(
-            height: 36,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          )
-        else
-          Center(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                RsvpButton(
-                  label: "i'm going",
-                  icon: Icons.sentiment_very_satisfied_outlined,
-                  activeColor: theme.colorScheme.primary,
-                  isActive: myRsvp == RsvpStatus.attending,
-                  onTap:
-                      () =>
-                          myRsvp == RsvpStatus.attending
-                              ? _removeRsvp()
-                              : _setRsvp(RsvpStatus.attending),
-                ),
-                RsvpButton(
-                  label: 'maybe',
-                  icon: Icons.sentiment_neutral_outlined,
-                  activeColor: theme.colorScheme.tertiary,
-                  isActive: myRsvp == RsvpStatus.maybe,
-                  onTap:
-                      () =>
-                          myRsvp == RsvpStatus.maybe
-                              ? _removeRsvp()
-                              : _setRsvp(RsvpStatus.maybe),
-                ),
-                RsvpButton(
-                  label: "can't make it",
-                  icon: Icons.sentiment_dissatisfied_outlined,
-                  activeColor: theme.colorScheme.error,
-                  isActive: myRsvp == RsvpStatus.cantGo,
-                  onTap:
-                      () =>
-                          myRsvp == RsvpStatus.cantGo
-                              ? _removeRsvp()
-                              : _setRsvp(RsvpStatus.cantGo),
-                ),
-              ],
+        if (summaryParts.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              summaryParts.join(' · '),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
+        Opacity(
+          opacity: _loading ? 0.5 : 1.0,
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              _RsvpToggleButton(
+                label: "i'm going",
+                icon: Icons.sentiment_very_satisfied_outlined,
+                activeColor: cs.primary,
+                isActive: myRsvp == RsvpStatus.attending,
+                enabled: !_loading,
+                onTap: () => myRsvp == RsvpStatus.attending
+                    ? _removeRsvp()
+                    : _setRsvp(RsvpStatus.attending),
+              ),
+              _RsvpToggleButton(
+                label: 'maybe',
+                icon: Icons.sentiment_neutral_outlined,
+                activeColor: cs.tertiary,
+                isActive: myRsvp == RsvpStatus.maybe,
+                enabled: !_loading,
+                onTap: () => myRsvp == RsvpStatus.maybe
+                    ? _removeRsvp()
+                    : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
+              ),
+              _RsvpToggleButton(
+                label: "can't make it",
+                icon: Icons.sentiment_dissatisfied_outlined,
+                activeColor: cs.error,
+                isActive: myRsvp == RsvpStatus.cantGo,
+                enabled: !_loading,
+                onTap: () => myRsvp == RsvpStatus.cantGo
+                    ? _removeRsvp()
+                    : _confirmAndSetRsvp(RsvpStatus.cantGo, "can't make it"),
+              ),
+            ],
+          ),
+        ),
         if (guests.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _GuestGroup(
-            label: 'going (${attending.length})',
-            guests: attending,
-            color: theme.colorScheme.primary,
-          ),
-          _GuestGroup(
-            label: 'maybe (${maybe.length})',
-            guests: maybe,
-            color: theme.colorScheme.tertiary,
-          ),
-          _GuestGroup(
-            label: "can't make it (${cantGo.length})",
-            guests: cantGo,
-            color: theme.colorScheme.error,
-          ),
+          RsvpGuestList(guests: guests),
         ],
       ],
     );
   }
 }
 
-class RsvpButton extends StatelessWidget {
+// ---------------------------------------------------------------------------
+// Toggle button
+// ---------------------------------------------------------------------------
+
+class _RsvpToggleButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color activeColor;
   final bool isActive;
+  final bool enabled;
   final VoidCallback onTap;
 
-  const RsvpButton({
-    super.key,
+  const _RsvpToggleButton({
     required this.label,
     required this.icon,
     required this.activeColor,
     required this.isActive,
+    required this.enabled,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color:
-              isActive
-                  ? activeColor.withValues(alpha: 0.15)
-                  : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? activeColor : Colors.transparent,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color:
-                  isActive
-                      ? activeColor
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color:
-                    isActive
-                        ? activeColor
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+    final cs = Theme.of(context).colorScheme;
 
-class _GuestGroup extends StatelessWidget {
-  final String label;
-  final List<EventGuest> guests;
-  final Color color;
-
-  const _GuestGroup({
-    required this.label,
-    required this.guests,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (guests.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
+    return Semantics(
+      button: true,
+      label: 'rsvp $label${isActive ? ", selected" : ""}',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(24),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive
+                ? activeColor.withValues(alpha: 0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isActive ? activeColor : cs.outlineVariant,
+              width: isActive ? 2 : 1,
             ),
           ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: guests.map((g) => _GuestChip(guest: g)).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GuestAvatar extends StatelessWidget {
-  final EventGuest guest;
-  const _GuestAvatar({required this.guest});
-
-  static const double radius = 10;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget avatar;
-    if (guest.photoUrl.isNotEmpty) {
-      avatar = CircleAvatar(
-        radius: radius,
-        backgroundImage: NetworkImage(guest.photoUrl),
-      );
-    } else {
-      final initials =
-          guest.name.isNotEmpty ? guest.name[0].toUpperCase() : '?';
-      avatar = CircleAvatar(
-        radius: radius,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        child: Text(
-          initials,
-          style: TextStyle(
-            fontSize: radius * 0.9,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
-          ),
-        ),
-      );
-    }
-    return InkWell(
-      onTap: () => context.push('/members/${guest.userId}'),
-      customBorder: const CircleBorder(),
-      child: avatar,
-    );
-  }
-}
-
-class _GuestChip extends StatefulWidget {
-  final EventGuest guest;
-
-  const _GuestChip({required this.guest});
-
-  @override
-  State<_GuestChip> createState() => _GuestChipState();
-}
-
-class _GuestChipState extends State<_GuestChip> {
-  bool _expanded = false;
-  OverlayEntry? _overlay;
-  final _link = LayerLink();
-
-  @override
-  void dispose() {
-    _removeOverlay();
-    super.dispose();
-  }
-
-  void _removeOverlay() {
-    _overlay?.remove();
-    _overlay = null;
-  }
-
-  void _showOverlay(String phone) {
-    if (_overlay != null) return;
-    _overlay = OverlayEntry(
-      builder:
-          (_) => GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _removeOverlay,
-            child: Stack(
-              children: [
-                CompositedTransformFollower(
-                  link: _link,
-                  offset: const Offset(0, 20),
-                  child: Material(
-                    elevation: 4,
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey.shade900,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.smartphone_outlined,
-                            size: 13,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(width: 6),
-                          SelectableText(
-                            phone,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontFamily: 'monospace',
-                              color: Colors.grey.shade100,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-    Overlay.of(context).insert(_overlay!);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final phone = widget.guest.phone;
-    final isWide = MediaQuery.sizeOf(context).width >= 720;
-
-    if (phone == null) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _GuestAvatar(guest: widget.guest),
-          const SizedBox(width: 6),
-          Text(widget.guest.name, style: const TextStyle(fontSize: 13)),
-        ],
-      );
-    }
-
-    if (isWide) {
-      return CompositedTransformTarget(
-        link: _link,
-        child: MouseRegion(
-          onEnter: (_) => _showOverlay(phone),
-          onExit: (_) => _removeOverlay(),
-          cursor: SystemMouseCursors.basic,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _GuestAvatar(guest: widget.guest),
+              Icon(
+                icon,
+                size: 18,
+                color: isActive ? activeColor : cs.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
               Text(
-                widget.guest.name,
-                style: const TextStyle(
-                  fontSize: 13,
-                  decoration: TextDecoration.none,
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: isActive ? activeColor : cs.onSurfaceVariant,
                 ),
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    // Mobile: tap to reveal
-    return Semantics(
-      button: true,
-      label: _expanded ? 'Hide details' : 'Show details',
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: () => setState(() => _expanded = !_expanded),
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _GuestAvatar(guest: widget.guest),
-                const SizedBox(width: 6),
-                Text(
-                  widget.guest.name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    decoration: TextDecoration.underline,
-                    decorationStyle: TextDecorationStyle.dotted,
-                  ),
-                ),
-              ],
-            ),
-            if (_expanded)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.smartphone_outlined,
-                      size: 11,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 3),
-                    SelectableText(
-                      phone,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: 'monospace',
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
         ),
       ),
     );

@@ -13,9 +13,12 @@ final secureStorageProvider = Provider<SecureStorageService>(
   (_) => SecureStorageService(),
 );
 
-final apiClientProvider = Provider<ApiClient>(
-  (ref) => ApiClient(ref.watch(secureStorageProvider)),
-);
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient(
+    ref.watch(secureStorageProvider),
+    onSessionExpired: () => ref.read(authProvider.notifier).forceLogout(),
+  );
+});
 
 class AuthNotifier extends AsyncNotifier<User?> {
   @override
@@ -141,6 +144,12 @@ class AuthNotifier extends AsyncNotifier<User?> {
     final api = ref.read(apiClientProvider);
     final response = await api.delete('/api/auth/me/photo/');
     state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+  }
+
+  void forceLogout() {
+    ref.read(secureStorageProvider).clearTokens();
+    state = const AsyncData(null);
+    _log.info('Session expired — forced logout');
   }
 
   Future<void> logout() async {

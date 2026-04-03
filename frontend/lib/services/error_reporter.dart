@@ -33,7 +33,13 @@ class ErrorReporter {
     try {
       await _dio.post(
         '/api/community/error-report/',
-        data: {'error': error, 'stack_trace': stackTrace, 'context': context},
+        data: {
+          'error': error,
+          'stack_trace': stackTrace.length > 10000
+              ? stackTrace.substring(0, 10000)
+              : stackTrace,
+          'context': context,
+        },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     } catch (e) {

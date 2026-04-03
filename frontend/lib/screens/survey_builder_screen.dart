@@ -8,23 +8,7 @@ import 'package:pda/utils/share.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/config/constants.dart';
-
-const _fieldTypeLabels = {
-  FieldType.text: 'text',
-  FieldType.textarea: 'text area',
-  FieldType.select: 'single select',
-  FieldType.multiselect: 'multi select',
-  FieldType.dropdown: 'dropdown',
-  FieldType.number: 'number',
-  FieldType.yesNo: 'yes / no',
-  FieldType.rating: 'rating (1–5)',
-};
-
-const _fieldTypesWithOptions = {
-  FieldType.select,
-  FieldType.multiselect,
-  FieldType.dropdown,
-};
+import 'package:pda/screens/survey_question_form_dialog.dart';
 
 IconData _fieldTypeIcon(String type) {
   return switch (type) {
@@ -35,6 +19,7 @@ IconData _fieldTypeIcon(String type) {
     FieldType.number => Icons.pin_outlined,
     FieldType.yesNo => Icons.toggle_on_outlined,
     FieldType.rating => Icons.star_outline_rounded,
+    FieldType.datetimePoll => Icons.event_outlined,
     _ => Icons.short_text_outlined,
   };
 }
@@ -51,10 +36,8 @@ class SurveyBuilderScreen extends ConsumerWidget {
     return AppScaffold(
       child: surveyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load survey — try refreshing'),
-            ),
+        error: (e, _) =>
+            const Center(child: Text('couldn\'t load survey — try refreshing')),
         data: (survey) => _BuilderBody(survey: survey),
       ),
     );
@@ -88,9 +71,9 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
   }
 
   Future<void> _addQuestion() async {
-    final result = await showDialog<_QuestionFormResult>(
+    final result = await showDialog<SurveyQuestionFormResult>(
       context: context,
-      builder: (_) => const _QuestionFormDialog(),
+      builder: (_) => const SurveyQuestionFormDialog(),
     );
     if (result == null) return;
     try {
@@ -111,9 +94,9 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
   }
 
   Future<void> _editQuestion(SurveyQuestion q) async {
-    final result = await showDialog<_QuestionFormResult>(
+    final result = await showDialog<SurveyQuestionFormResult>(
       context: context,
-      builder: (_) => _QuestionFormDialog(question: q),
+      builder: (_) => SurveyQuestionFormDialog(question: q),
     );
     if (result == null) return;
     try {
@@ -137,27 +120,26 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
   Future<void> _deleteQuestion(SurveyQuestion q) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('delete question'),
-            content: Text(
-              'Delete "${q.label}"? Existing responses will '
-              'still show their answers.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: const Text('delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('delete question'),
+        content: Text(
+          'Delete "${q.label}"? Existing responses will '
+          'still show their answers.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
     try {
@@ -224,30 +206,28 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
                 runSpacing: 8,
                 children: [
                   OutlinedButton.icon(
-                    onPressed:
-                        () => context.go('/surveys/${widget.survey.slug}'),
+                    onPressed: () =>
+                        context.go('/surveys/${widget.survey.slug}'),
                     icon: const Icon(Icons.visibility_outlined, size: 18),
                     label: const Text('preview'),
                   ),
                   OutlinedButton.icon(
                     onPressed: () {
-                      final link =
-                          Uri.base
-                              .replace(
-                                path: '/surveys/${widget.survey.slug}',
-                                query: '',
-                              )
-                              .toString();
+                      final link = Uri.base
+                          .replace(
+                            path: '/surveys/${widget.survey.slug}',
+                            query: '',
+                          )
+                          .toString();
                       shareUrl(link, subject: widget.survey.title);
                     },
                     icon: const Icon(AppIcons.share, size: 18),
                     label: const Text('share'),
                   ),
                   OutlinedButton.icon(
-                    onPressed:
-                        () => context.go(
-                          '/admin/surveys/${widget.survey.id}/responses',
-                        ),
+                    onPressed: () => context.go(
+                      '/admin/surveys/${widget.survey.id}/responses',
+                    ),
                     icon: const Icon(Icons.bar_chart_rounded, size: 18),
                     label: Text('${widget.survey.responseCount} responses'),
                   ),
@@ -330,7 +310,9 @@ class _QuestionCard extends StatelessWidget {
         title: Text(question.label),
         subtitle: Row(
           children: [
-            Text(_fieldTypeLabels[question.fieldType] ?? question.fieldType),
+            Text(
+              surveyFieldTypeLabels[question.fieldType] ?? question.fieldType,
+            ),
             if (question.required) ...[
               const SizedBox(width: 8),
               Text(
@@ -364,252 +346,6 @@ class _QuestionCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _QuestionFormResult {
-  final String label;
-  final String fieldType;
-  final List<String> options;
-  final bool required;
-
-  const _QuestionFormResult({
-    required this.label,
-    required this.fieldType,
-    required this.options,
-    required this.required,
-  });
-}
-
-class _QuestionFormDialog extends StatefulWidget {
-  final SurveyQuestion? question;
-
-  const _QuestionFormDialog({this.question});
-
-  @override
-  State<_QuestionFormDialog> createState() => _QuestionFormDialogState();
-}
-
-class _QuestionFormDialogState extends State<_QuestionFormDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _labelCtrl;
-  late String _fieldType;
-  late bool _required;
-  late List<TextEditingController> _optionCtrls;
-  late List<TextEditingController> _ratingLabelCtrls;
-
-  @override
-  void initState() {
-    super.initState();
-    _labelCtrl = TextEditingController(text: widget.question?.label ?? '');
-    _fieldType = widget.question?.fieldType ?? FieldType.text;
-    _required = widget.question?.required ?? false;
-    final existingOptions = widget.question?.options ?? [];
-    _optionCtrls =
-        existingOptions.map((o) => TextEditingController(text: o)).toList();
-    // For rating type, options hold 5 labels (1-star through 5-star)
-    _ratingLabelCtrls = List.generate(
-      5,
-      (i) => TextEditingController(
-        text:
-            (_fieldType == FieldType.rating && i < existingOptions.length)
-                ? existingOptions[i]
-                : '',
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _labelCtrl.dispose();
-    for (final c in _optionCtrls) {
-      c.dispose();
-    }
-    for (final c in _ratingLabelCtrls) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  bool get _showOptions => _fieldTypesWithOptions.contains(_fieldType);
-
-  void _addOption() {
-    setState(() => _optionCtrls.add(TextEditingController()));
-  }
-
-  void _removeOption(int index) {
-    setState(() {
-      _optionCtrls[index].dispose();
-      _optionCtrls.removeAt(index);
-    });
-  }
-
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    List<String> options;
-    if (_fieldType == FieldType.rating) {
-      options = _ratingLabelCtrls.map((c) => c.text.trim()).toList();
-    } else if (_showOptions) {
-      options =
-          _optionCtrls
-              .map((c) => c.text.trim())
-              .where((o) => o.isNotEmpty)
-              .toList();
-    } else {
-      options = [];
-    }
-    Navigator.of(context).pop(
-      _QuestionFormResult(
-        label: _labelCtrl.text.trim(),
-        fieldType: _fieldType,
-        options: options,
-        required: _required,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isEditing = widget.question != null;
-    return AlertDialog(
-      title: Text(isEditing ? 'edit question' : 'add question'),
-      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      content: SizedBox(
-        width: 400,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _labelCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'question label',
-                    border: OutlineInputBorder(),
-                  ),
-                  autofocus: true,
-                  textInputAction: TextInputAction.done,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Required';
-                    return null;
-                  },
-                  onFieldSubmitted: (_) => _submit(),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: _fieldType,
-                  decoration: const InputDecoration(
-                    labelText: 'field type',
-                    border: OutlineInputBorder(),
-                  ),
-                  items:
-                      _fieldTypeLabels.entries
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ),
-                          )
-                          .toList(),
-                  onChanged:
-                      (val) =>
-                          setState(() => _fieldType = val ?? FieldType.text),
-                ),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  title: const Text('required'),
-                  value: _required,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (val) => setState(() => _required = val),
-                ),
-                if (_showOptions) ...[
-                  const SizedBox(height: 12),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'options',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  for (var i = 0; i < _optionCtrls.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _optionCtrls[i],
-                              decoration: InputDecoration(
-                                hintText: 'option ${i + 1}',
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'remove option',
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => _removeOption(i),
-                          ),
-                        ],
-                      ),
-                    ),
-                  TextButton.icon(
-                    onPressed: _addOption,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('add option'),
-                  ),
-                ],
-                if (_fieldType == FieldType.rating) ...[
-                  const SizedBox(height: 12),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'rating labels (optional)',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'label each star level — leave blank to skip',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  for (var i = 0; i < 5; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: TextFormField(
-                        controller: _ratingLabelCtrls[i],
-                        decoration: InputDecoration(
-                          hintText: '${i + 1} star${i == 0 ? '' : 's'}',
-                          prefixText: '${'★' * (i + 1)}  ',
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('cancel'),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(isEditing ? 'save' : 'add'),
-        ),
-      ],
     );
   }
 }

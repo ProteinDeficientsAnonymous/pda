@@ -65,6 +65,20 @@ void main() {
     expect(goRouter.routerDelegate.currentConfiguration.uri.path, '/calendar');
   });
 
+  test('forceLogout clears auth state to null', () async {
+    final container = ProviderContainer(
+      overrides: [authProvider.overrideWith(() => _MemberAuthNotifier())],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(authProvider.future);
+    expect(container.read(authProvider).value?.displayName, 'Alice');
+
+    container.read(authProvider.notifier).forceLogout();
+
+    expect(container.read(authProvider).value, isNull);
+  });
+
   test('logout clears auth state to null', () async {
     final container = ProviderContainer(
       overrides: [authProvider.overrideWith(() => _MemberAuthNotifier())],
@@ -85,6 +99,9 @@ class _GuestAuthNotifier extends AuthNotifier {
   Future<User?> build() async => null;
 
   @override
+  void forceLogout() => state = const AsyncData(null);
+
+  @override
   Future<void> logout() async {
     state = const AsyncData(null);
   }
@@ -94,6 +111,9 @@ class _MemberAuthNotifier extends AuthNotifier {
   @override
   Future<User?> build() async =>
       const User(id: 'u1', phoneNumber: '+12025551234', displayName: 'Alice');
+
+  @override
+  void forceLogout() => state = const AsyncData(null);
 
   @override
   Future<void> logout() async {

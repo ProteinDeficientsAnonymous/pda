@@ -40,14 +40,13 @@ void main() {
         context: '/calendar',
       );
 
-      final captured =
-          verify(
-            () => mockDio.post(
-              captureAny(),
-              data: captureAny(named: 'data'),
-              options: captureAny(named: 'options'),
-            ),
-          ).captured;
+      final captured = verify(
+        () => mockDio.post(
+          captureAny(),
+          data: captureAny(named: 'data'),
+          options: captureAny(named: 'options'),
+        ),
+      ).captured;
       expect(captured[0], '/api/community/error-report/');
       final data = captured[1] as Map<String, String>;
       expect(data['error'], 'Test error');

@@ -5,6 +5,7 @@ import 'package:pda/config/api_config.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/widgets/feedback_button.dart';
+import 'package:pda/widgets/notification_bell.dart';
 import 'package:pda/widgets/profile_avatar.dart';
 
 class AppScaffold extends ConsumerWidget {
@@ -23,30 +24,28 @@ class AppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
 
-    final body =
-        maxWidth != null
-            ? _CenteredBody(maxWidth: maxWidth!, child: child)
-            : child;
+    final body = maxWidth != null
+        ? _CenteredBody(maxWidth: maxWidth!, child: child)
+        : child;
 
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: _LogoButton(onTap: () => _showPdaMenu(context, user)),
-        actions: actions,
+        actions: [if (user != null) const NotificationBell(), ...?actions],
       ),
-      body:
-          enableFeedback && user != null
-              ? Stack(
-                children: [
-                  body,
-                  FeedbackButton(
-                    currentRoute: GoRouterState.of(context).uri.toString(),
-                  ),
-                ],
-              )
-              : body,
+      body: enableFeedback && user != null
+          ? Stack(
+              children: [
+                body,
+                FeedbackButton(
+                  currentRoute: GoRouterState.of(context).uri.toString(),
+                ),
+              ],
+            )
+          : body,
       bottomNavigationBar: _BottomNav(user: user),
     );
   }
@@ -141,6 +140,15 @@ void _showPdaMenu(BuildContext context, User? user) {
             ),
             if (user != null)
               ListTile(
+                leading: const Icon(Icons.library_books_outlined),
+                title: const Text('docs'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.go('/docs');
+                },
+              ),
+            if (user != null)
+              ListTile(
                 leading: const Icon(Icons.favorite_outline),
                 title: const Text('volunteer'),
                 onTap: () {
@@ -187,7 +195,9 @@ class _BottomNav extends StatelessWidget {
         currentPath.startsWith('/admin/') ||
         currentPath == '/join-requests' ||
         currentPath == '/members' ||
-        currentPath.startsWith('/surveys');
+        currentPath.startsWith('/surveys') ||
+        currentPath == '/docs' ||
+        currentPath.startsWith('/docs/');
 
     int selectedIndex;
     if (isCalendar) {

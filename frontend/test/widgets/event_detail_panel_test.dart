@@ -8,6 +8,8 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/screens/calendar/event_detail_panel.dart';
 
+import '../helpers/provider_overrides.dart';
+
 // Narrow viewport → drawer nav, avoiding AppBar overflow for authenticated users.
 const _kTestSize = Size(700, 900);
 
@@ -40,6 +42,7 @@ Widget _buildSubject(Event event, {AuthNotifier? authNotifier}) {
       eventsProvider.overrideWith((_) async => [event]),
       eventDetailProvider.overrideWith((ref, id) async => event),
       authProvider.overrideWith(() => authNotifier ?? _GuestAuthNotifier()),
+      silentNotificationsOverride,
     ],
     child: MaterialApp.router(routerConfig: router),
   );

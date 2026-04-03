@@ -89,8 +89,9 @@ String _foldLine(String line) {
   while (remaining.isNotEmpty) {
     // First line: 75 chars max. Continuation lines: 74 chars (space prefix).
     final maxLen = first ? 75 : 74;
-    final chunk =
-        remaining.length <= maxLen ? remaining : remaining.substring(0, maxLen);
+    final chunk = remaining.length <= maxLen
+        ? remaining
+        : remaining.substring(0, maxLen);
     if (!first) buf.write(' ');
     buf.write(chunk);
     remaining = remaining.substring(chunk.length);

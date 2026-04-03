@@ -17,10 +17,9 @@ class SurveyAdminScreen extends ConsumerWidget {
     return AppScaffold(
       child: surveysAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load surveys — try refreshing'),
-            ),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t load surveys — try refreshing'),
+        ),
         data: (surveys) => _SurveyAdminBody(surveys: surveys),
       ),
     );
@@ -141,27 +140,26 @@ class _SurveyAdminBody extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('delete survey'),
-            content: Text(
-              'Delete "${survey.title}" and all its responses? '
-              'This cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: const Text('delete'),
-              ),
-            ],
+      builder: (_) => AlertDialog(
+        title: const Text('delete survey'),
+        content: Text(
+          'Delete "${survey.title}" and all its responses? '
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
     try {
@@ -198,10 +196,9 @@ class _SurveyCard extends StatelessWidget {
         onTap: onTap,
         leading: Icon(
           survey.isActive ? Icons.poll_outlined : Icons.pause_circle_outline,
-          color:
-              survey.isActive
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+          color: survey.isActive
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurface.withValues(alpha: 0.4),
         ),
         title: Text(survey.title),
         subtitle: Text(
@@ -213,14 +210,13 @@ class _SurveyCard extends StatelessWidget {
             if (value == 'toggle') onToggle();
             if (value == 'delete') onDelete();
           },
-          itemBuilder:
-              (_) => [
-                PopupMenuItem(
-                  value: 'toggle',
-                  child: Text(survey.isActive ? 'pause' : 'activate'),
-                ),
-                const PopupMenuItem(value: 'delete', child: Text('delete')),
-              ],
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'toggle',
+              child: Text(survey.isActive ? 'pause' : 'activate'),
+            ),
+            const PopupMenuItem(value: 'delete', child: Text('delete')),
+          ],
         ),
       ),
     );
@@ -321,10 +317,8 @@ class _CreateSurveyDialogState extends State<_CreateSurveyDialog> {
                     child: Text('members only'),
                   ),
                 ],
-                onChanged:
-                    (v) => setState(
-                      () => _visibility = v ?? PageVisibility.public_,
-                    ),
+                onChanged: (v) =>
+                    setState(() => _visibility = v ?? PageVisibility.public_),
               ),
             ],
           ),

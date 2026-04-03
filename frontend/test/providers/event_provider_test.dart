@@ -45,6 +45,8 @@ final _eventJson = {
 
 /// Builds a [ProviderContainer] and subscribes a listener to [eventsProvider]
 /// so the provider stays alive and actually runs (auto-dispose won't kill it).
+/// Retry is disabled so that FutureProvider errors settle immediately as
+/// AsyncError rather than looping through Riverpod 3's retry mechanism.
 ProviderContainer _makeContainer(MockApiClient mockApi) {
   final container = ProviderContainer(
     overrides: [
@@ -54,6 +56,7 @@ ProviderContainer _makeContainer(MockApiClient mockApi) {
       ),
       apiClientProvider.overrideWithValue(mockApi),
     ],
+    retry: (_, __) => null,
   );
   // Keep eventsProvider alive by subscribing a listener.
   container.listen(eventsProvider, (_, __) {});
@@ -111,10 +114,16 @@ void main() {
     final container = _makeContainer(mockApi);
     addTearDown(container.dispose);
 
-    await expectLater(
-      container.read(eventsProvider.future),
-      throwsA(isA<DioException>()),
-    );
+    // Retry is disabled on the container so the provider settles immediately
+    // to AsyncError. Use try/catch to wait for completion, then inspect state.
+    try {
+      await container.read(eventsProvider.future);
+    } catch (_) {
+      // ignore — waiting for the provider to settle
+    }
+    final state = container.read(eventsProvider);
+    expect(state.hasError, isTrue);
+    expect(state.error, isA<DioException>());
   });
 
   test('refetches when auth state changes', () async {

@@ -69,9 +69,9 @@ GoRoute(
 
 Forms must have explicit focus traversal order using `FocusTraversalGroup` and `NumericFocusOrder` so Tab key follows visual order.
 
-### Semantics Are Enabled at Startup
+### Semantics on Flutter Web
 
-`SemanticsBinding.instance.ensureSemantics()` is called in `main()` before `runApp()`. This enables the accessibility overlay regardless of screen reader detection — important for AI tooling.
+Do NOT call `SemanticsBinding.instance.ensureSemantics()` in `main()`. On Flutter web (CanvasKit), forcing the semantics overlay to always be active intercepts pointer/keyboard events and breaks text input. Flutter automatically activates semantics when a screen reader is detected, which is sufficient for accessibility. Use `tester.ensureSemantics()` in tests instead.
 
 ## Testing Requirements
 

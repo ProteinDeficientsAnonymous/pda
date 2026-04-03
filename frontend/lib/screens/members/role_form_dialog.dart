@@ -87,14 +87,13 @@ class _RoleFormDialogState extends State<RoleFormDialog> {
                 ...kPermissionLabels.entries.map((entry) {
                   return CheckboxListTile(
                     value: _selectedPermissions.contains(entry.key),
-                    onChanged:
-                        (v) => setState(() {
-                          if (v == true) {
-                            _selectedPermissions.add(entry.key);
-                          } else {
-                            _selectedPermissions.remove(entry.key);
-                          }
-                        }),
+                    onChanged: (v) => setState(() {
+                      if (v == true) {
+                        _selectedPermissions.add(entry.key);
+                      } else {
+                        _selectedPermissions.remove(entry.key);
+                      }
+                    }),
                     title: Text(entry.value),
                     dense: true,
                     contentPadding: EdgeInsets.zero,
@@ -175,46 +174,43 @@ class _RoleEditorDialogState extends State<RoleEditorDialog> {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children:
-                widget.allRoles.map((role) {
-                  final locked = _isLocked(role);
-                  final checked = _selected.contains(role.id);
-                  return CheckboxListTile(
-                    value: checked,
-                    onChanged:
-                        locked
-                            ? null
-                            : (v) => setState(() {
-                              if (v == true) {
-                                _selected.add(role.id);
-                              } else {
-                                _selected.remove(role.id);
-                              }
-                            }),
-                    title: Row(
-                      children: [
-                        Text(role.name),
-                        if (locked) ...[
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.lock_outline,
-                            size: 14,
-                            color: Colors.grey[500],
-                          ),
-                        ],
-                      ],
-                    ),
-                    subtitle:
-                        role.permissions.isEmpty
-                            ? null
-                            : Text(
-                              role.permissions
-                                  .map((p) => kPermissionLabels[p] ?? p)
-                                  .join(', '),
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                  );
-                }).toList(),
+            children: widget.allRoles.map((role) {
+              final locked = _isLocked(role);
+              final checked = _selected.contains(role.id);
+              return CheckboxListTile(
+                value: checked,
+                onChanged: locked
+                    ? null
+                    : (v) => setState(() {
+                        if (v == true) {
+                          _selected.add(role.id);
+                        } else {
+                          _selected.remove(role.id);
+                        }
+                      }),
+                title: Row(
+                  children: [
+                    Text(role.name),
+                    if (locked) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.lock_outline,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
+                    ],
+                  ],
+                ),
+                subtitle: role.permissions.isEmpty
+                    ? null
+                    : Text(
+                        role.permissions
+                            .map((p) => kPermissionLabels[p] ?? p)
+                            .join(', '),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+              );
+            }).toList(),
           ),
         ),
       ),

@@ -149,6 +149,21 @@ void main() {
     });
   });
 
+  group('AuthNotifier.forceLogout', () {
+    test('clears state to AsyncData(null)', () async {
+      await container.read(authProvider.future);
+
+      // Simulate logged-in state
+      container.read(authProvider.notifier).state = const AsyncData(null);
+
+      container.read(authProvider.notifier).forceLogout();
+
+      final state = container.read(authProvider);
+      expect(state.hasError, isFalse);
+      expect(state.value, isNull);
+    });
+  });
+
   group('AuthNotifier.login errors', () {
     test('sets InvalidCredentials error on 401', () async {
       // Wait for build() to complete before calling login()

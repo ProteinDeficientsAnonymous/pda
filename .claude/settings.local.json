@@ -10,7 +10,10 @@
       "WebFetch(domain:flutter-quill.gitbook.io)",
       "WebFetch(domain:pypi.org)",
       "WebFetch(domain:tally.so)",
-      "WebFetch(domain:docs.railway.com)"
+      "WebFetch(domain:docs.railway.com)",
+      "Skill(update-config)",
+      "mcp__dart-flutter__analyze_files",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "enabledMcpjsonServers": [

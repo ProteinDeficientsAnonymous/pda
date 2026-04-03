@@ -31,7 +31,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen>
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(authProvider).valueOrNull;
+    final currentUser = ref.watch(authProvider).value;
     final canManageRoles =
         currentUser?.hasPermission(Permission.manageRoles) ?? false;
     final canManageUsers =
@@ -42,7 +42,10 @@ class _MembersScreenState extends ConsumerState<MembersScreen>
         children: [
           TabBar(
             controller: _tabController,
-            tabs: const [Tab(text: 'Members'), Tab(text: 'Roles')],
+            tabs: const [
+              Tab(text: 'Members'),
+              Tab(text: 'Roles'),
+            ],
           ),
           Expanded(
             child: TabBarView(

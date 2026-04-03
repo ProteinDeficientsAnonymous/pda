@@ -14,6 +14,7 @@ A vegan collective liberation community platform.
 ```bash
 cp .env.example .env
 make install
+make frontend-codegen  # generate Freezed/Riverpod code (required after clone)
 make db-start
 make migrate
 make createsuperuser

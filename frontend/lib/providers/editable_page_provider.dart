@@ -22,20 +22,23 @@ class EditablePage {
   );
 }
 
-class EditablePageNotifier extends FamilyAsyncNotifier<EditablePage, String> {
+class EditablePageNotifier extends AsyncNotifier<EditablePage> {
+  EditablePageNotifier(this._slug);
+  final String _slug;
+
   @override
-  Future<EditablePage> build(String arg) async {
+  Future<EditablePage> build() async {
     // Watch auth so the page refetches once the token is available.
     ref.watch(authProvider);
     final api = ref.read(apiClientProvider);
-    final response = await api.get('/api/community/pages/$arg/');
+    final response = await api.get('/api/community/pages/$_slug/');
     return EditablePage.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> saveContent(String content) async {
     final api = ref.read(apiClientProvider);
     final response = await api.patch(
-      '/api/community/pages/$arg/',
+      '/api/community/pages/$_slug/',
       data: {'content': content},
     );
     state = AsyncData(
@@ -46,7 +49,7 @@ class EditablePageNotifier extends FamilyAsyncNotifier<EditablePage, String> {
   Future<void> saveVisibility(String visibility) async {
     final api = ref.read(apiClientProvider);
     final response = await api.patch(
-      '/api/community/pages/$arg/',
+      '/api/community/pages/$_slug/',
       data: {'visibility': visibility},
     );
     state = AsyncData(
@@ -56,6 +59,6 @@ class EditablePageNotifier extends FamilyAsyncNotifier<EditablePage, String> {
 }
 
 final editablePageProvider =
-    AsyncNotifierProviderFamily<EditablePageNotifier, EditablePage, String>(
-      EditablePageNotifier.new,
+    AsyncNotifierProvider.family<EditablePageNotifier, EditablePage, String>(
+      (arg) => EditablePageNotifier(arg),
     );

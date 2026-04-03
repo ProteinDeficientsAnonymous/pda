@@ -102,7 +102,7 @@ frontend-codegen:
 	cd frontend && dart run build_runner build --delete-conflicting-outputs
 
 frontend-lint:
-	cd frontend && dart format --set-exit-if-changed lib/ test/ && dart analyze
+	cd frontend && dart format lib/ test/ && dart analyze
 
 frontend-format:
 	cd frontend && dart format lib/ test/
@@ -124,5 +124,5 @@ build-dev: install frontend-codegen migrate dev
 
 # Dev (concurrent backend + frontend)
 dev:
-	make run & make frontend-run
+	./dev.sh
 

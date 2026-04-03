@@ -42,15 +42,13 @@ class _EventListViewState extends State<EventListView> {
 
     final now = DateTime.now();
     if (_showUpcoming) {
-      result =
-          result
-              .where((e) => (e.endDatetime ?? e.startDatetime).isAfter(now))
-              .toList();
+      result = result
+          .where((e) => (e.endDatetime ?? e.startDatetime).isAfter(now))
+          .toList();
     } else {
-      result =
-          result
-              .where((e) => !(e.endDatetime ?? e.startDatetime).isAfter(now))
-              .toList();
+      result = result
+          .where((e) => !(e.endDatetime ?? e.startDatetime).isAfter(now))
+          .toList();
     }
 
     result = List.of(result);
@@ -85,17 +83,16 @@ class _EventListViewState extends State<EventListView> {
                 horizontal: 12,
                 vertical: 10,
               ),
-              suffixIcon:
-                  _query.isNotEmpty
-                      ? IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        tooltip: 'clear search',
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                      )
-                      : null,
+              suffixIcon: _query.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      tooltip: 'clear search',
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                    )
+                  : null,
             ),
             onChanged: (v) => setState(() => _query = v),
           ),
@@ -120,8 +117,9 @@ class _EventListViewState extends State<EventListView> {
                   ),
                 ],
                 selected: {_typeFilter},
-                onSelectionChanged:
-                    (s) => setState(() => _typeFilter = s.first),
+                onSelectionChanged: (s) =>
+                    setState(() => _typeFilter = s.first),
+                showSelectedIcon: false,
                 style: const ButtonStyle(visualDensity: VisualDensity.compact),
               ),
               SegmentedButton<bool>(
@@ -130,18 +128,20 @@ class _EventListViewState extends State<EventListView> {
                   ButtonSegment(value: false, label: Text('past')),
                 ],
                 selected: {_showUpcoming},
-                onSelectionChanged:
-                    (s) => setState(() => _showUpcoming = s.first),
+                onSelectionChanged: (s) =>
+                    setState(() => _showUpcoming = s.first),
+                showSelectedIcon: false,
                 style: const ButtonStyle(visualDensity: VisualDensity.compact),
               ),
               IconButton(
                 icon: Icon(
                   _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
                 ),
-                tooltip:
-                    _sortAscending ? 'sort newest first' : 'sort oldest first',
-                onPressed:
-                    () => setState(() => _sortAscending = !_sortAscending),
+                tooltip: _sortAscending
+                    ? 'sort newest first'
+                    : 'sort oldest first',
+                onPressed: () =>
+                    setState(() => _sortAscending = !_sortAscending),
               ),
             ],
           ),
@@ -153,24 +153,20 @@ class _EventListViewState extends State<EventListView> {
                 ? 'no events'
                 : '${filtered.length} event${filtered.length == 1 ? '' : 's'}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
         Expanded(
-          child:
-              filtered.isEmpty
-                  ? _EmptyState(query: _query, showUpcoming: _showUpcoming)
-                  : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder:
-                        (context, index) =>
-                            _EventListRow(event: filtered[index]),
-                  ),
+          child: filtered.isEmpty
+              ? _EmptyState(query: _query, showUpcoming: _showUpcoming)
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) =>
+                      _EventListRow(event: filtered[index]),
+                ),
         ),
       ],
     );
@@ -186,19 +182,18 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final message =
-        query.isNotEmpty
-            ? 'no matches for "$query"'
-            : showUpcoming
-            ? 'nothing upcoming 🌿'
-            : 'no past events';
+    final message = query.isNotEmpty
+        ? 'no matches for "$query"'
+        : showUpcoming
+        ? 'nothing upcoming 🌿'
+        : 'no past events';
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Text(
           message,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+            color: theme.colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
         ),
@@ -217,10 +212,9 @@ class _EventListRow extends StatelessWidget {
     final (bg, fg) = eventColors(event.id);
     final dateFmt = DateFormat('EEE, MMM d');
     final start = event.startDatetime.toLocal();
-    final timeStr =
-        event.endDatetime == null
-            ? '${dateFmt.format(start).toLowerCase()} · ${formatTime(start)}'
-            : '${dateFmt.format(start).toLowerCase()} · ${formatTime(start)} — ${formatTime(event.endDatetime!.toLocal())}';
+    final timeStr = event.endDatetime == null
+        ? '${dateFmt.format(start).toLowerCase()} · ${formatTime(start)}'
+        : '${dateFmt.format(start).toLowerCase()} · ${formatTime(start)} — ${formatTime(event.endDatetime!.toLocal())}';
 
     final hostNames = <String>[
       if (event.createdByName != null) event.createdByName!,
@@ -276,30 +270,19 @@ class _EventListRow extends StatelessWidget {
                     ],
                     if (event.visibility == PageVisibility.membersOnly) ...[
                       const SizedBox(width: 6),
-                      Icon(
-                        Icons.lock_outline,
-                        size: 14,
-                        color: fg.withValues(alpha: 0.6),
-                      ),
+                      Icon(Icons.lock_outline, size: 14, color: fg),
                     ],
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
-                      Icons.schedule_outlined,
-                      size: 14,
-                      color: fg.withValues(alpha: 0.6),
-                    ),
+                    Icon(Icons.schedule_outlined, size: 14, color: fg),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         timeStr,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: fg.withValues(alpha: 0.6),
-                        ),
+                        style: TextStyle(fontSize: 13, color: fg),
                       ),
                     ),
                   ],
@@ -308,21 +291,14 @@ class _EventListRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: fg.withValues(alpha: 0.6),
-                      ),
+                      Icon(Icons.location_on_outlined, size: 14, color: fg),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           event.location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: fg.withValues(alpha: 0.6),
-                          ),
+                          style: TextStyle(fontSize: 13, color: fg),
                         ),
                       ),
                     ],
@@ -332,21 +308,14 @@ class _EventListRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.person_pin_outlined,
-                        size: 14,
-                        color: fg.withValues(alpha: 0.6),
-                      ),
+                      Icon(Icons.person_pin_outlined, size: 14, color: fg),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           hostNames.join(', '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: fg.withValues(alpha: 0.6),
-                          ),
+                          style: TextStyle(fontSize: 13, color: fg),
                         ),
                       ),
                     ],

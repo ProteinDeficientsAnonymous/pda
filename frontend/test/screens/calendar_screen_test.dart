@@ -10,6 +10,8 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/screens/calendar_screen.dart';
 
+import '../helpers/provider_overrides.dart';
+
 // Use a narrow viewport so AppScaffold uses drawer nav (avoids AppBar overflow
 // when authenticated user has many nav items).
 const _kTestSize = Size(700, 900);
@@ -30,6 +32,7 @@ Widget _buildSubject({
         (_) => eventsBuilder != null ? eventsBuilder() : Future.value([]),
       ),
       authProvider.overrideWith(() => authNotifier ?? _GuestAuthNotifier()),
+      silentNotificationsOverride,
     ],
     child: MaterialApp.router(routerConfig: router),
   );

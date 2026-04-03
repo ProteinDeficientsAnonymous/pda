@@ -29,6 +29,7 @@ void main() {
         ),
         apiClientProvider.overrideWithValue(mockApi),
       ],
+      retry: (_, __) => null,
     );
   });
 
@@ -56,13 +57,10 @@ void main() {
         ),
       );
 
-      final state = await container
-          .read(guidelinesProvider.future)
-          .then(
-            (_) => container.read(guidelinesProvider),
-            onError: (_) => container.read(guidelinesProvider),
-          );
-      expect(state.hasError, isTrue);
+      await expectLater(
+        container.read(guidelinesProvider.future),
+        throwsA(isA<DioException>()),
+      );
     });
   });
 

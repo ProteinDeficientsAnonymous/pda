@@ -9,6 +9,8 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/home_provider.dart';
 import 'package:pda/screens/home_screen.dart';
 
+import '../helpers/provider_overrides.dart';
+
 // Use a narrow viewport so AppScaffold shows the drawer (no wide nav bar),
 // avoiding AppBar overflow from many nav items.
 const _kTestSize = Size(700, 900);
@@ -30,6 +32,7 @@ Widget _buildSubject({
         () => homeNotifier ?? _FakeHomeNotifier(),
       ),
       authProvider.overrideWith(() => authNotifier ?? _GuestAuthNotifier()),
+      silentNotificationsOverride,
     ],
     child: MaterialApp.router(routerConfig: router),
   );

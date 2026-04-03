@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:pda/config/constants.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/providers/survey_admin_provider.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+import 'package:pda/screens/survey_poll_results_section.dart';
 
 class SurveyResponsesScreen extends ConsumerWidget {
   final String surveyId;
@@ -18,15 +20,14 @@ class SurveyResponsesScreen extends ConsumerWidget {
     return AppScaffold(
       child: responsesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load responses — try refreshing'),
-            ),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t load responses — try refreshing'),
+        ),
         data: (responses) {
-          final survey = surveyAsync.valueOrNull;
+          final survey = surveyAsync.value;
           return _ResponsesBody(
-            surveyTitle: survey?.title ?? 'survey',
-            questions: survey?.questions ?? [],
+            surveyId: surveyId,
+            survey: survey,
             responses: responses,
           );
         },
@@ -35,26 +36,34 @@ class SurveyResponsesScreen extends ConsumerWidget {
   }
 }
 
-class _ResponsesBody extends StatelessWidget {
-  final String surveyTitle;
-  final List<SurveyQuestion> questions;
+class _ResponsesBody extends ConsumerWidget {
+  final String surveyId;
+  final Survey? survey;
   final List<SurveyResponse> responses;
 
   const _ResponsesBody({
-    required this.surveyTitle,
-    required this.questions,
+    required this.surveyId,
+    required this.survey,
     required this.responses,
   });
 
+  bool get _hasPollQuestion =>
+      survey?.questions.any((q) => q.fieldType == FieldType.datetimePoll) ??
+      false;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final dateFmt = DateFormat('MMM d, y h:mm a');
+    final questions = survey?.questions ?? [];
 
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        Text('$surveyTitle — responses', style: theme.textTheme.headlineSmall),
+        Text(
+          '${survey?.title ?? 'survey'} — responses',
+          style: theme.textTheme.headlineSmall,
+        ),
         const SizedBox(height: 4),
         Text(
           '${responses.length} responses',
@@ -62,6 +71,10 @@ class _ResponsesBody extends StatelessWidget {
             color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
+        if (_hasPollQuestion) ...[
+          const SizedBox(height: 20),
+          SurveyPollResultsSection(surveyId: surveyId, survey: survey!),
+        ],
         const SizedBox(height: 20),
         if (responses.isEmpty)
           Center(

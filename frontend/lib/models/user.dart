@@ -50,5 +50,6 @@ abstract class User with _$User {
       hasPermission(Permission.manageUsers) ||
       hasPermission(Permission.approveJoinRequests) ||
       hasPermission(Permission.manageWhatsapp) ||
-      hasPermission(Permission.editJoinQuestions);
+      hasPermission(Permission.editJoinQuestions) ||
+      hasPermission(Permission.manageDocs);
 }

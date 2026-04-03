@@ -35,8 +35,9 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
   @override
   void initState() {
     super.initState();
-    _userAgent =
-        widget.userAgent.isNotEmpty ? widget.userAgent : getUserAgent();
+    _userAgent = widget.userAgent.isNotEmpty
+        ? widget.userAgent
+        : getUserAgent();
     _appVersion = widget.appVersion.isNotEmpty ? widget.appVersion : gitSha;
   }
 
@@ -50,7 +51,7 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final user = ref.read(authProvider).valueOrNull;
+    final user = ref.read(authProvider).value;
 
     await ref
         .read(feedbackProvider.notifier)
@@ -112,21 +113,19 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       Checkbox(
                         value: _isBug,
                         semanticLabel: 'bug',
-                        onChanged:
-                            isLoading
-                                ? null
-                                : (v) => setState(() => _isBug = v ?? false),
+                        onChanged: isLoading
+                            ? null
+                            : (v) => setState(() => _isBug = v ?? false),
                       ),
                       const Text('bug'),
                       Checkbox(
                         value: _isFeatureRequest,
                         semanticLabel: 'feature request',
-                        onChanged:
-                            isLoading
-                                ? null
-                                : (v) => setState(
-                                  () => _isFeatureRequest = v ?? false,
-                                ),
+                        onChanged: isLoading
+                            ? null
+                            : (v) => setState(
+                                () => _isFeatureRequest = v ?? false,
+                              ),
                       ),
                       const Text('feature request'),
                     ],
@@ -138,9 +137,8 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       labelText: 'Title',
                       hintText: 'what happened?',
                     ),
-                    validator:
-                        (v) =>
-                            (v == null || v.trim().isEmpty) ? 'required' : null,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'required' : null,
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 12),
@@ -169,16 +167,15 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       const SizedBox(width: 8),
                       FilledButton(
                         onPressed: isLoading ? null : _submit,
-                        child:
-                            isLoading
-                                ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text('submit'),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('submit'),
                       ),
                     ],
                   ),
@@ -210,15 +207,14 @@ class _MetadataSection extends StatelessWidget {
     return Wrap(
       spacing: 6,
       runSpacing: 4,
-      children:
-          chips
-              .map(
-                (label) => Chip(
-                  label: Text(label, style: const TextStyle(fontSize: 12)),
-                  visualDensity: VisualDensity.compact,
-                ),
-              )
-              .toList(),
+      children: chips
+          .map(
+            (label) => Chip(
+              label: Text(label, style: const TextStyle(fontSize: 12)),
+              visualDensity: VisualDensity.compact,
+            ),
+          )
+          .toList(),
     );
   }
 }

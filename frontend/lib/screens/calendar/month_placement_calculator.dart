@@ -83,10 +83,9 @@ class MonthPlacementCalculator {
     for (var c = 6; c >= 0; c--) {
       final d = days[c];
       final ds = DateTime(d.year, d.month, d.day);
-      final lastDay =
-          eEnd.hour == 0 && eEnd.minute == 0
-              ? DateTime(eEnd.year, eEnd.month, eEnd.day - 1)
-              : DateTime(eEnd.year, eEnd.month, eEnd.day);
+      final lastDay = eEnd.hour == 0 && eEnd.minute == 0
+          ? DateTime(eEnd.year, eEnd.month, eEnd.day - 1)
+          : DateTime(eEnd.year, eEnd.month, eEnd.day);
       if (ds.isAtSameMomentAs(lastDay) || ds.isBefore(lastDay)) {
         return c;
       }

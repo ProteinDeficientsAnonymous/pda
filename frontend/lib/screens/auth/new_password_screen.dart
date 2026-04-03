@@ -85,21 +85,19 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                             ),
-                            tooltip:
-                                _obscureNew ? 'Show password' : 'Hide password',
-                            onPressed:
-                                () =>
-                                    setState(() => _obscureNew = !_obscureNew),
+                            tooltip: _obscureNew
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () =>
+                                setState(() => _obscureNew = !_obscureNew),
                           ),
                         ),
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted:
-                            (_) => _confirmPwFocusNode.requestFocus(),
-                        validator:
-                            (v) =>
-                                (v == null || v.length < 8)
-                                    ? 'At least 8 characters'
-                                    : null,
+                        onFieldSubmitted: (_) =>
+                            _confirmPwFocusNode.requestFocus(),
+                        validator: (v) => (v == null || v.length < 8)
+                            ? 'At least 8 characters'
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -115,37 +113,32 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                             ),
-                            tooltip:
-                                _obscureConfirm
-                                    ? 'Show password'
-                                    : 'Hide password',
-                            onPressed:
-                                () => setState(
-                                  () => _obscureConfirm = !_obscureConfirm,
-                                ),
+                            tooltip: _obscureConfirm
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm,
+                            ),
                           ),
                         ),
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => _saving ? null : _save(),
-                        validator:
-                            (v) =>
-                                v != _newPwCtrl.text
-                                    ? 'Passwords do not match'
-                                    : null,
+                        validator: (v) => v != _newPwCtrl.text
+                            ? 'Passwords do not match'
+                            : null,
                       ),
                       const SizedBox(height: 24),
                       FilledButton(
                         onPressed: _saving ? null : _save,
-                        child:
-                            _saving
-                                ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text('save & continue'),
+                        child: _saving
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('save & continue'),
                       ),
                     ],
                   ),

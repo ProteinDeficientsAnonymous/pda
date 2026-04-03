@@ -32,10 +32,9 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
     if (_autosaveInitialized || !canEdit) return;
     _autosaveInitialized = true;
     initAutosaveCallback(
-      onSave:
-          (text) => ref
-              .read(editablePageProvider(widget.slug).notifier)
-              .saveContent(text),
+      onSave: (text) => ref
+          .read(editablePageProvider(widget.slug).notifier)
+          .saveContent(text),
     );
   }
 
@@ -80,7 +79,7 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     final canEdit = user?.hasPermission(Permission.editGuidelines) ?? false;
     _maybeInitAutosave(canEdit);
     final pageAsync = ref.watch(editablePageProvider(widget.slug));
@@ -124,13 +123,12 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
                 editing: _editing,
                 expands: true,
                 hintText: 'Enter page content…',
-                onChanged:
-                    canEdit
-                        ? (v) {
-                          _json = v;
-                          triggerAutosave(v);
-                        }
-                        : null,
+                onChanged: canEdit
+                    ? (v) {
+                        _json = v;
+                        triggerAutosave(v);
+                      }
+                    : null,
               ),
             ),
           ],

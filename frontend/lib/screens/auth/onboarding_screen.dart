@@ -45,8 +45,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           .read(authProvider.notifier)
           .completeOnboarding(
             displayName: _displayNameCtrl.text.trim(),
-            email:
-                _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+            email: _emailCtrl.text.trim().isEmpty
+                ? null
+                : _emailCtrl.text.trim(),
             newPassword: _newPwCtrl.text,
           );
       // Router redirect will navigate to /guidelines once needsOnboarding becomes false.
@@ -94,11 +95,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         textInputAction: TextInputAction.next,
                         onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
-                        validator:
-                            (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? 'Display name is required'
-                                    : null,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Display name is required'
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -126,21 +125,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                             ),
-                            tooltip:
-                                _obscureNew ? 'Show password' : 'Hide password',
-                            onPressed:
-                                () =>
-                                    setState(() => _obscureNew = !_obscureNew),
+                            tooltip: _obscureNew
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () =>
+                                setState(() => _obscureNew = !_obscureNew),
                           ),
                         ),
                         textInputAction: TextInputAction.next,
-                        onFieldSubmitted:
-                            (_) => _confirmPwFocusNode.requestFocus(),
-                        validator:
-                            (v) =>
-                                (v == null || v.length < 8)
-                                    ? 'At least 8 characters'
-                                    : null,
+                        onFieldSubmitted: (_) =>
+                            _confirmPwFocusNode.requestFocus(),
+                        validator: (v) => (v == null || v.length < 8)
+                            ? 'At least 8 characters'
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -156,37 +153,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   ? Icons.visibility_off
                                   : Icons.visibility,
                             ),
-                            tooltip:
-                                _obscureConfirm
-                                    ? 'Show password'
-                                    : 'Hide password',
-                            onPressed:
-                                () => setState(
-                                  () => _obscureConfirm = !_obscureConfirm,
-                                ),
+                            tooltip: _obscureConfirm
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm,
+                            ),
                           ),
                         ),
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => _saving ? null : _save(),
-                        validator:
-                            (v) =>
-                                v != _newPwCtrl.text
-                                    ? 'Passwords do not match'
-                                    : null,
+                        validator: (v) => v != _newPwCtrl.text
+                            ? 'Passwords do not match'
+                            : null,
                       ),
                       const SizedBox(height: 24),
                       FilledButton(
                         onPressed: _saving ? null : _save,
-                        child:
-                            _saving
-                                ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text('save & continue'),
+                        child: _saving
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('save & continue'),
                       ),
                     ],
                   ),

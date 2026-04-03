@@ -1,0 +1,374 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pda/models/event.dart';
+import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/providers/event_provider.dart';
+import 'package:pda/services/api_error.dart';
+import 'package:pda/utils/create_datetime_poll.dart';
+import 'package:pda/utils/snackbar.dart';
+import 'package:pda/widgets/loading_button.dart';
+import 'package:pda/widgets/phone_form_field.dart';
+import 'package:pda/config/constants.dart';
+import 'package:pda/screens/calendar/event_form_dialog.dart';
+
+/// Shows member-only content (location, links, RSVP, admin actions) or a
+/// login/join prompt for unauthenticated visitors.
+class EventAdminActions extends ConsumerStatefulWidget {
+  final Event event;
+
+  const EventAdminActions({super.key, required this.event});
+
+  @override
+  ConsumerState<EventAdminActions> createState() => _EventAdminActionsState();
+}
+
+class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
+  bool _loading = false;
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete event'),
+        content: Text('Delete "${widget.event.title}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _loading = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.delete('/api/community/events/${widget.event.id}/');
+      ref.invalidate(eventsProvider);
+      ref.invalidate(eventDetailProvider(widget.event.id));
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _edit() async {
+    final result = await showDialog<EventFormResult>(
+      context: context,
+      builder: (ctx) => EventFormDialog(event: widget.event),
+    );
+    if (result == null) return;
+
+    setState(() => _loading = true);
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.patch(
+        '/api/community/events/${widget.event.id}/',
+        data: result.data,
+      );
+      if (result.photo != null) {
+        await uploadEventPhoto(ref, widget.event.id, result.photo!);
+      } else if (result.removePhoto) {
+        await deleteEventPhoto(ref, widget.event.id);
+      }
+      if (result.datetimePollOptions.isNotEmpty) {
+        await createDatetimePoll(
+          ref: ref,
+          eventId: widget.event.id,
+          eventTitle: result.data['title'] as String,
+          options: result.datetimePollOptions,
+        );
+      }
+      ref.invalidate(eventsProvider);
+      ref.invalidate(eventDetailProvider(widget.event.id));
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final user = ref.watch(authProvider).value;
+    if (user == null) return const SizedBox.shrink();
+
+    final isCreator = widget.event.createdById == user.id;
+    final isManager = user.hasPermission(Permission.manageEvents);
+    if (!isCreator && !isManager) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _edit,
+          icon: const Icon(Icons.edit_outlined, size: 16),
+          label: const Text('edit'),
+        ),
+        const SizedBox(width: 12),
+        OutlinedButton.icon(
+          onPressed: _delete,
+          icon: Icon(
+            Icons.delete_outline,
+            size: 16,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          label: Text(
+            'delete',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shown to unauthenticated visitors. Collects phone number, checks if they're
+/// a member, then either prompts login or prompts them to submit a join request.
+class LoginOrJoinSection extends ConsumerStatefulWidget {
+  final Event event;
+
+  const LoginOrJoinSection({super.key, required this.event});
+
+  @override
+  ConsumerState<LoginOrJoinSection> createState() => _LoginOrJoinSectionState();
+}
+
+class _LoginOrJoinSectionState extends ConsumerState<LoginOrJoinSection> {
+  String _phoneNumber = '';
+  final _passwordCtrl = TextEditingController();
+  final _phoneKey = GlobalKey<FormState>();
+  final _loginKey = GlobalKey<FormState>();
+
+  // null = phone step, "member" / "pending" / "unknown"
+  String? _phoneStatus;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkPhone() async {
+    if (!(_phoneKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final api = ref.read(apiClientProvider);
+      final res = await api.post(
+        '/api/community/check-phone/',
+        data: {'phone_number': _phoneNumber},
+      );
+      final status = (res.data as Map<String, dynamic>)['status'] as String;
+      setState(() => _phoneStatus = status);
+    } catch (e) {
+      setState(() => _error = 'something went wrong — try again');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _login() async {
+    if (!(_loginKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .login(_phoneNumber, _passwordCtrl.text);
+    } catch (e) {
+      setState(() => _error = 'incorrect password — try again');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Phone step
+    if (_phoneStatus == null) {
+      return JuicyGate(
+        headline: '🔒 log in to see the juicy details',
+        subtext:
+            'links, RSVPs & more are for members only — enter your number to get in',
+        error: _error,
+        child: Form(
+          key: _phoneKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PhoneFormField(onChanged: (number) => _phoneNumber = number),
+              const SizedBox(height: 8),
+              LoadingButton(
+                label: 'continue',
+                onPressed: _checkPhone,
+                loading: _loading,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Login step (member found)
+    if (_phoneStatus == 'member') {
+      return JuicyGate(
+        headline: '👋 hey, welcome back!',
+        subtext: 'pop in your password and we\'ll get you in',
+        error: _error,
+        child: Form(
+          key: _loginKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _passwordCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                obscureText: true,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Required';
+                  return null;
+                },
+                onFieldSubmitted: (_) => _login(),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  LoadingButton(
+                    label: 'log in',
+                    onPressed: _login,
+                    loading: _loading,
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () => setState(() => _phoneStatus = null),
+                    child: const Text('back'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Request in review
+    if (_phoneStatus == 'pending') {
+      return JuicyGate(
+        headline: '⏳ your request is in review',
+        subtext: 'hang tight — we\'ll get back to you soon',
+        error: null,
+        child: TextButton(
+          onPressed: () => setState(() => _phoneStatus = null),
+          child: const Text('back'),
+        ),
+      );
+    }
+
+    // Not a member — prompt to join
+    return JuicyGate(
+      headline: '🌱 not a member yet?',
+      subtext: 'request to join the collective and unlock all the good stuff',
+      error: null,
+      child: Row(
+        children: [
+          FilledButton(
+            onPressed: () => context.push('/join'),
+            child: const Text('request to join'),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () => setState(() => _phoneStatus = null),
+            child: const Text('back'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class JuicyGate extends StatelessWidget {
+  const JuicyGate({
+    super.key,
+    required this.headline,
+    required this.subtext,
+    required this.child,
+    required this.error,
+  });
+
+  final String headline;
+  final String subtext;
+  final Widget child;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            headline,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtext,
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          child,
+          if (error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              error!,
+              style: TextStyle(fontSize: 13, color: theme.colorScheme.error),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

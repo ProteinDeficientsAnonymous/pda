@@ -22,6 +22,7 @@ abstract class Permission {
   static const editJoinQuestions = 'edit_join_questions';
   static const manageSurveys = 'manage_surveys';
   static const tagOfficialEvent = 'tag_official_event';
+  static const manageDocs = 'manage_documents';
 }
 
 abstract class JoinRequestStatus {
@@ -33,6 +34,7 @@ abstract class JoinRequestStatus {
 abstract class PageVisibility {
   static const public_ = 'public';
   static const membersOnly = 'members_only';
+  static const inviteOnly = 'invite_only';
 }
 
 abstract class FieldType {
@@ -44,10 +46,20 @@ abstract class FieldType {
   static const number = 'number';
   static const yesNo = 'yes_no';
   static const rating = 'rating';
+  static const datetimePoll = 'datetime_poll';
+}
+
+abstract class PollAvailability {
+  static const yes = 'yes';
+  static const maybe = 'maybe';
 }
 
 abstract class RoleName {
   static const admin = 'admin';
+}
+
+abstract class NotificationType {
+  static const eventInvite = 'event_invite';
 }
 
 abstract class EventDetailLabel {

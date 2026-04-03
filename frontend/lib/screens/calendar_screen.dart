@@ -8,9 +8,9 @@ import 'package:pda/screens/calendar/event_detail_panel.dart';
 import 'package:pda/screens/calendar/list_view.dart';
 import 'package:pda/screens/calendar/month_view.dart';
 import 'package:pda/screens/calendar/week_view.dart';
-import 'package:pda/services/api_error.dart';
+import 'package:pda/screens/guest_add_event_dialog.dart';
+import 'package:pda/utils/create_datetime_poll.dart';
 import 'package:pda/widgets/app_scaffold.dart';
-import 'package:pda/widgets/phone_form_field.dart';
 
 enum _CalendarView { month, week, day, list }
 
@@ -46,13 +46,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _openCreateEvent() async {
-    final user = ref.read(authProvider).valueOrNull;
+    final user = ref.read(authProvider).value;
 
     if (user == null) {
       if (!mounted) return;
       final loggedIn = await showDialog<bool>(
         context: context,
-        builder: (_) => const _GuestAddEventDialog(),
+        builder: (_) => const GuestAddEventDialog(),
       );
       if (loggedIn != true || !mounted) return;
     }
@@ -73,7 +73,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       if (result.photo != null) {
         await uploadEventPhoto(ref, eventId, result.photo!);
       }
+      if (result.datetimePollOptions.isNotEmpty) {
+        await createDatetimePoll(
+          ref: ref,
+          eventId: eventId,
+          eventTitle: result.data['title'] as String,
+          options: result.datetimePollOptions,
+        );
+      }
       ref.invalidate(eventsProvider);
+      if (mounted) context.push('/events/$eventId');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -114,10 +123,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Expanded(
             child: eventsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error:
-                  (e, _) => const Center(
-                    child: Text('couldn\'t load events — try refreshing'),
-                  ),
+              error: (e, _) => const Center(
+                child: Text('couldn\'t load events — try refreshing'),
+              ),
               data: (events) => _buildView(events),
             ),
           ),
@@ -209,189 +217,6 @@ class _CalendarToolbar extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Guest "add event" dialog — shown when an unauthenticated user taps the FAB.
-// Walks through: phone check → login (if member) or join redirect (if not).
-// ---------------------------------------------------------------------------
-
-enum _GuestStep { phone, password }
-
-class _GuestAddEventDialog extends ConsumerStatefulWidget {
-  const _GuestAddEventDialog();
-
-  @override
-  ConsumerState<_GuestAddEventDialog> createState() =>
-      _GuestAddEventDialogState();
-}
-
-class _GuestAddEventDialogState extends ConsumerState<_GuestAddEventDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _passwordController = TextEditingController();
-  String _phoneNumber = '';
-  _GuestStep _step = _GuestStep.phone;
-  bool _loading = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _checkPhone() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final api = ref.read(apiClientProvider);
-      final resp = await api.post(
-        '/api/community/check-phone/',
-        data: {'phone_number': _phoneNumber},
-      );
-      final exists = (resp.data as Map<String, dynamic>)['exists'] as bool;
-      if (!mounted) return;
-      if (exists) {
-        setState(() {
-          _step = _GuestStep.password;
-          _loading = false;
-        });
-      } else {
-        Navigator.of(context).pop();
-        context.go('/join');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = ApiError.from(e).message;
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      await ref
-          .read(authProvider.notifier)
-          .login(_phoneNumber, _passwordController.text);
-      if (!mounted) return;
-      final authState = ref.read(authProvider);
-      if (authState.hasError) {
-        setState(() {
-          _error = ApiError.from(authState.error!).message;
-          _loading = false;
-        });
-        return;
-      }
-      // Logged in — signal success to caller, which will open the event form.
-      Navigator.of(context).pop(true);
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = ApiError.from(e).message;
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isPhone = _step == _GuestStep.phone;
-
-    return AlertDialog(
-      title: const Text('add an event'),
-      content: SizedBox(
-        width: 360,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isPhone
-                    ? 'you need to be logged in to add events — pop in your number and we\'ll sort you out'
-                    : 'welcome back! enter your password to get in',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (isPhone)
-                PhoneFormField(
-                  onChanged: (v) => setState(() => _phoneNumber = v),
-                  helperText:
-                      'not a member yet? we\'ll send you to the join form',
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _loading ? null : _checkPhone(),
-                )
-              else
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  autofillHints: const [AutofillHints.password],
-                  validator:
-                      (v) => (v == null || v.isEmpty) ? 'Required' : null,
-                  onFieldSubmitted: (_) => _loading ? null : _login(),
-                ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _error!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('cancel'),
-        ),
-        if (_step == _GuestStep.password)
-          TextButton(
-            onPressed:
-                _loading
-                    ? null
-                    : () => setState(() {
-                      _step = _GuestStep.phone;
-                      _error = null;
-                    }),
-            child: const Text('back'),
-          ),
-        FilledButton(
-          onPressed: _loading ? null : (isPhone ? _checkPhone : _login),
-          child:
-              _loading
-                  ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                  : Text(isPhone ? 'continue' : 'log in'),
-        ),
-      ],
     );
   }
 }

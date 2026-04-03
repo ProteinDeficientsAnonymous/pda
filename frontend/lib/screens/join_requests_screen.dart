@@ -62,13 +62,12 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
   ) async {
     await showDialog<void>(
       context: context,
-      builder:
-          (_) => ApprovalCredentialsDialog(
-            title: '$displayName approved! 🎉',
-            body: 'share this login link with them:',
-            magicLinkToken: magicLinkToken,
-            phoneNumber: phoneNumber,
-          ),
+      builder: (_) => ApprovalCredentialsDialog(
+        title: '$displayName approved! 🎉',
+        body: 'share this login link with them:',
+        magicLinkToken: magicLinkToken,
+        phoneNumber: phoneNumber,
+      ),
     );
   }
 
@@ -87,12 +86,9 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
           Expanded(
             child: requestsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error:
-                  (e, _) => const Center(
-                    child: Text(
-                      'couldn\'t load join requests — try refreshing',
-                    ),
-                  ),
+              error: (e, _) => const Center(
+                child: Text('couldn\'t load join requests — try refreshing'),
+              ),
               data: (requests) {
                 final filtered = _applyFilter(requests);
                 if (filtered.isEmpty) {
@@ -110,24 +106,21 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
                   padding: const EdgeInsets.all(24),
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder:
-                      (context, index) => _JoinRequestCard(
-                        request: filtered[index],
-                        onApprove:
-                            () => _updateStatus(
-                              filtered[index].id,
-                              JoinRequestStatus.approved,
-                              filtered[index].displayName,
-                              filtered[index].phoneNumber,
-                            ),
-                        onReject:
-                            () => _updateStatus(
-                              filtered[index].id,
-                              JoinRequestStatus.rejected,
-                              filtered[index].displayName,
-                              filtered[index].phoneNumber,
-                            ),
-                      ),
+                  itemBuilder: (context, index) => _JoinRequestCard(
+                    request: filtered[index],
+                    onApprove: () => _updateStatus(
+                      filtered[index].id,
+                      JoinRequestStatus.approved,
+                      filtered[index].displayName,
+                      filtered[index].phoneNumber,
+                    ),
+                    onReject: () => _updateStatus(
+                      filtered[index].id,
+                      JoinRequestStatus.rejected,
+                      filtered[index].displayName,
+                      filtered[index].phoneNumber,
+                    ),
+                  ),
                 );
               },
             ),
@@ -150,16 +143,15 @@ class _FilterChips extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Wrap(
         spacing: 8,
-        children:
-            _filters.map((filter) {
-              final isSelected = selected == filter;
-              return FilterChip(
-                label: Text(filter),
-                selected: isSelected,
-                showCheckmark: false,
-                onSelected: (_) => onSelected(filter),
-              );
-            }).toList(),
+        children: _filters.map((filter) {
+          final isSelected = selected == filter;
+          return FilterChip(
+            label: Text(filter),
+            selected: isSelected,
+            showCheckmark: false,
+            onSelected: (_) => onSelected(filter),
+          );
+        }).toList(),
       ),
     );
   }
