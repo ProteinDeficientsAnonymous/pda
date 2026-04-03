@@ -37,6 +37,40 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
   }
 
+  Future<void> _confirmAndSetRsvp(String status, String label) async {
+    final user = ref.read(authProvider).valueOrNull;
+    final isCoHost =
+        user != null &&
+        (widget.event.coHostIds.contains(user.id) ||
+            widget.event.createdById == user.id);
+
+    if (isCoHost) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              title: const Text('change your rsvp?'),
+              content: Text(
+                'you\'re a co-host of this event — are you sure you want to rsvp as "$label"?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('yes, update'),
+                ),
+              ],
+            ),
+      );
+      if (confirmed != true) return;
+    }
+
+    await _setRsvp(status);
+  }
+
   Future<void> _removeRsvp() async {
     setState(() => _loading = true);
     try {
@@ -116,7 +150,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                     () =>
                         myRsvp == RsvpStatus.maybe
                             ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.maybe),
+                            : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
               ),
               _RsvpToggleButton(
                 label: "can't make it",
@@ -128,7 +162,10 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                     () =>
                         myRsvp == RsvpStatus.cantGo
                             ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.cantGo),
+                            : _confirmAndSetRsvp(
+                              RsvpStatus.cantGo,
+                              "can't make it",
+                            ),
               ),
             ],
           ),

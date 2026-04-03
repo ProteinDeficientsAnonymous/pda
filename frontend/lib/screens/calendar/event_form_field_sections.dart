@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
 
+/// A tappable date+time summary row that expands/collapses an inline picker.
+///
+/// Shows a date chip and a time chip side by side. Tapping either chip (or
+/// anywhere in the row) calls [onTap] to toggle [isExpanded]. The chevron
+/// icon rotates to indicate state.
 class EventFormDateTimeRow extends StatelessWidget {
   final String label;
   final String date;
   final String time;
-  final bool isActive;
-  final VoidCallback onDateTap;
-  final VoidCallback onTimeTap;
+  final VoidCallback onTap;
+  final bool isExpanded;
 
   const EventFormDateTimeRow({
     super.key,
     required this.label,
     required this.date,
     required this.time,
-    required this.onDateTap,
-    required this.onTimeTap,
-    this.isActive = false,
+    required this.onTap,
+    this.isExpanded = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final chipColor =
-        isActive
+        isExpanded
             ? theme.colorScheme.primaryContainer
             : theme.colorScheme.surfaceContainerHighest;
     final textStyle = theme.textTheme.bodyMedium;
@@ -37,13 +40,42 @@ class EventFormDateTimeRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Row(
-          children: [
-            Flexible(
-              child: InkWell(
-                onTap: onDateTap,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
+        Semantics(
+          button: true,
+          label: '$label date and time',
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: chipColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, size: 14),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            date,
+                            style: textStyle,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
@@ -55,44 +87,21 @@ class EventFormDateTimeRow extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.calendar_today_outlined, size: 14),
+                      const Icon(Icons.schedule_outlined, size: 14),
                       const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          date,
-                          style: textStyle,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      Text(time, style: textStyle),
                     ],
                   ),
                 ),
-              ),
+                const SizedBox(width: 4),
+                AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: const Icon(Icons.expand_more, size: 18),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: onTimeTap,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: chipColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.schedule_outlined, size: 14),
-                    const SizedBox(width: 6),
-                    Text(time, style: textStyle),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );

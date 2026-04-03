@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/models/event_poll.dart';
 import 'package:pda/providers/event_poll_provider.dart';
+import 'package:pda/widgets/date_time_picker_dialog.dart';
 import 'package:pda/widgets/poll_widgets.dart';
 
 /// Inline editor for an active poll's options — shown inside EventFormDialog
@@ -27,25 +28,13 @@ class _LivePollEditorState extends ConsumerState<LivePollEditor> {
 
   Future<void> _addOption() async {
     final now = DateTime.now();
-    final date = await showDatePicker(
+    final dt = await showDateTimePicker(
       context: context,
-      initialDate: now,
+      initialDateTime: now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 2),
     );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(now),
-    );
-    if (time == null || !mounted) return;
-    final dt = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
+    if (dt == null || !mounted) return;
     setState(() => _adding = true);
     try {
       await addPollOption(ref: ref, eventId: widget.eventId, datetime: dt);

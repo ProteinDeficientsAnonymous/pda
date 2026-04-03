@@ -16,6 +16,8 @@ import 'package:pda/screens/calendar/event_form_models.dart';
 import 'package:pda/screens/calendar/co_host_picker.dart';
 import 'package:pda/screens/calendar/live_poll_editor.dart';
 import 'package:pda/screens/calendar/event_form_field_sections.dart';
+import 'package:pda/widgets/date_time_picker.dart';
+import 'package:pda/widgets/date_time_picker_dialog.dart';
 
 export 'package:pda/screens/calendar/event_form_result.dart'
     show EventFormResult;
@@ -56,8 +58,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late Map<String, String> _coHostNames;
   late Set<String> _invitedUserIds;
   late Map<String, String> _invitedUserNames;
-  // which field the inline calendar is editing: 'start', 'end', or null (hidden)
-  String? _calendarTarget;
+  bool _startPickerExpanded = false;
+  bool _endPickerExpanded = false;
   XFile? _selectedPhoto;
   bool _removePhoto = false;
   bool _removingPoll = false;
@@ -79,7 +81,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _description = TextEditingController(text: e.description);
       _location = TextEditingController(text: e.location);
       _whatsappLink = TextEditingController(text: e.whatsappLink);
-      _partifulLink = TextEditingController(text: e.partifulLink);
+      _partifulLink = TextEditingController(text: e.partifulLink)
+        ..addListener(() => setState(() {}));
       _otherLink = TextEditingController(text: e.otherLink);
       _price = TextEditingController(text: e.price);
       _venmoLink = TextEditingController(
@@ -118,7 +121,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _description = TextEditingController();
       _location = TextEditingController();
       _whatsappLink = TextEditingController();
-      _partifulLink = TextEditingController();
+      _partifulLink =
+          TextEditingController()..addListener(() => setState(() {}));
       _otherLink = TextEditingController();
       _price = TextEditingController();
       _venmoLink = TextEditingController();
@@ -156,73 +160,17 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     super.dispose();
   }
 
-  void _toggleCalendar(String target) {
-    setState(() => _calendarTarget = _calendarTarget == target ? null : target);
-  }
-
-  void _onCalendarDaySelected(DateTime day) {
+  void _onStartChanged(DateTime dt) {
     setState(() {
-      if (_calendarTarget == 'start') {
-        _start = DateTime(
-          day.year,
-          day.month,
-          day.day,
-          _start.hour,
-          _start.minute,
-        );
-        if (_end != null && _end!.isBefore(_start)) {
-          _end = _start.add(const Duration(hours: 1));
-        }
-      } else {
-        final base = _end ?? _start;
-        _end = DateTime(day.year, day.month, day.day, base.hour, base.minute);
-        if (_end!.isBefore(_start)) {
-          _start = _end!.subtract(const Duration(hours: 1));
-        }
-      }
-      _calendarTarget = null;
-    });
-  }
-
-  Future<void> _pickStartTime() async {
-    setState(() => _calendarTarget = null);
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_start),
-    );
-    if (picked == null) return;
-    setState(() {
-      _start = DateTime(
-        _start.year,
-        _start.month,
-        _start.day,
-        picked.hour,
-        picked.minute,
-      );
+      _start = dt;
       if (_end != null && _end!.isBefore(_start)) {
         _end = _start.add(const Duration(hours: 1));
       }
     });
   }
 
-  Future<void> _pickEndTime() async {
-    setState(() => _calendarTarget = null);
-    final base = _end ?? _start;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(base),
-    );
-    if (picked == null) return;
-    final dateBase = _end ?? _start;
-    setState(() {
-      _end = DateTime(
-        dateBase.year,
-        dateBase.month,
-        dateBase.day,
-        picked.hour,
-        picked.minute,
-      );
-    });
+  void _onEndChanged(DateTime dt) {
+    setState(() => _end = dt);
   }
 
   String _normalizeUrl(String raw) {
@@ -286,22 +234,15 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
 
   Future<void> _addDatetimePollOption() async {
     final now = DateTime.now();
-    final date = await showDatePicker(
+    final dt = await showDateTimePicker(
       context: context,
-      initialDate: now,
+      initialDateTime: now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 2),
     );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(now),
-    );
-    if (time == null || !mounted) return;
+    if (dt == null || !mounted) return;
     setState(() {
-      _datetimePollOptions.add(
-        DateTime(date.year, date.month, date.day, time.hour, time.minute),
-      );
+      _datetimePollOptions.add(dt);
     });
   }
 
@@ -552,21 +493,21 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
         label: 'start',
         date: dateFmt(_start),
         time: formatTime(_start),
-        isActive: _calendarTarget == 'start',
-        onDateTap: () => _toggleCalendar('start'),
-        onTimeTap: _pickStartTime,
+        isExpanded: _startPickerExpanded,
+        onTap:
+            () => setState(() => _startPickerExpanded = !_startPickerExpanded),
       ),
-      const SizedBox(height: 8),
-      ..._buildEndTimeSection(dateFmt),
-      if (_calendarTarget != null) ...[
+      if (_startPickerExpanded) ...[
         const SizedBox(height: 8),
-        CalendarDatePicker(
-          initialDate: _calendarTarget == 'start' ? _start : (_end ?? _start),
+        DateTimePicker(
+          initialDateTime: _start,
+          onDateTimeChanged: _onStartChanged,
           firstDate: DateTime(2000),
           lastDate: DateTime(2100),
-          onDateChanged: _onCalendarDaySelected,
         ),
       ],
+      const SizedBox(height: 8),
+      ..._buildEndTimeSection(dateFmt),
     ];
   }
 
@@ -611,9 +552,10 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
               label: 'end',
               date: dateFmt(_end!),
               time: formatTime(_end!),
-              isActive: _calendarTarget == 'end',
-              onDateTap: () => _toggleCalendar('end'),
-              onTimeTap: _pickEndTime,
+              isExpanded: _endPickerExpanded,
+              onTap:
+                  () =>
+                      setState(() => _endPickerExpanded = !_endPickerExpanded),
             ),
           ),
           IconButton(
@@ -623,20 +565,29 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           ),
         ],
       ),
+      if (_endPickerExpanded) ...[
+        const SizedBox(height: 8),
+        DateTimePicker(
+          initialDateTime: _end!,
+          onDateTimeChanged: _onEndChanged,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        ),
+      ],
     ];
   }
 
   void _addEndTime() {
     setState(() {
       _end = _start.add(const Duration(hours: 1));
-      _calendarTarget = null;
+      _endPickerExpanded = true;
     });
   }
 
   void _clearEndTime() {
     setState(() {
       _end = null;
-      _calendarTarget = null;
+      _endPickerExpanded = false;
     });
   }
 
@@ -888,7 +839,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           border: const OutlineInputBorder(),
           prefixIcon: const Icon(Icons.celebration_outlined),
           helperText:
-              _rsvpEnabled
+              _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
                   ? 'consider using app RSVPs instead of partiful'
                   : null,
           helperStyle: TextStyle(color: theme.colorScheme.tertiary),

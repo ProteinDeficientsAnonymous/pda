@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/config/constants.dart';
+import 'package:pda/widgets/date_time_picker_dialog.dart';
 
 class SurveyQuestionFormResult {
   final String label;
@@ -123,22 +124,15 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
 
   Future<void> _addDatetimeOption() async {
     final now = DateTime.now();
-    final date = await showDatePicker(
+    final dt = await showDateTimePicker(
       context: context,
-      initialDate: now,
+      initialDateTime: now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 2),
     );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(now),
-    );
-    if (time == null || !mounted) return;
+    if (dt == null || !mounted) return;
     setState(() {
-      _datetimeOptions.add(
-        DateTime(date.year, date.month, date.day, time.hour, time.minute),
-      );
+      _datetimeOptions.add(dt);
     });
   }
 
