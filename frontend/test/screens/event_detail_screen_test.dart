@@ -32,9 +32,8 @@ Widget _buildSubject({Event? event, AuthNotifier? authNotifier}) {
     routes: [
       GoRoute(
         path: '/events/:id',
-        builder:
-            (_, state) =>
-                EventDetailScreen(eventId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            EventDetailScreen(eventId: state.pathParameters['id']!),
       ),
       GoRoute(path: '/login', builder: (_, __) => const SizedBox()),
     ],
@@ -44,10 +43,9 @@ Widget _buildSubject({Event? event, AuthNotifier? authNotifier}) {
     overrides: [
       eventsProvider.overrideWith((_) async => [resolvedEvent]),
       eventDetailProvider.overrideWith(
-        (ref, id) async =>
-            id == resolvedEvent.id
-                ? resolvedEvent
-                : (throw Exception('not found')),
+        (ref, id) async => id == resolvedEvent.id
+            ? resolvedEvent
+            : (throw Exception('not found')),
       ),
       authProvider.overrideWith(() => authNotifier ?? _GuestAuthNotifier()),
       silentNotificationsOverride,
@@ -145,9 +143,8 @@ void main() {
       routes: [
         GoRoute(
           path: '/events/:id',
-          builder:
-              (_, state) =>
-                  EventDetailScreen(eventId: state.pathParameters['id']!),
+          builder: (_, state) =>
+              EventDetailScreen(eventId: state.pathParameters['id']!),
         ),
       ],
       initialLocation: '/events/nonexistent',

@@ -30,49 +30,48 @@ class _GuestChipState extends State<GuestChip> {
   void _showOverlay(String phone) {
     if (_overlay != null) return;
     _overlay = OverlayEntry(
-      builder:
-          (_) => GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _removeOverlay,
-            child: Stack(
-              children: [
-                CompositedTransformFollower(
-                  link: _link,
-                  offset: const Offset(0, 20),
-                  child: Material(
-                    elevation: 4,
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey.shade900,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
+      builder: (_) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _removeOverlay,
+        child: Stack(
+          children: [
+            CompositedTransformFollower(
+              link: _link,
+              offset: const Offset(0, 20),
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey.shade900,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.smartphone_outlined,
+                        size: 13,
+                        color: Colors.grey.shade300,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.smartphone_outlined,
-                            size: 13,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(width: 6),
-                          SelectableText(
-                            phone,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontFamily: 'monospace',
-                              color: Colors.grey.shade100,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 6),
+                      SelectableText(
+                        phone,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'monospace',
+                          color: Colors.grey.shade100,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
+        ),
+      ),
     );
     Overlay.of(context).insert(_overlay!);
   }

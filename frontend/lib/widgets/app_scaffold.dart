@@ -24,12 +24,11 @@ class AppScaffold extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
 
-    final body =
-        maxWidth != null
-            ? _CenteredBody(maxWidth: maxWidth!, child: child)
-            : child;
+    final body = maxWidth != null
+        ? _CenteredBody(maxWidth: maxWidth!, child: child)
+        : child;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,17 +36,16 @@ class AppScaffold extends ConsumerWidget {
         title: _LogoButton(onTap: () => _showPdaMenu(context, user)),
         actions: [if (user != null) const NotificationBell(), ...?actions],
       ),
-      body:
-          enableFeedback && user != null
-              ? Stack(
-                children: [
-                  body,
-                  FeedbackButton(
-                    currentRoute: GoRouterState.of(context).uri.toString(),
-                  ),
-                ],
-              )
-              : body,
+      body: enableFeedback && user != null
+          ? Stack(
+              children: [
+                body,
+                FeedbackButton(
+                  currentRoute: GoRouterState.of(context).uri.toString(),
+                ),
+              ],
+            )
+          : body,
       bottomNavigationBar: _BottomNav(user: user),
     );
   }

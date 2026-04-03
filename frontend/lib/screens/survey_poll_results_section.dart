@@ -47,23 +47,22 @@ class _SurveyPollResultsSectionState
     final fmt = DateFormat('EEE, MMM d · h:mm a').format(winningDt.toLocal());
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('choose this time?'),
-            content: Text(
-              '${fmt.toLowerCase()}\n\nThis will set the event date and close the poll. This cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('confirm'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('choose this time?'),
+        content: Text(
+          '${fmt.toLowerCase()}\n\nThis will set the event date and close the poll. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('confirm'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true || !mounted) return;
 
@@ -142,155 +141,135 @@ class _SurveyPollResultsSectionState
           const SizedBox(height: 12),
           talliesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error:
-                (_, __) => const Text(
-                  'couldn\'t load tallies',
-                  style: TextStyle(color: Colors.grey),
-                ),
+            error: (_, __) => const Text(
+              'couldn\'t load tallies',
+              style: TextStyle(color: Colors.grey),
+            ),
             data: (tallies) {
-              final pollQuestions =
-                  widget.survey.questions
-                      .where((q) => q.fieldType == FieldType.datetimePoll)
-                      .toList();
+              final pollQuestions = widget.survey.questions
+                  .where((q) => q.fieldType == FieldType.datetimePoll)
+                  .toList();
 
               return Column(
-                children:
-                    pollQuestions.map((q) {
-                      final tally =
-                          tallies
-                              .where((t) => t.questionId == q.id)
-                              .firstOrNull;
-                      final total = tally?.totalResponses ?? 0;
-                      final winnerIso =
-                          widget.survey.pollResult?.winningDatetime
-                              .toUtc()
-                              .toIso8601String();
+                children: pollQuestions.map((q) {
+                  final tally = tallies
+                      .where((t) => t.questionId == q.id)
+                      .firstOrNull;
+                  final total = tally?.totalResponses ?? 0;
+                  final winnerIso = widget.survey.pollResult?.winningDatetime
+                      .toUtc()
+                      .toIso8601String();
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (pollQuestions.length > 1) ...[
-                            Text(
-                              q.label,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          ...q.options.map((iso) {
-                            final count = tally?.totalForOption(iso) ?? 0;
-                            final fraction = total > 0 ? count / total : 0.0;
-                            final label = formatPollOptionShort(iso);
-                            final isWinner =
-                                winnerIso != null &&
-                                normalizeIsoStr(iso) ==
-                                    normalizeIsoStr(winnerIso);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (pollQuestions.length > 1) ...[
+                        Text(
+                          q.label,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      ...q.options.map((iso) {
+                        final count = tally?.totalForOption(iso) ?? 0;
+                        final fraction = total > 0 ? count / total : 0.0;
+                        final label = formatPollOptionShort(iso);
+                        final isWinner =
+                            winnerIso != null &&
+                            normalizeIsoStr(iso) == normalizeIsoStr(winnerIso);
 
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
                                       children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                label,
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight:
-                                                      isWinner
-                                                          ? FontWeight.w600
-                                                          : FontWeight.normal,
-                                                ),
-                                              ),
+                                        Expanded(
+                                          child: Text(
+                                            label,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: isWinner
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
                                             ),
-                                            if (isWinner)
-                                              Icon(
-                                                Icons.check_circle_rounded,
-                                                size: 14,
-                                                color:
-                                                    theme.colorScheme.primary,
-                                              ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '$count',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: theme
-                                                    .colorScheme
-                                                    .onSurface
-                                                    .withValues(alpha: 0.6),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            3,
                                           ),
-                                          child: LinearProgressIndicator(
-                                            value: fraction,
-                                            minHeight: 5,
-                                            backgroundColor: theme
-                                                .colorScheme
-                                                .outline
-                                                .withValues(alpha: 0.15),
-                                            color:
-                                                isWinner
-                                                    ? theme.colorScheme.primary
-                                                    : theme
-                                                        .colorScheme
-                                                        .secondary,
+                                        ),
+                                        if (isWinner)
+                                          Icon(
+                                            Icons.check_circle_rounded,
+                                            size: 14,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '$count',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  if (!isFinalized) ...[
-                                    const SizedBox(width: 12),
-                                    _finalizing
-                                        ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                        : TextButton(
-                                          onPressed:
-                                              () => _confirmFinalize(
-                                                DateTime.parse(iso),
-                                              ),
-                                          style: TextButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            minimumSize: Size.zero,
-                                            tapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                          ),
-                                          child: const Text(
-                                            'choose this time',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
+                                    const SizedBox(height: 4),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(3),
+                                      child: LinearProgressIndicator(
+                                        value: fraction,
+                                        minHeight: 5,
+                                        backgroundColor: theme
+                                            .colorScheme
+                                            .outline
+                                            .withValues(alpha: 0.15),
+                                        color: isWinner
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.secondary,
+                                      ),
+                                    ),
                                   ],
-                                ],
+                                ),
                               ),
-                            );
-                          }),
-                        ],
-                      );
-                    }).toList(),
+                              if (!isFinalized) ...[
+                                const SizedBox(width: 12),
+                                _finalizing
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : TextButton(
+                                        onPressed: () => _confirmFinalize(
+                                          DateTime.parse(iso),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: const Text(
+                                          'choose this time',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  );
+                }).toList(),
               );
             },
           ),

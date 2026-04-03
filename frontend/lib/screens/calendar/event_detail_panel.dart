@@ -27,17 +27,16 @@ void showEventDetail(BuildContext context, Event event) {
 void _showSidePanel(BuildContext context, Event event) {
   showDialog(
     context: context,
-    builder:
-        (ctx) => Align(
-          alignment: Alignment.centerRight,
-          child: Material(
-            child: SizedBox(
-              width: 420,
-              height: double.infinity,
-              child: EventDetailContent(event: event),
-            ),
-          ),
+    builder: (ctx) => Align(
+      alignment: Alignment.centerRight,
+      child: Material(
+        child: SizedBox(
+          width: 420,
+          height: double.infinity,
+          child: EventDetailContent(event: event),
         ),
+      ),
+    ),
   );
 }
 
@@ -91,7 +90,7 @@ class EventDetailContent extends ConsumerWidget {
     // Fetch the full event detail (with links, RSVP, guests) from the detail
     // endpoint. Falls back to the list-level event while loading.
     final detailAsync = ref.watch(eventDetailProvider(event.id));
-    final liveEvent = detailAsync.valueOrNull ?? event;
+    final liveEvent = detailAsync.value ?? event;
 
     final start = liveEvent.startDatetime.toLocal();
     final end = liveEvent.endDatetime?.toLocal();
@@ -144,10 +143,9 @@ class EventDetailContent extends ConsumerWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.secondaryContainer,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.secondaryContainer,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -155,10 +153,9 @@ class EventDetailContent extends ConsumerWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onSecondaryContainer,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSecondaryContainer,
                                   ),
                                 ),
                               ),
@@ -170,10 +167,9 @@ class EventDetailContent extends ConsumerWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.tertiaryContainer,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.tertiaryContainer,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -181,10 +177,9 @@ class EventDetailContent extends ConsumerWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onTertiaryContainer,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onTertiaryContainer,
                                   ),
                                 ),
                               ),
@@ -196,10 +191,9 @@ class EventDetailContent extends ConsumerWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.errorContainer,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.errorContainer,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -207,10 +201,9 @@ class EventDetailContent extends ConsumerWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onErrorContainer,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
                                   ),
                                 ),
                               ),
@@ -228,10 +221,9 @@ class EventDetailContent extends ConsumerWidget {
                 tooltip: 'share event',
                 icon: AppIcons.share,
                 onPressed: () {
-                  final link =
-                      Uri.base
-                          .replace(path: '/events/${liveEvent.id}', query: '')
-                          .toString();
+                  final link = Uri.base
+                      .replace(path: '/events/${liveEvent.id}', query: '')
+                      .toString();
                   shareUrl(link, subject: liveEvent.title);
                 },
               ),
@@ -251,21 +243,19 @@ class EventDetailContent extends ConsumerWidget {
           const SizedBox(height: 16),
           EventSectionCard(
             label: EventDetailLabel.when,
-            child:
-                liveEvent.hasPoll
-                    ? EmbeddedEventPoll(event: liveEvent)
-                    : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children:
-                          liveEvent.datetimeTbd
-                              ? [
-                                const Text(
-                                  'date & time tbd',
-                                  style: TextStyle(fontSize: 15, height: 1.4),
-                                ),
-                              ]
-                              : _buildDateTimeRows(formatDate, start, end),
-                    ),
+            child: liveEvent.hasPoll
+                ? EmbeddedEventPoll(event: liveEvent)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: liveEvent.datetimeTbd
+                        ? [
+                            const Text(
+                              'date & time tbd',
+                              style: TextStyle(fontSize: 15, height: 1.4),
+                            ),
+                          ]
+                        : _buildDateTimeRows(formatDate, start, end),
+                  ),
           ),
           if (liveEvent.description.isNotEmpty) ...[
             const SizedBox(height: 12),

@@ -41,15 +41,14 @@ class _MembersTabState extends ConsumerState<MembersTab> {
     var filtered = [...users];
     if (_query.isNotEmpty) {
       final q = _query.toLowerCase();
-      filtered =
-          users
-              .where(
-                (u) =>
-                    u.displayName.toLowerCase().contains(q) ||
-                    u.phoneNumber.contains(q) ||
-                    u.email.toLowerCase().contains(q),
-              )
-              .toList();
+      filtered = users
+          .where(
+            (u) =>
+                u.displayName.toLowerCase().contains(q) ||
+                u.phoneNumber.contains(q) ||
+                u.email.toLowerCase().contains(q),
+          )
+          .toList();
     }
     filtered.sort((a, b) {
       return switch (_sort) {
@@ -87,17 +86,16 @@ class _MembersTabState extends ConsumerState<MembersTab> {
                     horizontal: 12,
                     vertical: 10,
                   ),
-                  suffixIcon:
-                      _query.isNotEmpty
-                          ? IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            tooltip: 'clear search',
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                          )
-                          : null,
+                  suffixIcon: _query.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          tooltip: 'clear search',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
+                        )
+                      : null,
                 ),
                 onChanged: (v) => setState(() => _query = v),
               ),
@@ -155,10 +153,9 @@ class _MembersTabState extends ConsumerState<MembersTab> {
         Expanded(
           child: usersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error:
-                (e, _) => const Center(
-                  child: Text('couldn\'t load members — try refreshing'),
-                ),
+            error: (e, _) => const Center(
+              child: Text('couldn\'t load members — try refreshing'),
+            ),
             data: (users) {
               final filtered = _filterAndSort(users);
               if (filtered.isEmpty) {
@@ -185,18 +182,17 @@ class _MembersTabState extends ConsumerState<MembersTab> {
                   ),
                 );
               }
-              final allRoles = rolesAsync.valueOrNull ?? [];
+              final allRoles = rolesAsync.value ?? [];
               return ListView.separated(
                 padding: const EdgeInsets.all(24),
                 itemCount: filtered.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder:
-                    (context, index) => MemberCard(
-                      user: filtered[index],
-                      allRoles: allRoles,
-                      canManageRoles: widget.canManageRoles,
-                      canManageUsers: widget.canManageUsers,
-                    ),
+                itemBuilder: (context, index) => MemberCard(
+                  user: filtered[index],
+                  allRoles: allRoles,
+                  canManageRoles: widget.canManageRoles,
+                  canManageUsers: widget.canManageUsers,
+                ),
               );
             },
           ),
@@ -207,7 +203,7 @@ class _MembersTabState extends ConsumerState<MembersTab> {
 
   Future<void> _showAddMemberDialog(BuildContext context, WidgetRef ref) async {
     final rolesAsync = ref.read(rolesProvider);
-    final allRoles = rolesAsync.valueOrNull ?? [];
+    final allRoles = rolesAsync.value ?? [];
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => AddMemberDialog(allRoles: allRoles),
@@ -241,12 +237,11 @@ class _MembersTabState extends ConsumerState<MembersTab> {
   }) {
     showDialog<void>(
       context: context,
-      builder:
-          (_) => ApprovalCredentialsDialog(
-            title: 'member created',
-            body: '$displayName has been added — share their login link:',
-            magicLinkToken: magicLinkToken,
-          ),
+      builder: (_) => ApprovalCredentialsDialog(
+        title: 'member created',
+        body: '$displayName has been added — share their login link:',
+        magicLinkToken: magicLinkToken,
+      ),
     );
   }
 

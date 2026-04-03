@@ -38,10 +38,9 @@ class _JoinFormQuestionDialogState extends State<JoinFormQuestionDialog> {
     _labelCtrl = TextEditingController(text: widget.question?.label ?? '');
     _fieldType = widget.question?.fieldType ?? FieldType.text;
     _required = widget.question?.required ?? false;
-    _optionCtrls =
-        (widget.question?.options ?? [])
-            .map((o) => TextEditingController(text: o))
-            .toList();
+    _optionCtrls = (widget.question?.options ?? [])
+        .map((o) => TextEditingController(text: o))
+        .toList();
   }
 
   @override
@@ -66,13 +65,12 @@ class _JoinFormQuestionDialogState extends State<JoinFormQuestionDialog> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    final options =
-        _fieldType == FieldType.select
-            ? _optionCtrls
-                .map((c) => c.text.trim())
-                .where((o) => o.isNotEmpty)
-                .toList()
-            : <String>[];
+    final options = _fieldType == FieldType.select
+        ? _optionCtrls
+              .map((c) => c.text.trim())
+              .where((o) => o.isNotEmpty)
+              .toList()
+        : <String>[];
     Navigator.of(context).pop(
       JoinFormQuestionResult(
         label: _labelCtrl.text.trim(),
@@ -116,8 +114,8 @@ class _JoinFormQuestionDialogState extends State<JoinFormQuestionDialog> {
                     child: Text('Dropdown'),
                   ),
                 ],
-                onChanged:
-                    (val) => setState(() => _fieldType = val ?? FieldType.text),
+                onChanged: (val) =>
+                    setState(() => _fieldType = val ?? FieldType.text),
               ),
               const SizedBox(height: 12),
               SwitchListTile(

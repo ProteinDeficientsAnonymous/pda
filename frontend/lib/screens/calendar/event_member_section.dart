@@ -57,7 +57,7 @@ class EventMemberSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     if (user != null) {
       // Build host list: creator first (no photo), then co-hosts (with photos)
       final hosts = <({String id, String name, String photoUrl})>[];
@@ -72,8 +72,9 @@ class EventMemberSection extends ConsumerWidget {
         hosts.add((
           id: i < event.coHostIds.length ? event.coHostIds[i] : '',
           name: event.coHostNames[i],
-          photoUrl:
-              i < event.coHostPhotoUrls.length ? event.coHostPhotoUrls[i] : '',
+          photoUrl: i < event.coHostPhotoUrls.length
+              ? event.coHostPhotoUrls[i]
+              : '',
         ));
       }
 
@@ -163,15 +164,13 @@ class EventMemberSection extends ConsumerWidget {
         for (var i = 0; i < event.invitedUserNames.length; i++)
           EventDetailHostChip(
             host: (
-              id:
-                  i < event.invitedUserIds.length
-                      ? event.invitedUserIds[i]
-                      : '',
+              id: i < event.invitedUserIds.length
+                  ? event.invitedUserIds[i]
+                  : '',
               name: event.invitedUserNames[i],
-              photoUrl:
-                  i < event.invitedUserPhotoUrls.length
-                      ? event.invitedUserPhotoUrls[i]
-                      : '',
+              photoUrl: i < event.invitedUserPhotoUrls.length
+                  ? event.invitedUserPhotoUrls[i]
+                  : '',
             ),
           ),
       ];
@@ -181,10 +180,9 @@ class EventMemberSection extends ConsumerWidget {
         children: [
           if (hosts.isNotEmpty)
             EventSectionCard(
-              label:
-                  hosts.length > 1
-                      ? EventDetailLabel.coHosts
-                      : EventDetailLabel.host,
+              label: hosts.length > 1
+                  ? EventDetailLabel.coHosts
+                  : EventDetailLabel.host,
               child: Wrap(
                 spacing: 12,
                 runSpacing: 8,

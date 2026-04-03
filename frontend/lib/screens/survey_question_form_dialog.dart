@@ -71,30 +71,29 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
     _fieldType = widget.question?.fieldType ?? FieldType.text;
     _required = widget.question?.required ?? false;
     final existingOptions = widget.question?.options ?? [];
-    _optionCtrls =
-        existingOptions.map((o) => TextEditingController(text: o)).toList();
+    _optionCtrls = existingOptions
+        .map((o) => TextEditingController(text: o))
+        .toList();
     _ratingLabelCtrls = List.generate(
       5,
       (i) => TextEditingController(
-        text:
-            (_fieldType == FieldType.rating && i < existingOptions.length)
-                ? existingOptions[i]
-                : '',
+        text: (_fieldType == FieldType.rating && i < existingOptions.length)
+            ? existingOptions[i]
+            : '',
       ),
     );
-    _datetimeOptions =
-        (_fieldType == FieldType.datetimePoll)
-            ? existingOptions
-                .map((s) {
-                  try {
-                    return DateTime.parse(s).toLocal();
-                  } catch (_) {
-                    return null;
-                  }
-                })
-                .whereType<DateTime>()
-                .toList()
-            : [];
+    _datetimeOptions = (_fieldType == FieldType.datetimePoll)
+        ? existingOptions
+              .map((s) {
+                try {
+                  return DateTime.parse(s).toLocal();
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<DateTime>()
+              .toList()
+        : [];
   }
 
   @override
@@ -140,16 +139,16 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     List<String> options;
     if (_fieldType == FieldType.datetimePoll) {
-      options =
-          _datetimeOptions.map((dt) => dt.toUtc().toIso8601String()).toList();
+      options = _datetimeOptions
+          .map((dt) => dt.toUtc().toIso8601String())
+          .toList();
     } else if (_fieldType == FieldType.rating) {
       options = _ratingLabelCtrls.map((c) => c.text.trim()).toList();
     } else if (_showOptions) {
-      options =
-          _optionCtrls
-              .map((c) => c.text.trim())
-              .where((o) => o.isNotEmpty)
-              .toList();
+      options = _optionCtrls
+          .map((c) => c.text.trim())
+          .where((o) => o.isNotEmpty)
+          .toList();
     } else {
       options = [];
     }
@@ -198,18 +197,16 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
                     labelText: 'field type',
                     border: OutlineInputBorder(),
                   ),
-                  items:
-                      surveyFieldTypeLabels.entries
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e.key,
-                              child: Text(e.value),
-                            ),
-                          )
-                          .toList(),
-                  onChanged:
-                      (val) =>
-                          setState(() => _fieldType = val ?? FieldType.text),
+                  items: surveyFieldTypeLabels.entries
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) =>
+                      setState(() => _fieldType = val ?? FieldType.text),
                 ),
                 const SizedBox(height: 12),
                 SwitchListTile(
@@ -294,10 +291,8 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
                           IconButton(
                             tooltip: 'remove option',
                             icon: const Icon(Icons.close, size: 18),
-                            onPressed:
-                                () => setState(
-                                  () => _datetimeOptions.removeAt(i),
-                                ),
+                            onPressed: () =>
+                                setState(() => _datetimeOptions.removeAt(i)),
                           ),
                         ],
                       ),

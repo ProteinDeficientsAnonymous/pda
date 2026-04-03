@@ -75,10 +75,9 @@ class MonthRow extends StatelessWidget {
 
   /// Find the column index where the event visually ends (clamped to 6).
   int _endColFor(DateTime eEnd) {
-    final lastDay =
-        eEnd.hour == 0 && eEnd.minute == 0
-            ? DateTime(eEnd.year, eEnd.month, eEnd.day - 1)
-            : DateTime(eEnd.year, eEnd.month, eEnd.day);
+    final lastDay = eEnd.hour == 0 && eEnd.minute == 0
+        ? DateTime(eEnd.year, eEnd.month, eEnd.day - 1)
+        : DateTime(eEnd.year, eEnd.month, eEnd.day);
     for (var c = 6; c >= 0; c--) {
       final ds = DateTime(days[c].year, days[c].month, days[c].day);
       if (ds.isAtSameMomentAs(lastDay) || ds.isBefore(lastDay)) return c;
@@ -181,15 +180,14 @@ class MonthRow extends StatelessWidget {
                   color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
                   width: 0.5,
                 ),
-                right:
-                    col < 6
-                        ? BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).dividerColor.withValues(alpha: 0.4),
-                          width: 0.5,
-                        )
-                        : BorderSide.none,
+                right: col < 6
+                    ? BorderSide(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
+                        width: 0.5,
+                      )
+                    : BorderSide.none,
               ),
             ),
             padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
@@ -342,25 +340,23 @@ class MonthDayLabel extends StatelessWidget {
         child: Container(
           width: 20,
           height: 20,
-          decoration:
-              isToday
-                  ? BoxDecoration(
-                    color: colorScheme.primary,
-                    shape: BoxShape.circle,
-                  )
-                  : null,
+          decoration: isToday
+              ? BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
+                )
+              : null,
           child: Center(
             child: Text(
               '${day.day}',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
-                color:
-                    isToday
-                        ? colorScheme.onPrimary
-                        : isCurrentMonth
-                        ? colorScheme.onSurface
-                        : colorScheme.onSurfaceVariant,
+                color: isToday
+                    ? colorScheme.onPrimary
+                    : isCurrentMonth
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurfaceVariant,
               ),
             ),
           ),

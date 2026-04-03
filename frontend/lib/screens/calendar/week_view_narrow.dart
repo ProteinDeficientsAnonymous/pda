@@ -115,13 +115,12 @@ class NarrowDayRow extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             border: Border(
-              bottom:
-                  isLast
-                      ? BorderSide.none
-                      : BorderSide(
-                        color: theme.dividerColor.withValues(alpha: 0.4),
-                        width: 0.5,
-                      ),
+              bottom: isLast
+                  ? BorderSide.none
+                  : BorderSide(
+                      color: theme.dividerColor.withValues(alpha: 0.4),
+                      width: 0.5,
+                    ),
             ),
           ),
           child: Row(
@@ -146,47 +145,45 @@ class NarrowDayRow extends StatelessWidget {
                     horizontal: 4,
                     vertical: 2,
                   ),
-                  child:
-                      events.isEmpty
-                          ? const SizedBox.shrink()
-                          : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ...visible.map(
-                                (e) => NarrowEventChip(
-                                  event: e,
-                                  onTap: () => onEventTapped(e),
-                                ),
+                  child: events.isEmpty
+                      ? const SizedBox.shrink()
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ...visible.map(
+                              (e) => NarrowEventChip(
+                                event: e,
+                                onTap: () => onEventTapped(e),
                               ),
-                              if (overflow > 0)
-                                Semantics(
-                                  button: true,
-                                  label: '$overflow more events',
-                                  child: InkWell(
-                                    onTap:
-                                        onDayTapped != null
-                                            ? () => onDayTapped!(day)
-                                            : null,
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 4,
-                                        top: 1,
-                                      ),
-                                      child: Text(
-                                        '+$overflow more',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: theme.colorScheme.primary,
-                                        ),
+                            ),
+                            if (overflow > 0)
+                              Semantics(
+                                button: true,
+                                label: '$overflow more events',
+                                child: InkWell(
+                                  onTap: onDayTapped != null
+                                      ? () => onDayTapped!(day)
+                                      : null,
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 4,
+                                      top: 1,
+                                    ),
+                                    child: Text(
+                                      '+$overflow more',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: theme.colorScheme.primary,
                                       ),
                                     ),
                                   ),
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
+                        ),
                 ),
               ),
             ],
@@ -271,8 +268,9 @@ class NarrowEventChip extends StatelessWidget {
   const NarrowEventChip({super.key, required this.event, required this.onTap});
 
   String _buildLabel() {
-    final lockSuffix =
-        event.visibility == PageVisibility.membersOnly ? ' 🔒' : '';
+    final lockSuffix = event.visibility == PageVisibility.membersOnly
+        ? ' 🔒'
+        : '';
     final officialSuffix = event.eventType == EventType.official ? ' ✦' : '';
     final suffix = '$lockSuffix$officialSuffix';
     final dateFmt = DateFormat('MMM d');

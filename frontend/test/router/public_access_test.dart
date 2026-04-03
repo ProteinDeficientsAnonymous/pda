@@ -31,7 +31,9 @@ Widget _buildApp(AuthNotifier authNotifier) {
             id == _fakeEvent.id ? _fakeEvent : (throw Exception('not found')),
       ),
       homePageNotifierProvider.overrideWith(() => _FakeHomeNotifier()),
-      editablePageProvider.overrideWith(() => _FakeEditablePageNotifier()),
+      editablePageProvider.overrideWith2(
+        (arg) => _FakeEditablePageNotifier(arg),
+      ),
     ],
     child: Consumer(
       builder: (context, ref, _) {
@@ -71,9 +73,13 @@ class _FakeHomeNotifier extends HomePageNotifier {
 }
 
 class _FakeEditablePageNotifier extends EditablePageNotifier {
+  // ignore: use_super_parameters
+  _FakeEditablePageNotifier(String slug) : _fakeSlug = slug, super(slug);
+  final String _fakeSlug;
+
   @override
-  Future<EditablePage> build(String arg) async => EditablePage(
-    slug: arg,
+  Future<EditablePage> build() async => EditablePage(
+    slug: _fakeSlug,
     content: '',
     visibility: 'public',
     updatedAt: DateTime(2026),

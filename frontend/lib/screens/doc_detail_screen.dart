@@ -45,7 +45,7 @@ class _DocDetailScreenState extends ConsumerState<DocDetailScreen>
   }
 
   bool get _canManage {
-    final user = ref.read(authProvider).valueOrNull;
+    final user = ref.read(authProvider).value;
     return user?.hasPermission(Permission.manageDocs) ?? false;
   }
 
@@ -56,10 +56,9 @@ class _DocDetailScreenState extends ConsumerState<DocDetailScreen>
     return AppScaffold(
       child: docAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load document — try refreshing'),
-            ),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t load document — try refreshing'),
+        ),
         data: (doc) {
           if (!_titleInitialized) {
             _titleController.text = doc.title;
@@ -133,27 +132,27 @@ class _DocDetailScreenState extends ConsumerState<DocDetailScreen>
           if (_canManage)
             _editing
                 ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      onPressed: _cancelEdit,
-                      child: Text(
-                        'cancel',
-                        style: TextStyle(color: cs.onSurfaceVariant),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton(
+                        onPressed: _cancelEdit,
+                        child: Text(
+                          'cancel',
+                          style: TextStyle(color: cs.onSurfaceVariant),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: _saveAndExit,
-                      child: const Text('done'),
-                    ),
-                  ],
-                )
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: _saveAndExit,
+                        child: const Text('done'),
+                      ),
+                    ],
+                  )
                 : IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'edit document',
-                  onPressed: () => setState(() => _editing = true),
-                ),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'edit document',
+                    onPressed: () => setState(() => _editing = true),
+                  ),
         ],
       ),
     );
@@ -162,14 +161,14 @@ class _DocDetailScreenState extends ConsumerState<DocDetailScreen>
   void _cancelEdit() {
     _pendingContent = null;
     ref.invalidate(docDetailProvider(widget.docId));
-    final doc = ref.read(docDetailProvider(widget.docId)).valueOrNull;
+    final doc = ref.read(docDetailProvider(widget.docId)).value;
     if (doc != null) _titleController.text = doc.title;
     setState(() => _editing = false);
   }
 
   Future<void> _saveAndExit() async {
     final newTitle = _titleController.text.trim();
-    final doc = ref.read(docDetailProvider(widget.docId)).valueOrNull;
+    final doc = ref.read(docDetailProvider(widget.docId)).value;
 
     final titleChanged =
         doc != null && newTitle != doc.title && newTitle.isNotEmpty;

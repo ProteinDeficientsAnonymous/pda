@@ -17,7 +17,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     final canEdit = user?.hasPermission(Permission.editHomepage) ?? false;
     final isLoggedIn = user != null;
     final homeAsync = ref.watch(homePageNotifierProvider);
@@ -25,22 +25,20 @@ class HomeScreen extends ConsumerWidget {
     return AppScaffold(
       child: homeAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (_, __) => _HomeBody(
-              content: '',
-              joinContent: '',
-              donateUrl: '',
-              canEdit: canEdit,
-              isLoggedIn: isLoggedIn,
-            ),
-        data:
-            (home) => _HomeBody(
-              content: home.content,
-              joinContent: home.joinContent,
-              donateUrl: home.donateUrl,
-              canEdit: canEdit,
-              isLoggedIn: isLoggedIn,
-            ),
+        error: (_, __) => _HomeBody(
+          content: '',
+          joinContent: '',
+          donateUrl: '',
+          canEdit: canEdit,
+          isLoggedIn: isLoggedIn,
+        ),
+        data: (home) => _HomeBody(
+          content: home.content,
+          joinContent: home.joinContent,
+          donateUrl: home.donateUrl,
+          canEdit: canEdit,
+          isLoggedIn: isLoggedIn,
+        ),
       ),
     );
   }
@@ -73,10 +71,9 @@ class _HomeBody extends StatelessWidget {
               _EditableSection(
                 content: content,
                 canEdit: canEdit,
-                onSave:
-                    (text) => ProviderScope.containerOf(
-                      context,
-                    ).read(homePageNotifierProvider.notifier).saveContent(text),
+                onSave: (text) => ProviderScope.containerOf(
+                  context,
+                ).read(homePageNotifierProvider.notifier).saveContent(text),
               ),
               if (donateUrl.isNotEmpty || canEdit) ...[
                 _DonateCta(donateUrl: donateUrl, canEdit: canEdit),
@@ -86,29 +83,27 @@ class _HomeBody extends StatelessWidget {
                 _EditableSection(
                   content: joinContent,
                   canEdit: canEdit,
-                  onSave:
-                      (text) => ProviderScope.containerOf(context)
-                          .read(homePageNotifierProvider.notifier)
-                          .saveJoinContent(text),
-                  footer:
-                      !isLoggedIn
-                          ? Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                            child: FilledButton(
-                              onPressed: () => context.go('/join'),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 16,
-                                ),
-                              ),
-                              child: const Text(
-                                'request to join',
-                                style: TextStyle(fontSize: 16),
+                  onSave: (text) => ProviderScope.containerOf(context)
+                      .read(homePageNotifierProvider.notifier)
+                      .saveJoinContent(text),
+                  footer: !isLoggedIn
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                          child: FilledButton(
+                            onPressed: () => context.go('/join'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
                               ),
                             ),
-                          )
-                          : null,
+                            child: const Text(
+                              'request to join',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
               ],
             ],
@@ -325,13 +320,12 @@ class _EditableSectionState extends ConsumerState<_EditableSection>
           jsonContent: _json,
           editing: _editing,
           hintText: 'Write content…',
-          onChanged:
-              widget.canEdit
-                  ? (v) {
-                    _json = v;
-                    triggerAutosave(v);
-                  }
-                  : null,
+          onChanged: widget.canEdit
+              ? (v) {
+                  _json = v;
+                  triggerAutosave(v);
+                }
+              : null,
         ),
         if (!_editing && widget.footer != null) widget.footer!,
       ],

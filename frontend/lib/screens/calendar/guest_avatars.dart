@@ -14,8 +14,9 @@ class StackedAvatarRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final visible = guests.take(_maxVisible).toList();
     final overflow = guests.length - _maxVisible;
-    final stackWidth =
-        visible.isEmpty ? 0.0 : _radius * 2 + (visible.length - 1) * _overlap;
+    final stackWidth = visible.isEmpty
+        ? 0.0
+        : _radius * 2 + (visible.length - 1) * _overlap;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -77,20 +78,20 @@ class StackedAvatar extends StatelessWidget {
       ),
       child: CircleAvatar(
         radius: radius - 2,
-        backgroundImage:
-            guest.photoUrl.isNotEmpty ? NetworkImage(guest.photoUrl) : null,
+        backgroundImage: guest.photoUrl.isNotEmpty
+            ? NetworkImage(guest.photoUrl)
+            : null,
         backgroundColor: cs.primaryContainer,
-        child:
-            guest.photoUrl.isEmpty
-                ? Text(
-                  initials,
-                  style: TextStyle(
-                    fontSize: (radius - 2) * 0.85,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onPrimaryContainer,
-                  ),
-                )
-                : null,
+        child: guest.photoUrl.isEmpty
+            ? Text(
+                initials,
+                style: TextStyle(
+                  fontSize: (radius - 2) * 0.85,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onPrimaryContainer,
+                ),
+              )
+            : null,
       ),
     );
   }

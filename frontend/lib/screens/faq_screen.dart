@@ -15,7 +15,7 @@ class FAQScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     final canEdit = user?.hasPermission(Permission.editFaq) ?? false;
     final faqAsync = ref.watch(faqNotifierProvider);
 
@@ -23,13 +23,12 @@ class FAQScreen extends ConsumerWidget {
       maxWidth: 800,
       child: faqAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => Center(
-              child: Text(
-                'Failed to load FAQ.',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
+        error: (e, _) => Center(
+          child: Text(
+            'Failed to load FAQ.',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
         data: (faq) => _FAQBody(content: faq.content, canEdit: canEdit),
       ),
     );
@@ -57,8 +56,8 @@ class _FAQBodyState extends ConsumerState<_FAQBody> with AutosaveMixin {
     _json = widget.content;
     if (widget.canEdit) {
       initAutosaveCallback(
-        onSave:
-            (text) => ref.read(faqNotifierProvider.notifier).saveContent(text),
+        onSave: (text) =>
+            ref.read(faqNotifierProvider.notifier).saveContent(text),
       );
     }
   }
@@ -84,7 +83,7 @@ class _FAQBodyState extends ConsumerState<_FAQBody> with AutosaveMixin {
 
   void _cancelEdit() {
     final saved =
-        ref.read(faqNotifierProvider).valueOrNull?.content ?? widget.content;
+        ref.read(faqNotifierProvider).value?.content ?? widget.content;
     setState(() {
       _json = saved;
       _editing = false;
@@ -103,13 +102,12 @@ class _FAQBodyState extends ConsumerState<_FAQBody> with AutosaveMixin {
             editing: _editing,
             expands: true,
             hintText: 'Write FAQ content…',
-            onChanged:
-                widget.canEdit
-                    ? (v) {
-                      _json = v;
-                      triggerAutosave(v);
-                    }
-                    : null,
+            onChanged: widget.canEdit
+                ? (v) {
+                    _json = v;
+                    triggerAutosave(v);
+                  }
+                : null,
           ),
         ),
       ],

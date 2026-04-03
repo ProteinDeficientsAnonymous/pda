@@ -169,7 +169,7 @@ class _FakeAuthNotifier extends AuthNotifier {
 
   @override
   Future<void> login(String phoneNumber, String password) async {
-    state = AsyncData(_fakeUser);
+    state = const AsyncData(_fakeUser);
   }
 
   @override

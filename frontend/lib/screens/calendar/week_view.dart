@@ -110,22 +110,21 @@ class _WeekViewState extends State<WeekView> {
             ),
           ),
           Expanded(
-            child:
-                isWide
-                    ? WideWeekGrid(
-                      days: days,
-                      events: widget.events,
-                      isToday: _isToday,
-                      onEventTapped: (e) => showEventDetail(context, e),
-                      onDayTapped: widget.onDayTapped,
-                    )
-                    : NarrowWeekGrid(
-                      days: days,
-                      events: widget.events,
-                      isToday: _isToday,
-                      onEventTapped: (e) => showEventDetail(context, e),
-                      onDayTapped: widget.onDayTapped,
-                    ),
+            child: isWide
+                ? WideWeekGrid(
+                    days: days,
+                    events: widget.events,
+                    isToday: _isToday,
+                    onEventTapped: (e) => showEventDetail(context, e),
+                    onDayTapped: widget.onDayTapped,
+                  )
+                : NarrowWeekGrid(
+                    days: days,
+                    events: widget.events,
+                    isToday: _isToday,
+                    onEventTapped: (e) => showEventDetail(context, e),
+                    onDayTapped: widget.onDayTapped,
+                  ),
           ),
         ],
       ),

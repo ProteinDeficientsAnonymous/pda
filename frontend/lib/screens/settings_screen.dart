@@ -16,7 +16,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     final displayName = user?.displayName ?? '';
     final phone = user?.phoneNumber ?? '';
     final email = user?.email ?? '';
@@ -78,19 +78,15 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.phone_outlined,
             label: 'show phone number on profile',
             value: showPhone,
-            onChanged:
-                (val) => ref
-                    .read(authProvider.notifier)
-                    .updateProfile(showPhone: val),
+            onChanged: (val) =>
+                ref.read(authProvider.notifier).updateProfile(showPhone: val),
           ),
           _PrivacyToggle(
             icon: Icons.email_outlined,
             label: 'show email on profile',
             value: showEmail,
-            onChanged:
-                (val) => ref
-                    .read(authProvider.notifier)
-                    .updateProfile(showEmail: val),
+            onChanged: (val) =>
+                ref.read(authProvider.notifier).updateProfile(showEmail: val),
           ),
           const SizedBox(height: 24),
           const _SectionHeader(label: 'calendar'),
@@ -139,14 +135,13 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await showDialog<String>(
       context: context,
-      builder:
-          (_) => SettingsEditFieldDialog(
-            title: 'edit name',
-            label: 'Display name',
-            initialValue: current ?? '',
-            keyboardType: TextInputType.name,
-            validator: v.displayName(),
-          ),
+      builder: (_) => SettingsEditFieldDialog(
+        title: 'edit name',
+        label: 'Display name',
+        initialValue: current ?? '',
+        keyboardType: TextInputType.name,
+        validator: v.displayName(),
+      ),
     );
     if (result == null || !context.mounted) return;
     try {
@@ -168,14 +163,13 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await showDialog<String>(
       context: context,
-      builder:
-          (_) => SettingsEditFieldDialog(
-            title: 'edit email',
-            label: 'Email address',
-            initialValue: current ?? '',
-            keyboardType: TextInputType.emailAddress,
-            validator: v.optionalEmail(),
-          ),
+      builder: (_) => SettingsEditFieldDialog(
+        title: 'edit email',
+        label: 'Email address',
+        initialValue: current ?? '',
+        keyboardType: TextInputType.emailAddress,
+        validator: v.optionalEmail(),
+      ),
     );
     if (result == null || !context.mounted) return;
     try {

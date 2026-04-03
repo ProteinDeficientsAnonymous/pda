@@ -106,8 +106,9 @@ class _MonthViewState extends State<MonthView> {
   @override
   Widget build(BuildContext context) {
     final gridDays = _buildGridDays();
-    final headerLabel =
-        DateFormat('MMMM yyyy').format(_focusedMonth).toLowerCase();
+    final headerLabel = DateFormat(
+      'MMMM yyyy',
+    ).format(_focusedMonth).toLowerCase();
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -178,19 +179,18 @@ class _MonthViewState extends State<MonthView> {
       color: Theme.of(context).colorScheme.onSurfaceVariant,
     );
     return Row(
-      children:
-          _dayHeaders
-              .map(
-                (h) => Expanded(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Text(h, style: textStyle),
-                    ),
-                  ),
+      children: _dayHeaders
+          .map(
+            (h) => Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(h, style: textStyle),
                 ),
-              )
-              .toList(),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 

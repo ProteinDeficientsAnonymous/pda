@@ -87,10 +87,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (authState.hasError) {
         if (mounted) {
           setState(() {
-            _error =
-                authState.error is ApiError
-                    ? (authState.error! as ApiError).message
-                    : 'something went wrong — try again';
+            _error = authState.error is ApiError
+                ? (authState.error! as ApiError).message
+                : 'something went wrong — try again';
             _loading = false;
           });
         }
@@ -98,8 +97,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
       TextInput.finishAutofillContext();
       if (mounted) {
-        final redirect =
-            GoRouterState.of(context).uri.queryParameters['redirect'];
+        final redirect = GoRouterState.of(
+          context,
+        ).uri.queryParameters['redirect'];
         context.go(redirect ?? '/calendar');
       }
     } catch (e) {
@@ -141,8 +141,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 controller: _passwordController,
                 focusNode: _passwordFocusNode,
                 obscure: _obscurePassword,
-                onToggleObscure:
-                    () => setState(() => _obscurePassword = !_obscurePassword),
+                onToggleObscure: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
                 onSubmit: _login,
                 onBack: _resetToPhone,
                 loading: _loading,
@@ -217,17 +217,13 @@ class _PhoneStep extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child:
-                      loading
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Text(
-                            'continue',
-                            style: TextStyle(fontSize: 16),
-                          ),
+                  child: loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('continue', style: TextStyle(fontSize: 16)),
                 ),
               ),
             ),
@@ -324,17 +320,13 @@ class _PasswordStep extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child:
-                        loading
-                            ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : const Text(
-                              'log in',
-                              style: TextStyle(fontSize: 16),
-                            ),
+                    child: loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('log in', style: TextStyle(fontSize: 16)),
                   ),
                 ),
               ),

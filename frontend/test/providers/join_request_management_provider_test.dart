@@ -39,6 +39,7 @@ void main() {
         ),
         apiClientProvider.overrideWithValue(mockApi),
       ],
+      retry: (_, __) => null,
     );
   });
 
@@ -74,12 +75,15 @@ void main() {
         ),
       );
 
-      final state = await container
-          .read(joinRequestsProvider.future)
-          .then(
-            (_) => container.read(joinRequestsProvider),
-            onError: (_) => container.read(joinRequestsProvider),
-          );
+      // Retry is disabled on the container so errors settle immediately.
+      // Keep the provider alive via listen, wait for the future, then inspect.
+      container.listen(joinRequestsProvider, (_, __) {});
+      try {
+        await container.read(joinRequestsProvider.future);
+      } catch (_) {
+        // ignore — waiting for the provider to settle
+      }
+      final state = container.read(joinRequestsProvider);
       expect(state.hasError, isTrue);
       expect(state.error.toString(), contains('permission'));
     });
@@ -92,12 +96,13 @@ void main() {
         ),
       );
 
-      final state = await container
-          .read(joinRequestsProvider.future)
-          .then(
-            (_) => container.read(joinRequestsProvider),
-            onError: (_) => container.read(joinRequestsProvider),
-          );
+      container.listen(joinRequestsProvider, (_, __) {});
+      try {
+        await container.read(joinRequestsProvider.future);
+      } catch (_) {
+        // ignore — waiting for the provider to settle
+      }
+      final state = container.read(joinRequestsProvider);
       expect(state.hasError, isTrue);
     });
   });

@@ -174,10 +174,9 @@ class Survey {
               .toList() ??
           [],
       responseCount: json['response_count'] as int? ?? 0,
-      pollResult:
-          json['poll_result'] != null
-              ? PollResult.fromJson(json['poll_result'] as Map<String, dynamic>)
-              : null,
+      pollResult: json['poll_result'] != null
+          ? PollResult.fromJson(json['poll_result'] as Map<String, dynamic>)
+          : null,
       myResponseId: json['my_response_id'] as String?,
       myAnswers: json['my_answers'] as Map<String, dynamic>?,
     );

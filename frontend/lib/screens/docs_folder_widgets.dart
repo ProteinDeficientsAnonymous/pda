@@ -105,14 +105,13 @@ class DocsDocTile extends ConsumerWidget {
     return ListTile(
       leading: const Icon(Icons.description_outlined),
       title: Text(doc.title),
-      trailing:
-          canManage
-              ? IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                tooltip: 'delete document',
-                onPressed: () => _confirmDelete(context, ref),
-              )
-              : null,
+      trailing: canManage
+          ? IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              tooltip: 'delete document',
+              onPressed: () => _confirmDelete(context, ref),
+            )
+          : null,
       onTap: () => context.push('/docs/${doc.id}'),
     );
   }
@@ -120,21 +119,20 @@ class DocsDocTile extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('delete document'),
-            content: Text('Delete "${doc.title}"? This cannot be undone.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('delete document'),
+        content: Text('Delete "${doc.title}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('delete'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true) return;
@@ -161,33 +159,31 @@ class DocsFolderMenuButton extends ConsumerWidget {
       onSelected: (value) {
         if (value == 'delete') _confirmDeleteFolder(context, ref);
       },
-      itemBuilder:
-          (_) => const [
-            PopupMenuItem(value: 'delete', child: Text('delete folder')),
-          ],
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'delete', child: Text('delete folder')),
+      ],
     );
   }
 
   Future<void> _confirmDeleteFolder(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('delete folder'),
-            content: const Text(
-              'Delete this folder and all its documents? This cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('delete folder'),
+        content: const Text(
+          'Delete this folder and all its documents? This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('delete'),
+          ),
+        ],
+      ),
     );
 
     if (confirmed != true) return;

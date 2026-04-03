@@ -53,16 +53,15 @@ class _CoHostPickerState extends ConsumerState<CoHostPicker> {
       );
       final data = (resp.data as List<dynamic>?) ?? [];
       setState(() {
-        _results =
-            data
-                .map(
-                  (item) => CoHostResult(
-                    id: item['id'] as String,
-                    displayName: item['display_name'] as String,
-                    phone: item['phone_number'] as String,
-                  ),
-                )
-                .toList();
+        _results = data
+            .map(
+              (item) => CoHostResult(
+                id: item['id'] as String,
+                displayName: item['display_name'] as String,
+                phone: item['phone_number'] as String,
+              ),
+            )
+            .toList();
       });
       if (_results.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -106,15 +105,14 @@ class _CoHostPickerState extends ConsumerState<CoHostPicker> {
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children:
-                selected.map((id) {
-                  final name = _knownNames[id] ?? id;
-                  return Chip(
-                    label: Text(name, style: const TextStyle(fontSize: 13)),
-                    onDeleted: () => _toggle(id, name),
-                    deleteIconColor: theme.colorScheme.onSurfaceVariant,
-                  );
-                }).toList(),
+            children: selected.map((id) {
+              final name = _knownNames[id] ?? id;
+              return Chip(
+                label: Text(name, style: const TextStyle(fontSize: 13)),
+                onDeleted: () => _toggle(id, name),
+                deleteIconColor: theme.colorScheme.onSurfaceVariant,
+              );
+            }).toList(),
           ),
           const SizedBox(height: 8),
         ],
@@ -124,17 +122,16 @@ class _CoHostPickerState extends ConsumerState<CoHostPicker> {
             hintText: 'search by name or phone…',
             border: const OutlineInputBorder(),
             isDense: true,
-            suffixIcon:
-                _searching
-                    ? const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                    : null,
+            suffixIcon: _searching
+                ? const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : null,
           ),
           onChanged: _search,
         ),
@@ -147,32 +144,31 @@ class _CoHostPickerState extends ConsumerState<CoHostPicker> {
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children:
-                  _results.map((r) {
-                    final isSelected = selected.contains(r.id);
-                    return ListTile(
-                      dense: true,
-                      title: Text(
-                        r.displayName,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      subtitle: Text(
-                        r.phone,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      trailing: null,
-                      onTap: () {
-                        _toggle(r.id, r.displayName);
-                        if (!isSelected) {
-                          _controller.clear();
-                          setState(() => _results = []);
-                        }
-                      },
-                    );
-                  }).toList(),
+              children: _results.map((r) {
+                final isSelected = selected.contains(r.id);
+                return ListTile(
+                  dense: true,
+                  title: Text(
+                    r.displayName,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  subtitle: Text(
+                    r.phone,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  trailing: null,
+                  onTap: () {
+                    _toggle(r.id, r.displayName);
+                    if (!isSelected) {
+                      _controller.clear();
+                      setState(() => _results = []);
+                    }
+                  },
+                );
+              }).toList(),
             ),
           ),
         ],

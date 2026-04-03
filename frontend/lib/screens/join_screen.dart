@@ -78,13 +78,11 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       maxWidth: 600,
       child: questionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load the form — try refreshing'),
-            ),
-        data:
-            (questions) =>
-                _buildForm(context, questions, isLoading, submitState),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t load the form — try refreshing'),
+        ),
+        data: (questions) =>
+            _buildForm(context, questions, isLoading, submitState),
       ),
     );
   }
@@ -168,24 +166,24 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                       child: SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed:
-                              isLoading ? null : () => _submit(questions),
+                          onPressed: isLoading
+                              ? null
+                              : () => _submit(questions),
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child:
-                              isLoading
-                                  ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                  : const Text(
-                                    'submit request',
-                                    style: TextStyle(fontSize: 16),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                   ),
+                                )
+                              : const Text(
+                                  'submit request',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                         ),
                       ),
                     ),
@@ -211,15 +209,13 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
             labelText: label,
             border: const OutlineInputBorder(),
           ),
-          items:
-              q.options
-                  .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
-                  .toList(),
+          items: q.options
+              .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+              .toList(),
           onChanged: (val) => setState(() => _selectValues[q.id] = val),
-          validator:
-              q.required
-                  ? (val) => (val == null || val.isEmpty) ? 'Required' : null
-                  : null,
+          validator: q.required
+              ? (val) => (val == null || val.isEmpty) ? 'Required' : null
+              : null,
         ),
       );
     }
@@ -233,10 +229,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
           border: const OutlineInputBorder(),
         ),
         maxLines: q.label.toLowerCase().contains('why') ? 5 : 1,
-        validator:
-            q.required
-                ? v.all([v.required(), v.maxLength(2000)])
-                : v.maxLength(2000),
+        validator: q.required
+            ? v.all([v.required(), v.maxLength(2000)])
+            : v.maxLength(2000),
       ),
     );
   }

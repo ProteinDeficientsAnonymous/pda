@@ -46,7 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refreshNotifier,
     redirect: (context, state) {
       final authState = ref.read(authProvider);
-      final user = authState.valueOrNull;
+      final user = authState.value;
       final isAuthenticated = user != null;
       final isLoading = authState.isLoading;
 
@@ -140,9 +140,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/magic-login/:token',
         name: 'magic-login',
-        builder:
-            (_, state) =>
-                MagicLoginScreen(token: state.pathParameters['token']!),
+        builder: (_, state) =>
+            MagicLoginScreen(token: state.pathParameters['token']!),
       ),
       GoRoute(
         path: '/onboarding',
@@ -218,16 +217,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/surveys/:id',
         name: 'survey-builder',
-        builder:
-            (_, state) =>
-                SurveyBuilderScreen(surveyId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            SurveyBuilderScreen(surveyId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/admin/surveys/:id/responses',
         name: 'survey-responses',
-        builder:
-            (_, state) =>
-                SurveyResponsesScreen(surveyId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            SurveyResponsesScreen(surveyId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/admin/whatsapp',
@@ -242,8 +239,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/docs/:id',
         name: 'doc-detail',
-        builder:
-            (_, state) => DocDetailScreen(docId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            DocDetailScreen(docId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/profile',
@@ -253,22 +250,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/members/:id',
         name: 'member-profile',
-        builder:
-            (_, state) =>
-                MemberProfileScreen(userId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            MemberProfileScreen(userId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/surveys/:slug',
         name: 'survey',
-        builder:
-            (_, state) => SurveyScreen(slug: state.pathParameters['slug']!),
+        builder: (_, state) =>
+            SurveyScreen(slug: state.pathParameters['slug']!),
       ),
       GoRoute(
         path: '/events/:id',
         name: 'event-detail',
-        builder:
-            (_, state) =>
-                EventDetailScreen(eventId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            EventDetailScreen(eventId: state.pathParameters['id']!),
       ),
     ],
   );

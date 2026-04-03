@@ -33,8 +33,8 @@ class PdaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final prefsAsync = ref.watch(accessibilityPreferencesNotifierProvider);
-    final prefs = prefsAsync.valueOrNull;
+    final prefsAsync = ref.watch(accessibilityPreferencesProvider);
+    final prefs = prefsAsync.value;
     final dyslexiaMode = prefs?.dyslexiaFriendlyFont ?? false;
     final textScaleFactor = prefs?.textScaleFactor ?? 1.0;
 

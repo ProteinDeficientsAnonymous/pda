@@ -19,26 +19,23 @@ class EventManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(eventsProvider);
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
 
     return AppScaffold(
       child: eventsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load events — try refreshing'),
-            ),
+        error: (e, _) =>
+            const Center(child: Text('couldn\'t load events — try refreshing')),
         data: (events) {
-          final filtered =
-              myEventsOnly && user != null
-                  ? events
-                      .where(
-                        (e) =>
-                            e.createdById == user.id ||
-                            e.coHostIds.contains(user.id),
-                      )
-                      .toList()
-                  : events;
+          final filtered = myEventsOnly && user != null
+              ? events
+                    .where(
+                      (e) =>
+                          e.createdById == user.id ||
+                          e.coHostIds.contains(user.id),
+                    )
+                    .toList()
+              : events;
           return _EventManagementBody(
             events: filtered,
             myEventsOnly: myEventsOnly,
@@ -80,8 +77,9 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
     var filtered = events;
     if (_query.isNotEmpty) {
       final q = _query.toLowerCase();
-      filtered =
-          events.where((e) => e.title.toLowerCase().contains(q)).toList();
+      filtered = events
+          .where((e) => e.title.toLowerCase().contains(q))
+          .toList();
     }
     filtered = List.of(filtered);
     filtered.sort((a, b) {
@@ -154,16 +152,15 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
                       horizontal: 12,
                       vertical: 10,
                     ),
-                    suffixIcon:
-                        _query.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.close, size: 18),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _query = '');
-                              },
-                            )
-                            : null,
+                    suffixIcon: _query.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                          )
+                        : null,
                   ),
                   onChanged: (v) => setState(() => _query = v),
                 ),
@@ -195,50 +192,48 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
           ),
         ),
         Expanded(
-          child:
-              filtered.isEmpty
-                  ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 64,
+          child: filtered.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _query.isNotEmpty
+                              ? 'no matches for "$_query"'
+                              : 'no events yet',
+                          style: const TextStyle(
+                            fontSize: 18,
                             color: Colors.grey,
                           ),
-                          const SizedBox(height: 16),
+                        ),
+                        if (_query.isEmpty) ...[
+                          const SizedBox(height: 8),
                           Text(
-                            _query.isNotEmpty
-                                ? 'no matches for "$_query"'
-                                : 'no events yet',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey,
-                            ),
+                            widget.myEventsOnly
+                                ? "you haven't created or co-hosted any events yet"
+                                : 'create one to get started',
+                            style: const TextStyle(color: Colors.grey),
                           ),
-                          if (_query.isEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              widget.myEventsOnly
-                                  ? "you haven't created or co-hosted any events yet"
-                                  : 'create one to get started',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
                         ],
-                      ),
+                      ],
                     ),
-                  )
-                  : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder:
-                        (context, index) =>
-                            EventManagementRow(event: filtered[index]),
                   ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) =>
+                      EventManagementRow(event: filtered[index]),
+                ),
         ),
       ],
     );

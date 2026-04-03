@@ -78,11 +78,10 @@ class _EmbeddedEventPollState extends ConsumerState<EmbeddedEventPoll> {
   void _showVoters(BuildContext context, EventPollOption option) {
     showModalBottomSheet<void>(
       context: context,
-      builder:
-          (ctx) => VotersSheet(
-            option: formatPollOption(option.datetime),
-            voters: option.allVoters,
-          ),
+      builder: (ctx) => VotersSheet(
+        option: formatPollOption(option.datetime),
+        voters: option.allVoters,
+      ),
     );
   }
 
@@ -107,11 +106,10 @@ class _EmbeddedEventPollState extends ConsumerState<EmbeddedEventPoll> {
     final pollAsync = ref.watch(eventPollProvider(widget.event.id));
 
     return pollAsync.when(
-      loading:
-          () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Center(child: CircularProgressIndicator()),
-          ),
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Center(child: CircularProgressIndicator()),
+      ),
       error: (_, __) => const Text('date & time tbd'),
       data: (poll) {
         if (poll == null) return const Text('date & time tbd');
@@ -123,7 +121,7 @@ class _EmbeddedEventPollState extends ConsumerState<EmbeddedEventPoll> {
           return _buildFinalized(poll.winningDatetime!);
         }
 
-        final user = ref.watch(authProvider).valueOrNull;
+        final user = ref.watch(authProvider).value;
         if (user == null) {
           return Text(
             'sign in to vote on a time 🌿',
@@ -255,8 +253,9 @@ class _EmbeddedEventPollState extends ConsumerState<EmbeddedEventPoll> {
         Row(
           children: [
             FilledButton(
-              onPressed:
-                  _submitting || _selected.isEmpty ? null : () => _submit(),
+              onPressed: _submitting || _selected.isEmpty
+                  ? null
+                  : () => _submit(),
               child: Text(
                 _submitting
                     ? 'submitting...'

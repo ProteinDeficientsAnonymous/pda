@@ -38,7 +38,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
   }
 
   Future<void> _confirmAndSetRsvp(String status, String label) async {
-    final user = ref.read(authProvider).valueOrNull;
+    final user = ref.read(authProvider).value;
     final isCoHost =
         user != null &&
         (widget.event.coHostIds.contains(user.id) ||
@@ -47,23 +47,22 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     if (isCoHost) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder:
-            (ctx) => AlertDialog(
-              title: const Text('change your rsvp?'),
-              content: Text(
-                'you\'re a co-host of this event — are you sure you want to rsvp as "$label"?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('cancel'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('yes, update'),
-                ),
-              ],
+        builder: (ctx) => AlertDialog(
+          title: const Text('change your rsvp?'),
+          content: Text(
+            'you\'re a co-host of this event — are you sure you want to rsvp as "$label"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('cancel'),
             ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('yes, update'),
+            ),
+          ],
+        ),
       );
       if (confirmed != true) return;
     }
@@ -91,13 +90,13 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final liveEvent =
-        ref.watch(eventDetailProvider(widget.event.id)).valueOrNull ??
-        widget.event;
+        ref.watch(eventDetailProvider(widget.event.id)).value ?? widget.event;
     final myRsvp = liveEvent.myRsvp;
     final guests = liveEvent.guests;
 
-    final attendingCount =
-        guests.where((g) => g.status == RsvpStatus.attending).length;
+    final attendingCount = guests
+        .where((g) => g.status == RsvpStatus.attending)
+        .length;
     final maybeCount = guests.where((g) => g.status == RsvpStatus.maybe).length;
 
     final summaryParts = [
@@ -134,11 +133,9 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                 activeColor: cs.primary,
                 isActive: myRsvp == RsvpStatus.attending,
                 enabled: !_loading,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.attending
-                            ? _removeRsvp()
-                            : _setRsvp(RsvpStatus.attending),
+                onTap: () => myRsvp == RsvpStatus.attending
+                    ? _removeRsvp()
+                    : _setRsvp(RsvpStatus.attending),
               ),
               _RsvpToggleButton(
                 label: 'maybe',
@@ -146,11 +143,9 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                 activeColor: cs.tertiary,
                 isActive: myRsvp == RsvpStatus.maybe,
                 enabled: !_loading,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.maybe
-                            ? _removeRsvp()
-                            : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
+                onTap: () => myRsvp == RsvpStatus.maybe
+                    ? _removeRsvp()
+                    : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
               ),
               _RsvpToggleButton(
                 label: "can't make it",
@@ -158,14 +153,9 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                 activeColor: cs.error,
                 isActive: myRsvp == RsvpStatus.cantGo,
                 enabled: !_loading,
-                onTap:
-                    () =>
-                        myRsvp == RsvpStatus.cantGo
-                            ? _removeRsvp()
-                            : _confirmAndSetRsvp(
-                              RsvpStatus.cantGo,
-                              "can't make it",
-                            ),
+                onTap: () => myRsvp == RsvpStatus.cantGo
+                    ? _removeRsvp()
+                    : _confirmAndSetRsvp(RsvpStatus.cantGo, "can't make it"),
               ),
             ],
           ),
@@ -215,10 +205,9 @@ class _RsvpToggleButton extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color:
-                isActive
-                    ? activeColor.withValues(alpha: 0.15)
-                    : Colors.transparent,
+            color: isActive
+                ? activeColor.withValues(alpha: 0.15)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isActive ? activeColor : cs.outlineVariant,

@@ -61,11 +61,10 @@ void main() {
           _app(
             ValueListenableBuilder<DateTime>(
               valueListenable: notifier,
-              builder:
-                  (_, dt, __) => DateTimePicker(
-                    initialDateTime: dt,
-                    onDateTimeChanged: (_) {},
-                  ),
+              builder: (_, dt, __) => DateTimePicker(
+                initialDateTime: dt,
+                onDateTimeChanged: (_) {},
+              ),
             ),
           ),
         );
@@ -94,16 +93,15 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: Builder(
-              builder:
-                  (ctx) => TextButton(
-                    onPressed: () async {
-                      result = await showDateTimePicker(
-                        context: ctx,
-                        initialDateTime: DateTime(2024, 6, 15, 10, 0),
-                      );
-                    },
-                    child: const Text('open'),
-                  ),
+              builder: (ctx) => TextButton(
+                onPressed: () async {
+                  result = await showDateTimePicker(
+                    context: ctx,
+                    initialDateTime: DateTime(2024, 6, 15, 10, 0),
+                  );
+                },
+                child: const Text('open'),
+              ),
             ),
           ),
         ),
@@ -133,16 +131,15 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: Builder(
-              builder:
-                  (ctx) => TextButton(
-                    onPressed: () async {
-                      result = await showDateTimePicker(
-                        context: ctx,
-                        initialDateTime: initial,
-                      );
-                    },
-                    child: const Text('open'),
-                  ),
+              builder: (ctx) => TextButton(
+                onPressed: () async {
+                  result = await showDateTimePicker(
+                    context: ctx,
+                    initialDateTime: initial,
+                  );
+                },
+                child: const Text('open'),
+              ),
             ),
           ),
         ),

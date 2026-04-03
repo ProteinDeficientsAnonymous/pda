@@ -26,10 +26,9 @@ class MemberProfileScreen extends ConsumerWidget {
       maxWidth: 600,
       child: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load profile — try refreshing'),
-            ),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t load profile — try refreshing'),
+        ),
         data: (data) => _ProfileBody(data: data),
       ),
     );

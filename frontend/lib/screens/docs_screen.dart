@@ -19,10 +19,8 @@ class DocsScreen extends ConsumerWidget {
     return AppScaffold(
       child: foldersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load docs — try refreshing'),
-            ),
+        error: (e, _) =>
+            const Center(child: Text('couldn\'t load docs — try refreshing')),
         data: (folders) => _DocsBody(folders: folders),
       ),
     );
@@ -73,7 +71,7 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
   }
 
   bool get _canManage {
-    final user = ref.read(authProvider).valueOrNull;
+    final user = ref.read(authProvider).value;
     return user?.hasPermission(Permission.manageDocs) ?? false;
   }
 
@@ -102,11 +100,10 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
                     if (value == 'folder') _showCreateFolderDialog();
                     if (value == 'doc') _showCreateDocDialog();
                   },
-                  itemBuilder:
-                      (_) => const [
-                        PopupMenuItem(value: 'folder', child: Text('folder')),
-                        PopupMenuItem(value: 'doc', child: Text('document')),
-                      ],
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'folder', child: Text('folder')),
+                    PopupMenuItem(value: 'doc', child: Text('document')),
+                  ],
                 ),
             ],
           ),
@@ -115,21 +112,16 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            tabs:
-                widget.folders
-                    .map((f) => Tab(text: f.name.toLowerCase()))
-                    .toList(),
+            tabs: widget.folders
+                .map((f) => Tab(text: f.name.toLowerCase()))
+                .toList(),
           ),
         Expanded(
           child: TabBarView(
             controller: _tabController,
-            children:
-                widget.folders
-                    .map(
-                      (f) =>
-                          DocsFolderContent(folder: f, canManage: _canManage),
-                    )
-                    .toList(),
+            children: widget.folders
+                .map((f) => DocsFolderContent(folder: f, canManage: _canManage))
+                .toList(),
           ),
         ),
       ],
@@ -140,26 +132,25 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
     final controller = TextEditingController();
     showDialog<void>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('new folder'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Folder name'),
-              onSubmitted: (_) => _submitFolder(ctx, controller),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => _submitFolder(ctx, controller),
-                child: const Text('create'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('new folder'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Folder name'),
+          onSubmitted: (_) => _submitFolder(ctx, controller),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => _submitFolder(ctx, controller),
+            child: const Text('create'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -184,26 +175,25 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
 
     showDialog<void>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('new document'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Document title'),
-              onSubmitted: (_) => _submitDoc(ctx, controller, currentFolder.id),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => _submitDoc(ctx, controller, currentFolder.id),
-                child: const Text('create'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('new document'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Document title'),
+          onSubmitted: (_) => _submitDoc(ctx, controller, currentFolder.id),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => _submitDoc(ctx, controller, currentFolder.id),
+            child: const Text('create'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -254,38 +244,37 @@ class _EmptyState extends ConsumerWidget {
     final controller = TextEditingController();
     showDialog<void>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('new folder'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Folder name'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  final name = controller.text.trim();
-                  if (name.isEmpty) return;
-                  Navigator.pop(ctx);
-                  try {
-                    await ref
-                        .read(docFoldersProvider.notifier)
-                        .createFolder(name: name);
-                  } catch (e) {
-                    if (context.mounted) {
-                      showErrorSnackBar(context, ApiError.from(e).message);
-                    }
-                  }
-                },
-                child: const Text('create'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('new folder'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Folder name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isEmpty) return;
+              Navigator.pop(ctx);
+              try {
+                await ref
+                    .read(docFoldersProvider.notifier)
+                    .createFolder(name: name);
+              } catch (e) {
+                if (context.mounted) {
+                  showErrorSnackBar(context, ApiError.from(e).message);
+                }
+              }
+            },
+            child: const Text('create'),
+          ),
+        ],
+      ),
     );
   }
 }

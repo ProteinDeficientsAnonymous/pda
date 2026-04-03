@@ -127,14 +127,13 @@ class _GuestAddEventDialogState extends ConsumerState<GuestAddEventDialog> {
           ),
           FilledButton(
             onPressed: _loading ? null : _checkPhone,
-            child:
-                _loading
-                    ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : const Text('continue'),
+            child: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('continue'),
           ),
         ],
         GuestStep.password => [
@@ -148,14 +147,13 @@ class _GuestAddEventDialogState extends ConsumerState<GuestAddEventDialog> {
           ),
           FilledButton(
             onPressed: _loading ? null : _login,
-            child:
-                _loading
-                    ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : const Text('log in'),
+            child: _loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('log in'),
           ),
         ],
         GuestStep.pending || GuestStep.unknown => [

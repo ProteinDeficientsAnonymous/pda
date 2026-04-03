@@ -101,18 +101,17 @@ class _SettingsProfileAvatarState extends ConsumerState<SettingsProfileAvatar> {
                 child: CircleAvatar(
                   radius: 16,
                   backgroundColor: cs.surface,
-                  child:
-                      _uploading
-                          ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : Icon(
-                            Icons.add_a_photo_outlined,
-                            size: 16,
-                            color: cs.onSurfaceVariant,
-                          ),
+                  child: _uploading
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          Icons.add_a_photo_outlined,
+                          size: 16,
+                          color: cs.onSurfaceVariant,
+                        ),
                 ),
               ),
             ],

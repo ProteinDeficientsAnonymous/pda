@@ -68,14 +68,13 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
         ),
         FilledButton(
           onPressed: _cropping ? null : _onDone,
-          child:
-              _cropping
-                  ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                  : const Text('done'),
+          child: _cropping
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('done'),
         ),
       ],
     );

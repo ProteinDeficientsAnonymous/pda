@@ -58,8 +58,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late Map<String, String> _coHostNames;
   late Set<String> _invitedUserIds;
   late Map<String, String> _invitedUserNames;
-  bool _startPickerExpanded = false;
-  bool _endPickerExpanded = false;
+  DateTimePickerMode? _startPickerMode;
+  DateTimePickerMode? _endPickerMode;
   XFile? _selectedPhoto;
   bool _removePhoto = false;
   bool _removingPoll = false;
@@ -121,8 +121,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _description = TextEditingController();
       _location = TextEditingController();
       _whatsappLink = TextEditingController();
-      _partifulLink =
-          TextEditingController()..addListener(() => setState(() {}));
+      _partifulLink = TextEditingController()
+        ..addListener(() => setState(() {}));
       _otherLink = TextEditingController();
       _price = TextEditingController();
       _venmoLink = TextEditingController();
@@ -224,10 +224,9 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
         },
         photo: _selectedPhoto,
         removePhoto: _removePhoto,
-        datetimePollOptions:
-            _datetimePollOptions
-                .map((dt) => dt.toUtc().toIso8601String())
-                .toList(),
+        datetimePollOptions: _datetimePollOptions
+            .map((dt) => dt.toUtc().toIso8601String())
+            .toList(),
       ),
     );
   }
@@ -253,26 +252,25 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     final messenger = ScaffoldMessenger.of(ctx);
     final confirmed = await showDialog<bool>(
       context: ctx,
-      builder:
-          (dlgCtx) => AlertDialog(
-            title: const Text('remove poll?'),
-            content: const Text(
-              'This will delete the poll and all votes. This cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dlgCtx).pop(false),
-                child: const Text('cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(dlgCtx).pop(true),
-                child: Text(
-                  'remove',
-                  style: TextStyle(color: Theme.of(dlgCtx).colorScheme.error),
-                ),
-              ),
-            ],
+      builder: (dlgCtx) => AlertDialog(
+        title: const Text('remove poll?'),
+        content: const Text(
+          'This will delete the poll and all votes. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dlgCtx).pop(false),
+            child: const Text('cancel'),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(dlgCtx).pop(true),
+            child: Text(
+              'remove',
+              style: TextStyle(color: Theme.of(dlgCtx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
     );
     if (confirmed != true || !mounted) return;
     setState(() => _removingPoll = true);
@@ -333,26 +331,25 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
         final features = (resp.data?['features'] as List<dynamic>?) ?? const [];
         if (!mounted) return;
         setState(() {
-          _locationResults =
-              features.map((f) {
-                final props = f['properties'] as Map<String, dynamic>;
-                final coords = f['geometry']['coordinates'] as List<dynamic>;
-                final name = props['name'] as String? ?? '';
-                final city = props['city'] as String?;
-                final parts = <String>[
-                  if (name.isNotEmpty) name,
-                  if (city != null) city,
-                  if (props['state'] != null) props['state'] as String,
-                  if (props['country'] != null) props['country'] as String,
-                ];
-                return EventPhotonResult(
-                  name: name,
-                  city: city != null && city != name ? city : null,
-                  fullAddress: parts.join(', '),
-                  lat: (coords[1] as num).toDouble(),
-                  lon: (coords[0] as num).toDouble(),
-                );
-              }).toList();
+          _locationResults = features.map((f) {
+            final props = f['properties'] as Map<String, dynamic>;
+            final coords = f['geometry']['coordinates'] as List<dynamic>;
+            final name = props['name'] as String? ?? '';
+            final city = props['city'] as String?;
+            final parts = <String>[
+              if (name.isNotEmpty) name,
+              if (city != null) city,
+              if (props['state'] != null) props['state'] as String,
+              if (props['country'] != null) props['country'] as String,
+            ];
+            return EventPhotonResult(
+              name: name,
+              city: city != null && city != name ? city : null,
+              fullAddress: parts.join(', '),
+              lat: (coords[1] as num).toDouble(),
+              lon: (coords[0] as num).toDouble(),
+            );
+          }).toList();
         });
       } catch (_) {
         if (mounted) setState(() => _locationResults = []);
@@ -365,13 +362,14 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   List<Widget> _buildWhenSection(
     ThemeData theme,
     String Function(DateTime) dateFmt,
+    double pickerWidth,
   ) {
     // Editing an event with a poll.
     if (_isEdit && (widget.event?.hasPoll ?? false)) {
       // Poll finalized — datetime_tbd is false, show normal date + note.
       if (!(widget.event?.datetimeTbd ?? true)) {
         return [
-          ..._buildDateTimeSection(dateFmt),
+          ..._buildDateTimeSection(dateFmt, pickerWidth),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -435,8 +433,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
               IconButton(
                 tooltip: 'remove option',
                 icon: const Icon(Icons.close, size: 18),
-                onPressed:
-                    () => setState(() => _datetimePollOptions.removeAt(i)),
+                onPressed: () =>
+                    setState(() => _datetimePollOptions.removeAt(i)),
               ),
             ],
           ),
@@ -450,7 +448,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
 
     // Default: date/time pickers + offer to switch to a poll.
     return [
-      ..._buildDateTimeSection(dateFmt),
+      ..._buildDateTimeSection(dateFmt, pickerWidth),
       const SizedBox(height: 10),
       InkWell(
         onTap: _addDatetimePollOption,
@@ -487,31 +485,54 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     ];
   }
 
-  List<Widget> _buildDateTimeSection(String Function(DateTime) dateFmt) {
+  void _toggleStartMode(DateTimePickerMode mode) {
+    setState(() {
+      _startPickerMode = _startPickerMode == mode ? null : mode;
+    });
+  }
+
+  void _toggleEndMode(DateTimePickerMode mode) {
+    setState(() {
+      _endPickerMode = _endPickerMode == mode ? null : mode;
+    });
+  }
+
+  List<Widget> _buildDateTimeSection(
+    String Function(DateTime) dateFmt,
+    double pickerWidth,
+  ) {
     return [
       EventFormDateTimeRow(
         label: 'start',
         date: dateFmt(_start),
         time: formatTime(_start),
-        isExpanded: _startPickerExpanded,
-        onTap:
-            () => setState(() => _startPickerExpanded = !_startPickerExpanded),
+        isDateExpanded: _startPickerMode == DateTimePickerMode.dateOnly,
+        isTimeExpanded: _startPickerMode == DateTimePickerMode.timeOnly,
+        onDateTap: () => _toggleStartMode(DateTimePickerMode.dateOnly),
+        onTimeTap: () => _toggleStartMode(DateTimePickerMode.timeOnly),
       ),
-      if (_startPickerExpanded) ...[
+      if (_startPickerMode != null) ...[
         const SizedBox(height: 8),
-        DateTimePicker(
-          initialDateTime: _start,
-          onDateTimeChanged: _onStartChanged,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
+        SizedBox(
+          width: pickerWidth,
+          child: DateTimePicker(
+            initialDateTime: _start,
+            onDateTimeChanged: _onStartChanged,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+            mode: _startPickerMode!,
+          ),
         ),
       ],
       const SizedBox(height: 8),
-      ..._buildEndTimeSection(dateFmt),
+      ..._buildEndTimeSection(dateFmt, pickerWidth),
     ];
   }
 
-  List<Widget> _buildEndTimeSection(String Function(DateTime) dateFmt) {
+  List<Widget> _buildEndTimeSection(
+    String Function(DateTime) dateFmt,
+    double pickerWidth,
+  ) {
     if (_end == null) {
       return [
         Semantics(
@@ -552,10 +573,10 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
               label: 'end',
               date: dateFmt(_end!),
               time: formatTime(_end!),
-              isExpanded: _endPickerExpanded,
-              onTap:
-                  () =>
-                      setState(() => _endPickerExpanded = !_endPickerExpanded),
+              isDateExpanded: _endPickerMode == DateTimePickerMode.dateOnly,
+              isTimeExpanded: _endPickerMode == DateTimePickerMode.timeOnly,
+              onDateTap: () => _toggleEndMode(DateTimePickerMode.dateOnly),
+              onTimeTap: () => _toggleEndMode(DateTimePickerMode.timeOnly),
             ),
           ),
           IconButton(
@@ -565,13 +586,17 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           ),
         ],
       ),
-      if (_endPickerExpanded) ...[
+      if (_endPickerMode != null) ...[
         const SizedBox(height: 8),
-        DateTimePicker(
-          initialDateTime: _end!,
-          onDateTimeChanged: _onEndChanged,
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
+        SizedBox(
+          width: pickerWidth,
+          child: DateTimePicker(
+            initialDateTime: _end!,
+            onDateTimeChanged: _onEndChanged,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+            mode: _endPickerMode!,
+          ),
         ),
       ],
     ];
@@ -580,14 +605,14 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   void _addEndTime() {
     setState(() {
       _end = _start.add(const Duration(hours: 1));
-      _endPickerExpanded = true;
+      _endPickerMode = DateTimePickerMode.timeOnly;
     });
   }
 
   void _clearEndTime() {
     setState(() {
       _end = null;
-      _endPickerExpanded = false;
+      _endPickerMode = null;
     });
   }
 
@@ -605,71 +630,68 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child:
-                  hasSelected
-                      ? FutureBuilder<List<int>>(
-                        future: _selectedPhoto!.readAsBytes(),
-                        builder: (ctx, snap) {
-                          if (!snap.hasData) {
-                            return const SizedBox(
-                              height: 160,
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          return Image.memory(
-                            snap.data! as dynamic,
+              child: hasSelected
+                  ? FutureBuilder<List<int>>(
+                      future: _selectedPhoto!.readAsBytes(),
+                      builder: (ctx, snap) {
+                        if (!snap.hasData) {
+                          return const SizedBox(
                             height: 160,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
+                            child: Center(child: CircularProgressIndicator()),
                           );
-                        },
-                      )
-                      : hasExisting
-                      ? Image.network(
-                        existingUrl,
-                        height: 160,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      )
-                      : InkWell(
-                        onTap: _pickPhoto,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 130,
+                        }
+                        return Image.memory(
+                          snap.data! as dynamic,
+                          height: 160,
                           width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest.withValues(
-                              alpha: 0.3,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: cs.outline.withValues(alpha: 0.2),
-                            ),
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    )
+                  : hasExisting
+                  ? Image.network(
+                      existingUrl,
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    )
+                  : InkWell(
+                      onTap: _pickPhoto,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 130,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest.withValues(
+                            alpha: 0.3,
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.add_photo_alternate_outlined,
-                                size: 32,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: cs.outline.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_photo_alternate_outlined,
+                              size: 32,
+                              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'add a cover photo',
+                              style: TextStyle(
+                                fontSize: 13,
                                 color: cs.onSurfaceVariant.withValues(
                                   alpha: 0.5,
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'add a cover photo',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: cs.onSurfaceVariant.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
             ),
             if (hasPhoto)
               Positioned(
@@ -715,17 +737,16 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
             labelText: 'where?',
             border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.place_outlined),
-            suffixIcon:
-                _locationSearching
-                    ? const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    )
-                    : null,
+            suffixIcon: _locationSearching
+                ? const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : null,
           ),
           onChanged: _searchLocation,
           validator: v.maxLength(300),
@@ -739,31 +760,29 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children:
-                  _locationResults.map((r) {
-                    return ListTile(
-                      dense: true,
-                      title: Text(r.name, style: const TextStyle(fontSize: 13)),
-                      subtitle:
-                          r.city != null
-                              ? Text(
-                                r.city!,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              )
-                              : null,
-                      onTap: () {
-                        _location.text = r.fullAddress;
-                        setState(() {
-                          _latitude = r.lat;
-                          _longitude = r.lon;
-                          _locationResults = [];
-                        });
-                      },
-                    );
-                  }).toList(),
+              children: _locationResults.map((r) {
+                return ListTile(
+                  dense: true,
+                  title: Text(r.name, style: const TextStyle(fontSize: 13)),
+                  subtitle: r.city != null
+                      ? Text(
+                          r.city!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      : null,
+                  onTap: () {
+                    _location.text = r.fullAddress;
+                    setState(() {
+                      _latitude = r.lat;
+                      _longitude = r.lon;
+                      _locationResults = [];
+                    });
+                  },
+                );
+              }).toList(),
             ),
           ),
         ],
@@ -838,10 +857,9 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           labelText: 'partiful link (optional)',
           border: const OutlineInputBorder(),
           prefixIcon: const Icon(Icons.celebration_outlined),
-          helperText:
-              _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
-                  ? 'consider using app RSVPs instead of partiful'
-                  : null,
+          helperText: _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
+              ? 'consider using app RSVPs instead of partiful'
+              : null,
           helperStyle: TextStyle(color: theme.colorScheme.tertiary),
         ),
         keyboardType: TextInputType.url,
@@ -963,13 +981,12 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       value: _rsvpEnabled,
       onChanged: (val) => setState(() => _rsvpEnabled = val),
       title: const Text('enable RSVPs'),
-      subtitle:
-          _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
-              ? Text(
-                'you have a partiful link set — consider using one or the other',
-                style: TextStyle(color: theme.colorScheme.tertiary),
-              )
-              : null,
+      subtitle: _rsvpEnabled && _partifulLink.text.trim().isNotEmpty
+          ? Text(
+              'you have a partiful link set — consider using one or the other',
+              style: TextStyle(color: theme.colorScheme.tertiary),
+            )
+          : null,
       contentPadding: EdgeInsets.zero,
     );
   }
@@ -1053,7 +1070,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 const SizedBox(height: 12),
                 _buildNoFeesNote(theme),
                 const SizedBox(height: 16),
-                ..._buildWhenSection(theme, dateFmt),
+                ..._buildWhenSection(theme, dateFmt, dialogWidth),
                 const SizedBox(height: 16),
                 _buildLocationField(),
                 const SizedBox(height: 12),
@@ -1096,14 +1113,13 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                       child: Text('invite only'),
                     ),
                   ],
-                  onChanged:
-                      (val) => setState(
-                        () => _visibility = val ?? PageVisibility.public_,
-                      ),
+                  onChanged: (val) => setState(
+                    () => _visibility = val ?? PageVisibility.public_,
+                  ),
                 ),
                 if (ref
                         .watch(authProvider)
-                        .valueOrNull
+                        .value
                         ?.hasPermission(Permission.tagOfficialEvent) ??
                     false) ...[
                   const SizedBox(height: 8),
@@ -1114,14 +1130,11 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     ),
                     value: _eventType == EventType.official,
                     contentPadding: EdgeInsets.zero,
-                    onChanged:
-                        (val) => setState(
-                          () =>
-                              _eventType =
-                                  val
-                                      ? EventType.official
-                                      : EventType.community,
-                        ),
+                    onChanged: (val) => setState(
+                      () => _eventType = val
+                          ? EventType.official
+                          : EventType.community,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 16),

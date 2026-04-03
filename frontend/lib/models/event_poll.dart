@@ -82,15 +82,13 @@ class EventPoll {
               .toList() ??
           [],
       winningOptionId: json['winning_option_id'] as String?,
-      winningDatetime:
-          json['winning_datetime'] != null
-              ? DateTime.parse(json['winning_datetime'] as String)
-              : null,
+      winningDatetime: json['winning_datetime'] != null
+          ? DateTime.parse(json['winning_datetime'] as String)
+          : null,
       finalizedById: json['finalized_by_id'] as String?,
-      finalizedAt:
-          json['finalized_at'] != null
-              ? DateTime.parse(json['finalized_at'] as String)
-              : null,
+      finalizedAt: json['finalized_at'] != null
+          ? DateTime.parse(json['finalized_at'] as String)
+          : null,
       myVotes:
           (json['my_votes'] as Map<String, dynamic>?)?.map(
             (k, v) => MapEntry(k, v as String),

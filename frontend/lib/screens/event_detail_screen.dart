@@ -17,10 +17,8 @@ class EventDetailScreen extends ConsumerWidget {
       maxWidth: 800,
       child: eventAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load event — try refreshing'),
-            ),
+        error: (e, _) =>
+            const Center(child: Text('couldn\'t load event — try refreshing')),
         data: (event) => EventDetailContent(event: event, fullPage: true),
       ),
     );

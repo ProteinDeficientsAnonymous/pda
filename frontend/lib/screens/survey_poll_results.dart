@@ -27,22 +27,20 @@ class SurveyVoterAvatarStack extends StatelessWidget {
               child: CircleAvatar(
                 radius: size / 2,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                backgroundImage:
-                    showing[i].photoUrl.isNotEmpty
-                        ? NetworkImage(showing[i].photoUrl)
-                        : null,
-                child:
-                    showing[i].photoUrl.isEmpty
-                        ? Text(
-                          showing[i].name.isNotEmpty
-                              ? showing[i].name[0].toUpperCase()
-                              : '?',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                        : null,
+                backgroundImage: showing[i].photoUrl.isNotEmpty
+                    ? NetworkImage(showing[i].photoUrl)
+                    : null,
+                child: showing[i].photoUrl.isEmpty
+                    ? Text(
+                        showing[i].name.isNotEmpty
+                            ? showing[i].name[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      )
+                    : null,
               ),
             ),
           if (extra > 0)
@@ -90,19 +88,17 @@ class SurveyPollOptionResult extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color:
-              isWinner
-                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.6)
-                  : theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.4,
-                  ),
+          color: isWinner
+              ? theme.colorScheme.primaryContainer.withValues(alpha: 0.6)
+              : theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
           borderRadius: BorderRadius.circular(8),
-          border:
-              isWinner
-                  ? Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.4),
-                  )
-                  : null,
+          border: isWinner
+              ? Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                )
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,8 +109,9 @@ class SurveyPollOptionResult extends StatelessWidget {
                   child: Text(
                     label,
                     style: TextStyle(
-                      fontWeight:
-                          isWinner ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: isWinner
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -143,10 +140,9 @@ class SurveyPollOptionResult extends StatelessWidget {
                 backgroundColor: theme.colorScheme.outline.withValues(
                   alpha: 0.15,
                 ),
-                color:
-                    isWinner
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.secondary,
+                color: isWinner
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.secondary,
               ),
             ),
           ],

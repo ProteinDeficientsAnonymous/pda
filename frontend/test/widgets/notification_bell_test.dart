@@ -41,8 +41,8 @@ Widget _buildBell({
       GoRoute(
         path: '/',
         name: 'home',
-        builder:
-            (_, __) => const Scaffold(body: Center(child: NotificationBell())),
+        builder: (_, __) =>
+            const Scaffold(body: Center(child: NotificationBell())),
       ),
       GoRoute(
         path: '/events/:id',

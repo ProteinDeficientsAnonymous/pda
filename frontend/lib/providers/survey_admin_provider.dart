@@ -66,11 +66,14 @@ final surveyDetailAdminProvider = FutureProvider.family<Survey, String>((
   return Survey.fromJson(response.data as Map<String, dynamic>);
 });
 
-class SurveyQuestionsNotifier extends FamilyAsyncNotifier<Survey, String> {
+class SurveyQuestionsNotifier extends AsyncNotifier<Survey> {
+  SurveyQuestionsNotifier(this._surveyId);
+  final String _surveyId;
+
   @override
-  Future<Survey> build(String surveyId) async {
+  Future<Survey> build() async {
     final api = ref.read(apiClientProvider);
-    final response = await api.get('/api/community/surveys/$surveyId/admin/');
+    final response = await api.get('/api/community/surveys/$_surveyId/admin/');
     return Survey.fromJson(response.data as Map<String, dynamic>);
   }
 
@@ -82,7 +85,7 @@ class SurveyQuestionsNotifier extends FamilyAsyncNotifier<Survey, String> {
   }) async {
     final api = ref.read(apiClientProvider);
     await api.post(
-      '/api/community/surveys/$arg/questions/',
+      '/api/community/surveys/$_surveyId/questions/',
       data: {
         'label': label,
         'field_type': fieldType,
@@ -102,7 +105,7 @@ class SurveyQuestionsNotifier extends FamilyAsyncNotifier<Survey, String> {
   }) async {
     final api = ref.read(apiClientProvider);
     await api.patch(
-      '/api/community/surveys/$arg/questions/$questionId/',
+      '/api/community/surveys/$_surveyId/questions/$questionId/',
       data: {
         'label': label,
         'field_type': fieldType,
@@ -115,14 +118,16 @@ class SurveyQuestionsNotifier extends FamilyAsyncNotifier<Survey, String> {
 
   Future<void> deleteQuestion(String questionId) async {
     final api = ref.read(apiClientProvider);
-    await api.delete('/api/community/surveys/$arg/questions/$questionId/');
+    await api.delete(
+      '/api/community/surveys/$_surveyId/questions/$questionId/',
+    );
     ref.invalidateSelf();
   }
 
   Future<void> reorder(List<String> questionIds) async {
     final api = ref.read(apiClientProvider);
     await api.put(
-      '/api/community/surveys/$arg/questions/order/',
+      '/api/community/surveys/$_surveyId/questions/order/',
       data: {'question_ids': questionIds},
     );
     ref.invalidateSelf();
@@ -131,7 +136,7 @@ class SurveyQuestionsNotifier extends FamilyAsyncNotifier<Survey, String> {
 
 final surveyQuestionsProvider =
     AsyncNotifierProvider.family<SurveyQuestionsNotifier, Survey, String>(
-      SurveyQuestionsNotifier.new,
+      (arg) => SurveyQuestionsNotifier(arg),
     );
 
 /// Fetches survey responses (admin).

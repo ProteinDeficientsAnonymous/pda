@@ -58,10 +58,9 @@ class _LivePollEditorState extends ConsumerState<LivePollEditor> {
       );
     } catch (e) {
       if (mounted) {
-        final msg =
-            e.toString().contains('at least 2')
-                ? 'a poll needs at least 2 options'
-                : 'couldn\'t remove option — try again';
+        final msg = e.toString().contains('at least 2')
+            ? 'a poll needs at least 2 options'
+            : 'couldn\'t remove option — try again';
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(msg)));
@@ -101,11 +100,10 @@ class _LivePollEditorState extends ConsumerState<LivePollEditor> {
         ),
         const SizedBox(height: 8),
         pollAsync.when(
-          loading:
-              () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Center(child: CircularProgressIndicator()),
-              ),
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(child: CircularProgressIndicator()),
+          ),
           error: (_, __) => const Text('couldn\'t load options'),
           data: (poll) {
             if (poll == null) return const SizedBox.shrink();
@@ -128,10 +126,9 @@ class _LivePollEditorState extends ConsumerState<LivePollEditor> {
                       IconButton(
                         tooltip: 'remove option',
                         icon: const Icon(Icons.close, size: 18),
-                        onPressed:
-                            options.length > 2
-                                ? () => _removeOption(option)
-                                : null,
+                        onPressed: options.length > 2
+                            ? () => _removeOption(option)
+                            : null,
                       ),
                     ],
                   ),

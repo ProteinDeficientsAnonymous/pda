@@ -41,8 +41,10 @@ class WideWeekGrid extends StatelessWidget {
       });
     });
 
-    final placements =
-        WeekPlacementCalculator(days: days, allEvents: events).calculate();
+    final placements = WeekPlacementCalculator(
+      days: days,
+      allEvents: events,
+    ).calculate();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -68,57 +70,52 @@ class WideWeekGrid extends StatelessWidget {
                       SizedBox(
                         height: _dayLabelHeight,
                         child: Row(
-                          children:
-                              days.map((day) {
-                                final today = isToday(day);
-                                final bgColor =
-                                    today
-                                        ? theme.colorScheme.primary
-                                        : Colors.transparent;
-                                final fgColor =
-                                    today
-                                        ? theme.colorScheme.onPrimary
-                                        : theme.colorScheme.onSurface;
-                                return Expanded(
-                                  child: InkWell(
-                                    onTap:
-                                        onDayTapped != null
-                                            ? () => onDayTapped!(day)
-                                            : null,
+                          children: days.map((day) {
+                            final today = isToday(day);
+                            final bgColor = today
+                                ? theme.colorScheme.primary
+                                : Colors.transparent;
+                            final fgColor = today
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurface;
+                            return Expanded(
+                              child: InkWell(
+                                onTap: onDayTapped != null
+                                    ? () => onDayTapped!(day)
+                                    : null,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: bgColor,
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: bgColor,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            DateFormat(
-                                              'EEE',
-                                            ).format(day).toLowerCase(),
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              color: fgColor,
-                                            ),
-                                          ),
-                                          Text(
-                                            '${day.day}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: fgColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                   ),
-                                );
-                              }).toList(),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        DateFormat(
+                                          'EEE',
+                                        ).format(day).toLowerCase(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: fgColor,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${day.day}',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: fgColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                       Divider(
@@ -132,15 +129,14 @@ class WideWeekGrid extends StatelessWidget {
                             // Tappable column cells with overflow indicators
                             Row(
                               children: List.generate(7, (col) {
-                                final overflow =
-                                    placements
-                                        .where(
-                                          (p) =>
-                                              p.row >= _maxEventRows &&
-                                              col >= p.startCol &&
-                                              col <= p.endCol,
-                                        )
-                                        .length;
+                                final overflow = placements
+                                    .where(
+                                      (p) =>
+                                          p.row >= _maxEventRows &&
+                                          col >= p.startCol &&
+                                          col <= p.endCol,
+                                    )
+                                    .length;
                                 return Expanded(
                                   child: Semantics(
                                     button: onDayTapped != null,
@@ -148,50 +144,44 @@ class WideWeekGrid extends StatelessWidget {
                                       'EEEE, MMMM d',
                                     ).format(days[col]),
                                     child: InkWell(
-                                      onTap:
-                                          onDayTapped != null
-                                              ? () => onDayTapped!(days[col])
-                                              : null,
+                                      onTap: onDayTapped != null
+                                          ? () => onDayTapped!(days[col])
+                                          : null,
                                       child: Container(
                                         decoration: BoxDecoration(
                                           border: Border(
-                                            right:
-                                                col < 6
-                                                    ? BorderSide(
-                                                      color: theme.dividerColor
-                                                          .withValues(
-                                                            alpha: 0.4,
-                                                          ),
-                                                      width: 0.5,
-                                                    )
-                                                    : BorderSide.none,
+                                            right: col < 6
+                                                ? BorderSide(
+                                                    color: theme.dividerColor
+                                                        .withValues(alpha: 0.4),
+                                                    width: 0.5,
+                                                  )
+                                                : BorderSide.none,
                                           ),
                                         ),
-                                        child:
-                                            overflow > 0
-                                                ? Align(
-                                                  alignment:
-                                                      Alignment.bottomCenter,
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          bottom: 4,
-                                                        ),
-                                                    child: Text(
-                                                      '+$overflow more',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color:
-                                                            theme
-                                                                .colorScheme
-                                                                .primary,
+                                        child: overflow > 0
+                                            ? Align(
+                                                alignment:
+                                                    Alignment.bottomCenter,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        bottom: 4,
                                                       ),
+                                                  child: Text(
+                                                    '+$overflow more',
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: theme
+                                                          .colorScheme
+                                                          .primary,
                                                     ),
                                                   ),
-                                                )
-                                                : null,
+                                                ),
+                                              )
+                                            : null,
                                       ),
                                     ),
                                   ),
@@ -202,17 +192,16 @@ class WideWeekGrid extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Stack(
-                                children:
-                                    placements
-                                        .where((p) => p.row < _maxEventRows)
-                                        .map(
-                                          (p) => _buildWideEventChip(
-                                            p,
-                                            colWidth,
-                                            days,
-                                          ),
-                                        )
-                                        .toList(),
+                                children: placements
+                                    .where((p) => p.row < _maxEventRows)
+                                    .map(
+                                      (p) => _buildWideEventChip(
+                                        p,
+                                        colWidth,
+                                        days,
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
                           ],
@@ -275,10 +264,9 @@ class WideWeekGrid extends StatelessWidget {
         p.startCol != p.endCol || continuesFromPrev || continuesToNext;
 
     final eStart = p.event.startDatetime.toLocal();
-    final subLabel =
-        isMultiDay
-            ? '${DateFormat('MMM d').format(eStart).toLowerCase()} \u2013 ${DateFormat('MMM d').format(eEnd).toLowerCase()}'
-            : formatTime(eStart);
+    final subLabel = isMultiDay
+        ? '${DateFormat('MMM d').format(eStart).toLowerCase()} \u2013 ${DateFormat('MMM d').format(eEnd).toLowerCase()}'
+        : formatTime(eStart);
 
     return Positioned(
       left: left,
@@ -301,8 +289,9 @@ class WideWeekGrid extends StatelessWidget {
             decoration: BoxDecoration(
               color: colors.$1,
               borderRadius: BorderRadius.horizontal(
-                left:
-                    continuesFromPrev ? Radius.zero : const Radius.circular(6),
+                left: continuesFromPrev
+                    ? Radius.zero
+                    : const Radius.circular(6),
                 right: continuesToNext ? Radius.zero : const Radius.circular(6),
               ),
             ),

@@ -26,7 +26,7 @@ class MemberCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(userManagementProvider.notifier);
-    final currentUser = ref.watch(authProvider).valueOrNull;
+    final currentUser = ref.watch(authProvider).value;
     final isOwnAccount = currentUser?.id == user.id;
 
     return Opacity(
@@ -52,8 +52,9 @@ class MemberCard extends ConsumerWidget {
                                   user.displayName.isNotEmpty
                                       ? user.displayName
                                       : '(no name)',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                 ),
                               ),
                               if (user.needsOnboarding) ...[
@@ -64,10 +65,9 @@ class MemberCard extends ConsumerWidget {
                                     width: 8,
                                     height: 8,
                                     decoration: BoxDecoration(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.tertiary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.tertiary,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -79,20 +79,18 @@ class MemberCard extends ConsumerWidget {
                           Text(
                             user.phoneNumber,
                             style: TextStyle(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                           if (user.email.isNotEmpty)
                             Text(
                               user.email,
                               style: TextStyle(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                         ],
@@ -101,8 +99,9 @@ class MemberCard extends ConsumerWidget {
                     if (user.isPaused)
                       Chip(
                         label: const Text('paused'),
-                        backgroundColor:
-                            Theme.of(context).colorScheme.surfaceContainerHigh,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHigh,
                         labelStyle: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 11,
@@ -111,8 +110,9 @@ class MemberCard extends ConsumerWidget {
                     if (user.isSuperuser)
                       Chip(
                         label: const Text('Superuser'),
-                        backgroundColor:
-                            Theme.of(context).colorScheme.errorContainer,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.errorContainer,
                         labelStyle: TextStyle(
                           color: Theme.of(context).colorScheme.onErrorContainer,
                           fontSize: 11,
@@ -125,8 +125,9 @@ class MemberCard extends ConsumerWidget {
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children:
-                        user.roles.map((r) => RoleBadge(role: r)).toList(),
+                    children: user.roles
+                        .map((r) => RoleBadge(role: r))
+                        .toList(),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -141,19 +142,18 @@ class MemberCard extends ConsumerWidget {
                           size: 16,
                         ),
                         label: const Text('Edit roles'),
-                        onPressed:
-                            () => _showRoleEditor(
-                              context,
-                              ref,
-                              notifier,
-                              isOwnAccount,
-                            ),
+                        onPressed: () => _showRoleEditor(
+                          context,
+                          ref,
+                          notifier,
+                          isOwnAccount,
+                        ),
                       ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.link_outlined, size: 16),
                       label: const Text('magic link'),
-                      onPressed:
-                          () => _handleGenerateMagicLink(context, notifier),
+                      onPressed: () =>
+                          _handleGenerateMagicLink(context, notifier),
                     ),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.key_outlined, size: 16),
@@ -211,7 +211,7 @@ class MemberCard extends ConsumerWidget {
       return;
     }
 
-    final currentUser = ref.read(authProvider).valueOrNull;
+    final currentUser = ref.read(authProvider).value;
     final adminRole = allRoles.firstWhere(
       (r) => r.name == RoleName.admin && r.isDefault,
       orElse: () => allRoles.first,
@@ -220,22 +220,21 @@ class MemberCard extends ConsumerWidget {
         user.roles.any((r) => r.id == adminRole.id) &&
         ref
                 .read(usersProvider)
-                .valueOrNull
+                .value
                 ?.where((u) => u.roles.any((r) => r.id == adminRole.id))
                 .length ==
             1;
 
     final result = await showDialog<List<String>>(
       context: context,
-      builder:
-          (ctx) => RoleEditorDialog(
-            user: user,
-            allRoles: allRoles,
-            isOwnAccount: isOwnAccount,
-            adminRoleId: adminRole.id,
-            isLastAdmin: isLastAdmin,
-            currentUserId: currentUser?.id,
-          ),
+      builder: (ctx) => RoleEditorDialog(
+        user: user,
+        allRoles: allRoles,
+        isOwnAccount: isOwnAccount,
+        adminRoleId: adminRole.id,
+        isLastAdmin: isLastAdmin,
+        currentUserId: currentUser?.id,
+      ),
     );
     if (result == null) return;
 
@@ -258,16 +257,16 @@ class MemberCard extends ConsumerWidget {
     try {
       final token = await notifier.generateMagicLink(user.id);
       if (!context.mounted) return;
-      final name =
-          user.displayName.isNotEmpty ? user.displayName : user.phoneNumber;
+      final name = user.displayName.isNotEmpty
+          ? user.displayName
+          : user.phoneNumber;
       showDialog<void>(
         context: context,
-        builder:
-            (_) => ApprovalCredentialsDialog(
-              title: 'magic sign-in link',
-              body: 'share this login link with $name:',
-              magicLinkToken: token,
-            ),
+        builder: (_) => ApprovalCredentialsDialog(
+          title: 'magic sign-in link',
+          body: 'share this login link with $name:',
+          magicLinkToken: token,
+        ),
       );
     } catch (e) {
       if (!context.mounted) return;
@@ -295,27 +294,26 @@ class MemberCard extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete member?'),
-            content: Text(
-              'Delete ${user.displayName.isNotEmpty ? user.displayName : user.phoneNumber}? '
-              'This cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(ctx).colorScheme.error,
-                ),
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete member?'),
+        content: Text(
+          'Delete ${user.displayName.isNotEmpty ? user.displayName : user.phoneNumber}? '
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
           ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
     try {
@@ -337,26 +335,26 @@ class MemberCard extends ConsumerWidget {
     BuildContext context,
     UserManagementNotifier notifier,
   ) async {
-    final name =
-        user.displayName.isNotEmpty ? user.displayName : user.phoneNumber;
+    final name = user.displayName.isNotEmpty
+        ? user.displayName
+        : user.phoneNumber;
     final action = user.isPaused ? 'unpause' : 'pause';
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: Text('$action member?'),
-            content: Text('$action $name\'s membership?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: Text(action),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: Text('$action member?'),
+        content: Text('$action $name\'s membership?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('cancel'),
           ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(action),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
     try {
@@ -372,16 +370,16 @@ class MemberCard extends ConsumerWidget {
   }
 
   void _showTempPasswordDialog(BuildContext context, String magicLinkToken) {
-    final name =
-        user.displayName.isNotEmpty ? user.displayName : user.phoneNumber;
+    final name = user.displayName.isNotEmpty
+        ? user.displayName
+        : user.phoneNumber;
     showDialog<void>(
       context: context,
-      builder:
-          (_) => ApprovalCredentialsDialog(
-            title: 'password reset',
-            body: 'share this login link with $name:',
-            magicLinkToken: magicLinkToken,
-          ),
+      builder: (_) => ApprovalCredentialsDialog(
+        title: 'password reset',
+        body: 'share this login link with $name:',
+        magicLinkToken: magicLinkToken,
+      ),
     );
   }
 }

@@ -35,6 +35,7 @@ void main() {
         ),
         apiClientProvider.overrideWithValue(mockApi),
       ],
+      retry: (_, __) => null,
     );
   });
 
@@ -67,14 +68,10 @@ void main() {
         ),
       );
 
-      final state = await container
-          .read(usersProvider.future)
-          .then(
-            (_) => container.read(usersProvider),
-            onError: (_) => container.read(usersProvider),
-          );
-      expect(state.hasError, isTrue);
-      expect(state.error.toString(), contains('permission'));
+      await expectLater(
+        container.read(usersProvider.future),
+        throwsA(predicate<Object>((e) => e.toString().contains('permission'))),
+      );
     });
   });
 

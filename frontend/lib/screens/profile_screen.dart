@@ -12,7 +12,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     final theme = Theme.of(context);
 
     return AppScaffold(
@@ -159,10 +159,9 @@ class _InfoTile extends StatelessWidget {
                   ? Icons.visibility_outlined
                   : Icons.visibility_off_outlined,
               size: 16,
-              color:
-                  visible
-                      ? theme.colorScheme.primary.withValues(alpha: 0.7)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.3),
+              color: visible
+                  ? theme.colorScheme.primary.withValues(alpha: 0.7)
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ),
         ],
@@ -187,8 +186,9 @@ class _ProfileButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color =
-        isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface;
+    final color = isDestructive
+        ? theme.colorScheme.error
+        : theme.colorScheme.onSurface;
 
     return InkWell(
       onTap: onTap,
@@ -199,10 +199,9 @@ class _ProfileButton extends StatelessWidget {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color:
-                isDestructive
-                    ? theme.colorScheme.error.withValues(alpha: 0.3)
-                    : theme.colorScheme.outline.withValues(alpha: 0.15),
+            color: isDestructive
+                ? theme.colorScheme.error.withValues(alpha: 0.3)
+                : theme.colorScheme.outline.withValues(alpha: 0.15),
           ),
         ),
         child: Row(

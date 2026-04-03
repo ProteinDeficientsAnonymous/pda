@@ -175,18 +175,15 @@ class _SettingsChangePasswordDialogState
               decoration: const InputDecoration(labelText: 'New password'),
               validator: v.all([
                 v.required(),
-                (val) =>
-                    (val != null && val.length < 8)
-                        ? 'Must be at least 8 characters'
-                        : null,
-                (val) =>
-                    (val != null && val.length > 128)
-                        ? 'Max 128 characters'
-                        : null,
-                (val) =>
-                    (val != null && val == _currentCtrl.text)
-                        ? 'New password must differ from current'
-                        : null,
+                (val) => (val != null && val.length < 8)
+                    ? 'Must be at least 8 characters'
+                    : null,
+                (val) => (val != null && val.length > 128)
+                    ? 'Max 128 characters'
+                    : null,
+                (val) => (val != null && val == _currentCtrl.text)
+                    ? 'New password must differ from current'
+                    : null,
               ]),
               onFieldSubmitted: (_) => _confirmFocus.requestFocus(),
             ),
@@ -224,8 +221,8 @@ class SettingsAccessibilitySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final prefsAsync = ref.watch(accessibilityPreferencesNotifierProvider);
-    final prefs = prefsAsync.valueOrNull;
+    final prefsAsync = ref.watch(accessibilityPreferencesProvider);
+    final prefs = prefsAsync.value;
     final dyslexiaOn = prefs?.dyslexiaFriendlyFont ?? false;
     final textScale = prefs?.textScaleFactor ?? 1.0;
 
@@ -243,7 +240,7 @@ class SettingsAccessibilitySection extends ConsumerWidget {
           dense: true,
           onChanged: (_) {
             ref
-                .read(accessibilityPreferencesNotifierProvider.notifier)
+                .read(accessibilityPreferencesProvider.notifier)
                 .toggleDyslexiaFont();
           },
         ),
@@ -268,9 +265,7 @@ class SettingsAccessibilitySection extends ConsumerWidget {
                     showSelectedIcon: false,
                     onSelectionChanged: (selection) {
                       ref
-                          .read(
-                            accessibilityPreferencesNotifierProvider.notifier,
-                          )
+                          .read(accessibilityPreferencesProvider.notifier)
                           .setTextScale(selection.first);
                     },
                   ),

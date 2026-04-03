@@ -121,10 +121,9 @@ class _SurveyDatetimePollFieldState
             label: label,
             count: totalCount,
             voters: voters,
-            onVotersTap:
-                voters.isNotEmpty
-                    ? () => _showVoters(context, label, voters)
-                    : null,
+            onVotersTap: voters.isNotEmpty
+                ? () => _showVoters(context, label, voters)
+                : null,
           ),
           const SizedBox(height: 4),
           Row(
@@ -154,53 +153,50 @@ class _SurveyDatetimePollFieldState
   void _showVoters(BuildContext context, String label, List<PollVoter> voters) {
     showModalBottomSheet<void>(
       context: context,
-      builder:
-          (ctx) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: Theme.of(ctx).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${voters.length} vote${voters.length == 1 ? '' : 's'}',
-                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final voter in voters)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundImage:
-                                voter.photoUrl.isNotEmpty
-                                    ? NetworkImage(voter.photoUrl)
-                                    : null,
-                            child:
-                                voter.photoUrl.isEmpty
-                                    ? Text(
-                                      voter.name.isNotEmpty
-                                          ? voter.name[0].toUpperCase()
-                                          : '?',
-                                      style: const TextStyle(fontSize: 12),
-                                    )
-                                    : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(voter.name),
-                        ],
-                      ),
-                    ),
-                ],
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(ctx).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                '${voters.length} vote${voters.length == 1 ? '' : 's'}',
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              for (final voter in voters)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundImage: voter.photoUrl.isNotEmpty
+                            ? NetworkImage(voter.photoUrl)
+                            : null,
+                        child: voter.photoUrl.isEmpty
+                            ? Text(
+                                voter.name.isNotEmpty
+                                    ? voter.name[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(fontSize: 12),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(voter.name),
+                    ],
+                  ),
+                ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -208,13 +204,13 @@ class _SurveyDatetimePollFieldState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final resultsAsync = ref.watch(pollResultsProvider(widget.survey.id));
-    final allResults = resultsAsync.valueOrNull;
-    final questionResults =
-        allResults
-            ?.where((t) => t.questionId == widget.question.id)
-            .firstOrNull;
-    final winnerIso =
-        widget.survey.pollResult?.winningDatetime.toUtc().toIso8601String();
+    final allResults = resultsAsync.value;
+    final questionResults = allResults
+        ?.where((t) => t.questionId == widget.question.id)
+        .firstOrNull;
+    final winnerIso = widget.survey.pollResult?.winningDatetime
+        .toUtc()
+        .toIso8601String();
 
     return FormField<String>(
       initialValue: '',
@@ -278,8 +274,9 @@ class SurveyAvailabilityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color =
-        isActive ? theme.colorScheme.primary : theme.colorScheme.outline;
+    final color = isActive
+        ? theme.colorScheme.primary
+        : theme.colorScheme.outline;
 
     return InkWell(
       onTap: onTap,

@@ -15,7 +15,7 @@ class GuidelinesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     final canEdit = user?.hasPermission(Permission.editGuidelines) ?? false;
     final guidelinesAsync = ref.watch(guidelinesNotifierProvider);
 
@@ -23,16 +23,14 @@ class GuidelinesScreen extends ConsumerWidget {
       maxWidth: 800,
       child: guidelinesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => Center(
-              child: Text(
-                'couldn\'t load guidelines — try refreshing',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-        data:
-            (guidelines) =>
-                _GuidelinesBody(content: guidelines.content, canEdit: canEdit),
+        error: (e, _) => Center(
+          child: Text(
+            'couldn\'t load guidelines — try refreshing',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
+        data: (guidelines) =>
+            _GuidelinesBody(content: guidelines.content, canEdit: canEdit),
       ),
     );
   }
@@ -60,9 +58,8 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody>
     _json = widget.content;
     if (widget.canEdit) {
       initAutosaveCallback(
-        onSave:
-            (text) =>
-                ref.read(guidelinesNotifierProvider.notifier).saveContent(text),
+        onSave: (text) =>
+            ref.read(guidelinesNotifierProvider.notifier).saveContent(text),
       );
     }
   }
@@ -88,8 +85,7 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody>
 
   void _cancelEdit() {
     final saved =
-        ref.read(guidelinesNotifierProvider).valueOrNull?.content ??
-        widget.content;
+        ref.read(guidelinesNotifierProvider).value?.content ?? widget.content;
     setState(() {
       _json = saved;
       _editing = false;
@@ -108,13 +104,12 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody>
             editing: _editing,
             expands: true,
             hintText: 'Write community guidelines…',
-            onChanged:
-                widget.canEdit
-                    ? (v) {
-                      _json = v;
-                      triggerAutosave(v);
-                    }
-                    : null,
+            onChanged: widget.canEdit
+                ? (v) {
+                    _json = v;
+                    triggerAutosave(v);
+                  }
+                : null,
           ),
         ),
       ],

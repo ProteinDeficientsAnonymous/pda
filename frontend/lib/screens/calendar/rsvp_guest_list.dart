@@ -12,8 +12,9 @@ class RsvpGuestList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final attending =
-        guests.where((g) => g.status == RsvpStatus.attending).toList();
+    final attending = guests
+        .where((g) => g.status == RsvpStatus.attending)
+        .toList();
     final maybe = guests.where((g) => g.status == RsvpStatus.maybe).toList();
     final cantGo = guests.where((g) => g.status == RsvpStatus.cantGo).toList();
 
@@ -100,20 +101,18 @@ class _GuestStatusGroupState extends State<GuestStatusGroup> {
           AnimatedSize(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,
-            child:
-                _expanded
-                    ? Padding(
-                      padding: const EdgeInsets.only(top: 4, left: 4),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children:
-                            widget.guests
-                                .map((g) => GuestChip(guest: g))
-                                .toList(),
-                      ),
-                    )
-                    : const SizedBox.shrink(),
+            child: _expanded
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 4, left: 4),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: widget.guests
+                          .map((g) => GuestChip(guest: g))
+                          .toList(),
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),

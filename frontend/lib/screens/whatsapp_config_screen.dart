@@ -24,10 +24,9 @@ class _WhatsAppConfigBody extends ConsumerWidget {
 
     return configAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error:
-          (e, _) => Center(
-            child: Text('Failed to load config: ${ApiError.from(e).message}'),
-          ),
+      error: (e, _) => Center(
+        child: Text('Failed to load config: ${ApiError.from(e).message}'),
+      ),
       data: (config) => _WhatsAppConfigForm(config: config),
     );
   }
@@ -127,10 +126,9 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
               controller: _secretCtrl,
               decoration: InputDecoration(
                 labelText: 'Bot secret',
-                hintText:
-                    widget.config.hasSecret
-                        ? '••••••••  (leave blank to keep current)'
-                        : 'Enter secret',
+                hintText: widget.config.hasSecret
+                    ? '••••••••  (leave blank to keep current)'
+                    : 'Enter secret',
                 border: const OutlineInputBorder(),
                 helperText: 'The X-Bot-Secret header value.',
               ),
@@ -150,14 +148,13 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _saving ? null : _save,
-              child:
-                  _saving
-                      ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Text('Save'),
+              child: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save'),
             ),
           ],
         ),
@@ -176,47 +173,43 @@ class _StatusCard extends ConsumerWidget {
     final theme = Theme.of(context);
 
     final (icon, label, color) = statusAsync.when(
-      loading:
-          () => (
-            const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-                as Widget,
-            'Checking…',
-            theme.colorScheme.onSurfaceVariant,
-          ),
-      error:
-          (_, __) => (
-            Icon(Icons.error_outline, size: 18, color: theme.colorScheme.error)
-                as Widget,
-            'Could not reach bot',
-            theme.colorScheme.error,
-          ),
-      data:
-          (connected) =>
-              connected
-                  ? (
-                    Icon(
-                          Icons.check_circle_outline,
-                          size: 18,
-                          color: Colors.green.shade600,
-                        )
-                        as Widget,
-                    'Bot connected',
-                    Colors.green.shade600,
+      loading: () => (
+        const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+            as Widget,
+        'Checking…',
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      error: (_, __) => (
+        Icon(Icons.error_outline, size: 18, color: theme.colorScheme.error)
+            as Widget,
+        'Could not reach bot',
+        theme.colorScheme.error,
+      ),
+      data: (connected) => connected
+          ? (
+              Icon(
+                    Icons.check_circle_outline,
+                    size: 18,
+                    color: Colors.green.shade600,
                   )
-                  : (
-                    Icon(
-                          Icons.cancel_outlined,
-                          size: 18,
-                          color: theme.colorScheme.error,
-                        )
-                        as Widget,
-                    'Bot not connected',
-                    theme.colorScheme.error,
-                  ),
+                  as Widget,
+              'Bot connected',
+              Colors.green.shade600,
+            )
+          : (
+              Icon(
+                    Icons.cancel_outlined,
+                    size: 18,
+                    color: theme.colorScheme.error,
+                  )
+                  as Widget,
+              'Bot not connected',
+              theme.colorScheme.error,
+            ),
     );
 
     return Container(

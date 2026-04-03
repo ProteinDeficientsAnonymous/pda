@@ -11,7 +11,7 @@ class NotificationBell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unreadAsync = ref.watch(unreadCountProvider);
-    final count = unreadAsync.valueOrNull ?? 0;
+    final count = unreadAsync.value ?? 0;
 
     return IconButton(
       tooltip: 'notifications',
@@ -67,21 +67,18 @@ class _NotificationsSheet extends ConsumerWidget {
             ),
             const Divider(height: 1),
             notificationsAsync.when(
-              loading:
-                  () => const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
-                  ),
-              error:
-                  (_, __) => const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('couldn\'t load notifications — try again'),
-                  ),
-              data:
-                  (notifications) => _NotificationList(
-                    notifications: notifications,
-                    onClose: () => Navigator.of(context).pop(),
-                  ),
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              ),
+              error: (_, __) => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('couldn\'t load notifications — try again'),
+              ),
+              data: (notifications) => _NotificationList(
+                notifications: notifications,
+                onClose: () => Navigator.of(context).pop(),
+              ),
             ),
           ],
         ),
@@ -145,10 +142,9 @@ class _NotificationTile extends StatelessWidget {
         notification.isRead
             ? Icons.notifications_none_outlined
             : Icons.notifications_active_outlined,
-        color:
-            notification.isRead
-                ? Theme.of(context).colorScheme.onSurfaceVariant
-                : Theme.of(context).colorScheme.primary,
+        color: notification.isRead
+            ? Theme.of(context).colorScheme.onSurfaceVariant
+            : Theme.of(context).colorScheme.primary,
       ),
       title: Text(
         notification.message,

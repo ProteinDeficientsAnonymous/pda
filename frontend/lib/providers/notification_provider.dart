@@ -11,7 +11,7 @@ final _log = Logger('NotificationProvider');
 /// Polls /api/notifications/unread-count/ every 60s.
 /// Yields 0 when unauthenticated. Skips fetching when tab is hidden.
 final unreadCountProvider = StreamProvider<int>((ref) async* {
-  final user = ref.watch(authProvider).valueOrNull;
+  final user = ref.watch(authProvider).value;
   if (user == null) {
     yield 0;
     return;
@@ -46,7 +46,7 @@ final unreadCountProvider = StreamProvider<int>((ref) async* {
 final notificationsProvider = FutureProvider<List<AppNotification>>((
   ref,
 ) async {
-  final user = ref.watch(authProvider).valueOrNull;
+  final user = ref.watch(authProvider).value;
   if (user == null) return [];
 
   final api = ref.watch(apiClientProvider);

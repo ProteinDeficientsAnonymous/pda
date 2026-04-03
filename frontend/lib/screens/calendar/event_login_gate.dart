@@ -29,23 +29,20 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
   Future<void> _delete() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete event'),
-            content: Text(
-              'Delete "${widget.event.title}"? This cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete event'),
+        content: Text('Delete "${widget.event.title}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
 
@@ -109,7 +106,7 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final user = ref.watch(authProvider).valueOrNull;
+    final user = ref.watch(authProvider).value;
     if (user == null) return const SizedBox.shrink();
 
     final isCreator = widget.event.createdById == user.id;

@@ -46,7 +46,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _openCreateEvent() async {
-    final user = ref.read(authProvider).valueOrNull;
+    final user = ref.read(authProvider).value;
 
     if (user == null) {
       if (!mounted) return;
@@ -123,10 +123,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Expanded(
             child: eventsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error:
-                  (e, _) => const Center(
-                    child: Text('couldn\'t load events — try refreshing'),
-                  ),
+              error: (e, _) => const Center(
+                child: Text('couldn\'t load events — try refreshing'),
+              ),
               data: (events) => _buildView(events),
             ),
           ),

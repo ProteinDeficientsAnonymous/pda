@@ -28,8 +28,9 @@ class AvailabilityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color =
-        isActive ? theme.colorScheme.primary : theme.colorScheme.outline;
+    final color = isActive
+        ? theme.colorScheme.primary
+        : theme.colorScheme.outline;
 
     return InkWell(
       onTap: onTap,
@@ -88,22 +89,20 @@ class VoterAvatarStack extends StatelessWidget {
               child: CircleAvatar(
                 radius: size / 2,
                 backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                backgroundImage:
-                    showing[i].photoUrl.isNotEmpty
-                        ? NetworkImage(showing[i].photoUrl)
-                        : null,
-                child:
-                    showing[i].photoUrl.isEmpty
-                        ? Text(
-                          showing[i].name.isNotEmpty
-                              ? showing[i].name[0].toUpperCase()
-                              : '?',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                        : null,
+                backgroundImage: showing[i].photoUrl.isNotEmpty
+                    ? NetworkImage(showing[i].photoUrl)
+                    : null,
+                child: showing[i].photoUrl.isEmpty
+                    ? Text(
+                        showing[i].name.isNotEmpty
+                            ? showing[i].name[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      )
+                    : null,
               ),
             ),
           if (extra > 0)
@@ -162,19 +161,17 @@ class VotersSheet extends StatelessWidget {
                       radius: 16,
                       backgroundColor:
                           theme.colorScheme.surfaceContainerHighest,
-                      backgroundImage:
-                          voter.photoUrl.isNotEmpty
-                              ? NetworkImage(voter.photoUrl)
-                              : null,
-                      child:
-                          voter.photoUrl.isEmpty
-                              ? Text(
-                                voter.name.isNotEmpty
-                                    ? voter.name[0].toUpperCase()
-                                    : '?',
-                                style: const TextStyle(fontSize: 12),
-                              )
-                              : null,
+                      backgroundImage: voter.photoUrl.isNotEmpty
+                          ? NetworkImage(voter.photoUrl)
+                          : null,
+                      child: voter.photoUrl.isEmpty
+                          ? Text(
+                              voter.name.isNotEmpty
+                                  ? voter.name[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(fontSize: 12),
+                            )
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     Text(voter.name),

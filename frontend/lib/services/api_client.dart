@@ -104,10 +104,9 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     String? accessToken,
   }) {
-    final options =
-        accessToken != null
-            ? Options(headers: {'Authorization': 'Bearer $accessToken'})
-            : null;
+    final options = accessToken != null
+        ? Options(headers: {'Authorization': 'Bearer $accessToken'})
+        : null;
     return _dio.get(path, queryParameters: queryParameters, options: options);
   }
 

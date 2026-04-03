@@ -1,33 +1,62 @@
 import 'package:flutter/material.dart';
 
-/// A tappable date+time summary row that expands/collapses an inline picker.
+/// A date+time summary row with separate tappable date and time chips.
 ///
-/// Shows a date chip and a time chip side by side. Tapping either chip (or
-/// anywhere in the row) calls [onTap] to toggle [isExpanded]. The chevron
-/// icon rotates to indicate state.
+/// Tapping the date chip calls [onDateTap]; tapping the time chip calls
+/// [onTimeTap]. Each chip is highlighted when its corresponding expanded
+/// flag is true.
 class EventFormDateTimeRow extends StatelessWidget {
   final String label;
   final String date;
   final String time;
-  final VoidCallback onTap;
-  final bool isExpanded;
+  final VoidCallback onDateTap;
+  final VoidCallback onTimeTap;
+  final bool isDateExpanded;
+  final bool isTimeExpanded;
 
   const EventFormDateTimeRow({
     super.key,
     required this.label,
     required this.date,
     required this.time,
-    required this.onTap,
-    this.isExpanded = false,
+    required this.onDateTap,
+    required this.onTimeTap,
+    this.isDateExpanded = false,
+    this.isTimeExpanded = false,
   });
+
+  Widget _chip({
+    required BuildContext context,
+    required String semanticLabel,
+    required VoidCallback onTap,
+    required bool isActive,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+    final color = isActive
+        ? theme.colorScheme.primaryContainer
+        : theme.colorScheme.surfaceContainerHighest;
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final chipColor =
-        isExpanded
-            ? theme.colorScheme.primaryContainer
-            : theme.colorScheme.surfaceContainerHighest;
     final textStyle = theme.textTheme.bodyMedium;
 
     return Column(
@@ -40,68 +69,46 @@ class EventFormDateTimeRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Semantics(
-          button: true,
-          label: '$label date and time',
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+        Row(
+          children: [
+            Flexible(
+              child: _chip(
+                context: context,
+                semanticLabel: '$label date',
+                onTap: onDateTap,
+                isActive: isDateExpanded,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, size: 14),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        date,
+                        style: textStyle,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: chipColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.calendar_today_outlined, size: 14),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            date,
-                            style: textStyle,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: chipColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.schedule_outlined, size: 14),
-                      const SizedBox(width: 6),
-                      Text(time, style: textStyle),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-                AnimatedRotation(
-                  turns: isExpanded ? 0.5 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.expand_more, size: 18),
-                ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            _chip(
+              context: context,
+              semanticLabel: '$label time',
+              onTap: onTimeTap,
+              isActive: isTimeExpanded,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.schedule_outlined, size: 14),
+                  const SizedBox(width: 6),
+                  Text(time, style: textStyle),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );

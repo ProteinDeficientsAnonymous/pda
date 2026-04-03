@@ -89,15 +89,11 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: Builder(
-              builder:
-                  (ctx) => TextButton(
-                    onPressed:
-                        () => showPhotoCropDialog(
-                          context: ctx,
-                          imageBytes: _kMinimalPng,
-                        ),
-                    child: const Text('open'),
-                  ),
+              builder: (ctx) => TextButton(
+                onPressed: () =>
+                    showPhotoCropDialog(context: ctx, imageBytes: _kMinimalPng),
+                child: const Text('open'),
+              ),
             ),
           ),
         ),
@@ -120,15 +116,11 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: Builder(
-              builder:
-                  (ctx) => TextButton(
-                    onPressed:
-                        () => showPhotoCropDialog(
-                          context: ctx,
-                          imageBytes: _kMinimalPng,
-                        ),
-                    child: const Text('open'),
-                  ),
+              builder: (ctx) => TextButton(
+                onPressed: () =>
+                    showPhotoCropDialog(context: ctx, imageBytes: _kMinimalPng),
+                child: const Text('open'),
+              ),
             ),
           ),
         ),

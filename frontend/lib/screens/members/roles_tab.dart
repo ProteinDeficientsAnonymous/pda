@@ -17,10 +17,8 @@ class RolesTab extends ConsumerWidget {
 
     return rolesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error:
-          (e, _) => const Center(
-            child: Text('couldn\'t load roles — try refreshing'),
-          ),
+      error: (e, _) =>
+          const Center(child: Text('couldn\'t load roles — try refreshing')),
       data: (roles) {
         return Column(
           children: [
@@ -41,11 +39,10 @@ class RolesTab extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 itemCount: roles.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder:
-                    (context, index) => RoleCard(
-                      role: roles[index],
-                      canManageRoles: canManageRoles,
-                    ),
+                itemBuilder: (context, index) => RoleCard(
+                  role: roles[index],
+                  canManageRoles: canManageRoles,
+                ),
               ),
             ),
           ],
@@ -152,10 +149,9 @@ class RoleCard extends ConsumerWidget {
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
-                children:
-                    role.permissions
-                        .map((p) => PermissionChip(permission: p))
-                        .toList(),
+                children: role.permissions
+                    .map((p) => PermissionChip(permission: p))
+                    .toList(),
               ),
             ] else ...[
               const SizedBox(height: 4),
@@ -204,26 +200,25 @@ class RoleCard extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete role?'),
-            content: Text(
-              'Delete the "${role.name}" role? Users with this role will lose its permissions.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(ctx).colorScheme.error,
-                ),
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete role?'),
+        content: Text(
+          'Delete the "${role.name}" role? Users with this role will lose its permissions.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
           ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
 

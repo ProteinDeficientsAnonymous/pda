@@ -20,12 +20,11 @@ class SurveyResponsesScreen extends ConsumerWidget {
     return AppScaffold(
       child: responsesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load responses — try refreshing'),
-            ),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t load responses — try refreshing'),
+        ),
         data: (responses) {
-          final survey = surveyAsync.valueOrNull;
+          final survey = surveyAsync.value;
           return _ResponsesBody(
             surveyId: surveyId,
             survey: survey,

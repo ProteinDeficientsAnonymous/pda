@@ -126,17 +126,16 @@ class SurveyRadioField extends FormField<String> {
                  groupValue: state.value,
                  onChanged: (v) => state.didChange(v),
                  child: Column(
-                   children:
-                       options
-                           .map(
-                             (option) => RadioListTile<String>(
-                               title: Text(option),
-                               value: option,
-                               dense: true,
-                               contentPadding: EdgeInsets.zero,
-                             ),
-                           )
-                           .toList(),
+                   children: options
+                       .map(
+                         (option) => RadioListTile<String>(
+                           title: Text(option),
+                           value: option,
+                           dense: true,
+                           contentPadding: EdgeInsets.zero,
+                         ),
+                       )
+                       .toList(),
                  ),
                ),
                if (state.hasError)
@@ -168,12 +167,11 @@ class SurveyCheckboxField extends FormField<String> {
          validator: validator,
          onSaved: onSaved,
          builder: (state) {
-           final selected =
-               (state.value ?? '')
-                   .split(',')
-                   .map((s) => s.trim())
-                   .where((s) => s.isNotEmpty)
-                   .toSet();
+           final selected = (state.value ?? '')
+               .split(',')
+               .map((s) => s.trim())
+               .where((s) => s.isNotEmpty)
+               .toSet();
            return Column(
              crossAxisAlignment: CrossAxisAlignment.start,
              children: [
@@ -233,10 +231,9 @@ class SurveyDropdownField extends StatelessWidget {
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      items:
-          options
-              .map((o) => DropdownMenuItem(value: o, child: Text(o)))
-              .toList(),
+      items: options
+          .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+          .toList(),
       validator: validator,
       onSaved: onSaved,
       onChanged: (_) {},
@@ -295,12 +292,11 @@ class SurveyRatingField extends FormField<String> {
                          star <= current
                              ? Icons.star_rounded
                              : Icons.star_outline_rounded,
-                         color:
-                             star <= current
-                                 ? theme.colorScheme.primary
-                                 : theme.colorScheme.onSurface.withValues(
-                                   alpha: 0.3,
-                                 ),
+                         color: star <= current
+                             ? theme.colorScheme.primary
+                             : theme.colorScheme.onSurface.withValues(
+                                 alpha: 0.3,
+                               ),
                          size: 32,
                        ),
                        onPressed: () => state.didChange('$star'),

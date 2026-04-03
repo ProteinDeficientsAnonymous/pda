@@ -18,8 +18,9 @@ class EventDetailHostChip extends StatelessWidget {
     final initials = host.name.isNotEmpty ? host.name[0].toUpperCase() : '?';
 
     return InkWell(
-      onTap:
-          host.id.isNotEmpty ? () => context.push('/members/${host.id}') : null,
+      onTap: host.id.isNotEmpty
+          ? () => context.push('/members/${host.id}')
+          : null,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
@@ -154,21 +155,20 @@ class CalendarMenuChip extends StatelessWidget {
                 downloadFile(ics, '${event.title}.ics', 'text/calendar');
             }
           },
-          itemBuilder:
-              (_) => const [
-                PopupMenuItem(
-                  value: CalendarOption.google,
-                  child: Text('google calendar'),
-                ),
-                PopupMenuItem(
-                  value: CalendarOption.apple,
-                  child: Text('apple calendar'),
-                ),
-                PopupMenuItem(
-                  value: CalendarOption.download,
-                  child: Text('download .ics'),
-                ),
-              ],
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: CalendarOption.google,
+              child: Text('google calendar'),
+            ),
+            PopupMenuItem(
+              value: CalendarOption.apple,
+              child: Text('apple calendar'),
+            ),
+            PopupMenuItem(
+              value: CalendarOption.download,
+              child: Text('download .ics'),
+            ),
+          ],
           padding: EdgeInsets.zero,
           child: Padding(
             padding: const EdgeInsets.all(9),

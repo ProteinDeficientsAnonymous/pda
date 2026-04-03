@@ -18,10 +18,9 @@ class JoinFormConfigScreen extends ConsumerWidget {
     return AppScaffold(
       child: questionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load questions — try refreshing'),
-            ),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t load questions — try refreshing'),
+        ),
         data: (questions) => _JoinFormConfigBody(questions: questions),
       ),
     );
@@ -103,24 +102,23 @@ class _JoinFormConfigBodyState extends ConsumerState<_JoinFormConfigBody> {
   Future<void> _deleteQuestion(JoinFormQuestion q) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete question'),
-            content: Text(
-              'Delete "${q.label}"? Existing answers will '
-              'still show on old requests.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete question'),
+        content: Text(
+          'Delete "${q.label}"? Existing answers will '
+          'still show on old requests.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
     try {

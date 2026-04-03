@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
 
+/// Controls which part of [DateTimePicker] is visible.
+enum DateTimePickerMode {
+  /// Shows both the calendar and time wheels.
+  both,
+
+  /// Shows only the calendar (date selection).
+  dateOnly,
+
+  /// Shows only the time wheels (time selection).
+  timeOnly,
+}
+
 /// Inline combined date + time picker.
 ///
 /// Top half: Flutter's [CalendarDatePicker] (no pencil icon — that only
 /// appears in the dialog variant).
 /// Bottom half: three [ListWheelScrollView] scroll wheels for hour, minute
 /// (5-minute intervals by default), and AM/PM.
+///
+/// Use [mode] to show only the date or time portion — useful when the
+/// date and time chips are separate tap targets.
 ///
 /// Fires [onDateTimeChanged] on every calendar tap or wheel scroll settle.
 /// No confirm/cancel — the parent controls that (see [showDateTimePicker]).
@@ -17,6 +32,7 @@ class DateTimePicker extends StatefulWidget {
     this.firstDate,
     this.lastDate,
     this.minuteInterval = 5,
+    this.mode = DateTimePickerMode.both,
   });
 
   final DateTime initialDateTime;
@@ -26,6 +42,9 @@ class DateTimePicker extends StatefulWidget {
 
   /// Interval between minute options (must divide 60 evenly). Defaults to 5.
   final int minuteInterval;
+
+  /// Which portion of the picker to show. Defaults to [DateTimePickerMode.both].
+  final DateTimePickerMode mode;
 
   @override
   State<DateTimePicker> createState() => _DateTimePickerState();
@@ -98,10 +117,9 @@ class _DateTimePickerState extends State<DateTimePicker> {
     final minuteVal =
         _minutes[_minuteController.selectedItem % _minutes.length];
     final isPm = _periodController.selectedItem % 2 == 1;
-    final hour24 =
-        isPm
-            ? (hourVal == 12 ? 12 : hourVal + 12)
-            : (hourVal == 12 ? 0 : hourVal);
+    final hour24 = isPm
+        ? (hourVal == 12 ? 12 : hourVal + 12)
+        : (hourVal == 12 ? 0 : hourVal);
     setState(() {
       _current = DateTime(
         _current.year,
@@ -120,28 +138,34 @@ class _DateTimePickerState extends State<DateTimePicker> {
     final first = widget.firstDate ?? DateTime(2000);
     final last = widget.lastDate ?? DateTime(2100);
 
+    final showDate = widget.mode != DateTimePickerMode.timeOnly;
+    final showTime = widget.mode != DateTimePickerMode.dateOnly;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CalendarDatePicker(
-          initialDate: _current,
-          firstDate: first,
-          lastDate: last,
-          onDateChanged: _onDateSelected,
-        ),
-        const Divider(height: 1),
-        const SizedBox(height: 8),
-        _TimeWheelSelector(
-          hourController: _hourController,
-          minuteController: _minuteController,
-          periodController: _periodController,
-          minutes: _minutes,
-          onScrollEnd: _updateTime,
-          selectedColor: theme.colorScheme.primaryContainer,
-          onSelectedColor: theme.colorScheme.onPrimaryContainer,
-          textStyle: theme.textTheme.titleMedium!,
-        ),
-        const SizedBox(height: 8),
+        if (showDate)
+          CalendarDatePicker(
+            initialDate: _current,
+            firstDate: first,
+            lastDate: last,
+            onDateChanged: _onDateSelected,
+          ),
+        if (showDate && showTime) const Divider(height: 1),
+        if (showTime) ...[
+          const SizedBox(height: 8),
+          _TimeWheelSelector(
+            hourController: _hourController,
+            minuteController: _minuteController,
+            periodController: _periodController,
+            minutes: _minutes,
+            onScrollEnd: _updateTime,
+            selectedColor: theme.colorScheme.primaryContainer,
+            onSelectedColor: theme.colorScheme.onPrimaryContainer,
+            textStyle: theme.textTheme.titleMedium!,
+          ),
+          const SizedBox(height: 8),
+        ],
       ],
     );
   }
@@ -192,17 +216,26 @@ class _TimeWheelSelector extends StatelessWidget {
               final selected =
                   controller.hasClients &&
                   controller.selectedItem % items.length == index;
-              return Container(
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected ? selectedColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
+              return GestureDetector(
+                onTap: () => controller.animateToItem(
+                  index,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
                 ),
-                child: Text(
-                  items[index],
-                  style: textStyle.copyWith(
-                    color: selected ? onSelectedColor : null,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: selected ? selectedColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    items[index],
+                    style: textStyle.copyWith(
+                      color: selected ? onSelectedColor : null,
+                      fontWeight: selected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
                   ),
                 ),
               );
@@ -216,8 +249,9 @@ class _TimeWheelSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hourItems = List.generate(12, (i) => '${i + 1}');
-    final minuteItems =
-        minutes.map((m) => m.toString().padLeft(2, '0')).toList();
+    final minuteItems = minutes
+        .map((m) => m.toString().padLeft(2, '0'))
+        .toList();
     const periodItems = ['AM', 'PM'];
 
     return Row(

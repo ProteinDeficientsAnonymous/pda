@@ -64,13 +64,12 @@ class _DayViewState extends State<DayView> {
       _selectedDay.day,
     );
     final dayEnd = dayStart.add(const Duration(days: 1));
-    final results =
-        widget.events.where((e) {
-          final start = e.startDatetime.toLocal();
-          final end =
-              e.endDatetime?.toLocal() ?? start.add(const Duration(minutes: 1));
-          return start.isBefore(dayEnd) && end.isAfter(dayStart);
-        }).toList();
+    final results = widget.events.where((e) {
+      final start = e.startDatetime.toLocal();
+      final end =
+          e.endDatetime?.toLocal() ?? start.add(const Duration(minutes: 1));
+      return start.isBefore(dayEnd) && end.isAfter(dayStart);
+    }).toList();
     results.sort((a, b) => a.startDatetime.compareTo(b.startDatetime));
     return results;
   }
@@ -130,8 +129,9 @@ class _DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label =
-        DateFormat('EEEE, MMMM d, y').format(selectedDay).toLowerCase();
+    final label = DateFormat(
+      'EEEE, MMMM d, y',
+    ).format(selectedDay).toLowerCase();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Row(

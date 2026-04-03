@@ -77,15 +77,14 @@ class _AddMemberDialogState extends State<AddMemberDialog> {
                       labelText: 'Role (optional)',
                       border: OutlineInputBorder(),
                     ),
-                    items:
-                        widget.allRoles
-                            .map(
-                              (r) => DropdownMenuItem(
-                                value: r.id,
-                                child: Text(r.name),
-                              ),
-                            )
-                            .toList(),
+                    items: widget.allRoles
+                        .map(
+                          (r) => DropdownMenuItem(
+                            value: r.id,
+                            child: Text(r.name),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (val) => setState(() => _selectedRoleId = val),
                   ),
                 ],
@@ -135,12 +134,11 @@ class _BulkAddDialogState extends State<BulkAddDialog> {
     super.dispose();
   }
 
-  List<String> get _phones =>
-      _ctrl.text
-          .split('\n')
-          .map((l) => l.trim())
-          .where((l) => l.isNotEmpty)
-          .toList();
+  List<String> get _phones => _ctrl.text
+      .split('\n')
+      .map((l) => l.trim())
+      .where((l) => l.isNotEmpty)
+      .toList();
 
   Future<void> _submit() async {
     final phones = _phones;
@@ -170,27 +168,25 @@ class _BulkAddDialogState extends State<BulkAddDialog> {
         width: 480,
         child: _results != null ? _buildResults(context) : _buildForm(context),
       ),
-      actions:
-          _results != null
-              ? [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Done'),
-                ),
-              ]
-              : [
-                TextButton(
-                  onPressed:
-                      _loading ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                LoadingButton(
-                  label:
-                      'Add ${_phones.length} member${_phones.length == 1 ? '' : 's'}',
-                  onPressed: _phones.isEmpty ? null : _submit,
-                  loading: _loading,
-                ),
-              ],
+      actions: _results != null
+          ? [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Done'),
+              ),
+            ]
+          : [
+              TextButton(
+                onPressed: _loading ? null : () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              LoadingButton(
+                label:
+                    'Add ${_phones.length} member${_phones.length == 1 ? '' : 's'}',
+                onPressed: _phones.isEmpty ? null : _submit,
+                loading: _loading,
+              ),
+            ],
     );
   }
 
@@ -234,10 +230,9 @@ class _BulkAddDialogState extends State<BulkAddDialog> {
             '$created created${failed > 0 ? ', $failed failed' : ''}',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color:
-                  failed > 0
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.primary,
+              color: failed > 0
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.primary,
             ),
           ),
           if (created > 0) ...[

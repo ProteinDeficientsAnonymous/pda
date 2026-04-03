@@ -14,13 +14,12 @@ Future<DateTime?> showDateTimePicker({
 }) {
   return showDialog<DateTime>(
     context: context,
-    builder:
-        (_) => _DateTimePickerDialog(
-          initialDateTime: initialDateTime,
-          firstDate: firstDate,
-          lastDate: lastDate,
-          minuteInterval: minuteInterval,
-        ),
+    builder: (_) => _DateTimePickerDialog(
+      initialDateTime: initialDateTime,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      minuteInterval: minuteInterval,
+    ),
   );
 }
 

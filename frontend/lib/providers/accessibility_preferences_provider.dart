@@ -20,7 +20,7 @@ class AccessibilityPreferencesNotifier
   }
 
   Future<void> toggleDyslexiaFont() async {
-    final current = state.valueOrNull ?? const AccessibilityPreferences();
+    final current = state.value ?? const AccessibilityPreferences();
     final next = current.copyWith(
       dyslexiaFriendlyFont: !current.dyslexiaFriendlyFont,
     );
@@ -30,7 +30,7 @@ class AccessibilityPreferencesNotifier
   }
 
   Future<void> setTextScale(double scale) async {
-    final current = state.valueOrNull ?? const AccessibilityPreferences();
+    final current = state.value ?? const AccessibilityPreferences();
     final next = current.copyWith(textScaleFactor: scale);
     state = AsyncData(next);
     final prefs = await SharedPreferences.getInstance();

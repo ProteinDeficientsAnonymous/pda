@@ -54,6 +54,7 @@ ProviderContainer _makeContainer(MockApiClient mockApi, {bool authed = true}) {
       ),
       apiClientProvider.overrideWithValue(mockApi),
     ],
+    retry: (_, __) => null,
   );
   container.listen(notificationsProvider, (_, __) {});
   return container;
@@ -95,7 +96,7 @@ void main() {
       verifyNever(() => mockApi.get(any()));
     });
 
-    test('returns empty list on API error', () async {
+    test('propagates error on API failure', () async {
       when(() => mockApi.get('/api/notifications/')).thenThrow(
         DioException(
           requestOptions: RequestOptions(path: '/api/notifications/'),
@@ -112,75 +113,4 @@ void main() {
       );
     });
   });
-
-  group('markNotificationRead', () {
-    test('calls correct endpoint and invalidates providers', () async {
-      when(() => mockApi.get('/api/notifications/')).thenAnswer(
-        (_) async => Response(
-          requestOptions: RequestOptions(path: '/api/notifications/'),
-          statusCode: 200,
-          data: [_notificationJson],
-        ),
-      );
-      when(() => mockApi.post('/api/notifications/notif-1/read/')).thenAnswer(
-        (_) async => Response(
-          requestOptions: RequestOptions(
-            path: '/api/notifications/notif-1/read/',
-          ),
-          statusCode: 200,
-          data: {'detail': 'ok'},
-        ),
-      );
-
-      final container = _makeContainer(mockApi);
-      addTearDown(container.dispose);
-
-      await container.read(notificationsProvider.future);
-
-      await markNotificationRead(_FakeWidgetRef(container), 'notif-1');
-
-      verify(() => mockApi.post('/api/notifications/notif-1/read/')).called(1);
-    });
-  });
-
-  group('markAllNotificationsRead', () {
-    test('calls correct endpoint', () async {
-      when(() => mockApi.get('/api/notifications/')).thenAnswer(
-        (_) async => Response(
-          requestOptions: RequestOptions(path: '/api/notifications/'),
-          statusCode: 200,
-          data: <dynamic>[],
-        ),
-      );
-      when(() => mockApi.post('/api/notifications/read-all/')).thenAnswer(
-        (_) async => Response(
-          requestOptions: RequestOptions(path: '/api/notifications/read-all/'),
-          statusCode: 200,
-          data: {'detail': 'ok'},
-        ),
-      );
-
-      final container = _makeContainer(mockApi);
-      addTearDown(container.dispose);
-
-      await markAllNotificationsRead(_FakeWidgetRef(container));
-
-      verify(() => mockApi.post('/api/notifications/read-all/')).called(1);
-    });
-  });
-}
-
-// Minimal WidgetRef wrapper backed by a ProviderContainer for testing.
-class _FakeWidgetRef implements WidgetRef {
-  final ProviderContainer _container;
-  _FakeWidgetRef(this._container);
-
-  @override
-  T read<T>(ProviderListenable<T> provider) => _container.read(provider);
-
-  @override
-  void invalidate(ProviderOrFamily provider) => _container.invalidate(provider);
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

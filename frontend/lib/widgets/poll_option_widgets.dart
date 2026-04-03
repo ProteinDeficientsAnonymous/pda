@@ -174,10 +174,9 @@ class PollOptionRow extends StatelessWidget {
                 icon: Icons.check_circle_outline,
                 isActive: availability == PollAvailability.yes,
                 count: option.yesCount,
-                onTap:
-                    isEditing
-                        ? () => onSetAvailability?.call(PollAvailability.yes)
-                        : null,
+                onTap: isEditing
+                    ? () => onSetAvailability?.call(PollAvailability.yes)
+                    : null,
               ),
               const SizedBox(width: 8),
               AvailabilityChip(
@@ -185,10 +184,9 @@ class PollOptionRow extends StatelessWidget {
                 icon: Icons.help_outline,
                 isActive: availability == PollAvailability.maybe,
                 count: option.maybeCount,
-                onTap:
-                    isEditing
-                        ? () => onSetAvailability?.call(PollAvailability.maybe)
-                        : null,
+                onTap: isEditing
+                    ? () => onSetAvailability?.call(PollAvailability.maybe)
+                    : null,
               ),
             ],
           ),
@@ -272,10 +270,9 @@ class _PollFinalizeSheetState extends ConsumerState<PollFinalizeSheet> {
                               ? Icons.radio_button_checked
                               : Icons.radio_button_unchecked,
                           size: 20,
-                          color:
-                              _selected == option.id
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurfaceVariant,
+                          color: _selected == option.id
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 10),
                         Expanded(

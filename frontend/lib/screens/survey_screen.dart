@@ -21,10 +21,9 @@ class SurveyScreen extends ConsumerWidget {
       maxWidth: 600,
       child: surveyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t find that survey — it may be closed'),
-            ),
+        error: (e, _) => const Center(
+          child: Text('couldn\'t find that survey — it may be closed'),
+        ),
         data: (survey) => _SurveyForm(survey: survey),
       ),
     );
@@ -148,16 +147,15 @@ class _SurveyFormState extends ConsumerState<_SurveyForm> {
                         width: double.infinity,
                         child: FilledButton(
                           onPressed: _submitting ? null : _submit,
-                          child:
-                              _submitting
-                                  ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                  : Text(isUpdate ? 'update vote' : 'submit'),
+                          child: _submitting
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(isUpdate ? 'update vote' : 'submit'),
                         ),
                       ),
                     ],

@@ -36,10 +36,8 @@ class SurveyBuilderScreen extends ConsumerWidget {
     return AppScaffold(
       child: surveyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => const Center(
-              child: Text('couldn\'t load survey — try refreshing'),
-            ),
+        error: (e, _) =>
+            const Center(child: Text('couldn\'t load survey — try refreshing')),
         data: (survey) => _BuilderBody(survey: survey),
       ),
     );
@@ -122,27 +120,26 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
   Future<void> _deleteQuestion(SurveyQuestion q) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('delete question'),
-            content: Text(
-              'Delete "${q.label}"? Existing responses will '
-              'still show their answers.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: const Text('delete'),
-              ),
-            ],
+      builder: (ctx) => AlertDialog(
+        title: const Text('delete question'),
+        content: Text(
+          'Delete "${q.label}"? Existing responses will '
+          'still show their answers.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('delete'),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
     try {
@@ -209,30 +206,28 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
                 runSpacing: 8,
                 children: [
                   OutlinedButton.icon(
-                    onPressed:
-                        () => context.go('/surveys/${widget.survey.slug}'),
+                    onPressed: () =>
+                        context.go('/surveys/${widget.survey.slug}'),
                     icon: const Icon(Icons.visibility_outlined, size: 18),
                     label: const Text('preview'),
                   ),
                   OutlinedButton.icon(
                     onPressed: () {
-                      final link =
-                          Uri.base
-                              .replace(
-                                path: '/surveys/${widget.survey.slug}',
-                                query: '',
-                              )
-                              .toString();
+                      final link = Uri.base
+                          .replace(
+                            path: '/surveys/${widget.survey.slug}',
+                            query: '',
+                          )
+                          .toString();
                       shareUrl(link, subject: widget.survey.title);
                     },
                     icon: const Icon(AppIcons.share, size: 18),
                     label: const Text('share'),
                   ),
                   OutlinedButton.icon(
-                    onPressed:
-                        () => context.go(
-                          '/admin/surveys/${widget.survey.id}/responses',
-                        ),
+                    onPressed: () => context.go(
+                      '/admin/surveys/${widget.survey.id}/responses',
+                    ),
                     icon: const Icon(Icons.bar_chart_rounded, size: 18),
                     label: Text('${widget.survey.responseCount} responses'),
                   ),

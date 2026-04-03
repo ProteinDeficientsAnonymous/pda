@@ -74,19 +74,22 @@ final docFoldersProvider =
       DocFoldersNotifier.new,
     );
 
-class DocDetailNotifier extends FamilyAsyncNotifier<Document, String> {
+class DocDetailNotifier extends AsyncNotifier<Document> {
+  DocDetailNotifier(this._docId);
+  final String _docId;
+
   @override
-  Future<Document> build(String arg) async {
+  Future<Document> build() async {
     ref.watch(authProvider);
     final api = ref.read(apiClientProvider);
-    final response = await api.get('/api/community/docs/$arg/');
+    final response = await api.get('/api/community/docs/$_docId/');
     return Document.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> save({String? title, String? content}) async {
     final api = ref.read(apiClientProvider);
     final response = await api.patch(
-      '/api/community/docs/$arg/',
+      '/api/community/docs/$_docId/',
       data: {
         if (title != null) 'title': title,
         if (content != null) 'content': content,
@@ -97,6 +100,6 @@ class DocDetailNotifier extends FamilyAsyncNotifier<Document, String> {
 }
 
 final docDetailProvider =
-    AsyncNotifierProviderFamily<DocDetailNotifier, Document, String>(
-      DocDetailNotifier.new,
+    AsyncNotifierProvider.family<DocDetailNotifier, Document, String>(
+      (arg) => DocDetailNotifier(arg),
     );
