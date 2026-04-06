@@ -11,6 +11,7 @@ class RSVPGuestOut(BaseModel):
     user_id: str
     name: str
     status: str
+    plus_one_count: int = 0
     phone: str | None = None
     photo_url: str = ""
 
@@ -38,6 +39,7 @@ class EventListOut(BaseModel):
     co_host_ids: list[str] = []
     co_host_names: list[str] = []
     datetime_tbd: bool = False
+    allow_plus_ones: bool = False
 
 
 class EventOut(BaseModel):
@@ -68,6 +70,7 @@ class EventOut(BaseModel):
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
     datetime_tbd: bool = False
+    allow_plus_ones: bool = False
     survey_slugs: list[str] = []
     datetime_poll_slug: str | None = None
     has_poll: bool = False
@@ -79,6 +82,7 @@ class EventOut(BaseModel):
 
 class RSVPIn(BaseModel):
     status: str
+    plus_one_count: int = 0
 
 
 class EventIn(BaseModel):
@@ -98,6 +102,7 @@ class EventIn(BaseModel):
     zelle_info: str = ""
     rsvp_enabled: bool = False
     datetime_tbd: bool = False
+    allow_plus_ones: bool = False
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     invite_permission: str = InvitePermission.ALL_MEMBERS
@@ -122,6 +127,7 @@ class EventPatchIn(BaseModel):
     zelle_info: str | None = None
     rsvp_enabled: bool | None = None
     datetime_tbd: bool | None = None
+    allow_plus_ones: bool | None = None
     event_type: str | None = None
     visibility: str | None = None
     invite_permission: str | None = None

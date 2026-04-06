@@ -455,6 +455,7 @@ class TestBuildGuestList:
             user_id=user_id,
             user=SimpleNamespace(display_name=name, phone_number=phone, profile_photo=None),
             status=status,
+            plus_one_count=0,
         )
         return rsvp
 

@@ -77,6 +77,7 @@ def list_events(request):
                 zelle_info=_members_only(e.zelle_info, "", is_authed),
                 created_by_id=str(e.created_by_id) if e.created_by_id else None,
                 datetime_tbd=e.datetime_tbd,
+                allow_plus_ones=e.allow_plus_ones,
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
             )
@@ -134,6 +135,7 @@ def create_event(request, payload: EventIn):
         zelle_info=payload.zelle_info,
         rsvp_enabled=payload.rsvp_enabled,
         datetime_tbd=payload.datetime_tbd,
+        allow_plus_ones=payload.allow_plus_ones,
         event_type=payload.event_type,
         visibility=payload.visibility,
         invite_permission=payload.invite_permission,
@@ -292,7 +294,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     EventRSVP.objects.update_or_create(
         event=event,
         user=request.auth,
-        defaults={"status": payload.status},
+        defaults={"status": payload.status, "plus_one_count": payload.plus_one_count},
     )
     event.refresh_from_db()
     event = (
