@@ -12,6 +12,7 @@ abstract class EventGuest with _$EventGuest {
     required String status,
     String? phone,
     @Default('') String photoUrl,
+    @Default(0) int plusOneCount,
   }) = _EventGuest;
 
   factory EventGuest.fromJson(Map<String, dynamic> json) =>
@@ -37,6 +38,7 @@ abstract class Event with _$Event {
     @Default('') String cashappLink,
     @Default('') String zelleInfo,
     @Default(false) bool rsvpEnabled,
+    @Default(false) bool allowPlusOnes,
     @Default(false) bool datetimeTbd,
     @Default(false) bool hasPoll,
     String? datetimePollSlug,
