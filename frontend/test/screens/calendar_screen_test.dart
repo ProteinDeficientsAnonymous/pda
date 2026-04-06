@@ -54,7 +54,7 @@ void main() {
     expect(find.text('list'), findsOneWidget);
   });
 
-  testWidgets('renders Today button', (tester) async {
+  testWidgets('renders today icon button', (tester) async {
     tester.view.physicalSize = _kTestSize;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -63,8 +63,7 @@ void main() {
     await tester.pumpWidget(_buildSubject());
     await tester.pumpAndSettle();
 
-    // Toolbar has a visible 'today' button + an invisible spacer with same text
-    expect(find.text('today'), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.calendar_today_outlined), findsOneWidget);
   });
 
   testWidgets('shows loading indicator while events are loading', (

@@ -111,16 +111,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     ref.listen(authProvider, (_, __) => ref.invalidate(eventsProvider));
 
     return AppScaffold(
-      actions: [
-        if (_view != _CalendarView.list)
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: OutlinedButton(
-              onPressed: _goToToday,
-              child: const Text('today'),
-            ),
-          ),
-      ],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreateEvent,
         icon: const Icon(Icons.add, size: 18),
@@ -132,7 +122,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             selected: _view,
             onSelected: _onViewChanged,
             onToday: _goToToday,
-            compact: true,
           ),
           Expanded(
             child: eventsAsync.when(
@@ -193,38 +182,83 @@ class _CalendarToolbar extends StatelessWidget {
   final _CalendarView selected;
   final ValueChanged<_CalendarView> onSelected;
   final VoidCallback onToday;
-  final bool compact;
 
   const _CalendarToolbar({
     required this.selected,
     required this.onSelected,
     required this.onToday,
-    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          SegmentedButton<_CalendarView>(
-            segments: const [
-              ButtonSegment(value: _CalendarView.month, label: Text('month')),
-              ButtonSegment(value: _CalendarView.week, label: Text('week')),
-              ButtonSegment(value: _CalendarView.day, label: Text('day')),
-              ButtonSegment(value: _CalendarView.list, label: Text('list')),
-            ],
-            selected: {selected},
-            onSelectionChanged: (s) => onSelected(s.first),
-            showSelectedIcon: false,
+          if (selected != _CalendarView.list)
+            _TodayIconButton(onPressed: onToday),
+          Expanded(
+            child: SegmentedButton<_CalendarView>(
+              segments: const [
+                ButtonSegment(value: _CalendarView.month, label: Text('month')),
+                ButtonSegment(value: _CalendarView.week, label: Text('week')),
+                ButtonSegment(value: _CalendarView.day, label: Text('day')),
+                ButtonSegment(value: _CalendarView.list, label: Text('list')),
+              ],
+              selected: {selected},
+              onSelectionChanged: (s) => onSelected(s.first),
+              showSelectedIcon: false,
+            ),
           ),
-          if (!compact) ...[
-            const SizedBox(height: 6),
-            OutlinedButton(onPressed: onToday, child: const Text('today')),
-          ],
         ],
+      ),
+    );
+  }
+}
+
+class _TodayIconButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _TodayIconButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final day = DateTime.now().day;
+    final color = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Tooltip(
+        message: 'go to today',
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(8),
+          child: Semantics(
+            button: true,
+            label: 'go to today',
+            excludeSemantics: true,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 28, color: color),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      '$day',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
