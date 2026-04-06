@@ -17,17 +17,10 @@ class InviteModal extends ConsumerStatefulWidget {
 class _InviteModalState extends ConsumerState<InviteModal> {
   final _searchController = TextEditingController();
   List<_UserResult> _results = [];
-  late Set<String> _selectedIds;
-  late Set<String> _initialIds;
+  // Only tracks newly added IDs — existing invitees cannot be removed here.
+  final Set<String> _newIds = {};
   bool _searching = false;
   bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialIds = Set<String>.from(widget.event.invitedUserIds);
-    _selectedIds = Set<String>.from(widget.event.invitedUserIds);
-  }
 
   @override
   void dispose() {
@@ -72,9 +65,10 @@ class _InviteModalState extends ConsumerState<InviteModal> {
     setState(() => _saving = true);
     try {
       final api = ref.read(apiClientProvider);
+      final allIds = [...widget.event.invitedUserIds, ..._newIds];
       await api.patch(
         '/api/community/events/${widget.event.id}/',
-        data: {'invited_user_ids': _selectedIds.toList()},
+        data: {'invited_user_ids': allIds},
       );
       ref.invalidate(eventDetailProvider(widget.event.id));
       ref.invalidate(eventsProvider);
@@ -92,21 +86,18 @@ class _InviteModalState extends ConsumerState<InviteModal> {
 
   void _toggle(String id) {
     setState(() {
-      if (_selectedIds.contains(id)) {
-        _selectedIds.remove(id);
+      if (_newIds.contains(id)) {
+        _newIds.remove(id);
       } else {
-        _selectedIds.add(id);
+        _newIds.add(id);
       }
     });
   }
 
-  bool get _hasChanges =>
-      !_selectedIds.containsAll(_initialIds) ||
-      !_initialIds.containsAll(_selectedIds);
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final alreadyInvited = widget.event.invitedUserIds.toSet();
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -170,10 +161,28 @@ class _InviteModalState extends ConsumerState<InviteModal> {
                         itemCount: _results.length,
                         itemBuilder: (_, i) {
                           final r = _results[i];
-                          final selected = _selectedIds.contains(r.id);
+                          final existing = alreadyInvited.contains(r.id);
+                          if (existing) {
+                            return CheckboxListTile(
+                              dense: true,
+                              value: true,
+                              onChanged: null,
+                              title: Text(
+                                r.name,
+                                style: TextStyle(color: cs.onSurfaceVariant),
+                              ),
+                              subtitle: Text(
+                                'already invited',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                            );
+                          }
                           return CheckboxListTile(
                             dense: true,
-                            value: selected,
+                            value: _newIds.contains(r.id),
                             onChanged: (_) => _toggle(r.id),
                             title: Text(r.name),
                             subtitle: Text(
@@ -189,7 +198,7 @@ class _InviteModalState extends ConsumerState<InviteModal> {
               ),
               const SizedBox(height: 12),
               FilledButton(
-                onPressed: _hasChanges && !_saving ? _submit : null,
+                onPressed: _newIds.isNotEmpty && !_saving ? _submit : null,
                 child: _saving
                     ? const SizedBox(
                         height: 16,
