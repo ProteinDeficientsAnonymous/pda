@@ -191,14 +191,7 @@ class EventMemberSection extends ConsumerWidget {
                 ],
               ),
             ),
-          if (invitedChips.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            EventSectionCard(
-              label: EventDetailLabel.invited,
-              child: Wrap(spacing: 12, runSpacing: 8, children: invitedChips),
-            ),
-          ],
-          if (detailRows.isNotEmpty) ...[
+          if (detailRows.isNotEmpty || invitedChips.isNotEmpty) ...[
             const SizedBox(height: 12),
             EventSectionCard(
               label: EventDetailLabel.details,
@@ -208,6 +201,17 @@ class EventMemberSection extends ConsumerWidget {
                   for (var i = 0; i < detailRows.length; i++) ...[
                     detailRows[i],
                     if (i < detailRows.length - 1) const SizedBox(height: 8),
+                  ],
+                  if (invitedChips.isNotEmpty) ...[
+                    if (detailRows.isNotEmpty) const SizedBox(height: 8),
+                    Text(
+                      EventDetailLabel.invited,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(spacing: 12, runSpacing: 8, children: invitedChips),
                   ],
                 ],
               ),
