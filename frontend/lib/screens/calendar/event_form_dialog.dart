@@ -48,6 +48,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late DateTime _start;
   late DateTime? _end;
   late bool _rsvpEnabled;
+  late bool _allowPlusOnes;
   late bool _datetimeTbd;
   late String _eventType;
   late String _visibility;
@@ -95,6 +96,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _start = e.startDatetime.toLocal();
       _end = e.endDatetime?.toLocal();
       _rsvpEnabled = e.rsvpEnabled;
+      _allowPlusOnes = e.allowPlusOnes;
       _datetimeTbd = e.datetimeTbd;
       _eventType = e.eventType;
       _visibility = e.visibility;
@@ -129,6 +131,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _start = DateTime(base.year, base.month, base.day, now.hour + 1);
       _end = null;
       _rsvpEnabled = false;
+      _allowPlusOnes = false;
       _datetimeTbd = false;
       _eventType = EventType.community;
       _visibility = PageVisibility.public_;
@@ -199,6 +202,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           'start_datetime': _start.toUtc().toIso8601String(),
           'end_datetime': _end?.toUtc().toIso8601String(),
           'rsvp_enabled': _rsvpEnabled,
+          'allow_plus_ones': _allowPlusOnes,
           'datetime_tbd': _datetimeTbd || _datetimePollOptions.isNotEmpty,
           'event_type': _eventType,
           'visibility': _visibility,
@@ -425,6 +429,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                   const SizedBox(height: 16),
                   EventFormSettingsSection(
                     rsvpEnabled: _rsvpEnabled,
+                    allowPlusOnes: _allowPlusOnes,
                     visibility: _visibility,
                     eventType: _eventType,
                     partifulLinkText: _partifulLink.text,
@@ -435,6 +440,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     invitedUserNames: _invitedUserNames,
                     scrollController: _scrollController,
                     onRsvpChanged: (val) => setState(() => _rsvpEnabled = val),
+                    onAllowPlusOnesChanged: (val) =>
+                        setState(() => _allowPlusOnes = val),
                     onVisibilityChanged: (val) =>
                         setState(() => _visibility = val),
                     onOfficialChanged: (val) => setState(

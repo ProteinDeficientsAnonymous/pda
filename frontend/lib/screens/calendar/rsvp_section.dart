@@ -17,14 +17,15 @@ class RSVPSection extends ConsumerStatefulWidget {
 
 class _RSVPSectionState extends ConsumerState<RSVPSection> {
   bool _loading = false;
+  int _plusOneCount = 0;
 
-  Future<void> _setRsvp(String status) async {
+  Future<void> _setRsvp(String status, {int plusOneCount = 0}) async {
     setState(() => _loading = true);
     try {
       final api = ref.read(apiClientProvider);
       await api.post(
         '/api/community/events/${widget.event.id}/rsvp/',
-        data: {'status': status},
+        data: {'status': status, 'plus_one_count': plusOneCount},
       );
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
@@ -37,7 +38,11 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
   }
 
-  Future<void> _confirmAndSetRsvp(String status, String label) async {
+  Future<void> _confirmAndSetRsvp(
+    String status,
+    String label, {
+    int plusOneCount = 0,
+  }) async {
     final user = ref.read(authProvider).value;
     final isCoHost =
         user != null &&
@@ -67,7 +72,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
       if (confirmed != true) return;
     }
 
-    await _setRsvp(status);
+    await _setRsvp(status, plusOneCount: plusOneCount);
   }
 
   Future<void> _removeRsvp() async {
@@ -102,8 +107,10 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
 
     final attendingCount = guests
         .where((g) => g.status == RsvpStatus.attending)
-        .length;
-    final maybeCount = guests.where((g) => g.status == RsvpStatus.maybe).length;
+        .fold(0, (sum, g) => sum + 1 + g.plusOneCount);
+    final maybeCount = guests
+        .where((g) => g.status == RsvpStatus.maybe)
+        .fold(0, (sum, g) => sum + 1 + g.plusOneCount);
 
     final summaryParts = [
       if (attendingCount > 0) '$attendingCount going',
@@ -170,6 +177,39 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
             ],
           ),
         ),
+        if (liveEvent.allowPlusOnes &&
+            (myRsvp == RsvpStatus.attending || myRsvp == RsvpStatus.maybe)) ...[
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'bringing +1s',
+                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                icon: const Icon(Icons.remove, size: 18),
+                tooltip: 'remove a +1',
+                onPressed: _plusOneCount > 0
+                    ? () {
+                        setState(() => _plusOneCount--);
+                        _setRsvp(myRsvp!, plusOneCount: _plusOneCount);
+                      }
+                    : null,
+              ),
+              Text('$_plusOneCount', style: const TextStyle(fontSize: 15)),
+              IconButton(
+                icon: const Icon(Icons.add, size: 18),
+                tooltip: 'add a +1',
+                onPressed: () {
+                  setState(() => _plusOneCount++);
+                  _setRsvp(myRsvp!, plusOneCount: _plusOneCount);
+                },
+              ),
+            ],
+          ),
+        ],
         if (guests.isNotEmpty || liveEvent.invitedUserNames.isNotEmpty) ...[
           const SizedBox(height: 16),
           RsvpGuestList(

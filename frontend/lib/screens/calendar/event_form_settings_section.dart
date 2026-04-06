@@ -15,7 +15,9 @@ class EventFormSettingsSection extends ConsumerWidget {
   final Set<String> invitedUserIds;
   final Map<String, String> invitedUserNames;
   final ScrollController scrollController;
+  final bool allowPlusOnes;
   final ValueChanged<bool> onRsvpChanged;
+  final ValueChanged<bool> onAllowPlusOnesChanged;
   final ValueChanged<String> onVisibilityChanged;
   final ValueChanged<bool> onOfficialChanged;
   final ValueChanged<String> onInvitePermissionChanged;
@@ -25,6 +27,7 @@ class EventFormSettingsSection extends ConsumerWidget {
   const EventFormSettingsSection({
     super.key,
     required this.rsvpEnabled,
+    required this.allowPlusOnes,
     required this.visibility,
     required this.eventType,
     required this.partifulLinkText,
@@ -35,6 +38,7 @@ class EventFormSettingsSection extends ConsumerWidget {
     required this.invitedUserNames,
     required this.scrollController,
     required this.onRsvpChanged,
+    required this.onAllowPlusOnesChanged,
     required this.onVisibilityChanged,
     required this.onOfficialChanged,
     required this.onInvitePermissionChanged,
@@ -69,6 +73,15 @@ class EventFormSettingsSection extends ConsumerWidget {
               : null,
           contentPadding: EdgeInsets.zero,
         ),
+        if (rsvpEnabled) ...[
+          SwitchListTile(
+            value: allowPlusOnes,
+            onChanged: onAllowPlusOnesChanged,
+            title: const Text('allow +1s'),
+            subtitle: const Text('guests can bring additional people'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: visibility,

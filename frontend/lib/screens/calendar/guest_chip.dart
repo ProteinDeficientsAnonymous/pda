@@ -98,6 +98,13 @@ class _GuestChipState extends State<GuestChip> {
                 GuestAvatar(guest: widget.guest),
                 const SizedBox(width: 6),
                 Text(widget.guest.name, style: const TextStyle(fontSize: 13)),
+                if (widget.guest.plusOneCount > 0) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '+${widget.guest.plusOneCount}',
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                  ),
+                ],
               ],
             ),
           ),
@@ -130,6 +137,16 @@ class _GuestChipState extends State<GuestChip> {
                       widget.guest.name,
                       style: const TextStyle(fontSize: 13),
                     ),
+                    if (widget.guest.plusOneCount > 0) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        '+${widget.guest.plusOneCount}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -158,7 +175,25 @@ class _GuestChipState extends State<GuestChip> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(widget.guest.name, style: const TextStyle(fontSize: 13)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.guest.name,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      if (widget.guest.plusOneCount > 0) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '+${widget.guest.plusOneCount}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
