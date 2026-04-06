@@ -49,10 +49,7 @@ class EventFormPhotoSection extends StatelessWidget {
                       },
                     )
                   : hasExisting
-                  ? Image.network(
-                      existingPhotoUrl,
-                      fit: BoxFit.contain,
-                    )
+                  ? Image.network(existingPhotoUrl, fit: BoxFit.contain)
                   : InkWell(
                       onTap: onPickPhoto,
                       borderRadius: BorderRadius.circular(12),

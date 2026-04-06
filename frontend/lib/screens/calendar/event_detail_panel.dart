@@ -288,10 +288,7 @@ class _EventPhoto extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          event.photoUrl,
-          fit: BoxFit.contain,
-        ),
+        child: Image.network(event.photoUrl, fit: BoxFit.contain),
       ),
     );
   }

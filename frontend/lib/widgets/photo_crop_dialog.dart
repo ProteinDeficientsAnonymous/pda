@@ -80,7 +80,9 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
     if (rect.width <= 0 || _clamping) return;
 
     final currentRatio = rect.height / rect.width;
-    _log.fine('_onMoved: w=${rect.width.toStringAsFixed(1)} h=${rect.height.toStringAsFixed(1)} ratio=${currentRatio.toStringAsFixed(3)} max=$maxRatio');
+    _log.fine(
+      '_onMoved: w=${rect.width.toStringAsFixed(1)} h=${rect.height.toStringAsFixed(1)} ratio=${currentRatio.toStringAsFixed(3)} max=$maxRatio',
+    );
 
     if (currentRatio > maxRatio) {
       _log.info('_onMoved: clamping rect (ratio $currentRatio > $maxRatio)');
@@ -126,11 +128,15 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
                 aspectRatio: widget.aspectRatio,
                 onMoved: _onMoved,
                 onCropped: (croppedBytes) {
-                  _log.info('onCropped: ${croppedBytes.length} bytes, mounted=$mounted');
+                  _log.info(
+                    'onCropped: ${croppedBytes.length} bytes, mounted=$mounted',
+                  );
                   if (mounted) Navigator.of(context).pop(croppedBytes);
                 },
                 onStatusChanged: (status) {
-                  _log.info('onStatusChanged: $status mounted=$mounted _cropping=$_cropping');
+                  _log.info(
+                    'onStatusChanged: $status mounted=$mounted _cropping=$_cropping',
+                  );
                   // Skip setState if we already popped (crop completed).
                   if (status != CropStatus.cropping && mounted && !_cropping) {
                     setState(() {});
