@@ -99,7 +99,9 @@ class _DayViewState extends State<DayView> {
           const Divider(height: 1),
           Expanded(
             child: Semantics(
-              onLongPressHint: widget.onLongPress != null ? 'create event' : null,
+              onLongPressHint: widget.onLongPress != null
+                  ? 'create event'
+                  : null,
               child: InkWell(
                 onLongPress: widget.onLongPress,
                 splashColor: Colors.transparent,

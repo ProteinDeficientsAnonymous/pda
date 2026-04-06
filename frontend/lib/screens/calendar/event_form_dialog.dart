@@ -51,6 +51,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late bool _datetimeTbd;
   late String _eventType;
   late String _visibility;
+  late String _invitePermission;
   late Set<String> _coHostIds;
   late Map<String, String> _coHostNames;
   late Set<String> _invitedUserIds;
@@ -97,6 +98,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _datetimeTbd = e.datetimeTbd;
       _eventType = e.eventType;
       _visibility = e.visibility;
+      _invitePermission = e.invitePermission;
       _coHostIds = Set<String>.from(e.coHostIds);
       _coHostNames = {
         for (var i = 0; i < e.coHostIds.length; i++)
@@ -130,6 +132,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _datetimeTbd = false;
       _eventType = EventType.community;
       _visibility = PageVisibility.public_;
+      _invitePermission = InvitePermission.allMembers;
       _coHostIds = {};
       _coHostNames = {};
       _invitedUserIds = {};
@@ -199,6 +202,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           'datetime_tbd': _datetimeTbd || _datetimePollOptions.isNotEmpty,
           'event_type': _eventType,
           'visibility': _visibility,
+          'invite_permission': _invitePermission,
           'co_host_ids': _coHostIds.toList(),
           'invited_user_ids': _invitedUserIds.toList(),
         },
@@ -424,6 +428,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     visibility: _visibility,
                     eventType: _eventType,
                     partifulLinkText: _partifulLink.text,
+                    invitePermission: _invitePermission,
                     coHostIds: _coHostIds,
                     coHostNames: _coHostNames,
                     invitedUserIds: _invitedUserIds,
@@ -437,6 +442,8 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                           ? EventType.official
                           : EventType.community,
                     ),
+                    onInvitePermissionChanged: (val) =>
+                        setState(() => _invitePermission = val),
                     onCoHostsChanged: (ids) => setState(() => _coHostIds = ids),
                     onInvitedChanged: (ids) =>
                         setState(() => _invitedUserIds = ids),

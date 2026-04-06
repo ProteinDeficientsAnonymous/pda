@@ -273,7 +273,7 @@ class _WideEventArea extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Text(
-                                '+$overflow more',
+                                '$overflow more',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from community.models import EventType, PageVisibility
+from community.models import EventType, InvitePermission, PageVisibility
 
 
 class RSVPGuestOut(BaseModel):
@@ -74,6 +74,7 @@ class EventOut(BaseModel):
     invited_user_ids: list[str] = []
     invited_user_names: list[str] = []
     invited_user_photo_urls: list[str] = []
+    invite_permission: str = InvitePermission.ALL_MEMBERS
 
 
 class RSVPIn(BaseModel):
@@ -99,6 +100,7 @@ class EventIn(BaseModel):
     datetime_tbd: bool = False
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
+    invite_permission: str = InvitePermission.ALL_MEMBERS
     co_host_ids: list[str] = []
     invited_user_ids: list[str] = []
 
@@ -122,6 +124,7 @@ class EventPatchIn(BaseModel):
     datetime_tbd: bool | None = None
     event_type: str | None = None
     visibility: str | None = None
+    invite_permission: str | None = None
     co_host_ids: list[str] | None = None
     invited_user_ids: list[str] | None = None
 

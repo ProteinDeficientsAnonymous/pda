@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from django.db import models
 
-from community.models.choices import EventType, PageVisibility, RSVPStatus
+from community.models.choices import EventType, InvitePermission, PageVisibility, RSVPStatus
 
 if TYPE_CHECKING:
     from django.db.models import Manager
@@ -42,6 +42,11 @@ class Event(models.Model):
         max_length=20,
         choices=PageVisibility.choices,
         default=PageVisibility.PUBLIC,
+    )
+    invite_permission = models.CharField(
+        max_length=20,
+        choices=InvitePermission.choices,
+        default=InvitePermission.ALL_MEMBERS,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:

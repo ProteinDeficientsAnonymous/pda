@@ -118,8 +118,9 @@ class NarrowDayRow extends StatelessWidget {
       onLongPressHint: onDayLongPressed != null ? 'create event' : null,
       child: InkWell(
         onTap: onDayTapped != null ? () => onDayTapped!(day) : null,
-        onLongPress:
-            onDayLongPressed != null ? () => onDayLongPressed!(day) : null,
+        onLongPress: onDayLongPressed != null
+            ? () => onDayLongPressed!(day)
+            : null,
         child: Container(
           decoration: BoxDecoration(
             border: Border(
@@ -180,7 +181,7 @@ class NarrowDayRow extends StatelessWidget {
                                       top: 1,
                                     ),
                                     child: Text(
-                                      '+$overflow more',
+                                      '$overflow more',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,

@@ -136,6 +136,7 @@ def create_event(request, payload: EventIn):
         datetime_tbd=payload.datetime_tbd,
         event_type=payload.event_type,
         visibility=payload.visibility,
+        invite_permission=payload.invite_permission,
         created_by=request.auth,
     )
     if payload.co_host_ids:

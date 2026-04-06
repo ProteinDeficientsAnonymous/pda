@@ -153,6 +153,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         invited_user_ids=[str(u.id) for u in invited],
         invited_user_names=[u.display_name or u.phone_number for u in invited],
         invited_user_photo_urls=[media_path(u.profile_photo) for u in invited],
+        invite_permission=event.invite_permission,
     )
 
 

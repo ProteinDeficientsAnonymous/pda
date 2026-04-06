@@ -42,6 +42,11 @@ class SurveyQuestionType(models.TextChoices):
     DATETIME_POLL = "datetime_poll", "Datetime poll"
 
 
+class InvitePermission(models.TextChoices):
+    ALL_MEMBERS = "all_members", "All members"
+    CO_HOSTS_ONLY = "co_hosts_only", "Co-hosts only"
+
+
 class RSVPStatus(models.TextChoices):
     ATTENDING = "attending", "Attending"
     MAYBE = "maybe", "Maybe"

@@ -195,7 +195,8 @@ class EventMemberSection extends ConsumerWidget {
               ),
             ),
           ],
-          if (isCoHost) ...[
+          if (isCoHost ||
+              event.invitePermission == InvitePermission.allMembers) ...[
             const SizedBox(height: 12),
             FilledButton.tonalIcon(
               icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),

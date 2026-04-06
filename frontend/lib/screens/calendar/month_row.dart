@@ -213,7 +213,7 @@ class MonthRow extends StatelessWidget {
                         (chipHeight + chipSpacing),
                   ),
                   Text(
-                    '+$overflow more',
+                    '$overflow more',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

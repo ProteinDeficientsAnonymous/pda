@@ -9,6 +9,7 @@ class EventFormSettingsSection extends ConsumerWidget {
   final String visibility;
   final String eventType;
   final String partifulLinkText;
+  final String invitePermission;
   final Set<String> coHostIds;
   final Map<String, String> coHostNames;
   final Set<String> invitedUserIds;
@@ -17,6 +18,7 @@ class EventFormSettingsSection extends ConsumerWidget {
   final ValueChanged<bool> onRsvpChanged;
   final ValueChanged<String> onVisibilityChanged;
   final ValueChanged<bool> onOfficialChanged;
+  final ValueChanged<String> onInvitePermissionChanged;
   final ValueChanged<Set<String>> onCoHostsChanged;
   final ValueChanged<Set<String>> onInvitedChanged;
 
@@ -26,6 +28,7 @@ class EventFormSettingsSection extends ConsumerWidget {
     required this.visibility,
     required this.eventType,
     required this.partifulLinkText,
+    required this.invitePermission,
     required this.coHostIds,
     required this.coHostNames,
     required this.invitedUserIds,
@@ -34,6 +37,7 @@ class EventFormSettingsSection extends ConsumerWidget {
     required this.onRsvpChanged,
     required this.onVisibilityChanged,
     required this.onOfficialChanged,
+    required this.onInvitePermissionChanged,
     required this.onCoHostsChanged,
     required this.onInvitedChanged,
   });
@@ -109,6 +113,23 @@ class EventFormSettingsSection extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         const Divider(),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: invitePermission,
+          decoration: const InputDecoration(labelText: 'who can invite?'),
+          items: const [
+            DropdownMenuItem(
+              value: InvitePermission.allMembers,
+              child: Text('all members'),
+            ),
+            DropdownMenuItem(
+              value: InvitePermission.coHostsOnly,
+              child: Text('co-hosts only'),
+            ),
+          ],
+          onChanged: (val) =>
+              onInvitePermissionChanged(val ?? InvitePermission.allMembers),
+        ),
         const SizedBox(height: 8),
         Text('invite members', style: theme.textTheme.labelLarge),
         const SizedBox(height: 4),
