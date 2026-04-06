@@ -122,40 +122,44 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
           ),
         Opacity(
           opacity: _loading ? 0.5 : 1.0,
-          child: Wrap(
+          child: Row(
             spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
             children: [
-              _RsvpToggleButton(
-                label: "i'm going",
-                icon: Icons.sentiment_very_satisfied_outlined,
-                activeColor: cs.primary,
-                isActive: myRsvp == RsvpStatus.attending,
-                enabled: !_loading,
-                onTap: () => myRsvp == RsvpStatus.attending
-                    ? _removeRsvp()
-                    : _setRsvp(RsvpStatus.attending),
+              Expanded(
+                child: _RsvpToggleButton(
+                  label: "i'm going",
+                  icon: Icons.sentiment_very_satisfied_outlined,
+                  activeColor: cs.primary,
+                  isActive: myRsvp == RsvpStatus.attending,
+                  enabled: !_loading,
+                  onTap: () => myRsvp == RsvpStatus.attending
+                      ? _removeRsvp()
+                      : _setRsvp(RsvpStatus.attending),
+                ),
               ),
-              _RsvpToggleButton(
-                label: 'maybe',
-                icon: Icons.sentiment_neutral_outlined,
-                activeColor: cs.tertiary,
-                isActive: myRsvp == RsvpStatus.maybe,
-                enabled: !_loading,
-                onTap: () => myRsvp == RsvpStatus.maybe
-                    ? _removeRsvp()
-                    : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
+              Expanded(
+                child: _RsvpToggleButton(
+                  label: 'maybe',
+                  icon: Icons.sentiment_neutral_outlined,
+                  activeColor: cs.tertiary,
+                  isActive: myRsvp == RsvpStatus.maybe,
+                  enabled: !_loading,
+                  onTap: () => myRsvp == RsvpStatus.maybe
+                      ? _removeRsvp()
+                      : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
+                ),
               ),
-              _RsvpToggleButton(
-                label: "can't make it",
-                icon: Icons.sentiment_dissatisfied_outlined,
-                activeColor: cs.error,
-                isActive: myRsvp == RsvpStatus.cantGo,
-                enabled: !_loading,
-                onTap: () => myRsvp == RsvpStatus.cantGo
-                    ? _removeRsvp()
-                    : _confirmAndSetRsvp(RsvpStatus.cantGo, "can't make it"),
+              Expanded(
+                child: _RsvpToggleButton(
+                  label: "can't make it",
+                  icon: Icons.sentiment_dissatisfied_outlined,
+                  activeColor: cs.error,
+                  isActive: myRsvp == RsvpStatus.cantGo,
+                  enabled: !_loading,
+                  onTap: () => myRsvp == RsvpStatus.cantGo
+                      ? _removeRsvp()
+                      : _confirmAndSetRsvp(RsvpStatus.cantGo, "can't make it"),
+                ),
               ),
             ],
           ),
@@ -203,7 +207,8 @@ class _RsvpToggleButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: isActive
                 ? activeColor.withValues(alpha: 0.15)
@@ -214,7 +219,7 @@ class _RsvpToggleButton extends StatelessWidget {
               width: isActive ? 2 : 1,
             ),
           ),
-          child: Row(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -222,11 +227,11 @@ class _RsvpToggleButton extends StatelessWidget {
                 size: 18,
                 color: isActive ? activeColor : cs.onSurfaceVariant,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                   color: isActive ? activeColor : cs.onSurfaceVariant,
                 ),

@@ -119,7 +119,10 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
         );
       }
       ref.invalidate(eventsProvider);
-      if (mounted) context.push('/events/$eventId');
+      if (mounted) {
+        showSnackBar(context, 'event created 🌱');
+        context.push('/events/$eventId');
+      }
     } catch (e) {
       if (mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);

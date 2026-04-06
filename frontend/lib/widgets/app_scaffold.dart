@@ -15,11 +15,14 @@ class AppScaffold extends ConsumerWidget {
   /// When set, body content is centered with this max width.
   final double? maxWidth;
 
+  final Widget? floatingActionButton;
+
   const AppScaffold({
     super.key,
     required this.child,
     this.actions,
     this.maxWidth,
+    this.floatingActionButton,
   });
 
   @override
@@ -46,6 +49,7 @@ class AppScaffold extends ConsumerWidget {
               ],
             )
           : body,
+      floatingActionButton: floatingActionButton,
       bottomNavigationBar: _BottomNav(user: user),
     );
   }

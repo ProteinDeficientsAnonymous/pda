@@ -10,6 +10,7 @@ import 'package:pda/screens/calendar/month_view.dart';
 import 'package:pda/screens/calendar/week_view.dart';
 import 'package:pda/screens/guest_add_event_dialog.dart';
 import 'package:pda/utils/create_datetime_poll.dart';
+import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
 enum _CalendarView { month, week, day, list }
@@ -82,7 +83,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         );
       }
       ref.invalidate(eventsProvider);
-      if (mounted) context.push('/events/$eventId');
+      if (mounted) {
+        showSnackBar(context, 'event created 🌱');
+        context.push('/events/$eventId');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,6 +116,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           ),
       ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openCreateEvent,
+        icon: const Icon(Icons.add, size: 18),
+        label: const Text('add event'),
+      ),
       child: Column(
         children: [
           _CalendarToolbar(
@@ -127,14 +136,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: Text('couldn\'t load events — try refreshing'),
               ),
               data: (events) => _buildView(events),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8, top: 4),
-            child: FilledButton.icon(
-              onPressed: _openCreateEvent,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('add event'),
             ),
           ),
         ],
