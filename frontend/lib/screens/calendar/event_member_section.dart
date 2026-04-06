@@ -160,21 +160,6 @@ class EventMemberSection extends ConsumerWidget {
             ),
       ];
 
-      final invitedChips = [
-        for (var i = 0; i < event.invitedUserNames.length; i++)
-          EventDetailHostChip(
-            host: (
-              id: i < event.invitedUserIds.length
-                  ? event.invitedUserIds[i]
-                  : '',
-              name: event.invitedUserNames[i],
-              photoUrl: i < event.invitedUserPhotoUrls.length
-                  ? event.invitedUserPhotoUrls[i]
-                  : '',
-            ),
-          ),
-      ];
-
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -191,7 +176,7 @@ class EventMemberSection extends ConsumerWidget {
                 ],
               ),
             ),
-          if (detailRows.isNotEmpty || invitedChips.isNotEmpty) ...[
+          if (detailRows.isNotEmpty) ...[
             const SizedBox(height: 12),
             EventSectionCard(
               label: EventDetailLabel.details,
@@ -201,17 +186,6 @@ class EventMemberSection extends ConsumerWidget {
                   for (var i = 0; i < detailRows.length; i++) ...[
                     detailRows[i],
                     if (i < detailRows.length - 1) const SizedBox(height: 8),
-                  ],
-                  if (invitedChips.isNotEmpty) ...[
-                    if (detailRows.isNotEmpty) const SizedBox(height: 8),
-                    Text(
-                      EventDetailLabel.invited,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(spacing: 12, runSpacing: 8, children: invitedChips),
                   ],
                 ],
               ),

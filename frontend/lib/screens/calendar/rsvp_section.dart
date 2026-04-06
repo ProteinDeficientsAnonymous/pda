@@ -94,6 +94,12 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     final myRsvp = liveEvent.myRsvp;
     final guests = liveEvent.guests;
 
+    final currentUser = ref.watch(authProvider).value;
+    final isCoHost =
+        currentUser != null &&
+        (liveEvent.coHostIds.contains(currentUser.id) ||
+            liveEvent.createdById == currentUser.id);
+
     final attendingCount = guests
         .where((g) => g.status == RsvpStatus.attending)
         .length;
@@ -164,9 +170,15 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
             ],
           ),
         ),
-        if (guests.isNotEmpty) ...[
+        if (guests.isNotEmpty || liveEvent.invitedUserNames.isNotEmpty) ...[
           const SizedBox(height: 16),
-          RsvpGuestList(guests: guests),
+          RsvpGuestList(
+            guests: guests,
+            invitedUserIds: liveEvent.invitedUserIds,
+            invitedUserNames: liveEvent.invitedUserNames,
+            invitedUserPhotoUrls: liveEvent.invitedUserPhotoUrls,
+            showInvited: isCoHost,
+          ),
         ],
       ],
     );
