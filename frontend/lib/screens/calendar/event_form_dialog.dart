@@ -290,9 +290,10 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       context: context,
       imageBytes: rawBytes,
       mode: PhotoCropMode.rectangle,
-      aspectRatio: 2 / 1,
+      maxHeightRatio: 5 / 4,
     );
     if (croppedBytes == null) return;
+
     final croppedFile = XFile.fromData(
       croppedBytes,
       name: image.name,

@@ -64,7 +64,6 @@ void main() {
                   context: ctx,
                   imageBytes: _kMinimalPng,
                   mode: PhotoCropMode.rectangle,
-                  aspectRatio: 2 / 1,
                 ),
                 child: const Text('open'),
               ),
@@ -155,7 +154,6 @@ void main() {
                     context: ctx,
                     imageBytes: _kMinimalPng,
                     mode: PhotoCropMode.rectangle,
-                    aspectRatio: 2 / 1,
                   );
                 },
                 child: const Text('open'),

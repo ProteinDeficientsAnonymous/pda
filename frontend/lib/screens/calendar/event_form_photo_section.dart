@@ -44,18 +44,14 @@ class EventFormPhotoSection extends StatelessWidget {
                         }
                         return Image.memory(
                           snap.data! as dynamic,
-                          height: 160,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                         );
                       },
                     )
                   : hasExisting
                   ? Image.network(
                       existingPhotoUrl,
-                      height: 160,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                     )
                   : InkWell(
                       onTap: onPickPhoto,
@@ -111,7 +107,32 @@ class EventFormPhotoSection extends StatelessWidget {
                     EventFormPhotoButton(
                       tooltip: 'remove photo',
                       icon: Icons.close,
-                      onPressed: onRemovePhoto,
+                      onPressed: hasExisting && !hasSelected
+                          ? () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('remove photo'),
+                                  content: const Text(
+                                    'Remove the cover photo? This cannot be undone.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('cancel'),
+                                    ),
+                                    FilledButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text('remove'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed == true) onRemovePhoto();
+                            }
+                          : onRemovePhoto,
                     ),
                   ],
                 ),

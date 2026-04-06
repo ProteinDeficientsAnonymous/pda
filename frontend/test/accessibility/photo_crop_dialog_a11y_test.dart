@@ -81,12 +81,8 @@ Widget _openButton(
   BuildContext ctx, {
   PhotoCropMode mode = PhotoCropMode.circle,
 }) => TextButton(
-  onPressed: () => showPhotoCropDialog(
-    context: ctx,
-    imageBytes: _kMinimalPng,
-    mode: mode,
-    aspectRatio: mode == PhotoCropMode.rectangle ? 2 / 1 : 1,
-  ),
+  onPressed: () =>
+      showPhotoCropDialog(context: ctx, imageBytes: _kMinimalPng, mode: mode),
   child: const Text('open'),
 );
 
