@@ -57,6 +57,29 @@ class _EventFormLinksAndCostSectionState
       widget.partifulLink.text.isNotEmpty ||
       widget.otherLink.text.isNotEmpty;
 
+  String? _validateWhatsapp(String? val) {
+    if (val == null || val.trim().isEmpty) return null;
+    final normalized = widget.normalizeUrl(val.trim());
+    final uri = Uri.tryParse(normalized);
+    if (uri == null || !uri.hasAuthority) return 'Enter a valid URL';
+    final host = uri.host;
+    final isWhatsApp =
+        host.contains('whatsapp.com') || host == 'wa.me' || host == 'whats.app';
+    if (!isWhatsApp) return 'Must be a WhatsApp link';
+    return null;
+  }
+
+  String? _validatePartiful(String? val) {
+    if (val == null || val.trim().isEmpty) return null;
+    final normalized = widget.normalizeUrl(val.trim());
+    final uri = Uri.tryParse(normalized);
+    if (uri == null || !uri.hasAuthority) return 'Enter a valid URL';
+    if (!uri.host.contains('partiful.com')) {
+      return 'Must be a Partiful link (partiful.com/...)';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -78,21 +101,7 @@ class _EventFormLinksAndCostSectionState
                 prefixIcon: Icon(Icons.chat_outlined),
               ),
               keyboardType: TextInputType.url,
-              validator: (val) {
-                if (val == null || val.trim().isEmpty) return null;
-                final normalized = widget.normalizeUrl(val.trim());
-                final uri = Uri.tryParse(normalized);
-                if (uri == null || !uri.hasAuthority) {
-                  return 'Enter a valid URL';
-                }
-                final host = uri.host;
-                final isWhatsApp =
-                    host.contains('whatsapp.com') ||
-                    host == 'wa.me' ||
-                    host == 'whats.app';
-                if (!isWhatsApp) return 'Must be a WhatsApp link';
-                return null;
-              },
+              validator: _validateWhatsapp,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -109,18 +118,7 @@ class _EventFormLinksAndCostSectionState
                 helperStyle: TextStyle(color: theme.colorScheme.tertiary),
               ),
               keyboardType: TextInputType.url,
-              validator: (val) {
-                if (val == null || val.trim().isEmpty) return null;
-                final normalized = widget.normalizeUrl(val.trim());
-                final uri = Uri.tryParse(normalized);
-                if (uri == null || !uri.hasAuthority) {
-                  return 'Enter a valid URL';
-                }
-                if (!uri.host.contains('partiful.com')) {
-                  return 'Must be a Partiful link (partiful.com/...)';
-                }
-                return null;
-              },
+              validator: _validatePartiful,
             ),
             const SizedBox(height: 12),
             TextFormField(

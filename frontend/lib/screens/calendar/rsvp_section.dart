@@ -95,6 +95,44 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
   }
 
+  String _buildSummary(List guests) {
+    final attendingCount = guests
+        .where((g) => g.status == RsvpStatus.attending)
+        .fold(0, (sum, g) => sum + 1 + (g.hasPlusOne ? 1 : 0));
+    final maybeCount = guests
+        .where((g) => g.status == RsvpStatus.maybe)
+        .fold(0, (sum, g) => sum + 1 + (g.hasPlusOne ? 1 : 0));
+    final parts = [
+      if (attendingCount > 0) '$attendingCount going',
+      if (maybeCount > 0) '$maybeCount maybe',
+    ];
+    return parts.join(' · ');
+  }
+
+  Widget _buildPlusOneButton(String myRsvp) {
+    return Center(
+      child: _bringingPlusOne
+          ? FilledButton.tonal(
+              onPressed: _loading
+                  ? null
+                  : () {
+                      setState(() => _bringingPlusOne = false);
+                      _setRsvp(myRsvp, hasPlusOne: false);
+                    },
+              child: const Text('bringing +1 ✓'),
+            )
+          : OutlinedButton(
+              onPressed: _loading
+                  ? null
+                  : () {
+                      setState(() => _bringingPlusOne = true);
+                      _setRsvp(myRsvp, hasPlusOne: true);
+                    },
+              child: const Text('bring a +1'),
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -113,32 +151,20 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     final myGuest = currentUser == null
         ? null
         : guests.where((g) => g.userId == currentUser.id).firstOrNull;
-    if (myGuest != null &&
-        myGuest.hasPlusOne != _bringingPlusOne &&
-        !_loading) {
+    if (myGuest != null && myGuest.hasPlusOne != _bringingPlusOne && !_loading) {
       _bringingPlusOne = myGuest.hasPlusOne;
     }
 
-    final attendingCount = guests
-        .where((g) => g.status == RsvpStatus.attending)
-        .fold(0, (sum, g) => sum + 1 + (g.hasPlusOne ? 1 : 0));
-    final maybeCount = guests
-        .where((g) => g.status == RsvpStatus.maybe)
-        .fold(0, (sum, g) => sum + 1 + (g.hasPlusOne ? 1 : 0));
-
-    final summaryParts = [
-      if (attendingCount > 0) '$attendingCount going',
-      if (maybeCount > 0) '$maybeCount maybe',
-    ];
+    final summary = _buildSummary(guests);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if (summaryParts.isNotEmpty)
+        if (summary.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              summaryParts.join(' · '),
+              summary,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -194,27 +220,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
         if (liveEvent.allowPlusOnes &&
             (myRsvp == RsvpStatus.attending || myRsvp == RsvpStatus.maybe)) ...[
           const SizedBox(height: 12),
-          Center(
-            child: _bringingPlusOne
-                ? FilledButton.tonal(
-                    onPressed: _loading
-                        ? null
-                        : () {
-                            setState(() => _bringingPlusOne = false);
-                            _setRsvp(myRsvp!, hasPlusOne: false);
-                          },
-                    child: const Text('bringing +1 ✓'),
-                  )
-                : OutlinedButton(
-                    onPressed: _loading
-                        ? null
-                        : () {
-                            setState(() => _bringingPlusOne = true);
-                            _setRsvp(myRsvp!, hasPlusOne: true);
-                          },
-                    child: const Text('bring a +1'),
-                  ),
-          ),
+          _buildPlusOneButton(myRsvp!),
         ],
         if (guests.isNotEmpty || liveEvent.invitedUserNames.isNotEmpty) ...[
           const SizedBox(height: 16),
