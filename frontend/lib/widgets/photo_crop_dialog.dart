@@ -61,7 +61,6 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
   final _controller = CropController();
   bool _cropping = false;
   bool _clamping = false;
-  bool _popped = false;
 
   void _onDone() {
     _log.info('_onDone called — _cropping=$_cropping mode=${widget.mode}');
