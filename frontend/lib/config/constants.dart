@@ -118,6 +118,11 @@ abstract class FieldLimit {
   static const paymentHandle = 100;
 }
 
+abstract class InvitePermission {
+  static const allMembers = 'all_members';
+  static const coHostsOnly = 'co_hosts_only';
+}
+
 abstract class EventDetailLabel {
   static const when = 'when';
   static const about = 'about';

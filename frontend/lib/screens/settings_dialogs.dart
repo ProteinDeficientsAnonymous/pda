@@ -11,6 +11,8 @@ import 'package:pda/widgets/password_strength_checklist.dart';
 
 final _log = Logger('SettingsDialog');
 
+final _log = Logger('SettingsDialog');
+
 class SettingsEditFieldDialog extends StatefulWidget {
   final String title;
   final String label;
