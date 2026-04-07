@@ -3,7 +3,7 @@ import 'package:pda/models/event.dart';
 import 'package:pda/utils/time_format.dart';
 import 'package:pda/screens/calendar/event_form_models.dart';
 import 'package:pda/screens/calendar/event_form_field_sections.dart';
-import 'package:pda/screens/calendar/live_poll_editor.dart';
+import 'package:pda/screens/calendar/poll_options_dialog.dart';
 import 'package:pda/widgets/date_time_picker.dart';
 
 class EventFormWhenSection extends StatefulWidget {
@@ -18,9 +18,7 @@ class EventFormWhenSection extends StatefulWidget {
   final ValueChanged<DateTime> onEndChanged;
   final VoidCallback onAddEndTime;
   final VoidCallback onClearEndTime;
-  final VoidCallback onAddPollOption;
-  final VoidCallback onClearPollOptions;
-  final void Function(int index) onRemovePollOption;
+  final void Function(List<DateTime> options) onPollOptionsChanged;
   final VoidCallback onRemovePoll;
   final double pickerWidth;
   final String Function(DateTime) dateFmt;
@@ -38,9 +36,7 @@ class EventFormWhenSection extends StatefulWidget {
     required this.onEndChanged,
     required this.onAddEndTime,
     required this.onClearEndTime,
-    required this.onAddPollOption,
-    required this.onClearPollOptions,
-    required this.onRemovePollOption,
+    required this.onPollOptionsChanged,
     required this.onRemovePoll,
     required this.pickerWidth,
     required this.dateFmt,
@@ -74,6 +70,27 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
     setState(() {
       _endPickerMode = _endPickerMode == mode ? null : mode;
     });
+  }
+
+  Future<void> _openPollDialog() async {
+    final hasActivePoll =
+        widget.isEdit &&
+        (widget.event?.hasPoll ?? false) &&
+        (widget.event?.datetimeTbd ?? true);
+
+    final result = await showDialog<List<DateTime>>(
+      context: context,
+      builder: (_) => PollOptionsDialog(
+        initialOptions: widget.datetimePollOptions,
+        eventId: hasActivePoll ? widget.event!.id : null,
+      ),
+    );
+
+    // In live-edit mode the dialog returns null (mutations are live).
+    // In create mode, result is the updated options list.
+    if (result != null) {
+      widget.onPollOptionsChanged(result);
+    }
   }
 
   List<Widget> _buildDateTimeRows() {
@@ -193,22 +210,79 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
     ];
   }
 
+  Widget _buildPollButton(ThemeData theme, String label) {
+    return InkWell(
+      onTap: _openPollDialog,
+      borderRadius: BorderRadius.circular(24),
+      child: Semantics(
+        button: true,
+        label: label,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.poll_outlined,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Editing an event with an active (non-finalized) poll — show live editor.
-    if (widget.isEdit &&
+    // Editing an event with an active (non-finalized) poll — show edit button.
+    final hasActivePoll =
+        widget.isEdit &&
         (widget.event?.hasPoll ?? false) &&
-        (widget.event?.datetimeTbd ?? true)) {
-      return LivePollEditor(
-        eventId: widget.event!.id,
-        onRemovePoll: widget.onRemovePoll,
-        removingPoll: widget.removingPoll,
+        (widget.event?.datetimeTbd ?? true);
+
+    if (hasActivePoll) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('date & time tbd', style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildPollButton(theme, 'edit poll'),
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: widget.removingPoll ? null : widget.onRemovePoll,
+                style: TextButton.styleFrom(
+                  foregroundColor: theme.colorScheme.error,
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  widget.removingPoll ? 'removing...' : 'remove poll',
+                ),
+              ),
+            ],
+          ),
+        ],
       );
     }
 
-    // Editing an event with a finalized poll and date unchanged — show badge.
+    // Editing with finalized poll — date pickers + "set by poll" badge.
     if (_dateSetByPoll) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,137 +306,41 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
             ],
           ),
           const SizedBox(height: 10),
-          InkWell(
-            onTap: () {
-              widget.onAddPollOption();
-              setState(() => _dateSetByPoll = false);
-            },
-            borderRadius: BorderRadius.circular(24),
-            child: Semantics(
-              button: true,
-              label: 're-poll members for a time',
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: theme.colorScheme.outlineVariant),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.poll_outlined,
-                      size: 16,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      're-poll members for a time',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          _buildPollButton(theme, 're-poll members for a time'),
         ],
       );
     }
 
-    // Building a poll — hide date pickers, show poll options.
+    // Creating with poll options already chosen — show summary + edit button.
     if (widget.datetimePollOptions.isNotEmpty) {
+      final count = widget.datetimePollOptions.length;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text('time options', style: theme.textTheme.titleSmall),
+              _buildPollButton(
+                theme,
+                'edit poll ($count option${count == 1 ? '' : 's'})',
               ),
+              const SizedBox(width: 12),
               TextButton(
-                onPressed: widget.onClearPollOptions,
+                onPressed: () => widget.onPollOptionsChanged([]),
                 child: const Text('cancel poll'),
               ),
             ],
-          ),
-          Text(
-            'members will vote on these — date is set when you pick a winner',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (var i = 0; i < widget.datetimePollOptions.length; i++)
-            Row(
-              children: [
-                const Icon(Icons.access_time_outlined, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    pollDateFmt
-                        .format(widget.datetimePollOptions[i])
-                        .toLowerCase(),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'remove option',
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () => widget.onRemovePollOption(i),
-                ),
-              ],
-            ),
-          TextButton.icon(
-            onPressed: widget.onAddPollOption,
-            icon: const Icon(Icons.add),
-            label: const Text('add another time'),
           ),
         ],
       );
     }
 
-    // Default: date/time pickers + offer to switch to a poll.
+    // Default: date/time pickers + offer to start a poll.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ..._buildDateTimeRows(),
         const SizedBox(height: 10),
-        InkWell(
-          onTap: widget.onAddPollOption,
-          borderRadius: BorderRadius.circular(24),
-          child: Semantics(
-            button: true,
-            label: 'poll members for a time',
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.poll_outlined,
-                    size: 16,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'or poll members for a time',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        _buildPollButton(theme, 'or poll members for a time'),
       ],
     );
   }

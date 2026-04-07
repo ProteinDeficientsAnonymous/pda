@@ -13,7 +13,6 @@ import 'package:pda/screens/calendar/event_form_location_field.dart';
 import 'package:pda/screens/calendar/event_form_links_section.dart';
 import 'package:pda/screens/calendar/event_form_settings_section.dart';
 import 'package:pda/utils/validators.dart' as v;
-import 'package:pda/widgets/date_time_picker_dialog.dart';
 import 'package:pda/widgets/photo_crop_dialog.dart';
 
 export 'package:pda/screens/calendar/event_form_result.dart'
@@ -219,18 +218,6 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     );
   }
 
-  Future<void> _addDatetimePollOption() async {
-    final now = DateTime.now();
-    final dt = await showDateTimePicker(
-      context: context,
-      initialDateTime: now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 2),
-    );
-    if (dt == null || !mounted) return;
-    setState(() => _datetimePollOptions.add(dt));
-  }
-
   Future<void> _removePoll(BuildContext ctx) async {
     final eventId = widget.event?.id;
     if (eventId == null) return;
@@ -368,11 +355,11 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     _end = _start.add(const Duration(hours: 1));
                   }),
                   onClearEndTime: () => setState(() => _end = null),
-                  onAddPollOption: _addDatetimePollOption,
-                  onClearPollOptions: () =>
-                      setState(() => _datetimePollOptions.clear()),
-                  onRemovePollOption: (i) =>
-                      setState(() => _datetimePollOptions.removeAt(i)),
+                  onPollOptionsChanged: (options) => setState(() {
+                    _datetimePollOptions
+                      ..clear()
+                      ..addAll(options);
+                  }),
                   onRemovePoll: () => _removePoll(context),
                   pickerWidth: dialogWidth,
                   dateFmt: dateFmt,
