@@ -383,7 +383,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     EventRSVP.objects.update_or_create(
         event=event,
         user=request.auth,
-        defaults={"status": payload.status, "plus_one_count": payload.plus_one_count},
+        defaults={"status": payload.status, "has_plus_one": payload.has_plus_one},
     )
     audit_log(
         logging.INFO,

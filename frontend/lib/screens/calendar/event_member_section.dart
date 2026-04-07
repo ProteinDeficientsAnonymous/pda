@@ -198,12 +198,14 @@ class EventMemberSection extends ConsumerWidget {
           if (isCoHost ||
               event.invitePermission == InvitePermission.allMembers) ...[
             const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
-              label: const Text('invite friends'),
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => InviteModal(event: event),
+            Center(
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                label: const Text('invite friends'),
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => InviteModal(event: event),
+                ),
               ),
             ),
           ],

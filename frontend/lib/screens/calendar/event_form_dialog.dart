@@ -372,6 +372,18 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                     _longitude = coords.lon;
                   }),
                 ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _description,
+                  decoration: const InputDecoration(
+                    labelText: 'tell us more',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  maxLines: 3,
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: v.maxLength(2000),
+                ),
                 const SizedBox(height: 8),
                 Center(
                   child: TextButton.icon(
@@ -389,18 +401,6 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 if (_showDetails) ...[
                   const SizedBox(height: 8),
                   const EventFormNoFeesNote(),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _description,
-                    decoration: const InputDecoration(
-                      labelText: 'tell us more',
-                      border: OutlineInputBorder(),
-                      alignLabelWithHint: true,
-                    ),
-                    maxLines: 3,
-                    textCapitalization: TextCapitalization.sentences,
-                    validator: v.maxLength(2000),
-                  ),
                   const SizedBox(height: 16),
                   EventFormLinksAndCostSection(
                     whatsappLink: _whatsappLink,

@@ -127,6 +127,7 @@ class _EventFormLinksAndCostSectionState
   List<Widget> _buildCostSection(ThemeData theme) {
     if (!_showCost) {
       return [
+        const Divider(),
         Center(
           child: TextButton.icon(
             onPressed: () => setState(() => _showCost = true),

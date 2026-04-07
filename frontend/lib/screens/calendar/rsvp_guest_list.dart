@@ -61,7 +61,9 @@ class _RsvpGuestListState extends State<RsvpGuestList> {
 
   int _tabCount(String tab) {
     if (tab == _kInvited) return widget.invitedUserNames.length;
-    return widget.guests.where((g) => g.status == tab).length;
+    return widget.guests
+        .where((g) => g.status == tab)
+        .fold(0, (sum, g) => sum + 1 + (g.hasPlusOne ? 1 : 0));
   }
 
   List<EventGuest> _currentGuests() =>

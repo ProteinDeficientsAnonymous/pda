@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pda/config/constants.dart';
 import 'package:pda/models/event_poll.dart';
 import 'package:pda/providers/event_poll_provider.dart';
 import 'package:pda/utils/snackbar.dart';

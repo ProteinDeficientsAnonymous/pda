@@ -12,7 +12,7 @@ abstract class EventGuest with _$EventGuest {
     required String status,
     String? phone,
     @Default('') String photoUrl,
-    @Default(0) int plusOneCount,
+    @Default(false) bool hasPlusOne,
   }) = _EventGuest;
 
   factory EventGuest.fromJson(Map<String, dynamic> json) =>

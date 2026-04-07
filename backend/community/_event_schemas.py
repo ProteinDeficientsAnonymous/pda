@@ -11,7 +11,7 @@ class RSVPGuestOut(BaseModel):
     user_id: str
     name: str
     status: str
-    plus_one_count: int = 0
+    has_plus_one: bool = False
     phone: str | None = None
     photo_url: str = ""
 
@@ -82,7 +82,7 @@ class EventOut(BaseModel):
 
 class RSVPIn(BaseModel):
     status: str
-    plus_one_count: int = 0
+    has_plus_one: bool = False
 
 
 class EventIn(BaseModel):

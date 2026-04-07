@@ -32,7 +32,7 @@ def _build_guest_list(rsvps, can_see_phones: bool) -> list[RSVPGuestOut]:
             user_id=str(r.user_id),
             name=r.user.display_name or r.user.phone_number,
             status=r.status,
-            plus_one_count=r.plus_one_count,
+            has_plus_one=r.has_plus_one,
             phone=r.user.phone_number if can_see_phones else None,
             photo_url=media_path(r.user.profile_photo),
         )

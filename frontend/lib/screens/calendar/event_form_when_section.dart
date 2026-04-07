@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/utils/time_format.dart';
-import 'package:pda/screens/calendar/event_form_models.dart';
 import 'package:pda/screens/calendar/event_form_field_sections.dart';
 import 'package:pda/screens/calendar/poll_options_dialog.dart';
 import 'package:pda/widgets/date_time_picker.dart';
@@ -344,7 +343,7 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
       children: [
         ..._buildDateTimeRows(),
         const SizedBox(height: 10),
-        _buildPollButton(theme, 'or poll members for a time'),
+        Center(child: _buildPollButton(theme, 'or poll members for a time')),
       ],
     );
   }

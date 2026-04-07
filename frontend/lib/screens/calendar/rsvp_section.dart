@@ -20,15 +20,16 @@ class RSVPSection extends ConsumerStatefulWidget {
 
 class _RSVPSectionState extends ConsumerState<RSVPSection> {
   bool _loading = false;
-  int _plusOneCount = 0;
+  bool _bringingPlusOne = false;
 
-  Future<void> _setRsvp(String status, {int plusOneCount = 0}) async {
+  Future<void> _setRsvp(String status, {bool? hasPlusOne}) async {
+    final plusOne = hasPlusOne ?? _bringingPlusOne;
     setState(() => _loading = true);
     try {
       final api = ref.read(apiClientProvider);
       await api.post(
         '/api/community/events/${widget.event.id}/rsvp/',
-        data: {'status': status, 'plus_one_count': plusOneCount},
+        data: {'status': status, 'has_plus_one': plusOne},
       );
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
@@ -43,11 +44,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
   }
 
-  Future<void> _confirmAndSetRsvp(
-    String status,
-    String label, {
-    int plusOneCount = 0,
-  }) async {
+  Future<void> _confirmAndSetRsvp(String status, String label) async {
     final user = ref.read(authProvider).value;
     final isCoHost =
         user != null &&
@@ -77,7 +74,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
       if (confirmed != true) return;
     }
 
-    await _setRsvp(status, plusOneCount: plusOneCount);
+    await _setRsvp(status);
   }
 
   Future<void> _removeRsvp() async {
@@ -112,12 +109,22 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
         (liveEvent.coHostIds.contains(currentUser.id) ||
             liveEvent.createdById == currentUser.id);
 
+    // Sync +1 state from server data.
+    final myGuest = currentUser == null
+        ? null
+        : guests.where((g) => g.userId == currentUser.id).firstOrNull;
+    if (myGuest != null &&
+        myGuest.hasPlusOne != _bringingPlusOne &&
+        !_loading) {
+      _bringingPlusOne = myGuest.hasPlusOne;
+    }
+
     final attendingCount = guests
         .where((g) => g.status == RsvpStatus.attending)
-        .fold(0, (sum, g) => sum + 1 + g.plusOneCount);
+        .fold(0, (sum, g) => sum + 1 + (g.hasPlusOne ? 1 : 0));
     final maybeCount = guests
         .where((g) => g.status == RsvpStatus.maybe)
-        .fold(0, (sum, g) => sum + 1 + g.plusOneCount);
+        .fold(0, (sum, g) => sum + 1 + (g.hasPlusOne ? 1 : 0));
 
     final summaryParts = [
       if (attendingCount > 0) '$attendingCount going',
@@ -187,34 +194,26 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
         if (liveEvent.allowPlusOnes &&
             (myRsvp == RsvpStatus.attending || myRsvp == RsvpStatus.maybe)) ...[
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'bringing +1s',
-                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-              ),
-              const SizedBox(width: 12),
-              IconButton(
-                icon: const Icon(Icons.remove, size: 18),
-                tooltip: 'remove a +1',
-                onPressed: _plusOneCount > 0
-                    ? () {
-                        setState(() => _plusOneCount--);
-                        _setRsvp(myRsvp!, plusOneCount: _plusOneCount);
-                      }
-                    : null,
-              ),
-              Text('$_plusOneCount', style: const TextStyle(fontSize: 15)),
-              IconButton(
-                icon: const Icon(Icons.add, size: 18),
-                tooltip: 'add a +1',
-                onPressed: () {
-                  setState(() => _plusOneCount++);
-                  _setRsvp(myRsvp!, plusOneCount: _plusOneCount);
-                },
-              ),
-            ],
+          Center(
+            child: _bringingPlusOne
+                ? FilledButton.tonal(
+                    onPressed: _loading
+                        ? null
+                        : () {
+                            setState(() => _bringingPlusOne = false);
+                            _setRsvp(myRsvp!, hasPlusOne: false);
+                          },
+                    child: const Text('bringing +1 ✓'),
+                  )
+                : OutlinedButton(
+                    onPressed: _loading
+                        ? null
+                        : () {
+                            setState(() => _bringingPlusOne = true);
+                            _setRsvp(myRsvp!, hasPlusOne: true);
+                          },
+                    child: const Text('bring a +1'),
+                  ),
           ),
         ],
         if (guests.isNotEmpty || liveEvent.invitedUserNames.isNotEmpty) ...[
