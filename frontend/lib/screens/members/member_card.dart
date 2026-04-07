@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
@@ -8,6 +9,8 @@ import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/approval_credentials_dialog.dart';
 import 'role_form_dialog.dart';
+
+final _log = Logger('MemberCard');
 
 class MemberCard extends ConsumerWidget {
   final User user;
@@ -240,10 +243,12 @@ class MemberCard extends ConsumerWidget {
 
     try {
       await notifier.updateUserRoles(user.id, result);
+      _log.info('edit roles succeeded for user ${user.id}');
       if (context.mounted) {
         showSnackBar(context, 'Roles updated');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to edit roles for user ${user.id}', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -256,6 +261,7 @@ class MemberCard extends ConsumerWidget {
   ) async {
     try {
       final token = await notifier.generateMagicLink(user.id);
+      _log.info('generate magic link succeeded for user ${user.id}');
       if (!context.mounted) return;
       final name = user.displayName.isNotEmpty
           ? user.displayName
@@ -268,7 +274,8 @@ class MemberCard extends ConsumerWidget {
           magicLinkToken: token,
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to generate magic link for user ${user.id}', e, st);
       if (!context.mounted) return;
       showErrorSnackBar(context, ApiError.from(e).message);
     }
@@ -280,9 +287,11 @@ class MemberCard extends ConsumerWidget {
   ) async {
     try {
       final tempPassword = await notifier.resetPassword(user.id);
+      _log.info('reset password succeeded for user ${user.id}');
       if (!context.mounted) return;
       _showTempPasswordDialog(context, tempPassword);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to reset password for user ${user.id}', e, st);
       if (!context.mounted) return;
       showErrorSnackBar(context, ApiError.from(e).message);
     }
@@ -318,13 +327,15 @@ class MemberCard extends ConsumerWidget {
     if (confirmed != true) return;
     try {
       await notifier.deleteUser(user.id);
+      _log.info('delete member succeeded for user ${user.id}');
       if (context.mounted) {
         showSnackBar(
           context,
           '${user.displayName.isNotEmpty ? user.displayName : user.phoneNumber} deleted',
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to delete member for user ${user.id}', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -359,10 +370,12 @@ class MemberCard extends ConsumerWidget {
     if (confirmed != true) return;
     try {
       await notifier.togglePause(user.id, paused: !user.isPaused);
+      _log.info('toggle pause succeeded for user ${user.id}');
       if (context.mounted) {
         showSnackBar(context, '$name ${user.isPaused ? 'unpaused' : 'paused'}');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to toggle pause for user ${user.id}', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, 'couldn\'t $action — try again');
       }

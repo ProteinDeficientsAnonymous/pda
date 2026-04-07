@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/survey_provider.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/screens/survey_question_field.dart';
+
+final _log = Logger('Survey');
 
 class SurveyScreen extends ConsumerWidget {
   final String slug;
@@ -58,7 +61,9 @@ class _SurveyFormState extends ConsumerState<_SurveyForm> {
       );
       setState(() => _submitted = true);
       ref.invalidate(surveyBySlugProvider(widget.survey.slug));
-    } catch (e) {
+      _log.info('submitted survey response');
+    } catch (e, st) {
+      _log.warning('failed to submit survey response', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t submit — try again');
       }

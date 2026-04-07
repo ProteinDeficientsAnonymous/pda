@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/models/event_poll.dart';
@@ -10,6 +11,8 @@ import 'package:pda/providers/event_poll_provider.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/poll_widgets.dart';
 import 'package:pda/widgets/poll_option_widgets.dart';
+
+final _log = Logger('EmbeddedPoll');
 
 /// Renders an EventPoll inline inside the event detail "when" section card.
 ///
@@ -68,7 +71,8 @@ class _EmbeddedEventPollState extends ConsumerState<EmbeddedEventPoll> {
         votes: _selected,
       );
       if (mounted) setState(() => _editing = false);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to submit poll vote', e, st);
       if (mounted) showErrorSnackBar(context, 'couldn\'t submit — try again');
     } finally {
       if (mounted) setState(() => _submitting = false);

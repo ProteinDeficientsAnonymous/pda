@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:logging/logging.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
@@ -12,6 +13,8 @@ import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/create_datetime_poll.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/utils/time_format.dart';
+
+final _log = Logger('EventManagement');
 
 class EventManagementRow extends ConsumerWidget {
   final Event event;
@@ -41,7 +44,9 @@ class EventManagementRow extends ConsumerWidget {
         );
       }
       ref.invalidate(eventsProvider);
-    } catch (e) {
+      _log.info('edited event ${event.id}');
+    } catch (e, st) {
+      _log.warning('failed to edit event', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -76,7 +81,9 @@ class EventManagementRow extends ConsumerWidget {
       final api = ref.read(apiClientProvider);
       await api.delete('/api/community/events/${event.id}/');
       ref.invalidate(eventsProvider);
-    } catch (e) {
+      _log.info('deleted event ${event.id}');
+    } catch (e, st) {
+      _log.warning('failed to delete event', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }

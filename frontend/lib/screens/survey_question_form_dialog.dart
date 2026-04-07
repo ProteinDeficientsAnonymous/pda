@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/widgets/date_time_picker_dialog.dart';
+
+final _log = Logger('SurveyQuestionForm');
 
 class SurveyQuestionFormResult {
   final String label;
@@ -40,7 +43,8 @@ String formatSurveyDatetimeOption(String iso) {
   try {
     final dt = DateTime.parse(iso).toLocal();
     return DateFormat('EEE, MMM d · h:mm a').format(dt).toLowerCase();
-  } catch (_) {
+  } catch (e, st) {
+    _log.warning('failed to parse datetime option: $iso', e, st);
     return iso;
   }
 }
@@ -87,7 +91,12 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
               .map((s) {
                 try {
                   return DateTime.parse(s).toLocal();
-                } catch (_) {
+                } catch (e, st) {
+                  _log.warning(
+                    'failed to parse datetime option in initState: $s',
+                    e,
+                    st,
+                  );
                   return null;
                 }
               })

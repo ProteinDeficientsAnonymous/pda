@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
+
+final _log = Logger('Guidelines');
 
 class Guidelines {
   final String content;
@@ -29,14 +32,20 @@ class GuidelinesNotifier extends AsyncNotifier<Guidelines> {
 
   Future<void> saveContent(String content) async {
     final api = ref.read(apiClientProvider);
-    final response = await api.patch(
-      '/api/community/guidelines/',
-      data: {'content': content},
-    );
-    state = AsyncData(
-      Guidelines.fromJson(response.data as Map<String, dynamic>),
-    );
-    ref.invalidate(guidelinesProvider);
+    try {
+      final response = await api.patch(
+        '/api/community/guidelines/',
+        data: {'content': content},
+      );
+      state = AsyncData(
+        Guidelines.fromJson(response.data as Map<String, dynamic>),
+      );
+      ref.invalidate(guidelinesProvider);
+      _log.info('saved guidelines content');
+    } catch (e, st) {
+      _log.warning('failed to save guidelines content', e, st);
+      rethrow;
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:logging/logging.dart';
 import 'package:pda/models/join_request.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/join_request_management_provider.dart';
@@ -9,6 +10,8 @@ import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/approval_credentials_dialog.dart';
 import 'package:pda/config/constants.dart';
+
+final _log = Logger('JoinRequests');
 
 const _filters = ['All', 'Pending', 'Approved', 'Rejected'];
 
@@ -42,13 +45,15 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
         data: {'status': status},
       );
       ref.invalidate(joinRequestsProvider);
+      _log.info('processed join request');
       if (status == JoinRequestStatus.approved && mounted) {
         final magicLinkToken = response.data['magic_link_token'] as String?;
         if (magicLinkToken != null) {
           await _showApprovalModal(displayName, phoneNumber, magicLinkToken);
         }
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to process join request', e, st);
       if (mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }

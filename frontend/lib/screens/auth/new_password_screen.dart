@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+
+final _log = Logger('NewPassword');
 
 class NewPasswordScreen extends ConsumerStatefulWidget {
   const NewPasswordScreen({super.key});
@@ -37,7 +40,9 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
           .read(authProvider.notifier)
           .completeOnboarding(newPassword: _newPwCtrl.text);
       // Router redirect will navigate to /calendar once needsOnboarding becomes false.
-    } catch (e) {
+      _log.info('password set');
+    } catch (e, st) {
+      _log.warning('failed to set password', e, st);
       if (!mounted) return;
       showErrorSnackBar(context, ApiError.from(e).message);
     } finally {

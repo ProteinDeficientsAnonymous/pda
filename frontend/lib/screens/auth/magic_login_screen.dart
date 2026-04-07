@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
+
+final _log = Logger('MagicLogin');
 
 class MagicLoginScreen extends ConsumerStatefulWidget {
   const MagicLoginScreen({super.key, required this.token});
@@ -25,7 +28,9 @@ class _MagicLoginScreenState extends ConsumerState<MagicLoginScreen> {
     try {
       await ref.read(authProvider.notifier).magicLogin(widget.token);
       // Router redirect handles onboarding navigation once auth state updates.
-    } catch (_) {
+      _log.info('magic link login succeeded');
+    } catch (e, st) {
+      _log.warning('magic link login failed', e, st);
       if (mounted) {
         setState(
           () => _error =

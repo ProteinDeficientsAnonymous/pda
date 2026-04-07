@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/providers/survey_admin_provider.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/config/constants.dart';
+
+final _log = Logger('SurveyAdmin');
 
 class SurveyAdminScreen extends ConsumerWidget {
   const SurveyAdminScreen({super.key});
@@ -104,7 +107,9 @@ class _SurveyAdminBody extends ConsumerWidget {
         showSnackBar(context, 'survey created 🌱');
         context.go('/admin/surveys/${survey.id}');
       }
-    } catch (e) {
+      _log.info('created survey');
+    } catch (e, st) {
+      _log.warning('failed to create survey', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, 'couldn\'t create survey — try again');
       }
@@ -126,7 +131,9 @@ class _SurveyAdminBody extends ConsumerWidget {
           survey.isActive ? 'survey paused' : 'survey active ✓',
         );
       }
-    } catch (e) {
+      _log.info('toggled survey active state');
+    } catch (e, st) {
+      _log.warning('failed to toggle survey active state', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, 'couldn\'t update survey — try again');
       }
@@ -165,7 +172,9 @@ class _SurveyAdminBody extends ConsumerWidget {
     try {
       await ref.read(surveyAdminProvider.notifier).deleteSurvey(survey.id);
       if (context.mounted) showSnackBar(context, 'survey deleted');
-    } catch (e) {
+      _log.info('deleted survey');
+    } catch (e, st) {
+      _log.warning('failed to delete survey', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, 'couldn\'t delete survey — try again');
       }

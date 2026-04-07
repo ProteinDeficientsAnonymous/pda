@@ -3,6 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('QuillEditor');
 
 /// Shared rich-text content widget backed by flutter_quill.
 ///
@@ -96,7 +99,12 @@ class _QuillContentEditorState extends State<QuillContentEditor> {
           document: Document.fromJson(jsonDecode(json) as List),
           selection: const TextSelection.collapsed(offset: 0),
         );
-      } catch (_) {
+      } catch (e, st) {
+        _log.warning(
+          'failed to parse document JSON — falling back to blank document',
+          e,
+          st,
+        );
         controller = QuillController.basic();
       }
     }

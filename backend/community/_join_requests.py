@@ -1,8 +1,10 @@
 """Join form configuration, join request submission/management, and check-phone endpoints."""
 
+import logging
 from datetime import datetime
 from uuid import UUID
 
+from config.audit import audit_log
 from django.conf import settings
 from django.core.mail import send_mail
 from ninja import Router
@@ -178,6 +180,15 @@ def get_join_form(request):
 )
 def create_join_form_question(request, payload: JoinFormQuestionIn):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "create_join_form_question",
+                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     max_order = JoinFormQuestion.objects.count()
     q = JoinFormQuestion.objects.create(
@@ -186,6 +197,14 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
         options=payload.options,
         required=payload.required,
         display_order=max_order,
+    )
+    audit_log(
+        logging.INFO,
+        "join_form_question_created",
+        request,
+        target_type="join_form_question",
+        target_id=str(q.id),
+        details={"label": q.label},
     )
     return Status(
         201,
@@ -207,6 +226,17 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
 )
 def update_join_form_question(request, question_id: UUID, payload: JoinFormQuestionIn):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="join_form_question",
+            target_id=str(question_id),
+            details={
+                "endpoint": "update_join_form_question",
+                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         q = JoinFormQuestion.objects.get(id=question_id)
@@ -217,6 +247,14 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
     q.options = payload.options
     q.required = payload.required
     q.save()
+    audit_log(
+        logging.INFO,
+        "join_form_question_updated",
+        request,
+        target_type="join_form_question",
+        target_id=str(question_id),
+        details={"label": q.label},
+    )
     return Status(
         200,
         JoinFormQuestionOut(
@@ -237,12 +275,32 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
 )
 def delete_join_form_question(request, question_id: UUID):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="join_form_question",
+            target_id=str(question_id),
+            details={
+                "endpoint": "delete_join_form_question",
+                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         q = JoinFormQuestion.objects.get(id=question_id)
     except JoinFormQuestion.DoesNotExist:
         return Status(404, ErrorOut(detail="Question not found."))
+    label = q.label
     q.delete()
+    audit_log(
+        logging.INFO,
+        "join_form_question_deleted",
+        request,
+        target_type="join_form_question",
+        target_id=str(question_id),
+        details={"label": label},
+    )
     return Status(204, None)
 
 
@@ -253,9 +311,19 @@ def delete_join_form_question(request, question_id: UUID):
 )
 def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "reorder_join_form_questions",
+                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     for idx, qid in enumerate(payload.question_ids):
         JoinFormQuestion.objects.filter(id=qid).update(display_order=idx)
+    audit_log(logging.INFO, "join_form_questions_reordered", request)
     questions = JoinFormQuestion.objects.all()
     return Status(
         200,
@@ -318,6 +386,14 @@ def submit_join_request(request, payload: JoinRequestIn):
     )
 
     logger.info("Join request submitted by %s", display_name)
+    audit_log(
+        logging.INFO,
+        "join_request_submitted",
+        request,
+        target_type="join_request",
+        target_id=str(join_request.id),
+        details={"display_name": display_name},
+    )
     _send_join_request_email(display_name, validated_phone, custom_answers)
 
     return Status(201, _join_request_out(join_request))
@@ -326,6 +402,15 @@ def submit_join_request(request, payload: JoinRequestIn):
 @router.get("/join-requests/", response={200: list[JoinRequestOut], 403: ErrorOut}, auth=JWTAuth())
 def list_join_requests(request):
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "list_join_requests",
+                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     join_requests = JoinRequest.objects.all()
@@ -342,6 +427,17 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     from users.models import User
 
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="join_request",
+            target_id=str(id),
+            details={
+                "endpoint": "update_join_request_status",
+                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     valid_statuses = [JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED]
@@ -360,6 +456,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     join_request.save()
 
     magic_token = None
+    user_created = False
     if payload.status == JoinRequestStatus.APPROVED:
         if not User.objects.filter(phone_number=join_request.phone_number).exists():
             _, magic_token = _create_user_with_role(
@@ -368,6 +465,21 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
                 "",
                 None,
             )
+            user_created = True
+
+    action = (
+        "join_request_approved"
+        if payload.status == JoinRequestStatus.APPROVED
+        else "join_request_rejected"
+    )
+    audit_log(
+        logging.INFO,
+        action,
+        request,
+        target_type="join_request",
+        target_id=str(join_request.id),
+        details={"display_name": join_request.display_name, "user_created": user_created},
+    )
 
     return Status(
         200,

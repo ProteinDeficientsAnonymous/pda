@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/config/constants.dart';
+
+final _log = Logger('SurveyAdmin');
 
 class SurveyAdminNotifier extends AsyncNotifier<List<Survey>> {
   @override
@@ -23,31 +26,49 @@ class SurveyAdminNotifier extends AsyncNotifier<List<Survey>> {
     bool oneResponsePerUser = false,
   }) async {
     final api = ref.read(apiClientProvider);
-    final response = await api.post(
-      '/api/community/surveys/',
-      data: {
-        'title': title,
-        'slug': slug,
-        'description': description,
-        'visibility': visibility,
-        'one_response_per_user': oneResponsePerUser,
-        if (linkedEventId != null) 'linked_event_id': linkedEventId,
-      },
-    );
-    ref.invalidateSelf();
-    return Survey.fromJson(response.data as Map<String, dynamic>);
+    try {
+      final response = await api.post(
+        '/api/community/surveys/',
+        data: {
+          'title': title,
+          'slug': slug,
+          'description': description,
+          'visibility': visibility,
+          'one_response_per_user': oneResponsePerUser,
+          if (linkedEventId != null) 'linked_event_id': linkedEventId,
+        },
+      );
+      ref.invalidateSelf();
+      _log.info('created survey "$title"');
+      return Survey.fromJson(response.data as Map<String, dynamic>);
+    } catch (e, st) {
+      _log.warning('failed to create survey "$title"', e, st);
+      rethrow;
+    }
   }
 
   Future<void> updateSurvey(String id, Map<String, dynamic> updates) async {
     final api = ref.read(apiClientProvider);
-    await api.patch('/api/community/surveys/$id/', data: updates);
-    ref.invalidateSelf();
+    try {
+      await api.patch('/api/community/surveys/$id/', data: updates);
+      ref.invalidateSelf();
+      _log.info('updated survey $id');
+    } catch (e, st) {
+      _log.warning('failed to update survey $id', e, st);
+      rethrow;
+    }
   }
 
   Future<void> deleteSurvey(String id) async {
     final api = ref.read(apiClientProvider);
-    await api.delete('/api/community/surveys/$id/');
-    ref.invalidateSelf();
+    try {
+      await api.delete('/api/community/surveys/$id/');
+      ref.invalidateSelf();
+      _log.info('deleted survey $id');
+    } catch (e, st) {
+      _log.warning('failed to delete survey $id', e, st);
+      rethrow;
+    }
   }
 }
 
@@ -84,16 +105,22 @@ class SurveyQuestionsNotifier extends AsyncNotifier<Survey> {
     bool required = false,
   }) async {
     final api = ref.read(apiClientProvider);
-    await api.post(
-      '/api/community/surveys/$_surveyId/questions/',
-      data: {
-        'label': label,
-        'field_type': fieldType,
-        'options': options,
-        'required': required,
-      },
-    );
-    ref.invalidateSelf();
+    try {
+      await api.post(
+        '/api/community/surveys/$_surveyId/questions/',
+        data: {
+          'label': label,
+          'field_type': fieldType,
+          'options': options,
+          'required': required,
+        },
+      );
+      ref.invalidateSelf();
+      _log.info('added question "$label" to survey $_surveyId');
+    } catch (e, st) {
+      _log.warning('failed to add question to survey $_surveyId', e, st);
+      rethrow;
+    }
   }
 
   Future<void> updateQuestion({
@@ -104,33 +131,58 @@ class SurveyQuestionsNotifier extends AsyncNotifier<Survey> {
     bool required = false,
   }) async {
     final api = ref.read(apiClientProvider);
-    await api.patch(
-      '/api/community/surveys/$_surveyId/questions/$questionId/',
-      data: {
-        'label': label,
-        'field_type': fieldType,
-        'options': options,
-        'required': required,
-      },
-    );
-    ref.invalidateSelf();
+    try {
+      await api.patch(
+        '/api/community/surveys/$_surveyId/questions/$questionId/',
+        data: {
+          'label': label,
+          'field_type': fieldType,
+          'options': options,
+          'required': required,
+        },
+      );
+      ref.invalidateSelf();
+      _log.info('updated question $questionId in survey $_surveyId');
+    } catch (e, st) {
+      _log.warning(
+        'failed to update question $questionId in survey $_surveyId',
+        e,
+        st,
+      );
+      rethrow;
+    }
   }
 
   Future<void> deleteQuestion(String questionId) async {
     final api = ref.read(apiClientProvider);
-    await api.delete(
-      '/api/community/surveys/$_surveyId/questions/$questionId/',
-    );
-    ref.invalidateSelf();
+    try {
+      await api.delete(
+        '/api/community/surveys/$_surveyId/questions/$questionId/',
+      );
+      ref.invalidateSelf();
+      _log.info('deleted question $questionId from survey $_surveyId');
+    } catch (e, st) {
+      _log.warning(
+        'failed to delete question $questionId from survey $_surveyId',
+        e,
+        st,
+      );
+      rethrow;
+    }
   }
 
   Future<void> reorder(List<String> questionIds) async {
     final api = ref.read(apiClientProvider);
-    await api.put(
-      '/api/community/surveys/$_surveyId/questions/order/',
-      data: {'question_ids': questionIds},
-    );
-    ref.invalidateSelf();
+    try {
+      await api.put(
+        '/api/community/surveys/$_surveyId/questions/order/',
+        data: {'question_ids': questionIds},
+      );
+      ref.invalidateSelf();
+    } catch (e, st) {
+      _log.warning('failed to reorder questions in survey $_surveyId', e, st);
+      rethrow;
+    }
   }
 }
 

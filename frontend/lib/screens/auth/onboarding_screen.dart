@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/app_scaffold.dart';
+
+final _log = Logger('Onboarding');
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -52,7 +55,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             newPassword: _newPwCtrl.text,
           );
       // Router redirect will navigate to /guidelines once needsOnboarding becomes false.
-    } catch (e) {
+      _log.info('onboarding completed');
+    } catch (e, st) {
+      _log.warning('onboarding failed', e, st);
       if (!mounted) return;
       showErrorSnackBar(context, ApiError.from(e).message);
     } finally {

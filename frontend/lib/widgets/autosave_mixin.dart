@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
+
+final _log = Logger('Autosave');
 
 enum AutosaveStatus { idle, saving, saved, error }
 
@@ -68,7 +71,8 @@ mixin AutosaveMixin<T extends StatefulWidget> on State<T> {
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) setState(() => _autosaveStatus = AutosaveStatus.idle);
       });
-    } catch (_) {
+    } catch (e, st) {
+      _log.warning('autosave failed', e, st);
       if (!mounted) return;
       setState(() => _autosaveStatus = AutosaveStatus.error);
     }

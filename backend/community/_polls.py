@@ -1,7 +1,9 @@
 """EventPoll endpoints — create, vote, finalize, delete."""
 
+import logging
 from uuid import UUID
 
+from config.audit import audit_log
 from config.media_proxy import media_path
 from django.db import transaction
 from ninja import Router
@@ -106,6 +108,14 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
     if not _can_manage_poll(request.auth, event):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details={"endpoint": "create_event_poll"},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     if hasattr(event, "poll"):
         return Status(400, ErrorOut(detail="This event already has a poll."))
@@ -119,6 +129,14 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
             event.datetime_tbd = True
             event.save(update_fields=["datetime_tbd"])
     poll.refresh_from_db()
+    audit_log(
+        logging.INFO,
+        "poll_created",
+        request,
+        target_type="event_poll",
+        target_id=str(poll.id),
+        details={"event_id": str(event_id), "option_count": len(payload.options)},
+    )
     return Status(201, _poll_out(poll, request.auth))
 
 
@@ -179,6 +197,14 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
                 user=request.auth,
                 defaults={"availability": availability},
             )
+    audit_log(
+        logging.INFO,
+        "poll_vote",
+        request,
+        target_type="event_poll",
+        target_id=str(poll.id),
+        details={"event_id": str(event_id)},
+    )
     poll.refresh_from_db()
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
@@ -199,6 +225,14 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
     if not _can_manage_poll(request.auth, event):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details={"endpoint": "finalize_event_poll"},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         poll = (
@@ -234,6 +268,17 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
                 user_id=user_id,
                 defaults={"status": RSVPStatus.ATTENDING},
             )
+    audit_log(
+        logging.INFO,
+        "poll_finalized",
+        request,
+        target_type="event_poll",
+        target_id=str(poll.id),
+        details={
+            "event_id": str(event_id),
+            "winning_datetime": winning_option.datetime.isoformat(),
+        },
+    )
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
         .prefetch_related("options__votes__user")
@@ -253,12 +298,29 @@ def delete_event_poll(request, event_id: UUID):
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
     if not _can_manage_poll(request.auth, event):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details={"endpoint": "delete_event_poll"},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         poll = EventPoll.objects.get(event=event)
     except EventPoll.DoesNotExist:
         return Status(404, ErrorOut(detail="Poll not found."))
+    poll_id = str(poll.id)
     poll.delete()
+    audit_log(
+        logging.INFO,
+        "poll_deleted",
+        request,
+        target_type="event_poll",
+        target_id=poll_id,
+        details={"event_id": str(event_id)},
+    )
     return Status(204, None)
 
 
@@ -297,6 +359,14 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
         PollOption.objects.create(poll=poll, datetime=payload.datetime, display_order=next_order)
     except Exception:
         return Status(400, ErrorOut(detail="That datetime option already exists in this poll."))
+    audit_log(
+        logging.INFO,
+        "poll_option_added",
+        request,
+        target_type="event_poll",
+        target_id=str(poll.id),
+        details={"event_id": str(event_id)},
+    )
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
         .prefetch_related("options__votes__user")
@@ -321,6 +391,14 @@ def delete_poll_option(request, event_id: UUID, option_id: UUID):
     if poll.options.count() <= 2:
         return Status(400, ErrorOut(detail="A poll must have at least 2 options."))
     option.delete()
+    audit_log(
+        logging.INFO,
+        "poll_option_deleted",
+        request,
+        target_type="event_poll",
+        target_id=str(poll.id),
+        details={"event_id": str(event_id), "option_id": str(option_id)},
+    )
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
         .prefetch_related("options__votes__user")

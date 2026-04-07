@@ -1,7 +1,9 @@
 """User management endpoints (admin CRUD, roles, magic links)."""
 
+import logging
 import re
 
+from config.audit import audit_log
 from django.db import models as dj_models
 from ninja import Router
 from ninja.responses import Status
@@ -41,6 +43,12 @@ router = Router()
 )
 def create_user(request, payload: UserCreateIn):
     if not request.auth.has_permission(PermissionKey.CREATE_USER):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={"endpoint": "create_user", "required_permission": PermissionKey.CREATE_USER},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     try:
@@ -50,6 +58,17 @@ def create_user(request, payload: UserCreateIn):
     except ValueError as e:
         return Status(400, ErrorOut(detail=str(e)))
 
+    audit_log(
+        logging.INFO,
+        "user_created",
+        request,
+        target_type="user",
+        target_id=str(user.id),
+        details={
+            "display_name": user.display_name,
+            "role_id": str(payload.role_id) if payload.role_id else None,
+        },
+    )
     return Status(
         201,
         UserCreateOut(
@@ -68,6 +87,15 @@ def create_user(request, payload: UserCreateIn):
 )
 def bulk_create_users(request, payload: BulkUserCreateIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "bulk_create_users",
+                "required_permission": PermissionKey.MANAGE_USERS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     member_role = Role.objects.filter(name="member", is_default=True).first()
@@ -117,6 +145,12 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
         )
         created += 1
 
+    audit_log(
+        logging.INFO,
+        "users_bulk_created",
+        request,
+        details={"count_created": created, "count_failed": failed},
+    )
     return Status(
         200,
         BulkUserCreateOut(results=results, created=created, failed=failed),
@@ -154,6 +188,12 @@ def search_users(request, q: str = ""):
 )
 def list_users(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     users = User.objects.prefetch_related("roles").order_by("phone_number")
     return Status(200, [UserOut.from_user(u) for u in users])
@@ -166,16 +206,45 @@ def list_users(request):
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={"endpoint": "update_user", "required_permission": PermissionKey.MANAGE_USERS},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         user = User.objects.prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
         return Status(404, ErrorOut(detail="User not found."))
 
+    old_is_paused = user.is_paused
     err = _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     if err:
         return Status(400, ErrorOut(detail=err))
     user.save()
+
+    if payload.is_paused is not None and payload.is_paused != old_is_paused:
+        action = "user_paused" if payload.is_paused else "user_unpaused"
+        audit_log(logging.WARNING, action, request, target_type="user", target_id=user_id)
+    else:
+        changed = [
+            f
+            for f in ("phone_number", "display_name", "email")
+            if getattr(payload, f, None) is not None
+        ]
+        if changed:
+            audit_log(
+                logging.INFO,
+                "user_updated",
+                request,
+                target_type="user",
+                target_id=user_id,
+                details={"fields_changed": changed},
+            )
+
     return Status(200, UserOut.from_user(user))
 
 
@@ -208,6 +277,14 @@ def _apply_user_patch(
 )
 def delete_user(request, user_id: str):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={"endpoint": "delete_user", "required_permission": PermissionKey.MANAGE_USERS},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         user = User.objects.get(pk=user_id)
@@ -217,7 +294,16 @@ def delete_user(request, user_id: str):
         return Status(400, ErrorOut(detail="You cannot delete your own account."))
     if _is_last_admin(user):
         return Status(400, ErrorOut(detail="Cannot delete the last admin."))
+    display_name = user.display_name
     user.delete()
+    audit_log(
+        logging.WARNING,
+        "user_deleted",
+        request,
+        target_type="user",
+        target_id=user_id,
+        details={"display_name": display_name},
+    )
     return Status(204, None)
 
 
@@ -228,6 +314,17 @@ def delete_user(request, user_id: str):
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={
+                "endpoint": "update_user_roles",
+                "required_permission": PermissionKey.MANAGE_USERS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         user = User.objects.prefetch_related("roles").get(pk=user_id)
@@ -242,7 +339,17 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if error:
         return Status(400, ErrorOut(detail=error))
 
+    old_role_ids = [str(r.id) for r in user.roles.all()]
     user.roles.set(roles)
+    new_role_ids = [str(r.id) for r in roles]
+    audit_log(
+        logging.WARNING,
+        "user_roles_changed",
+        request,
+        target_type="user",
+        target_id=user_id,
+        details={"old_role_ids": old_role_ids, "new_role_ids": new_role_ids},
+    )
     user = User.objects.prefetch_related("roles").get(pk=user.pk)
     return Status(200, UserOut.from_user(user))
 
@@ -254,12 +361,30 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
 )
 def generate_magic_link(request, user_id: str):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={
+                "endpoint": "generate_magic_link",
+                "required_permission": PermissionKey.MANAGE_USERS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
         return Status(404, ErrorOut(detail="User not found."))
     magic_token = _create_magic_token(user)
+    audit_log(
+        logging.INFO,
+        "magic_link_generated",
+        request,
+        target_type="user",
+        target_id=user_id,
+    )
     return Status(
         200,
         ResetPasswordOut(
@@ -276,6 +401,17 @@ def generate_magic_link(request, user_id: str):
 )
 def reset_password(request, user_id: str):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={
+                "endpoint": "reset_password",
+                "required_permission": PermissionKey.MANAGE_USERS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         user = User.objects.get(pk=user_id)
@@ -285,6 +421,13 @@ def reset_password(request, user_id: str):
     user.needs_onboarding = True
     user.save()
     magic_token = _create_magic_token(user)
+    audit_log(
+        logging.WARNING,
+        "password_reset_by_admin",
+        request,
+        target_type="user",
+        target_id=user_id,
+    )
     return Status(
         200,
         ResetPasswordOut(

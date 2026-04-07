@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import '../providers/auth_provider.dart';
 import '../config/constants.dart';
 import '../providers/editable_page_provider.dart';
@@ -9,6 +10,8 @@ import '../utils/snackbar.dart';
 import 'autosave_mixin.dart';
 import 'quill_content_editor.dart';
 import 'save_cancel_button_row.dart';
+
+final _log = Logger('EditableContent');
 
 class EditableContentBlock extends ConsumerStatefulWidget {
   const EditableContentBlock({super.key, required this.slug});
@@ -51,7 +54,8 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
           .read(editablePageProvider(widget.slug).notifier)
           .saveContent(_json);
       if (mounted) setState(() => _editing = false);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to save content', e, st);
       if (!mounted) return;
       showErrorSnackBar(context, ApiError.from(e).message);
     } finally {
@@ -71,7 +75,8 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
       await ref
           .read(editablePageProvider(widget.slug).notifier)
           .saveVisibility(visibility);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to change visibility', e, st);
       if (!mounted) return;
       showErrorSnackBar(context, ApiError.from(e).message);
     }

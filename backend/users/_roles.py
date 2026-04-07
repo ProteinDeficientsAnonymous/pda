@@ -1,5 +1,8 @@
 """Role management endpoints."""
 
+import logging
+
+from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -30,10 +33,24 @@ def list_roles(request):
 )
 def create_role(request, payload: RoleIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_ROLES):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={"endpoint": "create_role", "required_permission": PermissionKey.MANAGE_ROLES},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     if Role.objects.filter(name=payload.name).exists():
         return Status(400, ErrorOut(detail="A role with that name already exists."))
     role = Role.objects.create(name=payload.name, permissions=payload.permissions)
+    audit_log(
+        logging.INFO,
+        "role_created",
+        request,
+        target_type="role",
+        target_id=str(role.id),
+        details={"name": role.name, "permissions": role.permissions},
+    )
     return Status(
         201,
         RoleOut(
@@ -52,11 +69,22 @@ def create_role(request, payload: RoleIn):
 )
 def update_role(request, role_id: str, payload: RolePatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_ROLES):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="role",
+            target_id=role_id,
+            details={"endpoint": "update_role", "required_permission": PermissionKey.MANAGE_ROLES},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         role = Role.objects.get(pk=role_id)
     except Role.DoesNotExist:
         return Status(404, ErrorOut(detail="Role not found."))
+
+    old_name = role.name
+    old_permissions = list(role.permissions)
 
     if payload.name is not None and payload.name != role.name:
         if role.name in PROTECTED_ROLE_NAMES:
@@ -69,6 +97,19 @@ def update_role(request, role_id: str, payload: RolePatchIn):
         role.permissions = payload.permissions
 
     role.save()
+    audit_log(
+        logging.WARNING,
+        "role_updated",
+        request,
+        target_type="role",
+        target_id=role_id,
+        details={
+            "old_name": old_name,
+            "new_name": role.name,
+            "old_permissions": old_permissions,
+            "new_permissions": role.permissions,
+        },
+    )
     return Status(
         200,
         RoleOut(
@@ -87,6 +128,14 @@ def update_role(request, role_id: str, payload: RolePatchIn):
 )
 def delete_role(request, role_id: str):
     if not request.auth.has_permission(PermissionKey.MANAGE_ROLES):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="role",
+            target_id=role_id,
+            details={"endpoint": "delete_role", "required_permission": PermissionKey.MANAGE_ROLES},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         role = Role.objects.get(pk=role_id)
@@ -96,5 +145,14 @@ def delete_role(request, role_id: str):
         return Status(400, ErrorOut(detail=f"Cannot delete protected role '{role.name}'."))
     if role.users.exists():
         return Status(400, ErrorOut(detail="Cannot delete a role that has users assigned."))
+    role_name = role.name
     role.delete()
+    audit_log(
+        logging.WARNING,
+        "role_deleted",
+        request,
+        target_type="role",
+        target_id=role_id,
+        details={"name": role_name},
+    )
     return Status(204, None)

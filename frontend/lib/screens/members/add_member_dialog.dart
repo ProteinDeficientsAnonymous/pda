@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/user_management_provider.dart';
 import 'package:pda/services/api_error.dart';
@@ -8,6 +9,8 @@ import 'package:pda/utils/snackbar.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/loading_button.dart';
 import 'package:pda/widgets/phone_form_field.dart';
+
+final _log = Logger('AddMember');
 
 class AddMemberDialog extends StatefulWidget {
   final List<Role> allRoles;
@@ -148,11 +151,13 @@ class _BulkAddDialogState extends State<BulkAddDialog> {
       final data = await widget.ref
           .read(userManagementProvider.notifier)
           .bulkCreateUsers(phones);
+      _log.info('bulk add succeeded: ${phones.length} phones submitted');
       setState(() {
         _results = data;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to bulk add members', e, st);
       setState(() => _loading = false);
       if (mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/user_management_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'role_form_dialog.dart';
+
+final _log = Logger('RolesTab');
 
 class RolesTab extends ConsumerWidget {
   final bool canManageRoles;
@@ -68,10 +71,12 @@ class RolesTab extends ConsumerWidget {
             result['name'] as String,
             List<String>.from(result['permissions'] as List),
           );
+      _log.info('create role succeeded: ${result['name']}');
       if (context.mounted) {
         showSnackBar(context, 'Role created');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to create role', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -184,10 +189,12 @@ class RoleCard extends ConsumerWidget {
         role.id,
         List<String>.from(result['permissions'] as List),
       );
+      _log.info('edit role succeeded: ${role.id}');
       if (context.mounted) {
         showSnackBar(context, 'Role updated');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to edit role ${role.id}', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -224,10 +231,12 @@ class RoleCard extends ConsumerWidget {
 
     try {
       await notifier.deleteRole(role.id);
+      _log.info('delete role succeeded: ${role.id}');
       if (context.mounted) {
         showSnackBar(context, '"${role.name}" deleted');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to delete role ${role.id}', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }

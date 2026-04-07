@@ -18,6 +18,9 @@ class RequestLoggingMiddleware:
         response = self.get_response(request)
         duration_ms = (time.monotonic() - start) * 1000
 
+        user = getattr(request, "user", None)
+        user_id = str(user.pk) if user and getattr(user, "is_authenticated", False) else None
+
         logger.info(
             "%s %s %s %.0fms",
             request.method,
@@ -29,6 +32,7 @@ class RequestLoggingMiddleware:
                 "path": request.path,
                 "status_code": response.status_code,
                 "duration_ms": round(duration_ms, 2),
+                "user_id": user_id,
             },
         )
 

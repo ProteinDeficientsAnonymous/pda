@@ -1,7 +1,9 @@
 """Survey CRUD, questions, and response endpoints."""
 
+import logging
 from uuid import UUID
 
+from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -53,6 +55,15 @@ router = Router()
 )
 def list_surveys_admin(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "list_surveys_admin",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     surveys = Survey.objects.all()
     return Status(
@@ -80,6 +91,15 @@ def list_surveys_admin(request):
 )
 def create_survey(request, payload: SurveyIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "create_survey",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     if Survey.objects.filter(slug=payload.slug).exists():
         return Status(400, ErrorOut(detail="A survey with that slug already exists."))
@@ -99,6 +119,14 @@ def create_survey(request, payload: SurveyIn):
         linked_event=linked_event,
         created_by=request.auth,
     )
+    audit_log(
+        logging.INFO,
+        "survey_created",
+        request,
+        target_type="survey",
+        target_id=str(survey.id),
+        details={"title": survey.title, "slug": survey.slug},
+    )
     return Status(201, _survey_out(survey, include_questions=True))
 
 
@@ -109,6 +137,17 @@ def create_survey(request, payload: SurveyIn):
 )
 def get_survey_admin(request, survey_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={
+                "endpoint": "get_survey_admin",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         survey = Survey.objects.prefetch_related("questions").get(id=survey_id)
@@ -124,6 +163,17 @@ def get_survey_admin(request, survey_id: UUID):
 )
 def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={
+                "endpoint": "update_survey",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         survey = Survey.objects.get(id=survey_id)
@@ -140,6 +190,14 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
     for key, value in updates.items():
         setattr(survey, key, value)
     survey.save(update_fields=list(updates.keys()))
+    audit_log(
+        logging.INFO,
+        "survey_updated",
+        request,
+        target_type="survey",
+        target_id=str(survey_id),
+        details={"fields_changed": list(updates.keys())},
+    )
     return Status(200, _survey_out(survey, include_questions=True))
 
 
@@ -150,12 +208,32 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
 )
 def delete_survey(request, survey_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={
+                "endpoint": "delete_survey",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
         return Status(404, ErrorOut(detail="Survey not found."))
+    title = survey.title
     survey.delete()
+    audit_log(
+        logging.WARNING,
+        "survey_deleted",
+        request,
+        target_type="survey",
+        target_id=str(survey_id),
+        details={"title": title},
+    )
     return Status(204, None)
 
 
@@ -169,6 +247,17 @@ def delete_survey(request, survey_id: UUID):
 )
 def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={
+                "endpoint": "create_survey_question",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         survey = Survey.objects.get(id=survey_id)
@@ -183,6 +272,14 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         required=payload.required,
         display_order=max_order,
     )
+    audit_log(
+        logging.INFO,
+        "survey_question_created",
+        request,
+        target_type="survey_question",
+        target_id=str(q.id),
+        details={"survey_id": str(survey_id), "label": q.label},
+    )
     return Status(201, _survey_question_out(q))
 
 
@@ -193,6 +290,17 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
 )
 def update_survey_question(request, survey_id: UUID, question_id: UUID, payload: SurveyQuestionIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey_question",
+            target_id=str(question_id),
+            details={
+                "endpoint": "update_survey_question",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
@@ -203,6 +311,14 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
     q.options = payload.options
     q.required = payload.required
     q.save()
+    audit_log(
+        logging.INFO,
+        "survey_question_updated",
+        request,
+        target_type="survey_question",
+        target_id=str(question_id),
+        details={"survey_id": str(survey_id), "label": q.label},
+    )
     return Status(200, _survey_question_out(q))
 
 
@@ -213,12 +329,31 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
 )
 def delete_survey_question(request, survey_id: UUID, question_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey_question",
+            target_id=str(question_id),
+            details={
+                "endpoint": "delete_survey_question",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
     except SurveyQuestion.DoesNotExist:
         return Status(404, ErrorOut(detail="Question not found."))
     q.delete()
+    audit_log(
+        logging.INFO,
+        "survey_question_deleted",
+        request,
+        target_type="survey_question",
+        target_id=str(question_id),
+        details={"survey_id": str(survey_id)},
+    )
     return Status(204, None)
 
 
@@ -229,6 +364,17 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
 )
 def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={
+                "endpoint": "reorder_survey_questions",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         Survey.objects.get(id=survey_id)
@@ -236,6 +382,13 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
         return Status(404, ErrorOut(detail="Survey not found."))
     for idx, qid in enumerate(payload.question_ids):
         SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
+    audit_log(
+        logging.INFO,
+        "survey_questions_reordered",
+        request,
+        target_type="survey",
+        target_id=str(survey_id),
+    )
     questions = SurveyQuestion.objects.filter(survey_id=survey_id)
     return Status(200, [_survey_question_out(q) for q in questions])
 
@@ -250,6 +403,17 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
 )
 def list_survey_responses(request, survey_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={
+                "endpoint": "list_survey_responses",
+                "required_permission": PermissionKey.MANAGE_SURVEYS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     try:
         survey = Survey.objects.get(id=survey_id)
@@ -314,8 +478,24 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
         if existing:
             existing.answers = answers
             existing.save(update_fields=["answers"])
+            audit_log(
+                logging.INFO,
+                "survey_response_updated",
+                request,
+                target_type="survey",
+                target_id=str(survey.id),
+                details={"slug": slug},
+            )
             return Status(200, _response_out(existing, user_name))
     response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
+    audit_log(
+        logging.INFO,
+        "survey_response_submitted",
+        request,
+        target_type="survey",
+        target_id=str(survey.id),
+        details={"slug": slug},
+    )
     return Status(201, _response_out(response, user_name))
 
 
@@ -354,6 +534,14 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
 
     event = survey.linked_event
     if not _has_finalize_permission(request, survey, event):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={"endpoint": "finalize_poll"},
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     if hasattr(survey, "poll_result"):
@@ -383,5 +571,16 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
         event.datetime_tbd = False
         event.save(update_fields=["start_datetime", "datetime_tbd"])
 
+    audit_log(
+        logging.INFO,
+        "survey_poll_finalized",
+        request,
+        target_type="survey",
+        target_id=str(survey_id),
+        details={
+            "winning_datetime": payload.winning_datetime.isoformat(),
+            "linked_event_id": str(event.id) if event else None,
+        },
+    )
     survey.refresh_from_db()
     return Status(200, _survey_out(survey, include_questions=True, requesting_user=request.auth))

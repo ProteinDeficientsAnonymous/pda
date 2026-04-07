@@ -75,14 +75,23 @@ class AuthNotifier extends AsyncNotifier<User?> {
     state = const AsyncLoading();
     final api = ref.read(apiClientProvider);
     final storage = ref.read(secureStorageProvider);
-    final response = await api.get('/api/auth/magic-login/$token/');
-    final accessToken = response.data['access'] as String;
-    await storage.saveTokens(
-      access: accessToken,
-      refresh: response.data['refresh'] as String,
-    );
-    final meResponse = await api.get('/api/auth/me/', accessToken: accessToken);
-    state = AsyncData(User.fromJson(meResponse.data as Map<String, dynamic>));
+    try {
+      final response = await api.get('/api/auth/magic-login/$token/');
+      final accessToken = response.data['access'] as String;
+      await storage.saveTokens(
+        access: accessToken,
+        refresh: response.data['refresh'] as String,
+      );
+      final meResponse = await api.get(
+        '/api/auth/me/',
+        accessToken: accessToken,
+      );
+      state = AsyncData(User.fromJson(meResponse.data as Map<String, dynamic>));
+      _log.info('magic link login succeeded');
+    } catch (e, st) {
+      _log.warning('magic link login failed', e, st);
+      state = AsyncError(e, st);
+    }
   }
 
   Future<void> updateProfile({
@@ -97,8 +106,14 @@ class AuthNotifier extends AsyncNotifier<User?> {
     if (email != null) data['email'] = email;
     if (showPhone != null) data['show_phone'] = showPhone;
     if (showEmail != null) data['show_email'] = showEmail;
-    final response = await api.patch('/api/auth/me/', data: data);
-    state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+    try {
+      final response = await api.patch('/api/auth/me/', data: data);
+      state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+      _log.info('profile updated');
+    } catch (e, st) {
+      _log.warning('failed to update profile', e, st);
+      rethrow;
+    }
   }
 
   Future<void> changePassword({
@@ -106,10 +121,19 @@ class AuthNotifier extends AsyncNotifier<User?> {
     required String newPassword,
   }) async {
     final api = ref.read(apiClientProvider);
-    await api.post(
-      '/api/auth/change-password/',
-      data: {'current_password': currentPassword, 'new_password': newPassword},
-    );
+    try {
+      await api.post(
+        '/api/auth/change-password/',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        },
+      );
+      _log.info('password changed');
+    } catch (e, st) {
+      _log.warning('failed to change password', e, st);
+      rethrow;
+    }
   }
 
   Future<void> completeOnboarding({
@@ -123,11 +147,17 @@ class AuthNotifier extends AsyncNotifier<User?> {
       data['display_name'] = displayName;
     }
     if (email != null && email.isNotEmpty) data['email'] = email;
-    final response = await api.post(
-      '/api/auth/complete-onboarding/',
-      data: data,
-    );
-    state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+    try {
+      final response = await api.post(
+        '/api/auth/complete-onboarding/',
+        data: data,
+      );
+      state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+      _log.info('onboarding completed');
+    } catch (e, st) {
+      _log.warning('failed to complete onboarding', e, st);
+      rethrow;
+    }
   }
 
   Future<void> uploadProfilePhoto(XFile file) async {
@@ -136,14 +166,26 @@ class AuthNotifier extends AsyncNotifier<User?> {
     final formData = FormData.fromMap({
       'photo': MultipartFile.fromBytes(bytes, filename: file.name),
     });
-    final response = await api.post('/api/auth/me/photo/', data: formData);
-    state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+    try {
+      final response = await api.post('/api/auth/me/photo/', data: formData);
+      state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+      _log.info('profile photo uploaded');
+    } catch (e, st) {
+      _log.warning('failed to upload profile photo', e, st);
+      rethrow;
+    }
   }
 
   Future<void> deleteProfilePhoto() async {
     final api = ref.read(apiClientProvider);
-    final response = await api.delete('/api/auth/me/photo/');
-    state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+    try {
+      final response = await api.delete('/api/auth/me/photo/');
+      state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));
+      _log.info('profile photo deleted');
+    } catch (e, st) {
+      _log.warning('failed to delete profile photo', e, st);
+      rethrow;
+    }
   }
 
   void forceLogout() {

@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/event_poll.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
+
+final _log = Logger('EventPoll');
 
 /// Fetches the EventPoll for an event (includes tallies, voters, and my votes).
 final eventPollProvider = FutureProvider.family<EventPoll?, String>((
@@ -26,11 +29,17 @@ Future<void> submitPollVote({
   required Map<String, String> votes,
 }) async {
   final api = ref.read(apiClientProvider);
-  await api.post(
-    '/api/community/events/$eventId/poll/vote/',
-    data: {'votes': votes},
-  );
-  ref.invalidate(eventPollProvider(eventId));
+  try {
+    await api.post(
+      '/api/community/events/$eventId/poll/vote/',
+      data: {'votes': votes},
+    );
+    ref.invalidate(eventPollProvider(eventId));
+    _log.info('submitted poll vote for event $eventId');
+  } catch (e, st) {
+    _log.warning('failed to submit poll vote for event $eventId', e, st);
+    rethrow;
+  }
 }
 
 /// Finalizes an event poll by selecting a winning option.
@@ -40,13 +49,19 @@ Future<void> finalizeEventPoll({
   required String winningOptionId,
 }) async {
   final api = ref.read(apiClientProvider);
-  await api.post(
-    '/api/community/events/$eventId/poll/finalize/',
-    data: {'winning_option_id': winningOptionId},
-  );
-  ref.invalidate(eventPollProvider(eventId));
-  ref.invalidate(eventDetailProvider(eventId));
-  ref.invalidate(eventsProvider);
+  try {
+    await api.post(
+      '/api/community/events/$eventId/poll/finalize/',
+      data: {'winning_option_id': winningOptionId},
+    );
+    ref.invalidate(eventPollProvider(eventId));
+    ref.invalidate(eventDetailProvider(eventId));
+    ref.invalidate(eventsProvider);
+    _log.info('finalized poll for event $eventId with option $winningOptionId');
+  } catch (e, st) {
+    _log.warning('failed to finalize poll for event $eventId', e, st);
+    rethrow;
+  }
 }
 
 /// Adds a single datetime option to an existing poll.
@@ -56,11 +71,17 @@ Future<void> addPollOption({
   required DateTime datetime,
 }) async {
   final api = ref.read(apiClientProvider);
-  await api.post(
-    '/api/community/events/$eventId/poll/options/',
-    data: {'datetime': datetime.toUtc().toIso8601String()},
-  );
-  ref.invalidate(eventPollProvider(eventId));
+  try {
+    await api.post(
+      '/api/community/events/$eventId/poll/options/',
+      data: {'datetime': datetime.toUtc().toIso8601String()},
+    );
+    ref.invalidate(eventPollProvider(eventId));
+    _log.info('added poll option to event $eventId');
+  } catch (e, st) {
+    _log.warning('failed to add poll option to event $eventId', e, st);
+    rethrow;
+  }
 }
 
 /// Removes a single option from an existing poll.
@@ -70,8 +91,18 @@ Future<void> deletePollOption({
   required String optionId,
 }) async {
   final api = ref.read(apiClientProvider);
-  await api.delete('/api/community/events/$eventId/poll/options/$optionId/');
-  ref.invalidate(eventPollProvider(eventId));
+  try {
+    await api.delete('/api/community/events/$eventId/poll/options/$optionId/');
+    ref.invalidate(eventPollProvider(eventId));
+    _log.info('deleted poll option $optionId from event $eventId');
+  } catch (e, st) {
+    _log.warning(
+      'failed to delete poll option $optionId from event $eventId',
+      e,
+      st,
+    );
+    rethrow;
+  }
 }
 
 /// Deletes the event poll entirely.
@@ -80,10 +111,16 @@ Future<void> deleteEventPoll({
   required String eventId,
 }) async {
   final api = ref.read(apiClientProvider);
-  await api.delete('/api/community/events/$eventId/poll/');
-  ref.invalidate(eventPollProvider(eventId));
-  ref.invalidate(eventDetailProvider(eventId));
-  ref.invalidate(eventsProvider);
+  try {
+    await api.delete('/api/community/events/$eventId/poll/');
+    ref.invalidate(eventPollProvider(eventId));
+    ref.invalidate(eventDetailProvider(eventId));
+    ref.invalidate(eventsProvider);
+    _log.info('deleted poll for event $eventId');
+  } catch (e, st) {
+    _log.warning('failed to delete poll for event $eventId', e, st);
+    rethrow;
+  }
 }
 
 /// Creates an event poll with a list of datetime options.
@@ -93,13 +130,19 @@ Future<void> createEventPoll({
   required List<DateTime> options,
 }) async {
   final api = ref.read(apiClientProvider);
-  await api.post(
-    '/api/community/events/$eventId/poll/',
-    data: {
-      'options': options.map((dt) => dt.toUtc().toIso8601String()).toList(),
-    },
-  );
-  ref.invalidate(eventPollProvider(eventId));
-  ref.invalidate(eventDetailProvider(eventId));
-  ref.invalidate(eventsProvider);
+  try {
+    await api.post(
+      '/api/community/events/$eventId/poll/',
+      data: {
+        'options': options.map((dt) => dt.toUtc().toIso8601String()).toList(),
+      },
+    );
+    ref.invalidate(eventPollProvider(eventId));
+    ref.invalidate(eventDetailProvider(eventId));
+    ref.invalidate(eventsProvider);
+    _log.info('created poll for event $eventId with ${options.length} options');
+  } catch (e, st) {
+    _log.warning('failed to create poll for event $eventId', e, st);
+    rethrow;
+  }
 }

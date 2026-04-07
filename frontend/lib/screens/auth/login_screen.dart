@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/phone_form_field.dart';
+
+final _log = Logger('LoginScreen');
 
 enum _LoginStep { phone, password, pending, unknown }
 
@@ -63,7 +66,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (_step == _LoginStep.password) {
         _passwordFocusNode.requestFocus();
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('phone check failed', e, st);
       if (mounted) {
         setState(() {
           _error = ApiError.from(e).message;
@@ -96,13 +100,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
       TextInput.finishAutofillContext();
+      _log.info('login succeeded');
       if (mounted) {
         final redirect = GoRouterState.of(
           context,
         ).uri.queryParameters['redirect'];
         context.go(redirect ?? '/calendar');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('login failed', e, st);
       if (mounted) {
         setState(() {
           _error = ApiError.from(e).message;

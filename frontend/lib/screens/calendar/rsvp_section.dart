@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/config/constants.dart';
 import 'rsvp_guest_list.dart';
+
+final _log = Logger('RSVP');
 
 class RSVPSection extends ConsumerStatefulWidget {
   final Event event;
@@ -29,7 +32,9 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
       );
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
-    } catch (e) {
+      _log.info('rsvp set to $status for event ${widget.event.id}');
+    } catch (e, st) {
+      _log.warning('failed to set rsvp', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t update your rsvp — try again');
       }
@@ -82,7 +87,9 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
       await api.delete('/api/community/events/${widget.event.id}/rsvp/');
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
-    } catch (e) {
+      _log.info('rsvp removed for event ${widget.event.id}');
+    } catch (e, st) {
+      _log.warning('failed to remove rsvp', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t remove your rsvp — try again');
       }

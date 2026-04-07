@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
@@ -11,6 +12,8 @@ import 'package:pda/widgets/loading_button.dart';
 import 'package:pda/widgets/phone_form_field.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/screens/calendar/event_form_dialog.dart';
+
+final _log = Logger('EventLoginGate');
 
 /// Shows member-only content (location, links, RSVP, admin actions) or a
 /// login/join prompt for unauthenticated visitors.
@@ -52,8 +55,10 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
       await api.delete('/api/community/events/${widget.event.id}/');
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
+      _log.info('deleted event ${widget.event.id}');
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to delete event', e, st);
       if (mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -91,7 +96,9 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
       }
       ref.invalidate(eventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
-    } catch (e) {
+      _log.info('edited event ${widget.event.id}');
+    } catch (e, st) {
+      _log.warning('failed to edit event', e, st);
       if (mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -184,7 +191,8 @@ class _LoginOrJoinSectionState extends ConsumerState<LoginOrJoinSection> {
       );
       final status = (res.data as Map<String, dynamic>)['status'] as String;
       setState(() => _phoneStatus = status);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to check phone', e, st);
       setState(() => _error = 'something went wrong — try again');
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -201,7 +209,8 @@ class _LoginOrJoinSectionState extends ConsumerState<LoginOrJoinSection> {
       await ref
           .read(authProvider.notifier)
           .login(_phoneNumber, _passwordCtrl.text);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('inline login failed', e, st);
       setState(() => _error = 'incorrect password — try again');
     } finally {
       if (mounted) setState(() => _loading = false);

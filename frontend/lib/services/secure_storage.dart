@@ -61,8 +61,8 @@ class SecureStorageService {
   Future<void> _clearAll() async {
     try {
       await _storage.deleteAll();
-    } catch (_) {
-      // If deleteAll also fails, nothing more we can do
+    } catch (e, st) {
+      _log.warning('Failed to clear all storage', e, st);
     }
   }
 }

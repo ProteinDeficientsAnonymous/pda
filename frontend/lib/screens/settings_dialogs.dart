@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/accessibility_preferences_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/loading_button.dart';
 import 'package:pda/utils/validators.dart' as v;
+
+final _log = Logger('SettingsDialog');
 
 class SettingsEditFieldDialog extends StatefulWidget {
   final String title;
@@ -130,7 +133,8 @@ class _SettingsChangePasswordDialogState
         Navigator.of(context).pop();
         showSnackBar(context, 'password updated ✓');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('password change failed', e, st);
       setState(() {
         _error = ApiError.from(e).message;
         _loading = false;

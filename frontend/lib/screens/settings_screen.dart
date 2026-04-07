@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/calendar_provider.dart'
     show calendarTokenProvider;
@@ -10,6 +11,8 @@ import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/app_scaffold.dart';
+
+final _log = Logger('Settings');
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -146,10 +149,12 @@ class SettingsScreen extends ConsumerWidget {
     if (result == null || !context.mounted) return;
     try {
       await ref.read(authProvider.notifier).updateProfile(displayName: result);
+      _log.info('name updated');
       if (context.mounted) {
         showSnackBar(context, 'name updated ✓');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to update name', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -174,10 +179,12 @@ class SettingsScreen extends ConsumerWidget {
     if (result == null || !context.mounted) return;
     try {
       await ref.read(authProvider.notifier).updateProfile(email: result);
+      _log.info('email updated');
       if (context.mounted) {
         showSnackBar(context, 'email updated ✓');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to update email', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -203,13 +210,15 @@ class SettingsScreen extends ConsumerWidget {
         ref.invalidate(calendarTokenProvider);
       }
       await Clipboard.setData(ClipboardData(text: feedUrl));
+      _log.info('calendar feed URL copied');
       if (context.mounted) {
         showSnackBar(
           context,
           'calendar feed URL copied! paste it into your calendar app to subscribe',
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to get calendar feed URL', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }

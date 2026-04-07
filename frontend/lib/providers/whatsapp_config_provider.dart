@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
+
+final _log = Logger('WhatsAppConfig');
 
 class WhatsAppConfig {
   final String botUrl;
@@ -37,13 +40,19 @@ class WhatsAppConfigNotifier extends AsyncNotifier<WhatsAppConfig> {
     if (botUrl != null) data['bot_url'] = botUrl;
     if (botSecret != null) data['bot_secret'] = botSecret;
     if (groupId != null) data['group_id'] = groupId;
-    final response = await api.patch(
-      '/api/community/whatsapp/config/',
-      data: data,
-    );
-    state = AsyncData(
-      WhatsAppConfig.fromJson(response.data as Map<String, dynamic>),
-    );
+    try {
+      final response = await api.patch(
+        '/api/community/whatsapp/config/',
+        data: data,
+      );
+      state = AsyncData(
+        WhatsAppConfig.fromJson(response.data as Map<String, dynamic>),
+      );
+      _log.info('saved whatsapp config');
+    } catch (e, st) {
+      _log.warning('failed to save whatsapp config', e, st);
+      rethrow;
+    }
   }
 }
 

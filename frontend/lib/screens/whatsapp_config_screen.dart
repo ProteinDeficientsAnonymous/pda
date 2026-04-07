@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/whatsapp_config_provider.dart';
 import 'package:pda/screens/whatsapp_setup_instructions.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+
+final _log = Logger('WhatsAppScreen');
 
 class WhatsAppConfigScreen extends ConsumerWidget {
   const WhatsAppConfigScreen({super.key});
@@ -75,8 +78,10 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
             groupId: _groupIdCtrl.text.trim(),
           );
       _secretCtrl.clear();
+      _log.info('saved whatsapp config');
       if (mounted) showSnackBar(context, 'Saved');
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to save whatsapp config', e, st);
       if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     } finally {
       if (mounted) setState(() => _saving = false);

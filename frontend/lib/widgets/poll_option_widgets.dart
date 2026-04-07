@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/models/event_poll.dart';
 import 'package:pda/providers/event_poll_provider.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/poll_widgets.dart';
+
+final _log = Logger('PollOption');
 
 /// Read-only view shown after voting: date label + yes/maybe counts with avatars.
 class PollOptionResult extends StatelessWidget {
@@ -225,7 +228,8 @@ class _PollFinalizeSheetState extends ConsumerState<PollFinalizeSheet> {
         winningOptionId: _selected!,
       );
       if (mounted) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to finalize poll', e, st);
       if (mounted) showErrorSnackBar(context, 'couldn\'t finalize — try again');
     } finally {
       if (mounted) setState(() => _submitting = false);

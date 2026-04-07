@@ -40,9 +40,9 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "config.middleware.RequestLoggingMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "config.middleware.RequestLoggingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -173,6 +173,11 @@ LOGGING = {
     },
     "loggers": {
         "pda": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "pda.audit": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,

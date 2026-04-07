@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/screens/auth/login_screen.dart';
 import 'package:pda/screens/auth/magic_login_screen.dart';
@@ -33,6 +34,8 @@ import 'package:pda/screens/member_profile_screen.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/services/route_tracker.dart';
 
+final _log = Logger('Router');
+
 final routerProvider = Provider<GoRouter>((ref) {
   // Use ref.listen (not ref.watch) so auth state changes trigger redirect
   // re-evaluation without recreating the entire GoRouter instance.
@@ -62,7 +65,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (user != null && user.needsOnboarding) {
         final isPasswordReset = user.displayName.isNotEmpty;
         final targetRoute = isPasswordReset ? '/new-password' : '/onboarding';
-        if (loc != targetRoute) return targetRoute;
+        if (loc != targetRoute) {
+          _log.info('redirecting to $targetRoute (onboarding required)');
+          return targetRoute;
+        }
       }
       if (user != null && !user.needsOnboarding) {
         if (loc == '/onboarding') return '/guidelines';
@@ -85,6 +91,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           loc.startsWith('/docs/');
 
       if (isProtected && !isAuthenticated) {
+        _log.info('unauthenticated access to $loc — redirecting to login');
         return '/login?redirect=${state.matchedLocation}';
       }
 
@@ -94,29 +101,50 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isAuthenticated) {
         if (loc == '/members' && !user.hasPermission(Permission.manageUsers)) {
+          _log.warning(
+            'permission denied: $loc requires manage_users — redirecting',
+          );
           return '/calendar';
         }
         if (loc == '/join-requests' &&
             !user.hasPermission(Permission.approveJoinRequests)) {
+          _log.warning(
+            'permission denied: $loc requires approve_join_requests — redirecting',
+          );
           return '/calendar';
         }
         if (loc == '/events/manage' &&
             !user.hasPermission(Permission.manageEvents)) {
+          _log.warning(
+            'permission denied: $loc requires manage_events — redirecting',
+          );
           return '/calendar';
         }
         if (loc == '/admin' && !user.hasAnyAdminPermission) {
+          _log.warning(
+            'permission denied: $loc requires admin permission — redirecting',
+          );
           return '/calendar';
         }
         if (loc == '/admin/whatsapp' &&
             !user.hasPermission(Permission.manageWhatsapp)) {
+          _log.warning(
+            'permission denied: $loc requires manage_whatsapp — redirecting',
+          );
           return '/calendar';
         }
         if (loc == '/admin/join-form' &&
             !user.hasPermission(Permission.editJoinQuestions)) {
+          _log.warning(
+            'permission denied: $loc requires edit_join_questions — redirecting',
+          );
           return '/calendar';
         }
         if (loc.startsWith('/admin/surveys') &&
             !user.hasPermission(Permission.manageSurveys)) {
+          _log.warning(
+            'permission denied: $loc requires manage_surveys — redirecting',
+          );
           return '/calendar';
         }
       }

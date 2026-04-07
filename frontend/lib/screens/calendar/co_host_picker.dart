@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/screens/calendar/event_form_models.dart';
+
+final _log = Logger('CoHostPicker');
 
 class CoHostPicker extends ConsumerStatefulWidget {
   final Set<String> selectedIds;
@@ -75,7 +78,8 @@ class _CoHostPickerState extends ConsumerState<CoHostPicker> {
           }
         });
       }
-    } catch (_) {
+    } catch (e, st) {
+      _log.warning('search failed', e, st);
       setState(() => _results = []);
     } finally {
       if (mounted) setState(() => _searching = false);

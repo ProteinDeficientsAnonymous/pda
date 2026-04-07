@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
+
+final _log = Logger('EditablePage');
 
 class EditablePage {
   final String slug;
@@ -37,24 +40,36 @@ class EditablePageNotifier extends AsyncNotifier<EditablePage> {
 
   Future<void> saveContent(String content) async {
     final api = ref.read(apiClientProvider);
-    final response = await api.patch(
-      '/api/community/pages/$_slug/',
-      data: {'content': content},
-    );
-    state = AsyncData(
-      EditablePage.fromJson(response.data as Map<String, dynamic>),
-    );
+    try {
+      final response = await api.patch(
+        '/api/community/pages/$_slug/',
+        data: {'content': content},
+      );
+      state = AsyncData(
+        EditablePage.fromJson(response.data as Map<String, dynamic>),
+      );
+      _log.info('saved content for page $_slug');
+    } catch (e, st) {
+      _log.warning('failed to save content for page $_slug', e, st);
+      rethrow;
+    }
   }
 
   Future<void> saveVisibility(String visibility) async {
     final api = ref.read(apiClientProvider);
-    final response = await api.patch(
-      '/api/community/pages/$_slug/',
-      data: {'visibility': visibility},
-    );
-    state = AsyncData(
-      EditablePage.fromJson(response.data as Map<String, dynamic>),
-    );
+    try {
+      final response = await api.patch(
+        '/api/community/pages/$_slug/',
+        data: {'visibility': visibility},
+      );
+      state = AsyncData(
+        EditablePage.fromJson(response.data as Map<String, dynamic>),
+      );
+      _log.info('changed visibility of page $_slug to $visibility');
+    } catch (e, st) {
+      _log.warning('failed to change visibility of page $_slug', e, st);
+      rethrow;
+    }
   }
 }
 

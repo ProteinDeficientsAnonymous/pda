@@ -1,7 +1,9 @@
 """Document library endpoints."""
 
+import logging
 from datetime import datetime
 
+from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -136,6 +138,15 @@ def list_folders(request):
 )
 def create_folder(request, payload: FolderIn):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "create_folder",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     parent = None
@@ -146,6 +157,14 @@ def create_folder(request, payload: FolderIn):
             return Status(404, ErrorOut(detail="Parent folder not found."))
 
     folder = DocFolder.objects.create(name=payload.name, parent=parent)
+    audit_log(
+        logging.INFO,
+        "doc_folder_created",
+        request,
+        target_type="doc_folder",
+        target_id=str(folder.id),
+        details={"name": folder.name, "parent_id": str(parent.id) if parent else None},
+    )
     return Status(201, _folder_to_out(folder))
 
 
@@ -156,10 +175,20 @@ def create_folder(request, payload: FolderIn):
 )
 def reorder_folders(request, payload: ReorderIn):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "reorder_folders",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     for i, fid in enumerate(payload.ids):
         DocFolder.objects.filter(pk=fid).update(display_order=i)
+    audit_log(logging.INFO, "doc_folders_reordered", request)
     return Status(200, {"detail": "Folders reordered."})
 
 
@@ -170,6 +199,17 @@ def reorder_folders(request, payload: ReorderIn):
 )
 def update_folder(request, folder_id: str, payload: FolderPatchIn):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="doc_folder",
+            target_id=folder_id,
+            details={
+                "endpoint": "update_folder",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     try:
@@ -191,6 +231,14 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
     for key, value in updates.items():
         setattr(folder, key, value)
     folder.save()
+    audit_log(
+        logging.INFO,
+        "doc_folder_updated",
+        request,
+        target_type="doc_folder",
+        target_id=folder_id,
+        details={"fields_changed": list(updates.keys())},
+    )
     return Status(200, _folder_to_out(folder))
 
 
@@ -201,6 +249,17 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
 )
 def delete_folder(request, folder_id: str):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="doc_folder",
+            target_id=folder_id,
+            details={
+                "endpoint": "delete_folder",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     try:
@@ -208,7 +267,16 @@ def delete_folder(request, folder_id: str):
     except DocFolder.DoesNotExist:
         return Status(404, ErrorOut(detail="Folder not found."))
 
+    folder_name = folder.name
     folder.delete()
+    audit_log(
+        logging.INFO,
+        "doc_folder_deleted",
+        request,
+        target_type="doc_folder",
+        target_id=folder_id,
+        details={"name": folder_name},
+    )
     return Status(200, {"detail": "Folder deleted."})
 
 
@@ -224,6 +292,15 @@ def delete_folder(request, folder_id: str):
 )
 def create_document(request, payload: DocumentIn):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "create_document",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     try:
@@ -237,6 +314,14 @@ def create_document(request, payload: DocumentIn):
         folder=folder,
         created_by=request.auth,
     )
+    audit_log(
+        logging.INFO,
+        "document_created",
+        request,
+        target_type="document",
+        target_id=str(doc.id),
+        details={"title": doc.title, "folder_id": str(folder.id)},
+    )
     return Status(201, _doc_to_out(doc))
 
 
@@ -247,10 +332,20 @@ def create_document(request, payload: DocumentIn):
 )
 def reorder_documents(request, payload: ReorderIn):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "reorder_documents",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     for i, did in enumerate(payload.ids):
         Document.objects.filter(pk=did).update(display_order=i)
+    audit_log(logging.INFO, "documents_reordered", request)
     return Status(200, {"detail": "Documents reordered."})
 
 
@@ -275,6 +370,17 @@ def get_document(request, doc_id: str):
 )
 def update_document(request, doc_id: str, payload: DocumentPatchIn):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="document",
+            target_id=doc_id,
+            details={
+                "endpoint": "update_document",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     try:
@@ -293,7 +399,14 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
     for key, value in updates.items():
         setattr(doc, key, value)
     doc.save()
-
+    audit_log(
+        logging.INFO,
+        "document_updated",
+        request,
+        target_type="document",
+        target_id=doc_id,
+        details={"fields_changed": list(updates.keys())},
+    )
     return Status(200, _doc_to_out(doc))
 
 
@@ -304,6 +417,17 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
 )
 def delete_document(request, doc_id: str):
     if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="document",
+            target_id=doc_id,
+            details={
+                "endpoint": "delete_document",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
 
     try:
@@ -311,5 +435,14 @@ def delete_document(request, doc_id: str):
     except Document.DoesNotExist:
         return Status(404, ErrorOut(detail="Document not found."))
 
+    title = doc.title
     doc.delete()
+    audit_log(
+        logging.INFO,
+        "document_deleted",
+        request,
+        target_type="document",
+        target_id=doc_id,
+        details={"title": title},
+    )
     return Status(200, {"detail": "Document deleted."})

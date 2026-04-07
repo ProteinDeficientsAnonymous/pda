@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/user_management_provider.dart';
 import 'package:pda/services/api_error.dart';
@@ -9,6 +10,8 @@ import 'add_member_dialog.dart';
 import 'member_card.dart';
 
 export 'member_card.dart' show MemberCard, RoleBadge;
+
+final _log = Logger('MembersTab');
 
 enum _SortField { name, phone, role }
 
@@ -217,6 +220,7 @@ class _MembersTabState extends ConsumerState<MembersTab> {
             displayName: result['display_name'] as String? ?? '',
             roleId: result['role_id'] as String?,
           );
+      _log.info('member creation succeeded for ${result['phone_number']}');
       if (!context.mounted) return;
       _showCreatedPasswordDialog(
         context,
@@ -224,7 +228,12 @@ class _MembersTabState extends ConsumerState<MembersTab> {
             data['display_name'] as String? ?? data['phone_number'] as String,
         magicLinkToken: data['magic_link_token'] as String,
       );
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning(
+        'failed to create member for ${result['phone_number']}',
+        e,
+        st,
+      );
       if (!context.mounted) return;
       showErrorSnackBar(context, ApiError.from(e).message);
     }

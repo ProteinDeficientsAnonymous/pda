@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/models/document.dart';
 import 'package:pda/providers/auth_provider.dart';
@@ -8,6 +9,8 @@ import 'package:pda/screens/docs_folder_widgets.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+
+final _log = Logger('DocsScreen');
 
 class DocsScreen extends ConsumerWidget {
   const DocsScreen({super.key});
@@ -163,7 +166,8 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
     Navigator.pop(ctx);
     try {
       await ref.read(docFoldersProvider.notifier).createFolder(name: name);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to create folder', e, st);
       if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     }
   }
@@ -209,7 +213,8 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
       await ref
           .read(docFoldersProvider.notifier)
           .createDocument(title: title, folderId: folderId);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to create document', e, st);
       if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     }
   }
@@ -265,7 +270,8 @@ class _EmptyState extends ConsumerWidget {
                 await ref
                     .read(docFoldersProvider.notifier)
                     .createFolder(name: name);
-              } catch (e) {
+              } catch (e, st) {
+                _log.warning('failed to create first folder', e, st);
                 if (context.mounted) {
                   showErrorSnackBar(context, ApiError.from(e).message);
                 }

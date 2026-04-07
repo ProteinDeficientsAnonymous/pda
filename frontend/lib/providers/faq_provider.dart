@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
+
+final _log = Logger('FAQ');
 
 class FAQ {
   final String content;
@@ -23,11 +26,17 @@ class FaqNotifier extends AsyncNotifier<FAQ> {
 
   Future<void> saveContent(String content) async {
     final api = ref.read(apiClientProvider);
-    final response = await api.patch(
-      '/api/community/faq/',
-      data: {'content': content},
-    );
-    state = AsyncData(FAQ.fromJson(response.data as Map<String, dynamic>));
+    try {
+      final response = await api.patch(
+        '/api/community/faq/',
+        data: {'content': content},
+      );
+      state = AsyncData(FAQ.fromJson(response.data as Map<String, dynamic>));
+      _log.info('saved FAQ content');
+    } catch (e, st) {
+      _log.warning('failed to save FAQ content', e, st);
+      rethrow;
+    }
   }
 }
 

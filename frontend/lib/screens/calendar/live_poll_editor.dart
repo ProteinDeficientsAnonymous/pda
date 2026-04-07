@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/event_poll.dart';
 import 'package:pda/providers/event_poll_provider.dart';
 import 'package:pda/widgets/date_time_picker_dialog.dart';
 import 'package:pda/widgets/poll_widgets.dart';
+
+final _log = Logger('LivePollEditor');
 
 /// Inline editor for an active poll's options — shown inside EventFormDialog
 /// when editing an event that already has a poll.
@@ -38,7 +41,8 @@ class _LivePollEditorState extends ConsumerState<LivePollEditor> {
     setState(() => _adding = true);
     try {
       await addPollOption(ref: ref, eventId: widget.eventId, datetime: dt);
-    } catch (_) {
+    } catch (e, st) {
+      _log.warning('failed to add poll option', e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('couldn\'t add option — try again')),
@@ -56,7 +60,8 @@ class _LivePollEditorState extends ConsumerState<LivePollEditor> {
         eventId: widget.eventId,
         optionId: option.id,
       );
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to remove poll option', e, st);
       if (mounted) {
         final msg = e.toString().contains('at least 2')
             ? 'a poll needs at least 2 options'

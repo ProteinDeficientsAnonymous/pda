@@ -118,7 +118,8 @@ class ApiClient {
       final newToken = response.data['access'] as String;
       await _storage.saveTokens(access: newToken, refresh: refresh);
       return newToken;
-    } catch (_) {
+    } catch (e, st) {
+      _log.warning('Token refresh failed — clearing session', e, st);
       await _storage.clearTokens();
       _onSessionExpired?.call();
       return null;

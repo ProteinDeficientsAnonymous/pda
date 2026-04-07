@@ -2,6 +2,7 @@
 
 import logging
 
+from config.audit import audit_log
 from config.media_proxy import media_path
 from ninja import File, Router
 from ninja.files import UploadedFile
@@ -45,11 +46,19 @@ def login(request, payload: LoginIn):
     auth_user = authenticate(request, username=payload.phone_number, password=payload.password)
     if auth_user is None:
         logger.warning("Authentication failure: invalid credentials")
+        audit_log(
+            logging.WARNING, "login_failed", request, details={"reason": "invalid_credentials"}
+        )
         return Status(401, ErrorOut(detail="Invalid credentials"))
     user = User.objects.get(pk=auth_user.pk)
     if user.is_paused:
+        audit_log(
+            logging.WARNING, "login_paused", request, target_type="user", target_id=str(user.pk)
+        )
         return Status(403, ErrorOut(detail="your membership is currently paused"))
     refresh = RefreshToken.for_user(user)
+    request.auth = user
+    audit_log(logging.INFO, "login_success", request, target_type="user", target_id=str(user.pk))
     return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
 
 
@@ -60,14 +69,40 @@ def magic_login(request, token: str):
     try:
         magic = MagicLoginToken.objects.select_related("user").get(token=token)
     except MagicLoginToken.DoesNotExist:
+        audit_log(
+            logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
+        )
         return Status(400, ErrorOut(detail="Invalid or expired login link."))
     if magic.used or magic.is_expired:
+        audit_log(
+            logging.WARNING,
+            "magic_login_failed",
+            request,
+            target_type="user",
+            target_id=str(magic.user.pk),
+            details={"reason": "used_or_expired"},
+        )
         return Status(400, ErrorOut(detail="This login link has already been used or has expired."))
     if magic.user.is_paused:
+        audit_log(
+            logging.WARNING,
+            "magic_login_paused",
+            request,
+            target_type="user",
+            target_id=str(magic.user.pk),
+        )
         return Status(403, ErrorOut(detail="your membership is currently paused"))
     magic.used = True
     magic.save(update_fields=["used"])
     refresh = RefreshToken.for_user(magic.user)
+    request.auth = magic.user
+    audit_log(
+        logging.INFO,
+        "magic_login_success",
+        request,
+        target_type="user",
+        target_id=str(magic.user.pk),
+    )
     return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
 
 
@@ -96,17 +131,32 @@ def me(request):
 @router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
 def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    changed = []
     if payload.display_name is not None:
         user.display_name = payload.display_name
+        changed.append("display_name")
     if payload.email is not None:
         user.email = payload.email
+        changed.append("email")
     if payload.needs_onboarding is not None:
         user.needs_onboarding = payload.needs_onboarding
+        changed.append("needs_onboarding")
     if payload.show_phone is not None:
         user.show_phone = payload.show_phone
+        changed.append("show_phone")
     if payload.show_email is not None:
         user.show_email = payload.show_email
+        changed.append("show_email")
     user.save()
+    if changed:
+        audit_log(
+            logging.INFO,
+            "profile_updated",
+            request,
+            target_type="user",
+            target_id=str(user.pk),
+            details={"fields_changed": changed},
+        )
     return Status(200, UserOut.from_user(user))
 
 
@@ -122,6 +172,9 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
     name = photo.name or ""
     ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
     user.profile_photo.save(f"{user.pk}.{ext}", photo, save=True)
+    audit_log(
+        logging.INFO, "profile_photo_uploaded", request, target_type="user", target_id=str(user.pk)
+    )
     return Status(200, UserOut.from_user(user))
 
 
@@ -132,6 +185,9 @@ def delete_photo(request):
         user.profile_photo.delete(save=False)
         user.profile_photo = ""
         user.save(update_fields=["profile_photo"])
+    audit_log(
+        logging.INFO, "profile_photo_deleted", request, target_type="user", target_id=str(user.pk)
+    )
     return Status(200, UserOut.from_user(user))
 
 
@@ -170,6 +226,9 @@ def complete_onboarding(request, payload: OnboardingIn):
     user.set_password(payload.new_password)
     user.needs_onboarding = False
     user.save()
+    audit_log(
+        logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)
+    )
     return Status(200, UserOut.from_user(user))
 
 
@@ -177,9 +236,18 @@ def complete_onboarding(request, payload: OnboardingIn):
 def change_password(request, payload: ChangePasswordIn):
     user = User.objects.get(pk=request.auth.pk)
     if not user.check_password(payload.current_password):
+        audit_log(
+            logging.WARNING,
+            "password_change_failed",
+            request,
+            target_type="user",
+            target_id=str(user.pk),
+            details={"reason": "wrong_current_password"},
+        )
         return Status(400, ErrorOut(detail="Current password is incorrect."))
     if len(payload.new_password) < 8:
         return Status(400, ErrorOut(detail="New password must be at least 8 characters."))
     user.set_password(payload.new_password)
     user.save()
+    audit_log(logging.INFO, "password_changed", request, target_type="user", target_id=str(user.pk))
     return Status(200, ErrorOut(detail="Password updated successfully."))

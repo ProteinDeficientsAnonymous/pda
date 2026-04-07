@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/providers/survey_admin_provider.dart';
 import 'package:pda/utils/app_icons.dart';
@@ -9,6 +10,8 @@ import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/screens/survey_question_form_dialog.dart';
+
+final _log = Logger('SurveyBuilder');
 
 IconData _fieldTypeIcon(String type) {
   return switch (type) {
@@ -86,7 +89,8 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
             required: result.required,
           );
       if (mounted) showSnackBar(context, 'question added');
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to add question', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t add question — try again');
       }
@@ -110,7 +114,8 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
             required: result.required,
           );
       if (mounted) showSnackBar(context, 'question updated');
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to update question', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t update question — try again');
       }
@@ -147,7 +152,8 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
           .read(surveyQuestionsProvider(widget.survey.id).notifier)
           .deleteQuestion(q.id);
       if (mounted) showSnackBar(context, 'question deleted');
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to delete question', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t delete question — try again');
       }
@@ -163,7 +169,8 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
       await ref
           .read(surveyQuestionsProvider(widget.survey.id).notifier)
           .reorder(_questions.map((q) => q.id).toList());
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to reorder questions', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t reorder — try again');
       }

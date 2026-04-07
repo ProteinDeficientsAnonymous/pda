@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/utils/snackbar.dart';
+
+final _log = Logger('InviteModal');
 
 class InviteModal extends ConsumerStatefulWidget {
   final Event event;
@@ -54,7 +57,8 @@ class _InviteModalState extends ConsumerState<InviteModal> {
               .toList();
         });
       }
-    } catch (_) {
+    } catch (e, st) {
+      _log.warning('member search failed', e, st);
       if (mounted) setState(() => _results = []);
     } finally {
       if (mounted) setState(() => _searching = false);
@@ -76,7 +80,8 @@ class _InviteModalState extends ConsumerState<InviteModal> {
         Navigator.of(context).pop();
         showSnackBar(context, 'invites updated 🌱');
       }
-    } catch (_) {
+    } catch (e, st) {
+      _log.warning('failed to submit invites', e, st);
       if (mounted) {
         setState(() => _saving = false);
         showErrorSnackBar(context, 'couldn\'t update invites — try again');

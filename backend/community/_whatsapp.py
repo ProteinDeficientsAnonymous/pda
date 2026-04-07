@@ -1,5 +1,8 @@
 """WhatsApp configuration endpoints."""
 
+import logging
+
+from config.audit import audit_log
 from django.conf import settings
 from ninja import Router
 from ninja.responses import Status
@@ -36,6 +39,15 @@ class WhatsAppStatusOut(BaseModel):
 )
 def get_whatsapp_config(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_WHATSAPP):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "get_whatsapp_config",
+                "required_permission": PermissionKey.MANAGE_WHATSAPP,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     config = WhatsAppConfig.get()
     return Status(
@@ -55,15 +67,35 @@ def get_whatsapp_config(request):
 )
 def update_whatsapp_config(request, payload: WhatsAppConfigPatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_WHATSAPP):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "update_whatsapp_config",
+                "required_permission": PermissionKey.MANAGE_WHATSAPP,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     config = WhatsAppConfig.get()
+    changed = []
     if payload.bot_url is not None:
         config.bot_url = payload.bot_url
+        changed.append("bot_url")
     if payload.bot_secret is not None:
         config.bot_secret = payload.bot_secret
+        changed.append("bot_secret")  # log field name only, never the value
     if payload.group_id is not None:
         config.group_id = payload.group_id
+        changed.append("group_id")
     config.save()
+    audit_log(
+        logging.WARNING,
+        "whatsapp_config_updated",
+        request,
+        target_type="whatsapp_config",
+        details={"fields_changed": changed},
+    )
     return Status(
         200,
         WhatsAppConfigOut(
@@ -81,6 +113,15 @@ def update_whatsapp_config(request, payload: WhatsAppConfigPatchIn):
 )
 def get_whatsapp_status(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_WHATSAPP):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "get_whatsapp_status",
+                "required_permission": PermissionKey.MANAGE_WHATSAPP,
+            },
+        )
         return Status(403, ErrorOut(detail="Permission denied."))
     config = WhatsAppConfig.get()
     bot_url = config.bot_url or getattr(settings, "WHATSAPP_BOT_URL", "")

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/screens/calendar/day_view.dart';
@@ -12,6 +13,8 @@ import 'package:pda/screens/guest_add_event_dialog.dart';
 import 'package:pda/utils/create_datetime_poll.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+
+final _log = Logger('CalendarScreen');
 
 enum _CalendarView { month, week, day, list }
 
@@ -88,11 +91,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         );
       }
       ref.invalidate(eventsProvider);
+      _log.info('created event $eventId');
       if (mounted) {
         showSnackBar(context, 'event created 🌱');
         context.push('/events/$eventId');
       }
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to create event', e, st);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

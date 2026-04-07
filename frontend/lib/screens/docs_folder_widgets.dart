@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/models/document.dart';
 import 'package:pda/providers/docs_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
+
+final _log = Logger('DocsFolders');
 
 class DocsFolderContent extends ConsumerWidget {
   final DocFolder folder;
@@ -138,7 +141,8 @@ class DocsDocTile extends ConsumerWidget {
     if (confirmed != true) return;
     try {
       await ref.read(docFoldersProvider.notifier).deleteDocument(doc.id);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to delete document', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -189,7 +193,8 @@ class DocsFolderMenuButton extends ConsumerWidget {
     if (confirmed != true) return;
     try {
       await ref.read(docFoldersProvider.notifier).deleteFolder(folderId);
-    } catch (e) {
+    } catch (e, st) {
+      _log.warning('failed to delete folder', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }

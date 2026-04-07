@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:logging/logging.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/providers/poll_provider.dart';
 import 'package:pda/providers/survey_admin_provider.dart';
 import 'package:pda/utils/snackbar.dart';
+
+final _log = Logger('PollResults');
 
 String formatPollOptionShort(String iso) {
   try {
@@ -76,7 +79,9 @@ class _SurveyPollResultsSectionState
       ref.invalidate(surveyQuestionsProvider(widget.surveyId));
       ref.invalidate(surveyResponsesProvider(widget.surveyId));
       if (mounted) showSnackBar(context, 'time chosen! 🎉');
-    } catch (e) {
+      _log.info('finalized poll');
+    } catch (e, st) {
+      _log.warning('failed to finalize poll', e, st);
       if (mounted) {
         showErrorSnackBar(context, 'couldn\'t finalize — try again');
       }
