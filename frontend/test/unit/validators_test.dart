@@ -13,7 +13,7 @@ void main() {
       expect(validator('Mary-Jane'), isNull);
     });
 
-    test("accepts name with apostrophe", () {
+    test('accepts name with apostrophe', () {
       expect(validator("O'Brien"), isNull);
     });
 
