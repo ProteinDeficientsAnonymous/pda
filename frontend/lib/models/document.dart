@@ -62,6 +62,7 @@ class Document {
   final String id;
   final String title;
   final String content;
+  final String contentHtml;
   final String folderId;
   final int displayOrder;
   final String? createdById;
@@ -72,6 +73,7 @@ class Document {
     required this.id,
     required this.title,
     required this.content,
+    required this.contentHtml,
     required this.folderId,
     required this.displayOrder,
     this.createdById,
@@ -84,6 +86,7 @@ class Document {
       id: json['id'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
+      contentHtml: json['content_html'] as String? ?? '',
       folderId: json['folder_id'] as String,
       displayOrder: json['display_order'] as int,
       createdById: json['created_by_id'] as String?,

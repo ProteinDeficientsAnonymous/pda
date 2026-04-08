@@ -6,6 +6,7 @@ import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/docs_provider.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/autosave_mixin.dart';
+import 'package:pda/widgets/html_content_viewer.dart';
 import 'package:pda/widgets/quill_content_editor.dart';
 
 class DocDetailScreen extends ConsumerStatefulWidget {
@@ -92,16 +93,19 @@ class _DocDetailScreenState extends ConsumerState<DocDetailScreen>
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ),
-                      QuillContentEditor(
-                        jsonContent: doc.content,
-                        editing: _editing,
-                        onChanged: (content) {
-                          _pendingContent = content;
-                          triggerAutosave(content);
-                        },
-                        expands: false,
-                        hintText: 'start writing...',
-                      ),
+                      if (_editing)
+                        QuillContentEditor(
+                          jsonContent: doc.content,
+                          editing: true,
+                          onChanged: (content) {
+                            _pendingContent = content;
+                            triggerAutosave(content);
+                          },
+                          expands: false,
+                          hintText: 'start writing...',
+                        )
+                      else
+                        HtmlContentViewer(html: doc.contentHtml),
                       const SizedBox(height: 48),
                     ],
                   ),

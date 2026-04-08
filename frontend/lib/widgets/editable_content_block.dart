@@ -8,6 +8,7 @@ import '../providers/editable_page_provider.dart';
 import '../services/api_error.dart';
 import '../utils/snackbar.dart';
 import 'autosave_mixin.dart';
+import 'html_content_viewer.dart';
 import 'quill_content_editor.dart';
 import 'save_cancel_button_row.dart';
 
@@ -122,20 +123,25 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
                 onSave: _save,
                 onCancel: () => _cancelEdit(page.content),
               ),
-            Expanded(
-              child: QuillContentEditor(
-                jsonContent: _json,
-                editing: _editing,
-                expands: true,
-                hintText: 'Enter page content…',
-                onChanged: canEdit
-                    ? (v) {
-                        _json = v;
-                        triggerAutosave(v);
-                      }
-                    : null,
+            if (_editing)
+              Expanded(
+                child: QuillContentEditor(
+                  jsonContent: _json,
+                  editing: true,
+                  expands: true,
+                  hintText: 'Enter page content…',
+                  onChanged: (v) {
+                    _json = v;
+                    triggerAutosave(v);
+                  },
+                ),
+              )
+            else
+              Expanded(
+                child: SingleChildScrollView(
+                  child: HtmlContentViewer(html: page.contentHtml),
+                ),
               ),
-            ),
           ],
         );
       },

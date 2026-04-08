@@ -66,7 +66,9 @@ class _FakeHomeNotifier extends HomePageNotifier {
   @override
   Future<HomePage> build() async => HomePage(
     content: '',
+    contentHtml: '',
     joinContent: '',
+    joinContentHtml: '',
     donateUrl: '',
     updatedAt: DateTime(2026),
   );
@@ -81,6 +83,7 @@ class _FakeEditablePageNotifier extends EditablePageNotifier {
   Future<EditablePage> build() async => EditablePage(
     slug: _fakeSlug,
     content: '',
+    contentHtml: '',
     visibility: 'public',
     updatedAt: DateTime(2026),
   );

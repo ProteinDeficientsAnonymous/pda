@@ -161,7 +161,9 @@ class _FakeHomeNotifier extends HomePageNotifier {
   @override
   Future<HomePage> build() async => HomePage(
     content: '',
+    contentHtml: '',
     joinContent: '',
+    joinContentHtml: '',
     donateUrl: '',
     updatedAt: DateTime(2026),
   );
@@ -171,7 +173,9 @@ class _HomeWithDonateNotifier extends HomePageNotifier {
   @override
   Future<HomePage> build() async => HomePage(
     content: '',
+    contentHtml: '',
     joinContent: '',
+    joinContentHtml: '',
     donateUrl: 'https://example.com/donate',
     updatedAt: DateTime(2026),
   );
@@ -184,7 +188,9 @@ class _LoadingHomeNotifier extends HomePageNotifier {
     await Completer<void>().future;
     return HomePage(
       content: '',
+      contentHtml: '',
       joinContent: '',
+      joinContentHtml: '',
       donateUrl: '',
       updatedAt: DateTime(2026),
     );

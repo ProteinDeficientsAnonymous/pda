@@ -95,13 +95,14 @@ class _FaqEditorAuthNotifier extends AuthNotifier {
 
 class _FakeFaqNotifier extends FaqNotifier {
   @override
-  Future<FAQ> build() async => FAQ(content: '', updatedAt: DateTime(2026));
+  Future<FAQ> build() async =>
+      FAQ(content: '', contentHtml: '', updatedAt: DateTime(2026));
 }
 
 class _LoadingFaqNotifier extends FaqNotifier {
   @override
   Future<FAQ> build() async {
     await Completer<void>().future;
-    return FAQ(content: '', updatedAt: DateTime(2026));
+    return FAQ(content: '', contentHtml: '', updatedAt: DateTime(2026));
   }
 }

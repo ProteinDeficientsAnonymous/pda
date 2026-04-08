@@ -6,12 +6,18 @@ final _log = Logger('FAQ');
 
 class FAQ {
   final String content;
+  final String contentHtml;
   final DateTime updatedAt;
 
-  const FAQ({required this.content, required this.updatedAt});
+  const FAQ({
+    required this.content,
+    required this.contentHtml,
+    required this.updatedAt,
+  });
 
   factory FAQ.fromJson(Map<String, dynamic> json) => FAQ(
     content: json['content'] as String,
+    contentHtml: json['content_html'] as String? ?? '',
     updatedAt: DateTime.parse(json['updated_at'] as String),
   );
 }

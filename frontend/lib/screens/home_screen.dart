@@ -8,6 +8,7 @@ import 'package:pda/utils/launcher.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/autosave_mixin.dart';
+import 'package:pda/widgets/html_content_viewer.dart';
 import 'package:pda/widgets/quill_content_editor.dart';
 import 'package:pda/widgets/save_cancel_button_row.dart';
 import 'package:pda/config/constants.dart';
@@ -27,14 +28,18 @@ class HomeScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => _HomeBody(
           content: '',
+          contentHtml: '',
           joinContent: '',
+          joinContentHtml: '',
           donateUrl: '',
           canEdit: canEdit,
           isLoggedIn: isLoggedIn,
         ),
         data: (home) => _HomeBody(
           content: home.content,
+          contentHtml: home.contentHtml,
           joinContent: home.joinContent,
+          joinContentHtml: home.joinContentHtml,
           donateUrl: home.donateUrl,
           canEdit: canEdit,
           isLoggedIn: isLoggedIn,
@@ -46,14 +51,18 @@ class HomeScreen extends ConsumerWidget {
 
 class _HomeBody extends StatelessWidget {
   final String content;
+  final String contentHtml;
   final String joinContent;
+  final String joinContentHtml;
   final String donateUrl;
   final bool canEdit;
   final bool isLoggedIn;
 
   const _HomeBody({
     required this.content,
+    required this.contentHtml,
     required this.joinContent,
+    required this.joinContentHtml,
     required this.donateUrl,
     required this.canEdit,
     required this.isLoggedIn,
@@ -70,6 +79,7 @@ class _HomeBody extends StatelessWidget {
             children: [
               _EditableSection(
                 content: content,
+                contentHtml: contentHtml,
                 canEdit: canEdit,
                 onSave: (text) => ProviderScope.containerOf(
                   context,
@@ -82,6 +92,7 @@ class _HomeBody extends StatelessWidget {
                 const Divider(height: 32),
                 _EditableSection(
                   content: joinContent,
+                  contentHtml: joinContentHtml,
                   canEdit: canEdit,
                   onSave: (text) => ProviderScope.containerOf(context)
                       .read(homePageNotifierProvider.notifier)
@@ -231,12 +242,14 @@ class _DonateCtaState extends ConsumerState<_DonateCta> {
 
 class _EditableSection extends ConsumerStatefulWidget {
   final String content;
+  final String contentHtml;
   final bool canEdit;
   final Future<void> Function(String) onSave;
   final Widget? footer;
 
   const _EditableSection({
     required this.content,
+    required this.contentHtml,
     required this.canEdit,
     required this.onSave,
     this.footer,
@@ -316,17 +329,18 @@ class _EditableSectionState extends ConsumerState<_EditableSection>
               ],
             ),
           ),
-        QuillContentEditor(
-          jsonContent: _json,
-          editing: _editing,
-          hintText: 'Write content…',
-          onChanged: widget.canEdit
-              ? (v) {
-                  _json = v;
-                  triggerAutosave(v);
-                }
-              : null,
-        ),
+        if (_editing)
+          QuillContentEditor(
+            jsonContent: _json,
+            editing: true,
+            hintText: 'Write content…',
+            onChanged: (v) {
+              _json = v;
+              triggerAutosave(v);
+            },
+          )
+        else
+          HtmlContentViewer(html: widget.contentHtml),
         if (!_editing && widget.footer != null) widget.footer!,
       ],
     );

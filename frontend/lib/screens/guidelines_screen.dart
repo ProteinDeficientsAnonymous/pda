@@ -6,6 +6,7 @@ import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/autosave_mixin.dart';
+import 'package:pda/widgets/html_content_viewer.dart';
 import 'package:pda/widgets/quill_content_editor.dart';
 import 'package:pda/widgets/save_cancel_button_row.dart';
 import 'package:pda/config/constants.dart';
@@ -29,8 +30,11 @@ class GuidelinesScreen extends ConsumerWidget {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ),
-        data: (guidelines) =>
-            _GuidelinesBody(content: guidelines.content, canEdit: canEdit),
+        data: (guidelines) => _GuidelinesBody(
+          content: guidelines.content,
+          contentHtml: guidelines.contentHtml,
+          canEdit: canEdit,
+        ),
       ),
     );
   }
@@ -38,9 +42,14 @@ class GuidelinesScreen extends ConsumerWidget {
 
 class _GuidelinesBody extends ConsumerStatefulWidget {
   final String content;
+  final String contentHtml;
   final bool canEdit;
 
-  const _GuidelinesBody({required this.content, required this.canEdit});
+  const _GuidelinesBody({
+    required this.content,
+    required this.contentHtml,
+    required this.canEdit,
+  });
 
   @override
   ConsumerState<_GuidelinesBody> createState() => _GuidelinesBodyState();
@@ -98,20 +107,25 @@ class _GuidelinesBodyState extends ConsumerState<_GuidelinesBody>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(context),
-        Expanded(
-          child: QuillContentEditor(
-            jsonContent: _json,
-            editing: _editing,
-            expands: true,
-            hintText: 'Write community guidelines…',
-            onChanged: widget.canEdit
-                ? (v) {
-                    _json = v;
-                    triggerAutosave(v);
-                  }
-                : null,
+        if (_editing)
+          Expanded(
+            child: QuillContentEditor(
+              jsonContent: _json,
+              editing: true,
+              expands: true,
+              hintText: 'Write community guidelines…',
+              onChanged: (v) {
+                _json = v;
+                triggerAutosave(v);
+              },
+            ),
+          )
+        else
+          Expanded(
+            child: SingleChildScrollView(
+              child: HtmlContentViewer(html: widget.contentHtml),
+            ),
           ),
-        ),
       ],
     );
   }

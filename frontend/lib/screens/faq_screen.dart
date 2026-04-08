@@ -6,6 +6,7 @@ import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/autosave_mixin.dart';
+import 'package:pda/widgets/html_content_viewer.dart';
 import 'package:pda/widgets/quill_content_editor.dart';
 import 'package:pda/widgets/save_cancel_button_row.dart';
 import 'package:pda/config/constants.dart';
@@ -29,7 +30,11 @@ class FAQScreen extends ConsumerWidget {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ),
-        data: (faq) => _FAQBody(content: faq.content, canEdit: canEdit),
+        data: (faq) => _FAQBody(
+          content: faq.content,
+          contentHtml: faq.contentHtml,
+          canEdit: canEdit,
+        ),
       ),
     );
   }
@@ -37,9 +42,14 @@ class FAQScreen extends ConsumerWidget {
 
 class _FAQBody extends ConsumerStatefulWidget {
   final String content;
+  final String contentHtml;
   final bool canEdit;
 
-  const _FAQBody({required this.content, required this.canEdit});
+  const _FAQBody({
+    required this.content,
+    required this.contentHtml,
+    required this.canEdit,
+  });
 
   @override
   ConsumerState<_FAQBody> createState() => _FAQBodyState();
@@ -96,20 +106,25 @@ class _FAQBodyState extends ConsumerState<_FAQBody> with AutosaveMixin {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(context),
-        Expanded(
-          child: QuillContentEditor(
-            jsonContent: _json,
-            editing: _editing,
-            expands: true,
-            hintText: 'Write FAQ content…',
-            onChanged: widget.canEdit
-                ? (v) {
-                    _json = v;
-                    triggerAutosave(v);
-                  }
-                : null,
+        if (_editing)
+          Expanded(
+            child: QuillContentEditor(
+              jsonContent: _json,
+              editing: true,
+              expands: true,
+              hintText: 'Write FAQ content…',
+              onChanged: (v) {
+                _json = v;
+                triggerAutosave(v);
+              },
+            ),
+          )
+        else
+          Expanded(
+            child: SingleChildScrollView(
+              child: HtmlContentViewer(html: widget.contentHtml),
+            ),
           ),
-        ),
       ],
     );
   }

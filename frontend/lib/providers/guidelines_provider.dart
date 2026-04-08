@@ -6,12 +6,18 @@ final _log = Logger('Guidelines');
 
 class Guidelines {
   final String content;
+  final String contentHtml;
   final DateTime updatedAt;
 
-  const Guidelines({required this.content, required this.updatedAt});
+  const Guidelines({
+    required this.content,
+    required this.contentHtml,
+    required this.updatedAt,
+  });
 
   factory Guidelines.fromJson(Map<String, dynamic> json) => Guidelines(
     content: json['content'] as String,
+    contentHtml: json['content_html'] as String? ?? '',
     updatedAt: DateTime.parse(json['updated_at'] as String),
   );
 }

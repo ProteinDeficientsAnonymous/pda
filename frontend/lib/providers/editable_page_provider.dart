@@ -7,12 +7,14 @@ final _log = Logger('EditablePage');
 class EditablePage {
   final String slug;
   final String content;
+  final String contentHtml;
   final String visibility;
   final DateTime updatedAt;
 
   const EditablePage({
     required this.slug,
     required this.content,
+    required this.contentHtml,
     required this.visibility,
     required this.updatedAt,
   });
@@ -20,6 +22,7 @@ class EditablePage {
   factory EditablePage.fromJson(Map<String, dynamic> json) => EditablePage(
     slug: json['slug'] as String,
     content: json['content'] as String,
+    contentHtml: json['content_html'] as String? ?? '',
     visibility: json['visibility'] as String,
     updatedAt: DateTime.parse(json['updated_at'] as String),
   );

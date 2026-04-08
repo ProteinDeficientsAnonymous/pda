@@ -6,20 +6,26 @@ final _log = Logger('HomePage');
 
 class HomePage {
   final String content;
+  final String contentHtml;
   final String joinContent;
+  final String joinContentHtml;
   final String donateUrl;
   final DateTime updatedAt;
 
   const HomePage({
     required this.content,
+    required this.contentHtml,
     required this.joinContent,
+    required this.joinContentHtml,
     required this.donateUrl,
     required this.updatedAt,
   });
 
   factory HomePage.fromJson(Map<String, dynamic> json) => HomePage(
     content: json['content'] as String,
+    contentHtml: json['content_html'] as String? ?? '',
     joinContent: json['join_content'] as String,
+    joinContentHtml: json['join_content_html'] as String? ?? '',
     donateUrl: json['donate_url'] as String? ?? '',
     updatedAt: DateTime.parse(json['updated_at'] as String),
   );

@@ -38,7 +38,9 @@ class _FakeHomeNotifier extends HomePageNotifier {
   Future<HomePage> build() async {
     return HomePage(
       content: 'Test content',
+      contentHtml: '',
       joinContent: '',
+      joinContentHtml: '',
       donateUrl: '',
       updatedAt: DateTime(2026),
     );

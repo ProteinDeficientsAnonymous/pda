@@ -125,7 +125,9 @@ class _FakeHomeNotifier extends HomePageNotifier {
   @override
   Future<HomePage> build() async => HomePage(
     content: '',
+    contentHtml: '',
     joinContent: '',
+    joinContentHtml: '',
     donateUrl: '',
     updatedAt: DateTime(2026),
   );

@@ -109,13 +109,13 @@ class _GuidelinesEditorAuthNotifier extends AuthNotifier {
 class _FakeGuidelinesNotifier extends GuidelinesNotifier {
   @override
   Future<Guidelines> build() async =>
-      Guidelines(content: '', updatedAt: DateTime(2026));
+      Guidelines(content: '', contentHtml: '', updatedAt: DateTime(2026));
 }
 
 class _LoadingGuidelinesNotifier extends GuidelinesNotifier {
   @override
   Future<Guidelines> build() async {
     await Completer<void>().future;
-    return Guidelines(content: '', updatedAt: DateTime(2026));
+    return Guidelines(content: '', contentHtml: '', updatedAt: DateTime(2026));
   }
 }
