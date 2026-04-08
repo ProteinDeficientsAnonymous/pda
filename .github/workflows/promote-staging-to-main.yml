@@ -72,7 +72,7 @@ jobs:
             2>/dev/null || gh pr list --base main --head staging --json url --jq '.[0].url')
           echo "PR: $PR_URL"
 
-          gh pr merge "$PR_URL" --merge --admin --delete-branch=false
+          gh pr merge "$PR_URL" --merge --delete-branch=false
 
           STATE=$(gh pr view "$PR_URL" --json state --jq '.state')
           if [ "$STATE" != "MERGED" ]; then
