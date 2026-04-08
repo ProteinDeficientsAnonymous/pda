@@ -25,6 +25,7 @@ class JoinRequest {
   final List<JoinRequestAnswer> answers;
   final DateTime submittedAt;
   final String status;
+  final String? userId;
 
   const JoinRequest({
     required this.id,
@@ -33,6 +34,7 @@ class JoinRequest {
     this.answers = const [],
     required this.submittedAt,
     required this.status,
+    this.userId,
   });
 
   factory JoinRequest.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class JoinRequest {
           [],
       submittedAt: DateTime.parse(json['submitted_at'] as String),
       status: json['status'] as String,
+      userId: json['user_id'] as String?,
     );
   }
 }

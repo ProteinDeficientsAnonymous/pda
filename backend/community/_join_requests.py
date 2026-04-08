@@ -43,6 +43,7 @@ class JoinRequestOut(BaseModel):
     answers: list[JoinRequestAnswerOut] = []
     submitted_at: datetime
     status: str
+    user_id: str | None = None
 
 
 class JoinFormQuestionOut(BaseModel):
@@ -75,6 +76,7 @@ class ApproveJoinRequestOut(BaseModel):
     phone_number: str
     status: str
     magic_link_token: str | None = None
+    user_id: str | None = None
 
 
 class CheckPhoneOut(BaseModel):
@@ -86,10 +88,13 @@ class CheckPhoneIn(BaseModel):
 
 
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
+    from users.models import User
+
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
     ]
+    user = User.objects.filter(phone_number=jr.phone_number).first()
     return JoinRequestOut(
         id=str(jr.id),
         display_name=jr.display_name,
@@ -97,6 +102,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         answers=answers,
         submitted_at=jr.submitted_at,
         status=jr.status,
+        user_id=str(user.id) if user else None,
     )
 
 
@@ -409,7 +415,15 @@ def list_join_requests(request):
         )
         return Status(403, ErrorOut(detail="Permission denied."))
 
-    join_requests = JoinRequest.objects.all()
+    from users.models import User
+
+    onboarded_phones = User.objects.filter(needs_onboarding=False).values_list(
+        "phone_number", flat=True
+    )
+    join_requests = JoinRequest.objects.exclude(
+        status=JoinRequestStatus.APPROVED,
+        phone_number__in=onboarded_phones,
+    )
     return Status(200, [_join_request_out(jr) for jr in join_requests])
 
 
@@ -477,6 +491,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         details={"display_name": join_request.display_name, "user_created": user_created},
     )
 
+    approved_user = User.objects.filter(phone_number=join_request.phone_number).first()
     return Status(
         200,
         ApproveJoinRequestOut(
@@ -485,6 +500,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             phone_number=join_request.phone_number,
             status=join_request.status,
             magic_link_token=magic_token,
+            user_id=str(approved_user.id) if approved_user else None,
         ),
     )
 

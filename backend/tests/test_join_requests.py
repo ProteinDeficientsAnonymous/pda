@@ -456,3 +456,74 @@ class TestJoinRequestManagement:
         assert response.status_code == 200
         # No magic token since no user was created
         assert response.json()["magic_link_token"] is None
+
+    def test_list_excludes_approved_onboarded_user(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        from users.models import User
+
+        # Approve the request (creates user with needs_onboarding=True)
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        # Simulate user completing onboarding
+        user = User.objects.get(phone_number=sample_join_request.phone_number)
+        user.needs_onboarding = False
+        user.save(update_fields=["needs_onboarding"])
+
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        ids = [r["id"] for r in response.json()]
+        assert str(sample_join_request.id) not in ids
+
+    def test_list_includes_approved_not_yet_onboarded(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        # Approve the request (creates user with needs_onboarding=True)
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        # User still has needs_onboarding=True — request should still appear
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        ids = [r["id"] for r in response.json()]
+        assert str(sample_join_request.id) in ids
+
+    def test_list_keeps_pending_and_rejected_unaffected(self, api_client, vettor_headers, db):
+        from community.models import JoinRequest
+        from users.models import User
+
+        pending = JoinRequest.objects.create(
+            display_name="Pending Person",
+            phone_number="+12025550101",
+            status=JoinRequestStatus.PENDING,
+        )
+        rejected = JoinRequest.objects.create(
+            display_name="Rejected Person",
+            phone_number="+12025550102",
+            status=JoinRequestStatus.REJECTED,
+        )
+        # Approved request with onboarded user — should be excluded
+        approved = JoinRequest.objects.create(
+            display_name="Onboarded Person",
+            phone_number="+12025550103",
+            status=JoinRequestStatus.APPROVED,
+        )
+        User.objects.create_user(
+            phone_number="+12025550103",
+            display_name="Onboarded Person",
+            needs_onboarding=False,
+        )
+
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        ids = [r["id"] for r in response.json()]
+        assert str(pending.id) in ids
+        assert str(rejected.id) in ids
+        assert str(approved.id) not in ids

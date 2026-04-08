@@ -21,7 +21,8 @@ class _MagicLoginScreenState extends ConsumerState<MagicLoginScreen> {
   @override
   void initState() {
     super.initState();
-    _doMagicLogin();
+    // Defer to avoid modifying provider state during the widget tree build.
+    Future.microtask(_doMagicLogin);
   }
 
   Future<void> _doMagicLogin() async {
