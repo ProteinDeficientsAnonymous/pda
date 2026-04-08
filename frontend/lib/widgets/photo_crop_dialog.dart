@@ -60,7 +60,8 @@ class _PhotoCropDialog extends StatefulWidget {
 }
 
 class _PhotoCropDialogState extends State<_PhotoCropDialog> {
-  late final crop.CropController _controller;
+  // ignore: prefer_typing_uninitialized_variables
+  late final dynamic _controller;
   bool _cropping = false;
   bool _clamping = false;
 
@@ -81,7 +82,7 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
     _log.info('_onDone: crop() called on controller');
   }
 
-  void _onMoved(crop.ViewportBasedRect rect) {
+  void _onMoved(dynamic rect) {
     final maxRatio = widget.maxHeightRatio;
     if (maxRatio == null || widget.aspectRatio != null) return;
     if (rect.width <= 0 || _clamping) return;
