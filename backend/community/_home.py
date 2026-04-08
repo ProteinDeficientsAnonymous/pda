@@ -10,6 +10,7 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.permissions import PermissionKey
 
+from community._delta_html import delta_to_html
 from community._shared import ErrorOut
 from community.models import HomePage
 
@@ -18,7 +19,9 @@ router = Router()
 
 class HomePageOut(BaseModel):
     content: str
+    content_html: str
     join_content: str
+    join_content_html: str
     donate_url: str
     updated_at: datetime
 
@@ -29,18 +32,20 @@ class HomePagePatchIn(BaseModel):
     donate_url: str | None = None
 
 
+def _home_out(h: HomePage) -> HomePageOut:
+    return HomePageOut(
+        content=h.content,
+        content_html=h.content_html,
+        join_content=h.join_content,
+        join_content_html=h.join_content_html,
+        donate_url=h.donate_url,
+        updated_at=h.updated_at,
+    )
+
+
 @router.get("/home/", response={200: HomePageOut}, auth=None)
 def get_home(request):
-    h = HomePage.get()
-    return Status(
-        200,
-        HomePageOut(
-            content=h.content,
-            join_content=h.join_content,
-            donate_url=h.donate_url,
-            updated_at=h.updated_at,
-        ),
-    )
+    return Status(200, _home_out(HomePage.get()))
 
 
 @router.patch("/home/", response={200: HomePageOut, 403: ErrorOut}, auth=JWTAuth())
@@ -57,9 +62,11 @@ def update_home(request, payload: HomePagePatchIn):
     changed = []
     if payload.content is not None:
         h.content = payload.content
+        h.content_html = delta_to_html(payload.content)
         changed.append("content")
     if payload.join_content is not None:
         h.join_content = payload.join_content
+        h.join_content_html = delta_to_html(payload.join_content)
         changed.append("join_content")
     if payload.donate_url is not None:
         h.donate_url = payload.donate_url
@@ -72,12 +79,4 @@ def update_home(request, payload: HomePagePatchIn):
         target_type="homepage",
         details={"fields_changed": changed},
     )
-    return Status(
-        200,
-        HomePageOut(
-            content=h.content,
-            join_content=h.join_content,
-            donate_url=h.donate_url,
-            updated_at=h.updated_at,
-        ),
-    )
+    return Status(200, _home_out(h))

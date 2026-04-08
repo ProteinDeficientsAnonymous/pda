@@ -10,6 +10,7 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.permissions import PermissionKey
 
+from community._delta_html import delta_to_html
 from community._shared import ErrorOut
 from community.models import DocFolder, Document
 
@@ -64,6 +65,7 @@ class DocumentOut(BaseModel):
     id: str
     title: str
     content: str
+    content_html: str
     folder_id: str
     display_order: int
     created_by_id: str | None
@@ -106,6 +108,7 @@ def _doc_to_out(doc: Document) -> DocumentOut:
         id=str(doc.id),
         title=doc.title,
         content=doc.content,
+        content_html=doc.content_html,
         folder_id=str(doc.folder_id),
         display_order=doc.display_order,
         created_by_id=str(doc.created_by_id) if doc.created_by_id else None,
@@ -311,6 +314,7 @@ def create_document(request, payload: DocumentIn):
     doc = Document.objects.create(
         title=payload.title,
         content=payload.content,
+        content_html=delta_to_html(payload.content),
         folder=folder,
         created_by=request.auth,
     )
@@ -398,6 +402,8 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
 
     for key, value in updates.items():
         setattr(doc, key, value)
+    if "content" in updates:
+        doc.content_html = delta_to_html(updates["content"])
     doc.save()
     audit_log(
         logging.INFO,

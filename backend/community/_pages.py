@@ -11,6 +11,7 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.permissions import PermissionKey
 
+from community._delta_html import delta_to_html
 from community._shared import ErrorOut, _optional_jwt
 from community.models import EditablePage, PageVisibility
 
@@ -20,6 +21,7 @@ router = Router()
 class EditablePageOut(BaseModel):
     slug: str
     content: str
+    content_html: str
     visibility: str
     updated_at: datetime
 
@@ -27,6 +29,16 @@ class EditablePageOut(BaseModel):
 class EditablePagePatchIn(BaseModel):
     content: str | None = None
     visibility: str | None = None
+
+
+def _page_out(page: EditablePage) -> EditablePageOut:
+    return EditablePageOut(
+        slug=page.slug,
+        content=page.content,
+        content_html=page.content_html,
+        visibility=page.visibility,
+        updated_at=page.updated_at,
+    )
 
 
 @router.get("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=_optional_jwt)
@@ -38,15 +50,7 @@ def get_page(request, slug: str):
         if isinstance(request.auth, AnonymousUser):
             return Status(403, ErrorOut(detail="Members only."))
 
-    return Status(
-        200,
-        EditablePageOut(
-            slug=page.slug,
-            content=page.content,
-            visibility=page.visibility,
-            updated_at=page.updated_at,
-        ),
-    )
+    return Status(200, _page_out(page))
 
 
 @router.patch("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=JWTAuth())
@@ -71,6 +75,7 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
     changed = []
     if payload.content is not None:
         page.content = payload.content
+        page.content_html = delta_to_html(payload.content)
         changed.append("content")
     if payload.visibility is not None:
         page.visibility = payload.visibility
@@ -85,12 +90,4 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
         target_id=slug,
         details={"slug": slug, "fields_changed": changed},
     )
-    return Status(
-        200,
-        EditablePageOut(
-            slug=page.slug,
-            content=page.content,
-            visibility=page.visibility,
-            updated_at=page.updated_at,
-        ),
-    )
+    return Status(200, _page_out(page))
