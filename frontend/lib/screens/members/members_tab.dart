@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/user_management_provider.dart';
-import 'package:pda/services/api_error.dart';
-import 'package:pda/utils/snackbar.dart';
-import 'package:pda/widgets/approval_credentials_dialog.dart';
 import 'add_member_dialog.dart';
 import 'member_card.dart';
 
 export 'member_card.dart' show MemberCard, RoleBadge;
-
-final _log = Logger('MembersTab');
 
 enum _SortField { name, phone, role }
 
@@ -133,21 +127,15 @@ class _MembersTabState extends ConsumerState<MembersTab> {
                       ),
                     ),
                   ),
-                  if (widget.canManageUsers) ...[
-                    OutlinedButton.icon(
-                      onPressed: () => _showBulkAddDialog(context, ref),
-                      icon: const Icon(Icons.group_add_outlined, size: 18),
-                      label: const Text('bulk add'),
-                    ),
+                  if (widget.canManageUsers)
                     FilledButton.icon(
-                      onPressed: () => _showAddMemberDialog(context, ref),
+                      onPressed: () => _showAddMemberDialog(context),
                       icon: const Icon(
                         Icons.person_add_alt_1_outlined,
                         size: 18,
                       ),
                       label: const Text('add member'),
                     ),
-                  ],
                 ],
               ),
             ],
@@ -204,60 +192,11 @@ class _MembersTabState extends ConsumerState<MembersTab> {
     );
   }
 
-  Future<void> _showAddMemberDialog(BuildContext context, WidgetRef ref) async {
-    final rolesAsync = ref.read(rolesProvider);
-    final allRoles = rolesAsync.value ?? [];
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) => AddMemberDialog(allRoles: allRoles),
-    );
-    if (result == null || !context.mounted) return;
-    try {
-      final data = await ref
-          .read(userManagementProvider.notifier)
-          .createUser(
-            phoneNumber: result['phone_number'] as String,
-            displayName: result['display_name'] as String? ?? '',
-            roleId: result['role_id'] as String?,
-          );
-      _log.info('member creation succeeded for ${result['phone_number']}');
-      if (!context.mounted) return;
-      _showCreatedPasswordDialog(
-        context,
-        displayName:
-            data['display_name'] as String? ?? data['phone_number'] as String,
-        magicLinkToken: data['magic_link_token'] as String,
-      );
-    } catch (e, st) {
-      _log.warning(
-        'failed to create member for ${result['phone_number']}',
-        e,
-        st,
-      );
-      if (!context.mounted) return;
-      showErrorSnackBar(context, ApiError.from(e).message);
-    }
-  }
-
-  void _showCreatedPasswordDialog(
-    BuildContext context, {
-    required String displayName,
-    required String magicLinkToken,
-  }) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => ApprovalCredentialsDialog(
-        title: 'member created',
-        body: '$displayName has been added — share their login link:',
-        magicLinkToken: magicLinkToken,
-      ),
-    );
-  }
-
-  Future<void> _showBulkAddDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showAddMemberDialog(BuildContext context) async {
+    final allRoles = ref.read(rolesProvider).value ?? [];
     await showDialog<void>(
       context: context,
-      builder: (_) => BulkAddDialog(ref: ref),
+      builder: (_) => AddMemberDialog(allRoles: allRoles),
     );
   }
 }
