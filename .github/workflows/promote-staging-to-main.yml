@@ -28,38 +28,7 @@ jobs:
           echo "ahead=$AHEAD" >> $GITHUB_OUTPUT
           echo "Staging is $AHEAD commit(s) ahead of main"
 
-      - name: Wait for Railway deploy on staging
-        if: steps.check.outputs.ahead != '0'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          STAGING_SHA=$(git rev-parse origin/staging)
-          echo "Checking Railway deploy status for $STAGING_SHA"
-
-          TIMEOUT=300
-          INTERVAL=15
-          ELAPSED=0
-
-          while [ $ELAPSED -lt $TIMEOUT ]; do
-            STATE=$(gh api "repos/${{ github.repository }}/commits/$STAGING_SHA/status" --jq '.state')
-            echo "Railway status: $STATE (${ELAPSED}s elapsed)"
-
-            if [ "$STATE" = "success" ]; then
-              echo "Railway deploy succeeded — proceeding with promotion"
-              exit 0
-            elif [ "$STATE" = "failure" ]; then
-              echo "::error::Railway deploy failed on staging — not promoting to main"
-              exit 1
-            fi
-
-            sleep $INTERVAL
-            ELAPSED=$((ELAPSED + INTERVAL))
-          done
-
-          echo "::error::Timed out waiting for Railway deploy on staging (${TIMEOUT}s)"
-          exit 1
-
-      - name: Create PR and merge
+      - name: Create or update PR
         if: steps.check.outputs.ahead != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,33 +39,7 @@ jobs:
             --title "chore: promote staging → main" \
             --body "Automated promotion of staging to main." \
             2>/dev/null || gh pr list --base main --head staging --json url --jq '.[0].url')
-          echo "PR: $PR_URL"
-
-          gh pr merge "$PR_URL" --merge --auto --delete-branch=false
-          echo "Auto-merge enabled — waiting for PR to merge..."
-
-          TIMEOUT=300
-          INTERVAL=15
-          ELAPSED=0
-
-          while [ $ELAPSED -lt $TIMEOUT ]; do
-            STATE=$(gh pr view "$PR_URL" --json state --jq '.state')
-            echo "PR state: $STATE (${ELAPSED}s elapsed)"
-
-            if [ "$STATE" = "MERGED" ]; then
-              echo "PR merged successfully"
-              exit 0
-            elif [ "$STATE" = "CLOSED" ]; then
-              echo "::error::PR was closed without merging"
-              exit 1
-            fi
-
-            sleep $INTERVAL
-            ELAPSED=$((ELAPSED + INTERVAL))
-          done
-
-          echo "::error::Timed out waiting for PR to merge (${TIMEOUT}s)"
-          exit 1
+          echo "PR ready: $PR_URL"
 
       - name: Nothing to promote
         if: steps.check.outputs.ahead == '0'
