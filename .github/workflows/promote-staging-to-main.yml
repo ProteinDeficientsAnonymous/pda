@@ -72,14 +72,31 @@ jobs:
             2>/dev/null || gh pr list --base main --head staging --json url --jq '.[0].url')
           echo "PR: $PR_URL"
 
-          gh pr merge "$PR_URL" --merge --delete-branch=false
+          gh pr merge "$PR_URL" --merge --auto --delete-branch=false
+          echo "Auto-merge enabled — waiting for PR to merge..."
 
-          STATE=$(gh pr view "$PR_URL" --json state --jq '.state')
-          if [ "$STATE" != "MERGED" ]; then
-            echo "::error::PR was not merged — current state: $STATE"
-            exit 1
-          fi
-          echo "PR merged successfully"
+          TIMEOUT=300
+          INTERVAL=15
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATE=$(gh pr view "$PR_URL" --json state --jq '.state')
+            echo "PR state: $STATE (${ELAPSED}s elapsed)"
+
+            if [ "$STATE" = "MERGED" ]; then
+              echo "PR merged successfully"
+              exit 0
+            elif [ "$STATE" = "CLOSED" ]; then
+              echo "::error::PR was closed without merging"
+              exit 1
+            fi
+
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "::error::Timed out waiting for PR to merge (${TIMEOUT}s)"
+          exit 1
 
       - name: Nothing to promote
         if: steps.check.outputs.ahead == '0'
