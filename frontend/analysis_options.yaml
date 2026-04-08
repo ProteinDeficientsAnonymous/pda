@@ -20,3 +20,7 @@ dart_code_metrics:
     cyclomatic-complexity: 15
     maximum-nesting-level: 5
     number-of-parameters: 7
+    source-lines-of-code: 500
+  metrics-exclude:
+    - "**/*.freezed.dart"
+    - "**/*.g.dart"
