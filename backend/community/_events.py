@@ -5,15 +5,24 @@ from uuid import UUID
 
 from config.audit import audit_log
 from config.media_proxy import media_path
+from django.db.models import Q
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from notifications.service import create_event_invite_notifications
+from notifications.service import (
+    create_cohost_added_notifications,
+    create_event_invite_notifications,
+)
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
-from community._event_helpers import _can_see_invite_only, _event_out, _update_invited_users
+from community._event_helpers import (
+    _can_see_invite_only,
+    _event_out,
+    _update_co_hosts,
+    _update_invited_users,
+)
 from community._event_schemas import (
     _ALLOWED_IMAGE_TYPES,
     _MAX_EVENT_PHOTO_SIZE,
@@ -35,13 +44,29 @@ from community.models import (
 router = Router()
 
 
+def _can_edit_event(user, event: Event) -> bool:
+    """Check if user can edit/delete this event (creator, co-host, or manager)."""
+    if user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    if event.created_by_id == user.pk:
+        return True
+    return event.co_hosts.filter(pk=user.pk).exists()
+
+
+def _is_invalid_official_visibility(event_type: str, visibility: str) -> bool:
+    """Official events must have public visibility."""
+    return event_type == EventType.OFFICIAL and visibility != PageVisibility.PUBLIC
+
+
 @router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
 def list_events(request):
     auth_user = _authenticated_user(request.auth)
     is_authed = auth_user is not None
     events_qs = Event.objects.prefetch_related("co_hosts", "invited_users").all()
     if not is_authed:
-        events_qs = events_qs.filter(visibility=PageVisibility.PUBLIC)
+        events_qs = events_qs.filter(
+            Q(visibility=PageVisibility.PUBLIC) | Q(event_type=EventType.OFFICIAL)
+        )
     events = list(events_qs)
     if is_authed:
         events = [
@@ -99,7 +124,11 @@ def get_event(request, event_id: UUID):
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
     auth_user = _authenticated_user(request.auth)
-    if event.visibility == PageVisibility.MEMBERS_ONLY and auth_user is None:
+    if (
+        event.visibility == PageVisibility.MEMBERS_ONLY
+        and auth_user is None
+        and event.event_type != EventType.OFFICIAL
+    ):
         return Status(404, ErrorOut(detail="Event not found."))
     if event.visibility == PageVisibility.INVITE_ONLY:
         co_host_ids = {str(c.id) for c in event.co_hosts.all()}
@@ -125,6 +154,9 @@ def create_event(request, payload: EventIn):
                 },
             )
             return Status(403, ErrorOut(detail="Permission denied."))
+
+    if _is_invalid_official_visibility(payload.event_type, payload.visibility):
+        return Status(400, ErrorOut(detail="Official events must be public."))
 
     if payload.end_datetime is not None and payload.end_datetime <= payload.start_datetime:
         return Status(400, ErrorOut(detail="end_datetime must be after start_datetime."))
@@ -155,6 +187,7 @@ def create_event(request, payload: EventIn):
     if payload.co_host_ids:
         co_hosts = UserModel.objects.filter(pk__in=payload.co_host_ids)
         event.co_hosts.set(co_hosts)
+        create_cohost_added_notifications(event, payload.co_host_ids, request.auth)
     if payload.invited_user_ids:
         invited = UserModel.objects.filter(pk__in=payload.invited_user_ids)
         event.invited_users.set(invited)
@@ -185,10 +218,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
 
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
+    if not _can_edit_event(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -215,6 +245,10 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             },
         )
         return Status(403, ErrorOut(detail="Permission denied."))
+    effective_type = updates.get("event_type", event.event_type)
+    effective_visibility = updates.get("visibility", event.visibility)
+    if _is_invalid_official_visibility(effective_type, effective_visibility):
+        return Status(400, ErrorOut(detail="Official events must be public."))
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
     if effective_end is not None and effective_end <= effective_start:
@@ -224,8 +258,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     for field, value in updates.items():
         setattr(event, field, value)
     if co_host_ids is not None:
-        co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
-        event.co_hosts.set(co_hosts)
+        _update_co_hosts(event, co_host_ids, request.auth)
     if invited_user_ids is not None:
         _update_invited_users(event, invited_user_ids, request.auth)
 
