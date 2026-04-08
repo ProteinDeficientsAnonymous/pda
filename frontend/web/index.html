@@ -35,8 +35,53 @@
 
   <title>pda</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Loading indicator shown while Flutter initialises */
+    html, body { margin: 0; padding: 0; height: 100%; background: #1a1a1a; }
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: #1a1a1a;
+      z-index: 999;
+    }
+    #loading-wordmark {
+      color: #e8e0d4;
+      font-family: sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.08em;
+      opacity: 0.9;
+    }
+    #loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(232,224,212,0.2);
+      border-top-color: #e8e0d4;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
+  <div id="loading">
+    <div id="loading-wordmark">pda</div>
+    <div id="loading-spinner"></div>
+  </div>
+
+  <script>
+    // Remove loading indicator once Flutter signals it's ready.
+    window.addEventListener('flutter-first-frame', function() {
+      var el = document.getElementById('loading');
+      if (el) el.remove();
+    });
+  </script>
+
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

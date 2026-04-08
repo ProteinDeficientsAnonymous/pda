@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:crop_your_image/crop_your_image.dart';
+import 'package:crop_your_image/crop_your_image.dart' deferred as crop;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
@@ -26,7 +26,9 @@ Future<Uint8List?> showPhotoCropDialog({
   PhotoCropMode mode = PhotoCropMode.circle,
   double? aspectRatio,
   double? maxHeightRatio,
-}) {
+}) async {
+  await crop.loadLibrary();
+  if (!context.mounted) return null;
   return showDialog<Uint8List>(
     context: context,
     builder: (_) => _PhotoCropDialog(
@@ -58,9 +60,15 @@ class _PhotoCropDialog extends StatefulWidget {
 }
 
 class _PhotoCropDialogState extends State<_PhotoCropDialog> {
-  final _controller = CropController();
+  late final crop.CropController _controller;
   bool _cropping = false;
   bool _clamping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = crop.CropController();
+  }
 
   void _onDone() {
     _log.info('_onDone called — _cropping=$_cropping mode=${widget.mode}');
@@ -73,7 +81,7 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
     _log.info('_onDone: crop() called on controller');
   }
 
-  void _onMoved(ViewportBasedRect rect) {
+  void _onMoved(crop.ViewportBasedRect rect) {
     final maxRatio = widget.maxHeightRatio;
     if (maxRatio == null || widget.aspectRatio != null) return;
     if (rect.width <= 0 || _clamping) return;
@@ -86,7 +94,6 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
     if (currentRatio > maxRatio) {
       _log.info('_onMoved: clamping rect (ratio $currentRatio > $maxRatio)');
       _clamping = true;
-      // Defer to avoid calling setState inside the Crop widget's own setState.
       scheduleMicrotask(() {
         if (mounted) {
           _controller.cropRect = Rect.fromLTWH(
@@ -120,7 +127,7 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
             height: cropHeight,
             child: Semantics(
               label: 'crop area — pinch to zoom, drag to reposition',
-              child: Crop(
+              child: crop.Crop(
                 image: widget.imageBytes,
                 controller: _controller,
                 withCircleUi: isCircle,
@@ -136,8 +143,9 @@ class _PhotoCropDialogState extends State<_PhotoCropDialog> {
                   _log.info(
                     'onStatusChanged: $status mounted=$mounted _cropping=$_cropping',
                   );
-                  // Skip setState if we already popped (crop completed).
-                  if (status != CropStatus.cropping && mounted && !_cropping) {
+                  if (status != crop.CropStatus.cropping &&
+                      mounted &&
+                      !_cropping) {
                     setState(() {});
                   }
                 },
