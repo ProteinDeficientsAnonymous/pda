@@ -102,7 +102,7 @@ void main() {
         );
 
         await tester.tap(find.text('open'));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
         handle.dispose();
@@ -121,7 +121,7 @@ void main() {
         );
 
         await tester.tap(find.text('open'));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         handle.dispose();
@@ -147,7 +147,7 @@ void main() {
         );
 
         await tester.tap(find.text('open'));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
         handle.dispose();
@@ -171,7 +171,7 @@ void main() {
         );
 
         await tester.tap(find.text('open'));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         handle.dispose();

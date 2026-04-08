@@ -33,6 +33,10 @@
   <!-- Preload Material Icons font to avoid icon flash on load -->
   <link rel="preload" href="assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin="anonymous"/>
 
+  <!-- Preload critical Flutter assets so the browser starts downloading immediately -->
+  <link rel="preload" href="main.dart.js" as="script"/>
+  <link rel="preload" href="canvaskit/canvaskit.wasm" as="fetch" type="application/wasm" crossorigin="anonymous"/>
+
   <title>pda</title>
   <link rel="manifest" href="manifest.json">
 

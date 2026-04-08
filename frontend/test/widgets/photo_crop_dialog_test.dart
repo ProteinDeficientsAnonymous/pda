@@ -43,7 +43,7 @@ void main() {
       );
 
       await tester.tap(find.text('open'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('crop profile photo'), findsOneWidget);
       expect(find.text('cancel'), findsOneWidget);
@@ -73,7 +73,7 @@ void main() {
       );
 
       await tester.tap(find.text('open'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('crop event photo'), findsOneWidget);
       expect(find.text('cancel'), findsOneWidget);
@@ -100,7 +100,7 @@ void main() {
       );
 
       await tester.tap(find.text('open'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('pinch to zoom, drag to reposition'), findsOneWidget);
     });
@@ -130,7 +130,7 @@ void main() {
       );
 
       await tester.tap(find.text('open'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('cancel'));
       await tester.pumpAndSettle();
@@ -164,7 +164,7 @@ void main() {
       );
 
       await tester.tap(find.text('open'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('cancel'));
       await tester.pumpAndSettle();
@@ -192,7 +192,7 @@ void main() {
       );
 
       await tester.tap(find.text('open'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // The crop area is wrapped in a Semantics widget for screen readers.
       expect(find.byType(Semantics), findsWidgets);
