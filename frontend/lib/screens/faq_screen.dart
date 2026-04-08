@@ -6,8 +6,8 @@ import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/autosave_mixin.dart';
+import 'package:pda/widgets/deferred_quill_editor.dart';
 import 'package:pda/widgets/html_content_viewer.dart';
-import 'package:pda/widgets/quill_content_editor.dart';
 import 'package:pda/widgets/save_cancel_button_row.dart';
 import 'package:pda/config/constants.dart';
 
@@ -108,7 +108,7 @@ class _FAQBodyState extends ConsumerState<_FAQBody> with AutosaveMixin {
         _buildHeader(context),
         if (_editing)
           Expanded(
-            child: QuillContentEditor(
+            child: DeferredQuillEditor(
               jsonContent: _json,
               editing: true,
               expands: true,

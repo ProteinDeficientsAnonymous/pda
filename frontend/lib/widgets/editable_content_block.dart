@@ -8,8 +8,8 @@ import '../providers/editable_page_provider.dart';
 import '../services/api_error.dart';
 import '../utils/snackbar.dart';
 import 'autosave_mixin.dart';
+import 'deferred_quill_editor.dart';
 import 'html_content_viewer.dart';
-import 'quill_content_editor.dart';
 import 'save_cancel_button_row.dart';
 
 final _log = Logger('EditableContent');
@@ -125,7 +125,7 @@ class _EditableContentBlockState extends ConsumerState<EditableContentBlock>
               ),
             if (_editing)
               Expanded(
-                child: QuillContentEditor(
+                child: DeferredQuillEditor(
                   jsonContent: _json,
                   editing: true,
                   expands: true,

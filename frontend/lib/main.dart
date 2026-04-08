@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:mcp_toolkit/mcp_toolkit.dart';
@@ -43,12 +42,11 @@ class PdaApp extends ConsumerWidget {
       theme: buildAppTheme(dyslexiaMode: dyslexiaMode),
       routerConfig: router,
       localizationsDelegates: const [
-        FlutterQuillLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: FlutterQuillLocalizations.supportedLocales,
+      supportedLocales: const [Locale('en')],
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(

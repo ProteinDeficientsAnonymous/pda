@@ -145,20 +145,24 @@ class _QuillContentEditorState extends State<QuillContentEditor> {
       ),
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: widget.expands ? MainAxisSize.max : MainAxisSize.min,
-      children: [
-        QuillSimpleToolbar(
-          controller: _controller,
-          config: const QuillSimpleToolbarConfig(
-            showSubscript: false,
-            showSuperscript: false,
-            showListCheck: false,
+    return Localizations.override(
+      context: context,
+      delegates: FlutterQuillLocalizations.localizationsDelegates,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: widget.expands ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          QuillSimpleToolbar(
+            controller: _controller,
+            config: const QuillSimpleToolbarConfig(
+              showSubscript: false,
+              showSuperscript: false,
+              showListCheck: false,
+            ),
           ),
-        ),
-        widget.expands ? Expanded(child: editor) : editor,
-      ],
+          widget.expands ? Expanded(child: editor) : editor,
+        ],
+      ),
     );
   }
 }
