@@ -83,6 +83,7 @@ abstract class RoleName {
 
 abstract class NotificationType {
   static const eventInvite = 'event_invite';
+  static const joinRequest = 'join_request';
 }
 
 abstract class InvitePermission {

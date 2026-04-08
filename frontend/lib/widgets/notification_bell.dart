@@ -115,11 +115,14 @@ class _NotificationList extends ConsumerWidget {
             notification: n,
             onTap: () async {
               await markNotificationRead(ref, n.id);
+              if (!context.mounted) return;
               if (n.notificationType == NotificationType.eventInvite &&
-                  n.eventId != null &&
-                  context.mounted) {
+                  n.eventId != null) {
                 onClose();
                 context.go('/events/${n.eventId}');
+              } else if (n.notificationType == NotificationType.joinRequest) {
+                onClose();
+                context.go('/join-requests');
               }
             },
           );

@@ -5,6 +5,7 @@ from django.db import models
 
 class NotificationType(models.TextChoices):
     EVENT_INVITE = "event_invite", "Event Invite"
+    JOIN_REQUEST = "join_request", "Join Request"
 
 
 class Notification(models.Model):
