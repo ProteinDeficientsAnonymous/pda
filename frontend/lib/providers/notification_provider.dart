@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:pda/models/notification.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/services/notification_sse.dart';
 import 'package:pda/utils/tab_visibility.dart';
 
 final _log = Logger('NotificationProvider');
 
-/// Polls /api/notifications/unread-count/ every 60s.
-/// Yields 0 when unauthenticated. Skips fetching when tab is hidden.
+/// Fetches unread notification count. SSE provides real-time pushes;
+/// polling acts as a fallback (60s normally, 5min when SSE is connected).
 final unreadCountProvider = StreamProvider<int>((ref) async* {
   final user = ref.watch(authProvider).value;
   if (user == null) {
@@ -30,15 +31,46 @@ final unreadCountProvider = StreamProvider<int>((ref) async* {
     }
   }
 
-  // Initial fetch
+  // Merge SSE events and timer ticks into a single trigger stream.
+  final trigger = StreamController<void>();
+  NotificationSseClient? sseClient;
+  Timer? pollTimer;
+
+  void schedulePoll() {
+    final interval = (sseClient?.isConnected ?? false)
+        ? const Duration(minutes: 5)
+        : const Duration(seconds: 60);
+    pollTimer = Timer(interval, () {
+      if (!trigger.isClosed && !isTabHidden()) trigger.add(null);
+      schedulePoll();
+    });
+  }
+
+  // Attempt to connect SSE with the stored access token.
+  final storage = ref.read(secureStorageProvider);
+  final token = await storage.getAccessToken();
+  if (token != null) {
+    sseClient = NotificationSseClient(
+      token: token,
+      onNotification: () {
+        if (!trigger.isClosed) trigger.add(null);
+      },
+    );
+  }
+
+  ref.onDispose(() {
+    sseClient?.close();
+    pollTimer?.cancel();
+    trigger.close();
+  });
+
+  schedulePoll();
+
+  // Initial fetch before entering the event loop.
   yield await fetchCount();
 
-  // Poll every 60 seconds; skip tick if tab is hidden
-  while (true) {
-    await Future<void>.delayed(const Duration(seconds: 60));
-    if (!isTabHidden()) {
-      yield await fetchCount();
-    }
+  await for (final _ in trigger.stream) {
+    yield await fetchCount();
   }
 });
 

@@ -11,6 +11,18 @@ if TYPE_CHECKING:
     from users.models import User
 
 
+def _notify_users(user_ids: Iterable[str]) -> None:
+    """Fire pg_notify for each recipient so SSE clients get immediate updates."""
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        return
+
+    with connection.cursor() as cursor:
+        for uid in user_ids:
+            cursor.execute("SELECT pg_notify('notifications', %s)", [str(uid)])
+
+
 def notify_new_event(event: Event) -> bool:
     lines = [f"📅 New event: *{event.title}*"]
 
@@ -38,6 +50,31 @@ def admin_broadcast(message: str) -> bool:
     return send_to_group(message)
 
 
+def create_join_request_notifications(display_name: str) -> None:
+    from django.db.models import Q
+    from users.models import User
+    from users.permissions import PermissionKey
+
+    from notifications.models import Notification, NotificationType
+
+    recipients = User.objects.filter(
+        Q(roles__name="admin", roles__is_default=True)
+        | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
+    ).distinct()
+
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient=user,
+                notification_type=NotificationType.JOIN_REQUEST,
+                message=f"new join request from {display_name}",
+            )
+            for user in recipients
+        ]
+    )
+    _notify_users(str(user.pk) for user in recipients)
+
+
 def create_event_invite_notifications(
     event: Event,
     new_user_ids: Iterable[str],
@@ -47,6 +84,7 @@ def create_event_invite_notifications(
 
     inviter_id = str(inviter.pk)
     inviter_name = inviter.display_name or inviter.phone_number
+    notified_ids = [uid for uid in new_user_ids if str(uid) != inviter_id]
     Notification.objects.bulk_create(
         [
             Notification(
@@ -55,7 +93,7 @@ def create_event_invite_notifications(
                 event=event,
                 message=f"{inviter_name} invited you to {event.title}",
             )
-            for user_id in new_user_ids
-            if str(user_id) != inviter_id
+            for user_id in notified_ids
         ]
     )
+    _notify_users(notified_ids)

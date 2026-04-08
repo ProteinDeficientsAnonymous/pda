@@ -33,4 +33,4 @@ RUN DJANGO_SETTINGS_MODULE=config.settings \
 
 EXPOSE ${PORT:-8000}
 
-CMD ["sh", "-c", "cd backend && uv run python manage.py migrate && uv run gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000}"]
+CMD ["sh", "-c", "cd backend && uv run python manage.py migrate && uv run uvicorn config.asgi:application --host 0.0.0.0 --port ${PORT:-8000}"]

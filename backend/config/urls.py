@@ -3,6 +3,7 @@ from django.urls import path, re_path
 from django.views.generic import TemplateView
 from ninja import NinjaAPI
 from notifications.api import router as notifications_router
+from notifications.sse import notification_stream
 from users.api import router as auth_router
 
 from config.media_proxy import serve_media
@@ -14,6 +15,8 @@ api.add_router("/notifications/", notifications_router, tags=["notifications"])
 
 urlpatterns = [
     path("api/", api.urls),
+    # SSE endpoint — raw async view (Ninja doesn't support streaming responses)
+    path("api/notifications/stream/", notification_stream),
     # Media proxy — streams files from storage backend (local disk or B2)
     re_path(r"^media/(?P<path>.+)$", serve_media),
     # Flutter SPA catch-all (MUST BE LAST)
