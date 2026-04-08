@@ -74,7 +74,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'your password was reset — choose a new one to continue',
+                        'your password was reset — pick a new one and you\'re good to go',
                         style: TextStyle(color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
@@ -82,7 +82,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                         controller: _newPwCtrl,
                         obscureText: _obscureNew,
                         decoration: InputDecoration(
-                          labelText: 'New password',
+                          labelText: 'new password',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -110,7 +110,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                         focusNode: _confirmPwFocusNode,
                         obscureText: _obscureConfirm,
                         decoration: InputDecoration(
-                          labelText: 'Confirm new password',
+                          labelText: 'one more time',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(

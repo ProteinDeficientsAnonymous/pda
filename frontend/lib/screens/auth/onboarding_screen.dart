@@ -96,7 +96,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       TextFormField(
                         controller: _displayNameCtrl,
                         decoration: const InputDecoration(
-                          labelText: 'Display name',
+                          labelText: 'what should we call you?',
                           border: OutlineInputBorder(),
                         ),
                         textInputAction: TextInputAction.next,
@@ -108,7 +108,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         controller: _emailCtrl,
                         focusNode: _emailFocusNode,
                         decoration: const InputDecoration(
-                          labelText: 'Email (optional)',
+                          labelText: 'email (optional)',
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.emailAddress,
@@ -122,7 +122,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         focusNode: _newPwFocusNode,
                         obscureText: _obscureNew,
                         decoration: InputDecoration(
-                          labelText: 'New password',
+                          labelText: 'create a password',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -150,7 +150,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         focusNode: _confirmPwFocusNode,
                         obscureText: _obscureConfirm,
                         decoration: InputDecoration(
-                          labelText: 'Confirm new password',
+                          labelText: 'one more time',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
