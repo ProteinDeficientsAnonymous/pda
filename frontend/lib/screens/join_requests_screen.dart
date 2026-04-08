@@ -10,6 +10,7 @@ import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/widgets/approval_credentials_dialog.dart';
 import 'package:pda/config/constants.dart';
+import 'package:pda/providers/user_management_provider.dart';
 
 final _log = Logger('JoinRequests');
 
@@ -31,6 +32,13 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
         .where((r) => r.status.toLowerCase() == _selectedFilter.toLowerCase())
         .toList();
   }
+
+  String _emptyMessage() => switch (_selectedFilter) {
+    'Pending' => 'no pending requests 🌿',
+    'Approved' => 'approved members have all completed onboarding 🌱',
+    'Rejected' => 'no rejected requests',
+    _ => 'no join requests yet 🌿',
+  };
 
   Future<void> _updateStatus(
     String id,
@@ -76,6 +84,23 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
     );
   }
 
+  Future<void> _generateMagicLink(
+    String userId,
+    String displayName,
+    String phoneNumber,
+  ) async {
+    try {
+      final token = await ref
+          .read(userManagementProvider.notifier)
+          .generateMagicLink(userId);
+      if (!mounted) return;
+      await _showApprovalModal(displayName, phoneNumber, token);
+    } catch (e, st) {
+      _log.warning('failed to generate magic link for user $userId', e, st);
+      if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final requestsAsync = ref.watch(joinRequestsProvider);
@@ -97,12 +122,16 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
               data: (requests) {
                 final filtered = _applyFilter(requests);
                 if (filtered.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
-                        'no join requests yet',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                        _emptyMessage(),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   );
@@ -111,21 +140,31 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
                   padding: const EdgeInsets.all(24),
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) => _JoinRequestCard(
-                    request: filtered[index],
-                    onApprove: () => _updateStatus(
-                      filtered[index].id,
-                      JoinRequestStatus.approved,
-                      filtered[index].displayName,
-                      filtered[index].phoneNumber,
-                    ),
-                    onReject: () => _updateStatus(
-                      filtered[index].id,
-                      JoinRequestStatus.rejected,
-                      filtered[index].displayName,
-                      filtered[index].phoneNumber,
-                    ),
-                  ),
+                  itemBuilder: (context, index) {
+                    final req = filtered[index];
+                    return _JoinRequestCard(
+                      request: req,
+                      onApprove: () => _updateStatus(
+                        req.id,
+                        JoinRequestStatus.approved,
+                        req.displayName,
+                        req.phoneNumber,
+                      ),
+                      onReject: () => _updateStatus(
+                        req.id,
+                        JoinRequestStatus.rejected,
+                        req.displayName,
+                        req.phoneNumber,
+                      ),
+                      onMagicLink: req.userId != null
+                          ? () => _generateMagicLink(
+                              req.userId!,
+                              req.displayName,
+                              req.phoneNumber,
+                            )
+                          : null,
+                    );
+                  },
                 );
               },
             ),
@@ -166,11 +205,13 @@ class _JoinRequestCard extends StatelessWidget {
   final JoinRequest request;
   final VoidCallback onApprove;
   final VoidCallback onReject;
+  final VoidCallback? onMagicLink;
 
   const _JoinRequestCard({
     required this.request,
     required this.onApprove,
     required this.onReject,
+    this.onMagicLink,
   });
 
   Color _statusColor(BuildContext context, String status) {
@@ -223,7 +264,16 @@ class _JoinRequestCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 if (request.status == JoinRequestStatus.pending)
-                  _ActionButtons(onApprove: onApprove, onReject: onReject),
+                  _ActionButtons(onApprove: onApprove, onReject: onReject)
+                else if (onMagicLink != null)
+                  TextButton.icon(
+                    onPressed: onMagicLink,
+                    icon: const Icon(Icons.link, size: 16),
+                    label: const Text('magic link'),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
               ],
             ),
           ],
