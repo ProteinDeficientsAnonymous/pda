@@ -31,7 +31,7 @@ class EventManagementRow extends ConsumerWidget {
       final api = ref.read(apiClientProvider);
       await api.patch('/api/community/events/${event.id}/', data: result.data);
       if (result.photo != null) {
-        await uploadEventPhoto(ref, event.id, result.photo!);
+        await uploadEventPhoto(ref, event.id, result.photo!, oldPhotoUrl: event.photoUrl);
       } else if (result.removePhoto) {
         await deleteEventPhoto(ref, event.id);
       }

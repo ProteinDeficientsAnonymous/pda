@@ -287,7 +287,11 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     String dateFmt(DateTime d) =>
         DateFormat('EEE, MMM d, y').format(d).toLowerCase();
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final dialogWidth = screenWidth < 520 ? screenWidth - 48 : 480.0;
+    final dialogWidth = screenWidth < 640
+        ? screenWidth - 48
+        : screenWidth < 1024
+        ? screenWidth * 0.7
+        : 720.0;
 
     return AlertDialog(
       title: Text(_isEdit ? 'edit event' : 'new event \u{1F331}'),

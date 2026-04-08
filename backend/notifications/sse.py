@@ -55,6 +55,8 @@ async def _sse_generator(user_id: str):
                         yield f"event: notification\ndata: {json.dumps({'type': 'notification'})}\n\n"
                 except TimeoutError:
                     yield ": heartbeat\n\n"
+                except StopAsyncIteration:
+                    break
     except asyncio.CancelledError:
         return
     except Exception:

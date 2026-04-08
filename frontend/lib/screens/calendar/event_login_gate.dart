@@ -82,7 +82,7 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
         data: result.data,
       );
       if (result.photo != null) {
-        await uploadEventPhoto(ref, widget.event.id, result.photo!);
+        await uploadEventPhoto(ref, widget.event.id, result.photo!, oldPhotoUrl: widget.event.photoUrl);
       } else if (result.removePhoto) {
         await deleteEventPhoto(ref, widget.event.id);
       }

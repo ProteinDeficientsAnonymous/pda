@@ -7,6 +7,31 @@ from users.roles import Role
 
 
 @pytest.fixture
+def official_event_user(db):
+    """A user with tag_official_event permission."""
+    from users.models import User
+
+    user = User.objects.create_user(
+        phone_number="+14155559999",
+        password="officialpass123",
+        display_name="Official Tagger",
+    )
+    role = Role.objects.create(
+        name="official_tagger", permissions=[PermissionKey.TAG_OFFICIAL_EVENT]
+    )
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def official_event_headers(official_event_user):
+    from ninja_jwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(official_event_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
 def manage_events_user(db):
     """A non-superuser with only manage_events permission."""
     from users.models import User
@@ -291,3 +316,86 @@ class TestInviteOnlyVisibility:
         response = api_client.get(f"/api/community/calendar/feed/?token={owner.calendar_token}")
         assert response.status_code == 200
         assert b"Exclusive Hangout" in response.content
+
+
+@pytest.mark.django_db
+class TestOfficialEventVisibility:
+    """Official events are public — visible to anonymous users."""
+
+    def _make_official_event(self, creator):
+        from community.models import EventType
+        from django.utils import timezone
+
+        return Event.objects.create(
+            title="Official Meetup",
+            start_datetime=timezone.now(),
+            end_datetime=timezone.now(),
+            event_type=EventType.OFFICIAL,
+            created_by=creator,
+        )
+
+    def test_list_shows_official_event_to_anonymous(self, api_client, test_user):
+        event = self._make_official_event(test_user)
+        response = api_client.get("/api/community/events/")
+        assert response.status_code == 200
+        ids = [e["id"] for e in response.json()]
+        assert str(event.id) in ids
+
+    def test_get_official_event_visible_to_anonymous(self, api_client, test_user):
+        event = self._make_official_event(test_user)
+        response = api_client.get(f"/api/community/events/{event.id}/")
+        assert response.status_code == 200
+        assert response.json()["event_type"] == "official"
+
+    def test_create_official_event_rejects_non_public_visibility(
+        self, api_client, official_event_headers
+    ):
+        from django.utils import timezone
+
+        payload = {
+            "title": "Official Event",
+            "description": "",
+            "start_datetime": timezone.now().isoformat(),
+            "event_type": "official",
+            "visibility": "members_only",
+        }
+        response = api_client.post(
+            "/api/community/events/",
+            payload,
+            content_type="application/json",
+            **official_event_headers,
+        )
+        assert response.status_code == 400
+
+    def test_update_to_official_rejects_non_public_visibility(
+        self, api_client, official_event_user, official_event_headers
+    ):
+        from community.models import PageVisibility
+        from django.utils import timezone
+
+        event = Event.objects.create(
+            title="Community Event",
+            start_datetime=timezone.now(),
+            end_datetime=timezone.now(),
+            visibility=PageVisibility.MEMBERS_ONLY,
+            created_by=official_event_user,
+        )
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"event_type": "official"},
+            content_type="application/json",
+            **official_event_headers,
+        )
+        assert response.status_code == 400
+
+    def test_update_official_event_rejects_visibility_change(
+        self, api_client, official_event_user, official_event_headers
+    ):
+        event = self._make_official_event(official_event_user)
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"visibility": "members_only"},
+            content_type="application/json",
+            **official_event_headers,
+        )
+        assert response.status_code == 400

@@ -1,6 +1,7 @@
 """Events CRUD, RSVP, and event photo endpoints."""
 
 import logging
+import time
 from uuid import UUID
 
 from config.audit import audit_log
@@ -343,7 +344,8 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
         event.photo.delete(save=False)
     name = photo.name or ""
     ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    event.photo.save(f"{event_id}.{ext}", photo, save=True)
+    ts = int(time.time())
+    event.photo.save(f"{event_id}_{ts}.{ext}", photo, save=True)
     audit_log(
         logging.INFO, "event_photo_uploaded", request, target_type="event", target_id=str(event_id)
     )

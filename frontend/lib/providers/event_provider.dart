@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
@@ -38,13 +39,21 @@ final eventDetailProvider = FutureProvider.family<Event, String>((
   }
 });
 
-Future<void> uploadEventPhoto(WidgetRef ref, String eventId, XFile file) async {
+Future<void> uploadEventPhoto(
+  WidgetRef ref,
+  String eventId,
+  XFile file, {
+  String? oldPhotoUrl,
+}) async {
   final api = ref.read(apiClientProvider);
   final bytes = await file.readAsBytes();
   final formData = FormData.fromMap({
     'photo': MultipartFile.fromBytes(bytes, filename: file.name),
   });
   await api.post('/api/community/events/$eventId/photo/', data: formData);
+  if (oldPhotoUrl != null && oldPhotoUrl.isNotEmpty) {
+    imageCache.evict(NetworkImage(oldPhotoUrl));
+  }
   ref.invalidate(eventsProvider);
   ref.invalidate(eventDetailProvider(eventId));
 }
