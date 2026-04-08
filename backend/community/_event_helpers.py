@@ -159,6 +159,22 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     )
 
 
+def _update_co_hosts(
+    event: Event,
+    co_host_ids: Iterable[str],
+    updater: UserModel,
+) -> None:
+    """Update event.co_hosts and notify newly added co-hosts."""
+    from notifications.service import create_cohost_added_notifications
+
+    old_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
+    co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
+    event.co_hosts.set(co_hosts)
+    new_ids = {str(uid) for uid in co_host_ids} - old_ids
+    if new_ids:
+        create_cohost_added_notifications(event, new_ids, updater)
+
+
 def _update_invited_users(
     event: Event,
     invited_user_ids: Iterable[str],

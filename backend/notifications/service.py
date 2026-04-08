@@ -75,6 +75,30 @@ def create_join_request_notifications(display_name: str) -> None:
     _notify_users(str(user.pk) for user in recipients)
 
 
+def create_cohost_added_notifications(
+    event: Event,
+    new_user_ids: Iterable[str],
+    added_by: User,
+) -> None:
+    from notifications.models import Notification, NotificationType
+
+    added_by_id = str(added_by.pk)
+    added_by_name = added_by.display_name or added_by.phone_number
+    notified_ids = [uid for uid in new_user_ids if str(uid) != added_by_id]
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=user_id,
+                notification_type=NotificationType.COHOST_ADDED,
+                event=event,
+                message=f"{added_by_name} added you as a co-host for {event.title}",
+            )
+            for user_id in notified_ids
+        ]
+    )
+    _notify_users(notified_ids)
+
+
 def create_event_invite_notifications(
     event: Event,
     new_user_ids: Iterable[str],
