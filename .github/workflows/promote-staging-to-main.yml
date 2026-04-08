@@ -5,12 +5,13 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   promote:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -27,12 +28,19 @@ jobs:
           echo "ahead=$AHEAD" >> $GITHUB_OUTPUT
           echo "Staging is $AHEAD commit(s) ahead of main"
 
-      - name: Merge staging into main
+      - name: Create PR and auto-merge
         if: steps.check.outputs.ahead != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git checkout main
-          git merge origin/staging --no-ff -m "chore: promote staging → main"
-          git push origin main
+          PR_URL=$(gh pr create \
+            --base main \
+            --head staging \
+            --title "chore: promote staging → main" \
+            --body "Automated promotion of staging to main." \
+            2>/dev/null || gh pr list --base main --head staging --json url --jq '.[0].url')
+          echo "PR: $PR_URL"
+          gh pr merge "$PR_URL" --merge --auto --delete-branch=false
 
       - name: Nothing to promote
         if: steps.check.outputs.ahead == '0'
