@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:pda/models/user.dart';
 import 'package:pda/providers/user_management_provider.dart';
 import 'package:pda/services/api_error.dart';
+import 'package:pda/utils/launcher_stub.dart';
 import 'package:pda/utils/snackbar.dart';
+import 'package:pda/widgets/approval_credentials_dialog.dart';
 import 'package:pda/widgets/loading_button.dart';
+import 'package:flutter/services.dart';
 import 'bulk_add_form.dart';
 import 'single_add_form.dart';
 
@@ -206,8 +208,14 @@ class _SingleSuccessView extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayName =
         data['display_name'] as String? ?? data['phone_number'] as String;
+    final phoneNumber = data['phone_number'] as String?;
     final token = data['magic_link_token'] as String;
     final url = '${Uri.base.origin}/magic-login/$token';
+    final message =
+        "hey! you've been added to PDA 🌱\n\n"
+        'click here to log in: $url\n\n'
+        'the link works once and expires in 7 days — '
+        "you'll set your password on first login";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -220,20 +228,21 @@ class _SingleSuccessView extends StatelessWidget {
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 4),
-        _MagicLinkField(url: url),
+        MagicLinkField(url: url),
         const SizedBox(height: 12),
         OutlinedButton.icon(
-          onPressed: () {
-            final message =
-                'hey! you\'ve been added to PDA 🌱\n\n'
-                'click here to log in: $url\n\n'
-                'the link works once and expires in 7 days — '
-                'you\'ll set your password on first login';
-            Clipboard.setData(ClipboardData(text: message));
-            showSnackBar(context, 'welcome message copied ✓');
-          },
-          icon: const Icon(Icons.content_copy_outlined, size: 16),
-          label: const Text('copy welcome message'),
+          onPressed: () => _handleTap(context, phoneNumber, message),
+          icon: Icon(
+            phoneNumber != null
+                ? Icons.sms_outlined
+                : Icons.content_copy_outlined,
+            size: 16,
+          ),
+          label: Text(
+            phoneNumber != null
+                ? 'text welcome message'
+                : 'copy welcome message',
+          ),
         ),
         const SizedBox(height: 8),
         Text(
@@ -243,45 +252,25 @@ class _SingleSuccessView extends StatelessWidget {
       ],
     );
   }
-}
 
-class _MagicLinkField extends StatelessWidget {
-  final String url;
-
-  const _MagicLinkField({required this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              url,
-              style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          InkWell(
-            onTap: () => Clipboard.setData(ClipboardData(text: url)),
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.content_copy_outlined,
-                size: 16,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _handleTap(
+    BuildContext context,
+    String? phoneNumber,
+    String message,
+  ) async {
+    if (phoneNumber != null) {
+      final launched = await sendSms(phoneNumber: phoneNumber, body: message);
+      if (!context.mounted) return;
+      if (!launched) {
+        Clipboard.setData(ClipboardData(text: message));
+        showSnackBar(
+          context,
+          "couldn't open texting app — message copied instead",
+        );
+      }
+    } else {
+      Clipboard.setData(ClipboardData(text: message));
+      showSnackBar(context, 'welcome message copied ✓');
+    }
   }
 }

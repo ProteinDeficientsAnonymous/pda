@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pda/utils/launcher_stub.dart';
 import 'package:pda/utils/snackbar.dart';
 
 /// Displays a magic login link after a user account is created or a join
@@ -17,7 +18,8 @@ class ApprovalCredentialsDialog extends StatelessWidget {
   final String body;
   final String magicLinkToken;
 
-  /// If provided, a phone row is shown above the link field.
+  /// If provided, a phone row is shown above the link field and the button
+  /// will open the native SMS app instead of copying to clipboard.
   final String? phoneNumber;
 
   String get _loginUrl {
@@ -28,6 +30,7 @@ class ApprovalCredentialsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = _loginUrl;
+    final phone = phoneNumber;
     return AlertDialog(
       title: Text(title),
       content: Column(
@@ -36,8 +39,8 @@ class ApprovalCredentialsDialog extends StatelessWidget {
         children: [
           Text(body),
           const SizedBox(height: 12),
-          if (phoneNumber != null) ...[
-            _LabeledRow(label: 'phone', value: phoneNumber!),
+          if (phone != null) ...[
+            _LabeledRow(label: 'phone', value: phone),
             const SizedBox(height: 12),
           ],
           const Text(
@@ -45,21 +48,9 @@ class ApprovalCredentialsDialog extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           const SizedBox(height: 4),
-          _MagicLinkField(url: url),
+          MagicLinkField(url: url),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () {
-              final message =
-                  'hey! you\'ve been added to PDA 🌱\n\n'
-                  'click here to log in: $url\n\n'
-                  'the link works once and expires in 7 days — '
-                  'you\'ll set your password on first login';
-              Clipboard.setData(ClipboardData(text: message));
-              showSnackBar(context, 'welcome message copied ✓');
-            },
-            icon: const Icon(Icons.content_copy_outlined, size: 16),
-            label: const Text('copy welcome message'),
-          ),
+          _WelcomeMessageButton(url: url, phoneNumber: phone),
           const SizedBox(height: 8),
           Text(
             'includes login link — expires in 7 days',
@@ -77,10 +68,59 @@ class ApprovalCredentialsDialog extends StatelessWidget {
   }
 }
 
-class _MagicLinkField extends StatelessWidget {
+/// Button that opens the native SMS app with the welcome message pre-filled,
+/// or falls back to clipboard copy if no phone number is available or if the
+/// SMS app cannot be launched.
+class _WelcomeMessageButton extends StatelessWidget {
+  const _WelcomeMessageButton({required this.url, this.phoneNumber});
+
+  final String url;
+  final String? phoneNumber;
+
+  String get _message =>
+      "hey! you've been added to PDA 🌱\n\n"
+      'click here to log in: $url\n\n'
+      'the link works once and expires in 7 days — '
+      "you'll set your password on first login";
+
+  Future<void> _handleTap(BuildContext context) async {
+    final phone = phoneNumber;
+    if (phone != null) {
+      final launched = await sendSms(phoneNumber: phone, body: _message);
+      if (!context.mounted) return;
+      if (!launched) {
+        Clipboard.setData(ClipboardData(text: _message));
+        showSnackBar(
+          context,
+          "couldn't open texting app — message copied instead",
+        );
+      }
+    } else {
+      Clipboard.setData(ClipboardData(text: _message));
+      showSnackBar(context, 'welcome message copied ✓');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final haPhone = phoneNumber != null;
+    return OutlinedButton.icon(
+      onPressed: () => _handleTap(context),
+      icon: Icon(
+        haPhone ? Icons.sms_outlined : Icons.content_copy_outlined,
+        size: 16,
+      ),
+      label: Text(haPhone ? 'text welcome message' : 'copy welcome message'),
+    );
+  }
+}
+
+/// Displays a magic link URL with a copy-to-clipboard icon button.
+/// Public so it can be reused in other dialogs (e.g. add member flow).
+class MagicLinkField extends StatelessWidget {
   final String url;
 
-  const _MagicLinkField({required this.url});
+  const MagicLinkField({super.key, required this.url});
 
   @override
   Widget build(BuildContext context) {

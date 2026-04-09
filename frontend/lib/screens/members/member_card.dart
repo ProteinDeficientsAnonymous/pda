@@ -272,6 +272,7 @@ class MemberCard extends ConsumerWidget {
           title: 'magic sign-in link',
           body: 'share this login link with $name:',
           magicLinkToken: token,
+          phoneNumber: user.phoneNumber,
         ),
       );
     } catch (e, st) {
@@ -392,6 +393,7 @@ class MemberCard extends ConsumerWidget {
         title: 'password reset',
         body: 'share this login link with $name:',
         magicLinkToken: magicLinkToken,
+        phoneNumber: user.phoneNumber,
       ),
     );
   }
