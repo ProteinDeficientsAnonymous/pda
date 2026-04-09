@@ -27,7 +27,6 @@ class BulkAddForm extends StatelessWidget {
           maxLines: 8,
           onChanged: (_) => onChanged(),
           decoration: const InputDecoration(
-            border: OutlineInputBorder(),
             hintText: '+12125551234\n+13105559876\n…',
             alignLabelWithHint: true,
           ),

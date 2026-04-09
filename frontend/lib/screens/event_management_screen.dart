@@ -95,10 +95,7 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
   }
 
   Future<void> _showCreateDialog() async {
-    final result = await showDialog<EventFormResult>(
-      context: context,
-      builder: (_) => const EventFormDialog(),
-    );
+    final result = await showEventForm(context);
     if (result == null) return;
     try {
       final api = ref.read(apiClientProvider);

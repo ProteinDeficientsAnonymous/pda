@@ -207,7 +207,6 @@ class _DonateCtaState extends ConsumerState<_DonateCta> {
               TextField(
                 controller: _controller,
                 decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
                   labelText: 'Donate URL',
                   hintText: 'https://example.com/donate',
                 ),

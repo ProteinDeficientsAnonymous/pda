@@ -92,7 +92,6 @@ class _EventFormLocationFieldState extends State<EventFormLocationField> {
           controller: widget.controller,
           decoration: InputDecoration(
             labelText: 'where?',
-            border: const OutlineInputBorder(),
             prefixIcon: const Icon(Icons.place_outlined),
             suffixIcon: _locationSearching
                 ? const Padding(

@@ -19,7 +19,6 @@ class EventFormWhenSection extends StatefulWidget {
   final VoidCallback onClearEndTime;
   final void Function(List<DateTime> options) onPollOptionsChanged;
   final VoidCallback onRemovePoll;
-  final double pickerWidth;
   final String Function(DateTime) dateFmt;
 
   const EventFormWhenSection({
@@ -37,7 +36,6 @@ class EventFormWhenSection extends StatefulWidget {
     required this.onClearEndTime,
     required this.onPollOptionsChanged,
     required this.onRemovePoll,
-    required this.pickerWidth,
     required this.dateFmt,
   });
 
@@ -110,18 +108,15 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
             _startPickerMode = null;
             _endPickerMode = null;
           }),
-          child: SizedBox(
-            width: widget.pickerWidth,
-            child: DateTimePicker(
-              initialDateTime: widget.start,
-              onDateTimeChanged: (dt) {
-                setState(() => _dateSetByPoll = false);
-                widget.onStartChanged(dt);
-              },
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-              mode: _startPickerMode!,
-            ),
+          child: DateTimePicker(
+            initialDateTime: widget.start,
+            onDateTimeChanged: (dt) {
+              setState(() => _dateSetByPoll = false);
+              widget.onStartChanged(dt);
+            },
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+            mode: _startPickerMode!,
           ),
         ),
       ],
@@ -191,18 +186,15 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
             _startPickerMode = null;
             _endPickerMode = null;
           }),
-          child: SizedBox(
-            width: widget.pickerWidth,
-            child: DateTimePicker(
-              initialDateTime: widget.end!,
-              onDateTimeChanged: (dt) {
-                setState(() => _dateSetByPoll = false);
-                widget.onEndChanged(dt);
-              },
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-              mode: _endPickerMode!,
-            ),
+          child: DateTimePicker(
+            initialDateTime: widget.end!,
+            onDateTimeChanged: (dt) {
+              setState(() => _dateSetByPoll = false);
+              widget.onEndChanged(dt);
+            },
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+            mode: _endPickerMode!,
           ),
         ),
       ],

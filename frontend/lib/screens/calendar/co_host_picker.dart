@@ -124,7 +124,6 @@ class _CoHostPickerState extends ConsumerState<CoHostPicker> {
           controller: _controller,
           decoration: InputDecoration(
             hintText: 'search by name or phone…',
-            border: const OutlineInputBorder(),
             isDense: true,
             suffixIcon: _searching
                 ? const Padding(

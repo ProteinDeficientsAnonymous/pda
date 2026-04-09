@@ -11,7 +11,8 @@ import 'package:pda/widgets/embedded_event_poll.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/screens/calendar/event_detail_widgets.dart';
 import 'package:pda/screens/calendar/event_member_section.dart';
-export 'event_form_dialog.dart' show EventFormDialog, EventFormResult;
+export 'event_form_dialog.dart'
+    show EventFormDialog, EventFormResult, showEventForm;
 
 /// Shows the event detail panel as a side panel (wide) or navigates to the
 /// full event page (narrow).

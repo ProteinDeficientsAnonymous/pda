@@ -68,10 +68,7 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
   }
 
   Future<void> _edit() async {
-    final result = await showDialog<EventFormResult>(
-      context: context,
-      builder: (ctx) => EventFormDialog(event: widget.event),
-    );
+    final result = await showEventForm(context, event: widget.event);
     if (result == null) return;
 
     setState(() => _loading = true);
@@ -263,7 +260,6 @@ class _LoginOrJoinSectionState extends ConsumerState<LoginOrJoinSection> {
                 controller: _passwordCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Password',
-                  border: OutlineInputBorder(),
                   isDense: true,
                 ),
                 obscureText: true,

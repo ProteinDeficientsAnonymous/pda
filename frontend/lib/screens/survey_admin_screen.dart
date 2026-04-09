@@ -292,10 +292,7 @@ class _CreateSurveyDialogState extends State<_CreateSurveyDialog> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'title',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'title'),
                 validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                 autofocus: true,
               ),
@@ -304,7 +301,6 @@ class _CreateSurveyDialogState extends State<_CreateSurveyDialog> {
                 controller: _slugController,
                 decoration: const InputDecoration(
                   labelText: 'url slug',
-                  border: OutlineInputBorder(),
                   prefixText: '/surveys/',
                 ),
                 validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
@@ -312,10 +308,7 @@ class _CreateSurveyDialogState extends State<_CreateSurveyDialog> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _visibility,
-                decoration: const InputDecoration(
-                  labelText: 'visibility',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'visibility'),
                 items: const [
                   DropdownMenuItem(
                     value: PageVisibility.public_,

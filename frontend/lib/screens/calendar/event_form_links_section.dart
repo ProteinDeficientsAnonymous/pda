@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pda/screens/calendar/event_form_collapsible_section.dart';
 import 'package:pda/utils/validators.dart' as v;
 
 class EventFormLinksAndCostSection extends StatefulWidget {
@@ -86,8 +87,8 @@ class _EventFormLinksAndCostSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(),
-        _CollapsibleSection(
+        const Divider(height: 40, thickness: 0.5),
+        EventFormCollapsibleSection(
           title: 'links',
           initiallyExpanded: _linksExpanded,
           onExpansionChanged: (val) => setState(() => _linksExpanded = val),
@@ -97,18 +98,16 @@ class _EventFormLinksAndCostSectionState
               controller: widget.whatsappLink,
               decoration: const InputDecoration(
                 labelText: 'whatsapp group link (optional)',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.chat_outlined),
               ),
               keyboardType: TextInputType.url,
               validator: _validateWhatsapp,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextFormField(
               controller: widget.partifulLink,
               decoration: InputDecoration(
                 labelText: 'partiful link (optional)',
-                border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.celebration_outlined),
                 helperText:
                     widget.rsvpEnabled &&
@@ -120,12 +119,11 @@ class _EventFormLinksAndCostSectionState
               keyboardType: TextInputType.url,
               validator: _validatePartiful,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextFormField(
               controller: widget.otherLink,
               decoration: const InputDecoration(
                 labelText: 'other link (optional)',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.link),
               ),
               keyboardType: TextInputType.url,
@@ -133,8 +131,8 @@ class _EventFormLinksAndCostSectionState
             ),
           ],
         ),
-        const Divider(),
-        _CollapsibleSection(
+        const Divider(height: 40, thickness: 0.5),
+        EventFormCollapsibleSection(
           title: 'cost & payment',
           initiallyExpanded: _costExpanded,
           onExpansionChanged: (val) {
@@ -148,136 +146,82 @@ class _EventFormLinksAndCostSectionState
           },
           children: [
             const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondaryContainer.withValues(
-                  alpha: 0.4,
-                ),
-                borderRadius: BorderRadius.circular(8),
+            Card(
+              margin: EdgeInsets.zero,
+              elevation: 0,
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: theme.colorScheme.onSecondaryContainer,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'costs should only cover shared orders or direct expenses — no fees or markups',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSecondaryContainer,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'costs should only cover shared orders or direct expenses — no fees or markups',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: widget.price,
+                      decoration: const InputDecoration(
+                        labelText: 'cost',
+                        hintText: 'e.g. \$5 for groceries',
+                        prefixIcon: Icon(Icons.attach_money),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: widget.price,
-              decoration: const InputDecoration(
-                labelText: 'cost',
-                hintText: 'e.g. \$5 for groceries',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: widget.venmoLink,
-              decoration: const InputDecoration(
-                labelText: 'venmo handle',
-                hintText: 'username',
-                border: OutlineInputBorder(),
-                prefixText: '@',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: widget.cashappLink,
-              decoration: const InputDecoration(
-                labelText: 'cash app handle',
-                hintText: 'username',
-                border: OutlineInputBorder(),
-                prefixText: r'$',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: widget.zelleInfo,
-              decoration: const InputDecoration(
-                labelText: 'zelle (email or phone)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.account_balance_outlined),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: widget.venmoLink,
+                      decoration: const InputDecoration(
+                        labelText: 'venmo handle',
+                        hintText: 'username',
+                        prefixText: '@',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: widget.cashappLink,
+                      decoration: const InputDecoration(
+                        labelText: 'cash app handle',
+                        hintText: 'username',
+                        prefixText: r'$',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: widget.zelleInfo,
+                      decoration: const InputDecoration(
+                        labelText: 'zelle (email or phone)',
+                        prefixIcon: Icon(Icons.account_balance_outlined),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-        const Divider(),
-      ],
-    );
-  }
-}
-
-class _CollapsibleSection extends StatefulWidget {
-  final String title;
-  final bool initiallyExpanded;
-  final ValueChanged<bool> onExpansionChanged;
-  final List<Widget> children;
-
-  const _CollapsibleSection({
-    required this.title,
-    required this.initiallyExpanded,
-    required this.onExpansionChanged,
-    required this.children,
-  });
-
-  @override
-  State<_CollapsibleSection> createState() => _CollapsibleSectionState();
-}
-
-class _CollapsibleSectionState extends State<_CollapsibleSection> {
-  late bool _expanded;
-
-  @override
-  void initState() {
-    super.initState();
-    _expanded = widget.initiallyExpanded;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: () {
-            setState(() => _expanded = !_expanded);
-            widget.onExpansionChanged(_expanded);
-          },
-          borderRadius: BorderRadius.circular(4),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              children: [
-                Text(widget.title, style: theme.textTheme.labelLarge),
-                const Spacer(),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  size: 20,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_expanded) ...[...widget.children, const SizedBox(height: 8)],
+        const Divider(height: 40, thickness: 0.5),
       ],
     );
   }

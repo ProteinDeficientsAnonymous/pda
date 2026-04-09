@@ -346,7 +346,6 @@ class _PasswordStep extends StatelessWidget {
                     autofillHints: const [AutofillHints.password],
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(
                           obscure ? Icons.visibility_off : Icons.visibility,

@@ -121,7 +121,6 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
               decoration: const InputDecoration(
                 labelText: 'Bot URL',
                 hintText: 'http://localhost:3001',
-                border: OutlineInputBorder(),
                 helperText: 'The URL of the WhatsApp bot microservice.',
               ),
               keyboardType: TextInputType.url,
@@ -134,7 +133,6 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
                 hintText: widget.config.hasSecret
                     ? '••••••••  (leave blank to keep current)'
                     : 'Enter secret',
-                border: const OutlineInputBorder(),
                 helperText: 'The X-Bot-Secret header value.',
               ),
               obscureText: true,
@@ -145,7 +143,6 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
               decoration: const InputDecoration(
                 labelText: 'Group ID',
                 hintText: '1234567890@g.us',
-                border: OutlineInputBorder(),
                 helperText:
                     'The WhatsApp group JID (shown in bot logs on startup).',
               ),

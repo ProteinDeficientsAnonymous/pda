@@ -66,10 +66,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       if (loggedIn != true || !mounted) return;
     }
 
-    final result = await showDialog<EventFormResult>(
-      context: context,
-      builder: (_) => EventFormDialog(initialDate: _selectedDate),
-    );
+    final result = await showEventForm(context, initialDate: _selectedDate);
     if (result == null) return;
 
     try {

@@ -40,10 +40,7 @@ class SurveyQuestionField extends StatelessWidget {
 
     return switch (question.fieldType) {
       FieldType.textarea => TextFormField(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: label),
         maxLines: 4,
         validator: _validate,
         onSaved: onSaved,
@@ -67,10 +64,7 @@ class SurveyQuestionField extends StatelessWidget {
         onSaved: onSaved,
       ),
       FieldType.number => TextFormField(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: label),
         keyboardType: TextInputType.number,
         validator: (v) {
           final base = _validate(v);
@@ -95,10 +89,7 @@ class SurveyQuestionField extends StatelessWidget {
         onSaved: onSaved,
       ),
       _ => TextFormField(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: label),
         validator: _validate,
         onSaved: onSaved,
       ),
@@ -227,10 +218,7 @@ class SurveyDropdownField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
+      decoration: InputDecoration(labelText: label),
       items: options
           .map((o) => DropdownMenuItem(value: o, child: Text(o)))
           .toList(),

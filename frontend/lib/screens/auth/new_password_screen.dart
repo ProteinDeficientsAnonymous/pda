@@ -83,7 +83,6 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                         obscureText: _obscureNew,
                         decoration: InputDecoration(
                           labelText: 'new password',
-                          border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureNew
@@ -111,7 +110,6 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                         obscureText: _obscureConfirm,
                         decoration: InputDecoration(
                           labelText: 'one more time',
-                          border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirm

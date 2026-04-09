@@ -97,7 +97,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         controller: _displayNameCtrl,
                         decoration: const InputDecoration(
                           labelText: 'what should we call you?',
-                          border: OutlineInputBorder(),
                         ),
                         textInputAction: TextInputAction.next,
                         onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
@@ -109,7 +108,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         focusNode: _emailFocusNode,
                         decoration: const InputDecoration(
                           labelText: 'email (optional)',
-                          border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
@@ -123,7 +121,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         obscureText: _obscureNew,
                         decoration: InputDecoration(
                           labelText: 'create a password',
-                          border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureNew
@@ -151,7 +148,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         obscureText: _obscureConfirm,
                         decoration: InputDecoration(
                           labelText: 'one more time',
-                          border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirm

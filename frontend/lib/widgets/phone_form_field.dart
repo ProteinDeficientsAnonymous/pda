@@ -50,7 +50,6 @@ class PhoneFormField extends StatelessWidget {
     return TextFormField(
       decoration: InputDecoration(
         labelText: labelText,
-        border: const OutlineInputBorder(),
         prefixText: '+1 ',
         helperText: helperText,
         helperMaxLines: 2,

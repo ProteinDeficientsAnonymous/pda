@@ -132,7 +132,6 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                           labelText: 'display name *',
                           hintText: 'e.g. Alex R',
                           helperText: 'at least first name + last initial',
-                          border: OutlineInputBorder(),
                         ),
                         validator: v.displayName(),
                       ),
@@ -208,10 +207,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
         order: NumericFocusOrder(order.toDouble()),
         child: DropdownButtonFormField<String>(
           initialValue: _selectValues[q.id],
-          decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-          ),
+          decoration: InputDecoration(labelText: label),
           items: q.options
               .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
               .toList(),
@@ -227,10 +223,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       order: NumericFocusOrder(order.toDouble()),
       child: TextFormField(
         controller: _controllerFor(q.id),
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: label),
         maxLines: q.label.toLowerCase().contains('why') ? 5 : 1,
         validator: q.required
             ? v.all([v.required(), v.maxLength(2000)])

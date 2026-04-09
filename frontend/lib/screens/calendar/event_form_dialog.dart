@@ -9,6 +9,8 @@ import 'package:pda/screens/calendar/event_form_result.dart';
 import 'package:pda/screens/calendar/event_form_photo_section.dart';
 import 'package:pda/screens/calendar/event_form_when_section.dart';
 import 'package:pda/screens/calendar/event_form_location_field.dart';
+import 'package:pda/screens/calendar/co_host_picker.dart';
+import 'package:pda/screens/calendar/event_form_collapsible_section.dart';
 import 'package:pda/screens/calendar/event_form_links_section.dart';
 import 'package:pda/screens/calendar/event_form_settings_section.dart';
 import 'package:pda/utils/validators.dart' as v;
@@ -17,13 +19,20 @@ import 'package:pda/widgets/photo_crop_dialog.dart';
 export 'package:pda/screens/calendar/event_form_result.dart'
     show EventFormResult;
 
-/// Shared form dialog for creating and editing events.
+/// Shared form for creating and editing events.
 /// Pass [event] to pre-fill fields for editing; omit for create mode.
+/// Use [showEventForm] to open it — it picks full-screen or dialog automatically.
 class EventFormDialog extends ConsumerStatefulWidget {
   final Event? event;
   final DateTime? initialDate;
+  final bool fullScreen;
 
-  const EventFormDialog({super.key, this.event, this.initialDate});
+  const EventFormDialog({
+    super.key,
+    this.event,
+    this.initialDate,
+    this.fullScreen = false,
+  });
 
   @override
   ConsumerState<EventFormDialog> createState() => _EventFormDialogState();
@@ -56,7 +65,6 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   XFile? _selectedPhoto;
   bool _removePhoto = false;
   bool _removingPoll = false;
-  late bool _showDetails;
   double? _latitude;
   double? _longitude;
   final List<DateTime> _datetimePollOptions = [];
@@ -66,7 +74,6 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   @override
   void initState() {
     super.initState();
-    _showDetails = widget.event != null;
     final e = widget.event;
     if (e != null) {
       _title = TextEditingController(text: e.title);
@@ -124,7 +131,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _allowPlusOnes = false;
       _datetimeTbd = false;
       _visibilityChoice = EventVisibilityChoice.public_;
-      _invitePermission = InvitePermission.allMembers;
+      _invitePermission = InvitePermission.coHostsOnly;
       _coHostIds = {};
       _coHostNames = {};
       _invitedUserIds = {};
@@ -282,162 +289,214 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     });
   }
 
+  Widget _buildFormBody(String Function(DateTime) dateFmt) {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            EventFormPhotoSection(
+              existingPhotoUrl: widget.event?.photoUrl ?? '',
+              selectedPhoto: _selectedPhoto,
+              removePhoto: _removePhoto,
+              onPickPhoto: _pickPhoto,
+              onRemovePhoto: () => setState(() {
+                _selectedPhoto = null;
+                _removePhoto = true;
+              }),
+            ),
+            TextFormField(
+              controller: _title,
+              decoration: const InputDecoration(
+                labelText: 'what\'s the event? *',
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              validator: v.all([v.required(), v.maxLength(300)]),
+            ),
+            const SizedBox(height: 20),
+            EventFormWhenSection(
+              isEdit: _isEdit,
+              event: widget.event,
+              start: _start,
+              end: _end,
+              datetimeTbd: _datetimeTbd,
+              datetimePollOptions: _datetimePollOptions,
+              removingPoll: _removingPoll,
+              onStartChanged: (dt) => setState(() {
+                _start = dt;
+                if (_end != null && _end!.isBefore(_start)) {
+                  _end = _start.add(const Duration(hours: 1));
+                }
+              }),
+              onEndChanged: (dt) => setState(() => _end = dt),
+              onAddEndTime: () => setState(() {
+                _end = _start.add(const Duration(hours: 1));
+              }),
+              onClearEndTime: () => setState(() => _end = null),
+              onPollOptionsChanged: (options) => setState(() {
+                _datetimePollOptions
+                  ..clear()
+                  ..addAll(options);
+              }),
+              onRemovePoll: () => _removePoll(context),
+              dateFmt: dateFmt,
+            ),
+            const SizedBox(height: 20),
+            EventFormLocationField(
+              controller: _location,
+              onLocationSelected: (coords) => setState(() {
+                _latitude = coords.lat;
+                _longitude = coords.lon;
+              }),
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _description,
+              decoration: const InputDecoration(
+                labelText: 'tell us more',
+                alignLabelWithHint: true,
+              ),
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+              validator: v.maxLength(2000),
+            ),
+            const Divider(height: 40, thickness: 0.5),
+            EventFormCollapsibleSection(
+              title: 'co-hosts',
+              initiallyExpanded: _coHostIds.isNotEmpty,
+              onExpansionChanged: (_) {},
+              children: [
+                const SizedBox(height: 4),
+                CoHostPicker(
+                  selectedIds: _coHostIds,
+                  selectedNames: _coHostNames,
+                  onChanged: (ids) => setState(() => _coHostIds = ids),
+                  scrollController: _scrollController,
+                ),
+              ],
+            ),
+            EventFormLinksAndCostSection(
+              whatsappLink: _whatsappLink,
+              partifulLink: _partifulLink,
+              otherLink: _otherLink,
+              price: _price,
+              venmoLink: _venmoLink,
+              cashappLink: _cashappLink,
+              zelleInfo: _zelleInfo,
+              rsvpEnabled: _rsvpEnabled,
+              initialShowCost: _initialShowCost,
+              normalizeUrl: _normalizeUrl,
+            ),
+            EventFormSettingsSection(
+              rsvpEnabled: _rsvpEnabled,
+              allowPlusOnes: _allowPlusOnes,
+              visibilityChoice: _visibilityChoice,
+              partifulLinkText: _partifulLink.text,
+              invitePermission: _invitePermission,
+              onRsvpChanged: (val) => setState(() {
+                _rsvpEnabled = val;
+                if (val) _invitePermission = InvitePermission.coHostsOnly;
+              }),
+              onAllowPlusOnesChanged: (val) =>
+                  setState(() => _allowPlusOnes = val),
+              onVisibilityChoiceChanged: (val) =>
+                  setState(() => _visibilityChoice = val),
+              onInvitePermissionChanged: (val) =>
+                  setState(() => _invitePermission = val),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     String dateFmt(DateTime d) =>
         DateFormat('EEE, MMM d, y').format(d).toLowerCase();
+    final title = _isEdit ? 'edit event' : 'new event \u{1F331}';
+
+    if (widget.fullScreen) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'close',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilledButton(
+                onPressed: _submit,
+                child: Text(_isEdit ? 'save' : 'add'),
+              ),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: _buildFormBody(dateFmt),
+          ),
+        ),
+      );
+    }
+
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final dialogWidth = screenWidth < 640
-        ? screenWidth - 48
-        : screenWidth < 1024
-        ? screenWidth * 0.7
-        : 720.0;
+    final dialogWidth = screenWidth < 1024 ? screenWidth * 0.75 : 840.0;
 
     return AlertDialog(
-      title: Text(_isEdit ? 'edit event' : 'new event \u{1F331}'),
+      title: Text(title),
       contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       clipBehavior: Clip.none,
       content: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: dialogWidth,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
         ),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                EventFormPhotoSection(
-                  existingPhotoUrl: widget.event?.photoUrl ?? '',
-                  selectedPhoto: _selectedPhoto,
-                  removePhoto: _removePhoto,
-                  onPickPhoto: _pickPhoto,
-                  onRemovePhoto: () => setState(() {
-                    _selectedPhoto = null;
-                    _removePhoto = true;
-                  }),
-                ),
-                TextFormField(
-                  controller: _title,
-                  decoration: const InputDecoration(
-                    labelText: 'what\'s the event? *',
-                    border: OutlineInputBorder(),
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                  validator: v.all([v.required(), v.maxLength(300)]),
-                ),
-                const SizedBox(height: 16),
-                EventFormWhenSection(
-                  isEdit: _isEdit,
-                  event: widget.event,
-                  start: _start,
-                  end: _end,
-                  datetimeTbd: _datetimeTbd,
-                  datetimePollOptions: _datetimePollOptions,
-                  removingPoll: _removingPoll,
-                  onStartChanged: (dt) => setState(() {
-                    _start = dt;
-                    if (_end != null && _end!.isBefore(_start)) {
-                      _end = _start.add(const Duration(hours: 1));
-                    }
-                  }),
-                  onEndChanged: (dt) => setState(() => _end = dt),
-                  onAddEndTime: () => setState(() {
-                    _end = _start.add(const Duration(hours: 1));
-                  }),
-                  onClearEndTime: () => setState(() => _end = null),
-                  onPollOptionsChanged: (options) => setState(() {
-                    _datetimePollOptions
-                      ..clear()
-                      ..addAll(options);
-                  }),
-                  onRemovePoll: () => _removePoll(context),
-                  pickerWidth: dialogWidth,
-                  dateFmt: dateFmt,
-                ),
-                const SizedBox(height: 16),
-                EventFormLocationField(
-                  controller: _location,
-                  onLocationSelected: (coords) => setState(() {
-                    _latitude = coords.lat;
-                    _longitude = coords.lon;
-                  }),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _description,
-                  decoration: const InputDecoration(
-                    labelText: 'tell us more',
-                    border: OutlineInputBorder(),
-                    alignLabelWithHint: true,
-                  ),
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  validator: v.maxLength(2000),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () =>
-                        setState(() => _showDetails = !_showDetails),
-                    icon: Icon(
-                      _showDetails ? Icons.expand_less : Icons.expand_more,
-                      size: 18,
-                    ),
-                    label: Text(
-                      _showDetails ? 'fewer details' : 'more details',
-                    ),
-                  ),
-                ),
-                if (_showDetails) ...[
-                  const SizedBox(height: 8),
-                  EventFormLinksAndCostSection(
-                    whatsappLink: _whatsappLink,
-                    partifulLink: _partifulLink,
-                    otherLink: _otherLink,
-                    price: _price,
-                    venmoLink: _venmoLink,
-                    cashappLink: _cashappLink,
-                    zelleInfo: _zelleInfo,
-                    rsvpEnabled: _rsvpEnabled,
-                    initialShowCost: _initialShowCost,
-                    normalizeUrl: _normalizeUrl,
-                  ),
-                  EventFormSettingsSection(
-                    rsvpEnabled: _rsvpEnabled,
-                    allowPlusOnes: _allowPlusOnes,
-                    visibilityChoice: _visibilityChoice,
-                    partifulLinkText: _partifulLink.text,
-                    invitePermission: _invitePermission,
-                    coHostIds: _coHostIds,
-                    coHostNames: _coHostNames,
-                    scrollController: _scrollController,
-                    onRsvpChanged: (val) => setState(() => _rsvpEnabled = val),
-                    onAllowPlusOnesChanged: (val) =>
-                        setState(() => _allowPlusOnes = val),
-                    onVisibilityChoiceChanged: (val) =>
-                        setState(() => _visibilityChoice = val),
-                    onInvitePermissionChanged: (val) =>
-                        setState(() => _invitePermission = val),
-                    onCoHostsChanged: (ids) => setState(() => _coHostIds = ids),
-                  ),
-                ],
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        ),
+        child: _buildFormBody(dateFmt),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('cancel'),
         ),
         FilledButton(onPressed: _submit, child: Text(_isEdit ? 'save' : 'add')),
       ],
     );
   }
+}
+
+/// Opens the event form, choosing full-screen (mobile) or dialog (desktop)
+/// based on screen width. Returns [EventFormResult] or null if cancelled.
+Future<EventFormResult?> showEventForm(
+  BuildContext context, {
+  Event? event,
+  DateTime? initialDate,
+}) {
+  final screenWidth = MediaQuery.sizeOf(context).width;
+
+  if (screenWidth < 600) {
+    return Navigator.of(context).push<EventFormResult>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => EventFormDialog(
+          event: event,
+          initialDate: initialDate,
+          fullScreen: true,
+        ),
+      ),
+    );
+  }
+
+  return showDialog<EventFormResult>(
+    context: context,
+    builder: (_) => EventFormDialog(event: event, initialDate: initialDate),
+  );
 }

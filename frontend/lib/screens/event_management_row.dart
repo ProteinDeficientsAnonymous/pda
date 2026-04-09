@@ -22,10 +22,7 @@ class EventManagementRow extends ConsumerWidget {
   const EventManagementRow({super.key, required this.event});
 
   Future<void> _showEditDialog(BuildContext context, WidgetRef ref) async {
-    final result = await showDialog<EventFormResult>(
-      context: context,
-      builder: (_) => EventFormDialog(event: event),
-    );
+    final result = await showEventForm(context, event: event);
     if (result == null) return;
     try {
       final api = ref.read(apiClientProvider);

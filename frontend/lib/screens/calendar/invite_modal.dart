@@ -133,7 +133,6 @@ class _InviteModalState extends ConsumerState<InviteModal> {
                 autofocus: true,
                 decoration: InputDecoration(
                   hintText: 'search by name or phone…',
-                  border: const OutlineInputBorder(),
                   isDense: true,
                   suffixIcon: _searching
                       ? const Padding(

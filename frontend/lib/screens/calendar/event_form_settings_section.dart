@@ -2,22 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/providers/auth_provider.dart';
-import 'package:pda/screens/calendar/co_host_picker.dart';
 
 class EventFormSettingsSection extends ConsumerWidget {
   final bool rsvpEnabled;
   final String visibilityChoice;
   final String partifulLinkText;
   final String invitePermission;
-  final Set<String> coHostIds;
-  final Map<String, String> coHostNames;
-  final ScrollController scrollController;
   final bool allowPlusOnes;
   final ValueChanged<bool> onRsvpChanged;
   final ValueChanged<bool> onAllowPlusOnesChanged;
   final ValueChanged<String> onVisibilityChoiceChanged;
   final ValueChanged<String> onInvitePermissionChanged;
-  final ValueChanged<Set<String>> onCoHostsChanged;
 
   const EventFormSettingsSection({
     super.key,
@@ -26,14 +21,10 @@ class EventFormSettingsSection extends ConsumerWidget {
     required this.visibilityChoice,
     required this.partifulLinkText,
     required this.invitePermission,
-    required this.coHostIds,
-    required this.coHostNames,
-    required this.scrollController,
     required this.onRsvpChanged,
     required this.onAllowPlusOnesChanged,
     required this.onVisibilityChoiceChanged,
     required this.onInvitePermissionChanged,
-    required this.onCoHostsChanged,
   });
 
   @override
@@ -51,42 +42,60 @@ class EventFormSettingsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SwitchListTile(
-          value: rsvpEnabled,
-          onChanged: onRsvpChanged,
-          title: const Text('enable RSVPs'),
-          subtitle: rsvpEnabled && partifulLinkText.trim().isNotEmpty
-              ? Text(
-                  'you have a partiful link set — consider using one or the other',
-                  style: TextStyle(color: theme.colorScheme.tertiary),
-                )
-              : null,
-          contentPadding: EdgeInsets.zero,
-        ),
-        if (rsvpEnabled) ...[
-          SwitchListTile(
-            value: allowPlusOnes,
-            onChanged: onAllowPlusOnesChanged,
-            title: const Text('allow +1s'),
-            subtitle: const Text('guests can bring additional people'),
-            contentPadding: EdgeInsets.zero,
+        Card(
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
           ),
-          SwitchListTile(
-            title: const Text('guests can invite friends'),
-            value: invitePermission == InvitePermission.allMembers,
-            contentPadding: EdgeInsets.zero,
-            onChanged: (val) => onInvitePermissionChanged(
-              val ? InvitePermission.allMembers : InvitePermission.coHostsOnly,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                _SwitchRow(
+                  label: 'enable RSVPs',
+                  subtitle: rsvpEnabled && partifulLinkText.trim().isNotEmpty
+                      ? Text(
+                          'you have a partiful link set — consider using one or the other',
+                          style: TextStyle(color: theme.colorScheme.tertiary),
+                        )
+                      : null,
+                  value: rsvpEnabled,
+                  onChanged: onRsvpChanged,
+                ),
+                if (rsvpEnabled) ...[
+                  const SizedBox(height: 4),
+                  _SwitchRow(
+                    label: 'allow +1s',
+                    subtitle: const Text(
+                      'guests can bring additional people',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    value: allowPlusOnes,
+                    onChanged: onAllowPlusOnesChanged,
+                  ),
+                  const SizedBox(height: 4),
+                  _SwitchRow(
+                    label: 'guests can invite friends',
+                    value: invitePermission == InvitePermission.allMembers,
+                    onChanged: (val) => onInvitePermissionChanged(
+                      val
+                          ? InvitePermission.allMembers
+                          : InvitePermission.coHostsOnly,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-        ],
-        const SizedBox(height: 8),
+        ),
+        const Divider(height: 40, thickness: 0.5),
         DropdownButtonFormField<String>(
           initialValue: visibilityChoice,
-          decoration: const InputDecoration(
-            labelText: 'visibility',
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(labelText: 'who can see it'),
           items: [
             if (showOfficialOption)
               const DropdownMenuItem(
@@ -118,20 +127,44 @@ class EventFormSettingsSection extends ConsumerWidget {
           EventVisibilityChoice.inviteOnly =>
             'invite-only — just the people you pick',
           _ =>
-            'anyone can find this event — members get the full details like location and links',
+            'anyone can find this event — only pda members get the full details like location and links',
         }, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface)),
-        const SizedBox(height: 16),
-        const Divider(),
-        const SizedBox(height: 8),
-        Text('co-hosts', style: theme.textTheme.labelLarge),
-        const SizedBox(height: 8),
-        CoHostPicker(
-          selectedIds: coHostIds,
-          selectedNames: coHostNames,
-          onChanged: onCoHostsChanged,
-          scrollController: scrollController,
-        ),
       ],
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  final String label;
+  final Widget? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.bodyMedium),
+                if (subtitle != null) subtitle!,
+              ],
+            ),
+          ),
+          Switch(value: value, onChanged: onChanged),
+        ],
+      ),
     );
   }
 }

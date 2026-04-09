@@ -55,7 +55,6 @@ class _SingleAddFormState extends State<SingleAddForm> {
             textInputAction: TextInputAction.done,
             decoration: const InputDecoration(
               labelText: 'Display name (optional)',
-              border: OutlineInputBorder(),
             ),
             validator: v.optionalDisplayName(),
             onChanged: widget.onDisplayNameChanged,
@@ -64,10 +63,7 @@ class _SingleAddFormState extends State<SingleAddForm> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _selectedRoleId,
-              decoration: const InputDecoration(
-                labelText: 'Role (optional)',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(labelText: 'Role (optional)'),
               items: widget.allRoles
                   .map(
                     (r) => DropdownMenuItem(value: r.id, child: Text(r.name)),

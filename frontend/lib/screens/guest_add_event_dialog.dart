@@ -212,10 +212,7 @@ class _GuestAddEventDialogState extends ConsumerState<GuestAddEventDialog> {
         const SizedBox(height: 20),
         TextFormField(
           controller: _passwordController,
-          decoration: const InputDecoration(
-            labelText: 'Password',
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(labelText: 'Password'),
           obscureText: true,
           autofillHints: const [AutofillHints.password],
           validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,

@@ -189,7 +189,6 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
                   controller: _labelCtrl,
                   decoration: const InputDecoration(
                     labelText: 'question label',
-                    border: OutlineInputBorder(),
                   ),
                   autofocus: true,
                   textInputAction: TextInputAction.done,
@@ -202,10 +201,7 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: _fieldType,
-                  decoration: const InputDecoration(
-                    labelText: 'field type',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: 'field type'),
                   items: surveyFieldTypeLabels.entries
                       .map(
                         (e) => DropdownMenuItem(
