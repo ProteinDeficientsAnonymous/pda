@@ -53,18 +53,23 @@ class _EventFormLocationFieldState extends State<EventFormLocationField> {
           _locationResults = features.map((f) {
             final props = f['properties'] as Map<String, dynamic>;
             final coords = f['geometry']['coordinates'] as List<dynamic>;
-            final name = props['name'] as String? ?? '';
+            final housenumber = props['housenumber'] as String?;
+            final street = props['street'] as String?;
+            final placeName = props['name'] as String? ?? '';
             final city = props['city'] as String?;
-            final parts = <String>[
+            // Prefer street address over place name when available.
+            final name = (housenumber != null && street != null)
+                ? '$housenumber $street'
+                : placeName;
+            final cityLabel = city != null && city != name ? city : null;
+            final addressParts = <String>[
               if (name.isNotEmpty) name,
-              if (city != null) city,
-              if (props['state'] != null) props['state'] as String,
-              if (props['country'] != null) props['country'] as String,
+              if (cityLabel != null) cityLabel,
             ];
             return EventPhotonResult(
               name: name,
-              city: city != null && city != name ? city : null,
-              fullAddress: parts.join(', '),
+              city: cityLabel,
+              fullAddress: addressParts.join(', '),
               lat: (coords[1] as num).toDouble(),
               lon: (coords[0] as num).toDouble(),
             );

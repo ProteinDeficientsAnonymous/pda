@@ -1,3 +1,4 @@
+import 'package:pda/utils/launcher_web.dart';
 import 'package:web/web.dart' as web;
 
 void shareUrl(String url, {String? subject}) {
@@ -5,6 +6,6 @@ void shareUrl(String url, {String? subject}) {
   if (nav.canShare(web.ShareData(url: url, title: subject ?? ''))) {
     nav.share(web.ShareData(url: url, title: subject ?? ''));
   } else {
-    web.window.open(url, '_blank');
+    openUrl(url);
   }
 }
