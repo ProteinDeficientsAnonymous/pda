@@ -8,32 +8,43 @@ import 'package:pda/screens/auth/magic_login_screen.dart';
 import 'package:pda/screens/auth/onboarding_screen.dart';
 import 'package:pda/screens/auth/new_password_screen.dart';
 import 'package:pda/screens/calendar_screen.dart';
-import 'package:pda/screens/event_management_screen.dart';
 import 'package:pda/screens/home_screen.dart';
-import 'package:pda/screens/join_requests_screen.dart';
 import 'package:pda/screens/join_screen.dart';
 import 'package:pda/screens/join_success_screen.dart';
-import 'package:pda/screens/members_screen.dart';
 import 'package:pda/screens/faq_screen.dart';
 import 'package:pda/screens/guidelines_screen.dart';
 import 'package:pda/screens/event_detail_screen.dart';
 import 'package:pda/screens/donate_screen.dart';
 import 'package:pda/screens/install_app_screen.dart';
-import 'package:pda/screens/settings_screen.dart';
-import 'package:pda/screens/volunteer_screen.dart';
-import 'package:pda/screens/admin_screen.dart';
-import 'package:pda/screens/join_form_config_screen.dart';
-import 'package:pda/screens/survey_admin_screen.dart';
-import 'package:pda/screens/survey_builder_screen.dart';
-import 'package:pda/screens/survey_responses_screen.dart';
-import 'package:pda/screens/survey_screen.dart';
-import 'package:pda/screens/docs_screen.dart';
-import 'package:pda/screens/doc_detail_screen.dart';
-import 'package:pda/screens/whatsapp_config_screen.dart';
-import 'package:pda/screens/profile_screen.dart';
-import 'package:pda/screens/member_profile_screen.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/services/route_tracker.dart';
+import 'package:pda/widgets/deferred_screen.dart';
+// Deferred screen imports — kept out of the initial JS bundle
+import 'package:pda/screens/event_management_screen.dart'
+    deferred as event_management_screen;
+import 'package:pda/screens/join_requests_screen.dart'
+    deferred as join_requests_screen;
+import 'package:pda/screens/members_screen.dart' deferred as members_screen;
+import 'package:pda/screens/settings_screen.dart' deferred as settings_screen;
+import 'package:pda/screens/volunteer_screen.dart' deferred as volunteer_screen;
+import 'package:pda/screens/admin_screen.dart' deferred as admin_screen;
+import 'package:pda/screens/join_form_config_screen.dart'
+    deferred as join_form_config_screen;
+import 'package:pda/screens/survey_admin_screen.dart'
+    deferred as survey_admin_screen;
+import 'package:pda/screens/survey_builder_screen.dart'
+    deferred as survey_builder_screen;
+import 'package:pda/screens/survey_responses_screen.dart'
+    deferred as survey_responses_screen;
+import 'package:pda/screens/survey_screen.dart' deferred as survey_screen;
+import 'package:pda/screens/docs_screen.dart' deferred as docs_screen;
+import 'package:pda/screens/doc_detail_screen.dart'
+    deferred as doc_detail_screen;
+import 'package:pda/screens/whatsapp_config_screen.dart'
+    deferred as whatsapp_config_screen;
+import 'package:pda/screens/profile_screen.dart' deferred as profile_screen;
+import 'package:pda/screens/member_profile_screen.dart'
+    deferred as member_profile_screen;
 
 final _log = Logger('Router');
 
@@ -206,25 +217,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/members',
         name: 'members',
         caseSensitive: false,
-        builder: (_, __) => const MembersScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: members_screen.loadLibrary,
+          builder: () => members_screen.MembersScreen(),
+        ),
       ),
       GoRoute(
         path: '/join-requests',
         name: 'join-requests',
         caseSensitive: false,
-        builder: (_, __) => const JoinRequestsScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: join_requests_screen.loadLibrary,
+          builder: () => join_requests_screen.JoinRequestsScreen(),
+        ),
       ),
       GoRoute(
         path: '/events/mine',
         name: 'my-events',
         caseSensitive: false,
-        builder: (_, __) => const EventManagementScreen(myEventsOnly: true),
+        builder: (_, __) => DeferredScreen(
+          loader: event_management_screen.loadLibrary,
+          builder: () =>
+              event_management_screen.EventManagementScreen(myEventsOnly: true),
+        ),
       ),
       GoRoute(
         path: '/events/manage',
         name: 'manage-events',
         caseSensitive: false,
-        builder: (_, __) => const EventManagementScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: event_management_screen.loadLibrary,
+          builder: () => event_management_screen.EventManagementScreen(),
+        ),
       ),
       GoRoute(
         path: '/guidelines',
@@ -242,7 +266,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         name: 'settings',
         caseSensitive: false,
-        builder: (_, __) => const SettingsScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: settings_screen.loadLibrary,
+          builder: () => settings_screen.SettingsScreen(),
+        ),
       ),
       GoRoute(
         path: '/donate',
@@ -260,78 +287,118 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/volunteer',
         name: 'volunteer',
         caseSensitive: false,
-        builder: (_, __) => const VolunteerScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: volunteer_screen.loadLibrary,
+          builder: () => volunteer_screen.VolunteerScreen(),
+        ),
       ),
       GoRoute(
         path: '/admin',
         name: 'admin',
         caseSensitive: false,
-        builder: (_, __) => const AdminScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: admin_screen.loadLibrary,
+          builder: () => admin_screen.AdminScreen(),
+        ),
       ),
       GoRoute(
         path: '/admin/join-form',
         name: 'join-form-config',
         caseSensitive: false,
-        builder: (_, __) => const JoinFormConfigScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: join_form_config_screen.loadLibrary,
+          builder: () => join_form_config_screen.JoinFormConfigScreen(),
+        ),
       ),
       GoRoute(
         path: '/admin/surveys',
         name: 'survey-admin',
         caseSensitive: false,
-        builder: (_, __) => const SurveyAdminScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: survey_admin_screen.loadLibrary,
+          builder: () => survey_admin_screen.SurveyAdminScreen(),
+        ),
       ),
       GoRoute(
         path: '/admin/surveys/:id',
         name: 'survey-builder',
         caseSensitive: false,
-        builder: (_, state) =>
-            SurveyBuilderScreen(surveyId: state.pathParameters['id']!),
+        builder: (_, state) => DeferredScreen(
+          loader: survey_builder_screen.loadLibrary,
+          builder: () => survey_builder_screen.SurveyBuilderScreen(
+            surveyId: state.pathParameters['id']!,
+          ),
+        ),
       ),
       GoRoute(
         path: '/admin/surveys/:id/responses',
         name: 'survey-responses',
         caseSensitive: false,
-        builder: (_, state) =>
-            SurveyResponsesScreen(surveyId: state.pathParameters['id']!),
+        builder: (_, state) => DeferredScreen(
+          loader: survey_responses_screen.loadLibrary,
+          builder: () => survey_responses_screen.SurveyResponsesScreen(
+            surveyId: state.pathParameters['id']!,
+          ),
+        ),
       ),
       GoRoute(
         path: '/admin/whatsapp',
         name: 'whatsapp-config',
         caseSensitive: false,
-        builder: (_, __) => const WhatsAppConfigScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: whatsapp_config_screen.loadLibrary,
+          builder: () => whatsapp_config_screen.WhatsAppConfigScreen(),
+        ),
       ),
       GoRoute(
         path: '/docs',
         name: 'docs',
         caseSensitive: false,
-        builder: (_, __) => const DocsScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: docs_screen.loadLibrary,
+          builder: () => docs_screen.DocsScreen(),
+        ),
       ),
       GoRoute(
         path: '/docs/:id',
         name: 'doc-detail',
         caseSensitive: false,
-        builder: (_, state) =>
-            DocDetailScreen(docId: state.pathParameters['id']!),
+        builder: (_, state) => DeferredScreen(
+          loader: doc_detail_screen.loadLibrary,
+          builder: () => doc_detail_screen.DocDetailScreen(
+            docId: state.pathParameters['id']!,
+          ),
+        ),
       ),
       GoRoute(
         path: '/profile',
         name: 'profile',
         caseSensitive: false,
-        builder: (_, __) => const ProfileScreen(),
+        builder: (_, __) => DeferredScreen(
+          loader: profile_screen.loadLibrary,
+          builder: () => profile_screen.ProfileScreen(),
+        ),
       ),
       GoRoute(
         path: '/members/:id',
         name: 'member-profile',
         caseSensitive: false,
-        builder: (_, state) =>
-            MemberProfileScreen(userId: state.pathParameters['id']!),
+        builder: (_, state) => DeferredScreen(
+          loader: member_profile_screen.loadLibrary,
+          builder: () => member_profile_screen.MemberProfileScreen(
+            userId: state.pathParameters['id']!,
+          ),
+        ),
       ),
       GoRoute(
         path: '/surveys/:slug',
         name: 'survey',
         caseSensitive: false,
-        builder: (_, state) =>
-            SurveyScreen(slug: state.pathParameters['slug']!),
+        builder: (_, state) => DeferredScreen(
+          loader: survey_screen.loadLibrary,
+          builder: () =>
+              survey_screen.SurveyScreen(slug: state.pathParameters['slug']!),
+        ),
       ),
       GoRoute(
         path: '/events/:id',
