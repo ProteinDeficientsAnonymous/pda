@@ -7,6 +7,7 @@ class NotificationType(models.TextChoices):
     EVENT_INVITE = "event_invite", "Event Invite"
     JOIN_REQUEST = "join_request", "Join Request"
     COHOST_ADDED = "cohost_added", "Co-host Added"
+    MAGIC_LINK_REQUEST = "magic_link_request", "Magic Link Request"
 
 
 class Notification(models.Model):

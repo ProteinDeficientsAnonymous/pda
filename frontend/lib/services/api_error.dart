@@ -17,6 +17,11 @@ sealed class ApiError {
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
         if (statusCode == 401) return const InvalidCredentials();
+        if (statusCode == 409) {
+          final data = error.response?.data;
+          final detail = data is Map ? data['detail'] as String? : null;
+          if (detail == 'already_invited') return const AlreadyInvited();
+        }
         if (statusCode == 400 || statusCode == 422) {
           final data = error.response?.data;
           final detail = data is Map ? data['detail'] as String? : null;
@@ -32,6 +37,13 @@ sealed class ApiError {
         return const UnknownError();
     }
   }
+}
+
+class AlreadyInvited extends ApiError {
+  const AlreadyInvited();
+
+  @override
+  String get message => 'already_invited';
 }
 
 class InvalidCredentials extends ApiError {

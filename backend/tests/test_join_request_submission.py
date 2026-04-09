@@ -259,6 +259,38 @@ class TestJoinRequestSubmission:
         assert notif.notification_type == NotificationType.JOIN_REQUEST
         assert "Leafy New" in notif.message
 
+    def test_submit_existing_user_returns_409(self, api_client, why_join_id):
+        from users.models import User
+
+        User.objects.create_user(phone_number="+12025551299", password="pass")
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Already Here",
+                "phone_number": "+12025551299",
+                "answers": {why_join_id: "Liberation."},
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 409
+        assert response.json()["detail"] == "already_invited"
+
+    def test_submit_existing_user_creates_no_join_request(self, api_client, why_join_id):
+        from community.models import JoinRequest
+        from users.models import User
+
+        User.objects.create_user(phone_number="+12025551298", password="pass")
+        api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Already Here",
+                "phone_number": "+12025551298",
+                "answers": {why_join_id: "Liberation."},
+            },
+            content_type="application/json",
+        )
+        assert not JoinRequest.objects.filter(phone_number="+12025551298").exists()
+
     def test_submit_notification_failure_does_not_block(self, api_client, why_join_id, monkeypatch):
         def _fail(*args, **kwargs):
             raise RuntimeError("notification service down")

@@ -136,7 +136,9 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
         logger.exception("Failed to send vetting email for join request")
 
 
-@router.post("/join-request/", response={201: JoinRequestOut, 400: ErrorOut}, auth=None)
+@router.post(
+    "/join-request/", response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut}, auth=None
+)
 def submit_join_request(request, payload: JoinRequestIn):
     display_name = payload.display_name.strip()
     name_error = validate_display_name(display_name)
@@ -147,6 +149,11 @@ def submit_join_request(request, payload: JoinRequestIn):
         validated_phone = _validate_phone(payload.phone_number)
     except ValueError as e:
         return Status(400, ErrorOut(detail=str(e)))
+
+    from users.models import User
+
+    if User.objects.filter(phone_number=validated_phone).exists():
+        return Status(409, ErrorOut(detail="already_invited"))
 
     if JoinRequest.objects.filter(
         phone_number=validated_phone, status=JoinRequestStatus.PENDING
@@ -308,3 +315,49 @@ def check_phone(request, payload: CheckPhoneIn):
     ).exists():
         return Status(200, CheckPhoneOut(status="pending"))
     return Status(200, CheckPhoneOut(status="unknown"))
+
+
+class RequestLoginLinkIn(BaseModel):
+    phone_number: str
+
+
+class RequestLoginLinkOut(BaseModel):
+    detail: str
+
+
+_REQUEST_LINK_RESPONSE = "if you've been invited, an admin will be in touch with your login link"
+
+
+@router.post("/request-login-link/", response={200: RequestLoginLinkOut}, auth=None)
+def request_login_link(request, payload: RequestLoginLinkIn):
+    """Unauthenticated endpoint for invited users to re-request a magic login link.
+
+    Always returns 200 to prevent phone number enumeration.
+    If a User exists, generates a magic link token and notifies admins.
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
+    from notifications.service import create_magic_link_request_notifications
+    from users._helpers import _create_magic_token
+    from users.models import MagicLoginToken, User
+
+    try:
+        normalized = _validate_phone(payload.phone_number)
+    except ValueError:
+        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+
+    user = User.objects.filter(phone_number=normalized).first()
+    if user:
+        recent_token_exists = MagicLoginToken.objects.filter(
+            user=user,
+            created_at__gte=timezone.now() - timedelta(minutes=5),
+        ).exists()
+        if not recent_token_exists:
+            magic_token = _create_magic_token(user)
+            try:
+                create_magic_link_request_notifications(user, magic_token)
+            except Exception:
+                logger.exception("Failed to create magic link request notifications")
+
+    return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))

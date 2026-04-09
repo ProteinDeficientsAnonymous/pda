@@ -64,7 +64,12 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
           answers: answers,
         );
     final state = ref.read(joinRequestProvider);
-    if (state.hasError) return;
+    if (state.hasError) {
+      if (state.error is AlreadyInvited && mounted) {
+        context.go('/login?invited=true');
+      }
+      return;
+    }
     if (mounted) context.go('/join/success');
   }
 

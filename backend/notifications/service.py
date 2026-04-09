@@ -75,6 +75,32 @@ def create_join_request_notifications(display_name: str) -> None:
     _notify_users(str(user.pk) for user in recipients)
 
 
+def create_magic_link_request_notifications(user: User, magic_token: str) -> None:
+    from django.db.models import Q
+    from users.models import User as UserModel
+    from users.permissions import PermissionKey
+
+    from notifications.models import Notification, NotificationType
+
+    display = user.display_name or user.phone_number
+    recipients = UserModel.objects.filter(
+        Q(roles__name="admin", roles__is_default=True)
+        | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
+    ).distinct()
+
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient=recipient,
+                notification_type=NotificationType.MAGIC_LINK_REQUEST,
+                message=f"{display} requested a new login link — token: {magic_token}",
+            )
+            for recipient in recipients
+        ]
+    )
+    _notify_users(str(recipient.pk) for recipient in recipients)
+
+
 def create_cohost_added_notifications(
     event: Event,
     new_user_ids: Iterable[str],
