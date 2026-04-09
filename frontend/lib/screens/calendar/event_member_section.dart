@@ -81,7 +81,7 @@ class EventMemberSection extends ConsumerWidget {
       final isCoHost =
           user.id == event.createdById || event.coHostIds.contains(user.id);
 
-      final detailRows = <Widget>[
+      final locationRows = <Widget>[
         if (location.isNotEmpty)
           Semantics(
             button: true,
@@ -96,6 +96,9 @@ class EventMemberSection extends ConsumerWidget {
               ),
             ),
           ),
+      ];
+
+      final linkRows = <Widget>[
         if (event.whatsappLink.isNotEmpty)
           EventLinkRow(
             icon: Icons.chat_bubble_outline,
@@ -113,25 +116,6 @@ class EventMemberSection extends ConsumerWidget {
             icon: Icons.link_outlined,
             label: event.otherLink,
             url: event.otherLink,
-          ),
-        if (event.price.isNotEmpty)
-          EventDetailRow(icon: Icons.attach_money, text: event.price),
-        if (event.venmoLink.isNotEmpty)
-          EventLinkRow(
-            icon: Icons.payment,
-            label: 'venmo',
-            url: event.venmoLink,
-          ),
-        if (event.cashappLink.isNotEmpty)
-          EventLinkRow(
-            icon: Icons.monetization_on_outlined,
-            label: 'cash app',
-            url: event.cashappLink,
-          ),
-        if (event.zelleInfo.isNotEmpty)
-          EventDetailRow(
-            icon: Icons.account_balance_outlined,
-            text: 'zelle: ${event.zelleInfo}',
           ),
         ...event.surveySlugs
             .where((slug) => slug != event.datetimePollSlug)
@@ -163,6 +147,28 @@ class EventMemberSection extends ConsumerWidget {
             ),
       ];
 
+      final costRows = <Widget>[
+        if (event.price.isNotEmpty)
+          EventDetailRow(icon: Icons.attach_money, text: event.price),
+        if (event.venmoLink.isNotEmpty)
+          EventLinkRow(
+            icon: Icons.payment,
+            label: 'venmo',
+            url: event.venmoLink,
+          ),
+        if (event.cashappLink.isNotEmpty)
+          EventLinkRow(
+            icon: Icons.monetization_on_outlined,
+            label: 'cash app',
+            url: event.cashappLink,
+          ),
+        if (event.zelleInfo.isNotEmpty)
+          EventDetailRow(
+            icon: Icons.account_balance_outlined,
+            text: 'zelle: ${event.zelleInfo}',
+          ),
+      ];
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -179,16 +185,46 @@ class EventMemberSection extends ConsumerWidget {
                 ],
               ),
             ),
-          if (detailRows.isNotEmpty) ...[
+          if (locationRows.isNotEmpty) ...[
             const SizedBox(height: 12),
             EventSectionCard(
-              label: EventDetailLabel.details,
+              label: EventDetailLabel.location,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (var i = 0; i < detailRows.length; i++) ...[
-                    detailRows[i],
-                    if (i < detailRows.length - 1) const SizedBox(height: 8),
+                  for (var i = 0; i < locationRows.length; i++) ...[
+                    locationRows[i],
+                    if (i < locationRows.length - 1) const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+          ],
+          if (linkRows.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            EventSectionCard(
+              label: EventDetailLabel.links,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < linkRows.length; i++) ...[
+                    linkRows[i],
+                    if (i < linkRows.length - 1) const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+          ],
+          if (costRows.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            EventSectionCard(
+              label: EventDetailLabel.cost,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < costRows.length; i++) ...[
+                    costRows[i],
+                    if (i < costRows.length - 1) const SizedBox(height: 8),
                   ],
                 ],
               ),

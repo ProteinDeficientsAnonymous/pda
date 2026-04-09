@@ -431,16 +431,17 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
             tooltip: 'close',
             onPressed: () => Navigator.of(context).pop(),
           ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilledButton(
-                onPressed: _submit,
-                child: Text(_isEdit ? 'save' : 'add'),
-              ),
-            ),
-          ],
         ),
+        persistentFooterButtons: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('cancel'),
+          ),
+          FilledButton(
+            onPressed: _submit,
+            child: Text(_isEdit ? 'save' : 'add'),
+          ),
+        ],
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

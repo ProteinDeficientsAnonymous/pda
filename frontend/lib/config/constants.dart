@@ -98,6 +98,8 @@ abstract class EventDetailLabel {
   static const host = 'host';
   static const coHosts = 'co-hosts';
   static const invited = 'invited';
-  static const details = 'details';
+  static const location = 'location';
+  static const links = 'links';
+  static const cost = 'cost';
   static const rsvp = 'rsvp';
 }
