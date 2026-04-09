@@ -84,18 +84,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     try {
       final api = ref.read(apiClientProvider);
-      final resp = await api.post(
+      await api.post(
         '/api/community/request-login-link/',
         data: {'phone_number': _phoneNumber},
       );
-      final detail =
-          (resp.data as Map<String, dynamic>)['detail'] as String? ??
-          'if you\'ve been invited, an admin will be in touch';
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(detail)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('login link requested — an admin will send it to you'),
+          ),
+        );
       }
     } catch (e, st) {
       _log.warning('request login link failed', e, st);
