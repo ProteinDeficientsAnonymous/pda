@@ -26,25 +26,20 @@ sealed class ApiError {
     final data = response?.data;
     final detail = data is Map ? data['detail'] as String? : null;
 
-    if (statusCode == 401) return const InvalidCredentials();
-    if (statusCode == 403)
-      return ForbiddenError(detail ?? "you don't have access");
-    if (statusCode == 404) return const NotFoundError();
-    if (statusCode == 409 && detail == 'already_invited') {
-      return const AlreadyInvited();
-    }
-    if (statusCode == 429) {
-      return RateLimited(
+    return switch (statusCode) {
+      401 => const InvalidCredentials(),
+      403 => ForbiddenError(detail ?? "you don't have access"),
+      404 => const NotFoundError(),
+      409 when detail == 'already_invited' => const AlreadyInvited(),
+      429 => RateLimited(
         detail ?? "you're doing that too fast — try again in a bit",
-      );
-    }
-    if (statusCode == 400 || statusCode == 422) {
-      return ValidationError(
+      ),
+      400 || 422 => ValidationError(
         detail ?? 'Invalid request. Please check your input.',
-      );
-    }
-    if (statusCode != null && statusCode >= 500) return const ServerError();
-    return const UnknownError();
+      ),
+      _ when statusCode != null && statusCode >= 500 => const ServerError(),
+      _ => const UnknownError(),
+    };
   }
 }
 
