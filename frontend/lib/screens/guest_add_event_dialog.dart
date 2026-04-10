@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pda/config/constants.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
+import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/phone_form_field.dart';
 
 enum GuestStep { phone, password, pending, unknown }
@@ -215,7 +217,7 @@ class _GuestAddEventDialogState extends ConsumerState<GuestAddEventDialog> {
           decoration: const InputDecoration(labelText: 'Password'),
           obscureText: true,
           autofillHints: const [AutofillHints.password],
-          validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+          validator: v.all([v.required(), v.maxLength(FieldLimit.password)]),
           onFieldSubmitted: (_) => _loading ? null : _login(),
         ),
         if (_error != null) ...[

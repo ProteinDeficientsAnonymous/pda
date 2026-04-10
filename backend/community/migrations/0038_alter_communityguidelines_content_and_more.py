@@ -4,80 +4,79 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('community', '0037_communityguidelines_content_html_and_more'),
+        ("community", "0037_communityguidelines_content_html_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='communityguidelines',
-            name='content',
-            field=models.TextField(default='', max_length=50000),
+            model_name="communityguidelines",
+            name="content",
+            field=models.TextField(default="", max_length=50000),
         ),
         migrations.AlterField(
-            model_name='communityguidelines',
-            name='content_html',
-            field=models.TextField(default='', max_length=100000),
+            model_name="communityguidelines",
+            name="content_html",
+            field=models.TextField(default="", max_length=100000),
         ),
         migrations.AlterField(
-            model_name='document',
-            name='content',
-            field=models.TextField(default='', max_length=50000),
+            model_name="document",
+            name="content",
+            field=models.TextField(default="", max_length=50000),
         ),
         migrations.AlterField(
-            model_name='document',
-            name='content_html',
-            field=models.TextField(default='', max_length=100000),
+            model_name="document",
+            name="content_html",
+            field=models.TextField(default="", max_length=100000),
         ),
         migrations.AlterField(
-            model_name='editablepage',
-            name='content',
-            field=models.TextField(default='', max_length=50000),
+            model_name="editablepage",
+            name="content",
+            field=models.TextField(default="", max_length=50000),
         ),
         migrations.AlterField(
-            model_name='editablepage',
-            name='content_html',
-            field=models.TextField(default='', max_length=100000),
+            model_name="editablepage",
+            name="content_html",
+            field=models.TextField(default="", max_length=100000),
         ),
         migrations.AlterField(
-            model_name='event',
-            name='description',
+            model_name="event",
+            name="description",
             field=models.TextField(blank=True, max_length=2000),
         ),
         migrations.AlterField(
-            model_name='faq',
-            name='content',
-            field=models.TextField(default='', max_length=50000),
+            model_name="faq",
+            name="content",
+            field=models.TextField(default="", max_length=50000),
         ),
         migrations.AlterField(
-            model_name='faq',
-            name='content_html',
-            field=models.TextField(default='', max_length=100000),
+            model_name="faq",
+            name="content_html",
+            field=models.TextField(default="", max_length=100000),
         ),
         migrations.AlterField(
-            model_name='homepage',
-            name='content',
-            field=models.TextField(default='', max_length=50000),
+            model_name="homepage",
+            name="content",
+            field=models.TextField(default="", max_length=50000),
         ),
         migrations.AlterField(
-            model_name='homepage',
-            name='content_html',
-            field=models.TextField(default='', max_length=100000),
+            model_name="homepage",
+            name="content_html",
+            field=models.TextField(default="", max_length=100000),
         ),
         migrations.AlterField(
-            model_name='homepage',
-            name='join_content',
-            field=models.TextField(default='', max_length=50000),
+            model_name="homepage",
+            name="join_content",
+            field=models.TextField(default="", max_length=50000),
         ),
         migrations.AlterField(
-            model_name='homepage',
-            name='join_content_html',
-            field=models.TextField(default='', max_length=100000),
+            model_name="homepage",
+            name="join_content_html",
+            field=models.TextField(default="", max_length=100000),
         ),
         migrations.AlterField(
-            model_name='survey',
-            name='description',
-            field=models.TextField(blank=True, default='', max_length=2000),
+            model_name="survey",
+            name="description",
+            field=models.TextField(blank=True, default="", max_length=2000),
         ),
     ]

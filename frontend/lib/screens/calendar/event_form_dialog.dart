@@ -318,7 +318,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 labelText: 'what\'s the event? *',
               ),
               textCapitalization: TextCapitalization.sentences,
-              validator: v.all([v.required(), v.maxLength(300)]),
+              validator: v.all([v.required(), v.maxLength(FieldLimit.title)]),
             ),
             const SizedBox(height: 20),
             EventFormWhenSection(
@@ -365,8 +365,9 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                 alignLabelWithHint: true,
               ),
               maxLines: 3,
+              maxLength: FieldLimit.description,
               textCapitalization: TextCapitalization.sentences,
-              validator: v.maxLength(2000),
+              validator: v.maxLength(FieldLimit.description),
             ),
             const Divider(height: 40, thickness: 0.5),
             EventFormCollapsibleSection(

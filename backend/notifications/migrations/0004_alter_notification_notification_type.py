@@ -4,15 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notifications', '0003_alter_notification_notification_type'),
+        ("notifications", "0003_alter_notification_notification_type"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='notification',
-            name='notification_type',
-            field=models.CharField(choices=[('event_invite', 'Event Invite'), ('join_request', 'Join Request'), ('cohost_added', 'Co-host Added'), ('magic_link_request', 'Magic Link Request')], default='event_invite', max_length=32),
+            model_name="notification",
+            name="notification_type",
+            field=models.CharField(
+                choices=[
+                    ("event_invite", "Event Invite"),
+                    ("join_request", "Join Request"),
+                    ("cohost_added", "Co-host Added"),
+                    ("magic_link_request", "Magic Link Request"),
+                ],
+                default="event_invite",
+                max_length=32,
+            ),
         ),
     ]

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pda/config/constants.dart';
 import 'package:pda/screens/calendar/event_form_collapsible_section.dart';
 import 'package:pda/utils/validators.dart' as v;
 
@@ -60,6 +61,9 @@ class _EventFormLinksAndCostSectionState
 
   String? _validateWhatsapp(String? val) {
     if (val == null || val.trim().isEmpty) return null;
+    if (val.trim().length > FieldLimit.url) {
+      return 'Max ${FieldLimit.url} characters';
+    }
     final normalized = widget.normalizeUrl(val.trim());
     final uri = Uri.tryParse(normalized);
     if (uri == null || !uri.hasAuthority) return 'Enter a valid URL';
@@ -72,6 +76,9 @@ class _EventFormLinksAndCostSectionState
 
   String? _validatePartiful(String? val) {
     if (val == null || val.trim().isEmpty) return null;
+    if (val.trim().length > FieldLimit.url) {
+      return 'Max ${FieldLimit.url} characters';
+    }
     final normalized = widget.normalizeUrl(val.trim());
     final uri = Uri.tryParse(normalized);
     if (uri == null || !uri.hasAuthority) return 'Enter a valid URL';
@@ -127,7 +134,10 @@ class _EventFormLinksAndCostSectionState
                 prefixIcon: Icon(Icons.link),
               ),
               keyboardType: TextInputType.url,
-              validator: v.optionalUrl(httpsOnly: true),
+              validator: v.all([
+                v.optionalUrl(httpsOnly: true),
+                v.maxLength(FieldLimit.url),
+              ]),
             ),
           ],
         ),
@@ -188,6 +198,7 @@ class _EventFormLinksAndCostSectionState
                         hintText: 'e.g. \$5 for groceries',
                         prefixIcon: Icon(Icons.attach_money),
                       ),
+                      validator: v.maxLength(FieldLimit.shortText),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -197,6 +208,7 @@ class _EventFormLinksAndCostSectionState
                         hintText: 'username',
                         prefixText: '@',
                       ),
+                      validator: v.maxLength(FieldLimit.paymentHandle),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -206,6 +218,7 @@ class _EventFormLinksAndCostSectionState
                         hintText: 'username',
                         prefixText: r'$',
                       ),
+                      validator: v.maxLength(FieldLimit.paymentHandle),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -214,6 +227,7 @@ class _EventFormLinksAndCostSectionState
                         labelText: 'zelle (email or phone)',
                         prefixIcon: Icon(Icons.account_balance_outlined),
                       ),
+                      validator: v.maxLength(FieldLimit.shortText),
                     ),
                   ],
                 ),

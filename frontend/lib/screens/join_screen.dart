@@ -219,15 +219,17 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       );
     }
 
+    final isMultiline = q.label.toLowerCase().contains('why');
     return FocusTraversalOrder(
       order: NumericFocusOrder(order.toDouble()),
       child: TextFormField(
         controller: _controllerFor(q.id),
         decoration: InputDecoration(labelText: label),
-        maxLines: q.label.toLowerCase().contains('why') ? 5 : 1,
+        maxLines: isMultiline ? 5 : 1,
+        maxLength: isMultiline ? FieldLimit.description : null,
         validator: q.required
-            ? v.all([v.required(), v.maxLength(2000)])
-            : v.maxLength(2000),
+            ? v.all([v.required(), v.maxLength(FieldLimit.description)])
+            : v.maxLength(FieldLimit.description),
       ),
     );
   }

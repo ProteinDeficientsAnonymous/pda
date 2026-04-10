@@ -119,7 +119,7 @@ frontend-complexity:
 	dart pub global activate dart_code_metrics 2>/dev/null; dart pub global run dart_code_metrics:metrics analyze frontend/lib/ --disable-sunset-warning --set-exit-on-violation-level=warning
 
 # CI (run before every commit)
-ci: lint-check check test typecheck complexity frontend-lint frontend-test frontend-complexity
+ci: lint check test typecheck complexity frontend-lint frontend-test frontend-complexity
 
 # Install deps, codegen, migrate, then run dev
 build-dev: install frontend-codegen migrate dev
