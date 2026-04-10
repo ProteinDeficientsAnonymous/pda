@@ -193,7 +193,7 @@ class _RoleEditorDialogState extends State<RoleEditorDialog> {
                       Icon(
                         Icons.lock_outline,
                         size: 14,
-                        color: Colors.grey[500],
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ],
                   ],
