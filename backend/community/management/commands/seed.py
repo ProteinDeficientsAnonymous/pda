@@ -37,12 +37,12 @@ class SeedJoinRequest:
 
 SEED_USERS = [
     SeedUser(
-        phone_number="+15550990001",
+        phone_number="+17025550001",
         display_name="Seed Admin",
         is_superuser=True,
     ),
     SeedUser(
-        phone_number="+15550990002",
+        phone_number="+17025550002",
         display_name="Seed Member",
         is_superuser=False,
     ),
@@ -75,19 +75,19 @@ SEED_EVENTS = [
 SEED_JOIN_REQUESTS = [
     SeedJoinRequest(
         display_name="Alex Rivera",
-        phone_number="+15550990010",
+        phone_number="+17025550010",
         why_join="I've been vegan for two years and want to connect with community.",
         status=JoinRequestStatus.PENDING,
     ),
     SeedJoinRequest(
         display_name="Jordan Chen",
-        phone_number="+15550990011",
+        phone_number="+17025550011",
         why_join="Looking for local vegan friends and events.",
         status=JoinRequestStatus.APPROVED,
     ),
     SeedJoinRequest(
         display_name="Sam Taylor",
-        phone_number="+15550990012",
+        phone_number="+17025550012",
         why_join="Curious about veganism.",
         status=JoinRequestStatus.REJECTED,
     ),
@@ -176,7 +176,7 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write("Seed complete!")
         self.stdout.write(
-            f"  Users: {User.objects.filter(phone_number__startswith='+1555099').count()}"
+            f"  Users: {User.objects.filter(phone_number__startswith='+1702555').count()}"
         )
         self.stdout.write(f"  Events: {Event.objects.count()}")
         self.stdout.write(f"  Join requests: {JoinRequest.objects.count()}")
