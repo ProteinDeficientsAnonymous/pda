@@ -257,7 +257,7 @@ class EventDetailContent extends ConsumerWidget {
                   final link = Uri.base
                       .replace(path: '/events/${liveEvent.id}', query: null)
                       .toString();
-                  shareUrl(link, subject: liveEvent.title);
+                  shareUrl(link);
                 },
               ),
               if (!fullPage) ...[
