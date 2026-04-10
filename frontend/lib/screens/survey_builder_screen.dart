@@ -252,12 +252,14 @@ class _BuilderBodyState extends ConsumerState<_BuilderBody> {
               ),
               const SizedBox(height: 16),
               if (_questions.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text(
                       'no questions yet — add one below',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 )

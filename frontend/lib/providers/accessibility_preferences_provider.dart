@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:pda/models/accessibility_preferences.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +7,7 @@ part 'accessibility_preferences_provider.g.dart';
 
 const _keyDyslexiaFont = 'pda_dyslexia_font';
 const _keyTextScale = 'pda_text_scale';
+const _keyThemeMode = 'pda_theme_mode';
 
 @Riverpod(keepAlive: true)
 class AccessibilityPreferencesNotifier
@@ -13,9 +15,17 @@ class AccessibilityPreferencesNotifier
   @override
   Future<AccessibilityPreferences> build() async {
     final prefs = await SharedPreferences.getInstance();
+    final themeModeStr = prefs.getString(_keyThemeMode);
+    final themeMode =
+        ThemeMode.values.cast<ThemeMode?>().firstWhere(
+          (m) => m!.name == themeModeStr,
+          orElse: () => null,
+        ) ??
+        ThemeMode.system;
     return AccessibilityPreferences(
       dyslexiaFriendlyFont: prefs.getBool(_keyDyslexiaFont) ?? false,
       textScaleFactor: prefs.getDouble(_keyTextScale) ?? 1.0,
+      themeMode: themeMode,
     );
   }
 
@@ -35,5 +45,13 @@ class AccessibilityPreferencesNotifier
     state = AsyncData(next);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_keyTextScale, scale);
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final current = state.value ?? const AccessibilityPreferences();
+    final next = current.copyWith(themeMode: mode);
+    state = AsyncData(next);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyThemeMode, mode.name);
   }
 }

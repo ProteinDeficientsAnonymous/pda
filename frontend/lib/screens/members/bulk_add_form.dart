@@ -17,9 +17,12 @@ class BulkAddForm extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'One phone number per line. Members will be prompted to set a display name and password on first login.',
-          style: TextStyle(fontSize: 13, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -120,11 +123,19 @@ class MagicLinkRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(phone, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(
+          phone,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 2),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
             borderRadius: BorderRadius.circular(6),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -146,7 +157,7 @@ class MagicLinkRow extends StatelessWidget {
                   child: Icon(
                     Icons.content_copy_outlined,
                     size: 14,
-                    color: Colors.grey.shade600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),

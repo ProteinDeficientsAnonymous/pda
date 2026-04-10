@@ -26,10 +26,13 @@ class DocsFolderContent extends ConsumerWidget {
     final hasContent = allDocs.isNotEmpty || subFolders.isNotEmpty;
 
     if (!hasContent) {
-      return const Center(
+      return Center(
         child: Text(
           'this folder is empty 🌿',
-          style: TextStyle(fontSize: 14, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -82,11 +85,14 @@ class DocsSubFolderSection extends ConsumerWidget {
         ),
         const Divider(height: 8),
         if (subFolder.documents.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               'no docs here yet',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ...subFolder.documents.map(

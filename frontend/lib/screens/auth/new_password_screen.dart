@@ -75,9 +75,11 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'your password was reset — pick a new one and you\'re good to go',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       TextFormField(

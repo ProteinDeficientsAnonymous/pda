@@ -233,7 +233,9 @@ class _PhoneStep extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'this area is for approved PDA members only',
-              style: TextStyle(color: Colors.grey[700]),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 32),
             if (invited) ...[
@@ -340,7 +342,9 @@ class _PasswordStep extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'pop in your password to get in',
-                  style: TextStyle(color: Colors.grey[700]),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 32),
                 FocusTraversalOrder(
@@ -439,7 +443,9 @@ class _PendingStep extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           "hang tight — we'll be in touch soon",
-          style: TextStyle(color: Colors.grey[700]),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
         TextButton(
@@ -468,7 +474,9 @@ class _UnknownStep extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           "not a member yet? request to join and we'll sort you out",
-          style: TextStyle(color: Colors.grey[700]),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 24),
         SizedBox(

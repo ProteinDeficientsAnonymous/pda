@@ -200,11 +200,11 @@ class _StatusCard extends ConsumerWidget {
               Icon(
                     Icons.check_circle_outline,
                     size: 18,
-                    color: Colors.green.shade600,
+                    color: theme.colorScheme.primary,
                   )
                   as Widget,
               'Bot connected',
-              Colors.green.shade600,
+              theme.colorScheme.primary,
             )
           : (
               Icon(

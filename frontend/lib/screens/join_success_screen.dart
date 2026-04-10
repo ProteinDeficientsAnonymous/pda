@@ -16,7 +16,11 @@ class JoinSuccessScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.check_circle, size: 72, color: Colors.green),
+                Icon(
+                  Icons.check_circle,
+                  size: 72,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(height: 24),
                 Text(
                   'request received! 🌱',

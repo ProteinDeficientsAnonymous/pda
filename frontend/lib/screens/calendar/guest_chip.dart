@@ -41,7 +41,7 @@ class _GuestChipState extends State<GuestChip> {
               child: Material(
                 elevation: 4,
                 borderRadius: BorderRadius.circular(8),
-                color: Colors.grey.shade900,
+                color: Theme.of(context).colorScheme.inverseSurface,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -53,7 +53,7 @@ class _GuestChipState extends State<GuestChip> {
                       Icon(
                         Icons.smartphone_outlined,
                         size: 13,
-                        color: Colors.grey.shade300,
+                        color: Theme.of(context).colorScheme.onInverseSurface,
                       ),
                       const SizedBox(width: 6),
                       SelectableText(
@@ -61,7 +61,7 @@ class _GuestChipState extends State<GuestChip> {
                         style: TextStyle(
                           fontSize: 13,
                           fontFamily: 'monospace',
-                          color: Colors.grey.shade100,
+                          color: Theme.of(context).colorScheme.onInverseSurface,
                         ),
                       ),
                     ],

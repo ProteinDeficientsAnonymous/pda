@@ -121,7 +121,10 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                     Text(
                       'we review all requests — you\'ll hear from us once a '
                       'vetting member has had a look',
-                      style: TextStyle(color: Colors.grey[700], fontSize: 15),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 32),
                     FocusTraversalOrder(

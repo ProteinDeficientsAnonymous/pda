@@ -146,9 +146,11 @@ class _SurveyPollResultsSectionState
           const SizedBox(height: 12),
           talliesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Text(
+            error: (_, __) => Text(
               'couldn\'t load tallies',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             data: (tallies) {
               final pollQuestions = widget.survey.questions

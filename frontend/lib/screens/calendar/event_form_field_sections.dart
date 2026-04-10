@@ -132,14 +132,18 @@ class EventFormPhotoButton extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: Colors.black38,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.all(6),
-            child: Icon(icon, size: 16, color: Colors.white),
+            child: Icon(
+              icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.surface,
+            ),
           ),
         ),
       ),

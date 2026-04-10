@@ -127,9 +127,9 @@ class _JoinRequestsScreenState extends ConsumerState<JoinRequestsScreen> {
                       padding: const EdgeInsets.all(32),
                       child: Text(
                         _emptyMessage(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -247,7 +247,9 @@ class _JoinRequestCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               request.phoneNumber,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 12),
             for (final answer in request.answers)
@@ -261,7 +263,10 @@ class _JoinRequestCard extends StatelessWidget {
               children: [
                 Text(
                   'Submitted ${dateFmt.format(request.submittedAt.toLocal())}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 if (request.status == JoinRequestStatus.pending)
                   _ActionButtons(onApprove: onApprove, onReject: onReject)
@@ -323,10 +328,10 @@ class _InfoRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.grey,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 2),

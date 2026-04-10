@@ -204,12 +204,12 @@ class _InviteModalState extends ConsumerState<InviteModal> {
               FilledButton(
                 onPressed: _newIds.isNotEmpty && !_saving ? _submit : null,
                 child: _saving
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 16,
                         width: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : const Text('invite'),

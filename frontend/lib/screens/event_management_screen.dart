@@ -167,18 +167,26 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.calendar_today_outlined,
                 size: 64,
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 16),
               Text(
                 _emptyMessage(),
-                style: const TextStyle(fontSize: 18, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 8),
-              Text(_emptySubtext(), style: const TextStyle(color: Colors.grey)),
+              Text(
+                _emptySubtext(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),

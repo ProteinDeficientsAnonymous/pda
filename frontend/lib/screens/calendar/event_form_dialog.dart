@@ -258,9 +258,9 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('couldn\'t remove poll — try again'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('couldn\'t remove poll — try again'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       setState(() => _removingPoll = false);

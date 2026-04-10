@@ -112,7 +112,7 @@ class EventManagementRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dateFmt = DateFormat('EEE, MMM d');
 
-    final (bg, fg) = eventColors(event.id);
+    final (bg, fg) = eventColors(event.id, Theme.of(context).brightness);
 
     return Card(
       elevation: 0,
@@ -284,7 +284,7 @@ class _HostsLine extends StatelessWidget {
 
     if (names.isEmpty) return const SizedBox.shrink();
 
-    final c = color ?? Colors.grey;
+    final c = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Row(
       children: [

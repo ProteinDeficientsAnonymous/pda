@@ -89,9 +89,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'choose a display name and a new password to get started',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       TextFormField(

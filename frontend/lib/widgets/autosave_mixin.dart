@@ -103,7 +103,7 @@ class AutosaveIndicator extends StatelessWidget {
       AutosaveStatus.saved => (
         Icons.check_circle_outline,
         'Saved',
-        Colors.green,
+        Theme.of(context).colorScheme.primary,
       ),
       AutosaveStatus.error => (
         Icons.error_outline,

@@ -163,16 +163,21 @@ class _JoinFormConfigBodyState extends ConsumerState<_JoinFormConfigBody> {
               Text(
                 'Name and phone are always shown. Configure additional '
                 'questions below — drag to reorder.',
-                style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 24),
               if (_questions.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text(
                       'no custom questions yet',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 )

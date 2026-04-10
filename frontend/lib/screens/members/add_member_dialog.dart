@@ -237,7 +237,10 @@ class _SingleSuccessView extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'link expires in 7 days',
-          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.outline,
+            fontSize: 12,
+          ),
         ),
       ],
     );
