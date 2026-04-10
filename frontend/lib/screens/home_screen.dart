@@ -206,6 +206,7 @@ class _DonateCtaState extends ConsumerState<_DonateCta> {
               const SizedBox(height: 8),
               TextField(
                 controller: _controller,
+                maxLength: FieldLimit.url,
                 decoration: const InputDecoration(
                   labelText: 'Donate URL',
                   hintText: 'https://example.com/donate',

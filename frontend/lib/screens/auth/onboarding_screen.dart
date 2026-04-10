@@ -135,10 +135,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 setState(() => _obscureNew = !_obscureNew),
                           ),
                         ),
+                        maxLength: 128,
                         textInputAction: TextInputAction.next,
                         onFieldSubmitted: (_) =>
                             _confirmPwFocusNode.requestFocus(),
-                        validator: v.password(),
+                        validator: v.all([v.password(), v.maxLength(128)]),
                       ),
                       const SizedBox(height: 8),
                       PasswordStrengthChecklist(controller: _newPwCtrl),

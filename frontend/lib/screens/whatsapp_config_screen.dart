@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:pda/config/constants.dart';
 import 'package:pda/providers/whatsapp_config_provider.dart';
 import 'package:pda/screens/whatsapp_setup_instructions.dart';
 import 'package:pda/services/api_error.dart';
@@ -118,6 +119,7 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
             const SizedBox(height: 16),
             TextField(
               controller: _botUrlCtrl,
+              maxLength: FieldLimit.url,
               decoration: const InputDecoration(
                 labelText: 'Bot URL',
                 hintText: 'http://localhost:3001',
@@ -128,6 +130,7 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
             const SizedBox(height: 16),
             TextField(
               controller: _secretCtrl,
+              maxLength: FieldLimit.botSecret,
               decoration: InputDecoration(
                 labelText: 'Bot secret',
                 hintText: widget.config.hasSecret
@@ -140,6 +143,7 @@ class _WhatsAppConfigFormState extends ConsumerState<_WhatsAppConfigForm> {
             const SizedBox(height: 16),
             TextField(
               controller: _groupIdCtrl,
+              maxLength: FieldLimit.shortText,
               decoration: const InputDecoration(
                 labelText: 'Group ID',
                 hintText: '1234567890@g.us',

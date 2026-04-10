@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/screens/survey_datetime_poll_field.dart';
 import 'package:pda/config/constants.dart';
+import 'package:pda/utils/validators.dart' as vld;
 
 class SurveyQuestionField extends StatelessWidget {
   final SurveyQuestion question;
@@ -42,7 +43,8 @@ class SurveyQuestionField extends StatelessWidget {
       FieldType.textarea => TextFormField(
         decoration: InputDecoration(labelText: label),
         maxLines: 4,
-        validator: _validate,
+        maxLength: FieldLimit.description,
+        validator: vld.all([_validate, vld.maxLength(FieldLimit.description)]),
         onSaved: onSaved,
       ),
       FieldType.select => SurveyRadioField(
@@ -90,7 +92,8 @@ class SurveyQuestionField extends StatelessWidget {
       ),
       _ => TextFormField(
         decoration: InputDecoration(labelText: label),
-        validator: _validate,
+        maxLength: FieldLimit.shortText,
+        validator: vld.all([_validate, vld.maxLength(FieldLimit.shortText)]),
         onSaved: onSaved,
       ),
     };

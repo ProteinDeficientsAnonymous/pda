@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/models/join_form_question.dart';
+import 'package:pda/utils/validators.dart' as v;
 
 class JoinFormQuestionResult {
   final String label;
@@ -97,10 +98,11 @@ class _JoinFormQuestionDialogState extends State<JoinFormQuestionDialog> {
                 decoration: const InputDecoration(labelText: 'Question label'),
                 autofocus: true,
                 textInputAction: TextInputAction.done,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Required';
-                  return null;
-                },
+                maxLength: FieldLimit.shortText,
+                validator: v.all([
+                  v.required(),
+                  v.maxLength(FieldLimit.shortText),
+                ]),
                 onFieldSubmitted: (_) => _submit(),
               ),
               const SizedBox(height: 16),
@@ -146,6 +148,8 @@ class _JoinFormQuestionDialogState extends State<JoinFormQuestionDialog> {
                               hintText: 'Option ${i + 1}',
                               isDense: true,
                             ),
+                            maxLength: FieldLimit.optionText,
+                            validator: v.maxLength(FieldLimit.optionText),
                           ),
                         ),
                         IconButton(

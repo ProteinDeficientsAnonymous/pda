@@ -85,6 +85,7 @@ abstract class NotificationType {
   static const eventInvite = 'event_invite';
   static const joinRequest = 'join_request';
   static const cohostAdded = 'cohost_added';
+  static const magicLinkRequest = 'magic_link_request';
 }
 
 abstract class InvitePermission {

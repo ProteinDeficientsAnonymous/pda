@@ -358,6 +358,7 @@ class _PasswordStep extends StatelessWidget {
                     enableInteractiveSelection: true,
                     enableSuggestions: false,
                     autocorrect: false,
+                    maxLength: 128,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => loading ? null : onSubmit(),
                     validator: (v) =>

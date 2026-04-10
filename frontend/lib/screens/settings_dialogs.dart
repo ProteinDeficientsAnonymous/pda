@@ -164,6 +164,7 @@ class _SettingsChangePasswordDialogState
               obscureText: true,
               autofocus: true,
               textInputAction: TextInputAction.next,
+              maxLength: 128,
               decoration: const InputDecoration(labelText: 'Current password'),
               validator: (val) {
                 if (val == null || val.isEmpty) return 'Required';
@@ -177,6 +178,7 @@ class _SettingsChangePasswordDialogState
               focusNode: _newFocus,
               obscureText: true,
               textInputAction: TextInputAction.next,
+              maxLength: 128,
               decoration: const InputDecoration(labelText: 'New password'),
               validator: v.all([
                 v.password(),

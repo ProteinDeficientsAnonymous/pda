@@ -7,6 +7,7 @@ import 'package:pda/providers/survey_admin_provider.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 import 'package:pda/config/constants.dart';
+import 'package:pda/utils/validators.dart' as v;
 
 final _log = Logger('SurveyAdmin');
 
@@ -293,7 +294,8 @@ class _CreateSurveyDialogState extends State<_CreateSurveyDialog> {
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'title'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                maxLength: FieldLimit.title,
+                validator: v.all([v.required(), v.maxLength(FieldLimit.title)]),
                 autofocus: true,
               ),
               const SizedBox(height: 12),
@@ -303,7 +305,8 @@ class _CreateSurveyDialogState extends State<_CreateSurveyDialog> {
                   labelText: 'url slug',
                   prefixText: '/surveys/',
                 ),
-                validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                maxLength: FieldLimit.slug,
+                validator: v.all([v.required(), v.maxLength(FieldLimit.slug)]),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 import 'package:pda/models/survey.dart';
 import 'package:pda/config/constants.dart';
+import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/date_time_picker_dialog.dart';
 
 final _log = Logger('SurveyQuestionForm');
@@ -192,10 +193,11 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
                   ),
                   autofocus: true,
                   textInputAction: TextInputAction.done,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Required';
-                    return null;
-                  },
+                  maxLength: FieldLimit.shortText,
+                  validator: v.all([
+                    v.required(),
+                    v.maxLength(FieldLimit.shortText),
+                  ]),
                   onFieldSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: 16),
@@ -242,6 +244,8 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
                                 hintText: 'option ${i + 1}',
                                 isDense: true,
                               ),
+                              maxLength: FieldLimit.optionText,
+                              validator: v.maxLength(FieldLimit.optionText),
                             ),
                           ),
                           IconButton(
@@ -338,6 +342,8 @@ class _SurveyQuestionFormDialogState extends State<SurveyQuestionFormDialog> {
                           prefixText: '${'★' * (i + 1)}  ',
                           isDense: true,
                         ),
+                        maxLength: FieldLimit.optionText,
+                        validator: v.maxLength(FieldLimit.optionText),
                       ),
                     ),
                 ],

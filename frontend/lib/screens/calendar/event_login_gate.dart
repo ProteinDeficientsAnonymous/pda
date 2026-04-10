@@ -263,6 +263,7 @@ class _LoginOrJoinSectionState extends ConsumerState<LoginOrJoinSection> {
                   isDense: true,
                 ),
                 obscureText: true,
+                maxLength: 128,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Required';
                   return null;

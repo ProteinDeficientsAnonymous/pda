@@ -140,6 +140,7 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
         content: TextField(
           controller: controller,
           autofocus: true,
+          maxLength: FieldLimit.title,
           decoration: const InputDecoration(labelText: 'Folder name'),
           onSubmitted: (_) => _submitFolder(ctx, controller),
         ),
@@ -184,6 +185,7 @@ class _DocsBodyState extends ConsumerState<_DocsBody>
         content: TextField(
           controller: controller,
           autofocus: true,
+          maxLength: FieldLimit.title,
           decoration: const InputDecoration(labelText: 'Document title'),
           onSubmitted: (_) => _submitDoc(ctx, controller, currentFolder.id),
         ),
@@ -254,6 +256,7 @@ class _EmptyState extends ConsumerWidget {
         content: TextField(
           controller: controller,
           autofocus: true,
+          maxLength: FieldLimit.title,
           decoration: const InputDecoration(labelText: 'Folder name'),
         ),
         actions: [
