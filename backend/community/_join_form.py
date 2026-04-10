@@ -7,9 +7,10 @@ from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut, logger  # noqa: F401
 from community.models import JoinFormQuestion, JoinFormQuestionType
 
@@ -26,8 +27,8 @@ class JoinFormQuestionOut(BaseModel):
 
 
 class JoinFormQuestionIn(BaseModel):
-    label: str
-    field_type: str = JoinFormQuestionType.TEXT
+    label: str = Field(max_length=FieldLimit.SHORT_TEXT)
+    field_type: str = Field(default=JoinFormQuestionType.TEXT, max_length=FieldLimit.CHOICE)
     options: list[str] = []
     required: bool = False
 

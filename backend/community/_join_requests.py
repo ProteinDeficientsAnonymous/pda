@@ -11,9 +11,10 @@ from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from notifications.service import create_join_request_notifications
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from users.permissions import PermissionKey
 
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _validate_phone, logger, validate_display_name
 from community.models import (
     JoinFormQuestion,
@@ -26,9 +27,19 @@ router = Router()
 
 
 class JoinRequestIn(BaseModel):
-    display_name: str
-    phone_number: str
+    display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
     answers: dict[str, str] = {}
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answer_lengths(cls, v: dict[str, str]) -> dict[str, str]:
+        for key, answer in v.items():
+            if len(answer) > FieldLimit.DESCRIPTION:
+                raise ValueError(
+                    f"Answer for question {key} exceeds {FieldLimit.DESCRIPTION} characters."
+                )
+        return v
 
 
 class JoinRequestAnswerOut(BaseModel):
@@ -48,7 +59,7 @@ class JoinRequestOut(BaseModel):
 
 
 class JoinRequestStatusIn(BaseModel):
-    status: str
+    status: str = Field(max_length=FieldLimit.CHOICE)
 
 
 class ApproveJoinRequestOut(BaseModel):
@@ -65,7 +76,7 @@ class CheckPhoneOut(BaseModel):
 
 
 class CheckPhoneIn(BaseModel):
-    phone_number: str
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
 
 
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
@@ -318,7 +329,7 @@ def check_phone(request, payload: CheckPhoneIn):
 
 
 class RequestLoginLinkIn(BaseModel):
-    phone_number: str
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
 
 
 class RequestLoginLinkOut(BaseModel):

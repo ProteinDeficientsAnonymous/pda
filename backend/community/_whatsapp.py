@@ -7,9 +7,10 @@ from django.conf import settings
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community.models import WhatsAppConfig
 
@@ -23,9 +24,9 @@ class WhatsAppConfigOut(BaseModel):
 
 
 class WhatsAppConfigPatchIn(BaseModel):
-    bot_url: str | None = None
-    bot_secret: str | None = None
-    group_id: str | None = None
+    bot_url: str | None = Field(default=None, max_length=FieldLimit.URL)
+    bot_secret: str | None = Field(default=None, max_length=FieldLimit.BOT_SECRET)
+    group_id: str | None = Field(default=None, max_length=FieldLimit.BOT_SECRET)
 
 
 class WhatsAppStatusOut(BaseModel):

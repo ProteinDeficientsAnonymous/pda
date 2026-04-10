@@ -8,10 +8,11 @@ from django.contrib.auth.models import AnonymousUser
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
 from community._delta_html import delta_to_html
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _optional_jwt
 from community.models import EditablePage, PageVisibility
 
@@ -27,8 +28,8 @@ class EditablePageOut(BaseModel):
 
 
 class EditablePagePatchIn(BaseModel):
-    content: str | None = None
-    visibility: str | None = None
+    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
 
 
 def _page_out(page: EditablePage) -> EditablePageOut:

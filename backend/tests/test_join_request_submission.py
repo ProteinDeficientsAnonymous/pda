@@ -152,7 +152,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_display_name_with_numbers(self, api_client, why_join_id):
         response = api_client.post(

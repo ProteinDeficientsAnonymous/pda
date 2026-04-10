@@ -7,10 +7,11 @@ from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
 from community._delta_html import delta_to_html
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community.models import HomePage
 
@@ -27,9 +28,9 @@ class HomePageOut(BaseModel):
 
 
 class HomePagePatchIn(BaseModel):
-    content: str | None = None
-    join_content: str | None = None
-    donate_url: str | None = None
+    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    join_content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    donate_url: str | None = Field(default=None, max_length=FieldLimit.URL)
 
 
 def _home_out(h: HomePage) -> HomePageOut:

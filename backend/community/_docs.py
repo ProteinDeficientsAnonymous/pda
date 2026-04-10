@@ -7,10 +7,11 @@ from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
 from community._delta_html import delta_to_html
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community.models import DocFolder, Document
 
@@ -39,25 +40,25 @@ class DocFolderOut(BaseModel):
 
 
 class FolderIn(BaseModel):
-    name: str
+    name: str = Field(max_length=FieldLimit.TITLE)
     parent_id: str | None = None
 
 
 class FolderPatchIn(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, max_length=FieldLimit.TITLE)
     parent_id: str | None = None
     display_order: int | None = None
 
 
 class DocumentIn(BaseModel):
-    title: str
+    title: str = Field(max_length=FieldLimit.TITLE)
     folder_id: str
-    content: str = ""
+    content: str = Field(default="", max_length=FieldLimit.CONTENT)
 
 
 class DocumentPatchIn(BaseModel):
-    title: str | None = None
-    content: str | None = None
+    title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
+    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     folder_id: str | None = None
 
 

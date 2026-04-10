@@ -7,10 +7,11 @@ from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
 from community._delta_html import delta_to_html
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community.models import FAQ, CommunityGuidelines
 
@@ -24,7 +25,7 @@ class GuidelinesOut(BaseModel):
 
 
 class GuidelinesPatchIn(BaseModel):
-    content: str
+    content: str = Field(max_length=FieldLimit.CONTENT)
 
 
 @router.get("/guidelines/", response={200: GuidelinesOut}, auth=JWTAuth())
