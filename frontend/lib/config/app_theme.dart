@@ -4,9 +4,15 @@ import 'package:flutter/material.dart';
 ///
 /// When [dyslexiaMode] is true, the text theme switches to OpenDyslexic and
 /// is configured with wider letter spacing and more line height.
-ThemeData buildAppTheme({bool dyslexiaMode = false}) {
+ThemeData buildAppTheme({
+  bool dyslexiaMode = false,
+  Brightness brightness = Brightness.light,
+}) {
   const seedColor = Color(0xFF2E7D32);
-  final colorScheme = ColorScheme.fromSeed(seedColor: seedColor);
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: seedColor,
+    brightness: brightness,
+  );
   final String? fontFamily = dyslexiaMode ? 'OpenDyslexic' : null;
 
   final textTheme = _buildTextTheme(
@@ -52,9 +58,9 @@ ThemeData buildAppTheme({bool dyslexiaMode = false}) {
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      backgroundColor: seedColor,
+      backgroundColor: colorScheme.inverseSurface,
       contentTextStyle: TextStyle(
-        color: Colors.white,
+        color: colorScheme.onInverseSurface,
         fontSize: 14,
         fontFamily: fontFamily,
       ),

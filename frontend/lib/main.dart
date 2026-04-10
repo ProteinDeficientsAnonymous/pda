@@ -36,10 +36,16 @@ class PdaApp extends ConsumerWidget {
     final prefs = prefsAsync.value;
     final dyslexiaMode = prefs?.dyslexiaFriendlyFont ?? false;
     final textScaleFactor = prefs?.textScaleFactor ?? 1.0;
+    final themeMode = prefs?.themeMode ?? ThemeMode.system;
 
     return MaterialApp.router(
       title: 'protein deficients anonymous',
       theme: buildAppTheme(dyslexiaMode: dyslexiaMode),
+      darkTheme: buildAppTheme(
+        dyslexiaMode: dyslexiaMode,
+        brightness: Brightness.dark,
+      ),
+      themeMode: themeMode,
       routerConfig: router,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
