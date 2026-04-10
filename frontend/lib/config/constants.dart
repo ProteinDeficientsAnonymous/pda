@@ -92,6 +92,25 @@ abstract class InvitePermission {
   static const coHostsOnly = 'co_hosts_only';
 }
 
+/// Field length limits for form validation.
+/// Keep in sync with backend/community/_field_limits.py (FieldLimit class).
+abstract class FieldLimit {
+  static const title = 200;
+  static const shortText = 300;
+  static const description = 2000;
+  static const content = 50000;
+  static const url = 500;
+  static const displayName = 64;
+  static const phone = 20;
+  static const password = 128;
+  static const slug = 100;
+  static const roleName = 50;
+  static const optionText = 200;
+  static const choice = 20;
+  static const botSecret = 256;
+  static const paymentHandle = 100;
+}
+
 abstract class EventDetailLabel {
   static const when = 'when';
   static const about = 'about';

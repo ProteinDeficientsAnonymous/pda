@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/config/api_config.dart';
+import 'package:pda/config/constants.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/feedback_provider.dart';
 import 'package:pda/utils/user_agent.dart';
+import 'package:pda/utils/validators.dart' as v;
 
 class FeedbackForm extends ConsumerStatefulWidget {
   final String currentRoute;
@@ -137,8 +139,10 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       labelText: 'Title',
                       hintText: 'what happened?',
                     ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'required' : null,
+                    validator: v.all([
+                      v.required(),
+                      v.maxLength(FieldLimit.title),
+                    ]),
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 12),
@@ -149,6 +153,8 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       hintText: 'tell us more...',
                     ),
                     maxLines: 4,
+                    maxLength: FieldLimit.description,
+                    validator: v.maxLength(FieldLimit.description),
                     textInputAction: TextInputAction.newline,
                   ),
                   const SizedBox(height: 16),
