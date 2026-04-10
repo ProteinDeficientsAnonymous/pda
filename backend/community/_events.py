@@ -120,6 +120,7 @@ def list_events(request):
                 allow_plus_ones=e.allow_plus_ones,
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
+                is_past=e.is_past,
             )
             for e in events
         ],
@@ -433,6 +434,9 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     if not event.rsvp_enabled:
         return Status(400, ErrorOut(detail="RSVPs are not enabled for this event."))
 
+    if event.is_past and not _can_edit_event(request.auth, event):
+        return Status(400, ErrorOut(detail="RSVPs are closed for past events."))
+
     valid_statuses = RSVPStatus.values
     if payload.status not in valid_statuses:
         return Status(400, ErrorOut(detail=f"Status must be one of: {', '.join(valid_statuses)}."))
@@ -461,10 +465,16 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
 
 @router.delete(
     "/events/{event_id}/rsvp/",
-    response={204: None, 404: ErrorOut},
+    response={204: None, 400: ErrorOut, 404: ErrorOut},
     auth=JWTAuth(),
 )
 def delete_rsvp(request, event_id: UUID):
+    try:
+        event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
+    except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+    if event.is_past and not _can_edit_event(request.auth, event):
+        return Status(400, ErrorOut(detail="RSVPs are closed for past events."))
     deleted, _ = EventRSVP.objects.filter(event_id=event_id, user=request.auth).delete()
     if not deleted:
         return Status(404, ErrorOut(detail="RSVP not found."))

@@ -4,6 +4,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from django.db import models
+from django.utils import timezone
 
 from community.models.choices import EventType, InvitePermission, PageVisibility, RSVPStatus
 
@@ -76,6 +77,11 @@ class Event(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["start_datetime"]
+
+    @property
+    def is_past(self) -> bool:
+        cutoff = self.end_datetime or self.start_datetime
+        return cutoff < timezone.now()
 
     def __str__(self):
         return f"{self.title} — {self.start_datetime:%Y-%m-%d %H:%M}"

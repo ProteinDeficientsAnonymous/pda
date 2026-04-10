@@ -158,6 +158,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
 
     final summary = _buildSummary(guests);
+    final isPastForUserForUser = liveEvent.isPastForUser && !isCoHost;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -175,6 +176,14 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
               textAlign: TextAlign.center,
             ),
           ),
+        if (isPastForUser)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'rsvps are closed for past events',
+              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+            ),
+          ),
         Opacity(
           opacity: _loading ? 0.5 : 1.0,
           child: Row(
@@ -186,7 +195,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                   icon: Icons.sentiment_very_satisfied_outlined,
                   activeColor: cs.primary,
                   isActive: myRsvp == RsvpStatus.attending,
-                  enabled: !_loading,
+                  enabled: !_loading && !isPastForUser,
                   onTap: () => myRsvp == RsvpStatus.attending
                       ? _removeRsvp()
                       : _setRsvp(RsvpStatus.attending),
@@ -198,7 +207,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                   icon: Icons.sentiment_neutral_outlined,
                   activeColor: cs.tertiary,
                   isActive: myRsvp == RsvpStatus.maybe,
-                  enabled: !_loading,
+                  enabled: !_loading && !isPastForUser,
                   onTap: () => myRsvp == RsvpStatus.maybe
                       ? _removeRsvp()
                       : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
@@ -210,7 +219,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
                   icon: Icons.sentiment_dissatisfied_outlined,
                   activeColor: cs.error,
                   isActive: myRsvp == RsvpStatus.cantGo,
-                  enabled: !_loading,
+                  enabled: !_loading && !isPastForUser,
                   onTap: () => myRsvp == RsvpStatus.cantGo
                       ? _removeRsvp()
                       : _confirmAndSetRsvp(RsvpStatus.cantGo, "can't make it"),

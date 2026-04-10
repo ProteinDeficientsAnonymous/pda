@@ -58,6 +58,7 @@ abstract class Event with _$Event {
     @Default([]) List<String> invitedUserNames,
     @Default([]) List<String> invitedUserPhotoUrls,
     @Default(InvitePermission.allMembers) String invitePermission,
+    @Default(false) bool isPast,
   }) = _Event;
 
   factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);

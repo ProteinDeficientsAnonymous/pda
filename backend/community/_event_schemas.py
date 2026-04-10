@@ -40,6 +40,7 @@ class EventListOut(BaseModel):
     co_host_names: list[str] = []
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
+    is_past: bool = False
 
 
 class EventOut(BaseModel):
@@ -79,6 +80,7 @@ class EventOut(BaseModel):
     invited_user_names: list[str] = []
     invited_user_photo_urls: list[str] = []
     invite_permission: str = InvitePermission.ALL_MEMBERS
+    is_past: bool = False
 
 
 class RSVPIn(BaseModel):
