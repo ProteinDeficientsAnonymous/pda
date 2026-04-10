@@ -14,8 +14,6 @@ import 'package:pda/providers/user_management_provider.dart';
 
 final _log = Logger('JoinRequests');
 
-final _log = Logger('JoinRequests');
-
 const _filters = ['All', 'Pending', 'Approved', 'Rejected'];
 
 class JoinRequestsScreen extends ConsumerStatefulWidget {

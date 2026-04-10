@@ -10,8 +10,6 @@ import 'package:pda/widgets/password_strength_checklist.dart';
 
 final _log = Logger('NewPassword');
 
-final _log = Logger('NewPassword');
-
 class NewPasswordScreen extends ConsumerStatefulWidget {
   const NewPasswordScreen({super.key});
 

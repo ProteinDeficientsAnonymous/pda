@@ -10,8 +10,6 @@ import 'package:pda/widgets/password_strength_checklist.dart';
 
 final _log = Logger('Onboarding');
 
-final _log = Logger('Onboarding');
-
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 

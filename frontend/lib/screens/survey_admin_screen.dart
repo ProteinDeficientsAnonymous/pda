@@ -11,8 +11,6 @@ import 'package:pda/utils/validators.dart' as v;
 
 final _log = Logger('SurveyAdmin');
 
-final _log = Logger('SurveyAdmin');
-
 class SurveyAdminScreen extends ConsumerWidget {
   const SurveyAdminScreen({super.key});
 

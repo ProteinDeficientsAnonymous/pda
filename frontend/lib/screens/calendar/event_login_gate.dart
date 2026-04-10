@@ -147,8 +147,8 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
     if (user == null) return const SizedBox.shrink();
 
     final isCreator = widget.event.createdById == user.id;
-    final isManager = user.hasPermission(Permission.manageEvents);
     final isCoHost = widget.event.coHostIds.contains(user.id);
+    final isManager = user.hasPermission(Permission.manageEvents);
     final canEdit = isCreator || isManager || isCoHost;
     if (!canEdit) return const SizedBox.shrink();
 
