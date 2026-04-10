@@ -7,6 +7,7 @@ from uuid import UUID
 from config.audit import audit_log
 from config.media_proxy import media_path
 from django.db.models import Q
+from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
@@ -57,6 +58,17 @@ def _can_edit_event(user, event: Event) -> bool:
 def _is_invalid_official_visibility(event_type: str, visibility: str) -> bool:
     """Official events must have public visibility."""
     return event_type == EventType.OFFICIAL and visibility != PageVisibility.PUBLIC
+
+
+def _validate_event_datetimes(
+    start, end, datetime_tbd: bool, *, check_past: bool = True
+) -> str | None:
+    """Return an error message if datetime fields are invalid, else None."""
+    if end is not None and end <= start:
+        return "end_datetime must be after start_datetime."
+    if check_past and not datetime_tbd and start < timezone.now():
+        return "Start date must be in the future."
+    return None
 
 
 @router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
@@ -159,8 +171,11 @@ def create_event(request, payload: EventIn):
     if _is_invalid_official_visibility(payload.event_type, payload.visibility):
         return Status(400, ErrorOut(detail="Official events must be public."))
 
-    if payload.end_datetime is not None and payload.end_datetime <= payload.start_datetime:
-        return Status(400, ErrorOut(detail="end_datetime must be after start_datetime."))
+    dt_error = _validate_event_datetimes(
+        payload.start_datetime, payload.end_datetime, payload.datetime_tbd
+    )
+    if dt_error:
+        return Status(400, ErrorOut(detail=dt_error))
 
     event = Event.objects.create(
         title=payload.title,
@@ -252,8 +267,15 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         return Status(400, ErrorOut(detail="Official events must be public."))
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
-    if effective_end is not None and effective_end <= effective_start:
-        return Status(400, ErrorOut(detail="end_datetime must be after start_datetime."))
+    effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
+    dt_error = _validate_event_datetimes(
+        effective_start,
+        effective_end,
+        effective_tbd,
+        check_past="start_datetime" in updates,
+    )
+    if dt_error:
+        return Status(400, ErrorOut(detail=dt_error))
     co_host_ids = updates.pop("co_host_ids", None)
     invited_user_ids = updates.pop("invited_user_ids", None)
     for field, value in updates.items():

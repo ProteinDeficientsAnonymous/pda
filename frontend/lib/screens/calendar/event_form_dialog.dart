@@ -124,9 +124,12 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       _venmoLink = TextEditingController();
       _cashappLink = TextEditingController();
       _zelleInfo = TextEditingController();
-      final base = widget.initialDate ?? DateTime.now();
       final now = DateTime.now();
-      _start = DateTime(base.year, base.month, base.day, now.hour + 1);
+      final base = widget.initialDate ?? now;
+      final candidate = DateTime(base.year, base.month, base.day, now.hour + 1);
+      _start = candidate.isBefore(now)
+          ? DateTime(now.year, now.month, now.day, now.hour + 1)
+          : candidate;
       _end = null;
       _rsvpEnabled = false;
       _allowPlusOnes = false;

@@ -254,6 +254,63 @@ class TestEventManagement:
         assert response.status_code == 400
         assert "end_datetime" in response.json()["detail"]
 
+    def test_create_event_in_past_returns_400(self, api_client, manage_events_headers):
+        response = api_client.post(
+            "/api/community/events/",
+            {
+                "title": "Past Event",
+                "start_datetime": "2020-01-01T18:00:00Z",
+            },
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert response.status_code == 400
+        assert "future" in response.json()["detail"]
+
+    def test_create_event_in_past_allowed_when_datetime_tbd(
+        self, api_client, manage_events_headers
+    ):
+        response = api_client.post(
+            "/api/community/events/",
+            {
+                "title": "TBD Event",
+                "start_datetime": "2020-01-01T18:00:00Z",
+                "datetime_tbd": True,
+            },
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert response.status_code == 201
+
+    def test_update_event_start_to_past_returns_400(
+        self, api_client, manage_events_headers, sample_event
+    ):
+        response = api_client.patch(
+            f"/api/community/events/{sample_event.id}/",
+            {"start_datetime": "2020-01-01T18:00:00Z"},
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert response.status_code == 400
+        assert "future" in response.json()["detail"]
+
+    def test_update_event_non_date_fields_on_past_event(
+        self, api_client, manage_events_headers, db
+    ):
+        """Updating non-date fields on a past event should succeed."""
+        past_event = Event.objects.create(
+            title="Old Meetup",
+            start_datetime="2020-01-01T18:00:00Z",
+        )
+        response = api_client.patch(
+            f"/api/community/events/{past_event.id}/",
+            {"title": "Updated Old Meetup"},
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["title"] == "Updated Old Meetup"
+
     def test_update_event_clear_end_datetime(self, api_client, manage_events_headers, sample_event):
         response = api_client.patch(
             f"/api/community/events/{sample_event.id}/",

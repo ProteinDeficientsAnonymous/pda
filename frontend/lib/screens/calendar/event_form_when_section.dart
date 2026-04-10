@@ -114,7 +114,7 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
               setState(() => _dateSetByPoll = false);
               widget.onStartChanged(dt);
             },
-            firstDate: DateTime(2000),
+            firstDate: DateTime.now(),
             lastDate: DateTime(2100),
             mode: _startPickerMode!,
           ),
@@ -192,7 +192,7 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
               setState(() => _dateSetByPoll = false);
               widget.onEndChanged(dt);
             },
-            firstDate: DateTime(2000),
+            firstDate: DateTime.now(),
             lastDate: DateTime(2100),
             mode: _endPickerMode!,
           ),
