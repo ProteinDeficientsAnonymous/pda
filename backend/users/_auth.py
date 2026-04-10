@@ -11,6 +11,7 @@ from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
+from users._password_validation import validate_password
 from users.models import MagicLoginToken, User
 from users.schemas import (
     AccessOut,
@@ -220,8 +221,9 @@ def get_member_profile(request, user_id: str):
 
 @router.post("/complete-onboarding/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
 def complete_onboarding(request, payload: OnboardingIn):
-    if len(payload.new_password) < 8:
-        return Status(400, ErrorOut(detail="New password must be at least 8 characters."))
+    pw_errors = validate_password(payload.new_password)
+    if pw_errors:
+        return Status(400, ErrorOut(detail="; ".join(pw_errors)))
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if payload.display_name is not None:
         name_error = validate_display_name(payload.display_name)
@@ -252,8 +254,9 @@ def change_password(request, payload: ChangePasswordIn):
             details={"reason": "wrong_current_password"},
         )
         return Status(400, ErrorOut(detail="Current password is incorrect."))
-    if len(payload.new_password) < 8:
-        return Status(400, ErrorOut(detail="New password must be at least 8 characters."))
+    pw_errors = validate_password(payload.new_password)
+    if pw_errors:
+        return Status(400, ErrorOut(detail="; ".join(pw_errors)))
     user.set_password(payload.new_password)
     user.save()
     audit_log(logging.INFO, "password_changed", request, target_type="user", target_id=str(user.pk))

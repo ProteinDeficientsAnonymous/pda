@@ -252,19 +252,19 @@ class TestChangePassword:
     def test_change_password_success(self, api_client, auth_headers, test_user):
         response = api_client.post(
             "/api/auth/change-password/",
-            {"current_password": "testpass123", "new_password": "newpassword456"},
+            {"current_password": "testpass123", "new_password": "NewPassword456!"},
             content_type="application/json",
             **auth_headers,
         )
         assert response.status_code == 200
         assert response.json()["detail"] == "Password updated successfully."
         test_user.refresh_from_db()
-        assert test_user.check_password("newpassword456")
+        assert test_user.check_password("NewPassword456!")
 
     def test_change_password_wrong_current(self, api_client, auth_headers):
         response = api_client.post(
             "/api/auth/change-password/",
-            {"current_password": "wrongpass", "new_password": "newpassword456"},
+            {"current_password": "wrongpass", "new_password": "NewPassword456!"},
             content_type="application/json",
             **auth_headers,
         )
@@ -279,12 +279,56 @@ class TestChangePassword:
             **auth_headers,
         )
         assert response.status_code == 400
-        assert "8 characters" in response.json()["detail"]
+        assert "12 characters" in response.json()["detail"]
+
+    def test_change_password_missing_uppercase(self, api_client, auth_headers):
+        response = api_client.post(
+            "/api/auth/change-password/",
+            {"current_password": "testpass123", "new_password": "nouppercase123!"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        assert "uppercase" in response.json()["detail"]
+
+    def test_change_password_missing_number(self, api_client, auth_headers):
+        response = api_client.post(
+            "/api/auth/change-password/",
+            {"current_password": "testpass123", "new_password": "NoNumberHere!!!"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        assert "number" in response.json()["detail"]
+
+    def test_change_password_missing_special_char(self, api_client, auth_headers):
+        response = api_client.post(
+            "/api/auth/change-password/",
+            {"current_password": "testpass123", "new_password": "NoSpecialChar1X"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        assert "special" in response.json()["detail"]
+
+    def test_change_password_multiple_failures(self, api_client, auth_headers):
+        response = api_client.post(
+            "/api/auth/change-password/",
+            {"current_password": "testpass123", "new_password": "short"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        detail = response.json()["detail"]
+        assert "12 characters" in detail
+        assert "uppercase" in detail
+        assert "number" in detail
+        assert "special" in detail
 
     def test_change_password_requires_auth(self, api_client):
         response = api_client.post(
             "/api/auth/change-password/",
-            {"current_password": "testpass123", "new_password": "newpassword456"},
+            {"current_password": "testpass123", "new_password": "NewPassword456!"},
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -300,7 +344,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_success(self, api_client, onboarding_headers, onboarding_user):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "New Name", "new_password": "securepass99"},
+            {"display_name": "New Name", "new_password": "SecurePass99!"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -310,12 +354,12 @@ class TestCompleteOnboarding:
         assert data["needs_onboarding"] is False
         onboarding_user.refresh_from_db()
         assert onboarding_user.needs_onboarding is False
-        assert onboarding_user.check_password("securepass99")
+        assert onboarding_user.check_password("SecurePass99!")
 
     def test_complete_onboarding_with_email(self, api_client, onboarding_headers, onboarding_user):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "securepass99", "email": "user@example.com"},
+            {"display_name": "Named", "new_password": "SecurePass99!", "email": "user@example.com"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -331,12 +375,42 @@ class TestCompleteOnboarding:
             **onboarding_headers,
         )
         assert response.status_code == 400
-        assert "8 characters" in response.json()["detail"]
+        assert "12 characters" in response.json()["detail"]
+
+    def test_complete_onboarding_missing_uppercase(self, api_client, onboarding_headers):
+        response = api_client.post(
+            "/api/auth/complete-onboarding/",
+            {"display_name": "Named", "new_password": "nouppercase123!"},
+            content_type="application/json",
+            **onboarding_headers,
+        )
+        assert response.status_code == 400
+        assert "uppercase" in response.json()["detail"]
+
+    def test_complete_onboarding_missing_number(self, api_client, onboarding_headers):
+        response = api_client.post(
+            "/api/auth/complete-onboarding/",
+            {"display_name": "Named", "new_password": "NoNumberHere!!!"},
+            content_type="application/json",
+            **onboarding_headers,
+        )
+        assert response.status_code == 400
+        assert "number" in response.json()["detail"]
+
+    def test_complete_onboarding_missing_special_char(self, api_client, onboarding_headers):
+        response = api_client.post(
+            "/api/auth/complete-onboarding/",
+            {"display_name": "Named", "new_password": "NoSpecialChar1X"},
+            content_type="application/json",
+            **onboarding_headers,
+        )
+        assert response.status_code == 400
+        assert "special" in response.json()["detail"]
 
     def test_complete_onboarding_requires_auth(self, api_client):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "securepass99"},
+            {"display_name": "Named", "new_password": "SecurePass99!"},
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -346,7 +420,7 @@ class TestCompleteOnboarding:
     ):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "  Padded Name  ", "new_password": "securepass99"},
+            {"display_name": "  Padded Name  ", "new_password": "SecurePass99!"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -356,7 +430,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_invalid_email_rejected(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "securepass99", "email": "notanemail"},
+            {"display_name": "Named", "new_password": "SecurePass99!", "email": "notanemail"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -365,7 +439,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_empty_email_accepted(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "securepass99", "email": ""},
+            {"display_name": "Named", "new_password": "SecurePass99!", "email": ""},
             content_type="application/json",
             **onboarding_headers,
         )

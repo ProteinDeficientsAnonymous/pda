@@ -62,6 +62,48 @@ void main() {
     });
   });
 
+  group('password()', () {
+    final validator = v.password();
+
+    test('rejects empty string', () {
+      expect(validator(''), isNotNull);
+    });
+
+    test('rejects null', () {
+      expect(validator(null), isNotNull);
+    });
+
+    test('rejects password under 12 characters', () {
+      expect(validator('Short1!'), isNotNull);
+    });
+
+    test('rejects missing uppercase', () {
+      expect(validator('nouppercase123!'), isNotNull);
+    });
+
+    test('rejects missing number', () {
+      expect(validator('NoNumberHere!!!'), isNotNull);
+    });
+
+    test('rejects missing special character', () {
+      expect(validator('NoSpecialChar1X'), isNotNull);
+    });
+
+    test('accepts valid password', () {
+      expect(validator('ValidPass123!'), isNull);
+    });
+
+    test('accepts password with exactly 12 characters', () {
+      expect(validator('Abcdefghij1!'), isNull);
+    });
+
+    test('accepts various special characters', () {
+      expect(validator('ValidPass123@'), isNull);
+      expect(validator('ValidPass123#'), isNull);
+      expect(validator('ValidPass123\$'), isNull);
+    });
+  });
+
   group('optionalDisplayName()', () {
     final validator = v.optionalDisplayName();
 

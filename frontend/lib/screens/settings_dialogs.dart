@@ -5,8 +5,9 @@ import 'package:pda/providers/accessibility_preferences_provider.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
-import 'package:pda/widgets/loading_button.dart';
 import 'package:pda/utils/validators.dart' as v;
+import 'package:pda/widgets/loading_button.dart';
+import 'package:pda/widgets/password_strength_checklist.dart';
 
 final _log = Logger('SettingsDialog');
 
@@ -178,19 +179,16 @@ class _SettingsChangePasswordDialogState
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(labelText: 'New password'),
               validator: v.all([
-                v.required(),
-                (val) => (val != null && val.length < 8)
-                    ? 'Must be at least 8 characters'
-                    : null,
-                (val) => (val != null && val.length > 128)
-                    ? 'Max 128 characters'
-                    : null,
+                v.password(),
+                v.maxLength(128),
                 (val) => (val != null && val == _currentCtrl.text)
-                    ? 'New password must differ from current'
+                    ? 'new password must differ from current'
                     : null,
               ]),
               onFieldSubmitted: (_) => _confirmFocus.requestFocus(),
             ),
+            const SizedBox(height: 8),
+            PasswordStrengthChecklist(controller: _newCtrl),
             const SizedBox(height: 12),
             TextFormField(
               controller: _confirmCtrl,

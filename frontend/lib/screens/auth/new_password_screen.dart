@@ -4,7 +4,9 @@ import 'package:logging/logging.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
+import 'package:pda/utils/validators.dart' as v;
 import 'package:pda/widgets/app_scaffold.dart';
+import 'package:pda/widgets/password_strength_checklist.dart';
 
 final _log = Logger('NewPassword');
 
@@ -99,10 +101,10 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                         textInputAction: TextInputAction.next,
                         onFieldSubmitted: (_) =>
                             _confirmPwFocusNode.requestFocus(),
-                        validator: (v) => (v == null || v.length < 8)
-                            ? 'At least 8 characters'
-                            : null,
+                        validator: v.password(),
                       ),
+                      const SizedBox(height: 8),
+                      PasswordStrengthChecklist(controller: _newPwCtrl),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _confirmPwCtrl,

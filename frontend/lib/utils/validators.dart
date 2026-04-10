@@ -92,6 +92,23 @@ Validator optionalUrl({bool httpsOnly = false}) {
   };
 }
 
+/// Password strength: 12+ chars, uppercase letter, number, special character.
+Validator password() {
+  return all([
+    required(),
+    (v) => (v != null && v.length < 12) ? 'at least 12 characters' : null,
+    (v) => (v != null && v.isNotEmpty && !RegExp(r'[A-Z]').hasMatch(v))
+        ? 'include an uppercase letter'
+        : null,
+    (v) => (v != null && v.isNotEmpty && !RegExp(r'[0-9]').hasMatch(v))
+        ? 'include a number'
+        : null,
+    (v) => (v != null && v.isNotEmpty && !RegExp(r'[^A-Za-z0-9]').hasMatch(v))
+        ? 'include a special character'
+        : null,
+  ]);
+}
+
 /// Role name: required, alphanumeric + underscores/hyphens, max 50 chars.
 Validator roleName() {
   final re = RegExp(r'^[a-zA-Z0-9_\-]+$');
