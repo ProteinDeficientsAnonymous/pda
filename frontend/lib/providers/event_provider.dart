@@ -64,3 +64,27 @@ Future<void> deleteEventPhoto(WidgetRef ref, String eventId) async {
   ref.invalidate(eventsProvider);
   ref.invalidate(eventDetailProvider(eventId));
 }
+
+Future<void> uncancelEvent(WidgetRef ref, String eventId) async {
+  final api = ref.read(apiClientProvider);
+  await api.post('/api/community/events/$eventId/uncancel/');
+  ref.invalidate(eventsProvider);
+  ref.invalidate(cancelledEventsProvider);
+  ref.invalidate(eventDetailProvider(eventId));
+}
+
+final cancelledEventsProvider = FutureProvider<List<Event>>((ref) async {
+  ref.watch(authProvider);
+  final api = ref.watch(apiClientProvider);
+  try {
+    final response = await api.get(
+      '/api/community/events/',
+      queryParameters: {'status': 'cancelled'},
+    );
+    final list = response.data as List<dynamic>;
+    return list.map((e) => Event.fromJson(e as Map<String, dynamic>)).toList();
+  } catch (e) {
+    _log.warning('Failed to load cancelled events', e);
+    rethrow;
+  }
+});

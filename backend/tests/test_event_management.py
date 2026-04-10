@@ -397,7 +397,7 @@ class TestEventManagement:
             **manage_events_headers,
         )
         assert response.status_code == 204
-        assert not Event.objects.filter(id=event_id).exists()
+        assert Event.objects.filter(id=event_id, status="cancelled").exists()
 
     def test_delete_event_requires_permission(self, api_client, auth_headers, sample_event):
         """A regular member cannot delete an event they did not create."""
@@ -424,7 +424,7 @@ class TestEventManagement:
             **auth_headers,
         )
         assert response.status_code == 204
-        assert not Event.objects.filter(id=event_id).exists()
+        assert Event.objects.filter(id=event_id, status="cancelled").exists()
 
     def test_member_cannot_delete_others_event(self, api_client, auth_headers, manage_events_user):
         """A regular member cannot delete an event created by someone else."""

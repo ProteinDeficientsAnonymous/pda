@@ -29,20 +29,25 @@ class EventAdminActions extends ConsumerStatefulWidget {
 class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
   bool _loading = false;
 
-  Future<void> _delete() async {
+  Future<void> _cancel() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete event'),
-        content: Text('Delete "${widget.event.title}"? This cannot be undone.'),
+        title: const Text('cancel event'),
+        content: Text(
+          'cancel "${widget.event.title}"? attendees will see it\'s been cancelled.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: const Text('nevermind'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('cancel event'),
           ),
         ],
       ),
@@ -54,11 +59,30 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
       final api = ref.read(apiClientProvider);
       await api.delete('/api/community/events/${widget.event.id}/');
       ref.invalidate(eventsProvider);
+      ref.invalidate(cancelledEventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
-      _log.info('deleted event ${widget.event.id}');
+      _log.info('cancelled event ${widget.event.id}');
       if (mounted) Navigator.of(context).pop();
     } catch (e, st) {
-      _log.warning('failed to delete event', e, st);
+      _log.warning('failed to cancel event', e, st);
+      if (mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _uncancel() async {
+    setState(() => _loading = true);
+    try {
+      await uncancelEvent(ref, widget.event.id);
+      _log.info('uncancelled event ${widget.event.id}');
+      if (mounted) {
+        showSnackBar(context, 'event reinstated');
+      }
+    } catch (e, st) {
+      _log.warning('failed to uncancel event', e, st);
       if (mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -120,32 +144,43 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
 
     final isCreator = widget.event.createdById == user.id;
     final isManager = user.hasPermission(Permission.manageEvents);
-    if (!isCreator && !isManager) return const SizedBox.shrink();
+    final isCoHost = widget.event.coHostIds.contains(user.id);
+    final canEdit = isCreator || isManager || isCoHost;
+    if (!canEdit) return const SizedBox.shrink();
+
+    final isCancelled = widget.event.status == EventStatus.cancelled;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        OutlinedButton.icon(
-          onPressed: _edit,
-          icon: const Icon(Icons.edit_outlined, size: 16),
-          label: const Text('edit'),
-        ),
-        const SizedBox(width: 12),
-        OutlinedButton.icon(
-          onPressed: _delete,
-          icon: Icon(
-            Icons.delete_outline,
-            size: 16,
-            color: Theme.of(context).colorScheme.error,
+        if (!isCancelled) ...[
+          OutlinedButton.icon(
+            onPressed: _edit,
+            icon: const Icon(Icons.edit_outlined, size: 16),
+            label: const Text('edit'),
           ),
-          label: Text(
-            'delete',
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          const SizedBox(width: 12),
+          OutlinedButton.icon(
+            onPressed: _cancel,
+            icon: Icon(
+              Icons.cancel_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            label: Text(
+              'cancel event',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Theme.of(context).colorScheme.error),
+            ),
           ),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: Theme.of(context).colorScheme.error),
+        ] else if (isCreator || isManager)
+          OutlinedButton.icon(
+            onPressed: _uncancel,
+            icon: const Icon(Icons.restore, size: 16),
+            label: const Text('uncancel'),
           ),
-        ),
       ],
     );
   }

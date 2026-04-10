@@ -27,7 +27,7 @@ class EventManagementScreen extends ConsumerWidget {
         error: (e, _) =>
             const Center(child: Text('couldn\'t load events — try refreshing')),
         data: (events) {
-          final filtered = myEventsOnly && user != null
+          final myEvents = myEventsOnly && user != null
               ? events
                     .where(
                       (e) =>
@@ -37,7 +37,7 @@ class EventManagementScreen extends ConsumerWidget {
                     .toList()
               : events;
           return _EventManagementBody(
-            events: filtered,
+            events: myEvents,
             myEventsOnly: myEventsOnly,
           );
         },
@@ -47,6 +47,8 @@ class EventManagementScreen extends ConsumerWidget {
 }
 
 enum _SortField { date, title, type }
+
+enum _EventFilter { upcoming, past, cancelled }
 
 class _EventManagementBody extends ConsumerStatefulWidget {
   final List<Event> events;
@@ -66,6 +68,7 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
   final _searchController = TextEditingController();
   String _query = '';
   _SortField _sort = _SortField.date;
+  _EventFilter _filter = _EventFilter.upcoming;
 
   @override
   void dispose() {
@@ -73,25 +76,12 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
     super.dispose();
   }
 
-  List<Event> _filterAndSort(List<Event> events) {
-    var filtered = events;
-    if (_query.isNotEmpty) {
-      final q = _query.toLowerCase();
-      filtered = events
-          .where((e) => e.title.toLowerCase().contains(q))
-          .toList();
-    }
-    filtered = List.of(filtered);
-    filtered.sort((a, b) {
-      return switch (_sort) {
-        _SortField.date => b.startDatetime.compareTo(a.startDatetime),
-        _SortField.title => a.title.toLowerCase().compareTo(
-          b.title.toLowerCase(),
-        ),
-        _SortField.type => a.eventType.compareTo(b.eventType),
-      };
-    });
-    return filtered;
+  List<Event> _applyTabFilter(List<Event> events) {
+    return switch (_filter) {
+      _EventFilter.upcoming => events.where((e) => !e.isPast).toList(),
+      _EventFilter.past => events.where((e) => e.isPast).toList(),
+      _EventFilter.cancelled => [],
+    };
   }
 
   Future<void> _showCreateDialog() async {
@@ -127,15 +117,100 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
     }
   }
 
+  List<Event> _searchFilter(List<Event> events) {
+    if (_query.isEmpty) return events;
+    final q = _query.toLowerCase();
+    return events.where((e) => e.title.toLowerCase().contains(q)).toList();
+  }
+
+  List<Event> _applySortOrder(List<Event> events) {
+    final result = List.of(events);
+    result.sort((a, b) {
+      return switch (_sort) {
+        _SortField.date => b.startDatetime.compareTo(a.startDatetime),
+        _SortField.title => a.title.toLowerCase().compareTo(
+          b.title.toLowerCase(),
+        ),
+        _SortField.type => a.eventType.compareTo(b.eventType),
+      };
+    });
+    return result;
+  }
+
+  String _emptyMessage() {
+    if (_query.isNotEmpty) return 'no matches for "$_query"';
+    return switch (_filter) {
+      _EventFilter.upcoming => 'no upcoming events',
+      _EventFilter.past => 'no past events',
+      _EventFilter.cancelled => 'no cancelled events',
+    };
+  }
+
+  String _emptySubtext() {
+    if (_query.isNotEmpty || !widget.myEventsOnly) {
+      return 'create one to get started';
+    }
+    return switch (_filter) {
+      _EventFilter.upcoming =>
+        "you haven't created or co-hosted any upcoming events",
+      _EventFilter.past => "you haven't created or co-hosted any past events",
+      _EventFilter.cancelled => 'none of your events have been cancelled',
+    };
+  }
+
+  Widget _buildList(List<Event> events) {
+    final filtered = _applySortOrder(_searchFilter(events));
+    if (filtered.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.calendar_today_outlined,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _emptyMessage(),
+                style: const TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              Text(_emptySubtext(), style: const TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      itemCount: filtered.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) =>
+          EventManagementRow(event: filtered[index]),
+    );
+  }
+
+  Widget _buildCancelledTab() {
+    final cancelledAsync = ref.watch(cancelledEventsProvider);
+    return cancelledAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const Center(
+        child: Text("couldn't load cancelled events — try refreshing"),
+      ),
+      data: _buildList,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filtered = _filterAndSort(widget.events);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
           child: Row(
             children: [
               Expanded(
@@ -191,49 +266,39 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
             ],
           ),
         ),
-        Expanded(
-          child: filtered.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _query.isNotEmpty
-                              ? 'no matches for "$_query"'
-                              : 'no events yet',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        if (_query.isEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            widget.myEventsOnly
-                                ? "you haven't created or co-hosted any events yet"
-                                : 'create one to get started',
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) =>
-                      EventManagementRow(event: filtered[index]),
+        if (widget.myEventsOnly) ...[
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: SegmentedButton<_EventFilter>(
+              segments: const [
+                ButtonSegment(
+                  value: _EventFilter.upcoming,
+                  label: Text('upcoming'),
                 ),
+                ButtonSegment(value: _EventFilter.past, label: Text('past')),
+                ButtonSegment(
+                  value: _EventFilter.cancelled,
+                  label: Text('cancelled'),
+                ),
+              ],
+              selected: {_filter},
+              onSelectionChanged: (s) => setState(() => _filter = s.first),
+              showSelectedIcon: false,
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                textStyle: WidgetStatePropertyAll(
+                  Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Expanded(
+          child: _filter == _EventFilter.cancelled && widget.myEventsOnly
+              ? _buildCancelledTab()
+              : _buildList(_applyTabFilter(widget.events)),
         ),
       ],
     );

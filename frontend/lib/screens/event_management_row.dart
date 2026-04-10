@@ -55,23 +55,25 @@ class EventManagementRow extends ConsumerWidget {
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmCancel(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete event'),
-        content: Text('Delete "${event.title}"? This cannot be undone.'),
+      builder: (ctx) => AlertDialog(
+        title: const Text('cancel event'),
+        content: Text(
+          'cancel "${event.title}"? attendees will see it\'s been cancelled.',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('nevermind'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('cancel event'),
           ),
         ],
       ),
@@ -83,9 +85,23 @@ class EventManagementRow extends ConsumerWidget {
       final api = ref.read(apiClientProvider);
       await api.delete('/api/community/events/${event.id}/');
       ref.invalidate(eventsProvider);
-      _log.info('deleted event ${event.id}');
+      ref.invalidate(cancelledEventsProvider);
+      _log.info('cancelled event ${event.id}');
     } catch (e, st) {
-      _log.warning('failed to delete event', e, st);
+      _log.warning('failed to cancel event', e, st);
+      if (context.mounted) {
+        showErrorSnackBar(context, ApiError.from(e).message);
+      }
+    }
+  }
+
+  Future<void> _doUncancel(BuildContext context, WidgetRef ref) async {
+    try {
+      await uncancelEvent(ref, event.id);
+      _log.info('uncancelled event ${event.id}');
+      if (context.mounted) showSnackBar(context, 'event reinstated');
+    } catch (e, st) {
+      _log.warning('failed to uncancel event', e, st);
       if (context.mounted) {
         showErrorSnackBar(context, ApiError.from(e).message);
       }
@@ -124,6 +140,31 @@ class EventManagementRow extends ConsumerWidget {
                             ).textTheme.titleMedium?.copyWith(color: fg),
                           ),
                         ),
+                        if (event.status == EventStatus.cancelled) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'cancelled',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (event.eventType == EventType.official) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -200,19 +241,27 @@ class EventManagementRow extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Edit',
-                icon: Icon(Icons.edit_outlined, color: fg.withAlpha(178)),
-                onPressed: () => _showEditDialog(context, ref),
-              ),
-              IconButton(
-                tooltip: 'Delete',
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Theme.of(context).colorScheme.error,
+              if (event.status != EventStatus.cancelled)
+                IconButton(
+                  tooltip: 'Edit',
+                  icon: Icon(Icons.edit_outlined, color: fg.withAlpha(178)),
+                  onPressed: () => _showEditDialog(context, ref),
                 ),
-                onPressed: () => _confirmDelete(context, ref),
-              ),
+              if (event.status == EventStatus.cancelled)
+                IconButton(
+                  tooltip: 'Uncancel',
+                  icon: const Icon(Icons.restore),
+                  onPressed: () => _doUncancel(context, ref),
+                )
+              else
+                IconButton(
+                  tooltip: 'Cancel event',
+                  icon: Icon(
+                    Icons.cancel_outlined,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: () => _confirmCancel(context, ref),
+                ),
             ],
           ),
         ),

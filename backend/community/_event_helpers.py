@@ -158,6 +158,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         invited_user_photo_urls=[media_path(u.profile_photo) for u in invited],
         invite_permission=event.invite_permission,
         is_past=event.is_past,
+        status=event.status,
     )
 
 

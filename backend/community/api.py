@@ -11,6 +11,7 @@ from community._event_helpers import (  # noqa: F401
     _can_see_phones,
     _find_my_rsvp,
 )
+from community._event_rsvps import router as event_rsvps_router
 from community._event_schemas import EventPatchIn  # noqa: F401
 from community._events import router as events_router
 from community._feedback import router as feedback_router
@@ -33,6 +34,7 @@ router.add_router("", join_form_router)
 router.add_router("", join_requests_router)
 router.add_router("", feedback_router)
 router.add_router("", events_router)
+router.add_router("", event_rsvps_router)
 router.add_router("", calendar_router)
 router.add_router("", whatsapp_router)
 router.add_router("", polls_router)

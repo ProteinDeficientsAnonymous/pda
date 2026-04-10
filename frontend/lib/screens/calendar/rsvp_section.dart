@@ -210,6 +210,8 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
 
     final summary = _buildSummary(guests);
     final isPastForUser = liveEvent.isPast && !isCoHost;
+    final isCancelled = liveEvent.status == EventStatus.cancelled;
+    final rsvpDisabled = !_loading && !isPastForUser && !isCancelled;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -227,7 +229,15 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
               textAlign: TextAlign.center,
             ),
           ),
-        if (isPastForUser)
+        if (isCancelled)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              'this event has been cancelled',
+              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+            ),
+          )
+        else if (isPastForUser)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
@@ -235,11 +245,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
             ),
           ),
-        _buildToggleButtons(
-          myRsvp: myRsvp,
-          cs: cs,
-          enabled: !_loading && !isPastForUser,
-        ),
+        _buildToggleButtons(myRsvp: myRsvp, cs: cs, enabled: rsvpDisabled),
         if (liveEvent.allowPlusOnes &&
             (myRsvp == RsvpStatus.attending || myRsvp == RsvpStatus.maybe)) ...[
           const SizedBox(height: 12),

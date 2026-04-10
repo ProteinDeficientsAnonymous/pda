@@ -160,7 +160,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('edit'), findsOneWidget);
-    expect(find.text('delete'), findsOneWidget);
+    expect(find.text('cancel event'), findsOneWidget);
   });
 
   testWidgets('admin actions hidden for non-creator member', (tester) async {
@@ -178,7 +178,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('edit'), findsNothing);
-    expect(find.text('delete'), findsNothing);
+    expect(find.text('cancel event'), findsNothing);
   });
 }
 

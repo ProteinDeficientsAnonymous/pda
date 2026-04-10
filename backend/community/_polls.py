@@ -25,6 +25,7 @@ from community.models import (
     Event,
     EventPoll,
     EventRSVP,
+    EventStatus,
     PollAvailability,
     PollOption,
     PollVote,
@@ -117,6 +118,8 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
             details={"endpoint": "create_event_poll"},
         )
         return Status(403, ErrorOut(detail="Permission denied."))
+    if event.status == EventStatus.CANCELLED:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     if hasattr(event, "poll"):
         return Status(400, ErrorOut(detail="This event already has a poll."))
     if len(payload.options) < 2:
@@ -166,12 +169,14 @@ def get_event_poll(request, event_id: UUID):
 def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
     try:
         poll = (
-            EventPoll.objects.select_related("winning_option")
+            EventPoll.objects.select_related("winning_option", "event")
             .prefetch_related("options__votes__user")
             .get(event_id=event_id, is_active=True)
         )
     except EventPoll.DoesNotExist:
         return Status(404, ErrorOut(detail="Active poll not found."))
+    if poll.event.status == EventStatus.CANCELLED:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     for availability in payload.votes.values():
         if availability not in PollAvailability.VALID:
             return Status(
@@ -234,20 +239,11 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             details={"endpoint": "finalize_event_poll"},
         )
         return Status(403, ErrorOut(detail="Permission denied."))
-    try:
-        poll = (
-            EventPoll.objects.select_related("winning_option")
-            .prefetch_related("options__votes__user")
-            .get(event=event)
-        )
-    except EventPoll.DoesNotExist:
-        return Status(404, ErrorOut(detail="Poll not found."))
-    if poll.winning_option_id is not None:
-        return Status(400, ErrorOut(detail="This poll has already been finalized."))
-    try:
-        winning_option = poll.options.get(id=payload.winning_option_id)
-    except PollOption.DoesNotExist:
-        return Status(400, ErrorOut(detail="Winning option not found in this poll."))
+    if event.status == EventStatus.CANCELLED:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+    poll, winning_option, err = _get_poll_and_option(event, payload.winning_option_id)
+    if err is not None:
+        return err
     with transaction.atomic():
         from django.utils import timezone
 
@@ -332,6 +328,8 @@ def _get_active_poll(user, event_id: UUID):
         return None, None, Status(404, ErrorOut(detail="Event not found."))
     if not _can_manage_poll(user, event):
         return None, None, Status(403, ErrorOut(detail="Permission denied."))
+    if event.status == EventStatus.CANCELLED:
+        return None, None, Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     try:
         poll = (
             EventPoll.objects.select_related("winning_option")
@@ -343,6 +341,25 @@ def _get_active_poll(user, event_id: UUID):
     if poll.winning_option_id is not None:
         return None, None, Status(400, ErrorOut(detail="Cannot modify a finalized poll."))
     return event, poll, None
+
+
+def _get_poll_and_option(event, winning_option_id):
+    """Return (poll, winning_option, error) for finalize_event_poll."""
+    try:
+        poll = (
+            EventPoll.objects.select_related("winning_option")
+            .prefetch_related("options__votes__user")
+            .get(event=event)
+        )
+    except EventPoll.DoesNotExist:
+        return None, None, Status(404, ErrorOut(detail="Poll not found."))
+    if poll.winning_option_id is not None:
+        return None, None, Status(400, ErrorOut(detail="This poll has already been finalized."))
+    try:
+        winning_option = poll.options.get(id=winning_option_id)
+    except PollOption.DoesNotExist:
+        return None, None, Status(400, ErrorOut(detail="Winning option not found in this poll."))
+    return poll, winning_option, None
 
 
 @router.post(

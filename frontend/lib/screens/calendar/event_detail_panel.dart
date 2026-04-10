@@ -132,7 +132,8 @@ class EventDetailContent extends ConsumerWidget {
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                       ),
-                      if (liveEvent.eventType == EventType.official ||
+                      if (liveEvent.status == EventStatus.cancelled ||
+                          liveEvent.eventType == EventType.official ||
                           liveEvent.visibility == PageVisibility.membersOnly ||
                           liveEvent.visibility ==
                               PageVisibility.inviteOnly) ...[
@@ -140,6 +141,29 @@ class EventDetailContent extends ConsumerWidget {
                         Wrap(
                           spacing: 6,
                           children: [
+                            if (liveEvent.status == EventStatus.cancelled)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.errorContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'cancelled',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
+                                  ),
+                                ),
+                              ),
                             if (liveEvent.eventType == EventType.official)
                               Container(
                                 padding: const EdgeInsets.symmetric(

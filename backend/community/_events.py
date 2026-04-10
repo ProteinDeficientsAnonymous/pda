@@ -1,4 +1,4 @@
-"""Events CRUD, RSVP, and event photo endpoints."""
+"""Events CRUD and event photo endpoints."""
 
 import logging
 import time
@@ -33,15 +33,13 @@ from community._event_schemas import (
     EventListOut,
     EventOut,
     EventPatchIn,
-    RSVPIn,
 )
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community.models import (
     Event,
-    EventRSVP,
+    EventStatus,
     EventType,
     PageVisibility,
-    RSVPStatus,
 )
 
 router = Router()
@@ -72,28 +70,83 @@ def _validate_event_datetimes(
     return None
 
 
-@router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
-def list_events(request):
+def _validate_update_payload(request, event: Event, event_id, updates: dict) -> Status | None:
+    """Validate PATCH payload fields; return error Status or None."""
+    if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
+        PermissionKey.TAG_OFFICIAL_EVENT
+    ):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details={
+                "endpoint": "update_event",
+                "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
+            },
+        )
+        return Status(403, ErrorOut(detail="Permission denied."))
+    effective_type = updates.get("event_type", event.event_type)
+    effective_visibility = updates.get("visibility", event.visibility)
+    if _is_invalid_official_visibility(effective_type, effective_visibility):
+        return Status(400, ErrorOut(detail="Official events must be public."))
+    effective_start = updates.get("start_datetime", event.start_datetime)
+    effective_end = updates.get("end_datetime", event.end_datetime)
+    effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
+    dt_error = _validate_event_datetimes(
+        effective_start, effective_end, effective_tbd, check_past="start_datetime" in updates
+    )
+    if dt_error:
+        return Status(400, ErrorOut(detail=dt_error))
+    return None
+
+
+def _build_events_queryset(status: str, auth_user, is_authed):
+    """Build the events queryset for list_events based on status and auth state."""
+    if status == EventStatus.CANCELLED:
+        return (
+            Event.objects.prefetch_related("co_hosts", "invited_users")
+            .filter(status=EventStatus.CANCELLED)
+            .filter(Q(created_by=auth_user) | Q(co_hosts=auth_user))
+            .distinct()
+        )
+    qs = Event.objects.prefetch_related("co_hosts", "invited_users").exclude(
+        status=EventStatus.CANCELLED
+    )
+    if not is_authed:
+        qs = qs.filter(Q(visibility=PageVisibility.PUBLIC) | Q(event_type=EventType.OFFICIAL))
+    return qs
+
+
+def _filter_invite_only(events, auth_user, status: str):
+    """Remove invite-only events the user cannot see (skip for cancelled status queries)."""
+    if not auth_user or status == EventStatus.CANCELLED:
+        return events
+    return [
+        e
+        for e in events
+        if e.visibility != PageVisibility.INVITE_ONLY
+        or _can_see_invite_only(
+            auth_user,
+            {str(c.id) for c in e.co_hosts.all()},
+            {str(u.id) for u in e.invited_users.all()},
+            e.created_by_id,
+        )
+    ]
+
+
+@router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
+def list_events(request, status: str = EventStatus.ACTIVE):
     auth_user = _authenticated_user(request.auth)
     is_authed = auth_user is not None
-    events_qs = Event.objects.prefetch_related("co_hosts", "invited_users").all()
-    if not is_authed:
-        events_qs = events_qs.filter(
-            Q(visibility=PageVisibility.PUBLIC) | Q(event_type=EventType.OFFICIAL)
-        )
-    events = list(events_qs)
-    if is_authed:
-        events = [
-            e
-            for e in events
-            if e.visibility != PageVisibility.INVITE_ONLY
-            or _can_see_invite_only(
-                auth_user,
-                {str(c.id) for c in e.co_hosts.all()},
-                {str(u.id) for u in e.invited_users.all()},
-                e.created_by_id,
-            )
-        ]
+
+    if status == EventStatus.CANCELLED and not is_authed:
+        return Status(403, ErrorOut(detail="Authentication required."))
+
+    events = _filter_invite_only(
+        list(_build_events_queryset(status, auth_user, is_authed)), auth_user, status
+    )
     return Status(
         200,
         [
@@ -122,6 +175,7 @@ def list_events(request):
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
                 is_past=e.is_past,
+                status=e.status,
             )
             for e in events
         ],
@@ -256,37 +310,13 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         )
         return Status(403, ErrorOut(detail="Permission denied."))
 
+    if event.is_cancelled:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+
     updates = payload.model_dump(exclude_unset=True)
-    if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
-        PermissionKey.TAG_OFFICIAL_EVENT
-    ):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={
-                "endpoint": "update_event",
-                "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    effective_type = updates.get("event_type", event.event_type)
-    effective_visibility = updates.get("visibility", event.visibility)
-    if _is_invalid_official_visibility(effective_type, effective_visibility):
-        return Status(400, ErrorOut(detail="Official events must be public."))
-    effective_start = updates.get("start_datetime", event.start_datetime)
-    effective_end = updates.get("end_datetime", event.end_datetime)
-    effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
-    dt_error = _validate_event_datetimes(
-        effective_start,
-        effective_end,
-        effective_tbd,
-        check_past="start_datetime" in updates,
-    )
-    if dt_error:
-        return Status(400, ErrorOut(detail=dt_error))
+    err = _validate_update_payload(request, event, event_id, updates)
+    if err:
+        return err
     co_host_ids = updates.pop("co_host_ids", None)
     invited_user_ids = updates.pop("invited_user_ids", None)
     for field, value in updates.items():
@@ -331,17 +361,15 @@ def delete_event(request, event_id: UUID):
         )
         return Status(403, ErrorOut(detail="Permission denied."))
 
-    title = event.title
-    if event.photo:
-        event.photo.delete(save=False)
-    event.delete()
+    event.status = EventStatus.CANCELLED
+    event.save(update_fields=["status"])
     audit_log(
         logging.INFO,
-        "event_deleted",
+        "event_cancelled",
         request,
         target_type="event",
         target_id=str(event_id),
-        details={"title": title},
+        details={"title": event.title},
     )
     return Status(204, None)
 
@@ -374,6 +402,8 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
             details={"endpoint": "upload_event_photo"},
         )
         return Status(403, ErrorOut(detail="Permission denied."))
+    if event.is_cancelled:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     if event.photo:
         event.photo.delete(save=False)
     name = photo.name or ""
@@ -409,6 +439,8 @@ def delete_event_photo(request, event_id: UUID):
             details={"endpoint": "delete_event_photo"},
         )
         return Status(403, ErrorOut(detail="Permission denied."))
+    if event.is_cancelled:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     if event.photo:
         event.photo.delete(save=False)
         event.photo = ""
@@ -420,12 +452,11 @@ def delete_event_photo(request, event_id: UUID):
 
 
 @router.post(
-    "/events/{event_id}/rsvp/",
-    response={200: EventOut, 400: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    "/events/{event_id}/uncancel/",
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=JWTAuth(),
 )
-@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
-def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
+def uncancel_event(request, event_id: UUID):
     try:
         event = (
             Event.objects.select_related("created_by")
@@ -435,60 +466,30 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
 
-    if event.visibility == PageVisibility.INVITE_ONLY:
-        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
-        if not _can_see_invite_only(
-            request.auth, co_host_ids, invited_user_ids, event.created_by_id
-        ):
-            return Status(404, ErrorOut(detail="Event not found."))
+    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
+    is_creator = event.created_by_id == request.auth.pk
+    if not is_manager and not is_creator:
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details={"endpoint": "uncancel_event"},
+        )
+        return Status(403, ErrorOut(detail="Permission denied."))
 
-    if not event.rsvp_enabled:
-        return Status(400, ErrorOut(detail="RSVPs are not enabled for this event."))
+    if not event.is_cancelled:
+        return Status(400, ErrorOut(detail="Event is not cancelled."))
 
-    if event.is_past and not _can_edit_event(request.auth, event):
-        return Status(400, ErrorOut(detail="RSVPs are closed for past events."))
-
-    valid_statuses = RSVPStatus.values
-    if payload.status not in valid_statuses:
-        return Status(400, ErrorOut(detail=f"Status must be one of: {', '.join(valid_statuses)}."))
-
-    EventRSVP.objects.update_or_create(
-        event=event,
-        user=request.auth,
-        defaults={"status": payload.status, "has_plus_one": payload.has_plus_one},
-    )
+    event.status = EventStatus.ACTIVE
+    event.save(update_fields=["status"])
     audit_log(
         logging.INFO,
-        "rsvp_changed",
+        "event_uncancelled",
         request,
         target_type="event",
         target_id=str(event_id),
-        details={"status": payload.status},
-    )
-    event.refresh_from_db()
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .get(id=event_id)
+        details={"title": event.title},
     )
     return Status(200, _event_out(event, request.auth))
-
-
-@router.delete(
-    "/events/{event_id}/rsvp/",
-    response={204: None, 400: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def delete_rsvp(request, event_id: UUID):
-    try:
-        event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
-    except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
-    if event.is_past and not _can_edit_event(request.auth, event):
-        return Status(400, ErrorOut(detail="RSVPs are closed for past events."))
-    deleted, _ = EventRSVP.objects.filter(event_id=event_id, user=request.auth).delete()
-    if not deleted:
-        return Status(404, ErrorOut(detail="RSVP not found."))
-    audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
-    return Status(204, None)

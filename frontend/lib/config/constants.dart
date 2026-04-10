@@ -3,6 +3,11 @@ abstract class EventType {
   static const community = 'community';
 }
 
+abstract class EventStatus {
+  static const active = 'active';
+  static const cancelled = 'cancelled';
+}
+
 abstract class RsvpStatus {
   static const attending = 'attending';
   static const maybe = 'maybe';

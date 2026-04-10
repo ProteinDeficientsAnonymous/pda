@@ -4,6 +4,7 @@ All existing ``from community.models import X`` imports continue to work unchang
 """
 
 from community.models.choices import (
+    EventStatus,
     EventType,
     InvitePermission,
     JoinFormQuestionType,
@@ -34,6 +35,7 @@ from community.models.survey import (
 
 __all__ = [
     # choices
+    "EventStatus",
     "EventType",
     "InvitePermission",
     "JoinFormQuestionType",

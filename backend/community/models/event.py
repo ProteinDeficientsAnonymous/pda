@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING
 from django.db import models
 from django.utils import timezone
 
-from community.models.choices import EventType, InvitePermission, PageVisibility, RSVPStatus
+from community.models.choices import (
+    EventStatus,
+    EventType,
+    InvitePermission,
+    PageVisibility,
+    RSVPStatus,
+)
 
 if TYPE_CHECKING:
     from django.db.models import Manager
@@ -50,6 +56,11 @@ class Event(models.Model):
         choices=InvitePermission.choices,
         default=InvitePermission.ALL_MEMBERS,
     )
+    status = models.CharField(
+        max_length=20,
+        choices=EventStatus.choices,
+        default=EventStatus.ACTIVE,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None
@@ -82,6 +93,10 @@ class Event(models.Model):
     def is_past(self) -> bool:
         cutoff = self.end_datetime or self.start_datetime
         return cutoff < timezone.now()
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.status == EventStatus.CANCELLED
 
     def __str__(self):
         return f"{self.title} — {self.start_datetime:%Y-%m-%d %H:%M}"

@@ -42,6 +42,7 @@ class EventListOut(BaseModel):
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
     is_past: bool = False
+    status: str = "active"
 
 
 class EventOut(BaseModel):
@@ -82,6 +83,7 @@ class EventOut(BaseModel):
     invited_user_photo_urls: list[str] = []
     invite_permission: str = InvitePermission.ALL_MEMBERS
     is_past: bool = False
+    status: str = "active"
 
 
 class RSVPIn(BaseModel):

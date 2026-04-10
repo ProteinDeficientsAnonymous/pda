@@ -14,6 +14,11 @@ class EventType(models.TextChoices):
     COMMUNITY = "community", "Community"
 
 
+class EventStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    CANCELLED = "cancelled", "Cancelled"
+
+
 class JoinRequestStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     APPROVED = "approved", "Approved"

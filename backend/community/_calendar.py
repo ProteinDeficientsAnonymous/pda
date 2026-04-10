@@ -11,9 +11,9 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.models import User as UserModel
 
-from community._events import _can_see_invite_only
+from community._event_helpers import _can_see_invite_only
 from community._shared import ErrorOut  # noqa: F401
-from community.models import Event, PageVisibility
+from community.models import Event, EventStatus, PageVisibility
 
 router = Router()
 
@@ -77,6 +77,7 @@ def calendar_feed(request, token: str = ""):
     cutoff = timezone.now() - timedelta(days=30)
     events = (
         Event.objects.filter(start_datetime__gte=cutoff)
+        .exclude(status=EventStatus.CANCELLED)
         .select_related("created_by")
         .prefetch_related("co_hosts", "invited_users")
         .order_by("start_datetime")
