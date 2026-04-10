@@ -105,6 +105,31 @@ Future<void> deletePollOption({
   }
 }
 
+/// Updates a single option's datetime on an existing poll.
+Future<void> updatePollOption({
+  required WidgetRef ref,
+  required String eventId,
+  required String optionId,
+  required DateTime datetime,
+}) async {
+  final api = ref.read(apiClientProvider);
+  try {
+    await api.patch(
+      '/api/community/events/$eventId/poll/options/$optionId/',
+      data: {'datetime': datetime.toUtc().toIso8601String()},
+    );
+    ref.invalidate(eventPollProvider(eventId));
+    _log.info('updated poll option $optionId on event $eventId');
+  } catch (e, st) {
+    _log.warning(
+      'failed to update poll option $optionId on event $eventId',
+      e,
+      st,
+    );
+    rethrow;
+  }
+}
+
 /// Deletes the event poll entirely.
 Future<void> deleteEventPoll({
   required WidgetRef ref,

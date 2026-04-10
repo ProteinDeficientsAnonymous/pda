@@ -27,8 +27,10 @@ class PollOptionsDialog extends ConsumerStatefulWidget {
 class _PollOptionsDialogState extends ConsumerState<PollOptionsDialog> {
   late List<DateTime> _localOptions;
   bool _adding = false;
+  bool _updating = false;
 
   bool get _isLive => widget.eventId != null;
+  bool get _busy => _adding || _updating;
 
   @override
   void initState() {
@@ -84,6 +86,35 @@ class _PollOptionsDialogState extends ConsumerState<PollOptionsDialog> {
       }
     } else if (localIndex != null) {
       setState(() => _localOptions.removeAt(localIndex));
+    }
+  }
+
+  Future<void> _updateOption(EventPollOption option) async {
+    final now = DateTime.now();
+    final dt = await showDateTimePicker(
+      context: context,
+      initialDateTime: option.datetime.toLocal(),
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 2),
+    );
+    if (dt == null || !mounted) return;
+
+    setState(() => _updating = true);
+    try {
+      await updatePollOption(
+        ref: ref,
+        eventId: widget.eventId!,
+        optionId: option.id,
+        datetime: dt,
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('couldn\'t update option — try again')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updating = false);
     }
   }
 
@@ -176,7 +207,8 @@ class _PollOptionsDialogState extends ConsumerState<PollOptionsDialog> {
               _optionTile(
                 label: formatPollOption(option.datetime),
                 trailing: '${option.totalCount}',
-                onRemove: options.length > 2
+                onTap: _busy ? null : () => _updateOption(option),
+                onRemove: options.length > 2 && !_busy
                     ? () => _removeOption(option: option)
                     : null,
               ),
@@ -189,6 +221,7 @@ class _PollOptionsDialogState extends ConsumerState<PollOptionsDialog> {
   Widget _optionTile({
     required String label,
     String? trailing,
+    VoidCallback? onTap,
     VoidCallback? onRemove,
   }) {
     final theme = Theme.of(context);
@@ -196,7 +229,20 @@ class _PollOptionsDialogState extends ConsumerState<PollOptionsDialog> {
       children: [
         const Icon(Icons.access_time_outlined, size: 16),
         const SizedBox(width: 8),
-        Expanded(child: Text(label)),
+        Expanded(
+          child: onTap != null
+              ? Semantics(
+                  button: true,
+                  label: 'edit time: $label',
+                  child: InkWell(
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    onTap: onTap,
+                    child: Text(label),
+                  ),
+                )
+              : Text(label),
+        ),
         if (trailing != null)
           Padding(
             padding: const EdgeInsets.only(right: 4),

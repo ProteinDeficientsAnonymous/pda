@@ -392,6 +392,40 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
     return Status(201, _poll_out(poll_fresh, request.auth))
 
 
+@router.patch(
+    "/events/{event_id}/poll/options/{option_id}/",
+    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id: UUID):
+    _, poll, err = _get_active_poll(request.auth, event_id)
+    if err is not None:
+        return err
+    try:
+        option = poll.options.get(id=option_id)
+    except PollOption.DoesNotExist:
+        return Status(404, ErrorOut(detail="Option not found."))
+    try:
+        option.datetime = payload.datetime
+        option.save(update_fields=["datetime"])
+    except Exception:
+        return Status(400, ErrorOut(detail="That datetime option already exists in this poll."))
+    audit_log(
+        logging.INFO,
+        "poll_option_updated",
+        request,
+        target_type="event_poll",
+        target_id=str(poll.id),
+        details={"event_id": str(event_id), "option_id": str(option_id)},
+    )
+    poll_fresh = (
+        EventPoll.objects.select_related("winning_option")
+        .prefetch_related("options__votes__user")
+        .get(pk=poll.pk)
+    )
+    return Status(200, _poll_out(poll_fresh, request.auth))
+
+
 @router.delete(
     "/events/{event_id}/poll/options/{option_id}/",
     response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
