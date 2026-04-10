@@ -229,10 +229,47 @@ class SettingsAccessibilitySection extends ConsumerWidget {
     final prefs = prefsAsync.value;
     final dyslexiaOn = prefs?.dyslexiaFriendlyFont ?? false;
     final textScale = prefs?.textScaleFactor ?? 1.0;
+    final themeMode = prefs?.themeMode ?? ThemeMode.system;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+            const Icon(Icons.brightness_6_outlined, size: 20),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('theme', style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 8),
+                  SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: ThemeMode.system,
+                        label: Text('system'),
+                      ),
+                      ButtonSegment(
+                        value: ThemeMode.light,
+                        label: Text('light'),
+                      ),
+                      ButtonSegment(value: ThemeMode.dark, label: Text('dark')),
+                    ],
+                    selected: {themeMode},
+                    showSelectedIcon: false,
+                    onSelectionChanged: (selection) {
+                      ref
+                          .read(accessibilityPreferencesProvider.notifier)
+                          .setThemeMode(selection.first);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         SwitchListTile(
           secondary: const Icon(Icons.text_fields_outlined, size: 20),
           title: const Text(
