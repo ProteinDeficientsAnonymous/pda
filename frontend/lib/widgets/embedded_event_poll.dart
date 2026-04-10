@@ -78,7 +78,8 @@ class EmbeddedEventPoll extends ConsumerWidget {
           );
         }
 
-        final canManage = _canManagePoll(user);
+        final isPast = event.isPast;
+        final canManage = !isPast && _canManagePoll(user);
         final hasVoted = poll.myVotes.isNotEmpty;
         final sortedOptions = [...poll.options]
           ..sort((a, b) => b.totalCount.compareTo(a.totalCount));
@@ -90,6 +91,7 @@ class EmbeddedEventPoll extends ConsumerWidget {
           sortedOptions,
           hasVoted,
           canManage,
+          isPast: isPast,
         );
       },
     );
@@ -118,13 +120,15 @@ class EmbeddedEventPoll extends ConsumerWidget {
     EventPoll poll,
     List<EventPollOption> sortedOptions,
     bool hasVoted,
-    bool canManage,
-  ) {
+    bool canManage, {
+    bool isPast = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasVoted) ...[
-          Text('you voted ✓', style: theme.textTheme.labelLarge),
+        if (hasVoted || isPast) ...[
+          if (!isPast) Text('you voted ✓', style: theme.textTheme.labelLarge),
+          if (isPast) Text('poll closed', style: theme.textTheme.labelLarge),
           const SizedBox(height: 4),
           ...sortedOptions.map(
             (option) => PollOptionResult(
@@ -132,26 +136,28 @@ class EmbeddedEventPoll extends ConsumerWidget {
               onVotersTap: () => _showVoters(context, option),
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Semantics(
-                button: true,
-                label: 'edit your poll response',
-                child: OutlinedButton(
-                  onPressed: () => _openVoteDialog(context, poll),
-                  child: const Text('edit response'),
+          if (!isPast) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Semantics(
+                  button: true,
+                  label: 'edit your poll response',
+                  child: OutlinedButton(
+                    onPressed: () => _openVoteDialog(context, poll),
+                    child: const Text('edit response'),
+                  ),
                 ),
-              ),
-              if (canManage) ...[
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () => _showFinalizeSheet(context, poll),
-                  child: const Text('choose winner'),
-                ),
+                if (canManage) ...[
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () => _showFinalizeSheet(context, poll),
+                    child: const Text('choose winner'),
+                  ),
+                ],
               ],
-            ],
-          ),
+            ),
+          ],
         ] else ...[
           Text('time poll open', style: theme.textTheme.labelLarge),
           const SizedBox(height: 4),

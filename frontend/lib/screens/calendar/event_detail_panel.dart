@@ -248,8 +248,10 @@ class EventDetailContent extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              CalendarMenuChip(event: liveEvent),
-              const SizedBox(width: 4),
+              if (!liveEvent.isPast) ...[
+                CalendarMenuChip(event: liveEvent),
+                const SizedBox(width: 4),
+              ],
               EventActionChip(
                 tooltip: 'share event',
                 icon: AppIcons.share,

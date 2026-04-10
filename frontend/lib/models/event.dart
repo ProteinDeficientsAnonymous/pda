@@ -67,3 +67,7 @@ abstract class Event with _$Event {
 
   factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);
 }
+
+extension EventHelpers on Event {
+  bool get isPast => !(endDatetime ?? startDatetime).isAfter(DateTime.now());
+}

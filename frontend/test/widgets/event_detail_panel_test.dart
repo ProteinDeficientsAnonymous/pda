@@ -163,6 +163,82 @@ void main() {
     expect(find.text('cancel event'), findsOneWidget);
   });
 
+  testWidgets('RSVP hidden on past event for authenticated member', (
+    tester,
+  ) async {
+    tester.view.physicalSize = _kTestSize;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final pastEvent = _baseEvent.copyWith(
+      startDatetime: DateTime.now().subtract(const Duration(days: 7)),
+      endDatetime: DateTime.now()
+          .subtract(const Duration(days: 7))
+          .add(const Duration(hours: 2)),
+    );
+
+    await tester.pumpWidget(
+      _buildSubject(
+        pastEvent,
+        authNotifier: _MemberAuthNotifier(userId: 'u-member'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text("i'm going"), findsNothing);
+    expect(find.text('maybe'), findsNothing);
+    expect(find.text("can't make it"), findsNothing);
+  });
+
+  testWidgets('invite friends hidden on past event', (tester) async {
+    tester.view.physicalSize = _kTestSize;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final pastEvent = _baseEvent.copyWith(
+      startDatetime: DateTime.now().subtract(const Duration(days: 7)),
+      endDatetime: DateTime.now()
+          .subtract(const Duration(days: 7))
+          .add(const Duration(hours: 2)),
+    );
+
+    await tester.pumpWidget(
+      _buildSubject(
+        pastEvent,
+        authNotifier: _MemberAuthNotifier(userId: 'u-creator'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('invite friends'), findsNothing);
+  });
+
+  testWidgets('calendar menu hidden on past event', (tester) async {
+    tester.view.physicalSize = _kTestSize;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final pastEvent = _baseEvent.copyWith(
+      startDatetime: DateTime.now().subtract(const Duration(days: 7)),
+      endDatetime: DateTime.now()
+          .subtract(const Duration(days: 7))
+          .add(const Duration(hours: 2)),
+    );
+
+    await tester.pumpWidget(
+      _buildSubject(
+        pastEvent,
+        authNotifier: _MemberAuthNotifier(userId: 'u-member'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('add to calendar'), findsNothing);
+  });
+
   testWidgets('admin actions hidden for non-creator member', (tester) async {
     tester.view.physicalSize = _kTestSize;
     tester.view.devicePixelRatio = 1.0;

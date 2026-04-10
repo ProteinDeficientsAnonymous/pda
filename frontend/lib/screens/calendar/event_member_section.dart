@@ -232,7 +232,8 @@ class EventMemberSection extends ConsumerWidget {
               ),
             ),
           ],
-          if (event.status != EventStatus.cancelled &&
+          if (!event.isPast &&
+              event.status != EventStatus.cancelled &&
               (isCoHost ||
                   event.invitePermission == InvitePermission.allMembers)) ...[
             const SizedBox(height: 12),
@@ -247,7 +248,7 @@ class EventMemberSection extends ConsumerWidget {
               ),
             ),
           ],
-          if (event.rsvpEnabled && event.status != EventStatus.cancelled) ...[
+          if (!event.isPast && event.rsvpEnabled && event.status != EventStatus.cancelled) ...[
             const SizedBox(height: 12),
             EventSectionCard(
               label: EventDetailLabel.rsvp,
