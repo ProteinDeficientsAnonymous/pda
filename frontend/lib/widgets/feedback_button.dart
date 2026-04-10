@@ -53,6 +53,7 @@ class _FeedbackButtonState extends ConsumerState<FeedbackButton> {
             ),
           ),
           Positioned(
+            top: MediaQuery.paddingOf(context).top + 16,
             bottom: 80 + MediaQuery.viewInsetsOf(context).bottom,
             left: 16,
             right: 16,
