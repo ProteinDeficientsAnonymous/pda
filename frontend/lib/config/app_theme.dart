@@ -33,6 +33,8 @@ ThemeData buildAppTheme({
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
     inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: colorScheme.surfaceContainerHighest,
       border: inputBorder,
       enabledBorder: inputBorder,
       focusedBorder: OutlineInputBorder(

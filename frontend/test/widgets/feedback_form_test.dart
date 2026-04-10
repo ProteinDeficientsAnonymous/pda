@@ -44,7 +44,7 @@ void main() {
       expect(titleField.maxLength, 200);
     });
 
-    testWidgets('description field has maxLength 10000', (tester) async {
+    testWidgets('description field has maxLength 2000', (tester) async {
       await tester.pumpWidget(
         _app(FeedbackForm(currentRoute: '/calendar', onClose: () {})),
       );
@@ -53,7 +53,7 @@ void main() {
       final descField = tester
           .widgetList<TextField>(find.byType(TextField))
           .elementAt(1);
-      expect(descField.maxLength, 10000);
+      expect(descField.maxLength, 2000);
     });
 
     testWidgets('calls onClose when cancel is tapped', (tester) async {
