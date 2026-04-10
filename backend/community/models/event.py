@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class Event(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=300)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, max_length=2000)
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=300, blank=True)

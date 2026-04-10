@@ -8,8 +8,8 @@ from community.models.choices import PageVisibility
 class CommunityGuidelines(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 
-    content = models.TextField(default="")
-    content_html = models.TextField(default="")
+    content = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -29,8 +29,8 @@ class CommunityGuidelines(models.Model):
 class FAQ(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 
-    content = models.TextField(default="")
-    content_html = models.TextField(default="")
+    content = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -50,10 +50,10 @@ class FAQ(models.Model):
 class HomePage(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 
-    content = models.TextField(default="")
-    content_html = models.TextField(default="")
-    join_content = models.TextField(default="")
-    join_content_html = models.TextField(default="")
+    content = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
+    join_content = models.TextField(default="", max_length=50000)
+    join_content_html = models.TextField(default="", max_length=100000)
     donate_url = models.URLField(blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -75,8 +75,8 @@ class EditablePage(models.Model):
     """Content pages editable by admins. One row per slug."""
 
     slug = models.SlugField(max_length=100, unique=True)
-    content = models.TextField(default="")
-    content_html = models.TextField(default="")
+    content = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
     visibility = models.CharField(
         max_length=20,
         choices=PageVisibility.choices,
