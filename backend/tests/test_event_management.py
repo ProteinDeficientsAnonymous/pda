@@ -456,3 +456,29 @@ class TestEventManagement:
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "Event not found."
+
+
+@pytest.mark.django_db
+class TestEventRateLimiting:
+    def test_create_event_rate_limited(self, api_client, manage_events_headers):
+        from django.core.cache import cache
+
+        cache.clear()
+        for i in range(10):
+            resp = api_client.post(
+                "/api/community/events/",
+                {"title": f"Event {i}", "start_datetime": "2026-06-01T18:00:00Z"},
+                content_type="application/json",
+                **manage_events_headers,
+            )
+            assert resp.status_code == 201
+        # 11th request should be rate limited
+        resp = api_client.post(
+            "/api/community/events/",
+            {"title": "One Too Many", "start_datetime": "2026-06-01T18:00:00Z"},
+            content_type="application/json",
+            **manage_events_headers,
+        )
+        assert resp.status_code == 429
+        assert "too many" in resp.json()["detail"]
+        cache.clear()

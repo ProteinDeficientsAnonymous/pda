@@ -30,6 +30,11 @@ sealed class ApiError {
     if (statusCode == 409 && detail == 'already_invited') {
       return const AlreadyInvited();
     }
+    if (statusCode == 429) {
+      return RateLimited(
+        detail ?? "you're doing that too fast — try again in a bit",
+      );
+    }
     if (statusCode == 400 || statusCode == 422) {
       return ValidationError(
         detail ?? 'Invalid request. Please check your input.',
@@ -56,6 +61,15 @@ class InvalidCredentials extends ApiError {
 
 class ValidationError extends ApiError {
   const ValidationError(this.detail);
+
+  final String detail;
+
+  @override
+  String get message => detail;
+}
+
+class RateLimited extends ApiError {
+  const RateLimited(this.detail);
 
   final String detail;
 

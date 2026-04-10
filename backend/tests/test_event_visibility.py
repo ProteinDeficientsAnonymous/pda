@@ -97,13 +97,16 @@ class TestInviteOnlyVisibility:
     """Tests for invite_only PageVisibility — events hidden from non-invited members."""
 
     def _make_invite_only_event(self, creator, co_host=None, invited_user=None):
+        from datetime import timedelta
+
         from community.models import PageVisibility
         from django.utils import timezone
 
+        future = timezone.now() + timedelta(days=7)
         event = Event.objects.create(
             title="Secret Gathering",
-            start_datetime=timezone.now(),
-            end_datetime=timezone.now(),
+            start_datetime=future,
+            end_datetime=future + timedelta(hours=2),
             visibility=PageVisibility.INVITE_ONLY,
             created_by=creator,
         )

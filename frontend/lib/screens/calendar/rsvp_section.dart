@@ -95,6 +95,57 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
   }
 
+  Widget _buildToggleButtons({
+    required String? myRsvp,
+    required ColorScheme cs,
+    required bool enabled,
+  }) {
+    return Opacity(
+      opacity: _loading ? 0.5 : 1.0,
+      child: Row(
+        spacing: 8,
+        children: [
+          Expanded(
+            child: _RsvpToggleButton(
+              label: "i'm going",
+              icon: Icons.sentiment_very_satisfied_outlined,
+              activeColor: cs.primary,
+              isActive: myRsvp == RsvpStatus.attending,
+              enabled: enabled,
+              onTap: () => myRsvp == RsvpStatus.attending
+                  ? _removeRsvp()
+                  : _setRsvp(RsvpStatus.attending),
+            ),
+          ),
+          Expanded(
+            child: _RsvpToggleButton(
+              label: 'maybe',
+              icon: Icons.sentiment_neutral_outlined,
+              activeColor: cs.tertiary,
+              isActive: myRsvp == RsvpStatus.maybe,
+              enabled: enabled,
+              onTap: () => myRsvp == RsvpStatus.maybe
+                  ? _removeRsvp()
+                  : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
+            ),
+          ),
+          Expanded(
+            child: _RsvpToggleButton(
+              label: "can't make it",
+              icon: Icons.sentiment_dissatisfied_outlined,
+              activeColor: cs.error,
+              isActive: myRsvp == RsvpStatus.cantGo,
+              enabled: enabled,
+              onTap: () => myRsvp == RsvpStatus.cantGo
+                  ? _removeRsvp()
+                  : _confirmAndSetRsvp(RsvpStatus.cantGo, "can't make it"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _buildSummary(List guests) {
     final attendingCount = guests
         .where((g) => g.status == RsvpStatus.attending)
@@ -158,7 +209,7 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
     }
 
     final summary = _buildSummary(guests);
-    final isPastForUserForUser = liveEvent.isPastForUser && !isCoHost;
+    final isPastForUser = liveEvent.isPast && !isCoHost;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -184,49 +235,10 @@ class _RSVPSectionState extends ConsumerState<RSVPSection> {
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
             ),
           ),
-        Opacity(
-          opacity: _loading ? 0.5 : 1.0,
-          child: Row(
-            spacing: 8,
-            children: [
-              Expanded(
-                child: _RsvpToggleButton(
-                  label: "i'm going",
-                  icon: Icons.sentiment_very_satisfied_outlined,
-                  activeColor: cs.primary,
-                  isActive: myRsvp == RsvpStatus.attending,
-                  enabled: !_loading && !isPastForUser,
-                  onTap: () => myRsvp == RsvpStatus.attending
-                      ? _removeRsvp()
-                      : _setRsvp(RsvpStatus.attending),
-                ),
-              ),
-              Expanded(
-                child: _RsvpToggleButton(
-                  label: 'maybe',
-                  icon: Icons.sentiment_neutral_outlined,
-                  activeColor: cs.tertiary,
-                  isActive: myRsvp == RsvpStatus.maybe,
-                  enabled: !_loading && !isPastForUser,
-                  onTap: () => myRsvp == RsvpStatus.maybe
-                      ? _removeRsvp()
-                      : _confirmAndSetRsvp(RsvpStatus.maybe, 'maybe'),
-                ),
-              ),
-              Expanded(
-                child: _RsvpToggleButton(
-                  label: "can't make it",
-                  icon: Icons.sentiment_dissatisfied_outlined,
-                  activeColor: cs.error,
-                  isActive: myRsvp == RsvpStatus.cantGo,
-                  enabled: !_loading && !isPastForUser,
-                  onTap: () => myRsvp == RsvpStatus.cantGo
-                      ? _removeRsvp()
-                      : _confirmAndSetRsvp(RsvpStatus.cantGo, "can't make it"),
-                ),
-              ),
-            ],
-          ),
+        _buildToggleButtons(
+          myRsvp: myRsvp,
+          cs: cs,
+          enabled: !_loading && !isPastForUser,
         ),
         if (liveEvent.allowPlusOnes &&
             (myRsvp == RsvpStatus.attending || myRsvp == RsvpStatus.maybe)) ...[
