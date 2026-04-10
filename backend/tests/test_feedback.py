@@ -108,6 +108,39 @@ class TestFeedback:
         )
         assert response.status_code == 422
 
+    def test_feedback_rejects_empty_title(self, api_client, settings):
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {"title": "", "description": "Some description"},
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+
+    def test_feedback_requires_description(self, api_client, settings):
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {"title": "Bug report"},
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+
+    def test_feedback_rejects_empty_description(self, api_client, settings):
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {"title": "Bug report", "description": ""},
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+
     def test_feedback_returns_503_on_github_api_failure(self, api_client, settings, monkeypatch):
         from urllib.error import URLError
 

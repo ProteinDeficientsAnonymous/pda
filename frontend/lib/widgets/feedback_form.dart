@@ -139,6 +139,7 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                       labelText: 'Title',
                       hintText: 'what happened?',
                     ),
+                    maxLength: FieldLimit.title,
                     validator: v.all([
                       v.required(),
                       v.maxLength(FieldLimit.title),
@@ -154,14 +155,14 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
                     ),
                     maxLines: 4,
                     maxLength: FieldLimit.description,
-                    validator: v.maxLength(FieldLimit.description),
+                    validator: v.all([
+                      v.required(),
+                      v.maxLength(FieldLimit.description),
+                    ]),
                     textInputAction: TextInputAction.newline,
                   ),
                   const SizedBox(height: 16),
-                  _MetadataSection(
-                    route: widget.currentRoute,
-                    appVersion: _appVersion,
-                  ),
+                  _MetadataSection(route: widget.currentRoute),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -197,16 +198,12 @@ class _FeedbackFormState extends ConsumerState<FeedbackForm> {
 
 class _MetadataSection extends StatelessWidget {
   final String route;
-  final String appVersion;
 
-  const _MetadataSection({required this.route, required this.appVersion});
+  const _MetadataSection({required this.route});
 
   @override
   Widget build(BuildContext context) {
-    final chips = <String>[
-      if (route.isNotEmpty) route,
-      if (appVersion.isNotEmpty) 'v$appVersion',
-    ];
+    final chips = <String>[if (route.isNotEmpty) route];
 
     if (chips.isEmpty) return const SizedBox.shrink();
 

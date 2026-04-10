@@ -42,8 +42,8 @@ class FeedbackMetadataIn(BaseModel):
 
 
 class FeedbackIn(BaseModel):
-    title: str = Field(max_length=200)
-    description: str = Field(default="", max_length=10000)
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(min_length=1, max_length=10000)
     feedback_types: list[str] = Field(default_factory=list)  # "bug", "feature request"
     metadata: FeedbackMetadataIn | None = None
 
