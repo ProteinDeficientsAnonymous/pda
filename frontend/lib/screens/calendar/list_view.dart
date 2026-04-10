@@ -209,7 +209,7 @@ class _EventListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (bg, fg) = eventColors(event.id);
+    final (bg, fg) = eventColors(event.id, Theme.of(context).brightness);
     final dateFmt = DateFormat('EEE, MMM d');
     final start = event.startDatetime.toLocal();
     final timeStr = event.endDatetime == null

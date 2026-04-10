@@ -229,11 +229,15 @@ class MonthRow extends StatelessWidget {
     );
   }
 
-  Positioned _buildEventChip(SpanPlacement p, double colWidth) {
+  Positioned _buildEventChip(
+    SpanPlacement p,
+    double colWidth,
+    Brightness brightness,
+  ) {
     final left = p.startCol * colWidth;
     final width = (p.endCol - p.startCol + 1) * colWidth;
     final top = dayLabelHeight + 4 + p.row * (chipHeight + chipSpacing);
-    final colors = eventColors(p.event.id);
+    final colors = eventColors(p.event.id, brightness);
     final continuesFromPrev =
         p.startCol == 0 &&
         p.event.startDatetime.toLocal().isBefore(
@@ -313,7 +317,13 @@ class MonthRow extends StatelessWidget {
             ),
             ...placements
                 .where((p) => p.row < maxEventRows)
-                .map((p) => _buildEventChip(p, colWidth)),
+                .map(
+                  (p) => _buildEventChip(
+                    p,
+                    colWidth,
+                    Theme.of(context).brightness,
+                  ),
+                ),
           ],
         );
       },
