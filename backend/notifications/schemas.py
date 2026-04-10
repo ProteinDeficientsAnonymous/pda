@@ -7,6 +7,7 @@ class NotificationOut(BaseModel):
     id: str
     notification_type: str
     event_id: str | None
+    related_user_id: str | None
     message: str
     is_read: bool
     created_at: datetime

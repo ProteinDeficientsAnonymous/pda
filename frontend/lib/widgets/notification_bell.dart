@@ -124,6 +124,14 @@ class _NotificationList extends ConsumerWidget {
               } else if (n.notificationType == NotificationType.joinRequest) {
                 onClose();
                 context.go('/join-requests');
+              } else if (n.notificationType ==
+                  NotificationType.magicLinkRequest) {
+                onClose();
+                if (n.relatedUserId != null) {
+                  context.go('/members/${n.relatedUserId}');
+                } else {
+                  context.go('/members');
+                }
               }
             },
           );

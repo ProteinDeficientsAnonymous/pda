@@ -10,6 +10,7 @@ abstract class AppNotification with _$AppNotification {
     required String id,
     required String notificationType,
     String? eventId,
+    String? relatedUserId,
     required String message,
     @Default(false) bool isRead,
     required DateTime createdAt,

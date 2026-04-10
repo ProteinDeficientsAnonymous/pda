@@ -35,9 +35,7 @@ class _EventFormLocationFieldState extends State<EventFormLocationField> {
   void _searchLocation(String query) {
     _debounceTimer?.cancel();
     if (query.trim().length < 3) {
-      setState(() {
-        _locationResults = [];
-      });
+      setState(() => _locationResults = []);
       return;
     }
     _debounceTimer = Timer(const Duration(milliseconds: 400), () async {
@@ -54,42 +52,7 @@ class _EventFormLocationFieldState extends State<EventFormLocationField> {
             const [];
         if (!mounted) return;
         setState(() {
-          _locationResults = features.map((f) {
-            final props = f['properties'] as Map<String, dynamic>;
-            final coords = f['geometry']['coordinates'] as List<dynamic>;
-            final housenumber = props['housenumber'] as String?;
-            final street = props['street'] as String?;
-            final placeName = props['name'] as String? ?? '';
-            final city = props['city'] as String?;
-            final streetAddress = (housenumber != null && street != null)
-                ? '$housenumber $street'
-                : null;
-            // Show business name as primary; fall back to street address.
-            final name = placeName.isNotEmpty
-                ? placeName
-                : (streetAddress ?? '');
-            // Subtitle: street address when business name is title, else city.
-            final subtitle = (placeName.isNotEmpty && streetAddress != null)
-                ? streetAddress
-                : city;
-            final cityLabel = subtitle != null && subtitle != name
-                ? subtitle
-                : null;
-            final addressParts = <String>[
-              if (placeName.isNotEmpty) placeName,
-              if (streetAddress != null && streetAddress != placeName)
-                streetAddress,
-              if (city != null && city != placeName && city != streetAddress)
-                city,
-            ];
-            return EventPhotonResult(
-              name: name,
-              city: cityLabel,
-              fullAddress: addressParts.join(', '),
-              lat: (coords[1] as num).toDouble(),
-              lon: (coords[0] as num).toDouble(),
-            );
-          }).toList();
+          _locationResults = features.map(_parseFeature).toList();
         });
       } catch (_) {
         if (mounted) setState(() => _locationResults = []);
@@ -97,6 +60,39 @@ class _EventFormLocationFieldState extends State<EventFormLocationField> {
         if (mounted) setState(() => _locationSearching = false);
       }
     });
+  }
+
+  static EventPhotonResult _parseFeature(dynamic f) {
+    final props = f['properties'] as Map<String, dynamic>;
+    final coords = f['geometry']['coordinates'] as List<dynamic>;
+    final housenumber = props['housenumber'] as String?;
+    final street = props['street'] as String?;
+    final placeName = props['name'] as String? ?? '';
+    final city = props['city'] as String?;
+    final streetAddress = (housenumber != null && street != null)
+        ? '$housenumber $street'
+        : null;
+    // Show business name as primary; fall back to street address.
+    final name =
+        placeName.isNotEmpty ? placeName : (streetAddress ?? '');
+    // Subtitle: street address when business name is title, else city.
+    final subtitle = (placeName.isNotEmpty && streetAddress != null)
+        ? streetAddress
+        : city;
+    final cityLabel =
+        subtitle != null && subtitle != name ? subtitle : null;
+    final addressParts = <String>[
+      if (placeName.isNotEmpty) placeName,
+      if (streetAddress != null && streetAddress != placeName) streetAddress,
+      if (city != null && city != placeName && city != streetAddress) city,
+    ];
+    return EventPhotonResult(
+      name: name,
+      city: cityLabel,
+      fullAddress: addressParts.join(', '),
+      lat: (coords[1] as num).toDouble(),
+      lon: (coords[0] as num).toDouble(),
+    );
   }
 
   @override

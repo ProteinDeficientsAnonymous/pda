@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
+import 'package:pda/config/constants.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/providers/user_management_provider.dart';
+import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/snackbar.dart';
 import 'package:pda/widgets/app_scaffold.dart';
+import 'package:pda/widgets/approval_credentials_dialog.dart';
 import 'package:pda/widgets/profile_avatar.dart';
+
+final _log = Logger('MemberProfile');
 
 final _memberProfileProvider =
     FutureProvider.family<Map<String, dynamic>, String>((ref, userId) async {
@@ -29,24 +36,28 @@ class MemberProfileScreen extends ConsumerWidget {
         error: (e, _) => const Center(
           child: Text('couldn\'t load profile — try refreshing'),
         ),
-        data: (data) => _ProfileBody(data: data),
+        data: (data) => _ProfileBody(data: data, userId: userId),
       ),
     );
   }
 }
 
-class _ProfileBody extends StatelessWidget {
+class _ProfileBody extends ConsumerWidget {
   final Map<String, dynamic> data;
+  final String userId;
 
-  const _ProfileBody({required this.data});
+  const _ProfileBody({required this.data, required this.userId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final name = (data['display_name'] as String?) ?? '';
     final phone = (data['phone_number'] as String?) ?? '';
     final email = (data['email'] as String?) ?? '';
     final photoUrl = (data['profile_photo_url'] as String?) ?? '';
+
+    final user = ref.watch(authProvider).value;
+    final canManageUsers = user?.hasPermission(Permission.manageUsers) ?? false;
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -89,7 +100,64 @@ class _ProfileBody extends StatelessWidget {
               ),
             ),
           ),
+        if (canManageUsers) ...[
+          const SizedBox(height: 32),
+          _MagicLinkButton(userId: userId, phoneNumber: phone),
+        ],
       ],
+    );
+  }
+}
+
+class _MagicLinkButton extends ConsumerStatefulWidget {
+  final String userId;
+  final String phoneNumber;
+
+  const _MagicLinkButton({required this.userId, required this.phoneNumber});
+
+  @override
+  ConsumerState<_MagicLinkButton> createState() => _MagicLinkButtonState();
+}
+
+class _MagicLinkButtonState extends ConsumerState<_MagicLinkButton> {
+  bool _loading = false;
+
+  Future<void> _handleTap() async {
+    setState(() => _loading = true);
+    try {
+      final notifier = ref.read(userManagementProvider.notifier);
+      final token = await notifier.generateMagicLink(widget.userId);
+      _log.info('generated magic link for user ${widget.userId}');
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => ApprovalCredentialsDialog(
+          title: 'magic sign-in link',
+          magicLinkToken: token,
+          phoneNumber: widget.phoneNumber,
+        ),
+      );
+    } catch (e, st) {
+      _log.warning('failed to generate magic link', e, st);
+      if (!mounted) return;
+      showErrorSnackBar(context, ApiError.from(e).message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: _loading ? null : _handleTap,
+      icon: _loading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.link),
+      label: const Text('send magic link'),
     );
   }
 }

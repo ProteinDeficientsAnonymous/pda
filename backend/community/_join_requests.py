@@ -365,9 +365,9 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             created_at__gte=timezone.now() - timedelta(minutes=5),
         ).exists()
         if not recent_token_exists:
-            magic_token = _create_magic_token(user)
+            _create_magic_token(user)
             try:
-                create_magic_link_request_notifications(user, magic_token)
+                create_magic_link_request_notifications(user)
             except Exception:
                 logger.exception("Failed to create magic link request notifications")
 

@@ -75,7 +75,7 @@ def create_join_request_notifications(display_name: str) -> None:
     _notify_users(str(user.pk) for user in recipients)
 
 
-def create_magic_link_request_notifications(user: User, magic_token: str) -> None:
+def create_magic_link_request_notifications(user: User) -> None:
     from django.db.models import Q
     from users.models import User as UserModel
     from users.permissions import PermissionKey
@@ -93,7 +93,8 @@ def create_magic_link_request_notifications(user: User, magic_token: str) -> Non
             Notification(
                 recipient=recipient,
                 notification_type=NotificationType.MAGIC_LINK_REQUEST,
-                message=f"{display} requested a new login link — token: {magic_token}",
+                related_user=user,
+                message=f"{display} requested a new login link",
             )
             for recipient in recipients
         ]

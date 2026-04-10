@@ -29,6 +29,13 @@ class Notification(models.Model):
         on_delete=models.SET_NULL,
         related_name="notifications",
     )
+    related_user = models.ForeignKey(
+        "users.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="related_notifications",
+    )
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

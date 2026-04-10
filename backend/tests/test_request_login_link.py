@@ -61,6 +61,8 @@ class TestRequestLoginLink:
         notif = Notification.objects.get(recipient=approver)
         assert notif.notification_type == NotificationType.MAGIC_LINK_REQUEST
         assert user.display_name in notif.message
+        assert notif.related_user_id == user.pk  # ty: ignore[unresolved-attribute]
+        assert "token" not in notif.message.lower()
 
     def test_does_not_create_notification_for_unknown_phone(self, api_client):
         from users.models import User
