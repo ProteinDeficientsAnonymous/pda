@@ -53,6 +53,7 @@ class UserOut(BaseModel):
     show_email: bool = True
     is_paused: bool = False
     login_link_requested: bool = False
+    week_start: str = "sunday"
     roles: list[RoleOut]
 
     @classmethod
@@ -69,6 +70,7 @@ class UserOut(BaseModel):
             show_email=user.show_email,
             is_paused=user.is_paused,
             login_link_requested=user.login_link_requested,
+            week_start=user.week_start,
             roles=[
                 RoleOut(
                     id=str(r.id), name=r.name, is_default=r.is_default, permissions=r.permissions
@@ -132,6 +134,7 @@ class MePatchIn(BaseModel):
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
+    week_start: str | None = None
 
 
 class ChangePasswordIn(BaseModel):

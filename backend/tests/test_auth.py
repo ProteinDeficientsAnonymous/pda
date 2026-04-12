@@ -475,3 +475,27 @@ class TestUpdateMe:
             **auth_headers,
         )
         assert response.status_code == 200
+
+    def test_me_returns_week_start_default_sunday(self, api_client, auth_headers):
+        response = api_client.get("/api/auth/me/", **auth_headers)
+        assert response.status_code == 200
+        assert response.json()["week_start"] == "sunday"
+
+    def test_update_week_start_to_monday(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"week_start": "monday"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["week_start"] == "monday"
+
+    def test_update_week_start_invalid_value_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"week_start": "wednesday"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400

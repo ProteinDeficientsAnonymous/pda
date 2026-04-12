@@ -10,6 +10,13 @@ from django.utils import timezone
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
 
+class WeekStart:
+    SUNDAY = "sunday"
+    MONDAY = "monday"
+    VALID = {SUNDAY, MONDAY}
+    CHOICES = [(SUNDAY, "Sunday"), (MONDAY, "Monday")]
+
+
 class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
@@ -38,6 +45,9 @@ class User(AbstractUser):
     show_email = models.BooleanField(default=True)
     is_paused = models.BooleanField(default=False)
     login_link_requested = models.BooleanField(default=False)
+    week_start = models.CharField(
+        max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Remove inherited AbstractUser fields

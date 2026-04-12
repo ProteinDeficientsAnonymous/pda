@@ -153,6 +153,18 @@ def update_me(request, payload: MePatchIn):
     if payload.show_email is not None:
         user.show_email = payload.show_email
         changed.append("show_email")
+    if payload.week_start is not None:
+        from users.models import WeekStart
+
+        if payload.week_start not in WeekStart.VALID:
+            return Status(
+                400,
+                ErrorOut(
+                    detail=f'Invalid week_start "{payload.week_start}" — must be "sunday" or "monday".'
+                ),
+            )
+        user.week_start = payload.week_start
+        changed.append("week_start")
     user.save()
     if changed:
         audit_log(
