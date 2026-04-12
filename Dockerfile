@@ -9,7 +9,7 @@ COPY frontend/ ./
 RUN dart run build_runner build --delete-conflicting-outputs
 ARG RAILWAY_GIT_COMMIT_SHA=dev
 ARG ENABLE_FEEDBACK=false
-RUN flutter build web --release --dart-define=API_URL= --dart-define=GIT_SHA=${RAILWAY_GIT_COMMIT_SHA} --dart-define=ENABLE_FEEDBACK=${ENABLE_FEEDBACK} --no-pub --tree-shake-icons --wasm
+RUN flutter build web --release --pwa-strategy=none --dart-define=API_URL= --dart-define=GIT_SHA=${RAILWAY_GIT_COMMIT_SHA} --dart-define=ENABLE_FEEDBACK=${ENABLE_FEEDBACK} --no-pub --tree-shake-icons --wasm
 RUN rm -f build/web/assets/NOTICES
 
 # Stage 2: Python/Django runtime
