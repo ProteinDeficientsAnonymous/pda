@@ -131,14 +131,15 @@ def me(request):
     return Status(200, UserOut.from_user(user))
 
 
-@router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
-def update_me(request, payload: MePatchIn):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+def _apply_me_patch(user, payload: MePatchIn):
+    """Apply MePatchIn fields to user. Returns (changed_fields, error_response)."""
+    from users.models import WeekStart
+
     changed = []
     if payload.display_name is not None:
         name_error = validate_display_name(payload.display_name)
         if name_error:
-            return Status(400, ErrorOut(detail=name_error))
+            return None, Status(400, ErrorOut(detail=name_error))
         user.display_name = payload.display_name.strip()
         changed.append("display_name")
     if payload.email is not None:
@@ -154,10 +155,8 @@ def update_me(request, payload: MePatchIn):
         user.show_email = payload.show_email
         changed.append("show_email")
     if payload.week_start is not None:
-        from users.models import WeekStart
-
         if payload.week_start not in WeekStart.VALID:
-            return Status(
+            return None, Status(
                 400,
                 ErrorOut(
                     detail=f'Invalid week_start "{payload.week_start}" — must be "sunday" or "monday".'
@@ -165,6 +164,15 @@ def update_me(request, payload: MePatchIn):
             )
         user.week_start = payload.week_start
         changed.append("week_start")
+    return changed, None
+
+
+@router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+def update_me(request, payload: MePatchIn):
+    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    changed, err = _apply_me_patch(user, payload)
+    if err is not None:
+        return err
     user.save()
     if changed:
         audit_log(

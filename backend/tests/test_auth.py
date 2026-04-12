@@ -215,6 +215,7 @@ class TestMe:
         data = response.json()
         assert data["phone_number"] == test_user.phone_number
         assert data["display_name"] == "Test Member"
+        assert data["week_start"] == "sunday"
         assert "roles" in data
         assert isinstance(data["roles"], list)
 
@@ -475,11 +476,6 @@ class TestUpdateMe:
             **auth_headers,
         )
         assert response.status_code == 200
-
-    def test_me_returns_week_start_default_sunday(self, api_client, auth_headers):
-        response = api_client.get("/api/auth/me/", **auth_headers)
-        assert response.status_code == 200
-        assert response.json()["week_start"] == "sunday"
 
     def test_update_week_start_to_monday(self, api_client, auth_headers):
         response = api_client.patch(
