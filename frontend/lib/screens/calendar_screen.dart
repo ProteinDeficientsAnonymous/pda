@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
+import 'package:pda/config/constants.dart';
+import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/screens/calendar/day_view.dart';
@@ -27,6 +29,7 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   _CalendarView _view = _CalendarView.month;
+  String? _typeFilter;
   late DateTime _selectedDate;
 
   @override
@@ -99,6 +102,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       child: Column(
         children: [
           _CalendarToolbar(selected: _view, onSelected: _onViewChanged),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SegmentedButton<String?>(
+              segments: const [
+                ButtonSegment(value: null, label: Text('all')),
+                ButtonSegment(
+                  value: EventType.official,
+                  label: Text('official'),
+                ),
+                ButtonSegment(
+                  value: EventType.community,
+                  label: Text('community'),
+                ),
+              ],
+              selected: {_typeFilter},
+              onSelectionChanged: (s) => setState(() => _typeFilter = s.first),
+              showSelectedIcon: false,
+              style: const ButtonStyle(visualDensity: VisualDensity.compact),
+            ),
+          ),
           Expanded(
             child: eventsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -113,7 +136,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Widget _buildView(events) {
+  Widget _buildView(List<Event> allEvents) {
+    final events = _typeFilter == null
+        ? allEvents
+        : allEvents.where((e) => e.eventType == _typeFilter).toList();
     switch (_view) {
       case _CalendarView.month:
         return MonthView(

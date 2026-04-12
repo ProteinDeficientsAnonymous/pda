@@ -97,42 +97,8 @@ void main() {
     expect(find.text('Official Meetup'), findsOneWidget);
   });
 
-  testWidgets('type filter official shows only official events', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_buildSubject(events: [_upcoming, _official]));
-    await tester.pumpAndSettle();
-
-    // Tap the 'official' segment inside the SegmentedButton (not the badge)
-    await tester.tap(
-      find.descendant(
-        of: find.byType(SegmentedButton<String?>),
-        matching: find.text('official'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Official Meetup'), findsOneWidget);
-    expect(find.text('Future Feast'), findsNothing);
-  });
-
-  testWidgets('type filter community shows only community events', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_buildSubject(events: [_upcoming, _official]));
-    await tester.pumpAndSettle();
-
-    await tester.tap(
-      find.descendant(
-        of: find.byType(SegmentedButton<String?>),
-        matching: find.text('community'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Future Feast'), findsOneWidget);
-    expect(find.text('Official Meetup'), findsNothing);
-  });
+  // Type filter tests moved to calendar_type_filter_test.dart (filter now
+  // lives in CalendarScreen, shared across all views).
 
   testWidgets('empty state shown when no upcoming events', (tester) async {
     await tester.pumpWidget(_buildSubject(events: [_past]));

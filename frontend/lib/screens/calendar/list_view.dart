@@ -18,7 +18,6 @@ class EventListView extends StatefulWidget {
 class _EventListViewState extends State<EventListView> {
   final _searchController = TextEditingController();
   String _query = '';
-  String? _typeFilter;
   bool _showUpcoming = true;
   bool _sortAscending = true;
 
@@ -34,10 +33,6 @@ class _EventListViewState extends State<EventListView> {
     if (_query.isNotEmpty) {
       final q = _query.toLowerCase();
       result = result.where((e) => e.title.toLowerCase().contains(q)).toList();
-    }
-
-    if (_typeFilter != null) {
-      result = result.where((e) => e.eventType == _typeFilter).toList();
     }
 
     final now = DateTime.now();
@@ -104,24 +99,6 @@ class _EventListViewState extends State<EventListView> {
             runSpacing: 4,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              SegmentedButton<String?>(
-                segments: const [
-                  ButtonSegment(value: null, label: Text('all')),
-                  ButtonSegment(
-                    value: EventType.official,
-                    label: Text('official'),
-                  ),
-                  ButtonSegment(
-                    value: EventType.community,
-                    label: Text('community'),
-                  ),
-                ],
-                selected: {_typeFilter},
-                onSelectionChanged: (s) =>
-                    setState(() => _typeFilter = s.first),
-                showSelectedIcon: false,
-                style: const ButtonStyle(visualDensity: VisualDensity.compact),
-              ),
               SegmentedButton<bool>(
                 segments: const [
                   ButtonSegment(value: true, label: Text('upcoming')),
