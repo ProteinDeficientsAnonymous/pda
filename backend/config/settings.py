@@ -97,6 +97,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 if IS_PRODUCTION:
     WHITENOISE_ROOT = STATIC_ROOT / "flutter"
+    WHITENOISE_MAX_AGE = 60
 
 STORAGES: dict[str, dict[str, object]] = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},

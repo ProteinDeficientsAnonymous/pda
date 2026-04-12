@@ -96,7 +96,7 @@ frontend-run-html:
 	cd frontend && flutter run -d web-server --web-port 3001 --web-hostname 0.0.0.0 --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
 
 frontend-build:
-	cd frontend && flutter build web --dart-define=API_URL=$(API_URL) --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
+	cd frontend && flutter build web --pwa-strategy=none --dart-define=API_URL=$(API_URL) --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
 
 frontend-codegen:
 	cd frontend && dart run build_runner build --delete-conflicting-outputs
