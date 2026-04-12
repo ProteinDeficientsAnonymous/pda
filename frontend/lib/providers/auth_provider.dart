@@ -99,6 +99,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     String? email,
     bool? showPhone,
     bool? showEmail,
+    String? weekStart,
   }) async {
     final api = ref.read(apiClientProvider);
     final data = <String, dynamic>{};
@@ -106,6 +107,7 @@ class AuthNotifier extends AsyncNotifier<User?> {
     if (email != null) data['email'] = email;
     if (showPhone != null) data['show_phone'] = showPhone;
     if (showEmail != null) data['show_email'] = showEmail;
+    if (weekStart != null) data['week_start'] = weekStart;
     try {
       final response = await api.patch('/api/auth/me/', data: data);
       state = AsyncData(User.fromJson(response.data as Map<String, dynamic>));

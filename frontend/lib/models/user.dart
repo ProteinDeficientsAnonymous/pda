@@ -32,6 +32,7 @@ abstract class User with _$User {
     @Default(true) bool showEmail,
     @Default(false) bool isPaused,
     @Default(false) bool loginLinkRequested,
+    @Default('sunday') String weekStart,
     @Default([]) List<Role> roles,
   }) = _User;
 

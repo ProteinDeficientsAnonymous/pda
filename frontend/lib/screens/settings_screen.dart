@@ -101,6 +101,12 @@ class SettingsScreen extends ConsumerWidget {
                 'get a personal link for Google Calendar, Apple Calendar, etc.',
             onTap: () => _handleCalendarSubscribe(context, ref),
           ),
+          const SizedBox(height: 12),
+          _WeekStartToggle(
+            weekStart: user?.weekStart ?? 'sunday',
+            onChanged: (val) =>
+                ref.read(authProvider.notifier).updateProfile(weekStart: val),
+          ),
           const SizedBox(height: 24),
           const _SectionHeader(label: 'accessibility'),
           const SizedBox(height: 4),
@@ -305,6 +311,39 @@ class _SettingsTile extends StatelessWidget {
         trailing: onTap != null ? const Icon(Icons.chevron_right) : null,
         onTap: onTap,
       ),
+    );
+  }
+}
+
+class _WeekStartToggle extends StatelessWidget {
+  final String weekStart;
+  final ValueChanged<String> onChanged;
+
+  const _WeekStartToggle({required this.weekStart, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          Icons.calendar_view_week_outlined,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 12),
+        const Text('week starts on', style: TextStyle(fontSize: 14)),
+        const Spacer(),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: 'sunday', label: Text('sunday')),
+            ButtonSegment(value: 'monday', label: Text('monday')),
+          ],
+          selected: {weekStart},
+          onSelectionChanged: (s) => onChanged(s.first),
+          showSelectedIcon: false,
+          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+        ),
+      ],
     );
   }
 }
