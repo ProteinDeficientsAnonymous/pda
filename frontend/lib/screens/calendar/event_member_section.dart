@@ -248,7 +248,9 @@ class EventMemberSection extends ConsumerWidget {
               ),
             ),
           ],
-          if (!event.isPast && event.rsvpEnabled && event.status != EventStatus.cancelled) ...[
+          if (!event.isPast &&
+              event.rsvpEnabled &&
+              event.status != EventStatus.cancelled) ...[
             const SizedBox(height: 12),
             EventSectionCard(
               label: EventDetailLabel.rsvp,
