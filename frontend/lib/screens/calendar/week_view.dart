@@ -13,6 +13,7 @@ class WeekView extends StatefulWidget {
   final VoidCallback onToday;
   final ValueChanged<DateTime>? onDayTapped;
   final ValueChanged<DateTime>? onDayLongPressed;
+  final bool startOnMonday;
 
   const WeekView({
     super.key,
@@ -22,6 +23,7 @@ class WeekView extends StatefulWidget {
     required this.onToday,
     this.onDayTapped,
     this.onDayLongPressed,
+    this.startOnMonday = false,
   });
 
   @override
@@ -34,21 +36,24 @@ class _WeekViewState extends State<WeekView> {
   @override
   void initState() {
     super.initState();
-    _weekStart = _mondayOf(widget.selectedDate);
+    _weekStart = _weekStartOf(widget.selectedDate);
   }
 
   @override
   void didUpdateWidget(WeekView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final newWeekStart = _mondayOf(widget.selectedDate);
+    final newWeekStart = _weekStartOf(widget.selectedDate);
     if (newWeekStart != _weekStart) {
       setState(() => _weekStart = newWeekStart);
     }
   }
 
-  DateTime _mondayOf(DateTime date) {
+  DateTime _weekStartOf(DateTime date) {
     final d = DateTime(date.year, date.month, date.day);
-    return d.subtract(Duration(days: d.weekday - 1));
+    if (widget.startOnMonday) {
+      return d.subtract(Duration(days: (d.weekday - 1) % 7));
+    }
+    return d.subtract(Duration(days: d.weekday % 7));
   }
 
   void _goToPreviousWeek() {

@@ -164,6 +164,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           selectedDate: _selectedDate,
           onDateChanged: _onDateChanged,
           onToday: _goToToday,
+          startOnMonday: startOnMonday,
           onDayTapped: (date) {
             setState(() {
               _selectedDate = date;
