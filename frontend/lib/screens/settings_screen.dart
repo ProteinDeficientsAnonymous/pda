@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:pda/models/user.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/calendar_provider.dart'
     show calendarTokenProvider;
@@ -20,110 +21,147 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).value;
-    final displayName = user?.displayName ?? '';
-    final phone = user?.phoneNumber ?? '';
-    final email = user?.email ?? '';
-    final photoUrl = user?.profilePhotoUrl ?? '';
-    final showPhone = user?.showPhone ?? true;
-    final showEmail = user?.showEmail ?? true;
 
     return AppScaffold(
       maxWidth: 600,
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          SettingsProfileAvatar(
-            initials: _initials(displayName, email),
-            photoUrl: photoUrl,
-          ),
-          const SizedBox(height: 32),
-          const _SectionHeader(label: 'profile'),
-          const SizedBox(height: 12),
-          _SettingsTile(
-            icon: Icons.face_outlined,
-            label: 'name',
-            value: displayName.trim().isEmpty ? 'not set' : displayName,
-            onTap: () => _showEditNameDialog(context, ref, displayName),
-          ),
-          _SettingsTile(
-            icon: Icons.phone_iphone_outlined,
-            label: 'phone',
-            value: phone,
-          ),
-          _SettingsTile(
-            icon: Icons.alternate_email_outlined,
-            label: 'email',
-            value: email.trim().isEmpty ? 'not set' : email,
-            onTap: () => _showEditEmailDialog(context, ref, email),
-          ),
+          ..._buildProfileSection(context, ref, user),
           const SizedBox(height: 24),
-          const _SectionHeader(label: 'security'),
-          const SizedBox(height: 12),
-          _SettingsTile(
-            icon: Icons.key_outlined,
-            label: 'change password',
-            onTap: () => _showChangePasswordDialog(context, ref),
-          ),
+          ..._buildSecuritySection(context, ref),
           const SizedBox(height: 24),
-          const _SectionHeader(label: 'privacy'),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              'only logged-in PDA members can see your profile',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          _PrivacyToggle(
-            icon: Icons.phone_outlined,
-            label: 'show phone number on profile',
-            value: showPhone,
-            onChanged: (val) =>
-                ref.read(authProvider.notifier).updateProfile(showPhone: val),
-          ),
-          _PrivacyToggle(
-            icon: Icons.email_outlined,
-            label: 'show email on profile',
-            value: showEmail,
-            onChanged: (val) =>
-                ref.read(authProvider.notifier).updateProfile(showEmail: val),
-          ),
+          ..._buildPrivacySection(context, ref, user),
           const SizedBox(height: 24),
-          const _SectionHeader(label: 'calendar'),
-          const SizedBox(height: 12),
-          _SettingsTile(
-            icon: Icons.event_outlined,
-            label: 'subscribe to PDA calendar',
-            value:
-                'get a personal link for Google Calendar, Apple Calendar, etc.',
-            onTap: () => _handleCalendarSubscribe(context, ref),
-          ),
-          const SizedBox(height: 12),
-          _WeekStartToggle(
-            weekStart: user?.weekStart ?? 'sunday',
-            onChanged: (val) =>
-                ref.read(authProvider.notifier).updateProfile(weekStart: val),
-          ),
+          ..._buildCalendarSection(context, ref, user),
           const SizedBox(height: 24),
-          const _SectionHeader(label: 'accessibility'),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              'adjust text settings for easier reading',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SettingsAccessibilitySection(),
+          ..._buildAccessibilitySection(context),
         ],
       ),
     );
+  }
+
+  List<Widget> _buildProfileSection(
+    BuildContext context,
+    WidgetRef ref,
+    User? user,
+  ) {
+    final displayName = user?.displayName ?? '';
+    final email = user?.email ?? '';
+    return [
+      SettingsProfileAvatar(
+        initials: _initials(displayName, email),
+        photoUrl: user?.profilePhotoUrl ?? '',
+      ),
+      const SizedBox(height: 32),
+      const _SectionHeader(label: 'profile'),
+      const SizedBox(height: 12),
+      _SettingsTile(
+        icon: Icons.face_outlined,
+        label: 'name',
+        value: displayName.trim().isEmpty ? 'not set' : displayName,
+        onTap: () => _showEditNameDialog(context, ref, displayName),
+      ),
+      _SettingsTile(
+        icon: Icons.phone_iphone_outlined,
+        label: 'phone',
+        value: user?.phoneNumber ?? '',
+      ),
+      _SettingsTile(
+        icon: Icons.alternate_email_outlined,
+        label: 'email',
+        value: email.trim().isEmpty ? 'not set' : email,
+        onTap: () => _showEditEmailDialog(context, ref, email),
+      ),
+    ];
+  }
+
+  List<Widget> _buildSecuritySection(BuildContext context, WidgetRef ref) {
+    return [
+      const _SectionHeader(label: 'security'),
+      const SizedBox(height: 12),
+      _SettingsTile(
+        icon: Icons.key_outlined,
+        label: 'change password',
+        onTap: () => _showChangePasswordDialog(context, ref),
+      ),
+    ];
+  }
+
+  List<Widget> _buildPrivacySection(
+    BuildContext context,
+    WidgetRef ref,
+    User? user,
+  ) {
+    return [
+      const _SectionHeader(label: 'privacy'),
+      const SizedBox(height: 4),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(
+          'only logged-in PDA members can see your profile',
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      _PrivacyToggle(
+        icon: Icons.phone_outlined,
+        label: 'show phone number on profile',
+        value: user?.showPhone ?? true,
+        onChanged: (val) =>
+            ref.read(authProvider.notifier).updateProfile(showPhone: val),
+      ),
+      _PrivacyToggle(
+        icon: Icons.email_outlined,
+        label: 'show email on profile',
+        value: user?.showEmail ?? true,
+        onChanged: (val) =>
+            ref.read(authProvider.notifier).updateProfile(showEmail: val),
+      ),
+    ];
+  }
+
+  List<Widget> _buildCalendarSection(
+    BuildContext context,
+    WidgetRef ref,
+    User? user,
+  ) {
+    return [
+      const _SectionHeader(label: 'calendar'),
+      const SizedBox(height: 12),
+      _SettingsTile(
+        icon: Icons.event_outlined,
+        label: 'subscribe to PDA calendar',
+        value: 'get a personal link for Google Calendar, Apple Calendar, etc.',
+        onTap: () => _handleCalendarSubscribe(context, ref),
+      ),
+      const SizedBox(height: 12),
+      _WeekStartToggle(
+        weekStart: user?.weekStart ?? 'sunday',
+        onChanged: (val) =>
+            ref.read(authProvider.notifier).updateProfile(weekStart: val),
+      ),
+    ];
+  }
+
+  List<Widget> _buildAccessibilitySection(BuildContext context) {
+    return [
+      const _SectionHeader(label: 'accessibility'),
+      const SizedBox(height: 4),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(
+          'adjust text settings for easier reading',
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      const SettingsAccessibilitySection(),
+    ];
   }
 
   String _initials(String displayName, String email) {
