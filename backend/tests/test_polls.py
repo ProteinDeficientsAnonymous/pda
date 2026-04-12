@@ -254,6 +254,22 @@ class TestVoteOnPoll:
         )
         assert response.status_code == 401
 
+    def test_vote_no_availability(self, api_client, auth_headers, poll_with_options, poll_event):
+        option = poll_with_options.options.first()
+        payload = {"votes": {str(option.id): PollAvailability.NO}}
+        response = api_client.post(
+            f"/api/community/events/{poll_event.id}/poll/vote/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["my_votes"][str(option.id)] == PollAvailability.NO
+        # Verify no_count is returned in the option
+        opt_data = next(o for o in data["options"] if o["id"] == str(option.id))
+        assert opt_data["no_count"] == 1
+
 
 # ---------------------------------------------------------------------------
 # TestFinalizePoll

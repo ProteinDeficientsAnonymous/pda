@@ -59,14 +59,17 @@ def _option_out(option: PollOption, my_votes: dict[str, str]) -> EventPollOption
     votes = list(option.votes.select_related("user").all())
     yes_voters = [_voter_out(v.user) for v in votes if v.availability == PollAvailability.YES]
     maybe_voters = [_voter_out(v.user) for v in votes if v.availability == PollAvailability.MAYBE]
+    no_voters = [_voter_out(v.user) for v in votes if v.availability == PollAvailability.NO]
     return EventPollOptionOut(
         id=str(option.id),
         datetime=option.datetime,
         display_order=option.display_order,
         yes_count=len(yes_voters),
         maybe_count=len(maybe_voters),
+        no_count=len(no_voters),
         yes_voters=yes_voters,
         maybe_voters=maybe_voters,
+        no_voters=no_voters,
     )
 
 
@@ -182,7 +185,7 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
             return Status(
                 400,
                 ErrorOut(
-                    detail=f'Invalid availability "{availability}" — must be "yes" or "maybe".'
+                    detail=f'Invalid availability "{availability}" — must be "yes", "maybe", or "no".'
                 ),
             )
     option_ids = {str(pk) for pk in poll.options.values_list("id", flat=True)}

@@ -62,4 +62,5 @@ class RSVPStatus(models.TextChoices):
 class PollAvailability:
     YES = "yes"
     MAYBE = "maybe"
-    VALID = {YES, MAYBE}
+    NO = "no"
+    VALID = {YES, MAYBE, NO}
