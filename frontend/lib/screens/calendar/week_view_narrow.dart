@@ -304,7 +304,7 @@ class NarrowEventChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = eventColors(event.id, Theme.of(context).brightness);
+    final colors = eventColors(event.eventType, Theme.of(context).brightness);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),

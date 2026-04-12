@@ -237,7 +237,7 @@ class MonthRow extends StatelessWidget {
     final left = p.startCol * colWidth;
     final width = (p.endCol - p.startCol + 1) * colWidth;
     final top = dayLabelHeight + 4 + p.row * (chipHeight + chipSpacing);
-    final colors = eventColors(p.event.id, brightness);
+    final colors = eventColors(p.event.eventType, brightness);
     final continuesFromPrev =
         p.startCol == 0 &&
         p.event.startDatetime.toLocal().isBefore(

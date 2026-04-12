@@ -188,7 +188,7 @@ class _DayEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = eventColors(event.id, theme.brightness);
+    final colors = eventColors(event.eventType, theme.brightness);
     final bgColor = colors.$1;
     final fgColor = colors.$2;
     final dateFmt = DateFormat('MMM d');
