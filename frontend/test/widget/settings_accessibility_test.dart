@@ -14,9 +14,9 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
-            home: Scaffold(body: const SettingsAccessibilitySection()),
+            home: Scaffold(body: SettingsAccessibilitySection()),
           ),
         ),
       );
@@ -30,9 +30,9 @@ void main() {
 
     testWidgets('tapping dark segment updates theme mode', (tester) async {
       await tester.pumpWidget(
-        ProviderScope(
+        const ProviderScope(
           child: MaterialApp(
-            home: Scaffold(body: const SettingsAccessibilitySection()),
+            home: Scaffold(body: SettingsAccessibilitySection()),
           ),
         ),
       );

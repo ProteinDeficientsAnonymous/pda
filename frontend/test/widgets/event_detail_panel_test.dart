@@ -171,12 +171,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final pastEvent = _baseEvent.copyWith(
-      startDatetime: DateTime.now().subtract(const Duration(days: 7)),
-      endDatetime: DateTime.now()
-          .subtract(const Duration(days: 7))
-          .add(const Duration(hours: 2)),
-    );
+    final pastEvent = _baseEvent.copyWith(isPast: true);
 
     await tester.pumpWidget(
       _buildSubject(
@@ -197,12 +192,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final pastEvent = _baseEvent.copyWith(
-      startDatetime: DateTime.now().subtract(const Duration(days: 7)),
-      endDatetime: DateTime.now()
-          .subtract(const Duration(days: 7))
-          .add(const Duration(hours: 2)),
-    );
+    final pastEvent = _baseEvent.copyWith(isPast: true);
 
     await tester.pumpWidget(
       _buildSubject(
@@ -221,12 +211,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final pastEvent = _baseEvent.copyWith(
-      startDatetime: DateTime.now().subtract(const Duration(days: 7)),
-      endDatetime: DateTime.now()
-          .subtract(const Duration(days: 7))
-          .add(const Duration(hours: 2)),
-    );
+    final pastEvent = _baseEvent.copyWith(isPast: true);
 
     await tester.pumpWidget(
       _buildSubject(
