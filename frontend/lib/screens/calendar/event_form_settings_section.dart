@@ -109,36 +109,32 @@ class EventFormSettingsSection extends ConsumerWidget {
           decoration: const InputDecoration(labelText: 'who can see it'),
           items: [
             if (showOfficialOption)
-              DropdownMenuItem(
+              const DropdownMenuItem(
                 value: EventVisibilityChoice.official,
                 child: _ColorDotLabel(
                   label: 'official PDA event',
                   choice: EventVisibilityChoice.official,
-                  brightness: theme.brightness,
                 ),
               ),
-            DropdownMenuItem(
+            const DropdownMenuItem(
               value: EventVisibilityChoice.public_,
               child: _ColorDotLabel(
                 label: 'public',
                 choice: EventVisibilityChoice.public_,
-                brightness: theme.brightness,
               ),
             ),
-            DropdownMenuItem(
+            const DropdownMenuItem(
               value: EventVisibilityChoice.membersOnly,
               child: _ColorDotLabel(
                 label: 'pda members only',
                 choice: EventVisibilityChoice.membersOnly,
-                brightness: theme.brightness,
               ),
             ),
-            DropdownMenuItem(
+            const DropdownMenuItem(
               value: EventVisibilityChoice.inviteOnly,
               child: _ColorDotLabel(
                 label: 'invite only',
                 choice: EventVisibilityChoice.inviteOnly,
-                brightness: theme.brightness,
               ),
             ),
           ],
@@ -246,18 +242,15 @@ class _SwitchRow extends StatelessWidget {
 class _ColorDotLabel extends StatelessWidget {
   final String label;
   final String choice;
-  final Brightness brightness;
 
-  const _ColorDotLabel({
-    required this.label,
-    required this.choice,
-    required this.brightness,
-  });
+  const _ColorDotLabel({required this.label, required this.choice});
 
   @override
   Widget build(BuildContext context) {
-    final (type, vis) = visibilityChoiceToFields(choice);
-    final (bg, _) = eventColors(type, vis, brightness);
+    final (vis, type) = visibilityChoiceToFields(choice);
+    // Always use light palette for the dot — dark mode bg colors are too
+    // muted to distinguish at 12px on a dark dropdown background.
+    final (bg, _) = eventColors(type, vis, Brightness.light);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
