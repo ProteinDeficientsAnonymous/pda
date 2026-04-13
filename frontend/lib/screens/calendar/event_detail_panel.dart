@@ -9,6 +9,7 @@ import 'package:pda/utils/share.dart';
 import 'package:pda/providers/event_provider.dart';
 import 'package:pda/widgets/embedded_event_poll.dart';
 import 'package:pda/config/constants.dart';
+import 'package:pda/screens/calendar/event_colors.dart';
 import 'package:pda/screens/calendar/event_detail_widgets.dart';
 import 'package:pda/screens/calendar/event_member_section.dart';
 export 'event_form_dialog.dart'
@@ -169,77 +170,7 @@ class EventDetailContent extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                            if (liveEvent.eventType == EventType.official)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.secondaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'official pda event',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSecondaryContainer,
-                                  ),
-                                ),
-                              ),
-                            if (liveEvent.visibility ==
-                                PageVisibility.membersOnly)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.tertiaryContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'pda members only',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onTertiaryContainer,
-                                  ),
-                                ),
-                              ),
-                            if (liveEvent.visibility ==
-                                PageVisibility.inviteOnly)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.errorContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'invite only',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onErrorContainer,
-                                  ),
-                                ),
-                              ),
+                            _VisibilityBadge(event: liveEvent),
                           ],
                         ),
                       ],
@@ -349,6 +280,42 @@ class _EventPhoto extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _VisibilityBadge extends StatelessWidget {
+  final Event event;
+
+  const _VisibilityBadge({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (event.eventType) {
+      EventType.official => 'official pda event',
+      _ => switch (event.visibility) {
+        PageVisibility.membersOnly => 'pda members only',
+        PageVisibility.inviteOnly => 'invite only',
+        _ => null,
+      },
+    };
+    if (label == null) return const SizedBox.shrink();
+
+    final (bg, fg) = eventColors(
+      event.eventType,
+      event.visibility,
+      Theme.of(context).brightness,
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg),
       ),
     );
   }

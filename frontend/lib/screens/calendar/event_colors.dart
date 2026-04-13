@@ -14,8 +14,8 @@ const _kMembersOnlyLight = (Color(0xFFFFE5CC), Color(0xFF5C3000));
 const _kMembersOnlyDark = (Color(0xFF3D2210), Color(0xFFFFD6A8));
 
 // Invite only (purple)
-const _kInviteOnlyLight = (Color(0xFFF5D0F5), Color(0xFF4A0A4A));
-const _kInviteOnlyDark = (Color(0xFF301030), Color(0xFFE8B0E8));
+const _kInviteOnlyLight = (Color(0xFFE8D6FF), Color(0xFF2D0A5C));
+const _kInviteOnlyDark = (Color(0xFF2A1848), Color(0xFFD0B8FF));
 
 /// Returns (backgroundColor, foregroundColor) for an event based on its
 /// type and visibility.
