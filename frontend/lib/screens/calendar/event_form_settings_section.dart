@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pda/config/constants.dart';
 import 'package:pda/providers/auth_provider.dart';
+import 'package:pda/screens/calendar/event_colors.dart';
 
 class EventFormSettingsSection extends ConsumerWidget {
   final bool rsvpEnabled;
@@ -108,21 +109,37 @@ class EventFormSettingsSection extends ConsumerWidget {
           decoration: const InputDecoration(labelText: 'who can see it'),
           items: [
             if (showOfficialOption)
-              const DropdownMenuItem(
+              DropdownMenuItem(
                 value: EventVisibilityChoice.official,
-                child: Text('official PDA event'),
+                child: _ColorDotLabel(
+                  label: 'official PDA event',
+                  choice: EventVisibilityChoice.official,
+                  brightness: theme.brightness,
+                ),
               ),
-            const DropdownMenuItem(
+            DropdownMenuItem(
               value: EventVisibilityChoice.public_,
-              child: Text('public'),
+              child: _ColorDotLabel(
+                label: 'public',
+                choice: EventVisibilityChoice.public_,
+                brightness: theme.brightness,
+              ),
             ),
-            const DropdownMenuItem(
+            DropdownMenuItem(
               value: EventVisibilityChoice.membersOnly,
-              child: Text('pda members only'),
+              child: _ColorDotLabel(
+                label: 'pda members only',
+                choice: EventVisibilityChoice.membersOnly,
+                brightness: theme.brightness,
+              ),
             ),
-            const DropdownMenuItem(
+            DropdownMenuItem(
               value: EventVisibilityChoice.inviteOnly,
-              child: Text('invite only'),
+              child: _ColorDotLabel(
+                label: 'invite only',
+                choice: EventVisibilityChoice.inviteOnly,
+                brightness: theme.brightness,
+              ),
             ),
           ],
           onChanged: (val) =>
@@ -222,6 +239,36 @@ class _SwitchRow extends StatelessWidget {
           Switch(value: value, onChanged: onChanged),
         ],
       ),
+    );
+  }
+}
+
+class _ColorDotLabel extends StatelessWidget {
+  final String label;
+  final String choice;
+  final Brightness brightness;
+
+  const _ColorDotLabel({
+    required this.label,
+    required this.choice,
+    required this.brightness,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final (type, vis) = visibilityChoiceToFields(choice);
+    final (bg, _) = eventColors(type, vis, brightness);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(label),
+      ],
     );
   }
 }
