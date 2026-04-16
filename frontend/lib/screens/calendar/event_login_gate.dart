@@ -126,6 +126,7 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
         );
       }
       ref.invalidate(eventsProvider);
+      ref.invalidate(draftEventsProvider);
       ref.invalidate(eventDetailProvider(widget.event.id));
       _log.info('edited event ${widget.event.id}');
     } catch (e, st) {

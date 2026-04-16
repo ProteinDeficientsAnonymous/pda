@@ -73,7 +73,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       final eventId = await submitNewEvent(ref, result);
       _log.info('created event $eventId');
       if (mounted) {
-        showSnackBar(context, 'event created 🌱');
+        final isDraft = result.status == 'draft';
+        showSnackBar(context, isDraft ? 'draft saved' : 'event created 🌱');
         context.push('/events/$eventId');
       }
     } catch (e, st) {

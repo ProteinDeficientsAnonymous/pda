@@ -98,6 +98,10 @@ class Event(models.Model):
         return cutoff < timezone.now()
 
     @property
+    def is_draft(self) -> bool:
+        return self.status == EventStatus.DRAFT
+
+    @property
     def is_cancelled(self) -> bool:
         return self.status == EventStatus.CANCELLED
 

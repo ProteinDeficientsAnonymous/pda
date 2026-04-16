@@ -11,11 +11,6 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from notifications.service import (
-    create_cohost_added_notifications,
-    create_event_invite_notifications,
-)
-from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community._event_helpers import (
@@ -23,7 +18,6 @@ from community._event_helpers import (
     _can_see_invite_only,
     _event_out,
     _get_creator_name,
-    _has_attendees,
     _update_co_hosts,
     _update_invited_users,
     _waitlisted_count,
@@ -33,6 +27,10 @@ from community._event_schemas import (
     EventListOut,
     EventOut,
     EventPatchIn,
+)
+from community._event_transitions import (
+    _handle_status_update,
+    _set_event_participants,
 )
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community.models import (
@@ -94,8 +92,10 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
     effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
+    # Draft events may hold placeholder/past start times until published.
+    check_past = "start_datetime" in updates and not event.is_draft
     dt_error = _validate_event_datetimes(
-        effective_start, effective_end, effective_tbd, check_past="start_datetime" in updates
+        effective_start, effective_end, effective_tbd, check_past=check_past
     )
     if dt_error:
         return Status(400, ErrorOut(detail=dt_error))
@@ -104,11 +104,11 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
 
 def _build_events_queryset(status: str, auth_user, is_authed):
     """Build the events queryset for list_events based on status and auth state."""
-    if status == EventStatus.CANCELLED:
+    if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
         return (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "invited_users", "rsvps", "poll")
-            .filter(status=EventStatus.CANCELLED)
+            .filter(status=status)
             .filter(Q(created_by=auth_user) | Q(co_hosts=auth_user))
             .distinct()
         )
@@ -123,8 +123,8 @@ def _build_events_queryset(status: str, auth_user, is_authed):
 
 
 def _filter_invite_only(events, auth_user, status: str):
-    """Remove invite-only events the user cannot see (skip for cancelled status queries)."""
-    if not auth_user or status == EventStatus.CANCELLED:
+    """Remove invite-only events the user cannot see (skip for cancelled/draft status queries)."""
+    if not auth_user or status in (EventStatus.CANCELLED, EventStatus.DRAFT):
         return events
     return [
         e
@@ -144,7 +144,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
     auth_user = _authenticated_user(request.auth)
     is_authed = auth_user is not None
 
-    if status == EventStatus.CANCELLED and not is_authed:
+    if status in (EventStatus.CANCELLED, EventStatus.DRAFT) and not is_authed:
         return Status(403, ErrorOut(detail="Authentication required."))
 
     events = _filter_invite_only(
@@ -210,6 +210,8 @@ def get_event(request, event_id: UUID):
     if event.is_deleted:
         return Status(404, ErrorOut(detail="Event not found."))
     auth_user = _authenticated_user(request.auth)
+    if event.is_draft and not (auth_user and _can_edit_event(auth_user, event)):
+        return Status(404, ErrorOut(detail="Event not found."))
     if (
         event.visibility == PageVisibility.MEMBERS_ONLY
         and auth_user is None
@@ -231,8 +233,12 @@ def get_event(request, event_id: UUID):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/d")
 def create_event(request, payload: EventIn):
-    # Any authenticated member can create community events.
+    # Any authenticated member can create community or draft events.
     # Official events require tag_official_event permission.
+    # Subsequent draft saves use PATCH (no rate limit hit).
+    if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
+        return Status(400, ErrorOut(detail="status must be 'active' or 'draft'."))
+
     if payload.event_type == EventType.OFFICIAL:
         if not request.auth.has_permission(PermissionKey.TAG_OFFICIAL_EVENT):
             audit_log(
@@ -250,7 +256,10 @@ def create_event(request, payload: EventIn):
         return Status(400, ErrorOut(detail="Official events must be public."))
 
     dt_error = _validate_event_datetimes(
-        payload.start_datetime, payload.end_datetime, payload.datetime_tbd
+        payload.start_datetime,
+        payload.end_datetime,
+        payload.datetime_tbd,
+        check_past=payload.status != EventStatus.DRAFT,
     )
     if dt_error:
         return Status(400, ErrorOut(detail=dt_error))
@@ -277,19 +286,13 @@ def create_event(request, payload: EventIn):
         event_type=payload.event_type,
         visibility=payload.visibility,
         invite_permission=payload.invite_permission,
+        status=payload.status,
         created_by=request.auth,
     )
-    if payload.co_host_ids:
-        co_hosts = UserModel.objects.filter(pk__in=payload.co_host_ids)
-        event.co_hosts.set(co_hosts)
-        create_cohost_added_notifications(event, payload.co_host_ids, request.auth)
-    if payload.invited_user_ids:
-        invited = UserModel.objects.filter(pk__in=payload.invited_user_ids)
-        event.invited_users.set(invited)
-        create_event_invite_notifications(event, payload.invited_user_ids, request.auth)
+    _set_event_participants(request, event, payload.co_host_ids, payload.invited_user_ids)
     audit_log(
         logging.INFO,
-        "event_created",
+        "event_created_draft" if event.is_draft else "event_created",
         request,
         target_type="event",
         target_id=str(event.id),
@@ -297,102 +300,10 @@ def create_event(request, payload: EventIn):
             "title": event.title,
             "event_type": event.event_type,
             "visibility": event.visibility,
+            "status": event.status,
         },
     )
     return Status(201, _event_out(event, request.auth))
-
-
-def _cancel_event(request, event: Event, notify: bool) -> str | None:
-    """ACTIVE → CANCELLED. Returns error string or None."""
-    if event.is_past:
-        return "Past events cannot be cancelled — use delete instead."
-    if not _has_attendees(event):
-        return "Events with no invited users or RSVPs cannot be cancelled — use delete instead."
-    event.status = EventStatus.CANCELLED
-    event.save(update_fields=["status"])
-    if notify:
-        from notifications.service import create_event_cancellation_notifications
-
-        create_event_cancellation_notifications(event, request.auth)
-    audit_log(
-        logging.INFO,
-        "event_cancelled",
-        request,
-        target_type="event",
-        target_id=str(event.id),
-        details={"title": event.title, "notify_attendees": notify},
-    )
-    return None
-
-
-def _delete_event(request, event: Event) -> str | None:
-    """ACTIVE|CANCELLED → DELETED. Returns error string or None."""
-    from django.utils import timezone
-
-    if event.status == EventStatus.ACTIVE and not event.is_past and _has_attendees(event):
-        return "Cancel this event before deleting it."
-    event.status = EventStatus.DELETED
-    event.deleted_at = timezone.now()
-    event.save(update_fields=["status", "deleted_at"])
-    audit_log(
-        logging.INFO,
-        "event_deleted",
-        request,
-        target_type="event",
-        target_id=str(event.id),
-        details={"title": event.title},
-    )
-    return None
-
-
-def _uncancel_event(request, event: Event) -> None:
-    """CANCELLED → ACTIVE. Permission check is the caller's responsibility."""
-    event.status = EventStatus.ACTIVE
-    event.save(update_fields=["status"])
-    audit_log(
-        logging.INFO,
-        "event_uncancelled",
-        request,
-        target_type="event",
-        target_id=str(event.id),
-        details={"title": event.title},
-    )
-
-
-def _apply_status_transition(request, event: Event, new_status: str, notify: bool) -> str | None:
-    """Validate and apply a status transition. Returns an error message or None on success."""
-    current = event.status
-    if current == EventStatus.ACTIVE and new_status == EventStatus.CANCELLED:
-        return _cancel_event(request, event, notify)
-    if current in (EventStatus.ACTIVE, EventStatus.CANCELLED) and new_status == EventStatus.DELETED:
-        return _delete_event(request, event)
-    if current == EventStatus.CANCELLED and new_status == EventStatus.ACTIVE:
-        _uncancel_event(request, event)
-        return None
-    return f"Invalid status transition: {current} → {new_status}."
-
-
-def _handle_status_update(request, event: Event, new_status: str, notify: bool):
-    """
-    Validate and apply a status transition from update_event.
-    Returns a Status response to send immediately, or None to continue processing field edits.
-    """
-    # Uncancel requires creator/manager — co-hosts cannot uncancel
-    if new_status == EventStatus.ACTIVE and event.is_cancelled:
-        is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-        is_creator = event.created_by_id == request.auth.pk
-        if not is_creator and not is_manager:
-            return Status(403, ErrorOut(detail="Permission denied."))
-
-    err = _apply_status_transition(request, event, new_status, notify)
-    if err is not None:
-        return Status(400, ErrorOut(detail=err))
-
-    # After a delete transition the event is gone — stop further processing
-    if new_status == EventStatus.DELETED:
-        return Status(200, _event_out(event, request.auth))
-
-    return None
 
 
 def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict):
@@ -461,7 +372,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         if early is not None:
             return early
 
-    # Field edits are allowed on active or cancelled events (e.g. fixing a typo before uncancelling)
+    # Field edits are allowed on active, cancelled, or draft events
     err_status = _apply_field_updates(request, event, event_id, updates)
     if err_status:
         return err_status

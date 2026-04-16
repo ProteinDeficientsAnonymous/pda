@@ -59,7 +59,8 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
     try {
       final eventId = await submitNewEvent(ref, result);
       if (!mounted) return;
-      showSnackBar(context, 'event created 🌱');
+      final isDraft = result.status == 'draft';
+      showSnackBar(context, isDraft ? 'draft saved' : 'event created 🌱');
       context.go('/events/$eventId');
     } catch (e, st) {
       _log.warning('failed to create event', e, st);

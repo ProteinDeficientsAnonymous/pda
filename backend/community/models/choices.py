@@ -15,6 +15,7 @@ class EventType(models.TextChoices):
 
 
 class EventStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
     ACTIVE = "active", "Active"
     CANCELLED = "cancelled", "Cancelled"
     DELETED = "deleted", "Deleted"

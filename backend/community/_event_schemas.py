@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, Field, field_validator
 
 from community._field_limits import FieldLimit
-from community.models import EventType, InvitePermission, PageVisibility
+from community.models import EventStatus, EventType, InvitePermission, PageVisibility
 
 
 def _require_path(url: str, domain_hint: str) -> str:
@@ -199,6 +199,7 @@ class EventIn(BaseModel):
     )
     co_host_ids: list[str] = []
     invited_user_ids: list[str] = []
+    status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
 
     @field_validator("whatsapp_link", mode="before")
     @classmethod

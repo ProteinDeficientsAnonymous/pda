@@ -182,47 +182,81 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
     return '$baseUrl$h';
   }
 
+  Map<String, dynamic> _buildEventData() {
+    final (visibility, eventType) = visibilityChoiceToFields(_visibilityChoice);
+    return {
+      'title': _title.text.trim(),
+      'description': _description.text.trim(),
+      'location': _location.text.trim(),
+      'latitude': _latitude,
+      'longitude': _longitude,
+      'whatsapp_link': _normalizeUrl(_whatsappLink.text),
+      'partiful_link': _normalizeUrl(_partifulLink.text),
+      'other_link': _normalizeUrl(_otherLink.text),
+      'price': _price.text.trim(),
+      'venmo_link': _handleToLink(_venmoLink.text, 'https://venmo.com/'),
+      'cashapp_link': _handleToLink(_cashappLink.text, 'https://cash.app/\$'),
+      'zelle_info': _zelleInfo.text.trim(),
+      'start_datetime': _start.toUtc().toIso8601String(),
+      'end_datetime': _end?.toUtc().toIso8601String(),
+      'rsvp_enabled': _rsvpEnabled,
+      'allow_plus_ones': _allowPlusOnes,
+      'max_attendees': _maxAttendees,
+      'datetime_tbd': _datetimeTbd || _datetimePollOptions.isNotEmpty,
+      'event_type': eventType,
+      'visibility': visibility,
+      'invite_permission': _invitePermission,
+      'co_host_ids': _coHostIds.toList(),
+      'invited_user_ids': _invitedUserIds.toList(),
+    };
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    final (visibility, eventType) = visibilityChoiceToFields(_visibilityChoice);
+    final data = _buildEventData();
+    // When publishing a draft, include status=active so the caller sends
+    // the transition in the PATCH payload.
+    if (_isDraftEvent) data['status'] = 'active';
     Navigator.of(context).pop(
       EventFormResult(
-        data: {
-          'title': _title.text.trim(),
-          'description': _description.text.trim(),
-          'location': _location.text.trim(),
-          'latitude': _latitude,
-          'longitude': _longitude,
-          'whatsapp_link': _normalizeUrl(_whatsappLink.text),
-          'partiful_link': _normalizeUrl(_partifulLink.text),
-          'other_link': _normalizeUrl(_otherLink.text),
-          'price': _price.text.trim(),
-          'venmo_link': _handleToLink(_venmoLink.text, 'https://venmo.com/'),
-          'cashapp_link': _handleToLink(
-            _cashappLink.text,
-            'https://cash.app/\$',
-          ),
-          'zelle_info': _zelleInfo.text.trim(),
-          'start_datetime': _start.toUtc().toIso8601String(),
-          'end_datetime': _end?.toUtc().toIso8601String(),
-          'rsvp_enabled': _rsvpEnabled,
-          'allow_plus_ones': _allowPlusOnes,
-          'max_attendees': _maxAttendees,
-          'datetime_tbd': _datetimeTbd || _datetimePollOptions.isNotEmpty,
-          'event_type': eventType,
-          'visibility': visibility,
-          'invite_permission': _invitePermission,
-          'co_host_ids': _coHostIds.toList(),
-          'invited_user_ids': _invitedUserIds.toList(),
-        },
+        data: data,
         photo: _selectedPhoto,
         removePhoto: _removePhoto,
         datetimePollOptions: _datetimePollOptions
             .map((dt) => dt.toUtc().toIso8601String())
             .toList(),
+        status: 'active',
       ),
     );
   }
+
+  /// Saves the current form state as a draft. Only requires a non-empty title;
+  /// URL format validators are skipped so partial links don't block saving.
+  void _saveAsDraft() {
+    final title = _title.text.trim();
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('add a title before saving as a draft')),
+      );
+      return;
+    }
+    // Clear partial URL inputs that would fail backend validation —
+    // they'll be validated properly on publish.
+    final data = _buildEventData();
+    Navigator.of(context).pop(
+      EventFormResult(
+        data: data,
+        photo: _selectedPhoto,
+        removePhoto: _removePhoto,
+        datetimePollOptions: _datetimePollOptions
+            .map((dt) => dt.toUtc().toIso8601String())
+            .toList(),
+        status: 'draft',
+      ),
+    );
+  }
+
+  bool get _isDraftEvent => widget.event?.status == 'draft';
 
   Future<void> _removePoll(BuildContext ctx) async {
     final eventId = widget.event?.id;
@@ -460,10 +494,18 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
                   child: const Text('cancel'),
                 ),
                 const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _submit,
-                  child: Text(_isEdit ? 'save' : 'add'),
-                ),
+                if (!_isEdit || _isDraftEvent) ...[
+                  TextButton(
+                    onPressed: _saveAsDraft,
+                    child: const Text('save draft'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: _submit,
+                    child: const Text('publish'),
+                  ),
+                ] else
+                  FilledButton(onPressed: _submit, child: const Text('save')),
               ],
             ),
           ),
@@ -498,7 +540,11 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('cancel'),
         ),
-        FilledButton(onPressed: _submit, child: Text(_isEdit ? 'save' : 'add')),
+        if (!_isEdit || _isDraftEvent) ...[
+          TextButton(onPressed: _saveAsDraft, child: const Text('save draft')),
+          FilledButton(onPressed: _submit, child: const Text('publish')),
+        ] else
+          FilledButton(onPressed: _submit, child: const Text('save')),
       ],
     );
   }

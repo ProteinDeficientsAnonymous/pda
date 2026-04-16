@@ -4,6 +4,7 @@ abstract class EventType {
 }
 
 abstract class EventStatus {
+  static const draft = 'draft';
   static const active = 'active';
   static const cancelled = 'cancelled';
   static const deleted = 'deleted';

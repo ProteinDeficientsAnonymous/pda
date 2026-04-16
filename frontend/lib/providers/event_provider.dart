@@ -55,6 +55,7 @@ Future<void> uploadEventPhoto(
     imageCache.evict(NetworkImage(oldPhotoUrl));
   }
   ref.invalidate(eventsProvider);
+  ref.invalidate(draftEventsProvider);
   ref.invalidate(eventDetailProvider(eventId));
 }
 
@@ -62,6 +63,7 @@ Future<void> deleteEventPhoto(WidgetRef ref, String eventId) async {
   final api = ref.read(apiClientProvider);
   await api.delete('/api/community/events/$eventId/photo/');
   ref.invalidate(eventsProvider);
+  ref.invalidate(draftEventsProvider);
   ref.invalidate(eventDetailProvider(eventId));
 }
 
@@ -79,6 +81,7 @@ Future<void> patchEventStatus(
   await api.patch('/api/community/events/$eventId/', data: data);
   ref.invalidate(eventsProvider);
   ref.invalidate(cancelledEventsProvider);
+  ref.invalidate(draftEventsProvider);
   ref.invalidate(eventDetailProvider(eventId));
 }
 
@@ -94,6 +97,22 @@ final cancelledEventsProvider = FutureProvider<List<Event>>((ref) async {
     return list.map((e) => Event.fromJson(e as Map<String, dynamic>)).toList();
   } catch (e) {
     _log.warning('Failed to load cancelled events', e);
+    rethrow;
+  }
+});
+
+final draftEventsProvider = FutureProvider<List<Event>>((ref) async {
+  ref.watch(authProvider);
+  final api = ref.watch(apiClientProvider);
+  try {
+    final response = await api.get(
+      '/api/community/events/',
+      queryParameters: {'status': 'draft'},
+    );
+    final list = response.data as List<dynamic>;
+    return list.map((e) => Event.fromJson(e as Map<String, dynamic>)).toList();
+  } catch (e) {
+    _log.warning('Failed to load draft events', e);
     rethrow;
   }
 });

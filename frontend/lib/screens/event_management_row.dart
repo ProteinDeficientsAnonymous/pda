@@ -47,6 +47,7 @@ class EventManagementRow extends ConsumerWidget {
         );
       }
       ref.invalidate(eventsProvider);
+      ref.invalidate(draftEventsProvider);
       _log.info('edited event ${event.id}');
     } catch (e, st) {
       _log.warning('failed to edit event', e, st);
@@ -163,6 +164,31 @@ class EventManagementRow extends ConsumerWidget {
                             ),
                           ),
                         ],
+                        if (event.status == EventStatus.draft) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.secondaryContainer,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'draft',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (event.eventType == EventType.official) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -239,7 +265,21 @@ class EventManagementRow extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              if (event.status == EventStatus.cancelled) ...[
+              if (event.status == EventStatus.draft) ...[
+                IconButton(
+                  tooltip: 'Edit',
+                  icon: Icon(Icons.edit_outlined, color: fg.withAlpha(178)),
+                  onPressed: () => _showEditDialog(context, ref),
+                ),
+                IconButton(
+                  tooltip: 'Delete draft',
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: () => _doDelete(context, ref),
+                ),
+              ] else if (event.status == EventStatus.cancelled) ...[
                 IconButton(
                   tooltip: 'Uncancel',
                   icon: const Icon(Icons.restore),

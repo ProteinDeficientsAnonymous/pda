@@ -7,8 +7,8 @@ import 'package:pda/providers/event_provider.dart';
 import 'package:pda/screens/calendar/event_detail_panel.dart';
 import 'package:pda/screens/event_management_row.dart';
 import 'package:pda/services/api_error.dart';
-import 'package:pda/utils/create_datetime_poll.dart';
 import 'package:pda/utils/snackbar.dart';
+import 'package:pda/utils/submit_event.dart';
 import 'package:pda/widgets/app_scaffold.dart';
 
 class EventManagementScreen extends ConsumerWidget {
@@ -48,7 +48,7 @@ class EventManagementScreen extends ConsumerWidget {
 
 enum _SortField { date, title, type }
 
-enum _EventFilter { upcoming, past, cancelled }
+enum _EventFilter { upcoming, past, drafts, cancelled }
 
 class _EventManagementBody extends ConsumerStatefulWidget {
   final List<Event> events;
@@ -80,6 +80,7 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
     return switch (_filter) {
       _EventFilter.upcoming => events.where((e) => !e.isPast).toList(),
       _EventFilter.past => events.where((e) => e.isPast).toList(),
+      _EventFilter.drafts => [],
       _EventFilter.cancelled => [],
     };
   }
@@ -88,26 +89,10 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
     final result = await showEventForm(context);
     if (result == null) return;
     try {
-      final api = ref.read(apiClientProvider);
-      final response = await api.post(
-        '/api/community/events/',
-        data: result.data,
-      );
-      final eventId = (response.data as Map<String, dynamic>)['id'] as String;
-      if (result.photo != null) {
-        await uploadEventPhoto(ref, eventId, result.photo!);
-      }
-      if (result.datetimePollOptions.isNotEmpty) {
-        await createDatetimePoll(
-          ref: ref,
-          eventId: eventId,
-          eventTitle: result.data['title'] as String,
-          options: result.datetimePollOptions,
-        );
-      }
-      ref.invalidate(eventsProvider);
+      final eventId = await submitNewEvent(ref, result);
       if (mounted) {
-        showSnackBar(context, 'event created 🌱');
+        final isDraft = result.status == 'draft';
+        showSnackBar(context, isDraft ? 'draft saved' : 'event created 🌱');
         context.push('/events/$eventId');
       }
     } catch (e) {
@@ -142,6 +127,7 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
     return switch (_filter) {
       _EventFilter.upcoming => 'no upcoming events',
       _EventFilter.past => 'no past events',
+      _EventFilter.drafts => 'no drafts yet 🌿',
       _EventFilter.cancelled => 'no cancelled events',
     };
   }
@@ -154,6 +140,8 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
       _EventFilter.upcoming =>
         "you haven't created or co-hosted any upcoming events",
       _EventFilter.past => "you haven't created or co-hosted any past events",
+      _EventFilter.drafts =>
+        'hit save draft when you want to finish an event later',
       _EventFilter.cancelled => 'none of your events have been cancelled',
     };
   }
@@ -198,6 +186,16 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) =>
           EventManagementRow(event: filtered[index]),
+    );
+  }
+
+  Widget _buildDraftsTab() {
+    final draftsAsync = ref.watch(draftEventsProvider);
+    return draftsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) =>
+          const Center(child: Text("couldn't load drafts — try refreshing")),
+      data: _buildList,
     );
   }
 
@@ -294,6 +292,10 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
                 ),
                 ButtonSegment(value: _EventFilter.past, label: Text('past')),
                 ButtonSegment(
+                  value: _EventFilter.drafts,
+                  label: Text('drafts'),
+                ),
+                ButtonSegment(
                   value: _EventFilter.cancelled,
                   label: Text('cancelled'),
                 ),
@@ -312,9 +314,12 @@ class _EventManagementBodyState extends ConsumerState<_EventManagementBody> {
         ],
         const SizedBox(height: 12),
         Expanded(
-          child: _filter == _EventFilter.cancelled && widget.myEventsOnly
-              ? _buildCancelledTab()
-              : _buildList(_applyTabFilter(widget.events)),
+          child: switch (_filter) {
+            _EventFilter.drafts when widget.myEventsOnly => _buildDraftsTab(),
+            _EventFilter.cancelled when widget.myEventsOnly =>
+              _buildCancelledTab(),
+            _ => _buildList(_applyTabFilter(widget.events)),
+          },
         ),
       ],
     );
