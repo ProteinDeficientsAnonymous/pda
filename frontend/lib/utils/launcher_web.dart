@@ -26,6 +26,7 @@ void openUrl(String url) {
 }
 
 void openLocationInMaps(String location) {
-  final url = 'https://maps.google.com/?q=${Uri.encodeComponent(location)}';
+  final url =
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}';
   _openExternal(url);
 }
