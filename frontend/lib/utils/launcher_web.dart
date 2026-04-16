@@ -5,15 +5,12 @@ final _log = Logger('openUrl');
 
 const _safeSchemes = {'http', 'https', 'tel', 'mailto', 'sms', 'whatsapp'};
 
-// window.open() breaks under COOP: same-origin — use an anchor click instead.
+// Must be called synchronously from a user gesture (e.g. InkWell.onTap).
+// window.open from a direct user gesture is reliable under COOP: same-origin —
+// the anchor-click workaround removed the anchor before Chrome committed the
+// navigation in the cross-origin-isolated codepath, leaving about:blank.
 void _openExternal(String url) {
-  final a = web.document.createElement('a') as web.HTMLAnchorElement
-    ..href = url
-    ..target = '_blank'
-    ..rel = 'noopener noreferrer';
-  web.document.body?.append(a);
-  a.click();
-  a.remove();
+  web.window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 void openUrl(String url) {
