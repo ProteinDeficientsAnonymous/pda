@@ -89,6 +89,18 @@ class _PollOptionsDialogState extends ConsumerState<PollOptionsDialog> {
     }
   }
 
+  Future<void> _editLocalOption(int index) async {
+    final now = DateTime.now();
+    final dt = await showDateTimePicker(
+      context: context,
+      initialDateTime: _localOptions[index],
+      firstDate: now,
+      lastDate: DateTime(now.year + 2),
+    );
+    if (dt == null || !mounted) return;
+    setState(() => _localOptions[index] = dt);
+  }
+
   Future<void> _updateOption(EventPollOption option) async {
     final now = DateTime.now();
     final dt = await showDateTimePicker(
@@ -184,6 +196,7 @@ class _PollOptionsDialogState extends ConsumerState<PollOptionsDialog> {
         for (var i = 0; i < _localOptions.length; i++)
           _optionTile(
             label: pollDateFmt.format(_localOptions[i]).toLowerCase(),
+            onEdit: () => _editLocalOption(i),
             onRemove: () => _removeOption(localIndex: i),
           ),
       ],
