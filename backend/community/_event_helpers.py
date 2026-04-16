@@ -88,8 +88,11 @@ def promote_from_waitlist(event: Event) -> None:
 
     Must be called inside a transaction.atomic() block with the event row locked.
     """
+    from notifications.service import create_waitlist_promoted_notifications
+
     if event.max_attendees is None:
         return
+    promoted_user_ids: list[str] = []
     while True:
         headcount = _attending_headcount_db(event)
         if headcount >= event.max_attendees:
@@ -103,6 +106,9 @@ def promote_from_waitlist(event: Event) -> None:
             break
         oldest.status = RSVPStatus.ATTENDING
         oldest.save(update_fields=["status", "updated_at"])
+        promoted_user_ids.append(str(oldest.user_id))
+    if promoted_user_ids:
+        create_waitlist_promoted_notifications(event, promoted_user_ids)
 
 
 def _has_attendees(event: Event) -> bool:

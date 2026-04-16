@@ -94,6 +94,7 @@ abstract class NotificationType {
   static const joinRequest = 'join_request';
   static const cohostAdded = 'cohost_added';
   static const magicLinkRequest = 'magic_link_request';
+  static const waitlistPromoted = 'waitlist_promoted';
 }
 
 abstract class InvitePermission {

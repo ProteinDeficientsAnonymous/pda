@@ -173,3 +173,26 @@ def create_event_invite_notifications(
         ]
     )
     _notify_users(notified_ids)
+
+
+def create_waitlist_promoted_notifications(
+    event: Event,
+    promoted_user_ids: Iterable[str],
+) -> None:
+    from notifications.models import Notification, NotificationType
+
+    user_ids = list(promoted_user_ids)
+    if not user_ids:
+        return
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=user_id,
+                notification_type=NotificationType.WAITLIST_PROMOTED,
+                event=event,
+                message=f"a spot opened up — you're going to {event.title}!",
+            )
+            for user_id in user_ids
+        ]
+    )
+    _notify_users(user_ids)

@@ -239,6 +239,53 @@ class TestWaitlistPromotion:
 
 
 # ---------------------------------------------------------------------------
+# TestWaitlistPromotionNotification
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestWaitlistPromotionNotification:
+    def test_notification_created_on_promote(  # noqa: PLR0913
+        self,
+        api_client,
+        capped_event,
+        user3,
+        headers1,
+        headers2,
+        headers3,
+    ):
+        """Promoted user receives a WAITLIST_PROMOTED notification."""
+        from notifications.models import Notification, NotificationType
+
+        _rsvp(api_client, capped_event, headers1)
+        _rsvp(api_client, capped_event, headers2)
+        _rsvp(api_client, capped_event, headers3)  # waitlisted
+
+        api_client.delete(f"/api/community/events/{capped_event.id}/rsvp/", **headers1)
+
+        notif = Notification.objects.filter(
+            recipient=user3,
+            notification_type=NotificationType.WAITLIST_PROMOTED,
+            event=capped_event,
+        )
+        assert notif.exists()
+        assert capped_event.title in notif.first().message
+
+    def test_no_notification_when_no_waitlisted(self, api_client, capped_event, headers1, headers2):
+        """No notification created when a spot frees but nobody is waitlisted."""
+        from notifications.models import Notification, NotificationType
+
+        _rsvp(api_client, capped_event, headers1)
+        _rsvp(api_client, capped_event, headers2)
+
+        api_client.delete(f"/api/community/events/{capped_event.id}/rsvp/", **headers1)
+
+        assert not Notification.objects.filter(
+            notification_type=NotificationType.WAITLIST_PROMOTED,
+        ).exists()
+
+
+# ---------------------------------------------------------------------------
 # TestCapacityCounts
 # ---------------------------------------------------------------------------
 

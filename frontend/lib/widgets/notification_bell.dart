@@ -117,7 +117,9 @@ class _NotificationList extends ConsumerWidget {
               await markNotificationRead(ref, n.id);
               if (!context.mounted) return;
               if ((n.notificationType == NotificationType.eventInvite ||
-                      n.notificationType == NotificationType.cohostAdded) &&
+                      n.notificationType == NotificationType.cohostAdded ||
+                      n.notificationType ==
+                          NotificationType.waitlistPromoted) &&
                   n.eventId != null) {
                 onClose();
                 context.go('/events/${n.eventId}');

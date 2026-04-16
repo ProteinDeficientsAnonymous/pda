@@ -9,6 +9,7 @@ class NotificationType(models.TextChoices):
     JOIN_REQUEST = "join_request", "Join Request"
     COHOST_ADDED = "cohost_added", "Co-host Added"
     MAGIC_LINK_REQUEST = "magic_link_request", "Magic Link Request"
+    WAITLIST_PROMOTED = "waitlist_promoted", "Waitlist Promoted"
 
 
 class Notification(models.Model):
