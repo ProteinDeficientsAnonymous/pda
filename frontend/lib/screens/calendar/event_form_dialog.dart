@@ -20,6 +20,8 @@ import 'package:pda/widgets/photo_crop_dialog.dart';
 export 'package:pda/screens/calendar/event_form_result.dart'
     show EventFormResult;
 
+enum _PollRemovalState { idle, removing, removed }
+
 /// Shared form for creating and editing events.
 /// Pass [event] to pre-fill fields for editing; omit for create mode.
 /// Use [showEventForm] to open it — it picks full-screen or dialog automatically.
@@ -66,7 +68,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   late Set<String> _invitedUserIds;
   XFile? _selectedPhoto;
   bool _removePhoto = false;
-  bool _removingPoll = false;
+  _PollRemovalState _pollRemoval = _PollRemovalState.idle;
   double? _latitude;
   double? _longitude;
   final List<DateTime> _datetimePollOptions = [];
@@ -225,7 +227,6 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
   Future<void> _removePoll(BuildContext ctx) async {
     final eventId = widget.event?.id;
     if (eventId == null) return;
-    final nav = Navigator.of(ctx);
     final messenger = ScaffoldMessenger.of(ctx);
     final confirmed = await showDialog<bool>(
       context: ctx,
@@ -250,11 +251,14 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    setState(() => _removingPoll = true);
+    setState(() => _pollRemoval = _PollRemovalState.removing);
     try {
       await deleteEventPoll(ref: ref, eventId: eventId);
       if (!mounted) return;
-      nav.pop();
+      setState(() {
+        _pollRemoval = _PollRemovalState.removed;
+        _datetimeTbd = false;
+      });
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
@@ -263,7 +267,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
-      setState(() => _removingPoll = false);
+      setState(() => _pollRemoval = _PollRemovalState.idle);
     }
   }
 
@@ -328,11 +332,12 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
             EventFormWhenSection(
               isEdit: _isEdit,
               event: widget.event,
+              pollRemoved: _pollRemoval == _PollRemovalState.removed,
               start: _start,
               end: _end,
               datetimeTbd: _datetimeTbd,
               datetimePollOptions: _datetimePollOptions,
-              removingPoll: _removingPoll,
+              removingPoll: _pollRemoval == _PollRemovalState.removing,
               onStartChanged: (dt) => setState(() {
                 _start = dt;
                 if (_end != null && _end!.isBefore(_start)) {

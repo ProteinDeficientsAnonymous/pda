@@ -8,6 +8,7 @@ import 'package:pda/widgets/date_time_picker.dart';
 class EventFormWhenSection extends StatefulWidget {
   final bool isEdit;
   final Event? event;
+  final bool pollRemoved;
   final DateTime start;
   final DateTime? end;
   final bool datetimeTbd;
@@ -25,6 +26,7 @@ class EventFormWhenSection extends StatefulWidget {
     super.key,
     required this.isEdit,
     required this.event,
+    required this.pollRemoved,
     required this.start,
     required this.end,
     required this.datetimeTbd,
@@ -243,6 +245,7 @@ class _EventFormWhenSectionState extends State<EventFormWhenSection> {
     // Editing an event with an active (non-finalized) poll — show edit button.
     final hasActivePoll =
         widget.isEdit &&
+        !widget.pollRemoved &&
         (widget.event?.hasPoll ?? false) &&
         (widget.event?.datetimeTbd ?? true);
 
