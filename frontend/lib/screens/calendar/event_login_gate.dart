@@ -5,6 +5,7 @@ import 'package:logging/logging.dart';
 import 'package:pda/models/event.dart';
 import 'package:pda/providers/auth_provider.dart';
 import 'package:pda/providers/event_provider.dart';
+import 'package:pda/screens/calendar/event_action_dialogs.dart';
 import 'package:pda/services/api_error.dart';
 import 'package:pda/utils/create_datetime_poll.dart';
 import 'package:pda/utils/snackbar.dart';
@@ -15,13 +16,16 @@ import 'package:pda/screens/calendar/event_form_dialog.dart';
 
 final _log = Logger('EventLoginGate');
 
-/// Shows member-only content (location, links, RSVP, admin actions) or a
-/// login/join prompt for unauthenticated visitors.
+/// Shows admin action buttons (edit / cancel / delete / uncancel) for users
+/// who have permission to manage the event.
 class EventAdminActions extends ConsumerStatefulWidget {
   final Event event;
-  final VoidCallback? onCancelled;
 
-  const EventAdminActions({super.key, required this.event, this.onCancelled});
+  /// Called after the event is **deleted** (soft-deleted). The caller should
+  /// navigate away since the event is no longer accessible.
+  final VoidCallback? onDeleted;
+
+  const EventAdminActions({super.key, required this.event, this.onDeleted});
 
   @override
   ConsumerState<EventAdminActions> createState() => _EventAdminActionsState();
@@ -30,48 +34,47 @@ class EventAdminActions extends ConsumerStatefulWidget {
 class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
   bool _loading = false;
 
+  bool get _hasAttendees =>
+      widget.event.invitedCount > 0 || widget.event.attendingCount > 0;
+
   Future<void> _cancel() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('cancel event'),
-        content: Text(
-          'cancel "${widget.event.title}"? attendees will see it\'s been cancelled.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('nevermind'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            child: const Text('cancel event'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
+    final result = await showCancelEventDialog(context, widget.event);
+    if (!result.confirmed) return;
 
     setState(() => _loading = true);
     try {
-      final api = ref.read(apiClientProvider);
-      await api.delete('/api/community/events/${widget.event.id}/');
-      ref.invalidate(eventsProvider);
-      ref.invalidate(cancelledEventsProvider);
-      ref.invalidate(eventDetailProvider(widget.event.id));
+      await patchEventStatus(
+        ref,
+        widget.event.id,
+        status: EventStatus.cancelled,
+        notifyAttendees: result.notifyAttendees,
+      );
       _log.info('cancelled event ${widget.event.id}');
-      if (mounted) {
-        showSnackBar(context, 'event cancelled');
-        widget.onCancelled?.call();
-      }
+      if (mounted) showSnackBar(context, 'event cancelled');
+      // Stay on page — cancelled chip renders via invalidated provider
     } catch (e, st) {
       _log.warning('failed to cancel event', e, st);
+      if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDeleteEventDialog(context, widget.event);
+    if (!confirmed) return;
+
+    setState(() => _loading = true);
+    try {
+      await patchEventStatus(ref, widget.event.id, status: EventStatus.deleted);
+      _log.info('deleted event ${widget.event.id}');
       if (mounted) {
-        showErrorSnackBar(context, ApiError.from(e).message);
+        showSnackBar(context, 'event deleted');
+        widget.onDeleted?.call();
       }
+    } catch (e, st) {
+      _log.warning('failed to delete event', e, st);
+      if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -80,16 +83,12 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
   Future<void> _uncancel() async {
     setState(() => _loading = true);
     try {
-      await uncancelEvent(ref, widget.event.id);
+      await patchEventStatus(ref, widget.event.id, status: EventStatus.active);
       _log.info('uncancelled event ${widget.event.id}');
-      if (mounted) {
-        showSnackBar(context, 'event reinstated');
-      }
+      if (mounted) showSnackBar(context, 'event reinstated');
     } catch (e, st) {
       _log.warning('failed to uncancel event', e, st);
-      if (mounted) {
-        showErrorSnackBar(context, ApiError.from(e).message);
-      }
+      if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -129,9 +128,7 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
       _log.info('edited event ${widget.event.id}');
     } catch (e, st) {
       _log.warning('failed to edit event', e, st);
-      if (mounted) {
-        showErrorSnackBar(context, ApiError.from(e).message);
-      }
+      if (mounted) showErrorSnackBar(context, ApiError.from(e).message);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -154,10 +151,45 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
 
     final isCancelled = widget.event.status == EventStatus.cancelled;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (!isCancelled) ...[
+    // Past events: edit + delete only (can't cancel something already done)
+    // Upcoming with no attendees: edit + delete only
+    // Upcoming with attendees: edit + cancel
+    // Cancelled: uncancel (creator/manager only) + delete
+    Widget buttons;
+    if (isCancelled) {
+      buttons = Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (isCreator || isManager) ...[
+            OutlinedButton.icon(
+              onPressed: _uncancel,
+              icon: const Icon(Icons.restore, size: 16),
+              label: const Text('uncancel'),
+            ),
+            const SizedBox(width: 12),
+          ],
+          OutlinedButton.icon(
+            onPressed: _delete,
+            icon: Icon(
+              Icons.delete_outline,
+              size: 16,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            label: Text(
+              'delete',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      );
+    } else if (!widget.event.isPast && _hasAttendees) {
+      // Upcoming with attendees — show cancel (delete happens after cancel)
+      buttons = Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
           OutlinedButton.icon(
             onPressed: _edit,
             icon: const Icon(Icons.edit_outlined, size: 16),
@@ -179,14 +211,41 @@ class _EventAdminActionsState extends ConsumerState<EventAdminActions> {
               side: BorderSide(color: Theme.of(context).colorScheme.error),
             ),
           ),
-        ] else if (isCreator || isManager)
+        ],
+      );
+    } else {
+      // Past event or upcoming with no attendees — show delete directly
+      buttons = Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!widget.event.isPast) ...[
+            OutlinedButton.icon(
+              onPressed: _edit,
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: const Text('edit'),
+            ),
+            const SizedBox(width: 12),
+          ],
           OutlinedButton.icon(
-            onPressed: _uncancel,
-            icon: const Icon(Icons.restore, size: 16),
-            label: const Text('uncancel'),
+            onPressed: _delete,
+            icon: Icon(
+              Icons.delete_outline,
+              size: 16,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            label: Text(
+              'delete',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Theme.of(context).colorScheme.error),
+            ),
           ),
-      ],
-    );
+        ],
+      );
+    }
+
+    return buttons;
   }
 }
 

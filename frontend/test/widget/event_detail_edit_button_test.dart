@@ -12,6 +12,7 @@ import '../helpers/provider_overrides.dart';
 
 const _kTestSize = Size(700, 900);
 
+/// Upcoming event with attendees — shows cancel flow.
 final _testEvent = Event(
   id: 'evt-1',
   title: 'Movie Night',
@@ -22,15 +23,39 @@ final _testEvent = Event(
   createdByName: 'Alice',
   coHostIds: ['u-cohost'],
   coHostNames: ['Bob'],
+  attendingCount: 1, // has attendees → shows cancel (not delete)
 );
 
-Widget _buildSubject({AuthNotifier? authNotifier}) {
+/// Upcoming event with no attendees — shows delete directly.
+final _testEventNoAttendees = Event(
+  id: 'evt-2',
+  title: 'Quiet Gathering',
+  description: 'Just us.',
+  startDatetime: DateTime(2026, 4, 1, 19),
+  location: '',
+  createdById: 'u-host',
+  createdByName: 'Alice',
+);
+
+/// Past event — shows delete (no cancel).
+final _testPastEvent = Event(
+  id: 'evt-3',
+  title: 'Old Event',
+  description: 'Already happened.',
+  startDatetime: DateTime(2020, 1, 1, 19),
+  location: '',
+  createdById: 'u-host',
+  createdByName: 'Alice',
+  isPast: true,
+);
+
+Widget _buildSubject({AuthNotifier? authNotifier, Event? event}) {
+  final e = event ?? _testEvent;
   final router = GoRouter(
     routes: [
       GoRoute(
         path: '/',
-        builder: (_, __) =>
-            Scaffold(body: EventDetailContent(event: _testEvent)),
+        builder: (_, __) => Scaffold(body: EventDetailContent(event: e)),
       ),
       GoRoute(path: '/events/:id', builder: (_, __) => const SizedBox()),
       GoRoute(path: '/join', builder: (_, __) => const SizedBox()),
@@ -38,8 +63,8 @@ Widget _buildSubject({AuthNotifier? authNotifier}) {
   );
   return ProviderScope(
     overrides: [
-      eventsProvider.overrideWith((_) async => [_testEvent]),
-      eventDetailProvider.overrideWith((ref, id) async => _testEvent),
+      eventsProvider.overrideWith((_) async => [e]),
+      eventDetailProvider.overrideWith((ref, id) async => e),
       authProvider.overrideWith(() => authNotifier ?? _GuestAuthNotifier()),
       silentNotificationsOverride,
     ],
@@ -49,22 +74,67 @@ Widget _buildSubject({AuthNotifier? authNotifier}) {
 
 void main() {
   group('event detail admin actions visibility', () {
-    testWidgets('co-host sees edit and cancel buttons', (tester) async {
+    testWidgets(
+      'co-host sees edit and cancel buttons for upcoming event with attendees',
+      (tester) async {
+        tester.view.physicalSize = _kTestSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(authNotifier: _UserAuthNotifier(userId: 'u-cohost')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('edit'), findsOneWidget);
+        expect(find.text('cancel event'), findsOneWidget);
+        expect(find.text('delete'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'creator sees edit and delete for upcoming event with no attendees',
+      (tester) async {
+        tester.view.physicalSize = _kTestSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            event: _testEventNoAttendees,
+            authNotifier: _UserAuthNotifier(userId: 'u-host'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('edit'), findsOneWidget);
+        expect(find.text('delete'), findsOneWidget);
+        expect(find.text('cancel event'), findsNothing);
+      },
+    );
+
+    testWidgets('creator sees delete (no edit) for past event', (tester) async {
       tester.view.physicalSize = _kTestSize;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        _buildSubject(authNotifier: _UserAuthNotifier(userId: 'u-cohost')),
+        _buildSubject(
+          event: _testPastEvent,
+          authNotifier: _UserAuthNotifier(userId: 'u-host'),
+        ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('edit'), findsOneWidget);
-      expect(find.text('cancel event'), findsOneWidget);
+      expect(find.text('delete'), findsOneWidget);
+      expect(find.text('edit'), findsNothing);
+      expect(find.text('cancel event'), findsNothing);
     });
 
-    testWidgets('regular member does NOT see edit or delete', (tester) async {
+    testWidgets('regular member does NOT see edit or cancel', (tester) async {
       tester.view.physicalSize = _kTestSize;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -77,9 +147,10 @@ void main() {
 
       expect(find.text('edit'), findsNothing);
       expect(find.text('cancel event'), findsNothing);
+      expect(find.text('delete'), findsNothing);
     });
 
-    testWidgets('unauthenticated user does NOT see edit or delete', (
+    testWidgets('unauthenticated user does NOT see admin actions', (
       tester,
     ) async {
       tester.view.physicalSize = _kTestSize;
@@ -92,6 +163,7 @@ void main() {
 
       expect(find.text('edit'), findsNothing);
       expect(find.text('cancel event'), findsNothing);
+      expect(find.text('delete'), findsNothing);
     });
   });
 }

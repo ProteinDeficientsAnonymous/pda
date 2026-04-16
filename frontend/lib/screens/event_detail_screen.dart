@@ -31,7 +31,7 @@ class EventDetailScreen extends ConsumerWidget {
         data: (event) => EventDetailContent(
           event: event,
           fullPage: true,
-          onCancelled: () =>
+          onDeleted: () =>
               context.canPop() ? context.pop() : context.go('/events/mine'),
         ),
       ),

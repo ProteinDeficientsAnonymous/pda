@@ -62,6 +62,7 @@ class Event(models.Model):
         choices=EventStatus.choices,
         default=EventStatus.ACTIVE,
     )
+    deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None
@@ -98,6 +99,10 @@ class Event(models.Model):
     @property
     def is_cancelled(self) -> bool:
         return self.status == EventStatus.CANCELLED
+
+    @property
+    def is_deleted(self) -> bool:
+        return self.status == EventStatus.DELETED
 
     def __str__(self):
         return f"{self.title} — {self.start_datetime:%Y-%m-%d %H:%M}"

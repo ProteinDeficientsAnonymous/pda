@@ -1,4 +1,4 @@
-"""Event photo upload/delete and uncancel endpoints."""
+"""Event photo upload/delete endpoints."""
 
 import logging
 import time
@@ -19,7 +19,7 @@ from community._event_schemas import (
     EventOut,
 )
 from community._shared import ErrorOut
-from community.models import Event, EventStatus
+from community.models import Event
 
 router = Router()
 
@@ -97,49 +97,5 @@ def delete_event_photo(request, event_id: UUID):
         event.save(update_fields=["photo"])
     audit_log(
         logging.INFO, "event_photo_deleted", request, target_type="event", target_id=str(event_id)
-    )
-    return Status(200, _event_out(event, request.auth))
-
-
-@router.post(
-    "/events/{event_id}/uncancel/",
-    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def uncancel_event(request, event_id: UUID):
-    try:
-        event = (
-            Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-            .get(id=event_id)
-        )
-    except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
-
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    if not is_manager and not is_creator:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={"endpoint": "uncancel_event"},
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-
-    if not event.is_cancelled:
-        return Status(400, ErrorOut(detail="Event is not cancelled."))
-
-    event.status = EventStatus.ACTIVE
-    event.save(update_fields=["status"])
-    audit_log(
-        logging.INFO,
-        "event_uncancelled",
-        request,
-        target_type="event",
-        target_id=str(event_id),
-        details={"title": event.title},
     )
     return Status(200, _event_out(event, request.auth))

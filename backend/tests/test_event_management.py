@@ -379,83 +379,94 @@ class TestEventManagement:
         assert abs(data["longitude"] - -74.005974) < 0.000001
 
     def test_event_patch_fields_match_model(self):
-        """All EventPatchIn fields (except co_host_ids) must exist on Event model."""
+        """All EventPatchIn fields (except M2M and transient fields) must exist on Event model."""
         from community.api import EventPatchIn
 
-        m2m_fields = {"co_host_ids", "invited_user_ids"}
-        schema_fields = set(EventPatchIn.model_fields.keys()) - m2m_fields
+        non_model_fields = {"co_host_ids", "invited_user_ids", "status", "notify_attendees"}
+        schema_fields = set(EventPatchIn.model_fields.keys()) - non_model_fields
         model_fields = {f.name for f in Event._meta.get_fields()}
         missing = schema_fields - model_fields
         assert not missing, f"EventPatchIn fields not on Event model: {missing}"
 
-    # DELETE /api/community/events/{id}/
+    # Soft-delete via PATCH status=deleted (replaces old DELETE endpoint)
 
-    def test_delete_event_success(self, api_client, manage_events_headers, sample_event):
-        event_id = sample_event.id
-        response = api_client.delete(
-            f"/api/community/events/{event_id}/",
+    def test_soft_delete_past_event(self, api_client, manage_events_headers):
+        """A manager can soft-delete a past event."""
+        from community.models import EventStatus
+
+        event = Event.objects.create(
+            title="Past Deletable Event",
+            start_datetime="2020-01-01T18:00:00Z",
+            end_datetime="2020-01-01T20:00:00Z",
+            location="History",
+            created_by=None,
+        )
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"status": "deleted"},
+            content_type="application/json",
             **manage_events_headers,
         )
-        assert response.status_code == 204
-        assert Event.objects.filter(id=event_id, status="cancelled").exists()
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.status == EventStatus.DELETED
+        assert event.deleted_at is not None
 
-    def test_delete_event_requires_permission(self, api_client, auth_headers, sample_event):
-        """A regular member cannot delete an event they did not create."""
-        response = api_client.delete(
-            f"/api/community/events/{sample_event.id}/",
-            **auth_headers,
-        )
-        assert response.status_code == 403
-        assert response.json()["detail"] == "Permission denied."
+    def test_member_can_delete_own_past_event(self, api_client, auth_headers, test_user):
+        """A member can soft-delete a past event they created."""
+        from community.models import EventStatus
 
-    def test_member_can_delete_own_event(self, api_client, auth_headers, test_user):
-        """A regular member can delete an event they created."""
         event = Event.objects.create(
-            title="My Deletable Event",
-            description="Created by member",
-            start_datetime="2026-08-01T18:00:00Z",
-            end_datetime="2026-08-01T20:00:00Z",
+            title="My Past Event",
+            start_datetime="2020-08-01T18:00:00Z",
+            end_datetime="2020-08-01T20:00:00Z",
             location="Online",
             created_by=test_user,
         )
-        event_id = event.id
-        response = api_client.delete(
-            f"/api/community/events/{event_id}/",
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            {"status": "deleted"},
+            content_type="application/json",
             **auth_headers,
         )
-        assert response.status_code == 204
-        assert Event.objects.filter(id=event_id, status="cancelled").exists()
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.status == EventStatus.DELETED
 
     def test_member_cannot_delete_others_event(self, api_client, auth_headers, manage_events_user):
-        """A regular member cannot delete an event created by someone else."""
+        """A member cannot delete an event they did not create."""
         event = Event.objects.create(
-            title="Someone Else's Deletable Event",
-            description="Created by manager",
-            start_datetime="2026-08-01T18:00:00Z",
-            end_datetime="2026-08-01T20:00:00Z",
+            title="Someone Else's Past Event",
+            start_datetime="2020-08-01T18:00:00Z",
+            end_datetime="2020-08-01T20:00:00Z",
             location="Online",
             created_by=manage_events_user,
         )
-        response = api_client.delete(
+        response = api_client.patch(
             f"/api/community/events/{event.id}/",
+            {"status": "deleted"},
+            content_type="application/json",
             **auth_headers,
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "Permission denied."
 
-    def test_delete_event_requires_auth(self, api_client, sample_event):
-        response = api_client.delete(
-            f"/api/community/events/{sample_event.id}/",
-        )
-        assert response.status_code == 401
-
-    def test_delete_event_not_found(self, api_client, manage_events_headers):
-        response = api_client.delete(
+    def test_delete_not_found(self, api_client, manage_events_headers):
+        response = api_client.patch(
             "/api/community/events/00000000-0000-0000-0000-000000000000/",
+            {"status": "deleted"},
+            content_type="application/json",
             **manage_events_headers,
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "Event not found."
+
+    def test_delete_requires_auth(self, api_client, sample_event):
+        response = api_client.patch(
+            f"/api/community/events/{sample_event.id}/",
+            {"status": "deleted"},
+            content_type="application/json",
+        )
+        assert response.status_code == 401
 
 
 @pytest.mark.django_db

@@ -42,6 +42,7 @@ abstract class Event with _$Event {
     int? maxAttendees,
     @Default(0) int attendingCount,
     @Default(0) int waitlistedCount,
+    @Default(0) int invitedCount,
     @Default(false) bool datetimeTbd,
     @Default(false) bool hasPoll,
     String? datetimePollSlug,

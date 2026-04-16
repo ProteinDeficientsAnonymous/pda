@@ -17,6 +17,7 @@ class EventType(models.TextChoices):
 class EventStatus(models.TextChoices):
     ACTIVE = "active", "Active"
     CANCELLED = "cancelled", "Cancelled"
+    DELETED = "deleted", "Deleted"
 
 
 class JoinRequestStatus(models.TextChoices):

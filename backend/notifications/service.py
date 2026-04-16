@@ -126,6 +126,31 @@ def create_cohost_added_notifications(
     _notify_users(notified_ids)
 
 
+def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
+    from community.models import RSVPStatus
+
+    from notifications.models import Notification, NotificationType
+
+    canceller_id = str(canceller.pk)
+    invited_ids = {str(u.pk) for u in event.invited_users.all()}
+    rsvp_ids = {str(r.user_id) for r in event.rsvps.all() if r.status == RSVPStatus.ATTENDING}
+    recipient_ids = list((invited_ids | rsvp_ids) - {canceller_id})
+    if not recipient_ids:
+        return
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=user_id,
+                notification_type=NotificationType.EVENT_CANCELLED,
+                event=event,
+                message=f"{event.title} was cancelled",
+            )
+            for user_id in recipient_ids
+        ]
+    )
+    _notify_users(recipient_ids)
+
+
 def create_event_invite_notifications(
     event: Event,
     new_user_ids: Iterable[str],

@@ -24,6 +24,7 @@ final _baseEvent = Event(
   createdByName: 'Alice',
   whatsappLink: 'https://chat.whatsapp.com/abc',
   rsvpEnabled: true,
+  attendingCount: 1, // has attendees → shows cancel button
 );
 
 Widget _buildSubject(Event event, {AuthNotifier? authNotifier}) {

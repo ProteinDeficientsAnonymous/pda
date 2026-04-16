@@ -22,6 +22,7 @@ from community._event_helpers import (
     _attending_headcount,
     _can_see_invite_only,
     _event_out,
+    _has_attendees,
     _update_co_hosts,
     _update_invited_users,
     _waitlisted_count,
@@ -109,8 +110,8 @@ def _build_events_queryset(status: str, auth_user, is_authed):
             .filter(Q(created_by=auth_user) | Q(co_hosts=auth_user))
             .distinct()
         )
-    qs = Event.objects.prefetch_related("co_hosts", "invited_users", "rsvps").exclude(
-        status=EventStatus.CANCELLED
+    qs = Event.objects.prefetch_related("co_hosts", "invited_users", "rsvps").filter(
+        status=EventStatus.ACTIVE
     )
     if not is_authed:
         qs = qs.filter(Q(visibility=PageVisibility.PUBLIC) | Q(event_type=EventType.OFFICIAL))
@@ -173,6 +174,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 max_attendees=e.max_attendees,
                 attending_count=_attending_headcount(e),
                 waitlisted_count=_waitlisted_count(e),
+                invited_count=e.invited_users.count(),
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
                 is_past=e.is_past,
@@ -196,6 +198,8 @@ def get_event(request, event_id: UUID):
             .get(id=event_id)
         )
     except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+    if event.is_deleted:
         return Status(404, ErrorOut(detail="Event not found."))
     auth_user = _authenticated_user(request.auth)
     if (
@@ -290,6 +294,126 @@ def create_event(request, payload: EventIn):
     return Status(201, _event_out(event, request.auth))
 
 
+def _cancel_event(request, event: Event, notify: bool) -> str | None:
+    """ACTIVE → CANCELLED. Returns error string or None."""
+    if event.is_past:
+        return "Past events cannot be cancelled — use delete instead."
+    if not _has_attendees(event):
+        return "Events with no invited users or RSVPs cannot be cancelled — use delete instead."
+    event.status = EventStatus.CANCELLED
+    event.save(update_fields=["status"])
+    if notify:
+        from notifications.service import create_event_cancellation_notifications
+
+        create_event_cancellation_notifications(event, request.auth)
+    audit_log(
+        logging.INFO,
+        "event_cancelled",
+        request,
+        target_type="event",
+        target_id=str(event.id),
+        details={"title": event.title, "notify_attendees": notify},
+    )
+    return None
+
+
+def _delete_event(request, event: Event) -> str | None:
+    """ACTIVE|CANCELLED → DELETED. Returns error string or None."""
+    from django.utils import timezone
+
+    if event.status == EventStatus.ACTIVE and not event.is_past and _has_attendees(event):
+        return "Cancel this event before deleting it."
+    event.status = EventStatus.DELETED
+    event.deleted_at = timezone.now()
+    event.save(update_fields=["status", "deleted_at"])
+    audit_log(
+        logging.INFO,
+        "event_deleted",
+        request,
+        target_type="event",
+        target_id=str(event.id),
+        details={"title": event.title},
+    )
+    return None
+
+
+def _uncancel_event(request, event: Event) -> None:
+    """CANCELLED → ACTIVE. Permission check is the caller's responsibility."""
+    event.status = EventStatus.ACTIVE
+    event.save(update_fields=["status"])
+    audit_log(
+        logging.INFO,
+        "event_uncancelled",
+        request,
+        target_type="event",
+        target_id=str(event.id),
+        details={"title": event.title},
+    )
+
+
+def _apply_status_transition(request, event: Event, new_status: str, notify: bool) -> str | None:
+    """Validate and apply a status transition. Returns an error message or None on success."""
+    current = event.status
+    if current == EventStatus.ACTIVE and new_status == EventStatus.CANCELLED:
+        return _cancel_event(request, event, notify)
+    if current in (EventStatus.ACTIVE, EventStatus.CANCELLED) and new_status == EventStatus.DELETED:
+        return _delete_event(request, event)
+    if current == EventStatus.CANCELLED and new_status == EventStatus.ACTIVE:
+        _uncancel_event(request, event)
+        return None
+    return f"Invalid status transition: {current} → {new_status}."
+
+
+def _handle_status_update(request, event: Event, new_status: str, notify: bool):
+    """
+    Validate and apply a status transition from update_event.
+    Returns a Status response to send immediately, or None to continue processing field edits.
+    """
+    # Uncancel requires creator/manager — co-hosts cannot uncancel
+    if new_status == EventStatus.ACTIVE and event.is_cancelled:
+        is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
+        is_creator = event.created_by_id == request.auth.pk
+        if not is_creator and not is_manager:
+            return Status(403, ErrorOut(detail="Permission denied."))
+
+    err = _apply_status_transition(request, event, new_status, notify)
+    if err is not None:
+        return Status(400, ErrorOut(detail=err))
+
+    # After a delete transition the event is gone — stop further processing
+    if new_status == EventStatus.DELETED:
+        return Status(200, _event_out(event, request.auth))
+
+    return None
+
+
+def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict):
+    """Apply non-status field edits to an event. Returns a status response on error, else None."""
+    if not updates:
+        return None
+    err_status = _validate_update_payload(request, event, event_id, updates)
+    if err_status:
+        return err_status
+    co_host_ids = updates.pop("co_host_ids", None)
+    invited_user_ids = updates.pop("invited_user_ids", None)
+    for field, value in updates.items():
+        setattr(event, field, value)
+    if co_host_ids is not None:
+        _update_co_hosts(event, co_host_ids, request.auth)
+    if invited_user_ids is not None:
+        _update_invited_users(event, invited_user_ids, request.auth)
+    event.save()
+    audit_log(
+        logging.INFO,
+        "event_updated",
+        request,
+        target_type="event",
+        target_id=str(event_id),
+        details={"fields_changed": list(updates.keys())},
+    )
+    return None
+
+
 @router.patch(
     "/events/{event_id}/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
@@ -297,8 +421,15 @@ def create_event(request, payload: EventIn):
 )
 def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
-        event = Event.objects.get(id=event_id)
+        event = (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .get(id=event_id)
+        )
     except Event.DoesNotExist:
+        return Status(404, ErrorOut(detail="Event not found."))
+
+    if event.is_deleted:
         return Status(404, ErrorOut(detail="Event not found."))
 
     if not _can_edit_event(request.auth, event):
@@ -312,65 +443,21 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         )
         return Status(403, ErrorOut(detail="Permission denied."))
 
-    if event.is_cancelled:
-        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
-
     updates = payload.model_dump(exclude_unset=True)
-    err = _validate_update_payload(request, event, event_id, updates)
-    if err:
-        return err
-    co_host_ids = updates.pop("co_host_ids", None)
-    invited_user_ids = updates.pop("invited_user_ids", None)
-    for field, value in updates.items():
-        setattr(event, field, value)
-    if co_host_ids is not None:
-        _update_co_hosts(event, co_host_ids, request.auth)
-    if invited_user_ids is not None:
-        _update_invited_users(event, invited_user_ids, request.auth)
+    new_status = updates.pop("status", None)
+    notify_attendees = updates.pop("notify_attendees", False) or False
 
-    event.save()
-    audit_log(
-        logging.INFO,
-        "event_updated",
-        request,
-        target_type="event",
-        target_id=str(event_id),
-        details={"fields_changed": list(updates.keys())},
-    )
+    # Handle status transition first (may be the only change in the payload)
+    if new_status is not None:
+        early = _handle_status_update(request, event, new_status, notify_attendees)
+        if early is not None:
+            return early
+
+    # Field edits are allowed on active or cancelled events (e.g. fixing a typo before uncancelling)
+    err_status = _apply_field_updates(request, event, event_id, updates)
+    if err_status:
+        return err_status
+
+    # Re-fetch to pick up any M2M changes
+    event.refresh_from_db()
     return Status(200, _event_out(event, request.auth))
-
-
-@router.delete(
-    "/events/{event_id}/", response={204: None, 403: ErrorOut, 404: ErrorOut}, auth=JWTAuth()
-)
-def delete_event(request, event_id: UUID):
-    try:
-        event = Event.objects.get(id=event_id)
-    except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
-
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={"endpoint": "delete_event"},
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-
-    event.status = EventStatus.CANCELLED
-    event.save(update_fields=["status"])
-    audit_log(
-        logging.INFO,
-        "event_cancelled",
-        request,
-        target_type="event",
-        target_id=str(event_id),
-        details={"title": event.title},
-    )
-    return Status(204, None)

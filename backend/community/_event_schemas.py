@@ -44,6 +44,7 @@ class EventListOut(BaseModel):
     max_attendees: int | None = None
     attending_count: int = 0
     waitlisted_count: int = 0
+    invited_count: int = 0
     is_past: bool = False
     status: str = "active"
 
@@ -81,6 +82,7 @@ class EventOut(BaseModel):
     max_attendees: int | None = None
     attending_count: int = 0
     waitlisted_count: int = 0
+    invited_count: int = 0
     survey_slugs: list[str] = []
     datetime_poll_slug: str | None = None
     has_poll: bool = False
@@ -149,6 +151,8 @@ class EventPatchIn(BaseModel):
     invite_permission: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     co_host_ids: list[str] | None = None
     invited_user_ids: list[str] | None = None
+    status: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
+    notify_attendees: bool | None = None
 
 
 _MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB

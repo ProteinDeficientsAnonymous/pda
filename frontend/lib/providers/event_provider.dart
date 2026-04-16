@@ -65,9 +65,18 @@ Future<void> deleteEventPhoto(WidgetRef ref, String eventId) async {
   ref.invalidate(eventDetailProvider(eventId));
 }
 
-Future<void> uncancelEvent(WidgetRef ref, String eventId) async {
+Future<void> patchEventStatus(
+  WidgetRef ref,
+  String eventId, {
+  required String status,
+  bool? notifyAttendees,
+}) async {
   final api = ref.read(apiClientProvider);
-  await api.post('/api/community/events/$eventId/uncancel/');
+  final data = <String, dynamic>{'status': status};
+  if (notifyAttendees != null) {
+    data['notify_attendees'] = notifyAttendees;
+  }
+  await api.patch('/api/community/events/$eventId/', data: data);
   ref.invalidate(eventsProvider);
   ref.invalidate(cancelledEventsProvider);
   ref.invalidate(eventDetailProvider(eventId));

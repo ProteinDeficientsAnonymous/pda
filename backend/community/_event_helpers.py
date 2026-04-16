@@ -105,6 +105,13 @@ def promote_from_waitlist(event: Event) -> None:
         oldest.save(update_fields=["status", "updated_at"])
 
 
+def _has_attendees(event: Event) -> bool:
+    """Return True if the event has any invited users or attending RSVPs."""
+    if event.invited_users.exists():
+        return True
+    return event.rsvps.filter(status=RSVPStatus.ATTENDING).exists()
+
+
 def _can_see_invited(
     requesting_user,
     creator,
@@ -197,6 +204,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         max_attendees=event.max_attendees,
         attending_count=_attending_headcount(event),
         waitlisted_count=_waitlisted_count(event),
+        invited_count=len(all_invited),
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=_get_creator_name(creator),
         created_by_photo_url=media_path(creator.profile_photo) if creator else "",

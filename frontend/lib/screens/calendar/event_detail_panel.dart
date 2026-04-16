@@ -40,7 +40,7 @@ void _showSidePanel(BuildContext context, Event event) {
           height: double.infinity,
           child: EventDetailContent(
             event: event,
-            onCancelled: () => Navigator.of(ctx).pop(),
+            onDeleted: () => Navigator.of(ctx).pop(),
           ),
         ),
       ),
@@ -85,14 +85,14 @@ class EventDetailContent extends ConsumerWidget {
   final Event event;
   final ScrollController? scrollController;
   final bool fullPage;
-  final VoidCallback? onCancelled;
+  final VoidCallback? onDeleted;
 
   const EventDetailContent({
     super.key,
     required this.event,
     this.scrollController,
     this.fullPage = false,
-    this.onCancelled,
+    this.onDeleted,
   });
 
   @override
@@ -237,7 +237,7 @@ class EventDetailContent extends ConsumerWidget {
           EventMemberSection(
             event: liveEvent,
             location: liveEvent.location,
-            onCancelled: onCancelled,
+            onDeleted: onDeleted,
           ),
         ],
       ),
