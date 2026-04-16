@@ -176,6 +176,8 @@ class _SettingsChangePasswordDialogState
               onFieldSubmitted: (_) => _newFocus.requestFocus(),
             ),
             const SizedBox(height: 12),
+            PasswordStrengthChecklist(controller: _newCtrl),
+            const SizedBox(height: 8),
             TextFormField(
               controller: _newCtrl,
               focusNode: _newFocus,
@@ -192,8 +194,6 @@ class _SettingsChangePasswordDialogState
               ]),
               onFieldSubmitted: (_) => _confirmFocus.requestFocus(),
             ),
-            const SizedBox(height: 8),
-            PasswordStrengthChecklist(controller: _newCtrl),
             const SizedBox(height: 12),
             TextFormField(
               controller: _confirmCtrl,
