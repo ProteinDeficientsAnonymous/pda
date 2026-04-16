@@ -84,8 +84,13 @@ class ApiClient {
                 newToken,
               );
               return handler.resolve(response);
-            } catch (e) {
-              _log.warning('Failed to retry after token refresh', e);
+            } catch (retryError) {
+              _log.warning('Failed to retry after token refresh', retryError);
+              // Propagate the retry error (e.g. 403) instead of the original 401
+              // so callers see the actual failure reason.
+              if (retryError is DioException) {
+                return handler.next(retryError);
+              }
             }
           }
 
