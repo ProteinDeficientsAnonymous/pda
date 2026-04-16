@@ -320,6 +320,7 @@ class _EventFormDialogState extends ConsumerState<EventFormDialog> {
               decoration: const InputDecoration(
                 labelText: 'what\'s the event? *',
               ),
+              maxLength: FieldLimit.title,
               textCapitalization: TextCapitalization.sentences,
               validator: v.all([v.required(), v.maxLength(FieldLimit.title)]),
             ),

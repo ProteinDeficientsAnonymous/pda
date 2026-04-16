@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pda/config/constants.dart';
 import 'package:pda/screens/calendar/event_form_models.dart';
 import 'package:pda/services/api_client.dart';
 import 'package:pda/utils/validators.dart' as v;
@@ -115,8 +116,9 @@ class _EventFormLocationFieldState extends State<EventFormLocationField> {
                   )
                 : null,
           ),
+          maxLength: FieldLimit.shortText,
           onChanged: _searchLocation,
-          validator: v.maxLength(300),
+          validator: v.maxLength(FieldLimit.shortText),
         ),
         if (_locationResults.isNotEmpty) ...[
           const SizedBox(height: 4),

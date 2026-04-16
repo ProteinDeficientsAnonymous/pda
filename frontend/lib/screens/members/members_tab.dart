@@ -94,6 +94,14 @@ class _MembersTabState extends ConsumerState<MembersTab> {
                         )
                       : null,
                 ),
+                maxLength: 100,
+                buildCounter:
+                    (
+                      _, {
+                      required currentLength,
+                      required isFocused,
+                      maxLength,
+                    }) => null,
                 onChanged: (v) => setState(() => _query = v),
               ),
               const SizedBox(height: 8),
