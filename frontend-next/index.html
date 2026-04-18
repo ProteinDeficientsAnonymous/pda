@@ -7,6 +7,14 @@
     <title>pda</title>
   </head>
   <body>
+    <script>
+      (function(){try{var r=localStorage.getItem('pda-accessibility');var p=r?JSON.parse(r):{};var s=p.state||{};
+      var m=s.themeMode||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+      document.documentElement.classList.add(d?'dark':'light');
+      if(s.dyslexiaFont)document.documentElement.classList.add('dyslexia');
+      if(s.textScale&&s.textScale!==1)document.documentElement.style.setProperty('--text-scale-factor',String(s.textScale));
+      }catch(e){}})();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

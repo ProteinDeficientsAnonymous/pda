@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
-import {
-  type TextSize,
-  useAccessibilityStore,
-} from '@/auth/accessibilityStore';
+import { useAccessibilityStore, type ThemeMode, type TextScale } from '@/accessibility/store';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from './AvatarUpload';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
@@ -15,6 +12,13 @@ export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
   const updateProfile = useAuthStore((s) => s.updateProfile);
   const [pwOpen, setPwOpen] = useState(false);
+
+  const themeMode = useAccessibilityStore((s) => s.themeMode);
+  const setThemeMode = useAccessibilityStore((s) => s.setThemeMode);
+  const dyslexiaFont = useAccessibilityStore((s) => s.dyslexiaFont);
+  const toggleDyslexiaFont = useAccessibilityStore((s) => s.toggleDyslexiaFont);
+  const textScale = useAccessibilityStore((s) => s.textScale);
+  const setTextScale = useAccessibilityStore((s) => s.setTextScale);
 
   if (!user) return null;
 
@@ -67,7 +71,9 @@ export default function SettingsScreen() {
       </Section>
 
       <Section label="accessibility">
-        <AccessibilityControls />
+        <ThemeToggle value={themeMode} onChange={setThemeMode} />
+        <DyslexiaToggle checked={dyslexiaFont} onChange={toggleDyslexiaFont} />
+        <TextScaleToggle value={textScale} onChange={setTextScale} />
       </Section>
 
       <ChangePasswordDialog
@@ -333,6 +339,116 @@ function SegmentedControl<T extends string>({
                 onChange={() => {
                   onChange(opt.value);
                 }}
+                className="sr-only"
+              />
+              {opt.label}
+            </label>
+          );
+        })}
+</div>
+    </div>
+  );
+}
+
+function ThemeToggle({
+  value,
+  onChange,
+}: {
+  value: ThemeMode;
+  onChange: (v: ThemeMode) => void;
+}) {
+  const options: { value: ThemeMode; label: string }[] = [
+    { value: 'system', label: 'system' },
+    { value: 'light', label: 'light' },
+    { value: 'dark', label: 'dark' },
+  ];
+  return (
+    <SegmentedControl
+      label="theme"
+      options={options}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+
+function DyslexiaToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3">
+      <span className="text-sm text-neutral-800">dyslexia-friendly font</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-neutral-300 transition-colors checked:bg-neutral-900"
+      />
+    </label>
+  );
+}
+
+function TextScaleToggle({
+  value,
+  onChange,
+}: {
+  value: TextScale;
+  onChange: (v: TextScale) => void;
+}) {
+  const options: { value: TextScale; label: string }[] = [
+    { value: 1.0, label: 'normal' },
+    { value: 1.15, label: 'medium' },
+    { value: 1.3, label: 'large' },
+  ];
+  return (
+    <SegmentedControl
+      label="text size"
+      options={options}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+
+function SegmentedControl<T>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-2 text-sm text-neutral-800">{label}</div>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="inline-flex rounded-md border border-neutral-300 bg-white p-0.5"
+      >
+        {options.map((opt) => {
+          const active = opt.value === value;
+          return (
+            <label
+              key={String(opt.value)}
+              className={cn(
+                'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
+                active ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100',
+              )}
+            >
+              <input
+                type="radio"
+                name={label}
+                value={String(opt.value)}
+                checked={active}
+                onChange={() => { onChange(opt.value); }}
                 className="sr-only"
               />
               {opt.label}
