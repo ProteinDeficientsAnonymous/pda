@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+
+  /* brand — forest green seed, ported from frontend/lib/config/app_theme.dart
+     (Material 3 ColorScheme.fromSeed(Color(0xFF2E7D32))). */
+  --color-brand-50: #e8f3ea;
+  --color-brand-100: #c7e0cc;
+  --color-brand-200: #a2cdac;
+  --color-brand-300: #7bba8b;
+  --color-brand-400: #5aa670;
+  --color-brand-500: #3d9257;
+  --color-brand-600: #2e7d32;
+  --color-brand-700: #256628;
+  --color-brand-800: #1c4e1f;
+  --color-brand-900: #123616;
+
+  /* event-type surfaces — color-blind-friendly palette per
+     .claude/rules/color-blind-friendly.md (teal / blue / amber / lavender). */
+  --color-evt-community-bg: #cce8e4;
+  --color-evt-community-fg: #0a3c34;
+  --color-evt-official-bg: #d0e8ff;
+  --color-evt-official-fg: #0b2a4a;
+  --color-evt-members-bg: #ffe0b2;
+  --color-evt-members-fg: #4a2808;
+  --color-evt-invite-bg: #e0d0f0;
+  --color-evt-invite-fg: #2a104a;
+  --color-evt-cancelled-bg: #f3f4f6;
+  --color-evt-cancelled-fg: #6b7280;
+  --color-evt-cancelled-border: #9ca3af;
+
+  /* radii — match Flutter (chips 6, inputs 12, dialogs 20). */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Event chips for lists/badges outside the calendar. Every category is also
+   marked with a left-border weight/style so it survives total color-blindness. */
+.pda-evt {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border-inline-start-width: 3px;
+  border-inline-start-style: solid;
+}
+.pda-evt-community {
+  background: var(--color-evt-community-bg);
+  color: var(--color-evt-community-fg);
+  border-inline-start-color: var(--color-evt-community-fg);
+}
+.pda-evt-official {
+  background: var(--color-evt-official-bg);
+  color: var(--color-evt-official-fg);
+  border-inline-start-color: var(--color-evt-official-fg);
+}
+.pda-evt-members {
+  background: var(--color-evt-members-bg);
+  color: var(--color-evt-members-fg);
+  border-inline-start-color: var(--color-evt-members-fg);
+}
+.pda-evt-invite {
+  background: var(--color-evt-invite-bg);
+  color: var(--color-evt-invite-fg);
+  border-inline-start-color: var(--color-evt-invite-fg);
+}
+.pda-evt-cancelled {
+  background: var(--color-evt-cancelled-bg);
+  color: var(--color-evt-cancelled-fg);
+  text-decoration: line-through;
+  border-inline-start-color: var(--color-evt-cancelled-border);
+}
+
+/* react-big-calendar overrides. `.rbc-event` is a single-class selector with
+   the same specificity as `.pda-evt-*`, and the library's default stylesheet
+   ships later in the cascade — its `background: #3174ad` wins and every event
+   renders blue. Bumping to `.rbc-event.pda-evt` lifts our rules above the
+   default without resorting to !important. */
+.rbc-event.pda-evt {
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  border-inline-start-width: 3px;
+  border-inline-start-style: solid;
+}
+.rbc-event.pda-evt-community {
+  background: var(--color-evt-community-bg);
+  color: var(--color-evt-community-fg);
+  border-inline-start-color: var(--color-evt-community-fg);
+}
+.rbc-event.pda-evt-official {
+  background: var(--color-evt-official-bg);
+  color: var(--color-evt-official-fg);
+  border-inline-start-color: var(--color-evt-official-fg);
+}
+.rbc-event.pda-evt-members {
+  background: var(--color-evt-members-bg);
+  color: var(--color-evt-members-fg);
+  border-inline-start-color: var(--color-evt-members-fg);
+}
+.rbc-event.pda-evt-invite {
+  background: var(--color-evt-invite-bg);
+  color: var(--color-evt-invite-fg);
+  border-inline-start-color: var(--color-evt-invite-fg);
+}
+.rbc-event.pda-evt-cancelled {
+  background: var(--color-evt-cancelled-bg);
+  color: var(--color-evt-cancelled-fg);
+  text-decoration: line-through;
+  border-inline-start-color: var(--color-evt-cancelled-border);
+}
+/* Selected state — keep the type color readable, add a brand-tinted ring. */
+.rbc-event.rbc-selected.pda-evt {
+  box-shadow: 0 0 0 2px var(--color-brand-600);
+}

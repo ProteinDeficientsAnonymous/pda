@@ -37,7 +37,10 @@ class DocFolder(models.Model):
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=300)
+    # Legacy Quill Delta JSON (Flutter clients). See community/models/content.py
+    # for the dual-format design rationale.
     content = models.TextField(default="", max_length=50000)
+    content_pm = models.TextField(default="", max_length=50000)
     content_html = models.TextField(default="", max_length=100000)
     folder = models.ForeignKey(
         DocFolder,
