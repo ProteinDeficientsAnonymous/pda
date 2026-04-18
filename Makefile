@@ -1,13 +1,11 @@
 .PHONY: help install run test lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop ci dev dev-next build-dev build-dev-next complexity \
-        frontend-install frontend-run frontend-run-html frontend-build frontend-codegen frontend-lint \
-        frontend-format frontend-test frontend-fix frontend-complexity \
-        frontend-next-install frontend-next-run frontend-next-build frontend-next-lint \
-        frontend-next-format frontend-next-test frontend-next-typecheck frontend-next-types
+        createsuperuser seed db-start db-stop ci dev complexity \
+        frontend-install frontend-run frontend-build frontend-lint \
+        frontend-format frontend-test frontend-typecheck frontend-types
 
 help:
 	@echo "Backend commands:"
-	@echo "  make install          Install dependencies (uv sync + flutter pub get)"
+	@echo "  make install          Install dependencies (uv sync + pnpm install)"
 	@echo "  make run              Run Django dev server (localhost:8000)"
 	@echo "  make test             Run pytest suite"
 	@echo "  make lint             Run ruff (lint + format)"
@@ -21,27 +19,23 @@ help:
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
 	@echo ""
 	@echo "Frontend commands:"
-	@echo "  make frontend-install   flutter pub get"
-	@echo "  make frontend-run       Run Flutter web server (localhost:3000)"
-	@echo "  make frontend-build     Build Flutter web release"
-	@echo "  make frontend-codegen   Regenerate freezed/riverpod/json code"
-	@echo "  make frontend-lint      Run dart format check + dart analyze"
-	@echo "  make frontend-format    Auto-format Dart files"
-	@echo "  make frontend-fix       Auto-apply dart fix suggestions"
-	@echo "  make frontend-test         Run Flutter test suite"
-	@echo "  make frontend-complexity   Run Dart code metrics check"
+	@echo "  make frontend-install   pnpm install (frontend-next)"
+	@echo "  make frontend-run        Run Vite dev server (localhost:3000, proxies /api to 8000)"
+	@echo "  make frontend-build     Build Vite production bundle"
+	@echo "  make frontend-lint      Run ESLint + Prettier check"
+	@echo "  make frontend-format    Auto-format files"
+	@echo "  make frontend-test      Run Vitest suite"
+	@echo "  make frontend-typecheck Run TypeScript check"
+	@echo "  make frontend-types     Generate API types from OpenAPI"
 	@echo ""
 	@echo "Workflow commands:"
-	@echo "  make build-dev        Install deps, codegen, migrate, then run dev"
-	@echo "  make build-dev-next   Install deps, migrate, then run Django + Vite concurrently"
-	@echo "  make dev              Run Django + Flutter concurrently"
-	@echo "  make dev-next         Run Django + Vite concurrently (migration target)"
-	@echo "  make ci               Run all pre-commit checks (lint, check, test, typecheck, complexity, frontend-lint, frontend-test, frontend-complexity)"
+	@echo "  make dev              Run Django + Vite concurrently (default)"
+	@echo "  make ci               Run all pre-commit checks"
 
-# Backend
+# Backend + Frontend
 install:
 	uv sync
-	cd frontend && flutter pub get
+	cd frontend-next && pnpm install
 
 run:
 	cd backend && uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
@@ -91,76 +85,35 @@ db-start:
 db-stop:
 	docker compose down
 
-# Frontend
+# Frontend (frontend-next / Vite + React)
 frontend-install:
-	cd frontend && flutter pub get
-
-frontend-run:
-	cd frontend && flutter run -d web-server --web-port 3000 --web-hostname 0.0.0.0 --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
-
-frontend-run-html:
-	cd frontend && flutter run -d web-server --web-port 3001 --web-hostname 0.0.0.0 --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
-
-frontend-build:
-	cd frontend && flutter build web --pwa-strategy=none --dart-define=API_URL=$(API_URL) --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD) --tree-shake-icons --wasm
-
-frontend-codegen:
-	cd frontend && dart run build_runner build --delete-conflicting-outputs
-
-frontend-lint:
-	cd frontend && dart format lib/ test/ && dart analyze
-
-frontend-format:
-	cd frontend && dart format lib/ test/
-
-frontend-fix:
-	cd frontend && dart fix --apply
-
-frontend-test:
-	cd frontend && flutter test
-
-frontend-complexity:
-	dart pub global activate dart_code_metrics 2>/dev/null; dart pub global run dart_code_metrics:metrics analyze frontend/lib/ --disable-sunset-warning --set-exit-on-violation-level=warning
-
-# Frontend-next (Vite + React migration target — lives alongside Flutter until cutover)
-frontend-next-install:
 	cd frontend-next && pnpm install
 
-frontend-next-run:
+frontend-run:
 	cd frontend-next && pnpm dev
 
-frontend-next-build:
+frontend-build:
 	cd frontend-next && pnpm build
 
-frontend-next-lint:
-	cd frontend-next && pnpm lint && pnpm format:check
+frontend-lint:
+	cd frontend-next && pnpm lint
 
-frontend-next-format:
+frontend-format:
 	cd frontend-next && pnpm format
 
-frontend-next-test:
+frontend-test:
 	cd frontend-next && pnpm test
 
-frontend-next-typecheck:
+frontend-typecheck:
 	cd frontend-next && pnpm typecheck
 
-frontend-next-types:
+frontend-types:
 	cd frontend-next && pnpm types:api
 
 # CI (run before every commit)
-ci: lint check test typecheck complexity frontend-lint frontend-test frontend-complexity
-
-# Install deps, codegen, migrate, then run dev
-build-dev: install frontend-codegen migrate dev
-
-# Install deps + migrate, then run Django + Vite concurrently (migration target)
-build-dev-next: install frontend-next-install migrate dev-next
+ci: lint check test typecheck complexity frontend-lint frontend-test frontend-typecheck
 
 # Dev (concurrent backend + frontend)
 dev:
 	./dev.sh
-
-# Dev-next (concurrent backend + Vite frontend)
-dev-next:
-	./dev-next.sh
 
