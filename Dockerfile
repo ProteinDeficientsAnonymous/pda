@@ -1,19 +1,18 @@
-# Stage 1: Build Flutter web
-FROM ghcr.io/cirruslabs/flutter:3.41.4 AS flutter-build
+# Stage 1: Build Vite React frontend
+FROM node:22-alpine AS vite-build
+RUN corepack enable
+WORKDIR /app/frontend-next
 
-WORKDIR /app/frontend
-COPY frontend/pubspec.yaml frontend/pubspec.lock ./
-RUN flutter pub get
+COPY frontend-next/package.json frontend-next/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-COPY frontend/ ./
-RUN dart run build_runner build --delete-conflicting-outputs
-ARG RAILWAY_GIT_COMMIT_SHA=dev
-ARG ENABLE_FEEDBACK=false
-RUN flutter build web --release --pwa-strategy=none --dart-define=API_URL= --dart-define=GIT_SHA=${RAILWAY_GIT_COMMIT_SHA} --dart-define=ENABLE_FEEDBACK=${ENABLE_FEEDBACK} --no-pub --tree-shake-icons --wasm
-RUN rm -f build/web/assets/NOTICES
+COPY frontend-next/ ./
+RUN pnpm build
 
-# Stage 2: Python/Django runtime
+# Stage 2: Python/Django + nginx runtime
 FROM python:3.13-slim AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends nginx && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
@@ -25,13 +24,17 @@ RUN uv sync --locked --no-dev --no-install-project
 COPY backend/ ./backend/
 COPY static/ ./static/
 
-COPY --from=flutter-build /app/frontend/build/web/ ./backend/staticfiles/flutter/
-COPY --from=flutter-build /app/frontend/build/web/index.html ./backend/templates/flutter/index.html
+COPY --from=vite-build /app/frontend-next/dist/ /usr/share/nginx/html/
+
+COPY nginx.conf.template /app/nginx.conf.template
+
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 RUN DJANGO_SETTINGS_MODULE=config.settings \
     SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))") \
     uv run --no-dev python backend/manage.py collectstatic --noinput
 
-EXPOSE ${PORT:-8000}
+EXPOSE 8080
 
-CMD ["sh", "-c", "cd backend && uv run python manage.py migrate && uv run uvicorn config.asgi:application --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["/app/entrypoint.sh"]
