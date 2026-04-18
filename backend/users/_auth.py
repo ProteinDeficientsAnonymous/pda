@@ -5,6 +5,7 @@ import logging
 from community._shared import validate_display_name
 from config.audit import audit_log
 from config.media_proxy import media_path
+from django.http import HttpResponse
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
@@ -12,6 +13,11 @@ from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
 from users._password_validation import validate_password
+from users._refresh_cookie import (
+    clear_refresh_cookie,
+    read_refresh_cookie,
+    set_refresh_cookie,
+)
 from users.models import MagicLoginToken, User
 from users.permissions import PermissionKey
 from users.schemas import (
@@ -19,6 +25,7 @@ from users.schemas import (
     ChangePasswordIn,
     ErrorOut,
     LoginIn,
+    LogoutOut,
     MemberProfileOut,
     MePatchIn,
     OnboardingIn,
@@ -43,7 +50,7 @@ _ALLOWED_IMAGE_TYPES = {
 
 
 @router.post("/login/", response={200: TokenOut, 401: ErrorOut, 403: ErrorOut}, auth=None)
-def login(request, payload: LoginIn):
+def login(request, payload: LoginIn, response: HttpResponse):
     from django.contrib.auth import authenticate
 
     auth_user = authenticate(request, username=payload.phone_number, password=payload.password)
@@ -61,14 +68,16 @@ def login(request, payload: LoginIn):
         return Status(403, ErrorOut(detail="your membership is currently paused"))
     refresh = RefreshToken.for_user(user)
     request.auth = user
+    refresh_str = str(refresh)
+    set_refresh_cookie(response, refresh_str)
     audit_log(logging.INFO, "login_success", request, target_type="user", target_id=str(user.pk))
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
 
 
 @router.get(
     "/magic-login/{token}/", response={200: TokenOut, 400: ErrorOut, 403: ErrorOut}, auth=None
 )
-def magic_login(request, token: str):
+def magic_login(request, token: str, response: HttpResponse):
     try:
         magic = MagicLoginToken.objects.select_related("user").get(token=token)
     except MagicLoginToken.DoesNotExist:
@@ -99,6 +108,8 @@ def magic_login(request, token: str):
     magic.save(update_fields=["used"])
     refresh = RefreshToken.for_user(magic.user)
     request.auth = magic.user
+    refresh_str = str(refresh)
+    set_refresh_cookie(response, refresh_str)
     audit_log(
         logging.INFO,
         "magic_login_success",
@@ -106,21 +117,35 @@ def magic_login(request, token: str):
         target_type="user",
         target_id=str(magic.user.pk),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
-def refresh_token(request, payload: RefreshIn):
+def refresh_token(request, payload: RefreshIn, response: HttpResponse):
     from ninja_jwt.exceptions import TokenError
 
+    # Prefer httpOnly cookie (React). Fall back to body for Flutter clients
+    # that still send the refresh token in the JSON payload.
+    token = read_refresh_cookie(request) or payload.refresh
+    if not token:
+        return Status(401, ErrorOut(detail="Invalid or expired refresh token"))
     try:
-        refresh = RefreshToken(payload.refresh)
+        refresh = RefreshToken(token)
         return Status(200, AccessOut(access=str(refresh.access_token)))
     except TokenError:
+        clear_refresh_cookie(response)
         return Status(401, ErrorOut(detail="Invalid or expired refresh token"))
     except Exception:
         logger.exception("Unexpected error during token refresh")
+        clear_refresh_cookie(response)
         return Status(401, ErrorOut(detail="Token refresh failed"))
+
+
+@router.post("/logout/", response={200: LogoutOut}, auth=None)
+def logout(request, response: HttpResponse):
+    """Clear the refresh cookie. Idempotent; safe to call unauthenticated."""
+    clear_refresh_cookie(response)
+    return Status(200, LogoutOut(detail="logged out"))
 
 
 @router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=JWTAuth())

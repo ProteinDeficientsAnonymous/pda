@@ -144,6 +144,10 @@ if IS_PRODUCTION:
 else:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://0.0.0.0:3000"]
 
+# httpOnly refresh cookie is sent cross-origin in dev (React :3000 → Django :8000).
+# Required so the browser includes the cookie in fetch/axios withCredentials requests.
+CORS_ALLOW_CREDENTIALS = True
+
 # Email
 VETTING_EMAIL = os.environ.get("VETTING_EMAIL", "")
 

@@ -186,12 +186,17 @@ class TestRefreshToken:
         assert response.json()["detail"] == "Invalid or expired refresh token"
 
     def test_refresh_missing_field(self, api_client, db):
+        # With httpOnly cookie support, the body field is optional: the token
+        # may come from the `refresh_token` cookie instead. Missing both surfaces
+        # as a 401, not a 422 — since "no token available" is an auth failure,
+        # not a payload shape failure.
         response = api_client.post(
             "/api/auth/refresh/",
             {},
             content_type="application/json",
         )
-        assert response.status_code == 422
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Invalid or expired refresh token"
 
     def test_refresh_empty_string(self, api_client, db):
         response = api_client.post(
