@@ -1,14 +1,20 @@
 import { isAxiosError } from 'axios';
-import { useEditablePage } from '@/api/content';
-import { HtmlContent } from '@/components/HtmlContent';
+import { useEditablePage, useUpdateEditablePage } from '@/api/content';
+import { useAuthStore } from '@/auth/store';
+import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
+// Editing EditablePage (including donate/volunteer) is gated by the same
+// permission as guidelines per _pages.py.
+import { Permission, hasPermission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
 
 export default function DonateScreen() {
   const { data, isPending, error } = useEditablePage('donate');
+  const user = useAuthStore((s) => s.user);
+  const canEdit = hasPermission(user, Permission.EditGuidelines);
+  const update = useUpdateEditablePage('donate');
 
   if (isPending) return <ContentLoading />;
   if (error) {
-    // 403 on a members_only page is expected for unauthed users.
     if (isAxiosError(error) && error.response?.status === 403) {
       return <ContentError message="this page is for members only" />;
     }
@@ -18,7 +24,13 @@ export default function DonateScreen() {
   return (
     <ContentContainer>
       <h1 className="mb-4 text-2xl font-medium tracking-tight">donate</h1>
-      <HtmlContent html={data.contentHtml} />
+      <EditableHtmlBlock
+        canEdit={canEdit}
+        contentHtml={data.contentHtml}
+        initialPm={data.contentPm}
+        onSave={(contentPm) => update.mutateAsync({ contentPm }).then(() => undefined)}
+        placeholder="donate content"
+      />
     </ContentContainer>
   );
 }

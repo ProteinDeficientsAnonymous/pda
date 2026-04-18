@@ -1,14 +1,18 @@
 // The authed branch of the event detail. Renders the sections that the
-// backend gates behind auth: hosts, location, links, cost, invite, rsvp.
-// Admin actions are stubbed for phase 4.
+// backend gates behind auth: hosts, location, links, cost, invite, rsvp,
+// plus the admin actions card for the event's creator / co-hosts / managers.
 
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RsvpSection } from './RsvpSection';
+import { EventAdminActions } from './EventAdminActions';
+import { InviteDialog } from './InviteDialog';
 import { hasPermission } from '@/models/permissions';
 import { Permission } from '@/models/permissions';
 import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission } from '@/models/event';
 import { useAuthStore } from '@/auth/store';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   event: Event;
@@ -30,12 +34,13 @@ export function EventMemberSection({ event }: Props) {
       <LocationSection event={event} />
       <LinksSection event={event} />
       <CostSection event={event} />
-      {canInvite ? <InviteSection /> : null}
+      {canInvite ? <InviteSection event={event} /> : null}
       {showRsvp ? (
         <Card label="rsvp">
           <RsvpSection event={event} canSeeInvited={canSeeInvited} />
         </Card>
       ) : null}
+      <EventAdminActions event={event} />
     </div>
   );
 }
@@ -181,14 +186,25 @@ function CostSection({ event }: { event: Event }) {
   );
 }
 
-function InviteSection() {
-  // Full invite modal is phase-4 work (needs member search + multi-select).
-  // For now just indicate the capability.
+function InviteSection({ event }: { event: Event }) {
+  const [open, setOpen] = useState(false);
   return (
     <Card label="invite">
-      <p className="text-xs text-neutral-500">
-        invite flow lands in phase 4 — use the flutter app for now
-      </p>
+      <Button
+        variant="secondary"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        invite members
+      </Button>
+      <InviteDialog
+        event={event}
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      />
     </Card>
   );
 }

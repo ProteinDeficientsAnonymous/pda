@@ -26,6 +26,8 @@ const Join = lazy(() => import('@/screens/public/JoinScreen'));
 const JoinSuccess = lazy(() => import('@/screens/public/JoinSuccessScreen'));
 const Calendar = lazy(() => import('@/screens/calendar/CalendarScreen'));
 const EventDetail = lazy(() => import('@/screens/events/EventDetailScreen'));
+const EventCreate = lazy(() => import('@/screens/events/EventCreateScreen'));
+const EventEdit = lazy(() => import('@/screens/events/EventEditScreen'));
 const Profile = lazy(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazy(() => import('@/screens/settings/SettingsScreen'));
 const Docs = lazy(() => import('@/screens/docs/DocsScreen'));
@@ -57,7 +59,11 @@ export const router = createBrowserRouter([
           { path: '/join/success', element: el(<JoinSuccess />) },
           { path: '/calendar', element: el(<Calendar />) },
           { path: '/events/:id', element: el(<EventDetail />) },
-          { path: '/events/add', element: el(<Stub />) },
+          // Authed-only write paths, placed here (outside RequireAuth) because
+          // the form itself renders regardless of auth status — we let the
+          // backend 401 return bubble up to the error UI.
+          { path: '/events/:id/edit', element: el(<EventEdit />) },
+          { path: '/events/add', element: el(<EventCreate />) },
           { path: '/surveys/:slug', element: el(<Survey />) },
           { path: '/donate', element: el(<Donate />) },
           { path: '/install', element: el(<Install />) },

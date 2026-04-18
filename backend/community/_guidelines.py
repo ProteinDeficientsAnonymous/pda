@@ -10,7 +10,7 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
-from community._delta_html import delta_to_html
+from community._content_render import render_content_payload
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community.models import FAQ, CommunityGuidelines
@@ -20,20 +20,38 @@ router = Router()
 
 class GuidelinesOut(BaseModel):
     content: str
+    content_pm: str
     content_html: str
     updated_at: datetime
 
 
 class GuidelinesPatchIn(BaseModel):
-    content: str = Field(max_length=FieldLimit.CONTENT)
+    # Legacy Quill Delta JSON (Flutter). Optional — TipTap clients send
+    # content_pm instead. At least one of the two must be provided.
+    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+
+
+def _singleton_out(obj: FAQ | CommunityGuidelines) -> GuidelinesOut:
+    return GuidelinesOut(
+        content=obj.content,
+        content_pm=obj.content_pm,
+        content_html=obj.content_html,
+        updated_at=obj.updated_at,
+    )
+
+
+def _apply_update(obj: FAQ | CommunityGuidelines, payload: GuidelinesPatchIn) -> None:
+    rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
+    obj.content = rendered.content
+    obj.content_pm = rendered.content_pm
+    obj.content_html = rendered.content_html
+    obj.save()
 
 
 @router.get("/guidelines/", response={200: GuidelinesOut}, auth=JWTAuth())
 def get_guidelines(request):
-    g = CommunityGuidelines.get()
-    return Status(
-        200, GuidelinesOut(content=g.content, content_html=g.content_html, updated_at=g.updated_at)
-    )
+    return Status(200, _singleton_out(CommunityGuidelines.get()))
 
 
 @router.patch("/guidelines/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
@@ -50,27 +68,20 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
         )
         return Status(403, ErrorOut(detail="Permission denied."))
     g = CommunityGuidelines.get()
-    g.content = payload.content
-    g.content_html = delta_to_html(payload.content)
-    g.save()
+    _apply_update(g, payload)
     audit_log(
         logging.INFO,
         "guidelines_updated",
         request,
         target_type="guidelines",
-        details={"content_length": len(payload.content)},
+        details={"format": "prosemirror" if payload.content_pm else "delta"},
     )
-    return Status(
-        200, GuidelinesOut(content=g.content, content_html=g.content_html, updated_at=g.updated_at)
-    )
+    return Status(200, _singleton_out(g))
 
 
 @router.get("/faq/", response={200: GuidelinesOut}, auth=None)
 def get_faq(request):
-    f = FAQ.get()
-    return Status(
-        200, GuidelinesOut(content=f.content, content_html=f.content_html, updated_at=f.updated_at)
-    )
+    return Status(200, _singleton_out(FAQ.get()))
 
 
 @router.patch("/faq/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
@@ -84,16 +95,12 @@ def update_faq(request, payload: GuidelinesPatchIn):
         )
         return Status(403, ErrorOut(detail="Permission denied."))
     f = FAQ.get()
-    f.content = payload.content
-    f.content_html = delta_to_html(payload.content)
-    f.save()
+    _apply_update(f, payload)
     audit_log(
         logging.INFO,
         "faq_updated",
         request,
         target_type="faq",
-        details={"content_length": len(payload.content)},
+        details={"format": "prosemirror" if payload.content_pm else "delta"},
     )
-    return Status(
-        200, GuidelinesOut(content=f.content, content_html=f.content_html, updated_at=f.updated_at)
-    )
+    return Status(200, _singleton_out(f))

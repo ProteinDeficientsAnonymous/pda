@@ -1,7 +1,6 @@
-// Docs API (read-only for phase 3). Edit mutations land in phase 4 alongside
-// the TipTap editor.
+// Docs API. Reads used everywhere; writes gated by manage_documents.
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
 
 export interface DocSummary {
@@ -23,7 +22,10 @@ export interface DocFolder {
 export interface Document {
   id: string;
   title: string;
+  /** Legacy Quill Delta JSON (Flutter). */
   content: string;
+  /** ProseMirror JSON (TipTap). */
+  contentPm: string;
   contentHtml: string;
   folderId: string;
   displayOrder: number;
@@ -52,6 +54,7 @@ interface WireDocument {
   id: string;
   title: string;
   content: string;
+  content_pm?: string;
   content_html: string;
   folder_id: string;
   display_order: number;
@@ -85,6 +88,7 @@ function mapDocument(d: WireDocument): Document {
     id: d.id,
     title: d.title,
     content: d.content,
+    contentPm: d.content_pm ?? '',
     contentHtml: d.content_html,
     folderId: d.folder_id,
     displayOrder: d.display_order,
@@ -112,5 +116,27 @@ export function useDocument(id: string | undefined) {
       return mapDocument(data);
     },
     enabled: Boolean(id),
+  });
+}
+
+export interface DocumentUpdate {
+  title?: string;
+  contentPm?: string;
+}
+
+export function useUpdateDocument(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: DocumentUpdate) => {
+      const body: Record<string, string> = {};
+      if (patch.title !== undefined) body.title = patch.title;
+      if (patch.contentPm !== undefined) body.content_pm = patch.contentPm;
+      const { data } = await apiClient.patch<WireDocument>(`/api/community/docs/${id}/`, body);
+      return mapDocument(data);
+    },
+    onSuccess: (doc) => {
+      qc.setQueryData(['docs', 'detail', id], doc);
+      void qc.invalidateQueries({ queryKey: ['docs', 'folders'] });
+    },
   });
 }
