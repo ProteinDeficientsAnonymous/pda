@@ -3,11 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { isAxiosError } from 'axios';
 import { AuthLayout } from './AuthLayout';
 import { Button } from '@/components/ui/Button';
+import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
+import { extractApiError } from '@/utils/errors';
 import { passwordRule } from './passwordRule';
 
 const schema = z.object({
@@ -42,7 +43,7 @@ export default function OnboardingScreen() {
       });
       void navigate('/guidelines', { replace: true });
     } catch (err) {
-      setServerError(extractError(err));
+      setServerError(extractApiError(err, "couldn't finish onboarding — try again"));
     }
   }
 
@@ -63,9 +64,8 @@ export default function OnboardingScreen() {
           error={errors.email?.message}
           hint="used only for account recovery"
         />
-        <TextField
+        <PasswordField
           label="password"
-          type="password"
           autoComplete="new-password"
           {...register('newPassword')}
           error={errors.newPassword?.message}
@@ -82,12 +82,4 @@ export default function OnboardingScreen() {
       </form>
     </AuthLayout>
   );
-}
-
-function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't finish onboarding — try again";
 }

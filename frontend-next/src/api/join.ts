@@ -78,6 +78,18 @@ export function useSubmitJoinRequest() {
   });
 }
 
+// --- phone check -----------------------------------------------------------
+
+export type CheckPhoneStatus = 'member' | 'pending' | 'unknown';
+
+export async function checkPhone(phoneNumber: string): Promise<CheckPhoneStatus> {
+  const { data } = await apiClient.post<{ status: CheckPhoneStatus }>(
+    '/api/community/check-phone/',
+    { phone_number: phoneNumber },
+  );
+  return data.status;
+}
+
 // --- admin ------------------------------------------------------------------
 
 export type JoinRequestStatus = 'pending' | 'approved' | 'rejected';
