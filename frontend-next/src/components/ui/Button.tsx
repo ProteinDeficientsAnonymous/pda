@@ -9,7 +9,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-neutral-900 text-white hover:bg-neutral-800 disabled:bg-neutral-400',
+  primary: 'bg-brand-600 text-white hover:bg-brand-700 disabled:bg-neutral-400',
   secondary:
     'bg-white text-neutral-900 border border-neutral-300 hover:bg-neutral-50 disabled:opacity-50',
   ghost: 'text-neutral-700 hover:bg-neutral-100 disabled:opacity-50',
@@ -26,7 +26,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        'inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none disabled:cursor-not-allowed',
+        'focus-visible:ring-brand-200 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed',
         VARIANTS[variant],
         fullWidth && 'w-full',
         className,

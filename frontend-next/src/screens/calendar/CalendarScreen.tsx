@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event as PdaEvent } from '@/models/event';
-import { EventVisibility } from '@/models/event';
+import { eventClass } from '@/models/event';
 import { makeLocalizer } from './calendarLocalizer';
 import { ViewSwitcher } from './ViewSwitcher';
 
@@ -91,12 +91,4 @@ export default function CalendarScreen() {
       </div>
     </main>
   );
-}
-
-function eventClass(e: PdaEvent): string {
-  if (e.status === 'cancelled') return 'pda-evt pda-evt-cancelled';
-  if (e.eventType === 'official') return 'pda-evt pda-evt-official';
-  if (e.visibility === EventVisibility.InviteOnly) return 'pda-evt pda-evt-invite';
-  if (e.visibility === EventVisibility.MembersOnly) return 'pda-evt pda-evt-members';
-  return 'pda-evt pda-evt-community';
 }

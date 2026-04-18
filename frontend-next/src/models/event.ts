@@ -104,3 +104,16 @@ export interface Event {
   isPast: boolean;
   status: string;
 }
+
+// Maps an event to its chip/calendar css classes. Colocated with the model so
+// any list/detail/badge view can reuse the same color mapping. Returns two
+// classes: the shared .pda-evt base + one of the type/visibility variants.
+// Precedence matches the Flutter frontend: cancelled > official > invite-only
+// > members-only > community.
+export function eventClass(e: Event): string {
+  if (e.status === EventStatus.Cancelled) return 'pda-evt pda-evt-cancelled';
+  if (e.eventType === EventType.Official) return 'pda-evt pda-evt-official';
+  if (e.visibility === EventVisibility.InviteOnly) return 'pda-evt pda-evt-invite';
+  if (e.visibility === EventVisibility.MembersOnly) return 'pda-evt pda-evt-members';
+  return 'pda-evt pda-evt-community';
+}

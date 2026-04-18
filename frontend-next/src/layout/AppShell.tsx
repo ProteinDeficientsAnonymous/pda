@@ -26,7 +26,7 @@ export function AppShell() {
             onClick={() => {
               setMenuOpen(true);
             }}
-            className="text-base font-medium tracking-tight text-neutral-900 hover:text-neutral-700"
+            className="text-brand-700 hover:text-brand-800 text-base font-medium tracking-tight"
           >
             pda
           </button>
@@ -36,7 +36,7 @@ export function AppShell() {
             ) : (
               <Link
                 to="/login"
-                className="inline-flex h-9 items-center rounded-md px-3 text-sm text-neutral-700 hover:bg-neutral-100"
+                className="bg-brand-600 hover:bg-brand-700 inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-white"
               >
                 sign in
               </Link>

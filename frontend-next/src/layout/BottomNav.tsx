@@ -32,7 +32,7 @@ export function BottomNav() {
             onClick={() => void navigate('/events/add')}
             className={cn(
               'inline-flex h-11 w-11 items-center justify-center rounded-full text-white shadow transition-colors',
-              onEventsAdd ? 'bg-neutral-700' : 'bg-neutral-900 hover:bg-neutral-800',
+              onEventsAdd ? 'bg-brand-700' : 'bg-brand-600 hover:bg-brand-700',
             )}
           >
             <PlusIcon />
@@ -61,8 +61,8 @@ function NavItem({ to, label, children }: NavItemProps) {
       aria-label={label}
       className={({ isActive }) =>
         cn(
-          'flex flex-col items-center justify-center gap-0.5 text-neutral-600 transition-colors hover:bg-neutral-50',
-          isActive && 'text-neutral-900',
+          'flex flex-col items-center justify-center gap-0.5 text-neutral-500 transition-colors hover:bg-neutral-50',
+          isActive && 'text-brand-700',
         )
       }
     >
@@ -72,7 +72,7 @@ function NavItem({ to, label, children }: NavItemProps) {
           <span
             aria-hidden="true"
             className={cn(
-              'h-1 w-1 rounded-full bg-neutral-900 transition-opacity',
+              'bg-brand-700 h-1 w-1 rounded-full transition-opacity',
               isActive ? 'opacity-100' : 'opacity-0',
             )}
           />
