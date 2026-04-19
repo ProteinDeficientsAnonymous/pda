@@ -39,7 +39,8 @@ DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "--verbose --strict-markers --tb=short -n auto"
+# -n auto: pytest-xdist parallel workers. --reuse-db: skip recreate when the test DB already exists.
+addopts = "--verbose --strict-markers --tb=short -n auto --reuse-db"
 markers = [
     "django_db: Mark test as requiring database access",
     "unit: Mark test as a unit test (no database or external dependencies)",

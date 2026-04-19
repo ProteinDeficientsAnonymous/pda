@@ -2,6 +2,7 @@
         createsuperuser seed db-start db-stop ci agent-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-test frontend-typecheck frontend-types \
+        parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-typecheck agent-complexity \
         agent-frontend-lint agent-frontend-test agent-frontend-typecheck
 
@@ -114,7 +115,11 @@ frontend-types:
 	cd frontend && pnpm types:api
 
 # CI (run before every commit)
-ci: lint check test typecheck complexity frontend-lint frontend-test frontend-typecheck
+ci: lint check test typecheck complexity parallel-frontend
+
+# ESLint, Vitest, and tsc are independent — run in parallel to cut wall-clock time.
+parallel-frontend:
+	$(MAKE) -j3 frontend-lint frontend-test frontend-typecheck
 
 # CI with quiet runners (same steps as ci; still auto-fixes via ruff)
 agent-lint:
@@ -125,7 +130,7 @@ agent-check:
 
 agent-test:
 	cd backend && uv run python -m pytest tests/ \
-		-o addopts="--strict-markers -n auto --tb=line" -q --disable-warnings
+		-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings
 
 agent-typecheck:
 	cd backend && uv run ty check -qq .
@@ -145,8 +150,10 @@ agent-frontend-test:
 agent-frontend-typecheck:
 	cd frontend && pnpm exec tsc -b --noEmit --pretty false
 
-agent-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity \
-	agent-frontend-lint agent-frontend-test agent-frontend-typecheck
+agent-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity parallel-agent-frontend
+
+parallel-agent-frontend:
+	$(MAKE) -j3 agent-frontend-lint agent-frontend-test agent-frontend-typecheck
 
 # Dev (concurrent backend + frontend)
 dev:
