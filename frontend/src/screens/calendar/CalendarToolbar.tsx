@@ -5,14 +5,16 @@ import type { BigCalEvent } from './types';
 
 export function CalendarToolbar({ label, onNavigate }: ToolbarProps<BigCalEvent>) {
   return (
-    <div className="mb-2 flex items-center justify-between gap-2 px-1">
-      <TodayIconButton
-        onClick={() => {
-          onNavigate('TODAY');
-        }}
-      />
+    <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
+      <div className="justify-self-start">
+        <TodayIconButton
+          onClick={() => {
+            onNavigate('TODAY');
+          }}
+        />
+      </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 justify-self-center">
         <ChevronButton
           label="previous"
           onClick={() => {
@@ -34,7 +36,7 @@ export function CalendarToolbar({ label, onNavigate }: ToolbarProps<BigCalEvent>
         </ChevronButton>
       </div>
 
-      <span className="w-14" aria-hidden="true" />
+      <span aria-hidden="true" />
     </div>
   );
 }
