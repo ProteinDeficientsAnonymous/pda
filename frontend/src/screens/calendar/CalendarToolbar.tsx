@@ -5,38 +5,35 @@ import type { BigCalEvent } from './types';
 
 export function CalendarToolbar({ label, onNavigate }: ToolbarProps<BigCalEvent>) {
   return (
-    <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
-      <div className="justify-self-start">
-        <TodayIconButton
-          onClick={() => {
-            onNavigate('TODAY');
-          }}
-        />
+    <div className="relative mb-2 flex items-center px-1">
+      <TodayIconButton
+        onClick={() => {
+          onNavigate('TODAY');
+        }}
+      />
+      <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center">
+        <div className="pointer-events-auto flex items-center gap-1">
+          <ChevronButton
+            label="previous"
+            onClick={() => {
+              onNavigate('PREV');
+            }}
+          >
+            <ChevronLeft />
+          </ChevronButton>
+          <span className="text-center text-sm font-medium text-foreground">
+            {label.toLowerCase()}
+          </span>
+          <ChevronButton
+            label="next"
+            onClick={() => {
+              onNavigate('NEXT');
+            }}
+          >
+            <ChevronRight />
+          </ChevronButton>
+        </div>
       </div>
-
-      <div className="flex items-center gap-1 justify-self-center">
-        <ChevronButton
-          label="previous"
-          onClick={() => {
-            onNavigate('PREV');
-          }}
-        >
-          <ChevronLeft />
-        </ChevronButton>
-        <span className="min-w-[9rem] text-center text-sm font-medium text-foreground">
-          {label.toLowerCase()}
-        </span>
-        <ChevronButton
-          label="next"
-          onClick={() => {
-            onNavigate('NEXT');
-          }}
-        >
-          <ChevronRight />
-        </ChevronButton>
-      </div>
-
-      <span aria-hidden="true" />
     </div>
   );
 }

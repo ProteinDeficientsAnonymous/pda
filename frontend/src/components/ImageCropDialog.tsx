@@ -1,8 +1,19 @@
 // Crop dialog for avatar uploads (circular) and event covers (rectangular).
-// Built on react-easy-crop. Returns a PNG blob via onCrop.
+// The user drags/resizes a crop box over a stationary image — the common
+// Instagram/Facebook/macOS-style UX. Built on react-image-crop. Round shape
+// is locked to a 1:1 square (circular mask); rect shape is free-form so the
+// box can be reshaped to any ratio by dragging its handles. Returns a PNG
+// blob via onCrop.
 
-import { useCallback, useState } from 'react';
-import Cropper, { type Area } from 'react-easy-crop';
+import { useRef, useState } from 'react';
+import ReactCrop, {
+  centerCrop,
+  makeAspectCrop,
+  type Crop,
+  type PercentCrop,
+  type PixelCrop,
+} from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import { cropImage } from '@/utils/cropImage';
 import { Button } from './ui/Button';
 
@@ -11,7 +22,6 @@ export type CropShape = 'round' | 'rect';
 interface Props {
   file: File;
   shape?: CropShape;
-  aspect?: number;
   outputSize?: number;
   onCancel: () => void;
   onCrop: (blob: Blob) => Promise<void> | void;
@@ -20,23 +30,46 @@ interface Props {
 export function ImageCropDialog({
   file,
   shape = 'round',
-  aspect = 1,
   outputSize = 512,
   onCancel,
   onCrop,
 }: Props) {
+  const lockedAspect = shape === 'round' ? 1 : undefined;
   const [src] = useState(() => URL.createObjectURL(file));
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [area, setArea] = useState<Area | null>(null);
+  const [crop, setCrop] = useState<Crop | undefined>(undefined);
+  const [completed, setCompleted] = useState<PixelCrop | null>(null);
   const [saving, setSaving] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
-  const onCropComplete = useCallback((_croppedArea: Area, pixels: Area) => {
-    setArea(pixels);
-  }, []);
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const { width, height } = e.currentTarget;
+    const next: PercentCrop =
+      lockedAspect !== undefined
+        ? centerCrop(
+            makeAspectCrop({ unit: '%', width: 80 }, lockedAspect, width, height),
+            width,
+            height,
+          )
+        : centerCrop({ unit: '%', x: 0, y: 0, width: 80, height: 80 }, width, height);
+    setCrop(next);
+  }
+
+  function handleCancel() {
+    URL.revokeObjectURL(src);
+    onCancel();
+  }
 
   async function handleSave() {
-    if (!area) return;
+    const img = imgRef.current;
+    if (!completed || !img) return;
+    const scaleX = img.naturalWidth / img.width;
+    const scaleY = img.naturalHeight / img.height;
+    const area = {
+      x: completed.x * scaleX,
+      y: completed.y * scaleY,
+      width: completed.width * scaleX,
+      height: completed.height * scaleY,
+    };
     setSaving(true);
     try {
       const blob = await cropImage(file, area, outputSize);
@@ -47,6 +80,20 @@ export function ImageCropDialog({
     }
   }
 
+  const reactCropProps = {
+    circularCrop: shape === 'round',
+    keepSelection: true,
+    minWidth: 24,
+    onChange: (_: PixelCrop, pct: PercentCrop) => {
+      setCrop(pct);
+    },
+    onComplete: (pixels: PixelCrop) => {
+      setCompleted(pixels);
+    },
+    ...(crop !== undefined ? { crop } : {}),
+    ...(lockedAspect !== undefined ? { aspect: lockedAspect } : {}),
+  };
+
   return (
     <div
       role="dialog"
@@ -55,39 +102,22 @@ export function ImageCropDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
     >
       <div className="flex w-full max-w-md flex-col gap-4 rounded-lg bg-surface p-4 shadow-xl">
-        <div className="relative h-80 overflow-hidden rounded-md bg-neutral-900">
-          <Cropper
-            image={src}
-            crop={crop}
-            zoom={zoom}
-            aspect={aspect}
-            cropShape={shape}
-            showGrid={false}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropComplete}
-          />
+        <div className="flex max-h-80 items-center justify-center overflow-hidden rounded-md bg-neutral-900">
+          <ReactCrop {...reactCropProps}>
+            <img
+              ref={imgRef}
+              src={src}
+              alt=""
+              onLoad={onImageLoad}
+              className="max-h-80 w-auto"
+            />
+          </ReactCrop>
         </div>
-        <label className="flex items-center gap-3 text-sm">
-          <span className="w-12 text-foreground-tertiary">zoom</span>
-          <input
-            type="range"
-            min={1}
-            max={3}
-            step={0.05}
-            value={zoom}
-            onChange={(e) => {
-              setZoom(Number(e.target.value));
-            }}
-            className="flex-1"
-            aria-label="zoom"
-          />
-        </label>
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onCancel} disabled={saving}>
+          <Button variant="ghost" onClick={handleCancel} disabled={saving}>
             cancel
           </Button>
-          <Button onClick={() => void handleSave()} disabled={!area || saving}>
+          <Button onClick={() => void handleSave()} disabled={!completed || saving}>
             {saving ? 'saving…' : 'save'}
           </Button>
         </div>

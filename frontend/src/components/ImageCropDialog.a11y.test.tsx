@@ -3,10 +3,20 @@ import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { axe } from 'vitest-axe';
 
-vi.mock('react-easy-crop', () => ({
-  default: ({ cropShape }: { cropShape?: string }) => (
-    <div data-testid="cropper" data-crop-shape={cropShape} />
+vi.mock('react-image-crop', () => ({
+  default: ({
+    circularCrop,
+    children,
+  }: {
+    circularCrop?: boolean;
+    children?: React.ReactNode;
+  }) => (
+    <div data-testid="cropper" data-circular={String(Boolean(circularCrop))}>
+      {children}
+    </div>
   ),
+  centerCrop: (c: unknown) => c,
+  makeAspectCrop: () => ({ unit: '%', x: 0, y: 0, width: 80, height: 80 }),
 }));
 
 vi.mock('@/utils/cropImage', () => ({

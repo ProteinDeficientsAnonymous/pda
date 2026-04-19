@@ -1,6 +1,7 @@
 // Canvas-based image crop. Given a source image blob and a crop rect (in
 // source pixels), produces a cropped PNG Blob. react-easy-crop gives us the
-// rect; we do the actual compositing.
+// rect; we do the actual compositing. Output dimensions preserve the crop
+// area's aspect ratio, bounded by maxSize on the longer edge.
 
 export interface CropArea {
   x: number;
@@ -9,20 +10,28 @@ export interface CropArea {
   height: number;
 }
 
-export async function cropImage(source: Blob, area: CropArea, outputSize = 512): Promise<Blob> {
+export async function cropImage(source: Blob, area: CropArea, maxSize = 512): Promise<Blob> {
   const url = URL.createObjectURL(source);
   try {
     const img = await loadImage(url);
     const canvas = document.createElement('canvas');
-    canvas.width = outputSize;
-    canvas.height = outputSize;
+    const { width, height } = fitToMaxSize(area.width, area.height, maxSize);
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('canvas 2d context unavailable');
-    ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, outputSize, outputSize);
+    ctx.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, width, height);
     return await canvasToBlob(canvas);
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+function fitToMaxSize(w: number, h: number, maxSize: number): { width: number; height: number } {
+  const longer = Math.max(w, h);
+  if (longer <= maxSize) return { width: Math.round(w), height: Math.round(h) };
+  const scale = maxSize / longer;
+  return { width: Math.round(w * scale), height: Math.round(h * scale) };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {

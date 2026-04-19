@@ -1,5 +1,6 @@
 // Hero cover photo for the event form. The whole banner is one big button —
-// tap anywhere to pick. Crop happens via the shared ImageCropDialog (16:9).
+// tap anywhere to pick. Crop happens via the shared ImageCropDialog, which
+// lets the user freely drag/resize a crop box over the image.
 // On create the cropped blob is staged and uploaded after the event POST
 // returns an id; on edit it uploads immediately.
 
@@ -122,7 +123,9 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
               📸
             </span>
             <span className="text-sm font-medium">add a cover photo</span>
-            <span className="text-brand-600/80 text-xs">tap to pick — 16:9 works best</span>
+            <span className="text-brand-600/80 text-xs">
+              tap to pick — landscape to portrait
+            </span>
           </span>
         )}
       </button>
@@ -150,7 +153,6 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
         <ImageCropDialog
           file={file}
           shape="rect"
-          aspect={16 / 9}
           outputSize={1200}
           onCancel={() => {
             setFile(null);

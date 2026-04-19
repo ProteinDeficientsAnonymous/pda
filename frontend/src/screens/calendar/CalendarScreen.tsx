@@ -12,6 +12,7 @@ import { makeLocalizer } from './calendarLocalizer';
 import { AgendaList } from './AgendaList';
 import { DayEventList } from './DayEventList';
 import { NarrowWeekView } from './NarrowWeekView';
+import { WideWeekView } from './WideWeekView';
 import { TodayIconButton } from './TodayIconButton';
 import type { BigCalEvent } from './types';
 import { ViewSwitcher } from './ViewSwitcher';
@@ -77,8 +78,14 @@ export default function CalendarScreen() {
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState<Date>(new Date());
   const useNarrowWeek = view === 'week' && !isWide;
+  const useWideWeek = view === 'week' && isWide;
   const useDayList = view === 'day';
   const useAgendaList = view === 'agenda';
+
+  const goToDay = (d: Date) => {
+    setDate(d);
+    setView('day');
+  };
 
   const goToEvent = (e: PdaEvent) => {
     void navigate(`/events/${e.id}`);
@@ -121,6 +128,19 @@ export default function CalendarScreen() {
               />
             </div>
           </>
+        ) : useWideWeek ? (
+          <>
+            <NarrowWeekToolbar date={date} weekStartsOn={weekStartsOn} onNavigate={setDate} />
+            <div className="min-h-0 flex-1">
+              <WideWeekView
+                date={date}
+                weekStartsOn={weekStartsOn}
+                events={datedEvents}
+                onSelectEvent={goToEvent}
+                onSelectDay={goToDay}
+              />
+            </div>
+          </>
         ) : useDayList ? (
           <>
             <DayToolbar date={date} onNavigate={setDate} />
@@ -154,8 +174,7 @@ export default function CalendarScreen() {
               goToEvent(evt.resource);
             }}
             onDrillDown={(d) => {
-              setDate(d);
-              setView('day');
+              goToDay(d);
             }}
             style={{ height: '100%' }}
           />
@@ -182,40 +201,37 @@ interface DayToolbarProps {
 function DayToolbar({ date, onNavigate }: DayToolbarProps) {
   const label = lower(date, 'EEEE, MMM d');
   return (
-    <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
-      <div className="justify-self-start">
-        <TodayIconButton
-          onClick={() => {
-            onNavigate(new Date());
-          }}
-        />
+    <div className="relative mb-2 flex items-center px-1">
+      <TodayIconButton
+        onClick={() => {
+          onNavigate(new Date());
+        }}
+      />
+      <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center">
+        <div className="pointer-events-auto flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="previous day"
+            onClick={() => {
+              onNavigate(addDays(date, -1));
+            }}
+            className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
+          >
+            ‹
+          </button>
+          <span className="text-center text-sm font-medium text-foreground">{label}</span>
+          <button
+            type="button"
+            aria-label="next day"
+            onClick={() => {
+              onNavigate(addDays(date, 1));
+            }}
+            className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
+          >
+            ›
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-1 justify-self-center">
-        <button
-          type="button"
-          aria-label="previous day"
-          onClick={() => {
-            onNavigate(addDays(date, -1));
-          }}
-          className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
-        >
-          ‹
-        </button>
-        <span className="min-w-[10rem] text-center text-sm font-medium text-foreground">
-          {label}
-        </span>
-        <button
-          type="button"
-          aria-label="next day"
-          onClick={() => {
-            onNavigate(addDays(date, 1));
-          }}
-          className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
-        >
-          ›
-        </button>
-      </div>
-      <span aria-hidden="true" />
     </div>
   );
 }
@@ -224,40 +240,37 @@ function NarrowWeekToolbar({ date, weekStartsOn, onNavigate }: NarrowWeekToolbar
   const weekStart = startOfWeek(date, { weekStartsOn });
   const label = `week of ${lower(weekStart, 'MMM d')}`;
   return (
-    <div className="mb-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-1">
-      <div className="justify-self-start">
-        <TodayIconButton
-          onClick={() => {
-            onNavigate(new Date());
-          }}
-        />
+    <div className="relative mb-2 flex items-center px-1">
+      <TodayIconButton
+        onClick={() => {
+          onNavigate(new Date());
+        }}
+      />
+      <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center">
+        <div className="pointer-events-auto flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="previous week"
+            onClick={() => {
+              onNavigate(addDays(date, -7));
+            }}
+            className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
+          >
+            ‹
+          </button>
+          <span className="text-center text-sm font-medium text-foreground">{label}</span>
+          <button
+            type="button"
+            aria-label="next week"
+            onClick={() => {
+              onNavigate(addDays(date, 7));
+            }}
+            className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
+          >
+            ›
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-1 justify-self-center">
-        <button
-          type="button"
-          aria-label="previous week"
-          onClick={() => {
-            onNavigate(addDays(date, -7));
-          }}
-          className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
-        >
-          ‹
-        </button>
-        <span className="min-w-[9rem] text-center text-sm font-medium text-foreground">
-          {label}
-        </span>
-        <button
-          type="button"
-          aria-label="next week"
-          onClick={() => {
-            onNavigate(addDays(date, 7));
-          }}
-          className="hover:text-brand-700 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground-tertiary hover:bg-surface-dim"
-        >
-          ›
-        </button>
-      </div>
-      <span aria-hidden="true" />
     </div>
   );
 }

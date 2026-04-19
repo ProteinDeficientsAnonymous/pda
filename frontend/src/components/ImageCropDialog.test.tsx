@@ -3,12 +3,29 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// react-easy-crop manipulates DOM dimensions that jsdom doesn't support.
-// Stub it so it renders a simple sentinel element.
-vi.mock('react-easy-crop', () => ({
-  default: ({ cropShape }: { cropShape?: string }) => (
-    <div data-testid="cropper" data-crop-shape={cropShape} />
+// react-image-crop uses pointer events + ResizeObserver that jsdom doesn't
+// fully support. Stub it so it renders a simple sentinel element that
+// still exposes the props we care about (circularCrop, aspect).
+vi.mock('react-image-crop', () => ({
+  default: ({
+    circularCrop,
+    aspect,
+    children,
+  }: {
+    circularCrop?: boolean;
+    aspect?: number;
+    children?: React.ReactNode;
+  }) => (
+    <div
+      data-testid="cropper"
+      data-circular={String(Boolean(circularCrop))}
+      data-aspect={String(aspect ?? '')}
+    >
+      {children}
+    </div>
   ),
+  centerCrop: (c: unknown) => c,
+  makeAspectCrop: () => ({ unit: '%', x: 0, y: 0, width: 80, height: 80 }),
 }));
 
 // cropImage reaches into canvas APIs — stub it
@@ -47,34 +64,30 @@ function renderDialog({
 }
 
 describe('ImageCropDialog', () => {
-  it('renders in circle (round) mode with crop photo label and action buttons', () => {
+  it('renders in circle (round) mode with locked 1:1 aspect and action buttons', () => {
     renderDialog({ shape: 'round' });
 
     const dialog = screen.getByRole('dialog', { name: /crop photo/i });
     expect(dialog).toBeInTheDocument();
 
-    expect(screen.getByTestId('cropper')).toHaveAttribute('data-crop-shape', 'round');
+    const cropper = screen.getByTestId('cropper');
+    expect(cropper).toHaveAttribute('data-circular', 'true');
+    expect(cropper).toHaveAttribute('data-aspect', '1');
     expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
   });
 
-  it('renders in rectangle (rect) mode with action buttons', () => {
+  it('renders in rectangle (rect) mode as free-form (no aspect lock)', () => {
     renderDialog({ shape: 'rect' });
 
     const dialog = screen.getByRole('dialog', { name: /crop photo/i });
     expect(dialog).toBeInTheDocument();
 
-    expect(screen.getByTestId('cropper')).toHaveAttribute('data-crop-shape', 'rect');
+    const cropper = screen.getByTestId('cropper');
+    expect(cropper).toHaveAttribute('data-circular', 'false');
+    expect(cropper).toHaveAttribute('data-aspect', '');
     expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
-  });
-
-  it('renders zoom slider helper', () => {
-    renderDialog();
-
-    // The zoom label and range input are present
-    expect(screen.getByRole('slider', { name: /zoom/i })).toBeInTheDocument();
-    expect(screen.getByText('zoom')).toBeInTheDocument();
   });
 
   it('cancel button calls onCancel callback', async () => {
