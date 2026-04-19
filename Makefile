@@ -19,7 +19,7 @@ help:
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
 	@echo ""
 	@echo "Frontend commands:"
-	@echo "  make frontend-install   pnpm install (frontend-next)"
+	@echo "  make frontend-install   pnpm install (frontend)"
 	@echo "  make frontend-run        Run Vite dev server (localhost:3000, proxies /api to 8000)"
 	@echo "  make frontend-build     Build Vite production bundle"
 	@echo "  make frontend-lint      Run ESLint + Prettier check"
@@ -35,7 +35,7 @@ help:
 # Backend + Frontend
 install:
 	uv sync
-	cd frontend-next && pnpm install
+	cd frontend && pnpm install
 
 run:
 	cd backend && uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
@@ -85,30 +85,30 @@ db-start:
 db-stop:
 	docker compose down
 
-# Frontend (frontend-next / Vite + React)
+# Frontend (Vite + React)
 frontend-install:
-	cd frontend-next && pnpm install
+	cd frontend && pnpm install
 
 frontend-run:
-	cd frontend-next && pnpm dev
+	cd frontend && pnpm dev
 
 frontend-build:
-	cd frontend-next && pnpm build
+	cd frontend && pnpm build
 
 frontend-lint:
-	cd frontend-next && pnpm lint
+	cd frontend && pnpm lint
 
 frontend-format:
-	cd frontend-next && pnpm format
+	cd frontend && pnpm format
 
 frontend-test:
-	cd frontend-next && pnpm test
+	cd frontend && pnpm test
 
 frontend-typecheck:
-	cd frontend-next && pnpm typecheck
+	cd frontend && pnpm typecheck
 
 frontend-types:
-	cd frontend-next && pnpm types:api
+	cd frontend && pnpm types:api
 
 # CI (run before every commit)
 ci: lint check test typecheck complexity frontend-lint frontend-test frontend-typecheck

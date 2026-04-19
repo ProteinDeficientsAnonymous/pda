@@ -23,15 +23,10 @@ Thumbs.db
 media/
 static/uploads/
 
-# Flutter generated
-frontend/.dart_tool/
-frontend/build/
-frontend/ios/
-frontend/android/
-frontend/.flutter-plugins
-frontend/.flutter-plugins-dependencies
-*.freezed.dart
-*.g.dart
+# Vite / Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
 # Claude Code
 .claude/worktrees

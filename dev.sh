@@ -12,5 +12,5 @@ make run &
 sleep 2
 
 echo "⚛️  Starting Vite..."
-cd frontend-next
+cd frontend
 pnpm dev

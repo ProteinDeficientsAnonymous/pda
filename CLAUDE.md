@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-PDA (Protein Deficients Anonymous) is a vegan collective liberation community platform. The Django backend is API-only (Django Ninja). The Flutter web frontend (Riverpod + GoRouter + Dio) handles all UI.
+PDA (Protein Deficients Anonymous) is a vegan collective liberation community platform. The Django backend is API-only (Django Ninja). The Vite + React + TypeScript frontend (Zustand + React Router + Axios + TanStack Query) handles all UI.
 
 **Key design decisions:**
 - No user self-signup — accounts are created by admins via the members screen
@@ -18,7 +18,7 @@ PDA (Protein Deficients Anonymous) is a vegan collective liberation community pl
 ```bash
 make db-start         # Start local PostgreSQL via Docker
 make db-stop          # Stop local PostgreSQL
-make install          # Install dependencies (uv sync + flutter pub get)
+make install          # Install dependencies (uv sync + pnpm install)
 make run              # Run Django dev server on localhost:8000
 make test             # Run pytest
 make lint             # Run ruff (lint + format)
@@ -28,20 +28,20 @@ make migrate          # makemigrations + migrate
 make createsuperuser  # Create Django admin user
 make check            # Django system checks
 make ci               # Full pre-commit check (lint + check + test + typecheck + complexity + frontend-lint + frontend-test + frontend-complexity)
-make dev              # Run Django + Flutter concurrently
+make dev              # Run Django + Vite concurrently
 ```
 
-### Flutter commands
+### Frontend commands
 
 ```bash
-make frontend-install   # flutter pub get
-make frontend-run       # Flutter dev server (localhost:3000)
-make frontend-build     # Build Flutter web release (requires API_URL env var)
-make frontend-codegen   # Regenerate freezed/riverpod/json code
-make frontend-lint      # dart format check + dart analyze
-make frontend-format    # Auto-format Dart files
-make frontend-test         # Run Flutter test suite
-make frontend-complexity   # Run Dart code metrics check
+make frontend-install    # pnpm install
+make frontend-run        # Vite dev server (localhost:3000, proxies /api to 8000)
+make frontend-build      # Build Vite production bundle
+make frontend-lint       # ESLint + Prettier check
+make frontend-format     # Auto-format files
+make frontend-test       # Run Vitest suite
+make frontend-typecheck  # Run tsc --noEmit
+make frontend-types      # Regenerate API types from OpenAPI
 ```
 
 **Always run `make ci` before committing.**
@@ -58,14 +58,14 @@ backend/
 └── tests/        # Pytest tests
 
 frontend/
-└── lib/
-    ├── config/       # API base URL config
-    ├── models/       # Freezed models: User, AuthTokens, Event
-    ├── providers/    # Riverpod: auth, events, join request
-    ├── services/     # ApiClient (Dio + JWT interceptor), SecureStorage
-    ├── router/       # GoRouter with /calendar auth guard
-    ├── screens/      # home, join, join_success, login, calendar
-    └── widgets/      # AppScaffold (shared nav)
+└── src/
+    ├── api/          # axios client, TanStack Query hooks, generated API types
+    ├── auth/         # Zustand auth store, route guards
+    ├── components/   # Reusable UI primitives (Button, Dialog, TextField, etc.)
+    ├── layout/       # AppShell, BottomNav, NotificationBell
+    ├── models/       # Domain types: User, Event, Notification, Permissions
+    ├── router/       # React Router config, lazy-loaded routes
+    └── screens/      # auth, public, admin, calendar, events, profile, settings, surveys, docs
 ```
 
 ### Key Models
@@ -84,7 +84,7 @@ frontend/
 | POST | `/api/community/join-request/` | None | Submit join request |
 | GET | `/api/community/events/` | JWT | List calendar events |
 
-### Routes (Flutter / GoRouter)
+### Routes (React Router)
 
 | Path | Auth required | Screen |
 |------|--------------|--------|
@@ -114,10 +114,10 @@ frontend/
 
 ## Standards
 
-References: `~/.claude/rules/standards-django-ninja.md`, `standards-flutter-riverpod.md`, `standards-django-flutter-integration.md`
+References: `~/.claude/rules/standards-django-ninja.md`
 
-### frontend-next text casing
-- All user-facing text in the frontend-next app must be **lowercase only** — labels, headings, buttons, placeholders, toasts, error messages, date formatting, etc.
+### frontend text casing
+- All user-facing text in the frontend app must be **lowercase only** — labels, headings, buttons, placeholders, toasts, error messages, date formatting, etc.
 - Use `.toLowerCase()` on any dynamic/format-driven strings (e.g. `date-fns` output).
 
 # Agent Directives: Mechanical Overrides

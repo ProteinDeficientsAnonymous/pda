@@ -1,12 +1,12 @@
 # Stage 1: Build Vite React frontend
 FROM node:22-alpine AS vite-build
 RUN corepack enable
-WORKDIR /app/frontend-next
+WORKDIR /app/frontend
 
-COPY frontend-next/package.json frontend-next/pnpm-lock.yaml ./
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-COPY frontend-next/ ./
+COPY frontend/ ./
 RUN pnpm build
 
 # Stage 2: Python/Django + nginx runtime
@@ -24,7 +24,7 @@ RUN uv sync --locked --no-dev --no-install-project
 COPY backend/ ./backend/
 COPY static/ ./static/
 
-COPY --from=vite-build /app/frontend-next/dist/ /usr/share/nginx/html/
+COPY --from=vite-build /app/frontend/dist/ /usr/share/nginx/html/
 
 COPY nginx.conf.template /app/nginx.conf.template
 

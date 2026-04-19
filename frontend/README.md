@@ -1,6 +1,6 @@
-# frontend-next
+# frontend
 
-React + Vite + TypeScript replacement for the Flutter web frontend. See `/FLUTTER_TO_VITE_REACT_MIGRATION.md` at the repo root for the full migration plan.
+React + Vite + TypeScript frontend. See `/FLUTTER_TO_VITE_REACT_MIGRATION.md` at the repo root for historical context on the migration from the prior Flutter web frontend.
 
 ## Setup
 
