@@ -131,7 +131,17 @@ function JoinRequestCard({
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
           </p>
         </div>
-        <StatusBadge status={request.status} />
+        <div className="flex flex-wrap items-center gap-1">
+          {request.previouslyArchived ? (
+            <span
+              className="rounded-full bg-warning-subtle px-2 py-0.5 text-xs text-warning"
+              title="this phone number belongs to a previously archived member — approving will restore their account"
+            >
+              previously archived
+            </span>
+          ) : null}
+          <StatusBadge status={request.status} />
+        </div>
       </header>
 
       {request.answers.length > 0 ? (

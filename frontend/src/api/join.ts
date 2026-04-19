@@ -108,6 +108,7 @@ export interface JoinRequestSummary {
   submittedAt: string;
   status: JoinRequestStatus;
   userId: string | null;
+  previouslyArchived: boolean;
 }
 
 interface WireAnswer {
@@ -124,6 +125,7 @@ interface WireJoinRequest {
   submitted_at: string;
   status: JoinRequestStatus;
   user_id: string | null;
+  previously_archived?: boolean;
 }
 
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
@@ -139,6 +141,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     submittedAt: w.submitted_at,
     status: w.status,
     userId: w.user_id,
+    previouslyArchived: w.previously_archived ?? false,
   };
 }
 
