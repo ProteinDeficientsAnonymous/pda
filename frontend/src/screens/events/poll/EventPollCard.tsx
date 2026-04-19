@@ -10,7 +10,7 @@ import { useEventPoll } from '@/api/eventPolls';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
-import { hasPermission, Permission } from '@/models/permissions';
+import { hasPermission, Permission, type UserLike } from '@/models/permissions';
 import { PollFinalizeDialog } from './PollFinalizeDialog';
 import { PollManageDialog } from './PollManageDialog';
 import { PollOptionStrip } from './PollOptionStrip';
@@ -131,7 +131,7 @@ export function EventPollCard({ event }: Props) {
   );
 }
 
-function canManagePoll(event: Event, user: { id: string } | null): boolean {
+function canManagePoll(event: Event, user: (UserLike & { id: string }) | null): boolean {
   if (!user) return false;
   if (event.createdById === user.id) return true;
   if (event.coHostIds.includes(user.id)) return true;

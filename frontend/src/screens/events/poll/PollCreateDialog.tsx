@@ -19,9 +19,9 @@ interface Props {
   open: boolean;
   onClose: () => void;
   // Exactly one of these must be provided.
-  eventId?: string;
-  onBuffer?: (datetimes: Date[]) => void;
-  initialOptions?: readonly string[]; // ISO strings — used by buffer mode to reopen with existing queue
+  eventId?: string | undefined;
+  onBuffer?: ((datetimes: Date[]) => void) | undefined;
+  initialOptions?: readonly string[] | undefined; // ISO strings — used by buffer mode to reopen with existing queue
 }
 
 const MIN_OPTIONS = 2;

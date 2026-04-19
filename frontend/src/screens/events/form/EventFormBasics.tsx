@@ -25,10 +25,10 @@ interface Props {
   onChange: (patch: Partial<EventFormValues>) => void;
   errors: Partial<Record<keyof EventFormValues, string>>;
   timeLocked?: boolean;
-  existingEventId?: string;
+  existingEventId?: string | undefined;
   existingHasPoll?: boolean;
   bufferedPollOptions?: Date[] | null;
-  onBufferPoll?: (dates: Date[] | null) => void;
+  onBufferPoll?: ((dates: Date[] | null) => void) | undefined;
 }
 
 export function EventFormBasics({

@@ -24,10 +24,12 @@ export function pickFinalizeDefault(
   options: readonly EventPollOption[],
 ): EventPollOption | null {
   if (options.length === 0) return null;
-  return [...options].sort((a, b) => {
-    if (b.yesCount !== a.yesCount) return b.yesCount - a.yesCount;
-    return a.datetime.getTime() - b.datetime.getTime();
-  })[0];
+  return (
+    [...options].sort((a, b) => {
+      if (b.yesCount !== a.yesCount) return b.yesCount - a.yesCount;
+      return a.datetime.getTime() - b.datetime.getTime();
+    })[0] ?? null
+  );
 }
 
 // Popularity sort for the event-page strip. Most yeses first, ties broken by
