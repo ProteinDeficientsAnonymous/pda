@@ -86,13 +86,4 @@ describe('AppShell + BottomNav', () => {
     expect(nav).toBeInTheDocument();
   });
 
-  it('nav renders without crashing when unauthenticated', () => {
-    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
-    renderShell('/');
-
-    // Bottom nav should still render
-    expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument();
-    // Header should show sign-in link instead of notification bell
-    expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
-  });
 });

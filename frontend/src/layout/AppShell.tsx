@@ -4,7 +4,7 @@
 // branching — one code path from phone to 4K.
 
 import { useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
 import { FeedbackButton } from '@/components/FeedbackButton';
 import { BottomNav } from './BottomNav';
@@ -32,16 +32,7 @@ export function AppShell() {
             pda
           </button>
           <div className="flex items-center gap-1">
-            {isAuthed ? (
-              <NotificationBell />
-            ) : (
-              <Link
-                to="/login"
-                className="bg-brand-600 hover:bg-brand-700 inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-brand-on"
-              >
-                sign in
-              </Link>
-            )}
+            {isAuthed ? <NotificationBell /> : null}
           </div>
         </div>
       </header>

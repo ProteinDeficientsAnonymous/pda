@@ -70,7 +70,7 @@ export default function LoginScreen() {
           onClick={() => {
             setStep('phone');
           }}
-          className="mt-4 text-sm text-foreground underline"
+          className="mt-4 text-sm text-brand-700 hover:text-brand-900"
         >
           back
         </button>
@@ -123,7 +123,7 @@ export default function LoginScreen() {
       </form>
       <p className="mt-4 text-center text-sm text-muted">
         not a member yet?{' '}
-        <Link to="/join" className="text-foreground underline">
+        <Link to="/join" className="text-brand-700 hover:text-brand-900">
           request to join
         </Link>
       </p>
@@ -201,13 +201,13 @@ function PasswordStep({
         <Button type="submit" fullWidth disabled={isSubmitting}>
           {isSubmitting ? 'signing in…' : 'sign in'}
         </Button>
-        <button type="button" onClick={onBack} className="text-sm text-muted underline">
+        <button type="button" onClick={onBack} className="text-sm text-brand-700 hover:text-brand-900">
           that's not me
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-muted">
         not a member yet?{' '}
-        <Link to="/join" className="text-foreground underline">
+        <Link to="/join" className="text-brand-700 hover:text-brand-900">
           request to join
         </Link>
       </p>

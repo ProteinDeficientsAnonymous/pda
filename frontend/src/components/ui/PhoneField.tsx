@@ -1,4 +1,5 @@
 import PhoneInput, { type Country, type Value } from 'react-phone-number-input';
+import flags from 'react-phone-number-input/flags';
 import 'react-phone-number-input/style.css';
 import { cn } from '@/utils/cn';
 
@@ -31,7 +32,9 @@ export function PhoneField({
       <PhoneInput
         id={inputId}
         international
+        flags={flags}
         defaultCountry={defaultCountry}
+        countryCallingCodeEditable={false}
         value={value as Value}
         onChange={(next) => {
           onChange((next as string | undefined) ?? '');
@@ -48,10 +51,19 @@ export function PhoneField({
         countrySelectProps={{
           'aria-label': 'country',
         }}
+        style={
+          {
+            '--PhoneInput-color--focus': 'var(--color-brand-600)',
+          } as React.CSSProperties
+        }
         className={cn(
           'PhoneInput flex items-center gap-2',
-          '[&_.PhoneInputCountry]:flex [&_.PhoneInputCountry]:items-center [&_.PhoneInputCountry]:gap-1',
-          '[&_.PhoneInputCountrySelect]:h-10 [&_.PhoneInputCountrySelect]:rounded-md [&_.PhoneInputCountrySelect]:border [&_.PhoneInputCountrySelect]:border-border-strong [&_.PhoneInputCountrySelect]:bg-surface [&_.PhoneInputCountrySelect]:px-2 [&_.PhoneInputCountrySelect]:text-sm',
+          '[&_.PhoneInputCountry]:relative [&_.PhoneInputCountry]:flex [&_.PhoneInputCountry]:h-10 [&_.PhoneInputCountry]:items-center [&_.PhoneInputCountry]:gap-1 [&_.PhoneInputCountry]:rounded-md [&_.PhoneInputCountry]:border [&_.PhoneInputCountry]:border-border-strong [&_.PhoneInputCountry]:bg-surface [&_.PhoneInputCountry]:px-2',
+          '[&_.PhoneInputCountryIcon]:h-5 [&_.PhoneInputCountryIcon]:w-7 [&_.PhoneInputCountryIcon]:overflow-hidden [&_.PhoneInputCountryIcon]:rounded-[3px] [&_.PhoneInputCountryIcon]:shadow-none',
+          '[&_.PhoneInputCountryIcon--border]:shadow-none [&_.PhoneInputCountryIcon--border]:ring-0',
+          '[&_.PhoneInputCountryIconImg]:h-full [&_.PhoneInputCountryIconImg]:w-full [&_.PhoneInputCountryIconImg]:object-cover',
+          '[&_.PhoneInputCountrySelect]:absolute [&_.PhoneInputCountrySelect]:inset-0 [&_.PhoneInputCountrySelect]:h-full [&_.PhoneInputCountrySelect]:w-full [&_.PhoneInputCountrySelect]:cursor-pointer [&_.PhoneInputCountrySelect]:opacity-0',
+          '[&_.PhoneInputCountrySelectArrow]:ml-1 [&_.PhoneInputCountrySelectArrow]:text-foreground-tertiary [&_.PhoneInputCountrySelectArrow]:opacity-60',
         )}
       />
       {error ? (

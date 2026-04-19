@@ -143,7 +143,7 @@ function LocationSection({ event }: { event: Event }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`open ${event.location} in maps`}
-        className="text-brand-700 text-sm hover:underline"
+        className="text-brand-700 hover:text-brand-900 text-sm"
       >
         {primary}
       </a>

@@ -43,7 +43,7 @@ export function CollapsibleCard({
   return (
     <section
       className={cn(
-        'rounded-[var(--radius-md)] border bg-surface shadow-(--shadow-sm) transition-colors',
+        'overflow-hidden rounded-[var(--radius-md)] border bg-surface shadow-(--shadow-sm) transition-colors',
         isOpen ? 'border-brand-200' : 'border-brand-100 hover:border-brand-200',
       )}
     >

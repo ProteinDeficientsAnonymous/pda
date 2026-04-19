@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
 import { AuthLayout } from './AuthLayout';
 
@@ -9,6 +9,7 @@ export default function MagicLoginScreen() {
   const { token } = useParams();
   const magicLogin = useAuthStore((s) => s.magicLogin);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [state, setState] = useState<State>('pending');
 
   useEffect(() => {
@@ -24,12 +25,13 @@ export default function MagicLoginScreen() {
           void navigate(target, { replace: true });
           return;
         }
-        void navigate('/calendar', { replace: true });
+        const redirect = params.get('redirect');
+        void navigate(redirect ? decodeURIComponent(redirect) : '/calendar', { replace: true });
       })
       .catch(() => {
         setState('error');
       });
-  }, [token, magicLogin, navigate]);
+  }, [token, magicLogin, navigate, params]);
 
   if (!token) return <Navigate to="/login" replace />;
 
@@ -38,7 +40,7 @@ export default function MagicLoginScreen() {
       <AuthLayout title="link expired" subtitle="this login link didn't work">
         <p className="text-sm text-foreground-tertiary">
           ask an organizer to send a new one, or{' '}
-          <a href="/login" className="underline">
+          <a href="/login" className="text-brand-700 hover:text-brand-900">
             sign in with your password
           </a>
           .
