@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { WhatsappSetupInstructions } from './WhatsappSetupInstructions';
 
 export default function WhatsappConfigScreen() {
   const { data, isPending, isError } = useWhatsappConfig();
@@ -54,6 +55,8 @@ function WhatsappConfigForm({ config }: { config: WhatsappConfig }) {
     <ContentContainer>
       <h1 className="mb-2 text-2xl font-medium tracking-tight">whatsapp config</h1>
       <p className="mb-6 text-sm text-neutral-600">bot connection settings</p>
+
+      <WhatsappSetupInstructions />
 
       <section className="mb-6 flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4">
         <StatusDot state={statusPending ? 'checking' : connected ? 'connected' : 'offline'} />

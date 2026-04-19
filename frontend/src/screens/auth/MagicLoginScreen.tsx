@@ -15,7 +15,15 @@ export default function MagicLoginScreen() {
     if (!token) return;
     void magicLogin(token)
       .then(() => {
-        // OnboardingGate handles the needs_onboarding redirect.
+        // Route based on the fresh user in the store. Doing this here (instead
+        // of leaning on OnboardingGate) avoids a race where /calendar renders
+        // before the gate re-evaluates with the new auth state.
+        const user = useAuthStore.getState().user;
+        if (user?.needsOnboarding) {
+          const target = user.displayName.length > 0 ? '/new-password' : '/onboarding';
+          void navigate(target, { replace: true });
+          return;
+        }
         void navigate('/calendar', { replace: true });
       })
       .catch(() => {

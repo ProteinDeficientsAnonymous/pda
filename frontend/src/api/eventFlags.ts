@@ -6,9 +6,21 @@
 // Transitions: pending → dismissed | actioned. Cannot go back to pending.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { apiClient } from './client';
 
 export type FlagStatus = 'pending' | 'dismissed' | 'actioned';
+
+export type FlagEventErrorKind = 'already-flagged' | 'rate-limited' | 'unknown';
+
+export class FlagEventError extends Error {
+  readonly kind: FlagEventErrorKind;
+  constructor(kind: FlagEventErrorKind, message: string) {
+    super(message);
+    this.name = 'FlagEventError';
+    this.kind = kind;
+  }
+}
 
 export interface EventFlag {
   id: string;
@@ -58,6 +70,37 @@ export function useEventFlags(status?: FlagStatus) {
         params,
       });
       return data.map(mapFlag);
+    },
+  });
+}
+
+export function useFlagEvent(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { reason: string }) => {
+      try {
+        const { data } = await apiClient.post<WireFlag>(
+          `/api/community/events/${eventId}/flag/`,
+          { reason: args.reason },
+        );
+        return mapFlag(data);
+      } catch (err) {
+        if (isAxiosError(err)) {
+          if (err.response?.status === 409) {
+            throw new FlagEventError('already-flagged', "you've already flagged this event");
+          }
+          if (err.response?.status === 429) {
+            throw new FlagEventError(
+              'rate-limited',
+              "you've flagged too many events — try again later",
+            );
+          }
+        }
+        throw new FlagEventError('unknown', "couldn't submit — try again");
+      }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['event-flags'] });
     },
   });
 }

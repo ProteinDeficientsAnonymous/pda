@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
 import type { JoinQuestion } from '@/api/join';
 import { Button } from '@/components/ui/Button';
+import { PhoneField } from '@/components/ui/PhoneField';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
@@ -11,7 +12,6 @@ import { ContentContainer, ContentError, ContentLoading } from './ContentContain
 
 // Mirrors backend FieldLimit constants.
 const MAX_NAME = 64;
-const MAX_PHONE = 20;
 const MAX_ANSWER = 2000;
 
 // Heuristic from join_screen.dart: multi-line if the label mentions "why".
@@ -93,18 +93,12 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
           hint="at least first name + last initial"
           required
         />
-        <TextField
+        <PhoneField
           label="phone number"
-          type="tel"
           value={phoneNumber}
-          onChange={(e) => {
-            setPhoneNumber(e.target.value);
-          }}
-          maxLength={MAX_PHONE}
-          autoComplete="tel"
+          onChange={setPhoneNumber}
           error={errors.phoneNumber}
           hint="use the number you use (or will use) to connect with the community"
-          required
         />
 
         {questions.map((q) => (

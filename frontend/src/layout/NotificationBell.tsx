@@ -30,8 +30,15 @@ export function NotificationBell() {
     token: accessToken,
     onStatusChange: setSseConnected,
     events: {
+      // A push from the server means *something* a notification can point at
+      // just changed. Invalidate the notification caches so the bell updates,
+      // and the query keys for every screen a notification can link to so
+      // whatever screen the user happens to be on refetches in place.
       notification: () => {
         void qc.invalidateQueries({ queryKey: notificationKeys.all });
+        void qc.invalidateQueries({ queryKey: ['join-requests'] });
+        void qc.invalidateQueries({ queryKey: ['events'] });
+        void qc.invalidateQueries({ queryKey: ['users'] });
       },
     },
   });

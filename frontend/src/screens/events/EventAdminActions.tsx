@@ -51,13 +51,35 @@ function AdminActionRow({
 }) {
   const navigate = useNavigate();
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const update = useUpdateEvent(event.id);
   const del = useDeleteEvent(event.id);
 
   const isCancelled = event.status === EventStatus.Cancelled;
   const canDelete = isCreator || canManage;
+
+  async function onCancel() {
+    setCancelError(null);
+    try {
+      await update.mutateAsync({ status: 'cancelled' });
+      setCancelOpen(false);
+    } catch (err) {
+      setCancelError(extractMutationError(err));
+    }
+  }
+
+  async function onDelete() {
+    setDeleteError(null);
+    try {
+      await del.mutateAsync();
+      void navigate('/calendar', { replace: true });
+    } catch (err) {
+      setDeleteError(extractMutationError(err));
+    }
+  }
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -89,6 +111,7 @@ function AdminActionRow({
         open={cancelOpen}
         onClose={() => {
           setCancelOpen(false);
+          setCancelError(null);
         }}
         title="cancel event"
       >
@@ -96,24 +119,28 @@ function AdminActionRow({
           mark this event as cancelled? attendees will see a cancelled badge — you can't un-cancel
           from the React app yet.
         </p>
+        {cancelError ? (
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            {cancelError}
+          </p>
+        ) : null}
         <div className="mt-4 flex justify-end gap-2">
           <Button
             variant="ghost"
             onClick={() => {
               setCancelOpen(false);
+              setCancelError(null);
             }}
           >
             back
           </Button>
           <Button
             onClick={() => {
-              void update.mutateAsync({ status: 'cancelled' }).then(() => {
-                setCancelOpen(false);
-              });
+              void onCancel();
             }}
             disabled={update.isPending}
           >
-            cancel event
+            {update.isPending ? 'cancelling…' : 'cancel event'}
           </Button>
         </div>
       </Dialog>
@@ -122,17 +149,24 @@ function AdminActionRow({
         open={deleteOpen}
         onClose={() => {
           setDeleteOpen(false);
+          setDeleteError(null);
         }}
         title="delete event"
       >
         <p className="text-sm text-neutral-700">
           this permanently deletes the event and all rsvps. This cannot be undone.
         </p>
+        {deleteError ? (
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            {deleteError}
+          </p>
+        ) : null}
         <div className="mt-4 flex justify-end gap-2">
           <Button
             variant="ghost"
             onClick={() => {
               setDeleteOpen(false);
+              setDeleteError(null);
             }}
             disabled={del.isPending}
           >
@@ -140,9 +174,7 @@ function AdminActionRow({
           </Button>
           <Button
             onClick={() => {
-              void del.mutateAsync().then(() => {
-                void navigate('/calendar', { replace: true });
-              });
+              void onDelete();
             }}
             disabled={del.isPending}
           >
@@ -152,6 +184,15 @@ function AdminActionRow({
       </Dialog>
     </div>
   );
+}
+
+function extractMutationError(err: unknown): string {
+  if (isAxiosError(err)) {
+    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
+    if (detail) return detail.toLowerCase();
+  }
+  if (err instanceof Error && err.message) return err.message.toLowerCase();
+  return "couldn't update the event — try again";
 }
 
 function useDeleteEvent(eventId: string) {

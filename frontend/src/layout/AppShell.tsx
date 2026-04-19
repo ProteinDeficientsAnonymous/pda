@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
+import { FeedbackButton } from '@/components/FeedbackButton';
 import { BottomNav } from './BottomNav';
 import { NotificationBell } from './NotificationBell';
 import { PdaMenuSheet } from './PdaMenuSheet';
@@ -59,6 +60,7 @@ export function AppShell() {
           }}
         />
       </div>
+      <FeedbackButton />
       <BottomNav />
     </div>
   );

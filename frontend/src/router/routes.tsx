@@ -28,6 +28,7 @@ const Calendar = lazy(() => import('@/screens/calendar/CalendarScreen'));
 const EventDetail = lazy(() => import('@/screens/events/EventDetailScreen'));
 const EventCreate = lazy(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazy(() => import('@/screens/events/EventEditScreen'));
+const MyEvents = lazy(() => import('@/screens/events/MyEventsScreen'));
 const Profile = lazy(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazy(() => import('@/screens/settings/SettingsScreen'));
 const Docs = lazy(() => import('@/screens/docs/DocsScreen'));
@@ -44,6 +45,8 @@ const JoinFormAdmin = lazy(() => import('@/screens/admin/JoinFormAdminScreen'));
 const SurveyAdminList = lazy(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazy(() => import('@/screens/admin/SurveyBuilderScreen'));
 const SurveyResponses = lazy(() => import('@/screens/admin/SurveyResponsesScreen'));
+const Members = lazy(() => import('@/screens/admin/MembersScreen'));
+const MemberDetail = lazy(() => import('@/screens/admin/MemberDetailScreen'));
 
 const Stub = lazy(() => import('@/screens/NotImplemented'));
 
@@ -91,7 +94,7 @@ export const router = createBrowserRouter([
               { path: '/volunteer', element: el(<Volunteer />) },
               { path: '/docs', element: el(<Docs />) },
               { path: '/docs/:id', element: el(<DocDetail />) },
-              { path: '/events/mine', element: el(<Stub />) },
+              { path: '/events/mine', element: el(<MyEvents />) },
             ],
           },
 
@@ -105,12 +108,9 @@ export const router = createBrowserRouter([
           // ---- permissioned ----
           {
             element: <RequirePermission perm={Permission.ManageUsers} />,
-            // Members/roles admin is the one Phase 4b screen still deferred —
-            // needs the /api/auth/roles/ endpoints which were out of scope for
-            // this commit.
             children: [
-              { path: '/members', element: el(<Stub />) },
-              { path: '/members/:id', element: el(<Stub />) },
+              { path: '/members', element: el(<Members />) },
+              { path: '/members/:id', element: el(<MemberDetail />) },
             ],
           },
           {

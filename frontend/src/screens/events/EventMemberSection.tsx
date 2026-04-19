@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RsvpSection } from './RsvpSection';
 import { EventAdminActions } from './EventAdminActions';
+import { EventFlagDialog } from './EventFlagDialog';
 import { InviteDialog } from './InviteDialog';
 import { hasPermission } from '@/models/permissions';
 import { Permission } from '@/models/permissions';
@@ -41,6 +42,31 @@ export function EventMemberSection({ event }: Props) {
         </Card>
       ) : null}
       <EventAdminActions event={event} />
+      <ReportEventButton eventId={event.id} />
+    </div>
+  );
+}
+
+function ReportEventButton({ eventId }: { eventId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex justify-center pt-2">
+      <Button
+        variant="ghost"
+        className="text-xs text-neutral-500"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        report this event
+      </Button>
+      <EventFlagDialog
+        eventId={eventId}
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      />
     </div>
   );
 }

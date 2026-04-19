@@ -108,30 +108,37 @@ export default function EventManagementScreen() {
         </div>
       </div>
 
-      <div role="tablist" aria-label="event bucket" className="mb-4 flex flex-wrap gap-1">
-        {BUCKETS.map((b) => {
-          const active = bucket === b.value;
-          const count = data.filter((e) => bucketFilter(e, b.value)).length;
-          return (
-            <button
-              key={b.value}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => {
-                setBucket(b.value);
-              }}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs transition-colors',
-                active
-                  ? 'bg-neutral-900 text-white'
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200',
-              )}
-            >
-              {b.label} ({String(count)})
-            </button>
-          );
-        })}
+      <div className="mb-4 flex justify-center">
+        <div
+          role="radiogroup"
+          aria-label="filter"
+          className="inline-flex rounded-md border border-neutral-300 bg-white p-0.5"
+        >
+          {BUCKETS.map((b) => {
+            const active = bucket === b.value;
+            return (
+              <label
+                key={b.value}
+                className={cn(
+                  'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
+                  active ? 'bg-brand-600 text-white' : 'text-neutral-700 hover:bg-neutral-100',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="event-bucket-filter"
+                  value={b.value}
+                  checked={active}
+                  onChange={() => {
+                    setBucket(b.value);
+                  }}
+                  className="sr-only"
+                />
+                {b.label}
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       {visible.length === 0 ? (
