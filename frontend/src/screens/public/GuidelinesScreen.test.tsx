@@ -71,7 +71,7 @@ describe('GuidelinesScreen', () => {
     expect(screen.getByText('loading…')).toBeInTheDocument();
   });
 
-  it('hides edit button for member without manage_guidelines permission', () => {
+  it('hides edit button for member without edit_guidelines permission', () => {
     const memberUser: User = {
       ...baseUser,
       roles: [{ id: 'role-1', name: 'member', isDefault: true, permissions: [] }],

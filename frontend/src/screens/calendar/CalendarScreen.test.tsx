@@ -115,4 +115,15 @@ describe('CalendarScreen', () => {
       expect(weekRadio).toBeChecked();
     });
   });
+
+  it('renders the "go to today" button when the day view is active', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+
+    await user.click(screen.getByRole('radio', { name: /^day$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /go to today/i })).toBeInTheDocument();
+    });
+  });
 });

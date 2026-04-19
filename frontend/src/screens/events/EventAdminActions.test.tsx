@@ -193,4 +193,14 @@ describe('EventAdminActions', () => {
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
+
+  // Flutter had attendees-count logic on the delete button (see
+  // docs/flutter-test-migration.md). React gates delete on status only
+  // (draft/cancelled). Covered by "creator sees delete for draft event".
+  it.todo('creator sees delete for upcoming event with no attendees (Flutter parity)');
+
+  // Flutter hid edit on past events. React has no past-event branch —
+  // edit visibility is role-based only. Covered by the cancelled-event test
+  // which asserts delete shows without edit being gated.
+  it.todo('creator sees only delete (no edit) for past event (Flutter parity)');
 });

@@ -38,19 +38,28 @@ beforeEach(() => {
 });
 
 describe('InstallAppScreen', () => {
-  it('renders page title', () => {
+  it('renders page title and subtitle', () => {
     renderWith(<InstallAppScreen />);
     expect(screen.getByRole('heading', { name: /install the app/i })).toBeInTheDocument();
+    expect(screen.getByText(/add pda to your home screen for a native-app feel/i)).toBeInTheDocument();
   });
 
   it('shows Android section', () => {
     renderWith(<InstallAppScreen />);
-    expect(screen.getByText(/android/i)).toBeInTheDocument();
+    expect(screen.getByText(/^android$/i)).toBeInTheDocument();
   });
 
   it('shows iOS section', () => {
     renderWith(<InstallAppScreen />);
     expect(screen.getByText(/iphone \/ ipad/i)).toBeInTheDocument();
+  });
+
+  it('shows step content for the initially-open platform', () => {
+    renderWith(<InstallAppScreen />);
+    // jsdom's default UA doesn't match iOS or Android, so both cards open —
+    // at minimum one of each platform's first-step labels should be visible.
+    expect(screen.getByText(/open pda in safari/i)).toBeInTheDocument();
+    expect(screen.getByText(/open pda in chrome/i)).toBeInTheDocument();
   });
 
   it('is accessible to unauthenticated user — renders without crash and key text visible', () => {

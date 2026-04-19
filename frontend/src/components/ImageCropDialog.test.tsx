@@ -47,23 +47,26 @@ function renderDialog({
 }
 
 describe('ImageCropDialog', () => {
-  it('renders in circle (round) mode with crop photo label', () => {
+  it('renders in circle (round) mode with crop photo label and action buttons', () => {
     renderDialog({ shape: 'round' });
 
     const dialog = screen.getByRole('dialog', { name: /crop photo/i });
     expect(dialog).toBeInTheDocument();
 
-    // The cropper should be rendered with round shape
     expect(screen.getByTestId('cropper')).toHaveAttribute('data-crop-shape', 'round');
+    expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
   });
 
-  it('renders in rectangle (rect) mode', () => {
+  it('renders in rectangle (rect) mode with action buttons', () => {
     renderDialog({ shape: 'rect' });
 
     const dialog = screen.getByRole('dialog', { name: /crop photo/i });
     expect(dialog).toBeInTheDocument();
 
     expect(screen.getByTestId('cropper')).toHaveAttribute('data-crop-shape', 'rect');
+    expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
   });
 
   it('renders zoom slider helper', () => {
