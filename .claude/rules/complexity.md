@@ -9,7 +9,7 @@ paths:
 
 ## When cognitive complexity checks fail
 
-`make complexity` (Python cognitive complexity) is part of CI. When it fails:
+`make agent-complexity` / `make complexity` (Python cognitive complexity) is part of CI. When it fails:
 
 1. **Never relax thresholds** (pyproject.toml, analysis_options.yaml, Makefile exit levels) without explicit user permission.
 2. **Never add `# noqa: CCR001`, `# noqa: C901`, or `// ignore:` comments** without explicit user permission.

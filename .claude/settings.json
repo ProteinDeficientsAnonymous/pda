@@ -102,7 +102,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CMD=$(echo $STDIN_JSON | jq -r '.tool_input.command // \"\"'); BYPASS=''; if echo \"$CMD\" | grep -qE '^uv run pytest |^python -m pytest '; then BYPASS='pytest — use make test'; fi; if echo \"$CMD\" | grep -qE '^ruff (check|format) '; then BYPASS='ruff — use make lint'; fi; if echo \"$CMD\" | grep -qE '^(npx )?tsc '; then BYPASS='tsc — use make frontend-typecheck'; fi; if [ -n \"$BYPASS\" ] && [ -f Makefile ]; then echo \"Warning: called $BYPASS (Makefile First)\" >&2; exit 1; fi"
+            "command": "CMD=$(echo $STDIN_JSON | jq -r '.tool_input.command // \"\"'); BYPASS=''; if echo \"$CMD\" | grep -qE '^uv run pytest |^python -m pytest '; then BYPASS='pytest — use make agent-test'; fi; if echo \"$CMD\" | grep -qE '^ruff (check|format) '; then BYPASS='ruff — use make agent-lint'; fi; if echo \"$CMD\" | grep -qE '^(npx )?tsc '; then BYPASS='tsc — use make agent-frontend-typecheck'; fi; if echo \"$CMD\" | grep -qE '^(npx )?eslint |^pnpm exec eslint '; then BYPASS='eslint — use make agent-frontend-lint'; fi; if [ -n \"$BYPASS\" ] && [ -f Makefile ]; then echo \"Warning: called $BYPASS (Makefile First)\" >&2; exit 1; fi"
           }
         ]
       }
@@ -176,7 +176,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CHANGED=$(git diff --name-only --diff-filter=ACMR 2>/dev/null | grep '\\.py$'); if [[ -n \"$CHANGED\" ]]; then echo 'Linting changed Python files...'; make lint 2>&1 || true; fi",
+            "command": "CHANGED=$(git diff --name-only --diff-filter=ACMR 2>/dev/null | grep '\\.py$'); if [[ -n \"$CHANGED\" ]]; then echo 'Linting changed Python files...'; make agent-lint 2>&1 || true; fi",
             "timeout": 60
           }
         ]
@@ -186,7 +186,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CHANGED=$(git diff --name-only --diff-filter=ACMR 2>/dev/null | grep '\\.py$'); if [[ -n \"$CHANGED\" ]]; then echo 'Type checking changed files...'; make typecheck 2>&1 || true; fi",
+            "command": "CHANGED=$(git diff --name-only --diff-filter=ACMR 2>/dev/null | grep '\\.py$'); if [[ -n \"$CHANGED\" ]]; then echo 'Type checking changed files...'; make agent-typecheck 2>&1 || true; fi",
             "timeout": 60
           }
         ]

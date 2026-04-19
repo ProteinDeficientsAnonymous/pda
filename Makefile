@@ -1,7 +1,9 @@
 .PHONY: help install run test lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop ci dev complexity \
+        createsuperuser seed db-start db-stop ci agent-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
-        frontend-format frontend-test frontend-typecheck frontend-types
+        frontend-format frontend-test frontend-typecheck frontend-types \
+        agent-lint agent-check agent-test agent-typecheck agent-complexity \
+        agent-frontend-lint agent-frontend-test agent-frontend-typecheck
 
 help:
 	@echo "Backend commands:"
@@ -31,6 +33,7 @@ help:
 	@echo "Workflow commands:"
 	@echo "  make dev              Run Django + Vite concurrently (default)"
 	@echo "  make ci               Run all pre-commit checks"
+	@echo "  make agent-ci         Same as ci with minimal output (for agents / logs)"
 
 # Backend + Frontend
 install:
@@ -112,6 +115,38 @@ frontend-types:
 
 # CI (run before every commit)
 ci: lint check test typecheck complexity frontend-lint frontend-test frontend-typecheck
+
+# CI with quiet runners (same steps as ci; still auto-fixes via ruff)
+agent-lint:
+	cd backend && uv run ruff check -q --fix . && uv run ruff format -q .
+
+agent-check:
+	cd backend && uv run python manage.py check --verbosity 0 --no-color
+
+agent-test:
+	cd backend && uv run python -m pytest tests/ \
+		-o addopts="--strict-markers -n auto --tb=line" -q --disable-warnings
+
+agent-typecheck:
+	cd backend && uv run ty check -qq .
+
+agent-complexity:
+	cd backend && env UV_NO_PROGRESS=1 uvx -q --with flake8-cognitive-complexity flake8 -q \
+		--max-cognitive-complexity 10 --select CCR001 .
+	violations=$$(find backend -name '*.py' -not -path '*/migrations/*' | while read f; do lines=$$(wc -l < "$$f"); if [ "$$lines" -gt 500 ]; then echo "$$f: $$lines lines"; fi; done); \
+	if [ -n "$$violations" ]; then echo "Error: files exceed 500-line limit:\n$$violations"; exit 1; fi
+
+agent-frontend-lint:
+	cd frontend && pnpm exec eslint . --max-warnings 0
+
+agent-frontend-test:
+	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
+
+agent-frontend-typecheck:
+	cd frontend && pnpm exec tsc -b --noEmit --pretty false
+
+agent-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity \
+	agent-frontend-lint agent-frontend-test agent-frontend-typecheck
 
 # Dev (concurrent backend + frontend)
 dev:

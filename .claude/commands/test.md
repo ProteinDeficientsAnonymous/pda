@@ -11,7 +11,8 @@ Run the Vedgy test suite with pytest.
 ## Quick Run
 
 ```bash
-make test    # runs: cd backend && uv run python -m pytest tests/ -v
+make agent-test    # full suite, minimal pytest output (prefer in agents)
+make test          # verbose pytest (same suite)
 ```
 
 ## Targeted Tests

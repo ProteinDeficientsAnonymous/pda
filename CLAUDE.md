@@ -20,15 +20,21 @@ make db-start         # Start local PostgreSQL via Docker
 make db-stop          # Stop local PostgreSQL
 make install          # Install dependencies (uv sync + pnpm install)
 make run              # Run Django dev server on localhost:8000
-make test             # Run pytest
-make lint             # Run ruff (lint + format)
+make test             # Run pytest (verbose)
+make agent-test       # Run pytest (quiet; same suite)
+make lint             # Run ruff (lint + format; verbose)
+make agent-lint       # Same as lint with minimal ruff output
 make typecheck        # Run ty type checker
+make agent-typecheck  # Same as typecheck with minimal ty output
 make complexity       # Run Python cognitive complexity check
+make agent-complexity # Same as complexity with minimal uv/flake8 output
 make migrate          # makemigrations + migrate
 make createsuperuser  # Create Django admin user
 make seed             # Seed database with sample data (local dev)
 make check            # Django system checks
-make ci               # Full pre-commit check (lint + check + test + typecheck + complexity + frontend-lint + frontend-test + frontend-typecheck)
+make agent-check      # Same as check with minimal django output
+make agent-ci         # Full pre-commit check (same as ci; minimal output — prefer this in agents)
+make ci               # Same checks as agent-ci with default tool verbosity (local debugging)
 make dev              # Run Django + Vite concurrently
 ```
 
@@ -39,9 +45,12 @@ make frontend-install    # pnpm install
 make frontend-run        # Vite dev server (localhost:3000, proxies /api to 8000)
 make frontend-build      # Build Vite production bundle
 make frontend-lint       # ESLint + Prettier check
+make agent-frontend-lint # Same as frontend-lint with minimal eslint output
 make frontend-format     # Auto-format files
 make frontend-test       # Run Vitest suite
+make agent-frontend-test # Same as frontend-test with minimal vitest output
 make frontend-typecheck  # Run tsc --noEmit
+make agent-frontend-typecheck # Same as frontend-typecheck with plain tsc output
 make frontend-types      # Regenerate API types from OpenAPI
 ```
 
@@ -114,6 +123,8 @@ This table is a **subset**; see `/api/openapi.json` when the server is running. 
 - **Required env vars**: `SECRET_KEY`, `DATABASE_URL`, `VETTING_EMAIL` (see `.env.example`)
 
 ## Standards
+
+**Agents (Claude Code, Cursor):** Before claiming work complete or committing, run **`make agent-ci`** (or the matching **`make agent-*`** step). Use **`make ci`** / **`make test`** / etc. when you want default verbose tool output.
 
 References: `~/.claude/rules/standards-django-ninja.md`
 
