@@ -26,7 +26,9 @@ export function EventMemberSection({ event }: Props) {
   const isCoHost = user.id === event.createdById || event.coHostIds.includes(user.id);
   const canManageEvents = hasPermission(user, Permission.ManageEvents);
   const canSeeInvited = isCoHost || canManageEvents || event.invitedUserIds.includes(user.id);
-  const canInvite = isCoHost || event.invitePermission === InvitePermission.AllMembers;
+  const isCancelled = event.status === EventStatus.Cancelled;
+  const canInvite =
+    !isCancelled && (isCoHost || event.invitePermission === InvitePermission.AllMembers);
   const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
 
   return (
