@@ -1,7 +1,7 @@
 // Docs tree: nested folders and documents. Members with manage_documents can
 // create folders and docs, delete, and drag-reorder within the tree.
 
-import { useEffect, useMemo, useState, type ElementType } from 'react';
+import { useMemo, useState, type ElementType } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/auth/store';
@@ -36,12 +36,8 @@ export default function DocsScreen() {
   const [newDocFolderId, setNewDocFolderId] = useState('');
 
   const flatFolders = useMemo(() => (data ? flattenFolders(data) : []), [data]);
-
-  useEffect(() => {
-    if (flatFolders.length > 0 && !newDocFolderId) {
-      setNewDocFolderId(flatFolders[0]!.id);
-    }
-  }, [flatFolders, newDocFolderId]);
+  const defaultDocFolderId = flatFolders[0]?.id ?? '';
+  const effectiveDocFolderId = newDocFolderId || defaultDocFolderId;
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load the docs — try refreshing" />;
@@ -62,7 +58,9 @@ export default function DocsScreen() {
               label="new folder name"
               value={newFolderName}
               maxLength={120}
-              onChange={(e) => setNewFolderName(e.target.value)}
+              onChange={(e) => {
+                setNewFolderName(e.target.value);
+              }}
             />
             <Button
               type="button"
@@ -91,14 +89,18 @@ export default function DocsScreen() {
               label="new document title"
               value={newDocTitle}
               maxLength={120}
-              onChange={(e) => setNewDocTitle(e.target.value)}
+              onChange={(e) => {
+                setNewDocTitle(e.target.value);
+              }}
             />
             <label className="flex min-w-[10rem] flex-col gap-1 text-xs text-muted">
               folder
               <select
                 className="rounded-md border border-border bg-background px-2 py-2 text-sm text-foreground"
-                value={newDocFolderId}
-                onChange={(e) => setNewDocFolderId(e.target.value)}
+                value={effectiveDocFolderId}
+                onChange={(e) => {
+                  setNewDocFolderId(e.target.value);
+                }}
               >
                 {flatFolders.map((f) => (
                   <option key={f.id} value={f.id}>
@@ -112,7 +114,7 @@ export default function DocsScreen() {
               variant="secondary"
               disabled={
                 !newDocTitle.trim() ||
-                !newDocFolderId ||
+                !effectiveDocFolderId ||
                 createDoc.isPending ||
                 flatFolders.length === 0
               }
@@ -121,7 +123,7 @@ export default function DocsScreen() {
                   try {
                     const doc = await createDoc.mutateAsync({
                       title: newDocTitle.trim(),
-                      folderId: newDocFolderId,
+                      folderId: effectiveDocFolderId,
                     });
                     toast.success('document created 🌱');
                     setNewDocTitle('');
@@ -227,25 +229,21 @@ function FolderView({
                 toast.error("couldn't reorder documents");
               });
             }}
-            renderItem={(d) =>
-              canManage ? (
-                <DocRow
-                  key={d.id}
-                  doc={d}
-                  canManage
-                  onDelete={() => {
-                    const ok = window.confirm(`delete "${d.title}"?`);
-                    if (!ok) return;
-                    void deleteDoc.mutateAsync(d.id).then(
-                      () => toast.success('document deleted'),
-                      () => toast.error("couldn't delete"),
-                    );
-                  }}
-                />
-              ) : (
-                <DocRow key={d.id} doc={d} canManage={false} />
-              )
-            }
+            renderItem={(d) => (
+              <DocRow
+                key={d.id}
+                doc={d}
+                canManage
+                onDelete={() => {
+                  const ok = window.confirm(`delete "${d.title}"?`);
+                  if (!ok) return;
+                  void deleteDoc.mutateAsync(d.id).then(
+                    () => toast.success('document deleted'),
+                    () => toast.error("couldn't delete"),
+                  );
+                }}
+              />
+            )}
           />
         ) : (
           <ul className="mt-2 flex flex-col gap-1">

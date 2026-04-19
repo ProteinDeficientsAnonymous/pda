@@ -13,6 +13,7 @@ import {
   useFinalizeSurveyPoll,
   useSurveyPollTallies,
   useSurveyResponses,
+  type SurveyPollTallyRow,
 } from '@/api/surveyAdmin';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
@@ -36,10 +37,13 @@ export default function SurveyResponsesScreen() {
     return <ContentError message="couldn't load responses — try refreshing" />;
   }
 
-  const canFinalize =
+  const firstDatetimeQuestion = datetimeQuestions[0];
+  const finalizeOptions =
     !survey.data.pollResult &&
-    datetimeQuestions.length > 0 &&
-    (datetimeQuestions[0]?.options?.length ?? 0) > 0;
+    firstDatetimeQuestion &&
+    firstDatetimeQuestion.options.length > 0
+      ? firstDatetimeQuestion.options
+      : null;
 
   return (
     <ContentContainer>
@@ -68,13 +72,10 @@ export default function SurveyResponsesScreen() {
           ) : tallies.isError ? (
             <p className="text-sm text-muted">couldn't load tallies</p>
           ) : (
-            <TalliesTables
-              questions={survey.data.questions}
-              rows={tallies.data ?? []}
-            />
+            <TalliesTables questions={survey.data.questions} rows={tallies.data} />
           )}
-          {canFinalize ? (
-            <SurveyFinalizeControls surveyId={surveyId} options={datetimeQuestions[0]!.options} />
+          {finalizeOptions ? (
+            <SurveyFinalizeControls surveyId={surveyId} options={finalizeOptions} />
           ) : null}
         </section>
       ) : null}
@@ -122,7 +123,7 @@ function TalliesTables({
   rows,
 }: {
   questions: { id: string; label: string }[];
-  rows: import('@/api/surveyAdmin').SurveyPollTallyRow[];
+  rows: SurveyPollTallyRow[];
 }) {
   const labelById = new Map(questions.map((q) => [q.id, q.label]));
   return (
@@ -191,10 +192,22 @@ function SurveyFinalizeControls({ surveyId, options }: { surveyId: string; optio
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
         finalize poll
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="finalize survey poll">
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+        title="finalize survey poll"
+      >
         <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4">
           <p className="text-sm text-muted">
             pick the winning datetime. this locks the survey and, if linked, updates the event
@@ -220,7 +233,13 @@ function SurveyFinalizeControls({ surveyId, options }: { surveyId: string; optio
             ))}
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setOpen(false);
+              }}
+            >
               cancel
             </Button>
             <Button type="button" disabled={finalize.isPending} onClick={() => void onConfirm()}>

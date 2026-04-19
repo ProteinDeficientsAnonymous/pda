@@ -89,8 +89,11 @@ describe('useFinalizeSurveyPoll', () => {
       winning_datetime: dt.toISOString(),
     });
     await waitFor(() => {
-      const cached = qc.getQueryData(['surveys', 'admin', 'srv-1']) as { pollResult: unknown };
-      expect(cached.pollResult).not.toBeNull();
+      expect(qc.getQueryData(['surveys', 'admin', 'srv-1'])!).toEqual(
+        expect.objectContaining({
+          pollResult: expect.objectContaining({ id: 'pr1' }),
+        }),
+      );
     });
   });
 });

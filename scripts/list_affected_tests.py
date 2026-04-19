@@ -40,7 +40,8 @@ MIGRATION_MARK = "/migrations/"
 USERS_TESTS: frozenset[str] = frozenset(
     {
         "tests/test_user_model.py",
-        "tests/test_users.py",
+        "tests/users/test_users_crud.py",
+        "tests/users/test_users_admin_extended.py",
         "tests/test_auth.py",
         "tests/test_auth_cookie.py",
         "tests/test_auth_update_me.py",

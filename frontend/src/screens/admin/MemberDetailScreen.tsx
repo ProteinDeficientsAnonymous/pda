@@ -2,7 +2,7 @@
 // list (no dedicated detail endpoint exists on the backend) and lets admins
 // edit display name / email / phone + pause/unpause the account.
 
-import { useEffect, useState, type SyntheticEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
@@ -74,7 +74,13 @@ function MemberDetailView({ member }: { member: Member }) {
         </div>
       </header>
 
-      <MemberRolesSection member={member} />
+      <MemberRolesSection
+        key={`${member.id}:${member.roles
+          .map((r) => r.id)
+          .sort()
+          .join(',')}`}
+        member={member}
+      />
 
       <MemberMagicLinkSection memberId={member.id} />
 
@@ -123,10 +129,6 @@ function MemberRolesSection({ member }: { member: Member }) {
   const { data: allRoles = [], isPending, isError } = useRoles();
   const updateRoles = useUpdateMemberRoles(member.id);
   const [selected, setSelected] = useState(() => new Set(member.roles.map((r) => r.id)));
-
-  useEffect(() => {
-    setSelected(new Set(member.roles.map((r) => r.id)));
-  }, [member.id, member.roles]);
 
   const unchanged =
     selected.size === member.roles.length &&

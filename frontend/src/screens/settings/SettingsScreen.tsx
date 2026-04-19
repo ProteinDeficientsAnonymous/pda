@@ -94,17 +94,6 @@ function CalendarFeedSubscription() {
   const tokenQ = useCalendarToken();
   const regenerate = useRegenerateCalendarToken();
 
-  async function copyFeedUrl() {
-    const url = tokenQ.data?.feedUrl;
-    if (!url) return;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('feed link copied 🌱');
-    } catch {
-      toast.error("couldn't copy — try selecting the text");
-    }
-  }
-
   if (tokenQ.isPending) {
     return <p className="text-sm text-muted">loading feed link…</p>;
   }
@@ -112,7 +101,18 @@ function CalendarFeedSubscription() {
     return <p className="text-sm text-muted">couldn't load calendar feed — try again later</p>;
   }
 
-  const hasUrl = Boolean(tokenQ.data?.feedUrl);
+  const feedUrl = tokenQ.data.feedUrl;
+  const hasUrl = Boolean(feedUrl);
+
+  async function copyFeedUrl() {
+    if (!feedUrl) return;
+    try {
+      await navigator.clipboard.writeText(feedUrl);
+      toast.success('feed link copied 🌱');
+    } catch {
+      toast.error("couldn't copy — try selecting the text");
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-4">
@@ -129,7 +129,7 @@ function CalendarFeedSubscription() {
             id="cal-feed-url"
             readOnly
             className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono text-xs text-foreground"
-            value={tokenQ.data!.feedUrl}
+            value={feedUrl}
           />
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="secondary" onClick={() => void copyFeedUrl()}>
