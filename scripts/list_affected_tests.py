@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Emit pytest paths (relative to backend/, e.g. tests/test_foo.py) for tests likely affected by git changes.
 
-Compares the working tree (including staged + unstaged) to merge-base(HEAD, BASE_REF).
+Compares (1) commits since merge-base(HEAD, BASE_REF) and (2) uncommitted work vs HEAD,
+then unions the changed paths.
 Print one path per line. Special lines:
   __FULL__  — run the full suite (conservative: infra / migrations / unknown paths).
   (empty)   — no backend-relevant paths changed; caller may skip pytest.
 
-Override base with env TEST_BASE or argv: --base REF
+Override base with env TEST_BASE or argv: --base REF.
+
+Default BASE (when neither is set): origin/<current-branch> if that ref exists; otherwise
+@{upstream} if set; otherwise origin's default branch (origin/HEAD); otherwise origin/main
+or origin/master. Unpushed branches therefore diff against upstream or the integration branch.
 """
 
 from __future__ import annotations
@@ -22,7 +27,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 FULL_PREFIXES: tuple[str, ...] = (
     "backend/tests/conftest.py",
     "pyproject.toml",
-    "Makefile",
     "backend/config/settings.py",
     "backend/config/asgi.py",
     "backend/config/wsgi.py",
@@ -112,6 +116,42 @@ def _run_git(args: list[str]) -> str:
     return proc.stdout.strip()
 
 
+def _current_branch() -> str | None:
+    name = _run_git(["rev-parse", "--abbrev-ref", "HEAD"])
+    if not name or name == "HEAD":
+        return None
+    return name
+
+
+def _remote_default_branch() -> str | None:
+    """Return e.g. origin/main from refs/remotes/origin/HEAD, if configured."""
+    ref = _run_git(["symbolic-ref", "-q", "refs/remotes/origin/HEAD"])
+    if ref.startswith("refs/remotes/"):
+        return ref.removeprefix("refs/remotes/")
+    return None
+
+
+def _resolve_base_default() -> str | None:
+    """Pick merge-base ref when TEST_BASE / --base not set."""
+    branch = _current_branch()
+    if branch:
+        remote_tip = f"origin/{branch}"
+        if _run_git(["rev-parse", "--verify", remote_tip]):
+            return remote_tip
+
+    if _run_git(["rev-parse", "--verify", "@{upstream}"]):
+        return "@{upstream}"
+
+    if default := _remote_default_branch():
+        if _run_git(["rev-parse", "--verify", default]):
+            return default
+
+    for name in ("origin/main", "origin/master"):
+        if _run_git(["rev-parse", "--verify", name]):
+            return name
+    return None
+
+
 def _resolve_base(explicit: str | None) -> str | None:
     if explicit:
         if _run_git(["rev-parse", "--verify", explicit]):
@@ -120,10 +160,7 @@ def _resolve_base(explicit: str | None) -> str | None:
     env_base = os.environ.get("TEST_BASE", "").strip()
     if env_base and _run_git(["rev-parse", "--verify", env_base]):
         return env_base
-    for candidate in ("@{upstream}", "origin/main", "origin/master"):
-        if _run_git(["rev-parse", "--verify", candidate]):
-            return candidate
-    return None
+    return _resolve_base_default()
 
 
 def _normalize_path(raw: str) -> str:
@@ -157,7 +194,7 @@ def _bundle_for_backend_source(p: str) -> frozenset[str] | None:
     return None
 
 
-def _classify_and_collect(paths: list[str]) -> set[str] | None:
+def _classify_and_collect(paths: list[str]) -> set[str] | None:  # noqa: C901
     """Return set of paths relative to backend/, or None if full suite required."""
     candidates: set[str] = set()
     touched_backend = False
@@ -178,15 +215,18 @@ def _classify_and_collect(paths: list[str]) -> set[str] | None:
 
         bundle = _bundle_for_backend_source(p)
         if bundle is None:
-            return None
+            # Unmapped backend path: unknown .py (likely a new app) → full suite; else ignore.
+            if p.endswith(".py") and MIGRATION_MARK not in p:
+                return None
+            continue
         candidates.update(bundle)
 
     if not touched_backend:
         # Only non-backend files (e.g. frontend) — nothing to run.
         return set()
     if not candidates:
-        # e.g. only non-Python under backend/
-        return None
+        # e.g. only assets, README, or Makefile under backend/ — nothing mapped to pytest.
+        return set()
 
     return candidates
 
@@ -196,7 +236,10 @@ def main() -> int:
     parser.add_argument(
         "--base",
         default=None,
-        help="git ref for merge-base (default: TEST_BASE env, then @{upstream}, origin/main)",
+        help=(
+            "git ref for merge-base (default: TEST_BASE env, then origin/<branch>, "
+            "@{upstream}, origin/HEAD target, origin/main)"
+        ),
     )
     args = parser.parse_args()
 
@@ -210,8 +253,10 @@ def main() -> int:
         print("__FULL__")
         return 0
 
-    diff_out = _run_git(["diff", "--name-only", merge_base])
-    paths = [ln for ln in diff_out.splitlines() if ln.strip()]
+    # Committed since merge-base vs HEAD, plus uncommitted (index + worktree) vs HEAD.
+    committed = _run_git(["diff", "--name-only", merge_base, "HEAD"]).splitlines()
+    dirty = _run_git(["diff", "--name-only", "HEAD"]).splitlines()
+    paths = sorted({ln.strip() for ln in (*committed, *dirty) if ln.strip()})
 
     result = _classify_and_collect(paths)
     if result is None:

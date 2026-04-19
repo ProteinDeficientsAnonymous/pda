@@ -11,7 +11,7 @@ help:
 	@echo "  make install          Install dependencies (uv sync + pnpm install)"
 	@echo "  make run              Run Django dev server (localhost:8000)"
 	@echo "  make test             Run pytest suite"
-	@echo "  make test-since       Run pytest subset from git diff vs upstream (TEST_BASE= ref)"
+	@echo "  make test-since       Run pytest subset from git diff (TEST_BASE= overrides default base ref)"
 	@echo "  make lint             Run ruff (lint + format)"
 	@echo "  make typecheck        Run ty type checker"
 	@echo "  make check            Run Django system checks"
@@ -49,7 +49,7 @@ run:
 test:
 	cd backend && uv run python -m pytest tests/ -v
 
-# Tests likely affected by backend changes since merge-base(HEAD, TEST_BASE or @{upstream} or origin/main).
+# Tests likely affected by backend changes since remote tip (see scripts/list_affected_tests.py).
 test-since:
 	@affected=$$(uv run python "$(CURDIR)/scripts/list_affected_tests.py"); \
 	if [ "$$affected" = "__FULL__" ]; then \
