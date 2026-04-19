@@ -207,13 +207,16 @@ export function useBulkCreateUsers() {
       return {
         created: data.created,
         failed: data.failed,
-        results: data.results.map((r) => ({
-          row: r.row,
-          phoneNumber: r.phone_number,
-          success: r.success,
-          error: r.error,
-          magicLinkToken: r.magic_link_token,
-        })),
+        results: data.results.map((r) => {
+          const result: BulkCreateResult = {
+            row: r.row,
+            phoneNumber: r.phone_number,
+            success: r.success,
+          };
+          if (r.error !== undefined) result.error = r.error;
+          if (r.magic_link_token !== undefined) result.magicLinkToken = r.magic_link_token;
+          return result;
+        }),
       };
     },
     onSuccess: () => {

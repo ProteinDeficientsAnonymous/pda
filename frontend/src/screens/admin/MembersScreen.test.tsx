@@ -179,10 +179,44 @@ describe('MembersScreen', () => {
     expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
   });
 
-  // TODO(tier3-mismatch): Flutter MembersScreen had Members/Roles tabs. React
-  // splits these into separate admin routes — MembersScreen shows only the
-  // member list. No tab UI to assert on.
-  it.skip('renders Members/Roles tabs', () => {
-    // No React equivalent — roles live on a separate admin screen.
+  it('renders the Members/Roles tab switcher for users with manage_roles', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
+      accessToken: 'tok',
+    });
+    mockUsersResult({ data: [] });
+
+    renderScreen();
+
+    const group = screen.getByRole('radiogroup', { name: /members or roles/i });
+    expect(group).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'members' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'roles' })).toBeInTheDocument();
+  });
+
+  it('hides the tab switcher when the user lacks manage_roles', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: {
+        ...baseUser,
+        roles: [
+          {
+            id: 'role-custom',
+            name: 'vettor',
+            isDefault: false,
+            permissions: [Permission.ManageUsers],
+          },
+        ],
+      },
+      accessToken: 'tok',
+    });
+    mockUsersResult({ data: [] });
+
+    renderScreen();
+
+    expect(
+      screen.queryByRole('radiogroup', { name: /members or roles/i }),
+    ).not.toBeInTheDocument();
   });
 });

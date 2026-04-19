@@ -210,10 +210,9 @@ describe('useVotePoll', () => {
       result.current.mutateAsync({ 'opt-a': VoteChoice.Yes }),
     ).rejects.toThrow('network fail');
 
-    const rolledBack: ReturnType<typeof mapEventPoll> = qc.getQueryData(key)!;
-    const rolledOpt0 = rolledBack.options[0]!;
-    expect(rolledOpt0.yesCount).toBe(2);
-    expect(rolledOpt0.yesVoters.some((v) => v.userId === 'u-me')).toBe(false);
+    const rolledBack = qc.getQueryData<ReturnType<typeof mapEventPoll>>(key)!;
+    expect(rolledBack.options[0]!.yesCount).toBe(2);
+    expect(rolledBack.options[0]!.yesVoters.some((v) => v.userId === 'u-me')).toBe(false);
     expect(rolledBack.myVotes).toEqual({});
   });
 
