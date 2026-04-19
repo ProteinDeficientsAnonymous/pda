@@ -1,0 +1,40 @@
+---
+description: TDD workflow, test strategy, mocking rules
+alwaysApply: true
+---
+
+## Testing
+
+### TDD — Mandatory Workflow
+
+**STOP: Do you have a failing test? If not, write the test FIRST.**
+
+1. **RED** — Write one minimal test. Naming: Python `test_<func>_<scenario>_<expected>` | TS `it("should <behavior> when <condition>")`
+2. **VERIFY RED** — Run it. Must fail because feature doesn't exist, not syntax errors.
+3. **GREEN** — Simplest code that passes. No extras. Hardcoding is fine.
+4. **VERIFY GREEN** — Run all tests. Check diagnostics.
+5. **REFACTOR** — Only when green. No new behavior.
+
+**Applies to:** New functions, API endpoints, business logic, bug fixes (reproduce first).
+**Skip for:** Documentation, config, dependency versions, formatting.
+**Recovery:** Code written before test? Write the test now. Goal is coverage, not ritual.
+
+### Test Strategy
+
+**Unit for logic, integration for interactions, E2E for workflows. Minimum 80% coverage.**
+
+- **Unit:** < 1ms, mock ALL external deps, `@pytest.mark.unit`
+- **Integration:** Real test deps, fixtures, cleanup, `@pytest.mark.integration`
+
+### Mandatory Mocking
+
+Mock HTTP/Network, subprocess, file I/O, database, and external APIs in unit tests. Mock at module level (where imported, not where defined). Test > 1s = likely unmocked I/O.
+
+### Anti-Patterns
+
+- **Dependent tests** — each must work independently
+- **Testing implementation** — assert outputs, not mock calls
+- **Incomplete mocks** — must mirror full API structure
+- **Mocking without understanding** — understand what the dep does before mocking it
+
+Run the FULL suite, not just files you touched. Fix all failures before marking done.

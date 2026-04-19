@@ -29,7 +29,6 @@
     "BASH_MAX_OUTPUT_LENGTH": "20000",
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1"
   },
-  "includeCoAuthoredBy": true,
   "cleanupPeriodDays": 30,
   "hooks": {
     "PreToolUse": [

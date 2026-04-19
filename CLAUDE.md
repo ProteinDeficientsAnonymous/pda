@@ -16,45 +16,27 @@ PDA (Protein Deficients Anonymous) is a vegan collective liberation community pl
 ## Development Commands
 
 ```bash
-make db-start         # Start local PostgreSQL via Docker
-make db-stop          # Stop local PostgreSQL
 make install          # Install dependencies (uv sync + pnpm install)
 make run              # Run Django dev server on localhost:8000
-make test             # Run pytest (verbose)
-make agent-test       # Run pytest (quiet; same suite)
-make test-since       # Run pytest subset from git diff (default base: origin/<branch>, else upstream / origin/HEAD / main)
-make agent-test-since # Same as test-since with quiet pytest flags
-make lint             # Run ruff (lint + format; verbose)
-make agent-lint       # Same as lint with minimal ruff output
-make typecheck        # Run ty type checker
-make agent-typecheck  # Same as typecheck with minimal ty output
-make complexity       # Run Python cognitive complexity check
-make agent-complexity # Same as complexity with minimal uv/flake8 output
-make migrate          # makemigrations + migrate
-make createsuperuser  # Create Django admin user
-make seed             # Seed database with sample data (local dev)
-make check            # Django system checks
-make agent-check      # Same as check with minimal django output
-make agent-ci         # Full pre-commit check (same as ci; minimal output — prefer this in agents)
-make ci               # Same checks as agent-ci with default tool verbosity (local debugging)
 make dev              # Run Django + Vite concurrently
+make db-start         # Start local PostgreSQL via Docker
+make db-stop          # Stop local PostgreSQL
+make migrate          # makemigrations + migrate
+make seed             # Seed database with sample data (local dev)
+make agent-test       # Run pytest (quiet)
+make agent-test-since # Run pytest subset from git diff
+make agent-lint       # Run ruff (lint + format; minimal output)
+make agent-typecheck  # Run ty type checker (minimal output)
+make agent-complexity # Run cognitive complexity check (minimal output)
+make agent-ci         # Full pre-commit check (minimal output — prefer this in agents)
+make agent-frontend-test      # Run Vitest suite (minimal output)
+make agent-frontend-lint      # ESLint + Prettier check (minimal output)
+make agent-frontend-typecheck # Run tsc --noEmit (plain output)
+make frontend-types   # Regenerate API types from OpenAPI
+make frontend-build   # Build Vite production bundle
 ```
 
-### Frontend commands
-
-```bash
-make frontend-install    # pnpm install
-make frontend-run        # Vite dev server (localhost:3000, proxies /api to 8000)
-make frontend-build      # Build Vite production bundle
-make frontend-lint       # ESLint + Prettier check
-make agent-frontend-lint # Same as frontend-lint with minimal eslint output
-make frontend-format     # Auto-format files
-make frontend-test       # Run Vitest suite
-make agent-frontend-test # Same as frontend-test with minimal vitest output
-make frontend-typecheck  # Run tsc --noEmit
-make agent-frontend-typecheck # Same as frontend-typecheck with plain tsc output
-make frontend-types      # Regenerate API types from OpenAPI
-```
+Use `make test`, `make lint`, `make ci`, etc. for verbose output when debugging.
 
 ## Architecture
 
@@ -84,37 +66,11 @@ frontend/
 - **JoinRequest** (`community/models.py`): name, email, pronouns, how_they_heard, why_join, submitted_at
 - **Event** (`community/models.py`): title, description, start_datetime, end_datetime, location
 
-### API Endpoints
+### API & Routes
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/api/auth/login/` | None | Get JWT tokens |
-| POST | `/api/auth/refresh/` | None | Refresh access token |
-| GET | `/api/auth/me/` | JWT | Get current user |
-| POST | `/api/community/join-request/` | None | Submit join request |
-| GET | `/api/community/events/` | JWT | List calendar events |
+Full API: see `/api/openapi.json` when the server is running. Run `make frontend-types` to regenerate `frontend/src/api/types.gen.ts`.
 
-This table is a **subset**; see `/api/openapi.json` when the server is running. Run `make frontend-types` with the backend up to regenerate `frontend/src/api/types.gen.ts`.
-
-### Routes (React Router)
-
-| Path | Auth required | Screen |
-|------|--------------|--------|
-| `/` | No | Landing page |
-| `/join` | No | Join request form |
-| `/join/success` | No | Success confirmation |
-| `/login` | No | Member login |
-| `/calendar` | No (member details gated inline) | Community calendar |
-| `/events/:id` | No (member details gated inline) | Event detail |
-| `/onboarding` | JWT (first login) | Set display name + password |
-| `/new-password` | JWT (password reset) | Set new password |
-| `/guidelines` | Yes | Community guidelines |
-| `/settings` | Yes | Account settings |
-| `/events/mine` | Yes | My events |
-| `/events/manage` | Yes + manage_events | Manage events |
-| `/members` | Yes + manage_users | Members admin |
-| `/join-requests` | Yes + approve_join_requests | Join requests |
-| `/admin/whatsapp` | Yes + manage_whatsapp | WhatsApp config |
+Routes: see `.claude/docs/routes.md`
 
 ## Environment
 
@@ -126,7 +82,7 @@ This table is a **subset**; see `/api/openapi.json` when the server is running. 
 
 ## Standards
 
-**Agents (Claude Code, Cursor):** Before claiming work complete or committing, run **`make agent-ci`** (or the matching **`make agent-*`** step). Use **`make ci`** / **`make test`** / etc. when you want default verbose tool output.
+**Agents:** Run **`make agent-ci`** (or matching `make agent-*` step) before claiming work complete or committing.
 
 References: `~/.claude/rules/standards-django-ninja.md`
 
@@ -134,40 +90,12 @@ References: `~/.claude/rules/standards-django-ninja.md`
 - All user-facing text in the frontend app must be **lowercase only** — labels, headings, buttons, placeholders, toasts, error messages, date formatting, etc.
 - Use `.toLowerCase()` on any dynamic/format-driven strings (e.g. `date-fns` output).
 
-# Agent Directives: Mechanical Overrides
+## Agent Directives
 
-You are operating within a constrained context window and strict system prompts. To produce production-grade code, you MUST adhere to these overrides:
+1. **STEP 0 RULE**: Before ANY structural refactor on a file >300 LOC, first remove all dead props, unused exports, unused imports, and debug logs. Commit this cleanup separately.
 
-## Pre-Work
+2. **FILE READ BUDGET**: Each file read is capped at 2,000 lines. For files over 500 LOC, use offset and limit parameters to read in chunks.
 
-1. THE "STEP 0" RULE: Dead code accelerates context compaction. Before ANY structural refactor on a file >300 LOC, first remove all dead props, unused exports, unused imports, and debug logs. Commit this cleanup separately before starting the real work.
+3. **TOOL RESULT BLINDNESS**: Tool results over 50,000 characters are silently truncated. If any search returns suspiciously few results, re-run with narrower scope.
 
-2. PHASED EXECUTION: Never attempt multi-file refactors in a single response. Break work into explicit phases. Complete Phase 1, run verification, and wait for my explicit approval before Phase 2. Each phase must touch no more than 5 files.
-
-## Code Quality
-
-3. THE SENIOR DEV OVERRIDE: For architecture and design decisions — if architecture is flawed, state is duplicated, or patterns are inconsistent, propose and implement structural fixes. This does NOT override TDD's "simplest code that passes" during the Green phase — that applies at the implementation level.
-
-## Context Management
-
-4. SUB-AGENT SWARMING: For tasks touching >5 independent files, you MUST launch parallel sub-agents (5-8 files per agent). Each agent gets its own context window. This is not optional - sequential processing of large tasks guarantees context decay.
-
-5. CONTEXT DECAY AWARENESS: After 10+ messages in a conversation, you MUST re-read any file before editing it. Do not trust your memory of file contents. Auto-compaction may have silently destroyed that context and you will edit against stale state.
-
-6. FILE READ BUDGET: Each file read is capped at 2,000 lines. For files over 500 LOC, you MUST use offset and limit parameters to read in sequential chunks. Never assume you have seen a complete file from a single read.
-
-7. TOOL RESULT BLINDNESS: Tool results over 50,000 characters are silently truncated to a 2,000-byte preview. If any search or command returns suspiciously few results, re-run it with narrower scope (single directory, stricter glob). State when you suspect truncation occurred.
-
-## Edit Safety
-
-8. EDIT INTEGRITY: Before EVERY file edit, re-read the file. After editing, read it again to confirm the change applied correctly. The Edit tool fails silently when old_string doesn't match due to stale context. Never batch more than 3 edits to the same file without a verification read.
-
-9. NO SEMANTIC SEARCH: You have grep, not an AST. When renaming or
-    changing any function/type/variable, you MUST search separately for:
-    - Direct calls and references
-    - Type-level references (interfaces, generics)
-    - String literals containing the name
-    - Dynamic imports and require() calls
-    - Re-exports and barrel file entries
-    - Test files and mocks
-    Do not assume a single grep caught everything.
+4. **NO SEMANTIC SEARCH**: You have grep, not an AST. When renaming or changing any function/type/variable, search separately for: direct calls, type-level references, string literals, dynamic imports, re-exports, and test files/mocks.

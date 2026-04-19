@@ -12,7 +12,5 @@
       "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
-  "enabledMcpjsonServers": [
-    "github"
-  ]
+  "enabledMcpjsonServers": []
 }
