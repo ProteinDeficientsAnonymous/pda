@@ -6,6 +6,7 @@ import { EventStatus, EventType, EventVisibility } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { EventMemberSection } from './EventMemberSection';
+import { EventPollCard } from './poll/EventPollCard';
 
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -31,11 +32,8 @@ export default function EventDetailScreen() {
         <VisibilityBadge event={event} />
       </div>
 
-      <p className="text-sm text-foreground-secondary">
-        {event.startDatetime
-          ? formatEventDateTime(event.startDatetime, event.endDatetime, event.datetimeTbd)
-          : 'date & time tbd'}
-      </p>
+      <WhenLine event={event} />
+      <EventPollCard event={event} />
 
       {event.description ? (
         <section className="mt-6">
@@ -46,6 +44,25 @@ export default function EventDetailScreen() {
 
       {isAuthed ? <EventMemberSection event={event} /> : <LoginOrJoinSection />}
     </ContentContainer>
+  );
+}
+
+// Hides the normal datetime line while a poll is active (no start time yet).
+// Once finalized the backend sets startDatetime; we're back to normal.
+// For a no-poll event, EventPollCard owns the "tbd + propose dates" line
+// for hosts, so we suppress the plain "tbd" to avoid showing it twice.
+function WhenLine({ event }: { event: Event }) {
+  const user = useAuthStore((s) => s.user);
+  const pollActive = event.hasPoll && !event.startDatetime;
+  const isHost = !!user && (user.id === event.createdById || event.coHostIds.includes(user.id));
+  const hostWillProposeDates = !event.hasPoll && !event.startDatetime && isHost;
+  if (pollActive || hostWillProposeDates) return null;
+  return (
+    <p className="text-sm text-foreground-secondary">
+      {event.startDatetime
+        ? formatEventDateTime(event.startDatetime, event.endDatetime, event.datetimeTbd)
+        : 'date & time tbd'}
+    </p>
   );
 }
 

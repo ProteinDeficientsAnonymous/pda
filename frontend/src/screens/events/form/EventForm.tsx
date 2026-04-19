@@ -11,6 +11,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { apiClient } from '@/api/client';
 import type { MemberSearchResult } from '@/api/userSearch';
 import {
   emptyEventFormValues,
@@ -88,6 +89,10 @@ export function EventForm({ existing }: Props) {
   const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<Blob | null>(null);
+  // Buffered poll options — create-flow only. On submit we fire create-event
+  // then POST the poll. If the poll POST fails we still land on the new
+  // event's detail page and the host can retry from there.
+  const [bufferedPollOptions, setBufferedPollOptions] = useState<Date[] | null>(null);
 
   const create = useCreateEvent();
   const update = useUpdateEvent(existing?.id ?? '');
@@ -147,6 +152,15 @@ export function EventForm({ existing }: Props) {
           // Event saved; only the photo failed. Let the user retry from edit.
         }
       }
+      if (bufferedPollOptions && bufferedPollOptions.length >= 2) {
+        try {
+          await apiClient.post(`/api/community/events/${created.id}/poll/`, {
+            options: bufferedPollOptions.map((d) => d.toISOString()),
+          });
+        } catch {
+          toast.error("event saved, but couldn't create the poll — try from the event page");
+        }
+      }
       if (nextStatus === 'draft') toast.success('saved draft');
       void navigate(`/events/${created.id}`);
     } catch (err) {
@@ -203,6 +217,10 @@ export function EventForm({ existing }: Props) {
         onChange={patch}
         errors={errors}
         timeLocked={!!existing?.hasPoll && !existing.startDatetime}
+        existingEventId={existing?.id}
+        existingHasPoll={!!existing?.hasPoll}
+        bufferedPollOptions={bufferedPollOptions}
+        onBufferPoll={setBufferedPollOptions}
       />
 
       <CollapsibleCard

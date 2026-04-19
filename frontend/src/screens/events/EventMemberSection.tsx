@@ -76,7 +76,7 @@ function ReportEventButton({ eventId }: { eventId: string }) {
 function Card({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section className="rounded-lg border border-border bg-surface p-4">
-      <h2 className="mb-3 text-xs font-medium tracking-wide text-muted uppercase">{label}</h2>
+      <h2 className="mb-3 text-xs font-medium tracking-wide text-muted">{label}</h2>
       {children}
     </section>
   );

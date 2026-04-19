@@ -32,9 +32,7 @@ export function EventAdminActions({ event }: Props) {
 
   return (
     <section className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4">
-      <h2 className="text-xs font-medium tracking-wide text-muted uppercase">
-        admin actions
-      </h2>
+      <h2 className="mb-1 text-xs font-medium tracking-wide text-muted">event actions</h2>
       <AdminActionRow event={event} isCreator={isCreator} canManage={canManage} />
     </section>
   );
@@ -57,9 +55,11 @@ function AdminActionRow({
 
   const update = useUpdateEvent(event.id);
   const del = useDeleteEvent(event.id);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   const isCancelled = event.status === EventStatus.Cancelled;
-  const canDelete = isCreator || canManage;
+  const isDraft = event.status === EventStatus.Draft;
+  const canDelete = (isCreator || canManage) && (isDraft || isCancelled);
 
   async function onCancel() {
     setCancelError(null);
@@ -68,6 +68,15 @@ function AdminActionRow({
       setCancelOpen(false);
     } catch (err) {
       setCancelError(extractMutationError(err));
+    }
+  }
+
+  async function onPublish() {
+    setPublishError(null);
+    try {
+      await update.mutateAsync({ status: 'active' });
+    } catch (err) {
+      setPublishError(extractMutationError(err));
     }
   }
 
@@ -82,29 +91,47 @@ function AdminActionRow({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={() => void navigate(`/events/${event.id}/edit`)}>
-        edit
-      </Button>
-      {!isCancelled ? (
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setCancelOpen(true);
-          }}
-        >
-          cancel event
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" onClick={() => void navigate(`/events/${event.id}/edit`)}>
+          edit
         </Button>
-      ) : null}
-      {canDelete ? (
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setDeleteOpen(true);
-          }}
-        >
-          delete
-        </Button>
+        {isDraft ? (
+          <Button
+            onClick={() => {
+              void onPublish();
+            }}
+            disabled={update.isPending}
+          >
+            {update.isPending ? 'publishing…' : 'publish'}
+          </Button>
+        ) : null}
+        {!isCancelled && !isDraft ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setCancelOpen(true);
+            }}
+          >
+            cancel event
+          </Button>
+        ) : null}
+        {canDelete ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setDeleteOpen(true);
+            }}
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            delete
+          </Button>
+        ) : null}
+      </div>
+      {publishError ? (
+        <p role="alert" className="text-sm text-red-600">
+          {publishError}
+        </p>
       ) : null}
 
       <Dialog

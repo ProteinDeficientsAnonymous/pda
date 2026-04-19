@@ -29,3 +29,16 @@ export function pickFinalizeDefault(
     return a.datetime.getTime() - b.datetime.getTime();
   })[0];
 }
+
+// Popularity sort for the event-page strip. Most yeses first, ties broken by
+// most maybes, then earliest datetime (stable across re-renders so cards
+// don't jitter when counts match).
+export function sortOptionsByVotes(
+  options: readonly EventPollOption[],
+): readonly EventPollOption[] {
+  return [...options].sort((a, b) => {
+    if (b.yesCount !== a.yesCount) return b.yesCount - a.yesCount;
+    if (b.maybeCount !== a.maybeCount) return b.maybeCount - a.maybeCount;
+    return a.datetime.getTime() - b.datetime.getTime();
+  });
+}

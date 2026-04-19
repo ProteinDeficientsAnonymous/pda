@@ -2,7 +2,7 @@
 // option lists don't wrap into a messy grid.
 
 import type { EventPoll } from '@/models/eventPoll';
-import { sortOptionsChrono } from './pollHelpers';
+import { sortOptionsByVotes } from './pollHelpers';
 import { PollOptionCard } from './PollOptionCard';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function PollOptionStrip({ poll }: Props) {
-  const sorted = sortOptionsChrono(poll.options);
+  const sorted = sortOptionsByVotes(poll.options);
   const isFinalized = !!poll.winningOptionId;
 
   return (

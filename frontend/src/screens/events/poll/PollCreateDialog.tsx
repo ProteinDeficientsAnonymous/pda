@@ -27,7 +27,15 @@ interface Props {
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 10;
 
-export function PollCreateDialog({ open, onClose, eventId, onBuffer, initialOptions }: Props) {
+// Wrapper gates mount on `open` so the body's useState initializer re-runs
+// every time the dialog opens. Without this, clicking "edit" on a queued
+// batch would show two empty rows (the stale mount-time init).
+export function PollCreateDialog(props: Props) {
+  if (!props.open) return null;
+  return <PollCreateDialogBody {...props} />;
+}
+
+function PollCreateDialogBody({ onClose, eventId, onBuffer, initialOptions }: Props) {
   const createPoll = useCreatePoll(eventId ?? '');
   const [rows, setRows] = useState<(string | null)[]>(() =>
     initialOptions && initialOptions.length > 0 ? [...initialOptions] : [null, null],
@@ -35,7 +43,6 @@ export function PollCreateDialog({ open, onClose, eventId, onBuffer, initialOpti
   const [error, setError] = useState<string | null>(null);
 
   function close() {
-    setRows([null, null]);
     setError(null);
     onClose();
   }
@@ -90,7 +97,7 @@ export function PollCreateDialog({ open, onClose, eventId, onBuffer, initialOpti
   const submitting = createPoll.isPending;
 
   return (
-    <Dialog open={open} onClose={close} title="propose dates">
+    <Dialog open onClose={close} title="propose dates">
       <div className="flex flex-col gap-3">
         <p className="text-sm text-foreground-secondary">
           add a few times — members vote yes / maybe / no on each
