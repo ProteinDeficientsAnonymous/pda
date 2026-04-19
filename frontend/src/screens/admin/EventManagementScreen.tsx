@@ -75,7 +75,7 @@ export default function EventManagementScreen() {
         <h1 className="text-2xl font-medium tracking-tight">manage events</h1>
         <Link
           to="/events/add"
-          className="inline-flex h-10 items-center rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-neutral-800"
+          className="inline-flex h-10 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-brand-on hover:bg-brand-700"
         >
           new event
         </Link>
@@ -124,7 +124,7 @@ export default function EventManagementScreen() {
               className={cn(
                 'rounded-full px-3 py-1 text-xs transition-colors',
                 active
-                  ? 'bg-accent text-accent-foreground'
+                  ? 'bg-brand-600 text-brand-on'
                   : 'bg-surface-dim text-foreground-secondary hover:bg-surface-raised',
               )}
             >

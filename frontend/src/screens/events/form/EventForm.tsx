@@ -1,7 +1,7 @@
 // Event create/edit form.
 //
-// Layout: hero photo → always-visible (title/when/where) → 4 collapsible
-// sections (details, links, money, hosts & invites) → actions.
+// Layout: hero photo → always-visible (title/when/where) → collapsible
+// sections (hosts, details, rsvp, links, money) → actions.
 //
 // Photo-first by design: the Flutter app's form opened with a big cover
 // banner so the flow feels inviting even before a title is typed. Sections
@@ -103,6 +103,7 @@ export function EventForm({ existing }: Props) {
 
   async function submit(nextStatus: 'active' | 'draft') {
     setServerError(null);
+    const timeLocked = !!existing?.hasPoll && !existing.startDatetime;
     const merged: EventFormValues = {
       ...values,
       coHostIds: coHosts.map((m) => m.id),
@@ -124,7 +125,16 @@ export function EventForm({ existing }: Props) {
     setErrors({});
     try {
       if (existing) {
-        await update.mutateAsync(merged);
+        // While a poll is active, the poll owns the time. Send a Partial
+        // that omits start/end/tbd so useUpdateEvent's undefined-filter drops
+        // them from the PATCH body (backend rejects those edits).
+        const patchBody: Partial<EventFormValues> = timeLocked
+          ? (() => {
+              const { startDatetime: _s, endDatetime: _e, datetimeTbd: _t, ...rest } = merged;
+              return rest;
+            })()
+          : merged;
+        await update.mutateAsync(patchBody);
         if (nextStatus === 'draft') toast.success('saved draft');
         void navigate(`/events/${existing.id}`);
         return;
@@ -169,7 +179,7 @@ export function EventForm({ existing }: Props) {
     values.venmoLink.trim().length > 0 ||
     values.cashappLink.trim().length > 0 ||
     values.zelleInfo.trim().length > 0;
-  const hostsCount = coHosts.length + (values.visibility === 'invite_only' ? invited.length : 0);
+  const hostsCount = coHosts.length;
 
   return (
     <form
@@ -188,7 +198,29 @@ export function EventForm({ existing }: Props) {
         disabled={saving}
       />
 
-      <EventFormBasics values={values} onChange={patch} errors={errors} />
+      <EventFormBasics
+        values={values}
+        onChange={patch}
+        errors={errors}
+        timeLocked={!!existing?.hasPoll && !existing.startDatetime}
+      />
+
+      <CollapsibleCard
+        title="hosts"
+        summary={
+          hostsCount > 0
+            ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
+            : undefined
+        }
+      >
+        <MemberPicker
+          label="co-hosts"
+          selected={coHosts}
+          onChange={setCoHosts}
+          excludeIds={user ? [user.id] : []}
+          hint="co-hosts can edit the event and manage rsvps"
+        />
+      </CollapsibleCard>
 
       <CollapsibleCard
         title="details"
@@ -202,6 +234,16 @@ export function EventForm({ existing }: Props) {
           errors={errors}
           canTagOfficial={canTagOfficial}
         />
+        {values.visibility === 'invite_only' ? (
+          <div className="mt-4">
+            <MemberPicker
+              label="invited members"
+              selected={invited}
+              onChange={setInvited}
+              excludeIds={user ? [user.id, ...coHosts.map((m) => m.id)] : coHosts.map((m) => m.id)}
+            />
+          </div>
+        ) : null}
       </CollapsibleCard>
 
       <CollapsibleCard
@@ -228,33 +270,6 @@ export function EventForm({ existing }: Props) {
         <EventFormMoney values={values} onChange={patch} errors={errors} />
       </CollapsibleCard>
 
-      <CollapsibleCard
-        title="hosts & invites"
-        summary={
-          hostsCount > 0
-            ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
-            : undefined
-        }
-      >
-        <div className="flex flex-col gap-4">
-          <MemberPicker
-            label="co-hosts"
-            selected={coHosts}
-            onChange={setCoHosts}
-            excludeIds={user ? [user.id] : []}
-            hint="co-hosts can edit the event and manage rsvps"
-          />
-          {values.visibility === 'invite_only' ? (
-            <MemberPicker
-              label="invited members"
-              selected={invited}
-              onChange={setInvited}
-              excludeIds={user ? [user.id, ...coHosts.map((m) => m.id)] : coHosts.map((m) => m.id)}
-            />
-          ) : null}
-        </div>
-      </CollapsibleCard>
-
       {serverError ? (
         <p
           role="alert"
@@ -264,7 +279,7 @@ export function EventForm({ existing }: Props) {
         </p>
       ) : null}
 
-<div className="fixed inset-x-0 bottom-0 z-50 flex flex-row gap-2 border-t border-brand-100 bg-brand-50/95 px-4 py-3 backdrop-blur sm:static sm:z-auto sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:pt-2 sm:backdrop-blur-none">
+<div className="fixed inset-x-0 bottom-0 z-50 flex flex-row gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:z-auto sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:pt-2 sm:backdrop-blur-none">
         {!existing || isDraft ? (
           <Button
             variant="secondary"

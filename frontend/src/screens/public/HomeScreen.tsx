@@ -36,7 +36,7 @@ export default function HomeScreen() {
           />
           <Link
             to="/join"
-            className="mt-4 inline-flex h-10 items-center rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-accent/80"
+            className="mt-4 inline-flex h-10 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-brand-on hover:bg-brand-700"
           >
             request to join
           </Link>
@@ -49,7 +49,7 @@ export default function HomeScreen() {
             href={data.donateUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-10 items-center rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-accent/80"
+            className="inline-flex h-10 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-brand-on hover:bg-brand-700"
           >
             donate
           </a>

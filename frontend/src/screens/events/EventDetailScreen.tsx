@@ -92,7 +92,7 @@ function LoginOrJoinSection() {
       <div className="flex flex-wrap gap-3">
         <Link
           to="/login"
-          className="inline-flex h-10 items-center rounded-md bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-accent/80"
+          className="inline-flex h-10 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-brand-on hover:bg-brand-700"
         >
           sign in
         </Link>

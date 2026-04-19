@@ -23,29 +23,43 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
       <label htmlFor={inputId} className="text-sm font-medium text-foreground">
         {label}
       </label>
-      <select
-        ref={ref}
-        id={inputId}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${inputId}-error` : undefined}
-        className={cn(
-          'h-10 rounded-md border border-border-strong bg-surface px-3 text-sm transition-colors outline-none focus:border-neutral-500 focus:ring-2 focus:ring-border',
-          error && 'border-destructive-border focus:border-red-500 focus:ring-red-100',
-          className,
-        )}
-        {...rest}
-      >
-        {placeholder ? (
-          <option value="" disabled>
-            {placeholder}
-          </option>
-        ) : null}
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          ref={ref}
+          id={inputId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+          className={cn(
+            'h-10 w-full appearance-none rounded-md border border-border-strong bg-surface pr-9 pl-3 text-sm transition-colors outline-none focus:border-neutral-500 focus:ring-2 focus:ring-border',
+            error && 'border-destructive-border focus:border-red-500 focus:ring-red-100',
+            className,
+          )}
+          {...rest}
+        >
+          {placeholder ? (
+            <option value="" disabled>
+              {placeholder}
+            </option>
+          ) : null}
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 20 20"
+          className="pointer-events-none absolute inset-y-0 end-3 my-auto h-4 w-4 text-foreground-secondary"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 8l4 4 4-4" />
+        </svg>
+      </div>
       {error ? (
         <p id={`${inputId}-error`} className="text-xs text-destructive">
           {error}

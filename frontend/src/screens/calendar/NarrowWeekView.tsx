@@ -77,10 +77,10 @@ function DayRow({ day, isLast, isToday, events, onSelectEvent }: DayRowProps) {
         <div
           className={cn(
             'flex flex-col items-center justify-center rounded-md px-1.5 py-1 text-center leading-tight',
-            isToday ? 'bg-accent text-accent-foreground' : 'text-foreground-secondary',
+            isToday ? 'bg-brand-600 text-brand-on' : 'text-foreground-secondary',
           )}
         >
-          <span className={cn('text-xs', isToday ? 'text-accent-foreground' : 'text-muted')}>
+          <span className={cn('text-xs', isToday ? 'text-brand-on' : 'text-muted')}>
             {weekdayLabel}
           </span>
           <span className="text-base font-medium">{dayNumber}</span>

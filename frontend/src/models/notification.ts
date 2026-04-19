@@ -1,5 +1,6 @@
 export const NotificationType = {
   EventInvite: 'event_invite',
+  EventFlagged: 'event_flagged',
   JoinRequest: 'join_request',
   CohostAdded: 'cohost_added',
   MagicLinkRequest: 'magic_link_request',

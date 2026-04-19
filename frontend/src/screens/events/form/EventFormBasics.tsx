@@ -11,9 +11,10 @@ interface Props {
   values: EventFormValues;
   onChange: (patch: Partial<EventFormValues>) => void;
   errors: Partial<Record<keyof EventFormValues, string>>;
+  timeLocked?: boolean;
 }
 
-export function EventFormBasics({ values, onChange, errors }: Props) {
+export function EventFormBasics({ values, onChange, errors, timeLocked = false }: Props) {
   return (
     <div className="flex flex-col gap-4 rounded-[var(--radius-md)] border border-brand-100 bg-surface p-4 shadow-(--shadow-sm)">
       <TextField
@@ -28,35 +29,43 @@ export function EventFormBasics({ values, onChange, errors }: Props) {
         required
       />
 
-      <Toggle
-        label="date & time tbd"
-        checked={values.datetimeTbd}
-        onChange={(checked) => {
-          onChange({ datetimeTbd: checked });
-        }}
-      />
+      {timeLocked ? (
+        <p className="text-sm text-neutral-600">
+          date locked — a poll is active. finalize it to set the time.
+        </p>
+      ) : (
+        <>
+          <Toggle
+            label="date & time tbd"
+            checked={values.datetimeTbd}
+            onChange={(checked) => {
+              onChange({ datetimeTbd: checked });
+            }}
+          />
 
-      {!values.datetimeTbd ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <DateTimePicker
-            label="starts"
-            value={values.startDatetime}
-            onChange={(iso) => {
-              onChange({ startDatetime: iso });
-            }}
-            error={errors.startDatetime}
-          />
-          <DateTimePicker
-            label="ends"
-            value={values.endDatetime}
-            onChange={(iso) => {
-              onChange({ endDatetime: iso });
-            }}
-            error={errors.endDatetime}
-            optional
-          />
-        </div>
-      ) : null}
+          {!values.datetimeTbd ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DateTimePicker
+                label="starts"
+                value={values.startDatetime}
+                onChange={(iso) => {
+                  onChange({ startDatetime: iso });
+                }}
+                error={errors.startDatetime}
+              />
+              <DateTimePicker
+                label="ends"
+                value={values.endDatetime}
+                onChange={(iso) => {
+                  onChange({ endDatetime: iso });
+                }}
+                error={errors.endDatetime}
+                optional
+              />
+            </div>
+          ) : null}
+        </>
+      )}
 
       <LocationField
         label="location"

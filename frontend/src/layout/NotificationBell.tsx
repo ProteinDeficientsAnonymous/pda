@@ -169,6 +169,8 @@ function notificationTarget(n: AppNotification): string | null {
     case NotificationType.CohostAdded:
     case NotificationType.WaitlistPromoted:
       return n.eventId ? `/events/${n.eventId}` : null;
+    case NotificationType.EventFlagged:
+      return '/admin/flagged-events';
     case NotificationType.JoinRequest:
       return '/join-requests';
     case NotificationType.MagicLinkRequest:

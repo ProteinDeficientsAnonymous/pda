@@ -37,7 +37,7 @@ export function AppShell() {
             ) : (
               <Link
                 to="/login"
-                className="bg-brand-600 hover:bg-brand-700 inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-white"
+                className="bg-brand-600 hover:bg-brand-700 inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-brand-on"
               >
                 sign in
               </Link>

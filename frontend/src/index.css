@@ -17,6 +17,10 @@
   --color-brand-700: #245024;
   --color-brand-800: #1c4e1f;
   --color-brand-900: #0a390f;
+  /* Foreground to pair with bg-brand-600 / brand-700 (the CTA + active-state
+     colors). Flips in dark mode so text stays readable over the lighter
+     sage-green dark-mode brand tokens. */
+  --color-brand-on: #ffffff;
 
   --color-background: #f7fbf1;
   --color-foreground: #191d17;
@@ -112,6 +116,9 @@
   --color-brand-700: #bcf0b4;
   --color-brand-800: #a1d39a;
   --color-brand-900: #82b87c;
+  /* In dark mode brand-600 is light sage — pair it with a very dark green
+     foreground so white-on-sage contrast failures don't ship. */
+  --color-brand-on: #0a390f;
   --color-evt-community-bg: #103028;
   --color-evt-community-fg: #a8e0d8;
   --color-evt-official-bg: #1a3050;
@@ -319,7 +326,7 @@ body {
 /* Today's date number becomes a filled brand pill. */
 .rbc-date-cell.rbc-now > a {
   background: var(--color-brand-600);
-  color: white;
+  color: var(--color-brand-on);
   border-radius: 9999px;
   width: 1.5rem;
   height: 1.5rem;
@@ -424,7 +431,7 @@ body {
 }
 .rdp-selected .rdp-day_button {
   background: var(--color-brand-600);
-  color: white;
+  color: var(--color-brand-on);
   font-weight: 600;
 }
 .rdp-selected .rdp-day_button:hover {

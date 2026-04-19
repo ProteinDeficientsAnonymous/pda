@@ -276,7 +276,7 @@ function DyslexiaToggle({
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-toggle-off transition-colors checked:bg-accent"
+        className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-toggle-off transition-colors checked:bg-brand-600"
       />
     </label>
   );
@@ -330,7 +330,7 @@ function SegmentedControl<T>({
               key={String(opt.value)}
               className={cn(
                 'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-                active ? 'bg-accent text-accent-foreground' : 'text-foreground-secondary hover:bg-surface-dim',
+                active ? 'bg-brand-600 text-brand-on' : 'text-foreground-secondary hover:bg-surface-dim',
               )}
             >
               <input

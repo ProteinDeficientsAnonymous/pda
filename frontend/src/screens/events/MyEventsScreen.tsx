@@ -63,7 +63,7 @@ export default function MyEventsScreen() {
         <h1 className="text-2xl font-medium tracking-tight">my events</h1>
         <Link
           to="/events/add"
-          className="inline-flex h-10 items-center rounded-md bg-neutral-900 px-4 text-sm font-medium text-white hover:bg-neutral-800"
+          className="inline-flex h-10 items-center rounded-md bg-brand-600 px-4 text-sm font-medium text-brand-on hover:bg-brand-700"
         >
           create event
         </Link>
@@ -82,7 +82,7 @@ export default function MyEventsScreen() {
                 key={f.value}
                 className={cn(
                   'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-                  active ? 'bg-brand-600 text-white' : 'text-neutral-700 hover:bg-neutral-100',
+                  active ? 'bg-brand-600 text-brand-on' : 'text-neutral-700 hover:bg-neutral-100',
                 )}
               >
                 <input

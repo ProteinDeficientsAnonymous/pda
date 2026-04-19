@@ -51,7 +51,7 @@ export default function FlaggedEventsScreen() {
               className={cn(
                 'rounded-full px-3 py-1 text-xs transition-colors',
                 active
-                  ? 'bg-accent text-accent-foreground'
+                  ? 'bg-brand-600 text-brand-on'
                   : 'bg-surface-dim text-foreground-secondary hover:bg-surface-raised',
               )}
             >

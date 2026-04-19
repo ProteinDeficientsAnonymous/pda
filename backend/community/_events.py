@@ -93,6 +93,17 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     effective_visibility = updates.get("visibility", event.visibility)
     if _is_invalid_official_visibility(effective_type, effective_visibility):
         return Status(400, ErrorOut(detail="Official events must be public."))
+    # While a poll is active, the poll is the source of truth for when. Block
+    # direct edits to start/end so the event time can't drift from the poll.
+    # Host must finalize (or delete) the poll before setting a time.
+    time_fields_edited = any(
+        f in updates for f in ("start_datetime", "end_datetime", "datetime_tbd")
+    )
+    if time_fields_edited and hasattr(event, "poll") and event.poll.is_active:
+        return Status(
+            400,
+            ErrorOut(detail="can't edit the date while a poll is active — finalize the poll first"),
+        )
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
     effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)

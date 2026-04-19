@@ -166,7 +166,7 @@ function RoleFilterRow({
               key={name}
               className={cn(
                 'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-                active ? 'bg-brand-600 text-white' : 'text-neutral-700 hover:bg-neutral-100',
+                active ? 'bg-brand-600 text-brand-on' : 'text-neutral-700 hover:bg-neutral-100',
               )}
             >
               <input

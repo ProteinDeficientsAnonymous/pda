@@ -139,7 +139,7 @@ function RsvpPill({
       className={cn(
         'inline-flex h-10 items-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
         active
-          ? 'bg-accent text-accent-foreground'
+          ? 'bg-brand-600 text-brand-on'
           : 'border border-border-strong text-foreground-secondary hover:bg-background',
         disabled && 'opacity-60',
       )}
