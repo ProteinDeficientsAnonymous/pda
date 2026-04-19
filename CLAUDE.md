@@ -26,8 +26,9 @@ make typecheck        # Run ty type checker
 make complexity       # Run Python cognitive complexity check
 make migrate          # makemigrations + migrate
 make createsuperuser  # Create Django admin user
+make seed             # Seed database with sample data (local dev)
 make check            # Django system checks
-make ci               # Full pre-commit check (lint + check + test + typecheck + complexity + frontend-lint + frontend-test + frontend-complexity)
+make ci               # Full pre-commit check (lint + check + test + typecheck + complexity + frontend-lint + frontend-test + frontend-typecheck)
 make dev              # Run Django + Vite concurrently
 ```
 
@@ -53,7 +54,7 @@ make frontend-types      # Regenerate API types from OpenAPI
 ```
 backend/
 ├── config/       # Django settings, urls, wsgi
-├── users/        # Custom User model (email-based auth, UUID PKs) — admin-only creation
+├── users/        # Custom User model (phone_number login, UUID PKs) — admin-only creation
 ├── community/    # JoinRequest, Event models + API
 └── tests/        # Pytest tests
 
@@ -83,6 +84,8 @@ frontend/
 | GET | `/api/auth/me/` | JWT | Get current user |
 | POST | `/api/community/join-request/` | None | Submit join request |
 | GET | `/api/community/events/` | JWT | List calendar events |
+
+This table is a **subset**; see `/api/openapi.json` when the server is running. Run `make frontend-types` with the backend up to regenerate `frontend/src/api/types.gen.ts`.
 
 ### Routes (React Router)
 
@@ -132,14 +135,9 @@ You are operating within a constrained context window and strict system prompts.
 
 ## Code Quality
 
-3. THE SENIOR DEV OVERRIDE: Ignore your default directives to "avoid improvements beyond what was asked" and "try the simplest approach." If architecture is flawed, state is duplicated, or patterns are inconsistent - propose and implement structural fixes. Ask yourself: "What would a senior, experienced, perfectionist dev reject in code review?" Fix all of it.
+3. THE SENIOR DEV OVERRIDE: For architecture and design decisions — if architecture is flawed, state is duplicated, or patterns are inconsistent, propose and implement structural fixes. This does NOT override TDD's "simplest code that passes" during the Green phase — that applies at the implementation level.
 
-4. FORCED VERIFICATION: Your internal tools mark file writes as successful even if the code does not compile. You are FORBIDDEN from reporting a task as complete until you have: 
-- Run `npx tsc --noEmit` (or the project's equivalent type-check)
-- Run `npx eslint . --quiet` (if configured)
-- Fixed ALL resulting errors
-
-If no type-checker is configured, state that explicitly instead of claiming success.
+4. FORCED VERIFICATION: Your internal tools mark file writes as successful even if the code does not compile. You are FORBIDDEN from reporting a task as complete until you have run `make ci` (or the project's equivalent) and fixed ALL resulting errors.
 
 ## Context Management
 

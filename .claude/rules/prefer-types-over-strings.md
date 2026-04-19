@@ -1,3 +1,10 @@
+---
+paths:
+  - "**/*.py"
+  - "**/*.ts"
+  - "**/*.tsx"
+---
+
 # Prefer Types Over Raw Strings
 
 When writing new code or modifying existing code, use shared types, enums, and constants instead of raw string literals for any non-UI values.

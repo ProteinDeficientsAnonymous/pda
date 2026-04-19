@@ -1,3 +1,12 @@
+---
+paths:
+  - "**/*.py"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+---
+
 # File Size Limit
 
 Aim to keep files under ~300 lines. 500 lines is the hard max — never exceed it.

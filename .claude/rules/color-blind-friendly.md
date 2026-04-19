@@ -1,3 +1,12 @@
+---
+paths:
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "frontend/**"
+---
+
 # Color-Blind Friendly Palettes
 
 All color palettes and color-coded UI in this project MUST be color-blind friendly.

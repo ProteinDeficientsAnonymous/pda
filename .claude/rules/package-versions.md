@@ -1,3 +1,11 @@
+---
+paths:
+  - "**/package.json"
+  - "**/pyproject.toml"
+  - "**/pubspec.yaml"
+  - "**/requirements*.txt"
+---
+
 # Package Version Policy
 
 When adding or recommending any new package dependency, always look up and use the **latest stable version**.
