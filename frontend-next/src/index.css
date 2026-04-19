@@ -37,6 +37,22 @@
   --radius-lg: 20px;
 }
 
+/* OpenDyslexic — shipped from frontend/assets/fonts (Bunny Foundry, OFL). */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 html,
 body,
 #root {
@@ -48,6 +64,27 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessibility preferences — applied by src/auth/accessibilityStore.ts to
+   <html> via data-attributes. Scaling the root font-size lets every rem-based
+   size (tailwind's default) scale with the preference. */
+html[data-pda-font='dyslexic'] body {
+  font-family: 'OpenDyslexic', var(--font-sans);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+html[data-pda-text='small'] {
+  font-size: 14px;
+}
+html[data-pda-text='normal'] {
+  font-size: 16px;
+}
+html[data-pda-text='large'] {
+  font-size: 18px;
+}
+html[data-pda-text='xlarge'] {
+  font-size: 20px;
 }
 
 /* Event chips for lists/badges outside the calendar. Every category is also
@@ -127,4 +164,157 @@ body {
 /* Selected state — keep the type color readable, add a brand-tinted ring. */
 .rbc-event.rbc-selected.pda-evt {
   box-shadow: 0 0 0 2px var(--color-brand-600);
+}
+
+/* Outer frame — soft border + rounded corners to match Flutter's month frame. */
+.rbc-month-view,
+.rbc-time-view {
+  border: 1px solid rgb(229 229 229 / 0.8);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+/* Internal dividers soften to 60% opacity. */
+.rbc-month-row + .rbc-month-row,
+.rbc-day-bg + .rbc-day-bg,
+.rbc-header + .rbc-header,
+.rbc-timeslot-group {
+  border-color: rgb(229 229 229 / 0.6);
+}
+/* Weekday headers: lowercase, medium weight, softer color. */
+.rbc-header {
+  padding: 6px 4px;
+  font-weight: 500;
+  color: rgb(82 82 82);
+  text-transform: none;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid rgb(229 229 229 / 0.8);
+}
+/* Today cell: swap rbc's pale yellow for brand-50. */
+.rbc-today {
+  background: var(--color-brand-50);
+}
+/* Today's date number becomes a filled brand pill. */
+.rbc-date-cell.rbc-now > a {
+  background: var(--color-brand-600);
+  color: white;
+  border-radius: 9999px;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+/* Off-range days: very subtle wash on the cell; date numerals match the
+   in-range number color so they read the same (only the cell shading
+   distinguishes them). */
+.rbc-off-range-bg {
+  background: rgb(0 0 0 / 0.012);
+}
+.rbc-off-range {
+  color: inherit;
+  opacity: 1;
+}
+/* "n more" link tinted green, not bold, not clipped. rbc's stylesheet
+   imports later in CalendarScreen.tsx so we bump specificity with the
+   .rbc-month-view ancestor to win over their defaults (bold + blue). */
+.rbc-month-view .rbc-show-more,
+.rbc-month-view .rbc-show-more:hover,
+.rbc-month-view .rbc-show-more:focus {
+  color: var(--color-brand-700);
+  font-weight: 500;
+  font-size: 0.6875rem;
+  background: transparent;
+  padding: 0 6px;
+  line-height: 1.2;
+  text-decoration: none;
+}
+.rbc-month-view .rbc-show-more:hover {
+  color: var(--color-brand-800);
+  text-decoration: underline;
+}
+
+/* Compress every .rbc-event in the month grid — including the dummy rbc
+   renders during measurement (which has no .pda-evt class). rbc divides
+   .rbc-month-row height by this chip's height to decide how many events
+   fit per day before spilling to "+n more", so the dummy and the real
+   chips must be the same size for the math to be honest. */
+.rbc-month-view .rbc-event {
+  padding: 1px 4px;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  min-height: 0;
+  border-radius: 4px;
+}
+.rbc-month-view .rbc-row-segment {
+  padding: 1px 2px;
+}
+/* No min-height on .rbc-month-view. The Calendar container uses
+   calc(100dvh - chrome) so it fills the viewport exactly, and
+   .rbc-month-row's flex:1 0 0 divides that evenly across 6 weeks. */
+
+/* react-day-picker theme — lowercase, brand colors, matching radii/font. */
+.rdp-root {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+}
+.rdp-month_caption {
+  text-transform: lowercase;
+}
+.rdp-caption_label {
+  text-transform: lowercase;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-brand-900);
+}
+.rdp-nav {
+  display: flex;
+}
+.rdp-button_previous,
+.rdp-button_next {
+  color: var(--color-brand-600);
+  border-radius: var(--radius-sm);
+}
+.rdp-button_previous:hover,
+.rdp-button_next:hover {
+  background: var(--color-brand-50);
+}
+.rdp-chevron {
+  color: var(--color-brand-600);
+}
+.rdp-weekdays {
+  font-weight: 500;
+  font-size: 0.6875rem;
+  text-transform: lowercase;
+  color: var(--color-brand-600);
+}
+.rdp-weekday {
+  text-transform: lowercase;
+}
+.rdp-day_button {
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  width: 2rem;
+  height: 2rem;
+}
+.rdp-day_button:hover:not(:disabled) {
+  background: var(--color-brand-50);
+}
+.rdp-today:not(.rdp-selected) .rdp-day_button {
+  color: var(--color-brand-600);
+  font-weight: 600;
+}
+.rdp-selected .rdp-day_button {
+  background: var(--color-brand-600);
+  color: white;
+  font-weight: 600;
+}
+.rdp-selected .rdp-day_button:hover {
+  background: var(--color-brand-700);
+}
+.rdp-disabled .rdp-day_button {
+  color: var(--color-neutral-300);
+}
+.rdp-outside .rdp-day_button {
+  color: var(--color-neutral-300);
 }

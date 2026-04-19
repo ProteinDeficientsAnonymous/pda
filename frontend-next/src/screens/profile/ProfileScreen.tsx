@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/auth/store';
 import { useHasAnyAdminPermission } from '@/auth/useAuth';
 import { ContentContainer } from '@/screens/public/ContentContainer';
+import { cn } from '@/utils/cn';
 import { BioEditDialog } from './BioEditDialog';
 
 export default function ProfileScreen() {
@@ -33,20 +34,21 @@ export default function ProfileScreen() {
 
   return (
     <ContentContainer>
-      <header className="flex items-center gap-4">
+      <header className="flex flex-col items-center gap-3 text-center">
         {photoUrl ? (
-          <img src={photoUrl} alt="" className="h-20 w-20 rounded-full object-cover" />
+          <img src={photoUrl} alt="" className="h-28 w-28 rounded-full object-cover" />
         ) : (
           <span
             aria-hidden="true"
-            className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-200 text-2xl text-neutral-600"
+            className="flex h-28 w-28 items-center justify-center rounded-full bg-neutral-200 text-3xl text-neutral-600"
           >
             {initials}
           </span>
         )}
-        <div>
+        <div className="flex flex-col items-center gap-1">
           <h1 className="text-2xl font-medium tracking-tight">{user.displayName}</h1>
-          <p className="text-sm text-neutral-500">{user.phoneNumber}</p>
+          <ContactLine value={user.phoneNumber} visible={user.showPhone} />
+          {user.email ? <ContactLine value={user.email} visible={user.showEmail} /> : null}
         </div>
       </header>
 
@@ -99,6 +101,67 @@ export default function ProfileScreen() {
         }}
       />
     </ContentContainer>
+  );
+}
+
+function ContactLine({ value, visible }: { value: string; visible: boolean }) {
+  return (
+    <p className="flex items-center gap-1.5 text-sm text-neutral-500">
+      <span>{value}</span>
+      <span
+        aria-label={visible ? 'visible to members' : 'hidden from members'}
+        title={visible ? 'visible to members' : 'only you can see this'}
+        className={cn(
+          'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+          visible
+            ? 'bg-brand-50 text-brand-700'
+            : 'bg-neutral-100 text-neutral-500',
+        )}
+      >
+        {visible ? (
+          <EyeIcon className="h-3 w-3" />
+        ) : (
+          <EyeOffIcon className="h-3 w-3" />
+        )}
+        {visible ? 'visible' : 'hidden'}
+      </span>
+    </p>
+  );
+}
+
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a19.8 19.8 0 015.06-5.94M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a19.77 19.77 0 01-3.17 4.19M1 1l22 22" />
+      <path d="M14.12 14.12A3 3 0 119.88 9.88" />
+    </svg>
   );
 }
 

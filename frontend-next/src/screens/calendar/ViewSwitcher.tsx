@@ -30,7 +30,7 @@ export function ViewSwitcher({ value, onChange }: Props) {
             key={v.value}
             className={cn(
               'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-              active ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100',
+              active ? 'bg-brand-600 text-white' : 'text-neutral-700 hover:bg-neutral-100',
             )}
           >
             <input

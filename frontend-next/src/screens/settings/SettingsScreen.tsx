@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
+import {
+  type TextSize,
+  useAccessibilityStore,
+} from '@/auth/accessibilityStore';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from './AvatarUpload';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
@@ -60,6 +64,10 @@ export default function SettingsScreen() {
 
       <Section label="calendar">
         <WeekStartToggle value={user.weekStart} onChange={(v) => updateProfile({ weekStart: v })} />
+      </Section>
+
+      <Section label="accessibility">
+        <AccessibilityControls />
       </Section>
 
       <ChangePasswordDialog
@@ -179,14 +187,28 @@ function Toggle({
   return (
     <label className="flex items-center justify-between gap-3">
       <span className="text-sm text-neutral-800">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => {
-          void onChange(e.target.checked);
-        }}
-        className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-neutral-300 transition-colors checked:bg-neutral-900"
-      />
+      <span
+        className={cn(
+          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors',
+          checked ? 'bg-brand-600' : 'bg-neutral-300',
+        )}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => {
+            void onChange(e.target.checked);
+          }}
+          className="sr-only"
+        />
+        <span
+          aria-hidden="true"
+          className={cn(
+            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+            checked ? 'translate-x-5' : 'translate-x-0.5',
+          )}
+        />
+      </span>
     </label>
   );
 }
@@ -199,18 +221,105 @@ function WeekStartToggle({
   onChange: (v: 'sunday' | 'monday') => Promise<void>;
 }) {
   return (
+    <SegmentedControl
+      label="week starts on"
+      ariaLabel="week start"
+      name="week-start"
+      value={value}
+      options={[
+        { value: 'sunday', label: 'sunday' },
+        { value: 'monday', label: 'monday' },
+      ]}
+      onChange={(v) => void onChange(v)}
+    />
+  );
+}
+
+function AccessibilityControls() {
+  const dyslexiaFriendly = useAccessibilityStore((s) => s.dyslexiaFriendlyFont);
+  const setDyslexiaFriendly = useAccessibilityStore((s) => s.setDyslexiaFriendlyFont);
+  const textSize = useAccessibilityStore((s) => s.textSize);
+  const setTextSize = useAccessibilityStore((s) => s.setTextSize);
+
+  return (
+    <>
+      <label className="flex items-center justify-between gap-3">
+        <span className="text-sm text-neutral-800">dyslexia-friendly font</span>
+        <span
+          className={cn(
+            'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors',
+            dyslexiaFriendly ? 'bg-brand-600' : 'bg-neutral-300',
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={dyslexiaFriendly}
+            onChange={(e) => {
+              setDyslexiaFriendly(e.target.checked);
+            }}
+            className="sr-only"
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+              dyslexiaFriendly ? 'translate-x-5' : 'translate-x-0.5',
+            )}
+          />
+        </span>
+      </label>
+      <SegmentedControl
+        label="text size"
+        ariaLabel="text size"
+        name="text-size"
+        value={textSize}
+        options={[
+          { value: 'small', label: 'small' },
+          { value: 'normal', label: 'normal' },
+          { value: 'large', label: 'large' },
+          { value: 'xlarge', label: 'x-large' },
+        ]}
+        onChange={(v: TextSize) => {
+          setTextSize(v);
+        }}
+      />
+    </>
+  );
+}
+
+interface SegmentedOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+function SegmentedControl<T extends string>({
+  label,
+  ariaLabel,
+  name,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  ariaLabel: string;
+  name: string;
+  value: T;
+  options: SegmentedOption<T>[];
+  onChange: (v: T) => void;
+}) {
+  return (
     <div>
-      <div className="mb-2 text-sm text-neutral-800">week starts on</div>
+      <div className="mb-2 text-sm text-neutral-800">{label}</div>
       <div
         role="radiogroup"
-        aria-label="week start"
+        aria-label={ariaLabel}
         className="inline-flex rounded-md border border-neutral-300 bg-white p-0.5"
       >
-        {(['sunday', 'monday'] as const).map((v) => {
-          const active = v === value;
+        {options.map((opt) => {
+          const active = opt.value === value;
           return (
             <label
-              key={v}
+              key={opt.value}
               className={cn(
                 'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
                 active ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100',
@@ -218,15 +327,15 @@ function WeekStartToggle({
             >
               <input
                 type="radio"
-                name="week-start"
-                value={v}
+                name={name}
+                value={opt.value}
                 checked={active}
                 onChange={() => {
-                  void onChange(v);
+                  onChange(opt.value);
                 }}
                 className="sr-only"
               />
-              {v}
+              {opt.label}
             </label>
           );
         })}
