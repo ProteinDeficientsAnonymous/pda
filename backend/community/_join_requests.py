@@ -56,6 +56,7 @@ class JoinRequestOut(BaseModel):
     submitted_at: datetime
     status: str
     user_id: str | None = None
+    previously_archived: bool = False
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -87,6 +88,11 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         for qid, data in (jr.custom_answers or {}).items()
     ]
     user = User.objects.filter(phone_number=jr.phone_number).first()
+    previously_archived = bool(
+        User.objects.filter(
+            phone_number=jr.phone_number, archived_at__isnull=False
+        ).exists()
+    )
     return JoinRequestOut(
         id=str(jr.id),
         display_name=jr.display_name,
@@ -95,6 +101,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         submitted_at=jr.submitted_at,
         status=jr.status,
         user_id=str(user.id) if user else None,
+        previously_archived=previously_archived,
     )
 
 
@@ -163,7 +170,7 @@ def submit_join_request(request, payload: JoinRequestIn):
 
     from users.models import User
 
-    if User.objects.filter(phone_number=validated_phone).exists():
+    if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
         return Status(409, ErrorOut(detail="already_invited"))
 
     if JoinRequest.objects.filter(
@@ -274,13 +281,22 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     magic_token = None
     user_created = False
     if payload.status == JoinRequestStatus.APPROVED:
-        if not User.objects.filter(phone_number=join_request.phone_number).exists():
+        existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
+        if existing_user is None:
             _, magic_token = _create_user_with_role(
                 join_request.phone_number,
                 join_request.display_name,
                 "",
                 None,
             )
+            user_created = True
+        elif existing_user.archived_at is not None:
+            from users._helpers import _create_magic_token
+
+            existing_user.archived_at = None
+            existing_user.needs_onboarding = True
+            existing_user.save(update_fields=["archived_at", "needs_onboarding"])
+            magic_token = _create_magic_token(existing_user)
             user_created = True
 
     action = (
@@ -319,7 +335,7 @@ def check_phone(request, payload: CheckPhoneIn):
         normalized = _validate_phone(payload.phone_number)
     except ValueError:
         return Status(200, CheckPhoneOut(status="unknown"))
-    if UserModel.objects.filter(phone_number=normalized).exists():
+    if UserModel.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
         return Status(200, CheckPhoneOut(status="member"))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING
@@ -358,7 +374,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     except ValueError:
         return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
 
-    user = User.objects.filter(phone_number=normalized).first()
+    user = User.objects.filter(phone_number=normalized, archived_at__isnull=True).first()
     if user:
         recent_token_exists = MagicLoginToken.objects.filter(
             user=user,
