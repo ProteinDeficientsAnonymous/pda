@@ -31,9 +31,3 @@ cd backend && uv run ruff check . && uv run ruff format --check .
 # Type check
 cd backend && uv run ty check .
 ```
-
-## Full CI Check
-
-```bash
-make ci    # lint → check → test → typecheck → frontend-lint → frontend-test
-```

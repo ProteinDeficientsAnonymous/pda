@@ -7,7 +7,7 @@ paths:
 
 # Complexity Analysis
 
-## When `make ci` fails on complexity checks
+## When cognitive complexity checks fail
 
 `make complexity` (Python cognitive complexity) is part of CI. When it fails:
 

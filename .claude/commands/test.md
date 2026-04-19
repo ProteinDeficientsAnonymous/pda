@@ -38,9 +38,3 @@ Pytest config is in `pyproject.toml`:
 - Uses `--reuse-db` for speed
 - Requires `@pytest.mark.django_db` marker for DB access
 - Shared fixtures in `backend/tests/conftest.py`
-
-## Full CI
-
-```bash
-make ci    # lint → check → test → frontend-test
-```
