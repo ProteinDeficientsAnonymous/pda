@@ -11,5 +11,4 @@ frontend/.vite/
 frontend/src/**/*.test.ts
 frontend/src/**/*.test.tsx
 frontend/src/test/
-frontend/tsconfig.test.json
 frontend/vitest.config.ts
