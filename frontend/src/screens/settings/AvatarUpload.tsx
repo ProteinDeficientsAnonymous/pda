@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
-import { Button } from '@/components/ui/Button';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { useAuthStore } from '@/auth/store';
+import { cn } from '@/utils/cn';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = [
@@ -14,7 +14,11 @@ const ALLOWED_MIME = [
   'image/heif',
 ];
 
-export function AvatarUpload() {
+interface Props {
+  size?: 'md' | 'lg';
+}
+
+export function AvatarUpload({ size = 'md' }: Props) {
   const user = useAuthStore((s) => s.user);
   const upload = useAuthStore((s) => s.uploadProfilePhoto);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -29,10 +33,15 @@ export function AvatarUpload() {
       : user.profilePhotoUrl
     : '';
 
+  const avatarSize = size === 'lg' ? 'h-28 w-28' : 'h-20 w-20';
+  const initialsSize = size === 'lg' ? 'text-3xl' : 'text-2xl';
+  const cameraSize = size === 'lg' ? 'h-9 w-9' : 'h-8 w-8';
+  const cameraIconSize = size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
+
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     setError(null);
     const f = e.target.files?.[0];
-    e.target.value = ''; // allow re-picking the same file
+    e.target.value = '';
     if (!f) return;
     if (!ALLOWED_MIME.includes(f.type)) {
       setError('please pick a jpeg, png, webp, gif, or heic image');
@@ -57,18 +66,37 @@ export function AvatarUpload() {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      {photoUrl ? (
-        <img src={photoUrl} alt="" className="h-16 w-16 rounded-full object-cover" />
-      ) : (
-        <span
-          aria-hidden="true"
-          className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-active text-xl text-foreground-tertiary"
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative">
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt=""
+            className={cn(avatarSize, 'rounded-full object-cover')}
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className={cn(
+              avatarSize,
+              initialsSize,
+              'flex items-center justify-center rounded-full bg-surface-active text-foreground-tertiary',
+            )}
+          >
+            {initials}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          aria-label={photoUrl ? 'change photo' : 'upload photo'}
+          className={cn(
+            cameraSize,
+            'absolute right-0 bottom-0 inline-flex items-center justify-center rounded-full border border-border bg-surface text-foreground shadow-sm transition-colors hover:bg-surface-dim',
+          )}
         >
-          {initials}
-        </span>
-      )}
-      <div className="flex flex-col gap-1">
+          <CameraIcon className={cameraIconSize} />
+        </button>
         <input
           ref={inputRef}
           type="file"
@@ -77,15 +105,12 @@ export function AvatarUpload() {
           className="hidden"
           aria-label="choose profile photo"
         />
-        <Button variant="secondary" onClick={() => inputRef.current?.click()}>
-          {photoUrl ? 'change photo' : 'upload photo'}
-        </Button>
-        {error ? (
-          <p role="alert" className="text-xs text-red-600">
-            {error}
-          </p>
-        ) : null}
       </div>
+      {error ? (
+        <p role="alert" className="text-xs text-red-600">
+          {error}
+        </p>
+      ) : null}
 
       {file ? (
         <ImageCropDialog
@@ -98,6 +123,24 @@ export function AvatarUpload() {
         />
       ) : null}
     </div>
+  );
+}
+
+function CameraIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
   );
 }
 

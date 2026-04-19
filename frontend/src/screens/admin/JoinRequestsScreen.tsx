@@ -8,6 +8,7 @@ import {
   type JoinRequestSummary,
 } from '@/api/join';
 import { Button } from '@/components/ui/Button';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { cn } from '@/utils/cn';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
@@ -62,36 +63,13 @@ export default function JoinRequestsScreen() {
       <h1 className="mb-6 text-2xl font-medium tracking-tight">join requests</h1>
 
       <div className="mb-4 flex justify-center">
-        <div
-          role="radiogroup"
-          aria-label="filter"
-          className="inline-flex rounded-md border border-border-strong bg-surface p-0.5"
-        >
-          {FILTERS.map((f) => {
-            const active = filter === f.value;
-            return (
-              <label
-                key={f.value}
-                className={cn(
-                  'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-                  active ? 'bg-brand-600 text-brand-on' : 'text-foreground-secondary hover:bg-surface-dim',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="join-filter"
-                  value={f.value}
-                  checked={active}
-                  onChange={() => {
-                    setFilter(f.value);
-                  }}
-                  className="sr-only"
-                />
-                {f.label}
-              </label>
-            );
-          })}
-        </div>
+        <SegmentedControl
+          name="join-filter"
+          ariaLabel="filter"
+          options={FILTERS}
+          value={filter}
+          onChange={setFilter}
+        />
       </div>
 
       {error ? (

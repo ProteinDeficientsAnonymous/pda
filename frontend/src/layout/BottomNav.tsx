@@ -31,7 +31,7 @@ export function BottomNav() {
             aria-current={onEventsAdd ? 'page' : undefined}
             onClick={() => void navigate('/events/add')}
             className={cn(
-              'inline-flex h-11 w-11 items-center justify-center rounded-full text-white shadow transition-colors',
+              'inline-flex h-11 w-11 items-center justify-center rounded-full text-brand-on shadow transition-colors',
               onEventsAdd ? 'bg-brand-700' : 'bg-brand-600 hover:bg-brand-700',
             )}
           >

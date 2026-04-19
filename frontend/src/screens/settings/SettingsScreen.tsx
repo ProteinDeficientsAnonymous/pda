@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
 import { useAccessibilityStore, type ThemeMode, type TextScale } from '@/accessibility/store';
@@ -269,16 +270,19 @@ function DyslexiaToggle({
   checked: boolean;
   onChange: () => void;
 }) {
+  const options: { value: 'on' | 'off'; label: string }[] = [
+    { value: 'off', label: 'off' },
+    { value: 'on', label: 'on' },
+  ];
   return (
-    <label className="flex items-center justify-between gap-3">
-      <span className="text-sm text-foreground">dyslexia-friendly font</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="h-5 w-10 cursor-pointer appearance-none rounded-full bg-toggle-off transition-colors checked:bg-brand-600"
-      />
-    </label>
+    <SegmentedControl
+      label="dyslexia-friendly font"
+      options={options}
+      value={checked ? 'on' : 'off'}
+      onChange={(v) => {
+        if ((v === 'on') !== checked) onChange();
+      }}
+    />
   );
 }
 
@@ -304,7 +308,7 @@ function TextScaleToggle({
   );
 }
 
-function SegmentedControl<T>({
+function SegmentedControl<T extends string | number>({
   label,
   options,
   value,
@@ -318,34 +322,13 @@ function SegmentedControl<T>({
   return (
     <div>
       <div className="mb-2 text-sm text-foreground">{label}</div>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="inline-flex rounded-md border border-border-strong bg-surface p-0.5"
-      >
-        {options.map((opt) => {
-          const active = opt.value === value;
-          return (
-            <label
-              key={String(opt.value)}
-              className={cn(
-                'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-                active ? 'bg-brand-600 text-brand-on' : 'text-foreground-secondary hover:bg-surface-dim',
-              )}
-            >
-              <input
-                type="radio"
-                name={label}
-                value={String(opt.value)}
-                checked={active}
-                onChange={() => { onChange(opt.value); }}
-                className="sr-only"
-              />
-              {opt.label}
-            </label>
-          );
-        })}
-      </div>
+      <SharedSegmentedControl
+        name={label}
+        ariaLabel={label}
+        options={options}
+        value={value}
+        onChange={onChange}
+      />
     </div>
   );
 }

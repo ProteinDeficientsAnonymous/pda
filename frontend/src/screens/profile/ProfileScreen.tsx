@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/auth/store';
 import { useHasAnyAdminPermission } from '@/auth/useAuth';
 import { ContentContainer } from '@/screens/public/ContentContainer';
+import { AvatarUpload } from '@/screens/settings/AvatarUpload';
 import { cn } from '@/utils/cn';
 import { BioEditDialog } from './BioEditDialog';
 
@@ -20,13 +21,6 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
-  const initials = user.displayName.slice(0, 2).toUpperCase() || '?';
-  const photoUrl = user.profilePhotoUrl
-    ? user.photoUpdatedAt
-      ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
-      : user.profilePhotoUrl
-    : '';
-
   async function onLogout() {
     await logout();
     void navigate('/', { replace: true });
@@ -35,16 +29,7 @@ export default function ProfileScreen() {
   return (
     <ContentContainer>
       <header className="flex flex-col items-center gap-3 text-center">
-        {photoUrl ? (
-          <img src={photoUrl} alt="" className="h-28 w-28 rounded-full object-cover" />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="flex h-28 w-28 items-center justify-center rounded-full bg-surface-active text-3xl text-foreground-tertiary"
-          >
-            {initials}
-          </span>
-        )}
+        <AvatarUpload size="lg" />
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-2xl font-medium tracking-tight">{user.displayName}</h1>
           <ContactLine value={user.phoneNumber} visible={user.showPhone} />

@@ -11,7 +11,7 @@ import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType } from '@/models/event';
-import { cn } from '@/utils/cn';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 type Filter = 'upcoming' | 'past' | 'cancelled';
@@ -70,36 +70,13 @@ export default function MyEventsScreen() {
       </header>
 
       <div className="mb-4 flex justify-center">
-        <div
-          role="radiogroup"
-          aria-label="filter"
-          className="inline-flex rounded-md border border-neutral-300 bg-white p-0.5"
-        >
-          {FILTERS.map((f) => {
-            const active = filter === f.value;
-            return (
-              <label
-                key={f.value}
-                className={cn(
-                  'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-                  active ? 'bg-brand-600 text-brand-on' : 'text-neutral-700 hover:bg-neutral-100',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="my-events-filter"
-                  value={f.value}
-                  checked={active}
-                  onChange={() => {
-                    setFilter(f.value);
-                  }}
-                  className="sr-only"
-                />
-                {f.label}
-              </label>
-            );
-          })}
-        </div>
+        <SegmentedControl
+          name="my-events-filter"
+          ariaLabel="filter"
+          options={FILTERS}
+          value={filter}
+          onChange={setFilter}
+        />
       </div>
 
       {mine.length === 0 ? (

@@ -1,7 +1,4 @@
-// Pill-style segmented control for the 4 calendar views. Replaces Flutter's
-// SegmentedButton. Keyboard + screen-reader accessible via <input type="radio">.
-
-import { cn } from '@/utils/cn';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { View } from 'react-big-calendar';
 
 interface Props {
@@ -18,35 +15,12 @@ const VIEWS: { value: View; label: string }[] = [
 
 export function ViewSwitcher({ value, onChange }: Props) {
   return (
-    <div
-      role="radiogroup"
-      aria-label="calendar view"
-      className="inline-flex rounded-md border border-border-strong bg-surface p-0.5"
-    >
-      {VIEWS.map((v) => {
-        const active = v.value === value;
-        return (
-          <label
-            key={v.value}
-            className={cn(
-              'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-              active ? 'bg-brand-600 text-brand-on' : 'text-foreground-secondary hover:bg-surface-dim',
-            )}
-          >
-            <input
-              type="radio"
-              name="calendar-view"
-              value={v.value}
-              checked={active}
-              onChange={() => {
-                onChange(v.value);
-              }}
-              className="sr-only"
-            />
-            {v.label}
-          </label>
-        );
-      })}
-    </div>
+    <SegmentedControl<View>
+      name="calendar-view"
+      ariaLabel="calendar view"
+      options={VIEWS}
+      value={value}
+      onChange={onChange}
+    />
   );
 }

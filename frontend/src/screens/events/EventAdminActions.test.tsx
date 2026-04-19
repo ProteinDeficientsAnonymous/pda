@@ -123,13 +123,27 @@ beforeEach(() => {
 });
 
 describe('EventAdminActions', () => {
-  it('creator sees edit and delete buttons for upcoming event', () => {
+  it('creator sees edit and cancel (no delete) for active upcoming event', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
 
     renderActions(BASE_EVENT);
 
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cancel event/i })).toBeInTheDocument();
+    // Delete is gated to draft/cancelled events; active events must be cancelled first.
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
+  });
+
+  it('creator sees delete for draft event', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const draftEvent: Event = { ...BASE_EVENT, status: EventStatus.Draft };
+    renderActions(draftEvent);
+
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^publish$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 

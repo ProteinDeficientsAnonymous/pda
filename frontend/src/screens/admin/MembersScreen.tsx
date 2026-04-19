@@ -7,8 +7,8 @@ import { useUsers, type Member } from '@/api/users';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
-import { cn } from '@/utils/cn';
 import { MemberCreateDialog } from './MemberCreateDialog';
 
 type SortKey = 'name' | 'newest';
@@ -151,39 +151,17 @@ function RoleFilterRow({
   selected: string;
   onChange: (value: string) => void;
 }) {
-  const options = ['all', ...roleNames];
+  const options = ['all', ...roleNames].map((v) => ({ value: v, label: v }));
   return (
     <div className="mb-4 flex justify-center">
-      <div
-        role="radiogroup"
-        aria-label="filter by role"
-        className="inline-flex flex-wrap rounded-md border border-neutral-300 bg-white p-0.5"
-      >
-        {options.map((name) => {
-          const active = selected === name;
-          return (
-            <label
-              key={name}
-              className={cn(
-                'inline-flex h-8 cursor-pointer items-center rounded px-3 text-sm transition-colors',
-                active ? 'bg-brand-600 text-brand-on' : 'text-neutral-700 hover:bg-neutral-100',
-              )}
-            >
-              <input
-                type="radio"
-                name="member-role-filter"
-                value={name}
-                checked={active}
-                onChange={() => {
-                  onChange(name);
-                }}
-                className="sr-only"
-              />
-              {name}
-            </label>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        name="member-role-filter"
+        ariaLabel="filter by role"
+        options={options}
+        value={selected}
+        onChange={onChange}
+        className="flex-wrap"
+      />
     </div>
   );
 }
