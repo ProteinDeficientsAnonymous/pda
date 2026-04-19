@@ -1,17 +1,15 @@
 ---
 paths:
   - "backend/**/*.py"
-  - "frontend/lib/**/*.dart"
   - "Makefile"
   - "pyproject.toml"
-  - "frontend/analysis_options.yaml"
 ---
 
 # Complexity Analysis
 
 ## When `make ci` fails on complexity checks
 
-`make complexity` (Python cognitive complexity) and `make frontend-complexity` (Dart cyclomatic complexity) are part of CI. When they fail:
+`make complexity` (Python cognitive complexity) is part of CI. When it fails:
 
 1. **Never relax thresholds** (pyproject.toml, analysis_options.yaml, Makefile exit levels) without explicit user permission.
 2. **Never add `# noqa: CCR001`, `# noqa: C901`, or `// ignore:` comments** without explicit user permission.

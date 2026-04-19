@@ -31,12 +31,6 @@ cd backend && uv run python -m pytest listings/tests/ -v
 cd backend && uv run python -m pytest users/tests/ -v
 ```
 
-## Flutter Tests
-
-```bash
-make frontend-test    # cd frontend && flutter test
-```
-
 ## Configuration
 
 Pytest config is in `pyproject.toml`:

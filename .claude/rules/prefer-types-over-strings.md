@@ -9,8 +9,8 @@ When writing new code or modifying existing code, use shared types, enums, and c
 - Use `SurveyQuestionType`, `SurveyVisibility`, `PageVisibility`, `JoinRequestStatus` etc. from `community/models.py`
 - If no shared type exists for a repeated string value, create one
 
-## Frontend (Dart/Flutter)
+## Frontend (React/TypeScript)
 
-- Use constants from `config/constants.dart` (e.g. `EventType.official`, `RsvpStatus.attending`) instead of inline strings like `'official'`, `'attending'`
-- If a constant doesn't exist yet for a value used in comparisons or API payloads, add it to the appropriate constants class
+- Use constants or enums for values used in comparisons or API payloads instead of inline strings like `'official'`, `'attending'`
+- If a constant doesn't exist yet for a repeated string value, create one
 - This does **not** apply to UI text (button labels, headings, error messages, etc.) — those stay as inline strings

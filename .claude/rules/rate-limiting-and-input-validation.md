@@ -3,9 +3,6 @@ paths:
   - "**/api.py"
   - "**/_*.py"
   - "**/schemas.py"
-  - "**/screens/**/*.dart"
-  - "**/widgets/**/*.dart"
-  - "**/utils/validators.dart"
 ---
 
 # Rate Limiting and Input Validation
@@ -55,38 +52,7 @@ def cast_vote(request, data: VoteIn):
     ...
 ```
 
----
 
-## Input Validation (Frontend)
-
-All user-facing `TextFormField` inputs must have a `maxLength` constraint — both as a validator and as the field's `maxLength` property (which renders the character counter and enforces truncation at the OS level).
-
-### Pattern
-
-```dart
-import 'package:pda/utils/validators.dart';
-
-TextFormField(
-  maxLength: 500,
-  validator: all([required(), maxLength(500)]),
-  ...
-)
-```
-
-Use validators from `lib/utils/validators.dart`. Add new validators there — don't inline validation logic.
-
-### Recommended limits
-
-| Field type | maxLength |
-|------------|-----------|
-| Display name | 64 (already enforced by `displayName()` validator) |
-| Short text (title, label) | 100–150 |
-| Medium text (description, bio) | 500 |
-| Long text (event description, doc body) | 2000 |
-| URL fields | 500 |
-| Phone number | 20 |
-
-Match these to the corresponding Django model `max_length` — they must be consistent.
 
 ### Backend schema enforcement
 

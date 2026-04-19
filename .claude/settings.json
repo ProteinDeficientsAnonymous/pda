@@ -15,8 +15,6 @@
       "Bash(gunicorn:*)",
       "Bash(git:*)",
       "Bash(docker:*)",
-      "Bash(flutter:*)",
-      "Bash(dart:*)",
       "Bash(bd:*)"
     ],
     "deny": [
