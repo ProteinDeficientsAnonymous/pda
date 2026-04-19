@@ -7,7 +7,7 @@ COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY frontend/ ./
-RUN pnpm build
+RUN pnpm build:docker
 
 # Stage 2: Python/Django + nginx runtime
 FROM python:3.13-slim AS runtime
