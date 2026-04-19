@@ -3,13 +3,13 @@
 // edit display name / email / phone + pause/unpause the account.
 
 import { useState, type SyntheticEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
-import { useUpdateUser, useUsers, type Member } from '@/api/users';
+import { useArchiveUser, useUpdateUser, useUsers, type Member } from '@/api/users';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function MemberDetailScreen() {
@@ -27,6 +27,22 @@ export default function MemberDetailScreen() {
 
 function MemberDetailView({ member }: { member: Member }) {
   const [editing, setEditing] = useState(false);
+  const navigate = useNavigate();
+  const archive = useArchiveUser();
+
+  async function onArchive() {
+    const confirmed = window.confirm(
+      `archive ${member.displayName || member.phoneNumber}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+    );
+    if (!confirmed) return;
+    try {
+      await archive.mutateAsync(member.id);
+      toast.success('member archived ✓');
+      void navigate('/members');
+    } catch (err) {
+      toast.error(extractError(err));
+    }
+  }
 
   return (
     <ContentContainer>
@@ -87,7 +103,14 @@ function MemberDetailView({ member }: { member: Member }) {
           }}
         />
       ) : (
-        <div className="flex justify-end">
+        <div className="flex justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => void onArchive()}
+            disabled={archive.isPending}
+          >
+            {archive.isPending ? 'archiving…' : 'archive'}
+          </Button>
           <Button
             variant="secondary"
             onClick={() => {

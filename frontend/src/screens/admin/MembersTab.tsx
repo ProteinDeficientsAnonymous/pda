@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { BulkCreateDialog } from './BulkCreateDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
 
 type SortKey = 'name' | 'newest';
@@ -24,6 +25,7 @@ export function MembersTab() {
   const [sort, setSort] = useState<SortKey>('name');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [createOpen, setCreateOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const roleNames = useMemo(() => {
     const names = new Set<string>();
@@ -43,7 +45,15 @@ export function MembersTab() {
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex justify-end gap-2">
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setBulkOpen(true);
+          }}
+        >
+          bulk add
+        </Button>
         <Button
           onClick={() => {
             setCreateOpen(true);
@@ -100,6 +110,15 @@ export function MembersTab() {
           open
           onClose={() => {
             setCreateOpen(false);
+          }}
+        />
+      ) : null}
+
+      {bulkOpen ? (
+        <BulkCreateDialog
+          open
+          onClose={() => {
+            setBulkOpen(false);
           }}
         />
       ) : null}
