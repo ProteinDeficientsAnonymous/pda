@@ -215,14 +215,17 @@ class TestInviteOnlyVisibility:
         )
         assert response.status_code == 200
 
-    def test_invited_list_visible_to_invited_user(self, api_client, test_user):
+    def test_invited_list_hidden_from_invited_user(self, api_client, test_user):
+        # Invited-but-non-host users can open the event (they pass the
+        # invite-only gate) but the invited-list itself is host/cohost/admin
+        # only — they shouldn't see who else was invited.
         creator = self._make_user("+12025550210", "Creator10")
         event = self._make_invite_only_event(creator, invited_user=test_user)
         response = api_client.get(
             f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
         )
         assert response.status_code == 200
-        assert len(response.json()["invited_user_ids"]) == 1
+        assert response.json()["invited_user_ids"] == []
 
     def test_invited_list_hidden_for_regular_public_event(self, api_client, test_user):
         from community.models import PageVisibility
