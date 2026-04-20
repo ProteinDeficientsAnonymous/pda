@@ -87,3 +87,30 @@ class TestRequestLoginLink:
         # Second request within 5 minutes — should NOT create another token
         api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
         assert MagicLoginToken.objects.filter(user=user).count() == count_after_first
+
+    def test_skips_when_login_link_already_requested(self, api_client):
+        """Spam-tap: subsequent requests are no-ops while a request is pending."""
+        from users.models import User
+
+        approver = User.objects.create_user(phone_number="+12025559001", password="pass")
+        role = Role.objects.create(name="vetter", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
+        approver.roles.add(role)
+        user = User.objects.create_user(phone_number=_PHONE, password="pass")
+        user.login_link_requested = True
+        user.save(update_fields=["login_link_requested"])
+
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+
+        # No new notification should be created — existing pending request is respected.
+        assert not Notification.objects.filter(recipient=approver, related_user=user).exists()
+
+    def test_sets_login_link_requested_flag(self, api_client):
+        from users.models import User
+
+        user = User.objects.create_user(phone_number=_PHONE, password="pass")
+        assert user.login_link_requested is False
+
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+
+        user.refresh_from_db()
+        assert user.login_link_requested is True

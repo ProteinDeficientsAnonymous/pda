@@ -241,3 +241,49 @@ class TestGenerateMagicLink:
             **auth_headers,
         )
         assert response.status_code == 403
+
+    def test_generate_magic_link_reuses_recent_token(
+        self, api_client, manage_users_headers, other_user
+    ):
+        """Two admins clicking generate within 5 min get the same token (no duplicate)."""
+        first = api_client.post(
+            f"/api/auth/users/{other_user.pk}/magic-link/",
+            **manage_users_headers,
+        )
+        assert first.status_code == 200
+        first_token = first.json()["magic_link_token"]
+
+        second = api_client.post(
+            f"/api/auth/users/{other_user.pk}/magic-link/",
+            **manage_users_headers,
+        )
+        assert second.status_code == 200
+        assert second.json()["magic_link_token"] == first_token
+        assert "already" in second.json()["detail"].lower()
+
+    def test_generate_magic_link_clears_request_notifications(
+        self, api_client, manage_users_headers, other_user
+    ):
+        """When admin generates the link, MAGIC_LINK_REQUEST notifications are marked read."""
+        from notifications.models import Notification, NotificationType
+        from users.models import User
+
+        approver = User.objects.create_user(phone_number="+12025557788", password="pass")
+        Notification.objects.create(
+            recipient=approver,
+            notification_type=NotificationType.MAGIC_LINK_REQUEST,
+            related_user=other_user,
+            message="link request",
+        )
+        other_user.login_link_requested = True
+        other_user.save(update_fields=["login_link_requested"])
+
+        response = api_client.post(
+            f"/api/auth/users/{other_user.pk}/magic-link/",
+            **manage_users_headers,
+        )
+        assert response.status_code == 200
+        notif = Notification.objects.get(recipient=approver, related_user=other_user)
+        assert notif.is_read is True
+        other_user.refresh_from_db()
+        assert other_user.login_link_requested is False

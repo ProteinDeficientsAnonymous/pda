@@ -370,21 +370,59 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     try:
         normalized = _validate_phone(payload.phone_number)
     except ValueError:
+        audit_log(
+            logging.INFO,
+            "magic_link_request_skipped_invalid_phone",
+            request,
+        )
         return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
 
     user = User.objects.filter(phone_number=normalized, archived_at__isnull=True).first()
-    if user:
-        recent_token_exists = MagicLoginToken.objects.filter(
-            user=user,
-            created_at__gte=timezone.now() - timedelta(minutes=5),
-        ).exists()
-        if not recent_token_exists:
-            _create_magic_token(user)
-            user.login_link_requested = True
-            user.save(update_fields=["login_link_requested"])
-            try:
-                create_magic_link_request_notifications(user)
-            except Exception:
-                logger.exception("Failed to create magic link request notifications")
+    if user is None:
+        audit_log(
+            logging.INFO,
+            "magic_link_request_skipped_unknown_phone",
+            request,
+        )
+        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+
+    if user.login_link_requested:
+        audit_log(
+            logging.INFO,
+            "magic_link_request_skipped_already_pending",
+            request,
+            target_type="user",
+            target_id=str(user.pk),
+        )
+        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+
+    recent_token_exists = MagicLoginToken.objects.filter(
+        user=user,
+        created_at__gte=timezone.now() - timedelta(minutes=5),
+    ).exists()
+    if recent_token_exists:
+        audit_log(
+            logging.INFO,
+            "magic_link_request_skipped_recent_token",
+            request,
+            target_type="user",
+            target_id=str(user.pk),
+        )
+        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+
+    _create_magic_token(user)
+    user.login_link_requested = True
+    user.save(update_fields=["login_link_requested"])
+    try:
+        create_magic_link_request_notifications(user)
+    except Exception:
+        logger.exception("Failed to create magic link request notifications")
+    audit_log(
+        logging.INFO,
+        "magic_link_requested",
+        request,
+        target_type="user",
+        target_id=str(user.pk),
+    )
 
     return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
