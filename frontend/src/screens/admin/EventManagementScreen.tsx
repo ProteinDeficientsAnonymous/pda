@@ -9,9 +9,9 @@ import { Link } from 'react-router-dom';
 import { useEvents } from '@/api/events';
 import type { Event } from '@/models/event';
 import { Button } from '@/components/ui/Button';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { cn } from '@/utils/cn';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 type Bucket = 'upcoming' | 'past' | 'drafts' | 'cancelled';
@@ -108,30 +108,14 @@ export default function EventManagementScreen() {
         </div>
       </div>
 
-      <div role="tablist" aria-label="event bucket" className="mb-4 flex flex-wrap gap-1">
-        {BUCKETS.map((b) => {
-          const active = bucket === b.value;
-          const count = data.filter((e) => bucketFilter(e, b.value)).length;
-          return (
-            <button
-              key={b.value}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => {
-                setBucket(b.value);
-              }}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs transition-colors',
-                active
-                  ? 'bg-brand-600 text-brand-on'
-                  : 'bg-surface-dim text-foreground-secondary hover:bg-surface-raised',
-              )}
-            >
-              {b.label} ({String(count)})
-            </button>
-          );
-        })}
+      <div className="mb-4 flex justify-center overflow-x-auto">
+        <SegmentedControl
+          name="event-bucket"
+          ariaLabel="event bucket"
+          options={BUCKETS}
+          value={bucket}
+          onChange={setBucket}
+        />
       </div>
 
       {visible.length === 0 ? (
@@ -155,18 +139,17 @@ function EventRow({ event }: { event: Event }) {
       to={`/events/${event.id}`}
       className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 hover:bg-background"
     >
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{event.title}</p>
         <p className="truncate text-xs text-muted">
           {event.datetimeTbd || !event.startDatetime ? 'tbd' : format(event.startDatetime, 'EEE MMM d, h:mm a').toLowerCase()}
           {event.location ? ` · ${event.location}` : ''}
         </p>
       </div>
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex shrink-0 items-center gap-2 text-xs">
         {event.eventType === 'official' ? (
           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">official</span>
         ) : null}
-        <span className="text-muted">{String(event.attendingCount)} going</span>
         <Button
           variant="ghost"
           onClick={(e) => {
