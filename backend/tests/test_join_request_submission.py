@@ -33,6 +33,38 @@ class TestJoinRequestSubmission:
         assert data["phone_number"] == "+12025551234"
         assert len(data["answers"]) >= 1
 
+    def test_submit_honeypot_silently_drops_request(self, api_client, why_join_id):
+        from community.models import JoinRequest
+
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Bot Spammer",
+                "phone_number": "+12025557777",
+                "answers": {why_join_id: "spammy text"},
+                "website": "http://spam.example.com",
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+        assert not JoinRequest.objects.filter(phone_number="+12025557777").exists()
+
+    def test_submit_honeypot_blank_does_not_drop(self, api_client, why_join_id):
+        from community.models import JoinRequest
+
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Real Person",
+                "phone_number": "+12025558888",
+                "answers": {why_join_id: "I care about animals."},
+                "website": "",
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+        assert JoinRequest.objects.filter(phone_number="+12025558888").exists()
+
     def test_submit_join_request_missing_required_answer(self, api_client):
         response = api_client.post(
             "/api/community/join-request/",

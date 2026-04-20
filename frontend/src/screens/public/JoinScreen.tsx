@@ -37,6 +37,9 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
+  // Honeypot: real users never touch this. Bots auto-fill every input — when
+  // the value reaches the server, the request is silently dropped.
+  const [website, setWebsite] = useState('');
 
   function validate(): boolean {
     const next: Record<string, string> = {};
@@ -62,6 +65,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
         displayName: displayName.trim(),
         phoneNumber: phoneNumber.trim(),
         answers: nonEmpty,
+        website,
       });
       void navigate('/join/success', { replace: true });
     } catch (err) {
@@ -81,6 +85,20 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
       </p>
 
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
+        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+          <label htmlFor="website-hp">website (leave blank)</label>
+          <input
+            id="website-hp"
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={website}
+            onChange={(e) => {
+              setWebsite(e.target.value);
+            }}
+          />
+        </div>
         <TextField
           label="display name"
           value={displayName}

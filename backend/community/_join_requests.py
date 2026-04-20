@@ -31,6 +31,9 @@ class JoinRequestIn(BaseModel):
     display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     answers: dict[str, str] = {}
+    # Honeypot: hidden field human users never fill in. Bots auto-complete
+    # every input, so a non-empty value is a strong spam signal.
+    website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
 
     @field_validator("answers")
     @classmethod
@@ -161,11 +164,46 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
         logger.exception("Failed to send vetting email for join request")
 
 
+def _honeypot_decoy_response(display_name: str, phone_number: str) -> JoinRequestOut:
+    """Mimic a real submission's shape so bots register success and stop retrying."""
+    return JoinRequestOut(
+        id="",
+        display_name=display_name,
+        phone_number=phone_number,
+        submitted_at=timezone.now(),
+        status=JoinRequestStatus.PENDING,
+    )
+
+
+def _check_phone_conflicts(validated_phone: str) -> tuple[int, str] | None:
+    """Return (status_code, detail) if phone is already taken, else None."""
+    from users.models import User
+
+    if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
+        return 409, "already_invited"
+    if JoinRequest.objects.filter(
+        phone_number=validated_phone, status=JoinRequestStatus.PENDING
+    ).exists():
+        return 400, "a request for this number is already pending — we'll be in touch soon"
+    return None
+
+
 @router.post(
     "/join-request/", response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut}, auth=None
 )
 def submit_join_request(request, payload: JoinRequestIn):
     display_name = payload.display_name.strip()
+
+    # Honeypot trip — silently 201 without persisting so bots don't retry.
+    if payload.website.strip():
+        audit_log(
+            logging.WARNING,
+            "join_request_honeypot_tripped",
+            request,
+            details={"display_name": display_name},
+        )
+        return Status(201, _honeypot_decoy_response(display_name, payload.phone_number))
+
     name_error = validate_display_name(display_name)
     if name_error:
         return Status(400, ErrorOut(detail=name_error))
@@ -175,20 +213,10 @@ def submit_join_request(request, payload: JoinRequestIn):
     except ValueError as e:
         return Status(400, ErrorOut(detail=str(e)))
 
-    from users.models import User
-
-    if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
-        return Status(409, ErrorOut(detail="already_invited"))
-
-    if JoinRequest.objects.filter(
-        phone_number=validated_phone, status=JoinRequestStatus.PENDING
-    ).exists():
-        return Status(
-            400,
-            ErrorOut(
-                detail="a request for this number is already pending — we'll be in touch soon"
-            ),
-        )
+    conflict = _check_phone_conflicts(validated_phone)
+    if conflict is not None:
+        code, detail = conflict
+        return Status(code, ErrorOut(detail=detail))
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
     error = _validate_answers(payload.answers, questions)
@@ -403,89 +431,3 @@ def check_phone(request, payload: CheckPhoneIn):
     ).exists():
         return Status(200, CheckPhoneOut(status="pending"))
     return Status(200, CheckPhoneOut(status="unknown"))
-
-
-class RequestLoginLinkIn(BaseModel):
-    phone_number: str = Field(max_length=FieldLimit.PHONE)
-
-
-class RequestLoginLinkOut(BaseModel):
-    detail: str
-
-
-_REQUEST_LINK_RESPONSE = "if you've been invited, an admin will be in touch with your login link"
-
-
-@router.post("/request-login-link/", response={200: RequestLoginLinkOut}, auth=None)
-def request_login_link(request, payload: RequestLoginLinkIn):
-    """Unauthenticated endpoint for invited users to re-request a magic login link.
-
-    Always returns 200 to prevent phone number enumeration.
-    If a User exists, generates a magic link token and notifies admins.
-    """
-    from datetime import timedelta
-
-    from django.utils import timezone
-    from notifications.service import create_magic_link_request_notifications
-    from users._helpers import _create_magic_token
-    from users.models import MagicLoginToken, User
-
-    try:
-        normalized = _validate_phone(payload.phone_number)
-    except ValueError:
-        audit_log(
-            logging.INFO,
-            "magic_link_request_skipped_invalid_phone",
-            request,
-        )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
-
-    user = User.objects.filter(phone_number=normalized, archived_at__isnull=True).first()
-    if user is None:
-        audit_log(
-            logging.INFO,
-            "magic_link_request_skipped_unknown_phone",
-            request,
-        )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
-
-    if user.login_link_requested:
-        audit_log(
-            logging.INFO,
-            "magic_link_request_skipped_already_pending",
-            request,
-            target_type="user",
-            target_id=str(user.pk),
-        )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
-
-    recent_token_exists = MagicLoginToken.objects.filter(
-        user=user,
-        created_at__gte=timezone.now() - timedelta(minutes=5),
-    ).exists()
-    if recent_token_exists:
-        audit_log(
-            logging.INFO,
-            "magic_link_request_skipped_recent_token",
-            request,
-            target_type="user",
-            target_id=str(user.pk),
-        )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
-
-    _create_magic_token(user)
-    user.login_link_requested = True
-    user.save(update_fields=["login_link_requested"])
-    try:
-        create_magic_link_request_notifications(user)
-    except Exception:
-        logger.exception("Failed to create magic link request notifications")
-    audit_log(
-        logging.INFO,
-        "magic_link_requested",
-        request,
-        target_type="user",
-        target_id=str(user.pk),
-    )
-
-    return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))

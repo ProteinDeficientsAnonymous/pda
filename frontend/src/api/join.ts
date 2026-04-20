@@ -51,6 +51,7 @@ export interface SubmitJoinRequestPayload {
   displayName: string;
   phoneNumber: string;
   answers: Record<string, string>;
+  website: string;
 }
 
 export class AlreadyInvitedError extends Error {
@@ -68,6 +69,7 @@ export function useSubmitJoinRequest() {
           display_name: payload.displayName,
           phone_number: payload.phoneNumber,
           answers: payload.answers,
+          website: payload.website,
         });
       } catch (err) {
         const status = (err as { response?: { status?: number } }).response?.status;
