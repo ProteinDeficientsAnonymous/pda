@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
 import { extractApiError } from '@/utils/errors';
 import { passwordRule } from './passwordRule';
+import { PasswordChecklist } from './PasswordChecklist';
 
 const schema = z.object({
   displayName: z.string().min(1, 'name required').max(64),
@@ -27,11 +28,13 @@ export default function OnboardingScreen() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { displayName: '', email: '', newPassword: '' },
   });
+  const passwordValue = watch('newPassword');
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
@@ -64,12 +67,12 @@ export default function OnboardingScreen() {
           error={errors.email?.message}
           hint="used only for account recovery"
         />
+        <PasswordChecklist value={passwordValue} />
         <PasswordField
           label="password"
           autoComplete="new-password"
           {...register('newPassword')}
           error={errors.newPassword?.message}
-          hint="at least 8 characters, one letter, one number"
         />
         {serverError ? (
           <p role="alert" className="text-sm text-destructive">

@@ -31,6 +31,14 @@ export function setAuthBridge(next: AuthBridge): void {
   bridge = next;
 }
 
+// Read the current access token without going through the axios interceptor.
+// Callers on `authClient` (which has no interceptor) use this to opt in to
+// sending Authorization on specific requests — e.g. /magic-login/ needs to
+// reveal who's already signed in so the backend can reject cross-user swaps.
+export function getCurrentAccessToken(): string | null {
+  return bridge?.getAccessToken() ?? null;
+}
+
 const BASE_CONFIG = {
   baseURL: API_BASE_URL,
   withCredentials: true, // send httpOnly refresh cookie

@@ -5,6 +5,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
 import { passwordRule } from '@/screens/auth/passwordRule';
+import { PasswordChecklist } from '@/screens/auth/PasswordChecklist';
 
 interface Props {
   open: boolean;
@@ -73,6 +74,7 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
           autoComplete="current-password"
           maxLength={72}
         />
+        <PasswordChecklist value={next} />
         <TextField
           label="new password"
           type="password"

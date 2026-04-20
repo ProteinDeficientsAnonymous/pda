@@ -124,6 +124,36 @@ describe('useAuthStore', () => {
     });
   });
 
+  describe('magicLogin', () => {
+    it('preserves the existing session when magic login fails', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      const err = Object.assign(new Error('403'), {
+        isAxiosError: true,
+        response: { status: 403 },
+      });
+      vi.mocked(authApi.magicLogin).mockRejectedValueOnce(err);
+
+      await expect(useAuthStore.getState().magicLogin('some-token')).rejects.toThrow('403');
+
+      const { status, user, accessToken } = useAuthStore.getState();
+      expect(status).toBe('authed');
+      expect(user).toEqual(mockUser);
+      expect(accessToken).toBe('tok-abc');
+    });
+
+    it('moves to unauthed when magic login fails and no prior session existed', async () => {
+      const err = Object.assign(new Error('400'), {
+        isAxiosError: true,
+        response: { status: 400 },
+      });
+      vi.mocked(authApi.magicLogin).mockRejectedValueOnce(err);
+
+      await expect(useAuthStore.getState().magicLogin('some-token')).rejects.toThrow('400');
+
+      expect(useAuthStore.getState().status).toBe('unauthed');
+    });
+  });
+
   describe('logout', () => {
     it('sets status to unauthed and clears user and accessToken', async () => {
       // Start in an authed state.

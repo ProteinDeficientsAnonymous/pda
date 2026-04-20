@@ -9,6 +9,7 @@ import { PasswordField } from '@/components/ui/PasswordField';
 import { useAuthStore } from '@/auth/store';
 import { extractApiError } from '@/utils/errors';
 import { passwordRule } from './passwordRule';
+import { PasswordChecklist } from './PasswordChecklist';
 
 const schema = z.object({
   newPassword: passwordRule,
@@ -26,11 +27,13 @@ export default function NewPasswordScreen() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { newPassword: '' },
   });
+  const passwordValue = watch('newPassword');
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
@@ -45,12 +48,12 @@ export default function NewPasswordScreen() {
   return (
     <AuthLayout title="set a new password" subtitle="you're almost in">
       <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="flex flex-col gap-4">
+        <PasswordChecklist value={passwordValue} />
         <PasswordField
           label="new password"
           autoComplete="new-password"
           {...register('newPassword')}
           error={errors.newPassword?.message}
-          hint="at least 8 characters, one letter, one number"
         />
         {serverError ? (
           <p role="alert" className="text-sm text-destructive">

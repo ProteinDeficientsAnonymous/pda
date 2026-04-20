@@ -5,6 +5,7 @@ export const NotificationType = {
   CohostAdded: 'cohost_added',
   MagicLinkRequest: 'magic_link_request',
   WaitlistPromoted: 'waitlist_promoted',
+  EventCancelled: 'event_cancelled',
 } as const;
 
 export interface AppNotification {

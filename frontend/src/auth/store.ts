@@ -13,6 +13,7 @@
 import { create } from 'zustand';
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
+import { queryClient } from '@/api/queryClient';
 import type { User } from '@/models/user';
 
 export type AuthStatus = 'idle' | 'loading' | 'authed' | 'unauthed';
@@ -48,6 +49,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ status: 'loading' });
     try {
       const { access, user } = await authApi.login(phoneNumber, password);
+      queryClient.clear();
       set({ status: 'authed', user, accessToken: access });
     } catch (err) {
       set({ status: 'unauthed', user: null, accessToken: null });
@@ -56,12 +58,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async magicLogin(token) {
+    const prev = get();
     set({ status: 'loading' });
     try {
       const { access, user } = await authApi.magicLogin(token);
+      queryClient.clear();
       set({ status: 'authed', user, accessToken: access });
     } catch (err) {
-      set({ status: 'unauthed', user: null, accessToken: null });
+      // Preserve the existing session on failure. If the caller was already
+      // signed in (e.g. they clicked someone else's magic link), forcibly
+      // logging them out would compound the confusion. Only move to 'unauthed'
+      // if there was no prior session.
+      if (prev.status === 'authed' && prev.user) {
+        set({ status: 'authed', user: prev.user, accessToken: prev.accessToken });
+      } else {
+        set({ status: 'unauthed', user: null, accessToken: null });
+      }
       throw err;
     }
   },
@@ -108,10 +120,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async logout() {
     await authApi.logout();
+    queryClient.clear();
     set({ status: 'unauthed', user: null, accessToken: null });
   },
 
   forceLogout() {
+    queryClient.clear();
     set({ status: 'unauthed', user: null, accessToken: null });
   },
 }));

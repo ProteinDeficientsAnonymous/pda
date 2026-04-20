@@ -2,7 +2,7 @@
 // responses — centralizes the mapping from backend snake_case to frontend camelCase.
 
 import { useMutation } from '@tanstack/react-query';
-import { apiClient, authClient } from './client';
+import { apiClient, authClient, getCurrentAccessToken } from './client';
 import type { User, Role } from '@/models/user';
 
 // --- Wire types (snake_case, server-shaped). ----------------------------------
@@ -85,7 +85,12 @@ export async function login(
 }
 
 export async function magicLogin(token: string): Promise<{ access: string; user: User }> {
-  const { data } = await authClient.get<TokenOut>(`/api/auth/magic-login/${token}/`);
+  // Forward the current access token (if any) so the backend's cross-user
+  // guard can detect that a different user is already signed in and reject
+  // the link rather than silently swapping sessions.
+  const current = getCurrentAccessToken();
+  const config = current ? { headers: { Authorization: `Bearer ${current}` } } : undefined;
+  const { data } = await authClient.get<TokenOut>(`/api/auth/magic-login/${token}/`, config);
   const user = await fetchMeWithToken(data.access);
   return { access: data.access, user };
 }

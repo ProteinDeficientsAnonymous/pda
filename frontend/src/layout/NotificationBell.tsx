@@ -168,6 +168,7 @@ function notificationTarget(n: AppNotification): string | null {
     case NotificationType.EventInvite:
     case NotificationType.CohostAdded:
     case NotificationType.WaitlistPromoted:
+    case NotificationType.EventCancelled:
       return n.eventId ? `/events/${n.eventId}` : null;
     case NotificationType.EventFlagged:
       return '/admin/flagged-events';

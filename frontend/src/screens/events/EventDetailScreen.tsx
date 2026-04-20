@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { Link, useParams } from 'react-router-dom';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
@@ -12,10 +13,15 @@ import { EventPollCard } from './poll/EventPollCard';
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
-  const { data: event, isPending, isError } = useEvent(id);
+  const { data: event, isPending, isError, error } = useEvent(id);
 
   if (isPending) return <ContentLoading />;
-  if (isError) return <ContentError message="couldn't load this event — try refreshing" />;
+  if (isError) {
+    if (isAxiosError(error) && error.response?.status === 403) {
+      return <InviteOnlyNotice />;
+    }
+    return <ContentError message="couldn't load this event — try refreshing" />;
+  }
 
   return (
     <ContentContainer>
@@ -93,6 +99,25 @@ function Badge({
     lavender: 'bg-highlight-subtle text-highlight',
   };
   return <span className={`rounded-full px-2 py-0.5 text-xs ${tones[tone]}`}>{children}</span>;
+}
+
+function InviteOnlyNotice() {
+  return (
+    <ContentContainer>
+      <section className="mt-8 rounded-lg border border-border bg-surface p-6">
+        <h2 className="mb-2 text-base font-medium">invite only 🌿</h2>
+        <p className="mb-4 text-sm text-foreground-tertiary">
+          this event is invite only — reach out to the host if you'd like to come along
+        </p>
+        <Link
+          to="/calendar"
+          className="inline-flex h-10 items-center rounded-md border border-border-strong px-4 text-sm font-medium text-foreground-secondary hover:bg-background"
+        >
+          back to calendar
+        </Link>
+      </section>
+    </ContentContainer>
+  );
 }
 
 function LoginOrJoinSection() {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
 import { AuthLayout } from './AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
-type State = 'pending' | 'error';
+type State = 'pending' | 'expired' | 'cross_user';
 
 export default function MagicLoginScreen() {
   const { token } = useParams();
@@ -31,14 +32,41 @@ export default function MagicLoginScreen() {
         const redirect = params.get('redirect');
         void navigate(redirect ? decodeURIComponent(redirect) : '/calendar', { replace: true });
       })
-      .catch(() => {
-        setState('error');
+      .catch((err: unknown) => {
+        // 403 means the caller is already signed in as a different user. The
+        // store preserves that session, so surface a distinct message instead
+        // of the generic "link expired" and a "request new link" CTA that
+        // would just rotate the victim's own magic token.
+        if (err instanceof AxiosError && err.response?.status === 403) {
+          setState('cross_user');
+          return;
+        }
+        setState('expired');
       });
   }, [token, magicLogin, navigate, params]);
 
   if (!token) return <Navigate to="/login" replace />;
 
-  if (state === 'error') {
+  if (state === 'cross_user') {
+    return (
+      <AuthLayout title="already signed in" subtitle="this link is for a different account">
+        <p className="text-sm text-foreground-tertiary">
+          log out first, then open the link again
+        </p>
+        <Button
+          fullWidth
+          className="mt-4"
+          onClick={() => {
+            void navigate('/calendar', { replace: true });
+          }}
+        >
+          back to calendar
+        </Button>
+      </AuthLayout>
+    );
+  }
+
+  if (state === 'expired') {
     return (
       <AuthLayout title="link expired" subtitle="this login link didn't work">
         <p className="text-sm text-foreground-tertiary">
