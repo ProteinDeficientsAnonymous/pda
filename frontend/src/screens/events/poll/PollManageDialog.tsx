@@ -36,6 +36,10 @@ export function PollManageDialog({ open, onClose, poll }: Props) {
 
   async function onAdd() {
     if (!newIso) return;
+    if (new Date(newIso).getTime() < Date.now() - 60_000) {
+      toast.error('options must be in the future');
+      return;
+    }
     try {
       await addOpt.mutateAsync(new Date(newIso));
       setNewIso(null);
@@ -165,6 +169,10 @@ function OptionRow({
 
   async function save() {
     if (!iso) return;
+    if (new Date(iso).getTime() < Date.now() - 60_000) {
+      toast.error('options must be in the future');
+      return;
+    }
     setSaving(true);
     try {
       await onUpdate(iso);

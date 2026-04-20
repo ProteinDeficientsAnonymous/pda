@@ -1,12 +1,14 @@
 """EventPoll endpoints — create, vote, finalize, delete."""
 
 import logging
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from config.audit import audit_log
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
 from django.db import transaction
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -34,6 +36,25 @@ from community.models import (
 )
 
 router = Router()
+
+# Grace window matches frontend validateEventForm — lets a just-picked minute
+# land even if the server clock is a few seconds ahead of the user's.
+_PAST_GRACE = timedelta(seconds=60)
+
+
+def _any_in_past(dts: list[datetime]) -> bool:
+    cutoff = timezone.now() - _PAST_GRACE
+    return any(dt < cutoff for dt in dts)
+
+
+def _validate_poll_options(dts: list[datetime], *, require_at_least_one: bool):
+    """Returns an error Status if invalid, or None. Keeps endpoints below the
+    return-count threshold by bundling shape + past-time checks together."""
+    if require_at_least_one and len(dts) < 1:
+        return Status(400, ErrorOut(detail="A poll requires at least 1 option."))
+    if _any_in_past(dts):
+        return Status(400, ErrorOut(detail="Poll options must be in the future."))
+    return None
 
 
 def _can_manage_poll(user, event: Event) -> bool:
@@ -127,10 +148,9 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
         return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     if hasattr(event, "poll"):
         return Status(400, ErrorOut(detail="This event already has a poll."))
-    # Intentional: we accept a single-option poll here. The frontend requires ≥2
-    # options on creation, but scripts/imports may legitimately start with one.
-    if len(payload.options) < 1:
-        return Status(400, ErrorOut(detail="A poll requires at least 1 option."))
+    option_err = _validate_poll_options(payload.options, require_at_least_one=True)
+    if option_err is not None:
+        return option_err
     with transaction.atomic():
         poll = EventPoll.objects.create(event=event, created_by=request.auth)
         for i, dt in enumerate(payload.options):
@@ -258,8 +278,6 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
     if err is not None:
         return err
     with transaction.atomic():
-        from django.utils import timezone
-
         poll.winning_option = winning_option
         poll.finalized_by = request.auth
         poll.finalized_at = timezone.now()
@@ -386,6 +404,9 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
     _, poll, err = _get_active_poll(request.auth, event_id)
     if err is not None:
         return err
+    option_err = _validate_poll_options([payload.datetime], require_at_least_one=False)
+    if option_err is not None:
+        return option_err
     next_order = poll.options.count()
     try:
         PollOption.objects.create(poll=poll, datetime=payload.datetime, display_order=next_order)
@@ -417,6 +438,9 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
     _, poll, err = _get_active_poll(request.auth, event_id)
     if err is not None:
         return err
+    option_err = _validate_poll_options([payload.datetime], require_at_least_one=False)
+    if option_err is not None:
+        return option_err
     try:
         option = poll.options.get(id=option_id)
     except PollOption.DoesNotExist:

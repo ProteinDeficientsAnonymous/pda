@@ -71,6 +71,11 @@ function PollCreateDialogBody({ onClose, eventId, onBuffer, initialOptions }: Pr
       setError('some options are duplicates — remove them or pick different times');
       return;
     }
+    const cutoff = Date.now() - 60_000;
+    if (unique.some((iso) => new Date(iso).getTime() < cutoff)) {
+      setError('options must be in the future');
+      return;
+    }
     setError(null);
 
     const datetimes = unique.map((iso) => new Date(iso));
