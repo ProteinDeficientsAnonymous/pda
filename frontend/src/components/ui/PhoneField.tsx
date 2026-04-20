@@ -1,3 +1,4 @@
+import type { InputHTMLAttributes } from 'react';
 import PhoneInput, { type Country, type Value } from 'react-phone-number-input';
 import flags from 'react-phone-number-input/flags';
 import 'react-phone-number-input/style.css';
@@ -11,6 +12,9 @@ interface Props {
   hint?: string | undefined;
   defaultCountry?: Country;
   id?: string;
+  name?: string;
+  autoComplete?: string;
+  numberInputProps?: InputHTMLAttributes<HTMLInputElement>;
 }
 
 export function PhoneField({
@@ -21,6 +25,9 @@ export function PhoneField({
   hint,
   defaultCountry = 'US',
   id,
+  name,
+  autoComplete,
+  numberInputProps,
 }: Props) {
   const inputId = id ?? `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
   const describedBy = error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined;
@@ -35,6 +42,8 @@ export function PhoneField({
         flags={flags}
         defaultCountry={defaultCountry}
         countryCallingCodeEditable={false}
+        {...(name !== undefined ? { name } : {})}
+        {...(autoComplete !== undefined ? { autoComplete } : {})}
         value={value as Value}
         onChange={(next) => {
           onChange((next as string | undefined) ?? '');
@@ -43,9 +52,11 @@ export function PhoneField({
         aria-describedby={describedBy}
         numberInputProps={{
           'aria-label': label,
+          ...numberInputProps,
           className: cn(
             'h-10 w-full rounded-md border border-border-strong bg-surface px-3 text-sm transition-colors outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200',
             error && 'border-destructive-border focus:border-red-500 focus:ring-red-100',
+            numberInputProps?.className,
           ),
         }}
         countrySelectProps={{

@@ -43,4 +43,11 @@ describe('LoginScreen accessibility', () => {
     renderWith(<LoginScreen />);
     expect(screen.getByRole('button', { name: /continue/i })).toBeInTheDocument();
   });
+
+  it('phone step marks the identifier for password manager autofill', () => {
+    renderWith(<LoginScreen />);
+    const phoneInput = screen.getByRole('textbox', { name: /phone number/i });
+    expect(phoneInput).toHaveAttribute('autocomplete', 'username');
+    expect(phoneInput).toHaveAttribute('name', 'username');
+  });
 });

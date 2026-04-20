@@ -117,6 +117,8 @@ export default function LoginScreen() {
           value={phone}
           onChange={setPhone}
           error={phoneError ?? undefined}
+          name="username"
+          autoComplete="username"
         />
         <Button type="submit" fullWidth disabled={checking}>
           {checking ? 'checking…' : 'continue'}
