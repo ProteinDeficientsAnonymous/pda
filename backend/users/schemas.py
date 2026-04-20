@@ -45,6 +45,7 @@ class RoleOut(BaseModel):
     name: str
     is_default: bool
     permissions: list[str]
+    user_count: int = 0
 
 
 class UserOut(BaseModel):
@@ -81,7 +82,10 @@ class UserOut(BaseModel):
             week_start=user.week_start,
             roles=[
                 RoleOut(
-                    id=str(r.id), name=r.name, is_default=r.is_default, permissions=r.permissions
+                    id=str(r.id),
+                    name=r.name,
+                    is_default=r.is_default,
+                    permissions=r.effective_permissions,
                 )
                 for r in user.roles.all()
             ],

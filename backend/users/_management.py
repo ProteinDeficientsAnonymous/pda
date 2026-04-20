@@ -18,6 +18,7 @@ from users._helpers import (
     _is_admin,
     _is_last_admin,
     _validate_admin_role_change,
+    _validate_member_role_required,
     _validate_phone,
 )
 from users.models import User
@@ -376,6 +377,10 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
         return Status(400, ErrorOut(detail="One or more role IDs not found."))
 
     error = _validate_admin_role_change(user, request.auth.pk, roles)
+    if error:
+        return Status(400, ErrorOut(detail=error))
+
+    error = _validate_member_role_required(roles)
     if error:
         return Status(400, ErrorOut(detail=error))
 

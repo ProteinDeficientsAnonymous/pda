@@ -11,6 +11,7 @@ export interface Role {
   name: string;
   isDefault: boolean;
   permissions: string[];
+  userCount: number;
 }
 
 interface WireRole {
@@ -18,6 +19,7 @@ interface WireRole {
   name: string;
   is_default: boolean;
   permissions: string[];
+  user_count?: number;
 }
 
 function fromWire(w: WireRole): Role {
@@ -26,6 +28,7 @@ function fromWire(w: WireRole): Role {
     name: w.name,
     isDefault: w.is_default,
     permissions: w.permissions,
+    userCount: w.user_count ?? 0,
   };
 }
 
@@ -92,6 +95,7 @@ export function useDeleteRole() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ROLES_KEY });
+      void qc.invalidateQueries({ queryKey: ['users'] });
     },
   });
 }

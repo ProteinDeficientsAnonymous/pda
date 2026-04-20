@@ -19,9 +19,11 @@ export function RolesTab() {
 
   async function onDelete(role: Role) {
     if (PROTECTED_ROLE_NAMES.has(role.name)) return;
-    const confirmed = window.confirm(
-      `delete the "${role.name}" role? this cannot be undone.`,
-    );
+    const warning =
+      role.userCount > 0
+        ? `${String(role.userCount)} member${role.userCount === 1 ? ' has' : 's have'} the "${role.name}" role — deleting will remove it from ${role.userCount === 1 ? 'them' : 'all of them'}. continue?`
+        : `delete the "${role.name}" role? this cannot be undone.`;
+    const confirmed = window.confirm(warning);
     if (!confirmed) return;
     try {
       await deleteRole.mutateAsync(role.id);
@@ -66,6 +68,10 @@ export function RolesTab() {
                   {role.permissions.length === 0
                     ? 'no permissions'
                     : `${String(role.permissions.length)} permission${role.permissions.length === 1 ? '' : 's'}`}
+                  {' · '}
+                  {role.userCount === 0
+                    ? 'no members'
+                    : `${String(role.userCount)} member${role.userCount === 1 ? '' : 's'}`}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
@@ -75,7 +81,7 @@ export function RolesTab() {
                     setEditing(role);
                   }}
                 >
-                  edit
+                  {role.isDefault ? 'view' : 'edit'}
                 </Button>
                 {PROTECTED_ROLE_NAMES.has(role.name) ? null : (
                   <Button

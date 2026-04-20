@@ -107,3 +107,13 @@ def _validate_admin_role_change(
         return "Cannot remove admin from the last admin."
 
     return None
+
+
+def _validate_member_role_required(new_roles: list[Role]) -> str | None:
+    """Return error if the new role set is missing the built-in member role."""
+    member_role = Role.objects.filter(name="member", is_default=True).first()
+    if not member_role:
+        return None
+    if member_role not in new_roles:
+        return "Every user must keep the member role."
+    return None

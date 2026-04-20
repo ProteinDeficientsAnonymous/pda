@@ -1,5 +1,9 @@
 import pytest
-from users.api import _create_user_with_role, _validate_admin_role_change
+from users.api import (
+    _create_user_with_role,
+    _validate_admin_role_change,
+    _validate_member_role_required,
+)
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -250,6 +254,20 @@ class TestUserManagementAPI:
         assert response.status_code == 400
         assert "own admin role" in response.json()["detail"]
 
+    def test_update_user_roles_cannot_remove_member(self, api_client, admin_headers, test_user):
+        member_role = Role.objects.get(name="member")
+        test_user.roles.add(member_role)
+        custom = Role.objects.create(name="greeter", permissions=[])
+        response = api_client.patch(
+            f"/api/auth/users/{test_user.id}/roles/",
+            {"role_ids": [str(custom.id)]},
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 400
+        assert "member role" in response.json()["detail"]
+        assert test_user.roles.filter(name="member").exists()
+
 
 # ---------------------------------------------------------------------------
 # Unit tests for _create_user_with_role helper
@@ -335,6 +353,30 @@ class TestValidateAdminRoleChange:
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for _validate_member_role_required
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestValidateMemberRoleRequired:
+    def test_returns_none_when_member_role_present(self):
+        member_role = Role.objects.get_or_create(name="member", defaults={"is_default": True})[0]
+        custom = Role.objects.create(name="greeter")
+        assert _validate_member_role_required([member_role, custom]) is None
+
+    def test_returns_error_when_member_role_missing(self):
+        Role.objects.get_or_create(name="member", defaults={"is_default": True})
+        custom = Role.objects.create(name="greeter")
+        result = _validate_member_role_required([custom])
+        assert result == "Every user must keep the member role."
+
+    def test_returns_error_when_new_roles_empty(self):
+        Role.objects.get_or_create(name="member", defaults={"is_default": True})
+        result = _validate_member_role_required([])
+        assert result == "Every user must keep the member role."
+
+
+# ---------------------------------------------------------------------------
 # Role management API (#4)
 # ---------------------------------------------------------------------------
 
@@ -391,7 +433,7 @@ class TestRoleManagementAPI:
         assert response.status_code == 200
         assert PermissionKey.MANAGE_EVENTS in response.json()["permissions"]
 
-    def test_patch_protected_role_name_blocked(self, api_client, manage_users_headers):
+    def test_patch_default_role_blocked(self, api_client, manage_users_headers):
         admin_role = Role.objects.get(name="admin")
         response = api_client.patch(
             f"/api/auth/roles/{admin_role.id}/",
@@ -400,7 +442,20 @@ class TestRoleManagementAPI:
             **manage_users_headers,
         )
         assert response.status_code == 400
-        assert "protected" in response.json()["detail"]
+        assert "built-in" in response.json()["detail"]
+
+    def test_patch_default_role_permissions_blocked(self, api_client, manage_users_headers):
+        member_role = Role.objects.get(name="member")
+        response = api_client.patch(
+            f"/api/auth/roles/{member_role.id}/",
+            {"permissions": [PermissionKey.MANAGE_EVENTS]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 400
+        assert "built-in" in response.json()["detail"]
+        member_role.refresh_from_db()
+        assert PermissionKey.MANAGE_EVENTS not in member_role.permissions
 
     def test_delete_role_success(self, api_client, manage_users_headers):
         role = Role.objects.create(name="deleteme", permissions=[])
@@ -413,9 +468,18 @@ class TestRoleManagementAPI:
         assert response.status_code == 400
         assert "protected" in response.json()["detail"]
 
-    def test_delete_role_with_users_blocked(self, api_client, manage_users_headers, test_user):
+    def test_delete_role_with_users_succeeds(self, api_client, manage_users_headers, test_user):
         role = Role.objects.create(name="occupied", permissions=[])
         test_user.roles.add(role)
         response = api_client.delete(f"/api/auth/roles/{role.id}/", **manage_users_headers)
-        assert response.status_code == 400
-        assert "users assigned" in response.json()["detail"]
+        assert response.status_code == 204
+        assert not Role.objects.filter(pk=role.id).exists()
+        assert not test_user.roles.filter(name="occupied").exists()
+
+    def test_list_roles_includes_user_count(self, api_client, auth_headers, test_user):
+        role = Role.objects.create(name="popular", permissions=[])
+        test_user.roles.add(role)
+        response = api_client.get("/api/auth/roles/", **auth_headers)
+        assert response.status_code == 200
+        popular = next(r for r in response.json() if r["name"] == "popular")
+        assert popular["user_count"] == 1

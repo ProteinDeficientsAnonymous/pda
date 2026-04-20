@@ -7,7 +7,6 @@ import { useUsers, type Member } from '@/api/users';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
@@ -85,11 +84,22 @@ export function MembersTab() {
             }}
           />
         </div>
+        {roleNames.length > 0 ? (
+          <div className="sm:w-48">
+            <Select
+              label="filter by role"
+              options={[
+                { value: 'all', label: 'all roles' },
+                ...roleNames.map((n) => ({ value: n, label: n })),
+              ]}
+              value={roleFilter}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+              }}
+            />
+          </div>
+        ) : null}
       </div>
-
-      {roleNames.length > 0 ? (
-        <RoleFilterRow roleNames={roleNames} selected={roleFilter} onChange={setRoleFilter} />
-      ) : null}
 
       {visible.length === 0 ? (
         <p className="text-sm text-neutral-500">
@@ -156,30 +166,6 @@ function filterAndSort(
     sorted.reverse();
   }
   return sorted;
-}
-
-function RoleFilterRow({
-  roleNames,
-  selected,
-  onChange,
-}: {
-  roleNames: string[];
-  selected: string;
-  onChange: (value: string) => void;
-}) {
-  const options = ['all', ...roleNames].map((v) => ({ value: v, label: v }));
-  return (
-    <div className="mb-4 flex justify-center">
-      <SegmentedControl
-        name="member-role-filter"
-        ariaLabel="filter by role"
-        options={options}
-        value={selected}
-        onChange={onChange}
-        className="flex-wrap"
-      />
-    </div>
-  );
 }
 
 function MemberRow({ member }: { member: Member }) {

@@ -1,7 +1,7 @@
 // Dialog to create or edit a role. Shows the role name input and a
-// checkbox grid of every permission key. Protected roles (admin/member)
-// have their name locked but permissions still editable per backend
-// rules in users/_roles.py.
+// checkbox grid of every permission key. Built-in roles (is_default)
+// are read-only — opened only so admins can see which permissions
+// are checked.
 
 import { useState, type SyntheticEvent } from 'react';
 import { isAxiosError } from 'axios';
@@ -37,10 +37,9 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.ManageDocuments]: 'manage documents',
 };
 
-const PROTECTED_ROLE_NAMES = new Set(['admin', 'member']);
-
 export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {
   const isEdit = role !== null;
+  const readOnly = role?.isDefault ?? false;
   const createRole = useCreateRole();
   const updateRole = useUpdateRole(role?.id ?? '');
   const pending = createRole.isPending || updateRole.isPending;
@@ -65,9 +64,7 @@ export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {
     }
     try {
       if (role) {
-        const input: { name?: string; permissions: string[] } = { permissions };
-        if (!PROTECTED_ROLE_NAMES.has(role.name)) input.name = trimmedName;
-        await updateRole.mutateAsync(input);
+        await updateRole.mutateAsync({ name: trimmedName, permissions });
       } else {
         await createRole.mutateAsync({ name: trimmedName, permissions });
       }
@@ -82,10 +79,10 @@ export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {
     }
   }
 
-  const nameLocked = role !== null && PROTECTED_ROLE_NAMES.has(role.name);
+  const title = readOnly ? 'view role' : isEdit ? 'edit role' : 'create role';
 
   return (
-    <Dialog open={open} onClose={onClose} title={isEdit ? 'edit role' : 'create role'}>
+    <Dialog open={open} onClose={onClose} title={title}>
       <form
         onSubmit={(e) => {
           void onSubmit(e);
@@ -96,19 +93,19 @@ export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {
           label="name"
           value={name}
           maxLength={40}
-          disabled={nameLocked}
+          disabled={readOnly}
           placeholder="e.g. greeter"
           onChange={(e) => {
             setName(e.target.value);
           }}
         />
-        {nameLocked ? (
+        {readOnly ? (
           <p className="-mt-2 text-xs text-neutral-500">
-            built-in role — name is locked
+            built-in role — view only
           </p>
         ) : null}
 
-        <fieldset className="flex flex-col gap-2">
+        <fieldset className="flex flex-col gap-2" disabled={readOnly}>
           <legend className="mb-1 text-sm font-medium">permissions</legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {Object.entries(PERMISSION_LABELS).map(([key, label]) => (
@@ -119,6 +116,7 @@ export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {
                 <input
                   type="checkbox"
                   checked={permissions.includes(key)}
+                  disabled={readOnly}
                   onChange={() => {
                     toggle(key);
                   }}
@@ -137,11 +135,13 @@ export function RoleFormDialog({ open, onClose, initialRole: role }: Props) {
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose} disabled={pending}>
-            cancel
+            {readOnly ? 'close' : 'cancel'}
           </Button>
-          <Button type="submit" disabled={pending}>
-            {pending ? 'saving…' : isEdit ? 'save' : 'create'}
-          </Button>
+          {readOnly ? null : (
+            <Button type="submit" disabled={pending}>
+              {pending ? 'saving…' : isEdit ? 'save' : 'create'}
+            </Button>
+          )}
         </div>
       </form>
     </Dialog>
