@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios';
 import {
   useDecideJoinRequest,
   useJoinRequests,
+  useUnrejectJoinRequest,
   type JoinRequestStatus,
   type JoinRequestSummary,
 } from '@/api/join';
@@ -25,6 +26,7 @@ const FILTERS: { value: Filter; label: string }[] = [
 export default function JoinRequestsScreen() {
   const { data = [], isPending, isError } = useJoinRequests();
   const decide = useDecideJoinRequest();
+  const unreject = useUnrejectJoinRequest();
 
   const [filter, setFilter] = useState<Filter>('pending');
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,18 @@ export default function JoinRequestsScreen() {
     }
   }
 
+  async function unrejectRequest(request: JoinRequestSummary) {
+    const name = request.displayName || request.phoneNumber;
+    if (!window.confirm(`un-reject ${name}? this will move them back to pending review.`)) return;
+
+    setError(null);
+    try {
+      await unreject.mutateAsync(request.id);
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
   return (
     <ContentContainer>
       <h1 className="mb-6 text-2xl font-medium tracking-tight">join requests</h1>
@@ -93,9 +107,12 @@ export default function JoinRequestsScreen() {
             <li key={r.id}>
               <JoinRequestCard
                 request={r}
-                busy={decide.isPending}
+                busy={decide.isPending || unreject.isPending}
                 onDecide={(status) => {
                   void decideRequest(r, status);
+                }}
+                onUnreject={() => {
+                  void unrejectRequest(r);
                 }}
               />
             </li>
@@ -122,12 +139,15 @@ function JoinRequestCard({
   request,
   busy,
   onDecide,
+  onUnreject,
 }: {
   request: JoinRequestSummary;
   busy: boolean;
   onDecide: (status: 'approved' | 'rejected') => void;
+  onUnreject: () => void;
 }) {
   const isPending = request.status === 'pending';
+  const isRejected = request.status === 'rejected';
   return (
     <article className="border-border bg-surface rounded-lg border p-4">
       <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -183,7 +203,16 @@ function JoinRequestCard({
           </Button>
         </div>
       ) : (
-        <DecisionAttribution request={request} />
+        <>
+          <DecisionAttribution request={request} />
+          {isRejected ? (
+            <div className="mt-3">
+              <Button variant="ghost" onClick={onUnreject} disabled={busy}>
+                un-reject
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
     </article>
   );

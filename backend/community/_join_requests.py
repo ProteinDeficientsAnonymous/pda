@@ -345,6 +345,49 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     )
 
 
+@router.patch(
+    "/join-requests/{id}/unreject/",
+    response={200: JoinRequestOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def unreject_join_request(request, id: UUID):
+    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="join_request",
+            target_id=str(id),
+            details={
+                "endpoint": "unreject_join_request",
+                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+            },
+        )
+        return Status(403, ErrorOut(detail="Permission denied."))
+
+    try:
+        join_request = JoinRequest.objects.get(id=id)
+    except JoinRequest.DoesNotExist:
+        return Status(404, ErrorOut(detail="Join request not found."))
+
+    if join_request.status != JoinRequestStatus.REJECTED:
+        return Status(400, ErrorOut(detail="Only rejected requests can be un-rejected."))
+
+    join_request.status = JoinRequestStatus.PENDING
+    join_request.save(update_fields=["status"])
+
+    audit_log(
+        logging.INFO,
+        "join_request_unrejected",
+        request,
+        target_type="join_request",
+        target_id=str(join_request.id),
+        details={"display_name": join_request.display_name},
+    )
+
+    return Status(200, _join_request_out(join_request))
+
+
 @router.post("/check-phone/", response={200: CheckPhoneOut}, auth=None)
 def check_phone(request, payload: CheckPhoneIn):
     from users.models import User as UserModel

@@ -296,3 +296,15 @@ export function useDecideJoinRequest() {
     },
   });
 }
+
+export function useUnrejectJoinRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.patch(`/api/community/join-requests/${id}/unreject/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['join-requests'] });
+    },
+  });
+}
