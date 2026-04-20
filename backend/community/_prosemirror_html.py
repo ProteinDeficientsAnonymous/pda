@@ -1,11 +1,4 @@
-"""Convert ProseMirror JSON (emitted by TipTap) to HTML for static rendering.
-
-Mirrors _delta_html.py intentionally — the narrow feature set the app uses
-(bold/italic/underline/strike/code/link inlines; h1–h3 headings; ol/ul lists;
-images; paragraphs) maps 1:1 between the two editor formats. Keeping a
-single HTML output shape means view-mode consumers (Flutter app, anon web
-viewers) don't care which editor produced the document.
-"""
+"""Convert ProseMirror JSON (emitted by TipTap) to HTML for static rendering."""
 
 from __future__ import annotations
 
@@ -34,16 +27,27 @@ def _render_nodes(nodes: list[Any]) -> str:
     return "".join(_render_node(n) for n in nodes if isinstance(n, dict))
 
 
-def _render_paragraph(content: list[Any], _attrs: dict) -> str:
+def _text_align_attr(attrs: dict) -> str:
+    alignment = attrs.get("textAlign")
+    if alignment not in ("left", "center", "right"):
+        return ""
+    return f' style="text-align: {alignment}"'
+
+
+def _render_paragraph(content: list[Any], attrs: dict) -> str:
     inner = _render_inline(content)
-    return f"<p>{inner}</p>" if inner else "<p><br></p>"
+    align = _text_align_attr(attrs)
+    if not inner:
+        return f"<p{align}><br></p>"
+    return f"<p{align}>{inner}</p>"
 
 
 def _render_heading(content: list[Any], attrs: dict) -> str:
     level = attrs.get("level", 1)
     if level not in (1, 2, 3):
         level = 1
-    return f"<h{level}>{_render_inline(content)}</h{level}>"
+    align = _text_align_attr(attrs)
+    return f"<h{level}{align}>{_render_inline(content)}</h{level}>"
 
 
 def _render_list_item(content: list[Any], _attrs: dict) -> str:
@@ -52,6 +56,20 @@ def _render_list_item(content: list[Any], _attrs: dict) -> str:
     if len(content) == 1 and isinstance(content[0], dict) and content[0].get("type") == "paragraph":
         return f"<li>{_render_inline(content[0].get('content') or [])}</li>"
     return f"<li>{_render_nodes(content)}</li>"
+
+
+def _render_cta(_content: list[Any], attrs: dict) -> str:
+    href = escape(attrs.get("href") or "")
+    label = escape(attrs.get("label") or "")
+    variant = attrs.get("variant")
+    if variant not in ("primary", "secondary"):
+        variant = "primary"
+    anchor = (
+        f'<a class="cta cta--{variant}" href="{href}" '
+        f'target="_blank" rel="noopener noreferrer" role="button">{label}</a>'
+    )
+    align = _text_align_attr(attrs)
+    return f"<p{align}>{anchor}</p>"
 
 
 _BLOCK_RENDERERS = {
@@ -64,6 +82,7 @@ _BLOCK_RENDERERS = {
     "horizontalRule": lambda _c, _a: "<hr>",
     "hardBreak": lambda _c, _a: "<br>",
     "image": lambda _c, a: f'<img src="{escape(a.get("src", ""))}">',
+    "cta": _render_cta,
 }
 
 

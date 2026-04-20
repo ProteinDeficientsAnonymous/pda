@@ -72,8 +72,10 @@ export function EditableHtmlBlock({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <AutosaveStatus status={autosave.status} />
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <AutosaveStatus status={autosave.status} />
+        </div>
         <Button variant="ghost" onClick={stopEditing}>
           done
         </Button>

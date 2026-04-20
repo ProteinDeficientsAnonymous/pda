@@ -16,6 +16,7 @@ import type { Event } from '@/models/event';
 import { EventStatus, InvitePermission } from '@/models/event';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { ensureHttps } from '@/utils/url';
 
 interface Props {
   event: Event;
@@ -283,10 +284,6 @@ function InviteSection({ event }: { event: Event }) {
       />
     </Card>
   );
-}
-
-function ensureHttps(url: string): string {
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 
 // Strip scheme + optional www. and trailing slash for display. `href` should

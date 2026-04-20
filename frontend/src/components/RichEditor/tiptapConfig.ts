@@ -1,18 +1,17 @@
-// TipTap extensions + config shared between edit and view-with-editor render.
-// Feature set is intentionally narrow — matches the Quill toolbar used by the
-// Flutter app so cross-editor collisions (one client edits a doc authored by
-// the other) don't silently drop formatting.
+// TipTap extensions + config. Feature set is narrow by design — every node
+// we enable here must also have a handler in backend/community/_prosemirror_html.py,
+// otherwise it will be silently dropped on render.
 
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
+import TextAlign from '@tiptap/extension-text-align';
 import type { Extensions } from '@tiptap/react';
+import { CtaExtension } from './CtaExtension';
 
 export function pdaExtensions(): Extensions {
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
-      // Not used by the PDA app — keep the bundle small and prevent editors
-      // from producing nodes the backend PM→HTML renderer doesn't support.
       codeBlock: false,
       horizontalRule: false,
       strike: false,
@@ -22,5 +21,10 @@ export function pdaExtensions(): Extensions {
       autolink: true,
       HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
     }),
+    TextAlign.configure({
+      types: ['paragraph', 'heading', 'cta'],
+      alignments: ['left', 'center', 'right'],
+    }),
+    CtaExtension,
   ];
 }

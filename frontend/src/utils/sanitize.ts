@@ -33,7 +33,19 @@ const ALLOWED_TAGS = [
   'hr',
 ];
 
-const ALLOWED_ATTR = ['href', 'title', 'target', 'rel', 'src', 'alt', 'width', 'height'];
+const ALLOWED_ATTR = [
+  'href',
+  'title',
+  'target',
+  'rel',
+  'src',
+  'alt',
+  'width',
+  'height',
+  'class',
+  'role',
+  'style',
+];
 
 export function sanitizeHtml(raw: string): string {
   return DOMPurify.sanitize(raw, {

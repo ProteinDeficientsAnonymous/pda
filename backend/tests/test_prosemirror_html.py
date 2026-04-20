@@ -139,6 +139,101 @@ class TestImages:
         assert 'src="a&quot;b"' in html
 
 
+class TestCta:
+    def test_primary(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"cta","attrs":'
+            '{"href":"https://x.test","label":"join us","variant":"primary"}}]}'
+        )
+        html = prosemirror_to_html(pm)
+        assert (
+            html == '<p><a class="cta cta--primary" href="https://x.test" '
+            'target="_blank" rel="noopener noreferrer" role="button">join us</a></p>'
+        )
+
+    def test_secondary(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"cta","attrs":'
+            '{"href":"https://x.test","label":"rsvp","variant":"secondary"}}]}'
+        )
+        assert 'class="cta cta--secondary"' in prosemirror_to_html(pm)
+
+    def test_invalid_variant_falls_back_to_primary(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"cta","attrs":'
+            '{"href":"https://x.test","label":"x","variant":"danger"}}]}'
+        )
+        assert 'class="cta cta--primary"' in prosemirror_to_html(pm)
+
+    def test_missing_variant_falls_back_to_primary(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"cta","attrs":'
+            '{"href":"https://x.test","label":"x"}}]}'
+        )
+        assert 'class="cta cta--primary"' in prosemirror_to_html(pm)
+
+    def test_label_and_href_escaped(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"cta","attrs":'
+            '{"href":"https://x.test?a=1&b=2","label":"<script>","variant":"primary"}}]}'
+        )
+        html = prosemirror_to_html(pm)
+        assert "&lt;script&gt;" in html
+        assert "<script>" not in html
+        assert "a=1&amp;b=2" in html
+
+    def test_centered(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"cta","attrs":'
+            '{"href":"https://x.test","label":"hi","variant":"primary",'
+            '"textAlign":"center"}}]}'
+        )
+        html = prosemirror_to_html(pm)
+        assert html.startswith('<p style="text-align: center">')
+        assert 'class="cta cta--primary"' in html
+
+
+class TestTextAlign:
+    def test_paragraph_center(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","attrs":{"textAlign":"center"},'
+            '"content":[{"type":"text","text":"hi"}]}]}'
+        )
+        assert prosemirror_to_html(pm) == '<p style="text-align: center">hi</p>'
+
+    def test_paragraph_right(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","attrs":{"textAlign":"right"},'
+            '"content":[{"type":"text","text":"hi"}]}]}'
+        )
+        assert 'style="text-align: right"' in prosemirror_to_html(pm)
+
+    def test_heading_with_alignment(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"heading","attrs":{"level":2,"textAlign":"center"},'
+            '"content":[{"type":"text","text":"hi"}]}]}'
+        )
+        assert prosemirror_to_html(pm) == '<h2 style="text-align: center">hi</h2>'
+
+    def test_no_alignment_omits_style(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph",'
+            '"content":[{"type":"text","text":"hi"}]}]}'
+        )
+        assert prosemirror_to_html(pm) == "<p>hi</p>"
+
+    def test_invalid_alignment_omits_style(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","attrs":{"textAlign":"justify"},'
+            '"content":[{"type":"text","text":"hi"}]}]}'
+        )
+        assert prosemirror_to_html(pm) == "<p>hi</p>"
+
+    def test_empty_paragraph_keeps_alignment(self):
+        pm = '{"type":"doc","content":[{"type":"paragraph","attrs":{"textAlign":"center"}}]}'
+        assert prosemirror_to_html(pm) == '<p style="text-align: center"><br></p>'
+
+
 @pytest.mark.django_db
 class TestDualFormatEndpoint:
     """End-to-end: posting content_pm produces HTML identical in spirit to
