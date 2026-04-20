@@ -3,6 +3,7 @@
 import logging
 
 from config.audit import audit_log
+from django.db.models import Count, Q
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -16,11 +17,19 @@ router = Router()
 
 @router.get("/roles/", response={200: list[RoleOut]}, auth=JWTAuth())
 def list_roles(request):
-    roles = Role.objects.all()
+    roles = Role.objects.annotate(
+        user_count=Count("users", filter=Q(users__archived_at__isnull=True)),
+    )
     return Status(
         200,
         [
-            RoleOut(id=str(r.id), name=r.name, is_default=r.is_default, permissions=r.permissions)
+            RoleOut(
+                id=str(r.id),
+                name=r.name,
+                is_default=r.is_default,
+                permissions=r.effective_permissions,
+                user_count=getattr(r, "user_count", 0),
+            )
             for r in roles
         ],
     )
@@ -83,6 +92,9 @@ def update_role(request, role_id: str, payload: RolePatchIn):
     except Role.DoesNotExist:
         return Status(404, ErrorOut(detail="Role not found."))
 
+    if role.is_default:
+        return Status(400, ErrorOut(detail=f"Cannot edit the built-in '{role.name}' role."))
+
     old_name = role.name
     old_permissions = list(role.permissions)
 
@@ -143,9 +155,8 @@ def delete_role(request, role_id: str):
         return Status(404, ErrorOut(detail="Role not found."))
     if role.name in PROTECTED_ROLE_NAMES:
         return Status(400, ErrorOut(detail=f"Cannot delete protected role '{role.name}'."))
-    if role.users.exists():
-        return Status(400, ErrorOut(detail="Cannot delete a role that has users assigned."))
     role_name = role.name
+    affected_user_count = role.users.filter(archived_at__isnull=True).count()
     role.delete()
     audit_log(
         logging.WARNING,
@@ -153,6 +164,6 @@ def delete_role(request, role_id: str):
         request,
         target_type="role",
         target_id=role_id,
-        details={"name": role_name},
+        details={"name": role_name, "affected_user_count": affected_user_count},
     )
     return Status(204, None)

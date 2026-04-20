@@ -46,8 +46,8 @@ BASE = "/api/community/docs"
 
 @pytest.mark.django_db
 class TestDocFolders:
-    def test_list_folders(self, api_client, auth_headers, folder):
-        response = api_client.get(f"{BASE}/folders/", **auth_headers)
+    def test_list_folders(self, api_client, manage_docs_headers, folder):
+        response = api_client.get(f"{BASE}/folders/", **manage_docs_headers)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -119,8 +119,8 @@ class TestDocFolders:
 
 @pytest.mark.django_db
 class TestDocuments:
-    def test_get_document(self, api_client, auth_headers, document):
-        response = api_client.get(f"{BASE}/{document.id}/", **auth_headers)
+    def test_get_document(self, api_client, manage_docs_headers, document):
+        response = api_client.get(f"{BASE}/{document.id}/", **manage_docs_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["title"] == "tofu scramble"
@@ -178,12 +178,12 @@ class TestDocuments:
         assert d2.display_order == 0
         assert d1.display_order == 1
 
-    def test_read_access_regular_member(self, api_client, auth_headers, document):
-        """Regular members can read documents."""
+    def test_read_access_regular_member_denied(self, api_client, auth_headers, document):
+        """Docs are admin-only: regular members get 403 on read."""
         response = api_client.get(f"{BASE}/{document.id}/", **auth_headers)
-        assert response.status_code == 200
+        assert response.status_code == 403
 
-    def test_list_folders_regular_member(self, api_client, auth_headers, folder):
-        """Regular members can list folders."""
+    def test_list_folders_regular_member_denied(self, api_client, auth_headers, folder):
+        """Docs are admin-only: regular members get 403 listing folders."""
         response = api_client.get(f"{BASE}/folders/", **auth_headers)
-        assert response.status_code == 200
+        assert response.status_code == 403

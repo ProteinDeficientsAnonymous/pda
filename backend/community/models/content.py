@@ -8,7 +8,12 @@ from community.models.choices import PageVisibility
 class CommunityGuidelines(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 
-    content = models.TextField(default="")
+    # Legacy Quill Delta JSON (written by the Flutter client).
+    content = models.TextField(default="", max_length=50000)
+    # ProseMirror JSON (written by the React/TipTap client). Either field may
+    # be empty for any given row; content_html is the canonical read source.
+    content_pm = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -28,7 +33,9 @@ class CommunityGuidelines(models.Model):
 class FAQ(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 
-    content = models.TextField(default="")
+    content = models.TextField(default="", max_length=50000)
+    content_pm = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -48,8 +55,12 @@ class FAQ(models.Model):
 class HomePage(models.Model):
     """Singleton model — only one row ever exists (pk=1)."""
 
-    content = models.TextField(default="")
-    join_content = models.TextField(default="")
+    content = models.TextField(default="", max_length=50000)
+    content_pm = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
+    join_content = models.TextField(default="", max_length=50000)
+    join_content_pm = models.TextField(default="", max_length=50000)
+    join_content_html = models.TextField(default="", max_length=100000)
     donate_url = models.URLField(blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -71,7 +82,9 @@ class EditablePage(models.Model):
     """Content pages editable by admins. One row per slug."""
 
     slug = models.SlugField(max_length=100, unique=True)
-    content = models.TextField(default="")
+    content = models.TextField(default="", max_length=50000)
+    content_pm = models.TextField(default="", max_length=50000)
+    content_html = models.TextField(default="", max_length=100000)
     visibility = models.CharField(
         max_length=20,
         choices=PageVisibility.choices,

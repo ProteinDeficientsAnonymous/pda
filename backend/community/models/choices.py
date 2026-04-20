@@ -14,6 +14,19 @@ class EventType(models.TextChoices):
     COMMUNITY = "community", "Community"
 
 
+class EventStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    ACTIVE = "active", "Active"
+    CANCELLED = "cancelled", "Cancelled"
+    DELETED = "deleted", "Deleted"
+
+
+class EventFlagStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    DISMISSED = "dismissed", "Dismissed"
+    ACTIONED = "actioned", "Actioned"
+
+
 class JoinRequestStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     APPROVED = "approved", "Approved"
@@ -51,9 +64,11 @@ class RSVPStatus(models.TextChoices):
     ATTENDING = "attending", "Attending"
     MAYBE = "maybe", "Maybe"
     CANT_GO = "cant_go", "Can't go"
+    WAITLISTED = "waitlisted", "Waitlisted"
 
 
 class PollAvailability:
     YES = "yes"
     MAYBE = "maybe"
-    VALID = {YES, MAYBE}
+    NO = "no"
+    VALID = {YES, MAYBE, NO}

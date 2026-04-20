@@ -2,22 +2,19 @@
   "permissions": {
     "allow": [
       "Bash(uv add:*)",
-      "WebFetch(domain:pub.dev)",
       "WebSearch",
       "WebFetch(domain:www.walturn.com)",
-      "WebFetch(domain:fluttergems.dev)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:flutter-quill.gitbook.io)",
       "WebFetch(domain:pypi.org)",
       "WebFetch(domain:tally.so)",
       "WebFetch(domain:docs.railway.com)",
       "Skill(update-config)",
-      "mcp__dart-flutter__analyze_files",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ]
   },
   "enabledMcpjsonServers": [
-    "dart-flutter",
     "github"
-  ]
+  ],
+  "enableAllProjectMcpServers": true
 }

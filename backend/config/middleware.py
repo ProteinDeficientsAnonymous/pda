@@ -4,6 +4,25 @@ import time
 logger = logging.getLogger("pda.middleware")
 
 
+class CrossOriginIsolationMiddleware:
+    """Sets COOP/COEP headers on HTML responses.
+
+    Required for Flutter's Skwasm renderer to use multi-threaded mode
+    (SharedArrayBuffer), which enables the smaller skwasm.wasm (~3.4MB)
+    instead of skwasm_heavy.wasm (~4.9MB) or canvaskit.wasm (~6.8MB).
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if "text/html" in response.get("Content-Type", ""):
+            response["Cross-Origin-Opener-Policy"] = "same-origin"
+            response["Cross-Origin-Embedder-Policy"] = "require-corp"
+        return response
+
+
 class RequestLoggingMiddleware:
     """Logs HTTP method, path, status code, and duration for each request."""
 

@@ -1,0 +1,16 @@
+---
+description: Cursor-only agent policy for full CI before commits and before claiming work is done
+alwaysApply: true
+---
+
+# cursor-only: full ci verification
+
+These expectations apply to Cursor agents in this repo. They are intentionally **not** duplicated in `.claude/` so other tooling is not nudged toward a full agent CI run on every change. Canonical command lists live in `CLAUDE.md`.
+
+## before committing
+
+Run `make agent-ci` before committing when your changes touch application code, tests, or build config. Use individual `make agent-*` targets when you only need part of the suite.
+
+## before reporting work complete
+
+Tooling can report success even when the tree does not pass CI. Do not report a coding task as complete until you have run `make agent-ci` (or the project's equivalent) and fixed all errors it reports.

@@ -7,9 +7,11 @@ from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
+from community._content_render import render_content_payload
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community.models import DocFolder, Document
 
@@ -38,25 +40,29 @@ class DocFolderOut(BaseModel):
 
 
 class FolderIn(BaseModel):
-    name: str
+    name: str = Field(max_length=FieldLimit.TITLE)
     parent_id: str | None = None
 
 
 class FolderPatchIn(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, max_length=FieldLimit.TITLE)
     parent_id: str | None = None
     display_order: int | None = None
 
 
 class DocumentIn(BaseModel):
-    title: str
+    title: str = Field(max_length=FieldLimit.TITLE)
     folder_id: str
-    content: str = ""
+    # Either Delta (Flutter) or ProseMirror (TipTap). Sending both is allowed
+    # but content_pm wins in render_content_payload.
+    content: str = Field(default="", max_length=FieldLimit.CONTENT)
+    content_pm: str = Field(default="", max_length=FieldLimit.CONTENT)
 
 
 class DocumentPatchIn(BaseModel):
-    title: str | None = None
-    content: str | None = None
+    title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
+    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     folder_id: str | None = None
 
 
@@ -64,6 +70,8 @@ class DocumentOut(BaseModel):
     id: str
     title: str
     content: str
+    content_pm: str
+    content_html: str
     folder_id: str
     display_order: int
     created_by_id: str | None
@@ -106,6 +114,8 @@ def _doc_to_out(doc: Document) -> DocumentOut:
         id=str(doc.id),
         title=doc.title,
         content=doc.content,
+        content_pm=doc.content_pm,
+        content_html=doc.content_html,
         folder_id=str(doc.folder_id),
         display_order=doc.display_order,
         created_by_id=str(doc.created_by_id) if doc.created_by_id else None,
@@ -123,8 +133,23 @@ def _has_manage_docs(user) -> bool:
 # ---------------------------------------------------------------------------
 
 
-@router.get("/docs/folders/", response={200: list[DocFolderOut]}, auth=JWTAuth())
+@router.get(
+    "/docs/folders/",
+    response={200: list[DocFolderOut], 403: ErrorOut},
+    auth=JWTAuth(),
+)
 def list_folders(request):
+    if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "list_folders",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
+        return Status(403, ErrorOut(detail="Permission denied."))
     top_level = DocFolder.objects.filter(parent__isnull=True).prefetch_related(
         "children", "documents", "children__documents"
     )
@@ -308,9 +333,12 @@ def create_document(request, payload: DocumentIn):
     except DocFolder.DoesNotExist:
         return Status(404, ErrorOut(detail="Folder not found."))
 
+    rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
     doc = Document.objects.create(
         title=payload.title,
-        content=payload.content,
+        content=rendered.content,
+        content_pm=rendered.content_pm,
+        content_html=rendered.content_html,
         folder=folder,
         created_by=request.auth,
     )
@@ -351,10 +379,21 @@ def reorder_documents(request, payload: ReorderIn):
 
 @router.get(
     "/docs/{doc_id}/",
-    response={200: DocumentOut, 404: ErrorOut},
+    response={200: DocumentOut, 403: ErrorOut, 404: ErrorOut},
     auth=JWTAuth(),
 )
 def get_document(request, doc_id: str):
+    if not _has_manage_docs(request.auth):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={
+                "endpoint": "get_document",
+                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+            },
+        )
+        return Status(403, ErrorOut(detail="Permission denied."))
     try:
         doc = Document.objects.get(pk=doc_id)
     except Document.DoesNotExist:
@@ -395,6 +434,17 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
             doc.folder = DocFolder.objects.get(pk=fid)
         except DocFolder.DoesNotExist:
             return Status(404, ErrorOut(detail="Folder not found."))
+
+    # If either content format was sent, re-render HTML from the winner.
+    content_sent = "content" in updates or "content_pm" in updates
+    if content_sent:
+        rendered = render_content_payload(
+            delta=updates.pop("content", None),
+            prosemirror=updates.pop("content_pm", None),
+        )
+        doc.content = rendered.content
+        doc.content_pm = rendered.content_pm
+        doc.content_html = rendered.content_html
 
     for key, value in updates.items():
         setattr(doc, key, value)

@@ -24,3 +24,15 @@ class Role(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def effective_permissions(self) -> list[str]:
+        """Admin role implicitly grants every permission (see User.has_permission).
+        Return the current PermissionKey set so the UI reflects reality even if
+        the DB row was seeded before newer keys were added.
+        """
+        if self.name == "admin" and self.is_default:
+            from users.permissions import PermissionKey
+
+            return list(PermissionKey.values)
+        return list(self.permissions)

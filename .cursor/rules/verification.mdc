@@ -1,0 +1,25 @@
+---
+description: Execution verification, evidence before claims
+alwaysApply: true
+---
+
+## Verification
+
+**Core:** (1) Tests passing ≠ program working — always execute. (2) No completion claims without fresh evidence in the current message.
+
+### Execution Verification
+
+After tests pass: CLI → **run it** | API → **call it** | Frontend → **check browser** | Any program → **run it**.
+
+**When:** After tests pass, after refactoring, after changing imports/deps/config, before marking complete.
+**Skip for:** Doc-only, test-only, pure internal refactoring, config-only.
+
+### Evidence Before Claims
+
+| Claim | Required Evidence | Insufficient |
+|-------|-------------------|-------------|
+| "Tests pass" | Fresh run: 0 failures | Previous run, "should pass" |
+| "Build succeeds" | Build exit 0 | "Linter passed" |
+| "Bug fixed" | Reproducing test passes | "Code changed" |
+
+Before saying "done" or using uncertain language ("should", "probably") — run verification first.

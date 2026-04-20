@@ -1,0 +1,445 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+  --font-dyslexia: 'OpenDyslexic', system-ui, sans-serif;
+
+  --color-brand-50: #bcf0b4;
+  --color-brand-100: #a1d39a;
+  --color-brand-200: #82b87c;
+  --color-brand-300: #5a9a55;
+  --color-brand-400: #4a8346;
+  --color-brand-500: #3c6939;
+  --color-brand-600: #3c6939;
+  --color-brand-700: #245024;
+  --color-brand-800: #1c4e1f;
+  --color-brand-900: #0a390f;
+  /* Foreground to pair with bg-brand-600 / brand-700 (the CTA + active-state
+     colors). Flips in dark mode so text stays readable over the lighter
+     sage-green dark-mode brand tokens. */
+  --color-brand-on: #ffffff;
+
+  --color-background: #f7fbf1;
+  --color-foreground: #191d17;
+  --color-foreground-secondary: #404040;
+  --color-foreground-tertiary: #525252;
+  --color-surface: #ffffff;
+  --color-surface-dim: #e6e9e0;
+  --color-surface-active: #e0e4db;
+  --color-surface-raised: #e5e5e5;
+  --color-border: #c2c9bd;
+  --color-border-strong: #72796f;
+  --color-muted: #424940;
+  --color-muted-foreground: #72796f;
+  --color-accent: #2d322c;
+  --color-accent-foreground: #eff2e9;
+  --color-toggle-off: #d4d4d4;
+  --color-destructive: #dc2626;
+  --color-destructive-subtle: #fef2f2;
+  --color-destructive-border: #ef4444;
+  --color-success: #166534;
+  --color-success-subtle: #dcfce7;
+  --color-warning: #92400e;
+  --color-warning-subtle: #fef3c7;
+  --color-info: #1e3a5f;
+  --color-info-subtle: #dbeafe;
+  --color-highlight: #3b0764;
+  --color-highlight-subtle: #f3e8ff;
+  --color-positive: #065f46;
+  --color-positive-subtle: #d1fae5;
+  --color-positive-border: #6ee7b7;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  --color-evt-community-bg: #cce8e4;
+  --color-evt-community-fg: #0a3c34;
+  --color-evt-official-bg: #d0e8ff;
+  --color-evt-official-fg: #0b2a4a;
+  --color-evt-members-bg: #ffe0b2;
+  --color-evt-members-fg: #4a2808;
+  --color-evt-invite-bg: #e0d0f0;
+  --color-evt-invite-fg: #2a104a;
+  --color-evt-cancelled-bg: #ecefe6;
+  --color-evt-cancelled-fg: #72796f;
+  --color-evt-cancelled-border: #8c9388;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --text-scale-factor: 1;
+}
+
+.dark {
+  --color-background: #10140f;
+  --color-foreground: #e0e4db;
+  --color-foreground-secondary: #d4d4d4;
+  --color-foreground-tertiary: #a3a3a3;
+  --color-surface: #0b0f0a;
+  --color-surface-dim: #272b25;
+  --color-surface-active: #323630;
+  --color-surface-raised: #404040;
+  --color-border: #424940;
+  --color-border-strong: #8c9388;
+  --color-muted: #c2c9bd;
+  --color-muted-foreground: #8c9388;
+  --color-accent: #e0e4db;
+  --color-accent-foreground: #2d322c;
+  --color-toggle-off: #525252;
+  --color-destructive: #f87171;
+  --color-destructive-subtle: rgba(127, 29, 29, 0.3);
+  --color-destructive-border: #f87171;
+  --color-success: #86efac;
+  --color-success-subtle: rgba(20, 83, 45, 0.3);
+  --color-warning: #fcd34d;
+  --color-warning-subtle: rgba(120, 53, 15, 0.3);
+  --color-info: #93c5fd;
+  --color-info-subtle: rgba(30, 58, 95, 0.3);
+  --color-highlight: #d8b4fe;
+  --color-highlight-subtle: rgba(59, 7, 100, 0.3);
+  --color-positive: #6ee7b7;
+  --color-positive-subtle: rgba(6, 95, 70, 0.3);
+  --color-positive-border: #065f46;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+  --color-brand-50: #0a390f;
+  --color-brand-100: #245024;
+  --color-brand-200: #3c6939;
+  --color-brand-300: #5a9a55;
+  --color-brand-400: #82b87c;
+  --color-brand-500: #a1d39a;
+  --color-brand-600: #a1d39a;
+  --color-brand-700: #bcf0b4;
+  --color-brand-800: #a1d39a;
+  --color-brand-900: #82b87c;
+  /* In dark mode brand-600 is light sage — pair it with a very dark green
+     foreground so white-on-sage contrast failures don't ship. */
+  --color-brand-on: #0a390f;
+  --color-evt-community-bg: #103028;
+  --color-evt-community-fg: #a8e0d8;
+  --color-evt-official-bg: #1a3050;
+  --color-evt-official-fg: #b0d4ff;
+  --color-evt-members-bg: #3d2810;
+  --color-evt-members-fg: #ffd6a0;
+  --color-evt-invite-bg: #201040;
+  --color-evt-invite-fg: #d0b8ff;
+  --color-evt-cancelled-bg: #1d211b;
+  --color-evt-cancelled-fg: #8c9388;
+  --color-evt-cancelled-border: #4b5563;
+}
+
+.dyslexia {
+  font-family: var(--font-dyslexia);
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+}
+
+.dyslexia *,
+.dyslexia *::before,
+.dyslexia *::after {
+  font-family: var(--font-dyslexia) !important;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+html {
+  font-size: calc(16px * var(--text-scale-factor));
+}
+
+/* OpenDyslexic — shipped from frontend/assets/fonts (Bunny Foundry, OFL). */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.pda-evt {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border-inline-start-width: 3px;
+  border-inline-start-style: solid;
+}
+
+.pda-evt-community {
+  background: var(--color-evt-community-bg);
+  color: var(--color-evt-community-fg);
+  border-inline-start-color: var(--color-evt-community-fg);
+}
+
+.pda-evt-official {
+  background: var(--color-evt-official-bg);
+  color: var(--color-evt-official-fg);
+  border-inline-start-color: var(--color-evt-official-fg);
+}
+
+.pda-evt-members {
+  background: var(--color-evt-members-bg);
+  color: var(--color-evt-members-fg);
+  border-inline-start-color: var(--color-evt-members-fg);
+}
+
+.pda-evt-invite {
+  background: var(--color-evt-invite-bg);
+  color: var(--color-evt-invite-fg);
+  border-inline-start-color: var(--color-evt-invite-fg);
+}
+
+.pda-evt-cancelled {
+  background: var(--color-evt-cancelled-bg);
+  color: var(--color-evt-cancelled-fg);
+  text-decoration: line-through;
+  border-inline-start-color: var(--color-evt-cancelled-border);
+}
+
+.rbc-event.pda-evt {
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  border-inline-start-width: 3px;
+  border-inline-start-style: solid;
+}
+
+.rbc-event.pda-evt-community {
+  background: var(--color-evt-community-bg);
+  color: var(--color-evt-community-fg);
+  border-inline-start-color: var(--color-evt-community-fg);
+}
+
+.rbc-event.pda-evt-official {
+  background: var(--color-evt-official-bg);
+  color: var(--color-evt-official-fg);
+  border-inline-start-color: var(--color-evt-official-fg);
+}
+
+.rbc-event.pda-evt-members {
+  background: var(--color-evt-members-bg);
+  color: var(--color-evt-members-fg);
+  border-inline-start-color: var(--color-evt-members-fg);
+}
+
+.rbc-event.pda-evt-invite {
+  background: var(--color-evt-invite-bg);
+  color: var(--color-evt-invite-fg);
+  border-inline-start-color: var(--color-evt-invite-fg);
+}
+
+.rbc-event.pda-evt-cancelled {
+  background: var(--color-evt-cancelled-bg);
+  color: var(--color-evt-cancelled-fg);
+  text-decoration: line-through;
+  border-inline-start-color: var(--color-evt-cancelled-border);
+}
+
+.rbc-event.rbc-selected.pda-evt {
+  box-shadow: 0 0 0 2px var(--color-brand-600);
+}
+
+/* ── react-big-calendar overrides ──────────────────────────────────────
+   rbc CSS is imported in CalendarScreen.tsx AFTER index.css, so we use
+   doubled selectors for specificity to guarantee our theme wins.        */
+
+/* Outer frame — soft border + rounded corners. */
+.rbc-month-view.rbc-month-view,
+.rbc-time-view.rbc-time-view {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+/* All internal borders — cells, rows, headers. */
+.rbc-month-view .rbc-month-row + .rbc-month-row {
+  border-top: 1px solid var(--color-border);
+}
+.rbc-month-view .rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid var(--color-border);
+}
+.rbc-month-view .rbc-header + .rbc-header {
+  border-left: 1px solid var(--color-border);
+}
+.rbc-time-view .rbc-timeslot-group {
+  border-color: var(--color-border);
+}
+/* Weekday headers: lowercase, medium weight, themed color. */
+.rbc-month-view .rbc-header,
+.rbc-time-view .rbc-header {
+  padding: 6px 4px;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+  text-transform: none;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+}
+/* Date numbers — themed color. */
+.rbc-month-view .rbc-date-cell {
+  color: var(--color-foreground);
+}
+.rbc-month-view .rbc-date-cell a {
+  color: inherit;
+}
+/* Today cell: swap rbc's pale yellow for brand-50. */
+.rbc-month-view .rbc-today,
+.rbc-time-view .rbc-today {
+  background: var(--color-brand-50);
+}
+/* Today's date number becomes a filled brand pill. */
+.rbc-date-cell.rbc-now > a {
+  background: var(--color-brand-600);
+  color: var(--color-brand-on);
+  border-radius: 9999px;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+/* Off-range days: very subtle wash — barely visible in both themes. */
+.rbc-month-view .rbc-off-range-bg {
+  background: color-mix(in srgb, var(--color-foreground) 3%, transparent);
+}
+.rbc-month-view .rbc-off-range {
+  color: var(--color-muted-foreground);
+  opacity: 1;
+}
+/* "n more" link tinted green. */
+.rbc-month-view .rbc-show-more,
+.rbc-month-view .rbc-show-more:hover,
+.rbc-month-view .rbc-show-more:focus {
+  color: var(--color-brand-700);
+  font-weight: 500;
+  font-size: 0.6875rem;
+  background: transparent;
+  padding: 0 6px;
+  line-height: 1.2;
+  text-decoration: none;
+}
+.rbc-month-view .rbc-show-more:hover {
+  color: var(--color-brand-800);
+  text-decoration: underline;
+}
+/* Compress event chips in month grid. */
+.rbc-month-view .rbc-event {
+  padding: 1px 4px;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  min-height: 0;
+  border-radius: 4px;
+}
+.rbc-month-view .rbc-row-segment {
+  padding: 1px 2px;
+}
+/* Time view slots. */
+.rbc-time-view .rbc-time-slot {
+  border-top-color: var(--color-border);
+}
+.rbc-time-view .rbc-time-gutter {
+  color: var(--color-muted-foreground);
+}
+
+/* react-day-picker theme — lowercase, brand colors, matching radii/font. */
+.rdp-root {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+}
+.rdp-month_caption {
+  text-transform: lowercase;
+}
+.rdp-caption_label {
+  text-transform: lowercase;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-brand-900);
+}
+.rdp-nav {
+  display: flex;
+}
+.rdp-button_previous,
+.rdp-button_next {
+  color: var(--color-brand-600);
+  border-radius: var(--radius-sm);
+}
+.rdp-button_previous:hover,
+.rdp-button_next:hover {
+  background: var(--color-brand-50);
+}
+.rdp-chevron {
+  color: var(--color-brand-600);
+}
+.rdp-weekdays {
+  font-weight: 500;
+  font-size: 0.6875rem;
+  text-transform: lowercase;
+  color: var(--color-brand-600);
+}
+.rdp-weekday {
+  text-transform: lowercase;
+}
+.rdp-day_button {
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  width: 2rem;
+  height: 2rem;
+}
+.rdp-day_button:hover:not(:disabled) {
+  background: var(--color-brand-50);
+}
+.rdp-today:not(.rdp-selected) .rdp-day_button {
+  color: var(--color-brand-600);
+  font-weight: 600;
+}
+.rdp-selected .rdp-day_button {
+  background: var(--color-brand-600);
+  color: var(--color-brand-on);
+  font-weight: 600;
+}
+.rdp-selected .rdp-day_button:hover {
+  background: var(--color-brand-700);
+}
+.rdp-disabled .rdp-day_button {
+  color: var(--color-muted-foreground);
+}
+.rdp-outside .rdp-day_button {
+  color: var(--color-muted-foreground);
+}

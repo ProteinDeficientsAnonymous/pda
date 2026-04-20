@@ -5,18 +5,27 @@ import logging
 from community._shared import validate_display_name
 from config.audit import audit_log
 from config.media_proxy import media_path
+from django.http import HttpResponse
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
+from users._password_validation import validate_password
+from users._refresh_cookie import (
+    clear_refresh_cookie,
+    read_refresh_cookie,
+    set_refresh_cookie,
+)
 from users.models import MagicLoginToken, User
+from users.permissions import PermissionKey
 from users.schemas import (
     AccessOut,
     ChangePasswordIn,
     ErrorOut,
     LoginIn,
+    LogoutOut,
     MemberProfileOut,
     MePatchIn,
     OnboardingIn,
@@ -41,7 +50,7 @@ _ALLOWED_IMAGE_TYPES = {
 
 
 @router.post("/login/", response={200: TokenOut, 401: ErrorOut, 403: ErrorOut}, auth=None)
-def login(request, payload: LoginIn):
+def login(request, payload: LoginIn, response: HttpResponse):
     from django.contrib.auth import authenticate
 
     auth_user = authenticate(request, username=payload.phone_number, password=payload.password)
@@ -52,6 +61,11 @@ def login(request, payload: LoginIn):
         )
         return Status(401, ErrorOut(detail="Invalid credentials"))
     user = User.objects.get(pk=auth_user.pk)
+    if user.archived_at is not None:
+        audit_log(
+            logging.WARNING, "login_archived", request, target_type="user", target_id=str(user.pk)
+        )
+        return Status(403, ErrorOut(detail="this account is no longer active"))
     if user.is_paused:
         audit_log(
             logging.WARNING, "login_paused", request, target_type="user", target_id=str(user.pk)
@@ -59,14 +73,32 @@ def login(request, payload: LoginIn):
         return Status(403, ErrorOut(detail="your membership is currently paused"))
     refresh = RefreshToken.for_user(user)
     request.auth = user
+    refresh_str = str(refresh)
+    set_refresh_cookie(response, refresh_str)
     audit_log(logging.INFO, "login_success", request, target_type="user", target_id=str(user.pk))
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
+
+
+def _current_jwt_user(request) -> User | None:
+    """Best-effort JWT read for endpoints declared with auth=None.
+
+    Returns the authenticated user if the request carries a valid access token,
+    else None. Any auth error (missing/invalid/expired token) is treated as
+    anonymous — the calling endpoint decides whether that matters.
+    """
+    try:
+        user = JWTAuth()(request)
+    except Exception:
+        return None
+    if isinstance(user, User):
+        return user
+    return None
 
 
 @router.get(
     "/magic-login/{token}/", response={200: TokenOut, 400: ErrorOut, 403: ErrorOut}, auth=None
 )
-def magic_login(request, token: str):
+def magic_login(request, token: str, response: HttpResponse):
     try:
         magic = MagicLoginToken.objects.select_related("user").get(token=token)
     except MagicLoginToken.DoesNotExist:
@@ -74,6 +106,23 @@ def magic_login(request, token: str):
             logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
         )
         return Status(400, ErrorOut(detail="Invalid or expired login link."))
+    # Reject cross-user magic links: if the caller is already authenticated as a
+    # different user, a silent session swap would let them complete onboarding /
+    # password-set on behalf of the link's target. Force explicit logout first.
+    current_user = _current_jwt_user(request)
+    if current_user is not None and current_user.pk != magic.user.pk:
+        audit_log(
+            logging.WARNING,
+            "magic_login_cross_user_blocked",
+            request,
+            target_type="user",
+            target_id=str(magic.user.pk),
+            details={"current_user_id": str(current_user.pk)},
+        )
+        return Status(
+            403,
+            ErrorOut(detail="you're signed in as a different user — log out first"),
+        )
     if magic.used or magic.is_expired:
         audit_log(
             logging.WARNING,
@@ -84,6 +133,15 @@ def magic_login(request, token: str):
             details={"reason": "used_or_expired"},
         )
         return Status(400, ErrorOut(detail="This login link has already been used or has expired."))
+    if magic.user.archived_at is not None:
+        audit_log(
+            logging.WARNING,
+            "magic_login_archived",
+            request,
+            target_type="user",
+            target_id=str(magic.user.pk),
+        )
+        return Status(403, ErrorOut(detail="this account is no longer active"))
     if magic.user.is_paused:
         audit_log(
             logging.WARNING,
@@ -97,6 +155,8 @@ def magic_login(request, token: str):
     magic.save(update_fields=["used"])
     refresh = RefreshToken.for_user(magic.user)
     request.auth = magic.user
+    refresh_str = str(refresh)
+    set_refresh_cookie(response, refresh_str)
     audit_log(
         logging.INFO,
         "magic_login_success",
@@ -104,21 +164,35 @@ def magic_login(request, token: str):
         target_type="user",
         target_id=str(magic.user.pk),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=str(refresh)))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
-def refresh_token(request, payload: RefreshIn):
+def refresh_token(request, payload: RefreshIn, response: HttpResponse):
     from ninja_jwt.exceptions import TokenError
 
+    # Prefer httpOnly cookie (React). Fall back to body for Flutter clients
+    # that still send the refresh token in the JSON payload.
+    token = read_refresh_cookie(request) or payload.refresh
+    if not token:
+        return Status(401, ErrorOut(detail="Invalid or expired refresh token"))
     try:
-        refresh = RefreshToken(payload.refresh)
+        refresh = RefreshToken(token)
         return Status(200, AccessOut(access=str(refresh.access_token)))
     except TokenError:
+        clear_refresh_cookie(response)
         return Status(401, ErrorOut(detail="Invalid or expired refresh token"))
     except Exception:
         logger.exception("Unexpected error during token refresh")
+        clear_refresh_cookie(response)
         return Status(401, ErrorOut(detail="Token refresh failed"))
+
+
+@router.post("/logout/", response={200: LogoutOut}, auth=None)
+def logout(request, response: HttpResponse):
+    """Clear the refresh cookie. Idempotent; safe to call unauthenticated."""
+    clear_refresh_cookie(response)
+    return Status(200, LogoutOut(detail="logged out"))
 
 
 @router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=JWTAuth())
@@ -129,19 +203,21 @@ def me(request):
     return Status(200, UserOut.from_user(user))
 
 
-@router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
-def update_me(request, payload: MePatchIn):
-    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+def _apply_me_patch(user, payload: MePatchIn):
+    """Apply MePatchIn fields to user. Returns (changed_fields, error_response)."""
     changed = []
     if payload.display_name is not None:
         name_error = validate_display_name(payload.display_name)
         if name_error:
-            return Status(400, ErrorOut(detail=name_error))
+            return None, Status(400, ErrorOut(detail=name_error))
         user.display_name = payload.display_name.strip()
         changed.append("display_name")
     if payload.email is not None:
         user.email = payload.email
         changed.append("email")
+    if payload.bio is not None:
+        user.bio = payload.bio.strip()
+        changed.append("bio")
     if payload.needs_onboarding is not None:
         user.needs_onboarding = payload.needs_onboarding
         changed.append("needs_onboarding")
@@ -151,6 +227,18 @@ def update_me(request, payload: MePatchIn):
     if payload.show_email is not None:
         user.show_email = payload.show_email
         changed.append("show_email")
+    if payload.week_start is not None:
+        user.week_start = payload.week_start
+        changed.append("week_start")
+    return changed, None
+
+
+@router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+def update_me(request, payload: MePatchIn):
+    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    changed, err = _apply_me_patch(user, payload)
+    if err is not None:
+        return err
     user.save()
     if changed:
         audit_log(
@@ -202,10 +290,13 @@ def delete_photo(request):
 )
 def get_member_profile(request, user_id: str):
     try:
-        user = User.objects.get(pk=user_id, is_active=True, is_paused=False)
+        user = User.objects.get(
+            pk=user_id, is_active=True, is_paused=False, archived_at__isnull=True
+        )
     except User.DoesNotExist:
         return Status(404, ErrorOut(detail="Member not found."))
     is_own_profile = str(request.auth.pk) == user_id
+    can_manage_users = request.auth.has_permission(PermissionKey.MANAGE_USERS)
     return Status(
         200,
         MemberProfileOut(
@@ -213,15 +304,18 @@ def get_member_profile(request, user_id: str):
             display_name=user.display_name,
             phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
             email=(user.email or "") if (user.show_email or is_own_profile) else "",
+            bio=user.bio or "",
             profile_photo_url=media_path(user.profile_photo),
+            login_link_requested=user.login_link_requested if can_manage_users else False,
         ),
     )
 
 
 @router.post("/complete-onboarding/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
 def complete_onboarding(request, payload: OnboardingIn):
-    if len(payload.new_password) < 8:
-        return Status(400, ErrorOut(detail="New password must be at least 8 characters."))
+    pw_errors = validate_password(payload.new_password)
+    if pw_errors:
+        return Status(400, ErrorOut(detail="; ".join(pw_errors)))
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if payload.display_name is not None:
         name_error = validate_display_name(payload.display_name)
@@ -252,8 +346,9 @@ def change_password(request, payload: ChangePasswordIn):
             details={"reason": "wrong_current_password"},
         )
         return Status(400, ErrorOut(detail="Current password is incorrect."))
-    if len(payload.new_password) < 8:
-        return Status(400, ErrorOut(detail="New password must be at least 8 characters."))
+    pw_errors = validate_password(payload.new_password)
+    if pw_errors:
+        return Status(400, ErrorOut(detail="; ".join(pw_errors)))
     user.set_password(payload.new_password)
     user.save()
     audit_log(logging.INFO, "password_changed", request, target_type="user", target_id=str(user.pk))

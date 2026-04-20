@@ -11,7 +11,8 @@ Run the Vedgy test suite with pytest.
 ## Quick Run
 
 ```bash
-make test    # runs: cd backend && uv run python -m pytest tests/ -v
+make agent-test    # full suite, minimal pytest output (prefer in agents)
+make test          # verbose pytest (same suite)
 ```
 
 ## Targeted Tests
@@ -31,12 +32,6 @@ cd backend && uv run python -m pytest listings/tests/ -v
 cd backend && uv run python -m pytest users/tests/ -v
 ```
 
-## Flutter Tests
-
-```bash
-make frontend-test    # cd frontend && flutter test
-```
-
 ## Configuration
 
 Pytest config is in `pyproject.toml`:
@@ -44,9 +39,3 @@ Pytest config is in `pyproject.toml`:
 - Uses `--reuse-db` for speed
 - Requires `@pytest.mark.django_db` marker for DB access
 - Shared fixtures in `backend/tests/conftest.py`
-
-## Full CI
-
-```bash
-make ci    # lint → check → test → frontend-test
-```

@@ -17,8 +17,10 @@ class EventPollOptionOut(BaseModel):
     display_order: int
     yes_count: int
     maybe_count: int
+    no_count: int = 0
     yes_voters: list[VoterOut] = []
     maybe_voters: list[VoterOut] = []
+    no_voters: list[VoterOut] = []
 
 
 class EventPollOut(BaseModel):
@@ -30,7 +32,7 @@ class EventPollOut(BaseModel):
     winning_datetime: datetime | None = None
     finalized_by_id: str | None = None
     finalized_at: datetime | None = None
-    my_votes: dict[str, str] = {}  # option_id -> "yes" | "maybe"
+    my_votes: dict[str, str] = {}  # option_id -> "yes" | "maybe" | "no"
 
 
 class EventPollIn(BaseModel):
@@ -42,7 +44,7 @@ class PollOptionIn(BaseModel):
 
 
 class EventPollVoteIn(BaseModel):
-    votes: dict[str, str]  # option_id -> "yes" | "maybe"
+    votes: dict[str, str]  # option_id -> "yes" | "maybe" | "no"
 
 
 class EventPollFinalizeIn(BaseModel):

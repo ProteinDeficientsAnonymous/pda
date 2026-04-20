@@ -1,17 +1,38 @@
-# pda
+# frontend
 
-A new Flutter project.
+React + Vite + TypeScript frontend. See `/FLUTTER_TO_VITE_REACT_MIGRATION.md` at the repo root for historical context on the migration from the prior Flutter web frontend.
 
-## Getting Started
+## Setup
 
-This project is a starting point for a Flutter application.
+```bash
+pnpm install
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Dev
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+pnpm dev           # localhost:3000, proxies /api to localhost:8000
+pnpm test:watch    # vitest in watch mode
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## CI
+
+```bash
+pnpm typecheck     # tsc -b
+pnpm lint          # eslint with zero warnings
+pnpm test          # vitest run
+pnpm build         # tsc -b && vite build
+```
+
+## API types
+
+Generated from the Django Ninja OpenAPI schema. Run the backend first:
+
+```bash
+# in repo root
+make run            # Django on localhost:8000
+# then
+pnpm types:api      # writes src/api/types.gen.ts
+```
+
+The generated file is committed so builds pass without a backend running; regenerate whenever the API surface changes.

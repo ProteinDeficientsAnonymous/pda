@@ -1,7 +1,8 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
+from community._field_limits import FieldLimit
 from config.media_proxy import media_path
-from pydantic import BaseModel, BeforeValidator, EmailStr
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field
 
 from users.models import User
 
@@ -16,8 +17,8 @@ OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
 
 
 class LoginIn(BaseModel):
-    phone_number: str
-    password: str
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
+    password: str = Field(max_length=FieldLimit.PASSWORD)
 
 
 class TokenOut(BaseModel):
@@ -26,11 +27,17 @@ class TokenOut(BaseModel):
 
 
 class RefreshIn(BaseModel):
-    refresh: str
+    # Optional because React clients send the refresh token via httpOnly cookie;
+    # legacy Flutter clients still include it in the body.
+    refresh: str = Field(default="", max_length=500)
 
 
 class AccessOut(BaseModel):
     access: str
+
+
+class LogoutOut(BaseModel):
+    detail: str
 
 
 class RoleOut(BaseModel):
@@ -38,6 +45,7 @@ class RoleOut(BaseModel):
     name: str
     is_default: bool
     permissions: list[str]
+    user_count: int = 0
 
 
 class UserOut(BaseModel):
@@ -45,12 +53,15 @@ class UserOut(BaseModel):
     phone_number: str
     display_name: str
     email: str = ""
+    bio: str = ""
     is_superuser: bool = False
     needs_onboarding: bool = False
     profile_photo_url: str = ""
     show_phone: bool = True
     show_email: bool = True
     is_paused: bool = False
+    login_link_requested: bool = False
+    week_start: str = "sunday"
     roles: list[RoleOut]
 
     @classmethod
@@ -60,15 +71,21 @@ class UserOut(BaseModel):
             phone_number=user.phone_number,
             display_name=user.display_name,
             email=user.email or "",
+            bio=user.bio or "",
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             profile_photo_url=media_path(user.profile_photo),
             show_phone=user.show_phone,
             show_email=user.show_email,
             is_paused=user.is_paused,
+            login_link_requested=user.login_link_requested,
+            week_start=user.week_start,
             roles=[
                 RoleOut(
-                    id=str(r.id), name=r.name, is_default=r.is_default, permissions=r.permissions
+                    id=str(r.id),
+                    name=r.name,
+                    is_default=r.is_default,
+                    permissions=r.effective_permissions,
                 )
                 for r in user.roles.all()
             ],
@@ -80,12 +97,14 @@ class MemberProfileOut(BaseModel):
     display_name: str
     phone_number: str
     email: str = ""
+    bio: str = ""
     profile_photo_url: str = ""
+    login_link_requested: bool = False
 
 
 class UserCreateIn(BaseModel):
-    phone_number: str
-    display_name: str = ""
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
+    display_name: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
     email: OptionalEmail = None
     role_id: str | None = None
 
@@ -116,23 +135,25 @@ class BulkUserCreateOut(BaseModel):
 
 
 class UserPatchIn(BaseModel):
-    phone_number: str | None = None
-    display_name: str | None = None
+    phone_number: str | None = Field(default=None, max_length=FieldLimit.PHONE)
+    display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
     email: OptionalEmail = None
     is_paused: bool | None = None
 
 
 class MePatchIn(BaseModel):
-    display_name: str | None = None
+    display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
     email: OptionalEmail = None
+    bio: str | None = Field(default=None, max_length=FieldLimit.BIO)
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
+    week_start: Literal["sunday", "monday"] | None = None
 
 
 class ChangePasswordIn(BaseModel):
-    current_password: str
-    new_password: str
+    current_password: str = Field(max_length=FieldLimit.PASSWORD)
+    new_password: str = Field(max_length=FieldLimit.PASSWORD)
 
 
 class UserRolesIn(BaseModel):
@@ -145,12 +166,12 @@ class ResetPasswordOut(BaseModel):
 
 
 class RoleIn(BaseModel):
-    name: str
+    name: str = Field(max_length=FieldLimit.ROLE_NAME)
     permissions: list[str] = []
 
 
 class RolePatchIn(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, max_length=FieldLimit.ROLE_NAME)
     permissions: list[str] | None = None
 
 
@@ -159,8 +180,8 @@ class ErrorOut(BaseModel):
 
 
 class OnboardingIn(BaseModel):
-    new_password: str
-    display_name: str | None = None
+    new_password: str = Field(max_length=FieldLimit.PASSWORD)
+    display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
     email: OptionalEmail = None
 
 

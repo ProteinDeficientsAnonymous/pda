@@ -1,13 +1,23 @@
-.PHONY: help install run test lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop ci dev build-dev complexity \
-        frontend-install frontend-run frontend-run-html frontend-build frontend-codegen frontend-lint \
-        frontend-format frontend-test frontend-fix frontend-complexity
+# Auto-load .env so recipes see DATABASE_URL, SECRET_KEY, etc. without a
+# separate `source .env`. Leading dash silences the include if .env is missing
+# (fresh clones, CI). `export` pushes all make variables into recipe subshells.
+-include .env
+export
+
+.PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
+        createsuperuser seed db-start db-stop ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+        frontend-install frontend-run frontend-build frontend-lint \
+        frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
+        parallel-frontend parallel-agent-frontend \
+        agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity \
+        agent-frontend-lint agent-frontend-format agent-frontend-test agent-frontend-typecheck
 
 help:
 	@echo "Backend commands:"
-	@echo "  make install          Install dependencies (uv sync + flutter pub get)"
+	@echo "  make install          Install dependencies (uv sync + pnpm install)"
 	@echo "  make run              Run Django dev server (localhost:8000)"
 	@echo "  make test             Run pytest suite"
+	@echo "  make test-since       Run pytest subset from git diff (TEST_BASE= overrides default base ref)"
 	@echo "  make lint             Run ruff (lint + format)"
 	@echo "  make typecheck        Run ty type checker"
 	@echo "  make check            Run Django system checks"
@@ -19,31 +29,49 @@ help:
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
 	@echo ""
 	@echo "Frontend commands:"
-	@echo "  make frontend-install   flutter pub get"
-	@echo "  make frontend-run       Run Flutter web server (localhost:3000)"
-	@echo "  make frontend-build     Build Flutter web release"
-	@echo "  make frontend-codegen   Regenerate freezed/riverpod/json code"
-	@echo "  make frontend-lint      Run dart format check + dart analyze"
-	@echo "  make frontend-format    Auto-format Dart files"
-	@echo "  make frontend-fix       Auto-apply dart fix suggestions"
-	@echo "  make frontend-test         Run Flutter test suite"
-	@echo "  make frontend-complexity   Run Dart code metrics check"
+	@echo "  make frontend-install   pnpm install (frontend)"
+	@echo "  make frontend-run        Run Vite dev server (localhost:3000, proxies /api to 8000)"
+	@echo "  make frontend-build     Build Vite production bundle"
+	@echo "  make frontend-lint        Run ESLint"
+	@echo "  make frontend-format      Auto-format files (prettier --write)"
+	@echo "  make frontend-format-check  Prettier check (no write)"
+	@echo "  make frontend-test        Run Vitest suite"
+	@echo "  make frontend-typecheck   Run TypeScript check"
+	@echo "  make frontend-types       Generate API types from OpenAPI"
 	@echo ""
 	@echo "Workflow commands:"
-	@echo "  make build-dev        Install deps, codegen, migrate, then run dev"
-	@echo "  make dev              Run Django + Flutter concurrently"
-	@echo "  make ci               Run all pre-commit checks (lint, check, test, typecheck, complexity, frontend-lint, frontend-test, frontend-complexity)"
+	@echo "  make dev              Run Django + Vite concurrently (default)"
+	@echo "  make ci               Run all pre-commit checks (backend-ci + frontend-ci)"
+	@echo "  make backend-ci       Backend-only pre-commit checks"
+	@echo "  make frontend-ci      Frontend-only pre-commit checks"
+	@echo "  make agent-ci         Same as ci with minimal output (for agents / logs)"
+	@echo "  make agent-backend-ci   agent-ci backend portion only"
+	@echo "  make agent-frontend-ci  agent-ci frontend portion only"
+	@echo "  make agent-test-since Quiet test-since (same selection rules)"
 
-# Backend
+# Backend + Frontend
 install:
 	uv sync
-	cd frontend && flutter pub get
+	cd frontend && pnpm install
 
 run:
-	cd backend && uv run python manage.py runserver 0.0.0.0:8000
+	cd backend && uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
 
 test:
 	cd backend && uv run python -m pytest tests/ -v
+
+# Tests likely affected by backend changes since remote tip (see scripts/list_affected_tests.py).
+test-since:
+	@affected=$$(uv run python "$(CURDIR)/scripts/list_affected_tests.py"); \
+	if [ "$$affected" = "__FULL__" ]; then \
+		echo "list_affected_tests: running full suite"; \
+		cd backend && uv run python -m pytest tests/ -v; \
+	elif [ -z "$$affected" ]; then \
+		echo "No affected backend tests inferred; skipping pytest."; \
+	else \
+		echo "Running affected tests:"; echo "$$affected"; \
+		cd backend && uv run python -m pytest $$(echo "$$affected" | tr '\n' ' ') -v; \
+	fi
 
 lint:
 	cd backend && uv run ruff check --fix . && uv run ruff format .
@@ -59,6 +87,8 @@ typecheck:
 
 complexity:
 	cd backend && uvx --with flake8-cognitive-complexity flake8 --max-cognitive-complexity 10 --select CCR001 .
+	@violations=$$(find backend -name '*.py' -not -path '*/migrations/*' | while read f; do lines=$$(wc -l < "$$f"); if [ "$$lines" -gt 500 ]; then echo "$$f: $$lines lines"; fi; done); \
+	if [ -n "$$violations" ]; then echo "Error: files exceed 500-line limit:\n$$violations"; exit 1; fi
 
 lint-file:
 	@uv run ruff check --fix "$(FILE)" && uv run ruff format "$(FILE)"
@@ -85,42 +115,97 @@ db-start:
 db-stop:
 	docker compose down
 
-# Frontend
+# Frontend (Vite + React)
 frontend-install:
-	cd frontend && flutter pub get
+	cd frontend && pnpm install
 
 frontend-run:
-	cd frontend && flutter run -d web-server --web-port 3000 --web-hostname 0.0.0.0 --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
-
-frontend-run-html:
-	cd frontend && flutter run -d web-server --web-port 3001 --web-hostname 0.0.0.0 --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
+	cd frontend && pnpm dev
 
 frontend-build:
-	cd frontend && flutter build web --dart-define=API_URL=$(API_URL) --dart-define=ENABLE_FEEDBACK=$(ENABLE_FEEDBACK) --dart-define=GIT_SHA=$(shell git rev-parse --short HEAD)
-
-frontend-codegen:
-	cd frontend && dart run build_runner build --delete-conflicting-outputs
+	cd frontend && pnpm build
 
 frontend-lint:
-	cd frontend && dart format lib/ test/ && dart analyze
+	cd frontend && pnpm lint
 
 frontend-format:
-	cd frontend && dart format lib/ test/
+	cd frontend && pnpm format
 
-frontend-fix:
-	cd frontend && dart fix --apply
+frontend-format-check:
+	cd frontend && pnpm format:check
 
 frontend-test:
-	cd frontend && flutter test
+	cd frontend && pnpm test
 
-frontend-complexity:
-	dart pub global activate dart_code_metrics 2>/dev/null; dart pub global run dart_code_metrics:metrics analyze frontend/lib/ --disable-sunset-warning --set-exit-on-violation-level=warning
+frontend-typecheck:
+	cd frontend && pnpm typecheck
+
+frontend-types:
+	cd frontend && pnpm types:api
 
 # CI (run before every commit)
-ci: lint-check check test typecheck complexity frontend-lint frontend-test frontend-complexity
+ci: backend-ci frontend-ci
 
-# Install deps, codegen, migrate, then run dev
-build-dev: install frontend-codegen migrate dev
+backend-ci: lint check test typecheck complexity
+
+frontend-ci: parallel-frontend
+
+# ESLint, Prettier, Vitest, and tsc are independent — run in parallel to cut wall-clock time.
+parallel-frontend:
+	$(MAKE) -j4 frontend-lint frontend-format-check frontend-test frontend-typecheck
+
+# CI with quiet runners (same steps as ci; still auto-fixes via ruff)
+agent-lint:
+	cd backend && uv run ruff check -q --fix . && uv run ruff format -q .
+
+agent-check:
+	cd backend && uv run python manage.py check --verbosity 0 --no-color
+
+agent-test:
+	cd backend && uv run python -m pytest tests/ \
+		-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings
+
+agent-test-since:
+	@affected=$$(uv run python "$(CURDIR)/scripts/list_affected_tests.py"); \
+	if [ "$$affected" = "__FULL__" ]; then \
+		cd backend && uv run python -m pytest tests/ \
+			-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings; \
+	elif [ -z "$$affected" ]; then \
+		echo "No affected backend tests inferred; skipping pytest."; \
+	else \
+		cd backend && uv run python -m pytest $$(echo "$$affected" | tr '\n' ' ') \
+			-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings; \
+	fi
+
+agent-typecheck:
+	cd backend && uv run ty check -qq .
+
+agent-complexity:
+	cd backend && env UV_NO_PROGRESS=1 uvx -q --with flake8-cognitive-complexity flake8 -q \
+		--max-cognitive-complexity 10 --select CCR001 .
+	violations=$$(find backend -name '*.py' -not -path '*/migrations/*' | while read f; do lines=$$(wc -l < "$$f"); if [ "$$lines" -gt 500 ]; then echo "$$f: $$lines lines"; fi; done); \
+	if [ -n "$$violations" ]; then echo "Error: files exceed 500-line limit:\n$$violations"; exit 1; fi
+
+agent-frontend-lint:
+	cd frontend && pnpm exec eslint . --max-warnings 0
+
+agent-frontend-format:
+	cd frontend && pnpm exec prettier --write --log-level warn .
+
+agent-frontend-test:
+	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
+
+agent-frontend-typecheck:
+	cd frontend && pnpm exec tsc -b --noEmit --pretty false
+
+agent-ci: agent-backend-ci agent-frontend-ci
+
+agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity
+
+agent-frontend-ci: parallel-agent-frontend
+
+parallel-agent-frontend:
+	$(MAKE) -j4 agent-frontend-lint agent-frontend-format agent-frontend-test agent-frontend-typecheck
 
 # Dev (concurrent backend + frontend)
 dev:

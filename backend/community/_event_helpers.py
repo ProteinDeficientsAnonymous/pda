@@ -10,7 +10,7 @@ from users.permissions import PermissionKey
 
 from community._event_schemas import EventOut, RSVPGuestOut
 from community._shared import _authenticated_user, _members_only
-from community.models import Event, PageVisibility, SurveyQuestionType
+from community.models import Event, EventRSVP, RSVPStatus, SurveyQuestionType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -50,26 +50,91 @@ def _find_my_rsvp(rsvps, user) -> str | None:
     return None
 
 
+def _attending_headcount(event: Event) -> int:
+    """Count attending spots from prefetched RSVPs (each attendee + their +1)."""
+    return sum(
+        1 + (1 if r.has_plus_one else 0)
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.ATTENDING
+    )
+
+
+def _attending_headcount_db(event: Event, exclude_user=None) -> int:
+    """Count attending spots via DB query (use inside select_for_update transactions)."""
+    from django.db.models import Case, IntegerField, Sum, Value, When
+
+    qs = EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
+    if exclude_user is not None:
+        qs = qs.exclude(user=exclude_user)
+    result = qs.aggregate(
+        total=Sum(
+            Case(
+                When(has_plus_one=True, then=Value(2)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        )
+    )
+    return result["total"] or 0
+
+
+def _waitlisted_count(event: Event) -> int:
+    """Count waitlisted RSVPs from prefetched data."""
+    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.WAITLISTED)
+
+
+def promote_from_waitlist(event: Event) -> None:
+    """Promote oldest waitlisted users to attending (FIFO by created_at).
+
+    Must be called inside a transaction.atomic() block with the event row locked.
+    """
+    from notifications.service import create_waitlist_promoted_notifications
+
+    if event.max_attendees is None:
+        return
+    promoted_user_ids: list[str] = []
+    while True:
+        headcount = _attending_headcount_db(event)
+        if headcount >= event.max_attendees:
+            break
+        oldest = (
+            EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED)
+            .order_by("created_at")
+            .first()
+        )
+        if not oldest:
+            break
+        oldest.status = RSVPStatus.ATTENDING
+        oldest.save(update_fields=["status", "updated_at"])
+        promoted_user_ids.append(str(oldest.user_id))
+    if promoted_user_ids:
+        create_waitlist_promoted_notifications(event, promoted_user_ids)
+
+
+def _has_attendees(event: Event) -> bool:
+    """Return True if the event has any invited users or attending RSVPs."""
+    if event.invited_users.exists():
+        return True
+    return event.rsvps.filter(status=RSVPStatus.ATTENDING).exists()
+
+
 def _can_see_invited(
     requesting_user,
     creator,
     co_host_ids: set[str],
-    visibility: str = "",
-    invited_user_ids: set[str] | None = None,
 ) -> bool:
-    """Check if requesting user can see invited users list."""
+    """Check if requesting user can see invited users list.
+
+    Hosts/co-hosts/admins only. Regular members — even when they're themselves
+    invited — cannot see the list.
+    """
     if requesting_user is None:
         return False
     if creator is not None and requesting_user.pk == creator.pk:
         return True
     if str(requesting_user.pk) in co_host_ids:
         return True
-    if requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
-        return True
-    # Invited users can see the list for invite-only events
-    if visibility == PageVisibility.INVITE_ONLY and invited_user_ids is not None:
-        return str(requesting_user.pk) in invited_user_ids
-    return False
+    return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
 def _can_see_invite_only(
@@ -114,12 +179,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     all_invited = list(event.invited_users.all())
-    invited_user_ids = {str(u.id) for u in all_invited}
-    invited = (
-        all_invited
-        if _can_see_invited(auth_user, creator, co_host_ids, event.visibility, invited_user_ids)
-        else []
-    )
+    invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
     return EventOut(
         id=str(event.id),
         title=event.title,
@@ -139,8 +199,13 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         rsvp_enabled=_members_only(event.rsvp_enabled, False, is_authed),
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
+        max_attendees=event.max_attendees,
+        attending_count=_attending_headcount(event),
+        waitlisted_count=_waitlisted_count(event),
+        invited_count=len(all_invited),
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=_get_creator_name(creator),
+        created_by_photo_url=media_path(creator.profile_photo) if creator else "",
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[u.display_name or u.phone_number for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
@@ -156,7 +221,36 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         invited_user_names=[u.display_name or u.phone_number for u in invited],
         invited_user_photo_urls=[media_path(u.profile_photo) for u in invited],
         invite_permission=event.invite_permission,
+        is_past=event.is_past,
+        status=event.status,
     )
+
+
+def _update_co_hosts(
+    event: Event,
+    co_host_ids: Iterable[str],
+    updater: UserModel,
+) -> None:
+    """Update event.co_hosts and notify newly added co-hosts."""
+    from notifications.service import broadcast_event_update, create_cohost_added_notifications
+
+    old_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
+    next_ids = {str(uid) for uid in co_host_ids}
+    co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
+    event.co_hosts.set(co_hosts)
+    new_ids = next_ids - old_ids
+    if new_ids:
+        create_cohost_added_notifications(event, new_ids, updater)
+    # Silent live-update ping for anyone already viewing the event — so removed
+    # co-hosts and other stakeholders see the change without needing to reload.
+    # Exclude the updater (their local cache is already up-to-date).
+    if old_ids != next_ids:
+        removed_ids = old_ids - next_ids
+        broadcast_event_update(
+            event,
+            exclude_user_ids={str(updater.pk)},
+            extra_user_ids=removed_ids,
+        )
 
 
 def _update_invited_users(

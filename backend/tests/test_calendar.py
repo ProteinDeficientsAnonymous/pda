@@ -115,3 +115,32 @@ class TestCalendarFeed:
     def test_feed_missing_token_403(self, api_client):
         resp = api_client.get("/api/community/calendar/feed/")
         assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+class TestSingleEventIcs:
+    def test_returns_ics_for_existing_event(self, api_client, test_user):
+        from community.models import Event
+        from django.utils import timezone
+
+        event = Event.objects.create(
+            title="Picnic in the Park",
+            description="Bring hummus!",
+            location="Prospect Park",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.id}/ics/")
+        assert resp.status_code == 200
+        assert resp["Content-Type"] == "text/calendar"
+        content = resp.content.decode()
+        assert "BEGIN:VCALENDAR" in content
+        assert "Picnic in the Park" in content
+        assert "Prospect Park" in content
+
+    def test_returns_404_for_nonexistent_event(self, api_client):
+        import uuid
+
+        resp = api_client.get(f"/api/community/events/{uuid.uuid4()}/ics/")
+        assert resp.status_code == 404

@@ -11,8 +11,9 @@ dependencies = [
     "psycopg[binary]>=3.2,<4.0",
     "python-dotenv>=1.1,<2.0",
     "dj-database-url>=3.0,<4.0",
-    "whitenoise>=6.11,<7.0",
+    "whitenoise[brotli]>=6.11,<7.0",
     "gunicorn>=25.0,<26.0",
+    "uvicorn[standard]>=0.44,<1.0",
     "pydantic>=2.12,<3.0",
     "phonenumbers>=9.0,<10.0",
     "icalendar>=7.0,<8.0",
@@ -20,6 +21,7 @@ dependencies = [
     "Pillow>=11.0,<13.0",
     "PyJWT[crypto]>=2.0,<3.0",
     "email-validator>=2.0,<3.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]
@@ -37,7 +39,8 @@ DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "--verbose --strict-markers --tb=short -n auto"
+# -n auto: pytest-xdist parallel workers. --reuse-db: skip recreate when the test DB already exists.
+addopts = "--verbose --strict-markers --tb=short -n auto --reuse-db"
 markers = [
     "django_db: Mark test as requiring database access",
     "unit: Mark test as a unit test (no database or external dependencies)",

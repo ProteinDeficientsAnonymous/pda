@@ -72,8 +72,8 @@ class TestCreatePoll:
         poll_event.refresh_from_db()
         assert poll_event.datetime_tbd is True
 
-    def test_create_poll_requires_two_options(self, api_client, auth_headers, poll_event):
-        payload = {"options": ["2026-09-01T18:00:00Z"]}
+    def test_create_poll_requires_at_least_one_option(self, api_client, auth_headers, poll_event):
+        payload = {"options": []}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/",
             data=json.dumps(payload),
@@ -81,6 +81,16 @@ class TestCreatePoll:
             **auth_headers,
         )
         assert response.status_code == 400
+
+    def test_create_poll_with_one_option_succeeds(self, api_client, auth_headers, poll_event):
+        payload = {"options": ["2026-09-01T18:00:00Z"]}
+        response = api_client.post(
+            f"/api/community/events/{poll_event.id}/poll/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 201
 
     def test_create_poll_duplicate_fails(
         self, api_client, auth_headers, poll_with_options, poll_event
@@ -253,6 +263,22 @@ class TestVoteOnPoll:
             content_type="application/json",
         )
         assert response.status_code == 401
+
+    def test_vote_no_availability(self, api_client, auth_headers, poll_with_options, poll_event):
+        option = poll_with_options.options.first()
+        payload = {"votes": {str(option.id): PollAvailability.NO}}
+        response = api_client.post(
+            f"/api/community/events/{poll_event.id}/poll/vote/",
+            data=json.dumps(payload),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["my_votes"][str(option.id)] == PollAvailability.NO
+        # Verify no_count is returned in the option
+        opt_data = next(o for o in data["options"] if o["id"] == str(option.id))
+        assert opt_data["no_count"] == 1
 
 
 # ---------------------------------------------------------------------------

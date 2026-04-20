@@ -5,5 +5,10 @@ __pycache__/
 *.pyc
 .git/
 .claude/
-frontend/.dart_tool/
-frontend/build/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/src/**/*.test.ts
+frontend/src/**/*.test.tsx
+frontend/src/test/
+frontend/vitest.config.ts

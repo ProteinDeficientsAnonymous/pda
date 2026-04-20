@@ -1,4 +1,4 @@
-"""Join form configuration, join request submission/management, and check-phone endpoints."""
+"""Join request submission, management, and check-phone endpoints."""
 
 import logging
 from datetime import datetime
@@ -7,12 +7,15 @@ from uuid import UUID
 from config.audit import audit_log
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from notifications.service import create_join_request_notifications
+from pydantic import BaseModel, Field, field_validator
 from users.permissions import PermissionKey
 
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _validate_phone, logger, validate_display_name
 from community.models import (
     JoinFormQuestion,
@@ -25,9 +28,22 @@ router = Router()
 
 
 class JoinRequestIn(BaseModel):
-    display_name: str
-    phone_number: str
+    display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
     answers: dict[str, str] = {}
+    # Honeypot: hidden field human users never fill in. Bots auto-complete
+    # every input, so a non-empty value is a strong spam signal.
+    website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answer_lengths(cls, v: dict[str, str]) -> dict[str, str]:
+        for key, answer in v.items():
+            if len(answer) > FieldLimit.DESCRIPTION:
+                raise ValueError(
+                    f"Answer for question {key} exceeds {FieldLimit.DESCRIPTION} characters."
+                )
+        return v
 
 
 class JoinRequestAnswerOut(BaseModel):
@@ -44,30 +60,15 @@ class JoinRequestOut(BaseModel):
     submitted_at: datetime
     status: str
     user_id: str | None = None
-
-
-class JoinFormQuestionOut(BaseModel):
-    id: str
-    label: str
-    field_type: str
-    options: list[str] = []
-    required: bool
-    display_order: int
-
-
-class JoinFormQuestionIn(BaseModel):
-    label: str
-    field_type: str = JoinFormQuestionType.TEXT
-    options: list[str] = []
-    required: bool = False
-
-
-class JoinFormQuestionOrderIn(BaseModel):
-    question_ids: list[str]
+    previously_archived: bool = False
+    approved_at: datetime | None = None
+    approved_by_name: str | None = None
+    rejected_at: datetime | None = None
+    rejected_by_name: str | None = None
 
 
 class JoinRequestStatusIn(BaseModel):
-    status: str
+    status: str = Field(max_length=FieldLimit.CHOICE)
 
 
 class ApproveJoinRequestOut(BaseModel):
@@ -84,7 +85,7 @@ class CheckPhoneOut(BaseModel):
 
 
 class CheckPhoneIn(BaseModel):
-    phone_number: str
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
 
 
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
@@ -95,6 +96,9 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         for qid, data in (jr.custom_answers or {}).items()
     ]
     user = User.objects.filter(phone_number=jr.phone_number).first()
+    previously_archived = bool(
+        User.objects.filter(phone_number=jr.phone_number, archived_at__isnull=False).exists()
+    )
     return JoinRequestOut(
         id=str(jr.id),
         display_name=jr.display_name,
@@ -103,6 +107,11 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         submitted_at=jr.submitted_at,
         status=jr.status,
         user_id=str(user.id) if user else None,
+        previously_archived=previously_archived,
+        approved_at=jr.approved_at,
+        approved_by_name=jr.approved_by.display_name if jr.approved_by else None,
+        rejected_at=jr.rejected_at,
+        rejected_by_name=jr.rejected_by.display_name if jr.rejected_by else None,
     )
 
 
@@ -155,206 +164,46 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
         logger.exception("Failed to send vetting email for join request")
 
 
-# ---------------------------------------------------------------------------
-# Join form configuration
-# ---------------------------------------------------------------------------
-
-
-@router.get("/join-form/", response={200: list[JoinFormQuestionOut]}, auth=None)
-def get_join_form(request):
-    questions = JoinFormQuestion.objects.all()
-    return Status(
-        200,
-        [
-            JoinFormQuestionOut(
-                id=str(q.id),
-                label=q.label,
-                field_type=q.field_type,
-                options=q.options or [],
-                required=q.required,
-                display_order=q.display_order,
-            )
-            for q in questions
-        ],
+def _honeypot_decoy_response(display_name: str, phone_number: str) -> JoinRequestOut:
+    """Mimic a real submission's shape so bots register success and stop retrying."""
+    return JoinRequestOut(
+        id="",
+        display_name=display_name,
+        phone_number=phone_number,
+        submitted_at=timezone.now(),
+        status=JoinRequestStatus.PENDING,
     )
+
+
+def _check_phone_conflicts(validated_phone: str) -> tuple[int, str] | None:
+    """Return (status_code, detail) if phone is already taken, else None."""
+    from users.models import User
+
+    if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
+        return 409, "already_invited"
+    if JoinRequest.objects.filter(
+        phone_number=validated_phone, status=JoinRequestStatus.PENDING
+    ).exists():
+        return 400, "a request for this number is already pending — we'll be in touch soon"
+    return None
 
 
 @router.post(
-    "/join-form/questions/",
-    response={201: JoinFormQuestionOut, 403: ErrorOut},
-    auth=JWTAuth(),
+    "/join-request/", response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut}, auth=None
 )
-def create_join_form_question(request, payload: JoinFormQuestionIn):
-    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            details={
-                "endpoint": "create_join_form_question",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    max_order = JoinFormQuestion.objects.count()
-    q = JoinFormQuestion.objects.create(
-        label=payload.label,
-        field_type=payload.field_type,
-        options=payload.options,
-        required=payload.required,
-        display_order=max_order,
-    )
-    audit_log(
-        logging.INFO,
-        "join_form_question_created",
-        request,
-        target_type="join_form_question",
-        target_id=str(q.id),
-        details={"label": q.label},
-    )
-    return Status(
-        201,
-        JoinFormQuestionOut(
-            id=str(q.id),
-            label=q.label,
-            field_type=q.field_type,
-            options=q.options or [],
-            required=q.required,
-            display_order=q.display_order,
-        ),
-    )
-
-
-@router.patch(
-    "/join-form/questions/{question_id}/",
-    response={200: JoinFormQuestionOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def update_join_form_question(request, question_id: UUID, payload: JoinFormQuestionIn):
-    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="join_form_question",
-            target_id=str(question_id),
-            details={
-                "endpoint": "update_join_form_question",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    try:
-        q = JoinFormQuestion.objects.get(id=question_id)
-    except JoinFormQuestion.DoesNotExist:
-        return Status(404, ErrorOut(detail="Question not found."))
-    q.label = payload.label
-    q.field_type = payload.field_type
-    q.options = payload.options
-    q.required = payload.required
-    q.save()
-    audit_log(
-        logging.INFO,
-        "join_form_question_updated",
-        request,
-        target_type="join_form_question",
-        target_id=str(question_id),
-        details={"label": q.label},
-    )
-    return Status(
-        200,
-        JoinFormQuestionOut(
-            id=str(q.id),
-            label=q.label,
-            field_type=q.field_type,
-            options=q.options or [],
-            required=q.required,
-            display_order=q.display_order,
-        ),
-    )
-
-
-@router.delete(
-    "/join-form/questions/{question_id}/",
-    response={204: None, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def delete_join_form_question(request, question_id: UUID):
-    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="join_form_question",
-            target_id=str(question_id),
-            details={
-                "endpoint": "delete_join_form_question",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    try:
-        q = JoinFormQuestion.objects.get(id=question_id)
-    except JoinFormQuestion.DoesNotExist:
-        return Status(404, ErrorOut(detail="Question not found."))
-    label = q.label
-    q.delete()
-    audit_log(
-        logging.INFO,
-        "join_form_question_deleted",
-        request,
-        target_type="join_form_question",
-        target_id=str(question_id),
-        details={"label": label},
-    )
-    return Status(204, None)
-
-
-@router.put(
-    "/join-form/questions/order/",
-    response={200: list[JoinFormQuestionOut], 403: ErrorOut},
-    auth=JWTAuth(),
-)
-def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
-    if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            details={
-                "endpoint": "reorder_join_form_questions",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    for idx, qid in enumerate(payload.question_ids):
-        JoinFormQuestion.objects.filter(id=qid).update(display_order=idx)
-    audit_log(logging.INFO, "join_form_questions_reordered", request)
-    questions = JoinFormQuestion.objects.all()
-    return Status(
-        200,
-        [
-            JoinFormQuestionOut(
-                id=str(q.id),
-                label=q.label,
-                field_type=q.field_type,
-                options=q.options or [],
-                required=q.required,
-                display_order=q.display_order,
-            )
-            for q in questions
-        ],
-    )
-
-
-# ---------------------------------------------------------------------------
-# Join request submission
-# ---------------------------------------------------------------------------
-
-
-@router.post("/join-request/", response={201: JoinRequestOut, 400: ErrorOut}, auth=None)
 def submit_join_request(request, payload: JoinRequestIn):
     display_name = payload.display_name.strip()
+
+    # Honeypot trip — silently 201 without persisting so bots don't retry.
+    if payload.website.strip():
+        audit_log(
+            logging.WARNING,
+            "join_request_honeypot_tripped",
+            request,
+            details={"display_name": display_name},
+        )
+        return Status(201, _honeypot_decoy_response(display_name, payload.phone_number))
+
     name_error = validate_display_name(display_name)
     if name_error:
         return Status(400, ErrorOut(detail=name_error))
@@ -364,15 +213,10 @@ def submit_join_request(request, payload: JoinRequestIn):
     except ValueError as e:
         return Status(400, ErrorOut(detail=str(e)))
 
-    if JoinRequest.objects.filter(
-        phone_number=validated_phone, status=JoinRequestStatus.PENDING
-    ).exists():
-        return Status(
-            400,
-            ErrorOut(
-                detail="a request for this number is already pending — we'll be in touch soon"
-            ),
-        )
+    conflict = _check_phone_conflicts(validated_phone)
+    if conflict is not None:
+        code, detail = conflict
+        return Status(code, ErrorOut(detail=detail))
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
     error = _validate_answers(payload.answers, questions)
@@ -397,6 +241,10 @@ def submit_join_request(request, payload: JoinRequestIn):
         details={"display_name": display_name},
     )
     _send_join_request_email(display_name, validated_phone, custom_answers)
+    try:
+        create_join_request_notifications(display_name)
+    except Exception:
+        logger.exception("Failed to create join request notifications")
 
     return Status(201, _join_request_out(join_request))
 
@@ -425,6 +273,18 @@ def list_join_requests(request):
         phone_number__in=onboarded_phones,
     )
     return Status(200, [_join_request_out(jr) for jr in join_requests])
+
+
+def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
+    now = timezone.now()
+    join_request.status = status
+    if status == JoinRequestStatus.APPROVED:
+        join_request.approved_at = now
+        join_request.approved_by = actor
+    else:
+        join_request.rejected_at = now
+        join_request.rejected_by = actor
+    join_request.save()
 
 
 @router.patch(
@@ -459,22 +319,30 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     except JoinRequest.DoesNotExist:
         return Status(404, ErrorOut(detail="Join request not found."))
 
-    if join_request.status == JoinRequestStatus.APPROVED:
-        return Status(400, ErrorOut(detail="This request has already been approved."))
+    if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
+        return Status(400, ErrorOut(detail="This request has already been decided."))
 
-    join_request.status = payload.status
-    join_request.save()
+    _stamp_decision(join_request, payload.status, request.auth)
 
     magic_token = None
     user_created = False
     if payload.status == JoinRequestStatus.APPROVED:
-        if not User.objects.filter(phone_number=join_request.phone_number).exists():
+        existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
+        if existing_user is None:
             _, magic_token = _create_user_with_role(
                 join_request.phone_number,
                 join_request.display_name,
                 "",
                 None,
             )
+            user_created = True
+        elif existing_user.archived_at is not None:
+            from users._helpers import _create_magic_token
+
+            existing_user.archived_at = None
+            existing_user.needs_onboarding = True
+            existing_user.save(update_fields=["archived_at", "needs_onboarding"])
+            magic_token = _create_magic_token(existing_user)
             user_created = True
 
     action = (
@@ -505,6 +373,49 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     )
 
 
+@router.patch(
+    "/join-requests/{id}/unreject/",
+    response={200: JoinRequestOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def unreject_join_request(request, id: UUID):
+    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="join_request",
+            target_id=str(id),
+            details={
+                "endpoint": "unreject_join_request",
+                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+            },
+        )
+        return Status(403, ErrorOut(detail="Permission denied."))
+
+    try:
+        join_request = JoinRequest.objects.get(id=id)
+    except JoinRequest.DoesNotExist:
+        return Status(404, ErrorOut(detail="Join request not found."))
+
+    if join_request.status != JoinRequestStatus.REJECTED:
+        return Status(400, ErrorOut(detail="Only rejected requests can be un-rejected."))
+
+    join_request.status = JoinRequestStatus.PENDING
+    join_request.save(update_fields=["status"])
+
+    audit_log(
+        logging.INFO,
+        "join_request_unrejected",
+        request,
+        target_type="join_request",
+        target_id=str(join_request.id),
+        details={"display_name": join_request.display_name},
+    )
+
+    return Status(200, _join_request_out(join_request))
+
+
 @router.post("/check-phone/", response={200: CheckPhoneOut}, auth=None)
 def check_phone(request, payload: CheckPhoneIn):
     from users.models import User as UserModel
@@ -513,7 +424,7 @@ def check_phone(request, payload: CheckPhoneIn):
         normalized = _validate_phone(payload.phone_number)
     except ValueError:
         return Status(200, CheckPhoneOut(status="unknown"))
-    if UserModel.objects.filter(phone_number=normalized).exists():
+    if UserModel.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
         return Status(200, CheckPhoneOut(status="member"))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING

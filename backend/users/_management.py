@@ -1,4 +1,4 @@
-"""User management endpoints (admin CRUD, roles, magic links)."""
+"""User management endpoints (admin CRUD + roles)."""
 
 import logging
 import re
@@ -6,6 +6,7 @@ import re
 from community._shared import validate_display_name
 from config.audit import audit_log
 from django.db import models as dj_models
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -13,8 +14,10 @@ from ninja_jwt.authentication import JWTAuth
 from users._helpers import (
     _create_magic_token,
     _create_user_with_role,
+    _is_admin,
     _is_last_admin,
     _validate_admin_role_change,
+    _validate_member_role_required,
     _validate_phone,
 )
 from users.models import User
@@ -25,7 +28,6 @@ from users.schemas import (
     BulkUserCreateOut,
     BulkUserResult,
     ErrorOut,
-    ResetPasswordOut,
     UserCreateIn,
     UserCreateOut,
     UserOut,
@@ -165,7 +167,9 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 
 @router.get("/users/search/", response={200: list[UserSearchOut]}, auth=JWTAuth())
 def search_users(request, q: str = ""):
-    qs = User.objects.filter(is_active=True, is_paused=False).exclude(pk=request.auth.pk)
+    qs = User.objects.filter(is_active=True, is_paused=False, archived_at__isnull=True).exclude(
+        pk=request.auth.pk
+    )
     q = q.strip()
     if q:
         digits = re.sub(r"\D", "", q)
@@ -201,7 +205,11 @@ def list_users(request):
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
         return Status(403, ErrorOut(detail="Permission denied."))
-    users = User.objects.prefetch_related("roles").order_by("phone_number")
+    users = (
+        User.objects.filter(archived_at__isnull=True)
+        .prefetch_related("roles")
+        .order_by("phone_number")
+    )
     return Status(200, [UserOut.from_user(u) for u in users])
 
 
@@ -265,6 +273,16 @@ def _patch_phone(user: User, user_id: str, phone_number: str) -> str | None:
     return None
 
 
+def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str) -> str | None:
+    if not is_paused:
+        return None
+    if requester_id == str(user.pk):
+        return "You cannot pause your own account."
+    if _is_admin(user):
+        return "Admins cannot be paused."
+    return None
+
+
 def _apply_user_patch(
     user: User, user_id: str, payload: UserPatchIn, requester_id: str
 ) -> str | None:
@@ -280,8 +298,9 @@ def _apply_user_patch(
         user.display_name = payload.display_name.strip()
     if payload.email is not None:
         user.email = payload.email
-    if payload.is_paused and requester_id == str(user.pk):
-        return "You cannot pause your own account."
+    err = _validate_pause_change(user, payload.is_paused, requester_id)
+    if err:
+        return err
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
     return None
@@ -311,11 +330,14 @@ def delete_user(request, user_id: str):
         return Status(400, ErrorOut(detail="You cannot delete your own account."))
     if _is_last_admin(user):
         return Status(400, ErrorOut(detail="Cannot delete the last admin."))
+    if user.archived_at is not None:
+        return Status(400, ErrorOut(detail="User is already archived."))
     display_name = user.display_name
-    user.delete()
+    user.archived_at = timezone.now()
+    user.save(update_fields=["archived_at"])
     audit_log(
         logging.WARNING,
-        "user_deleted",
+        "user_archived",
         request,
         target_type="user",
         target_id=user_id,
@@ -356,6 +378,10 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if error:
         return Status(400, ErrorOut(detail=error))
 
+    error = _validate_member_role_required(roles)
+    if error:
+        return Status(400, ErrorOut(detail=error))
+
     old_role_ids = [str(r.id) for r in user.roles.all()]
     user.roles.set(roles)
     new_role_ids = [str(r.id) for r in roles]
@@ -369,86 +395,3 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
     )
     user = User.objects.prefetch_related("roles").get(pk=user.pk)
     return Status(200, UserOut.from_user(user))
-
-
-@router.post(
-    "/users/{user_id}/magic-link/",
-    response={200: ResetPasswordOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def generate_magic_link(request, user_id: str):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="user",
-            target_id=user_id,
-            details={
-                "endpoint": "generate_magic_link",
-                "required_permission": PermissionKey.MANAGE_USERS,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return Status(404, ErrorOut(detail="User not found."))
-    magic_token = _create_magic_token(user)
-    audit_log(
-        logging.INFO,
-        "magic_link_generated",
-        request,
-        target_type="user",
-        target_id=user_id,
-    )
-    return Status(
-        200,
-        ResetPasswordOut(
-            detail="Magic login link generated.",
-            magic_link_token=magic_token,
-        ),
-    )
-
-
-@router.post(
-    "/users/{user_id}/reset-password/",
-    response={200: ResetPasswordOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def reset_password(request, user_id: str):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="user",
-            target_id=user_id,
-            details={
-                "endpoint": "reset_password",
-                "required_permission": PermissionKey.MANAGE_USERS,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return Status(404, ErrorOut(detail="User not found."))
-    user.set_unusable_password()
-    user.needs_onboarding = True
-    user.save()
-    magic_token = _create_magic_token(user)
-    audit_log(
-        logging.WARNING,
-        "password_reset_by_admin",
-        request,
-        target_type="user",
-        target_id=user_id,
-    )
-    return Status(
-        200,
-        ResetPasswordOut(
-            detail="Password reset. Share the magic login link with the user.",
-            magic_link_token=magic_token,
-        ),
-    )

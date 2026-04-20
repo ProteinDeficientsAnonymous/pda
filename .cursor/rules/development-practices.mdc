@@ -1,0 +1,34 @@
+---
+description: Engineering principles, workflow, git conventions
+alwaysApply: true
+---
+
+## Development Practices
+
+**No Obvious Comments:** Comments only for non-obvious logic, workarounds, or context.
+
+**Inclusive Language:** "master/slave" → "primary/replica", "blacklist/whitelist" → "blocklist/allowlist".
+
+### Engineering Principles
+
+**Fail-Fast Over Fallbacks:** Never implement fallbacks that mask issues. Use `dict[key]` not `if key in dict`. Let exceptions bubble up. Only validate at boundaries (user input, external APIs).
+
+**Line of Sight:** Happy path flows down the left edge. Errors/edge cases returned early.
+
+### Workflow
+
+**Makefile First:** Use `make` targets, not underlying tools directly.
+
+**Dependency Check:** Before modifying any function, find all callers and update all call sites.
+
+### Git Operations
+
+**Read freely. Write commands need EXPLICIT user permission.**
+
+Never use destructive commands (`git restore`, `checkout --`, `clean -f`, `reset --hard`) without user approval. Stage exact file paths — no `git add -A` or `git add .`.
+
+### Commit Conventions
+
+- Conventional commits: `feat(scope): description`
+- No generic messages ("fix", "update", "wip")
+- Never amend a pushed commit

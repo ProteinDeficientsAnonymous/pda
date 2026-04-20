@@ -5,6 +5,12 @@ from django.db import models
 
 class NotificationType(models.TextChoices):
     EVENT_INVITE = "event_invite", "Event Invite"
+    EVENT_CANCELLED = "event_cancelled", "Event Cancelled"
+    JOIN_REQUEST = "join_request", "Join Request"
+    COHOST_ADDED = "cohost_added", "Co-host Added"
+    MAGIC_LINK_REQUEST = "magic_link_request", "Magic Link Request"
+    WAITLIST_PROMOTED = "waitlist_promoted", "Waitlist Promoted"
+    EVENT_FLAGGED = "event_flagged", "Event Flagged"
 
 
 class Notification(models.Model):
@@ -25,6 +31,13 @@ class Notification(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="notifications",
+    )
+    related_user = models.ForeignKey(
+        "users.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="related_notifications",
     )
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)

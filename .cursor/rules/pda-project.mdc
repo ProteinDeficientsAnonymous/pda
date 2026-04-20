@@ -1,0 +1,6 @@
+---
+description: PDA repo — load canonical project instructions from CLAUDE.md
+alwaysApply: true
+---
+
+@CLAUDE.md

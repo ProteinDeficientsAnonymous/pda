@@ -8,9 +8,11 @@ from django.contrib.auth.models import AnonymousUser
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
+from community._content_render import render_content_payload
+from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _optional_jwt
 from community.models import EditablePage, PageVisibility
 
@@ -20,13 +22,28 @@ router = Router()
 class EditablePageOut(BaseModel):
     slug: str
     content: str
+    content_pm: str
+    content_html: str
     visibility: str
     updated_at: datetime
 
 
 class EditablePagePatchIn(BaseModel):
-    content: str | None = None
-    visibility: str | None = None
+    # Legacy Quill Delta JSON (Flutter). Either content or content_pm.
+    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
+    visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
+
+
+def _page_out(page: EditablePage) -> EditablePageOut:
+    return EditablePageOut(
+        slug=page.slug,
+        content=page.content,
+        content_pm=page.content_pm,
+        content_html=page.content_html,
+        visibility=page.visibility,
+        updated_at=page.updated_at,
+    )
 
 
 @router.get("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=_optional_jwt)
@@ -38,15 +55,7 @@ def get_page(request, slug: str):
         if isinstance(request.auth, AnonymousUser):
             return Status(403, ErrorOut(detail="Members only."))
 
-    return Status(
-        200,
-        EditablePageOut(
-            slug=page.slug,
-            content=page.content,
-            visibility=page.visibility,
-            updated_at=page.updated_at,
-        ),
-    )
+    return Status(200, _page_out(page))
 
 
 @router.patch("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=JWTAuth())
@@ -69,8 +78,11 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
     page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
 
     changed = []
-    if payload.content is not None:
-        page.content = payload.content
+    if payload.content is not None or payload.content_pm is not None:
+        rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
+        page.content = rendered.content
+        page.content_pm = rendered.content_pm
+        page.content_html = rendered.content_html
         changed.append("content")
     if payload.visibility is not None:
         page.visibility = payload.visibility
@@ -85,12 +97,4 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
         target_id=slug,
         details={"slug": slug, "fields_changed": changed},
     )
-    return Status(
-        200,
-        EditablePageOut(
-            slug=page.slug,
-            content=page.content,
-            visibility=page.visibility,
-            updated_at=page.updated_at,
-        ),
-    )
+    return Status(200, _page_out(page))

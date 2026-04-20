@@ -1,11 +1,14 @@
 """EventPoll endpoints — create, vote, finalize, delete."""
 
 import logging
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from config.audit import audit_log
 from config.media_proxy import media_path
+from config.ratelimit import rate_limit
 from django.db import transaction
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -25,6 +28,7 @@ from community.models import (
     Event,
     EventPoll,
     EventRSVP,
+    EventStatus,
     PollAvailability,
     PollOption,
     PollVote,
@@ -32,6 +36,25 @@ from community.models import (
 )
 
 router = Router()
+
+# Grace window matches frontend validateEventForm — lets a just-picked minute
+# land even if the server clock is a few seconds ahead of the user's.
+_PAST_GRACE = timedelta(seconds=60)
+
+
+def _any_in_past(dts: list[datetime]) -> bool:
+    cutoff = timezone.now() - _PAST_GRACE
+    return any(dt < cutoff for dt in dts)
+
+
+def _validate_poll_options(dts: list[datetime], *, require_at_least_one: bool):
+    """Returns an error Status if invalid, or None. Keeps endpoints below the
+    return-count threshold by bundling shape + past-time checks together."""
+    if require_at_least_one and len(dts) < 1:
+        return Status(400, ErrorOut(detail="A poll requires at least 1 option."))
+    if _any_in_past(dts):
+        return Status(400, ErrorOut(detail="Poll options must be in the future."))
+    return None
 
 
 def _can_manage_poll(user, event: Event) -> bool:
@@ -58,14 +81,17 @@ def _option_out(option: PollOption, my_votes: dict[str, str]) -> EventPollOption
     votes = list(option.votes.select_related("user").all())
     yes_voters = [_voter_out(v.user) for v in votes if v.availability == PollAvailability.YES]
     maybe_voters = [_voter_out(v.user) for v in votes if v.availability == PollAvailability.MAYBE]
+    no_voters = [_voter_out(v.user) for v in votes if v.availability == PollAvailability.NO]
     return EventPollOptionOut(
         id=str(option.id),
         datetime=option.datetime,
         display_order=option.display_order,
         yes_count=len(yes_voters),
         maybe_count=len(maybe_voters),
+        no_count=len(no_voters),
         yes_voters=yes_voters,
         maybe_voters=maybe_voters,
+        no_voters=no_voters,
     )
 
 
@@ -99,9 +125,10 @@ def _poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
 
 @router.post(
     "/events/{event_id}/poll/",
-    response={201: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={201: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=JWTAuth(),
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/h")
 def create_event_poll(request, event_id: UUID, payload: EventPollIn):
     try:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
@@ -117,17 +144,24 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
             details={"endpoint": "create_event_poll"},
         )
         return Status(403, ErrorOut(detail="Permission denied."))
+    if event.status == EventStatus.CANCELLED:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     if hasattr(event, "poll"):
         return Status(400, ErrorOut(detail="This event already has a poll."))
-    if len(payload.options) < 2:
-        return Status(400, ErrorOut(detail="A poll requires at least 2 options."))
+    option_err = _validate_poll_options(payload.options, require_at_least_one=True)
+    if option_err is not None:
+        return option_err
     with transaction.atomic():
         poll = EventPoll.objects.create(event=event, created_by=request.auth)
         for i, dt in enumerate(payload.options):
             PollOption.objects.create(poll=poll, datetime=dt, display_order=i)
-        if not event.datetime_tbd:
-            event.datetime_tbd = True
-            event.save(update_fields=["datetime_tbd"])
+        # While a poll is active, the poll is the source of truth for when. Clear
+        # any previously set start/end so the event can't have a stale time that
+        # doesn't match any poll option.
+        event.start_datetime = None
+        event.end_datetime = None
+        event.datetime_tbd = True
+        event.save(update_fields=["start_datetime", "end_datetime", "datetime_tbd"])
     poll.refresh_from_db()
     audit_log(
         logging.INFO,
@@ -160,24 +194,27 @@ def get_event_poll(request, event_id: UUID):
 
 @router.post(
     "/events/{event_id}/poll/vote/",
-    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=JWTAuth(),
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
     try:
         poll = (
-            EventPoll.objects.select_related("winning_option")
+            EventPoll.objects.select_related("winning_option", "event")
             .prefetch_related("options__votes__user")
             .get(event_id=event_id, is_active=True)
         )
     except EventPoll.DoesNotExist:
         return Status(404, ErrorOut(detail="Active poll not found."))
+    if poll.event.status == EventStatus.CANCELLED:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     for availability in payload.votes.values():
         if availability not in PollAvailability.VALID:
             return Status(
                 400,
                 ErrorOut(
-                    detail=f'Invalid availability "{availability}" — must be "yes" or "maybe".'
+                    detail=f'Invalid availability "{availability}" — must be "yes", "maybe", or "no".'
                 ),
             )
     option_ids = {str(pk) for pk in poll.options.values_list("id", flat=True)}
@@ -216,9 +253,10 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
 
 @router.post(
     "/events/{event_id}/poll/finalize/",
-    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=JWTAuth(),
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/h")
 def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
     try:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
@@ -234,23 +272,12 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             details={"endpoint": "finalize_event_poll"},
         )
         return Status(403, ErrorOut(detail="Permission denied."))
-    try:
-        poll = (
-            EventPoll.objects.select_related("winning_option")
-            .prefetch_related("options__votes__user")
-            .get(event=event)
-        )
-    except EventPoll.DoesNotExist:
-        return Status(404, ErrorOut(detail="Poll not found."))
-    if poll.winning_option_id is not None:
-        return Status(400, ErrorOut(detail="This poll has already been finalized."))
-    try:
-        winning_option = poll.options.get(id=payload.winning_option_id)
-    except PollOption.DoesNotExist:
-        return Status(400, ErrorOut(detail="Winning option not found in this poll."))
+    if event.status == EventStatus.CANCELLED:
+        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+    poll, winning_option, err = _get_poll_and_option(event, payload.winning_option_id)
+    if err is not None:
+        return err
     with transaction.atomic():
-        from django.utils import timezone
-
         poll.winning_option = winning_option
         poll.finalized_by = request.auth
         poll.finalized_at = timezone.now()
@@ -289,9 +316,10 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
 
 @router.delete(
     "/events/{event_id}/poll/",
-    response={204: None, 403: ErrorOut, 404: ErrorOut},
+    response={204: None, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=JWTAuth(),
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/h")
 def delete_event_poll(request, event_id: UUID):
     try:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
@@ -332,6 +360,8 @@ def _get_active_poll(user, event_id: UUID):
         return None, None, Status(404, ErrorOut(detail="Event not found."))
     if not _can_manage_poll(user, event):
         return None, None, Status(403, ErrorOut(detail="Permission denied."))
+    if event.status == EventStatus.CANCELLED:
+        return None, None, Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
     try:
         poll = (
             EventPoll.objects.select_related("winning_option")
@@ -345,20 +375,43 @@ def _get_active_poll(user, event_id: UUID):
     return event, poll, None
 
 
+def _get_poll_and_option(event, winning_option_id):
+    """Return (poll, winning_option, error) for finalize_event_poll."""
+    try:
+        poll = (
+            EventPoll.objects.select_related("winning_option")
+            .prefetch_related("options__votes__user")
+            .get(event=event)
+        )
+    except EventPoll.DoesNotExist:
+        return None, None, Status(404, ErrorOut(detail="Poll not found."))
+    if poll.winning_option_id is not None:
+        return None, None, Status(400, ErrorOut(detail="This poll has already been finalized."))
+    try:
+        winning_option = poll.options.get(id=winning_option_id)
+    except PollOption.DoesNotExist:
+        return None, None, Status(400, ErrorOut(detail="Winning option not found in this poll."))
+    return poll, winning_option, None
+
+
 @router.post(
     "/events/{event_id}/poll/options/",
-    response={201: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={201: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=JWTAuth(),
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
     _, poll, err = _get_active_poll(request.auth, event_id)
     if err is not None:
         return err
+    option_err = _validate_poll_options([payload.datetime], require_at_least_one=False)
+    if option_err is not None:
+        return option_err
     next_order = poll.options.count()
     try:
         PollOption.objects.create(poll=poll, datetime=payload.datetime, display_order=next_order)
     except Exception:
-        return Status(400, ErrorOut(detail="That datetime option already exists in this poll."))
+        return Status(400, ErrorOut(detail="that time is already an option in this poll"))
     audit_log(
         logging.INFO,
         "poll_option_added",
@@ -375,11 +428,50 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
     return Status(201, _poll_out(poll_fresh, request.auth))
 
 
-@router.delete(
+@router.patch(
     "/events/{event_id}/poll/options/{option_id}/",
-    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=JWTAuth(),
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
+def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id: UUID):
+    _, poll, err = _get_active_poll(request.auth, event_id)
+    if err is not None:
+        return err
+    option_err = _validate_poll_options([payload.datetime], require_at_least_one=False)
+    if option_err is not None:
+        return option_err
+    try:
+        option = poll.options.get(id=option_id)
+    except PollOption.DoesNotExist:
+        return Status(404, ErrorOut(detail="Option not found."))
+    try:
+        option.datetime = payload.datetime
+        option.save(update_fields=["datetime"])
+    except Exception:
+        return Status(400, ErrorOut(detail="that time is already an option in this poll"))
+    audit_log(
+        logging.INFO,
+        "poll_option_updated",
+        request,
+        target_type="event_poll",
+        target_id=str(poll.id),
+        details={"event_id": str(event_id), "option_id": str(option_id)},
+    )
+    poll_fresh = (
+        EventPoll.objects.select_related("winning_option")
+        .prefetch_related("options__votes__user")
+        .get(pk=poll.pk)
+    )
+    return Status(200, _poll_out(poll_fresh, request.auth))
+
+
+@router.delete(
+    "/events/{event_id}/poll/options/{option_id}/",
+    response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    auth=JWTAuth(),
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def delete_poll_option(request, event_id: UUID, option_id: UUID):
     _, poll, err = _get_active_poll(request.auth, event_id)
     if err is not None:

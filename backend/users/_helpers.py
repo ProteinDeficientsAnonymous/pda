@@ -27,7 +27,12 @@ def _is_last_admin(user: User) -> bool:
         return False
     if not user.roles.filter(pk=admin_role.pk).exists():
         return False
-    return admin_role.users.count() <= 1
+    return admin_role.users.filter(archived_at__isnull=True).count() <= 1
+
+
+def _is_admin(user: User) -> bool:
+    """True if the user holds the built-in admin role."""
+    return user.roles.filter(name="admin", is_default=True).exists()
 
 
 def _validate_phone(raw: str) -> str:
@@ -101,4 +106,14 @@ def _validate_admin_role_change(
     if _is_last_admin(user) and removing_admin:
         return "Cannot remove admin from the last admin."
 
+    return None
+
+
+def _validate_member_role_required(new_roles: list[Role]) -> str | None:
+    """Return error if the new role set is missing the built-in member role."""
+    member_role = Role.objects.filter(name="member", is_default=True).first()
+    if not member_role:
+        return None
+    if member_role not in new_roles:
+        return "Every user must keep the member role."
     return None

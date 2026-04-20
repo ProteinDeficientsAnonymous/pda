@@ -1,60 +1,170 @@
-"""Events CRUD, RSVP, and event photo endpoints."""
+"""Events CRUD endpoints."""
 
 import logging
 from uuid import UUID
 
 from config.audit import audit_log
 from config.media_proxy import media_path
-from ninja import File, Router
-from ninja.files import UploadedFile
+from config.ratelimit import rate_limit
+from django.db.models import Q
+from django.utils import timezone
+from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from notifications.service import create_event_invite_notifications
-from users.models import User as UserModel
 from users.permissions import PermissionKey
 
-from community._event_helpers import _can_see_invite_only, _event_out, _update_invited_users
+from community._event_helpers import (
+    _attending_headcount,
+    _can_see_invite_only,
+    _event_out,
+    _get_creator_name,
+    _update_co_hosts,
+    _update_invited_users,
+    _waitlisted_count,
+)
 from community._event_schemas import (
-    _ALLOWED_IMAGE_TYPES,
-    _MAX_EVENT_PHOTO_SIZE,
     EventIn,
     EventListOut,
     EventOut,
     EventPatchIn,
-    RSVPIn,
+)
+from community._event_transitions import (
+    _handle_status_update,
+    _set_event_participants,
 )
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community.models import (
     Event,
-    EventRSVP,
+    EventStatus,
     EventType,
     PageVisibility,
-    RSVPStatus,
 )
 
 router = Router()
 
 
-@router.get("/events/", response={200: list[EventListOut]}, auth=_optional_jwt)
-def list_events(request):
+def _can_edit_event(user, event: Event) -> bool:
+    """Check if user can edit/delete this event (creator, co-host, or manager)."""
+    if user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    if event.created_by_id == user.pk:
+        return True
+    return event.co_hosts.filter(pk=user.pk).exists()
+
+
+def _is_invalid_official_visibility(event_type: str, visibility: str) -> bool:
+    """Official events must have public visibility."""
+    return event_type == EventType.OFFICIAL and visibility != PageVisibility.PUBLIC
+
+
+def _validate_event_datetimes(
+    start, end, datetime_tbd: bool, *, check_past: bool = True
+) -> str | None:
+    """Return an error message if datetime fields are invalid, else None."""
+    if start is None:
+        if not datetime_tbd:
+            return "start_datetime is required when datetime_tbd is false."
+        return None
+    if end is not None and end <= start:
+        return "end_datetime must be after start_datetime."
+    if check_past and not datetime_tbd and start < timezone.now():
+        return "Start date must be in the future."
+    return None
+
+
+def _validate_update_payload(request, event: Event, event_id, updates: dict) -> Status | None:
+    """Validate PATCH payload fields; return error Status or None."""
+    if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
+        PermissionKey.TAG_OFFICIAL_EVENT
+    ):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details={
+                "endpoint": "update_event",
+                "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
+            },
+        )
+        return Status(403, ErrorOut(detail="Permission denied."))
+    effective_type = updates.get("event_type", event.event_type)
+    effective_visibility = updates.get("visibility", event.visibility)
+    if _is_invalid_official_visibility(effective_type, effective_visibility):
+        return Status(400, ErrorOut(detail="Official events must be public."))
+    # While a poll is active, the poll is the source of truth for when. Block
+    # direct edits to start/end so the event time can't drift from the poll.
+    # Host must finalize (or delete) the poll before setting a time.
+    time_fields_edited = any(
+        f in updates for f in ("start_datetime", "end_datetime", "datetime_tbd")
+    )
+    if time_fields_edited and hasattr(event, "poll") and event.poll.is_active:
+        return Status(
+            400,
+            ErrorOut(detail="can't edit the date while a poll is active — finalize the poll first"),
+        )
+    effective_start = updates.get("start_datetime", event.start_datetime)
+    effective_end = updates.get("end_datetime", event.end_datetime)
+    effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
+    # Draft events may hold placeholder/past start times until published.
+    check_past = "start_datetime" in updates and not event.is_draft
+    dt_error = _validate_event_datetimes(
+        effective_start, effective_end, effective_tbd, check_past=check_past
+    )
+    if dt_error:
+        return Status(400, ErrorOut(detail=dt_error))
+    return None
+
+
+def _build_events_queryset(status: str, auth_user, is_authed):
+    """Build the events queryset for list_events based on status and auth state."""
+    if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
+        return (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "invited_users", "rsvps", "poll")
+            .filter(status=status)
+            .filter(Q(created_by=auth_user) | Q(co_hosts=auth_user))
+            .distinct()
+        )
+    qs = (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users", "rsvps", "poll")
+        .filter(status=EventStatus.ACTIVE)
+    )
+    if not is_authed:
+        qs = qs.filter(Q(visibility=PageVisibility.PUBLIC) | Q(event_type=EventType.OFFICIAL))
+    return qs
+
+
+def _filter_invite_only(events, auth_user, status: str):
+    """Remove invite-only events the user cannot see (skip for cancelled/draft status queries)."""
+    if not auth_user or status in (EventStatus.CANCELLED, EventStatus.DRAFT):
+        return events
+    return [
+        e
+        for e in events
+        if e.visibility != PageVisibility.INVITE_ONLY
+        or _can_see_invite_only(
+            auth_user,
+            {str(c.id) for c in e.co_hosts.all()},
+            {str(u.id) for u in e.invited_users.all()},
+            e.created_by_id,
+        )
+    ]
+
+
+@router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
+def list_events(request, status: str = EventStatus.ACTIVE):
     auth_user = _authenticated_user(request.auth)
     is_authed = auth_user is not None
-    events_qs = Event.objects.prefetch_related("co_hosts", "invited_users").all()
-    if not is_authed:
-        events_qs = events_qs.filter(visibility=PageVisibility.PUBLIC)
-    events = list(events_qs)
-    if is_authed:
-        events = [
-            e
-            for e in events
-            if e.visibility != PageVisibility.INVITE_ONLY
-            or _can_see_invite_only(
-                auth_user,
-                {str(c.id) for c in e.co_hosts.all()},
-                {str(u.id) for u in e.invited_users.all()},
-                e.created_by_id,
-            )
-        ]
+
+    if status in (EventStatus.CANCELLED, EventStatus.DRAFT) and not is_authed:
+        return Status(403, ErrorOut(detail="Authentication required."))
+
+    events = _filter_invite_only(
+        list(_build_events_queryset(status, auth_user, is_authed)), auth_user, status
+    )
     return Status(
         200,
         [
@@ -78,17 +188,31 @@ def list_events(request):
                 cashapp_link=_members_only(e.cashapp_link, "", is_authed),
                 zelle_info=_members_only(e.zelle_info, "", is_authed),
                 created_by_id=str(e.created_by_id) if e.created_by_id else None,
+                created_by_name=_get_creator_name(e.created_by),
+                created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
+                co_host_photo_urls=[media_path(c.profile_photo) for c in e.co_hosts.all()],
                 datetime_tbd=e.datetime_tbd,
+                has_poll=hasattr(e, "poll"),
                 allow_plus_ones=e.allow_plus_ones,
+                max_attendees=e.max_attendees,
+                attending_count=_attending_headcount(e),
+                waitlisted_count=_waitlisted_count(e),
+                invited_count=e.invited_users.count(),
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
+                is_past=e.is_past,
+                status=e.status,
             )
             for e in events
         ],
     )
 
 
-@router.get("/events/{event_id}/", response={200: EventOut, 404: ErrorOut}, auth=_optional_jwt)
+@router.get(
+    "/events/{event_id}/",
+    response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
+    auth=_optional_jwt,
+)
 def get_event(request, event_id: UUID):
     try:
         event = (
@@ -98,21 +222,38 @@ def get_event(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
+    if event.is_deleted:
+        return Status(404, ErrorOut(detail="Event not found."))
     auth_user = _authenticated_user(request.auth)
-    if event.visibility == PageVisibility.MEMBERS_ONLY and auth_user is None:
+    if event.is_draft and not (auth_user and _can_edit_event(auth_user, event)):
+        return Status(404, ErrorOut(detail="Event not found."))
+    if (
+        event.visibility == PageVisibility.MEMBERS_ONLY
+        and auth_user is None
+        and event.event_type != EventType.OFFICIAL
+    ):
         return Status(404, ErrorOut(detail="Event not found."))
     if event.visibility == PageVisibility.INVITE_ONLY:
         co_host_ids = {str(c.id) for c in event.co_hosts.all()}
         invited_user_ids = {str(u.id) for u in event.invited_users.all()}
         if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
-            return Status(404, ErrorOut(detail="Event not found."))
+            return Status(403, ErrorOut(detail="This event is invite only."))
     return Status(200, _event_out(event, request.auth))
 
 
-@router.post("/events/", response={201: EventOut, 400: ErrorOut, 403: ErrorOut}, auth=JWTAuth())
+@router.post(
+    "/events/",
+    response={201: EventOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
+    auth=JWTAuth(),
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/d")
 def create_event(request, payload: EventIn):
-    # Any authenticated member can create community events.
+    # Any authenticated member can create community or draft events.
     # Official events require tag_official_event permission.
+    # Subsequent draft saves use PATCH (no rate limit hit).
+    if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
+        return Status(400, ErrorOut(detail="status must be 'active' or 'draft'."))
+
     if payload.event_type == EventType.OFFICIAL:
         if not request.auth.has_permission(PermissionKey.TAG_OFFICIAL_EVENT):
             audit_log(
@@ -126,8 +267,17 @@ def create_event(request, payload: EventIn):
             )
             return Status(403, ErrorOut(detail="Permission denied."))
 
-    if payload.end_datetime is not None and payload.end_datetime <= payload.start_datetime:
-        return Status(400, ErrorOut(detail="end_datetime must be after start_datetime."))
+    if _is_invalid_official_visibility(payload.event_type, payload.visibility):
+        return Status(400, ErrorOut(detail="Official events must be public."))
+
+    dt_error = _validate_event_datetimes(
+        payload.start_datetime,
+        payload.end_datetime,
+        payload.datetime_tbd,
+        check_past=payload.status != EventStatus.DRAFT,
+    )
+    if dt_error:
+        return Status(400, ErrorOut(detail=dt_error))
 
     event = Event.objects.create(
         title=payload.title,
@@ -147,21 +297,17 @@ def create_event(request, payload: EventIn):
         rsvp_enabled=payload.rsvp_enabled,
         datetime_tbd=payload.datetime_tbd,
         allow_plus_ones=payload.allow_plus_ones,
+        max_attendees=payload.max_attendees,
         event_type=payload.event_type,
         visibility=payload.visibility,
         invite_permission=payload.invite_permission,
+        status=payload.status,
         created_by=request.auth,
     )
-    if payload.co_host_ids:
-        co_hosts = UserModel.objects.filter(pk__in=payload.co_host_ids)
-        event.co_hosts.set(co_hosts)
-    if payload.invited_user_ids:
-        invited = UserModel.objects.filter(pk__in=payload.invited_user_ids)
-        event.invited_users.set(invited)
-        create_event_invite_notifications(event, payload.invited_user_ids, request.auth)
+    _set_event_participants(request, event, payload.co_host_ids, payload.invited_user_ids)
     audit_log(
         logging.INFO,
-        "event_created",
+        "event_created_draft" if event.is_draft else "event_created",
         request,
         target_type="event",
         target_id=str(event.id),
@@ -169,9 +315,37 @@ def create_event(request, payload: EventIn):
             "title": event.title,
             "event_type": event.event_type,
             "visibility": event.visibility,
+            "status": event.status,
         },
     )
     return Status(201, _event_out(event, request.auth))
+
+
+def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict):
+    """Apply non-status field edits to an event. Returns a status response on error, else None."""
+    if not updates:
+        return None
+    err_status = _validate_update_payload(request, event, event_id, updates)
+    if err_status:
+        return err_status
+    co_host_ids = updates.pop("co_host_ids", None)
+    invited_user_ids = updates.pop("invited_user_ids", None)
+    for field, value in updates.items():
+        setattr(event, field, value)
+    if co_host_ids is not None:
+        _update_co_hosts(event, co_host_ids, request.auth)
+    if invited_user_ids is not None:
+        _update_invited_users(event, invited_user_ids, request.auth)
+    event.save()
+    audit_log(
+        logging.INFO,
+        "event_updated",
+        request,
+        target_type="event",
+        target_id=str(event_id),
+        details={"fields_changed": list(updates.keys())},
+    )
+    return None
 
 
 @router.patch(
@@ -181,14 +355,18 @@ def create_event(request, payload: EventIn):
 )
 def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
-        event = Event.objects.get(id=event_id)
+        event = (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .get(id=event_id)
+        )
     except Event.DoesNotExist:
         return Status(404, ErrorOut(detail="Event not found."))
 
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
+    if event.is_deleted:
+        return Status(404, ErrorOut(detail="Event not found."))
+
+    if not _can_edit_event(request.auth, event):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -200,216 +378,20 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
         return Status(403, ErrorOut(detail="Permission denied."))
 
     updates = payload.model_dump(exclude_unset=True)
-    if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
-        PermissionKey.TAG_OFFICIAL_EVENT
-    ):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={
-                "endpoint": "update_event",
-                "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
-            },
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    effective_start = updates.get("start_datetime", event.start_datetime)
-    effective_end = updates.get("end_datetime", event.end_datetime)
-    if effective_end is not None and effective_end <= effective_start:
-        return Status(400, ErrorOut(detail="end_datetime must be after start_datetime."))
-    co_host_ids = updates.pop("co_host_ids", None)
-    invited_user_ids = updates.pop("invited_user_ids", None)
-    for field, value in updates.items():
-        setattr(event, field, value)
-    if co_host_ids is not None:
-        co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
-        event.co_hosts.set(co_hosts)
-    if invited_user_ids is not None:
-        _update_invited_users(event, invited_user_ids, request.auth)
+    new_status = updates.pop("status", None)
+    notify_attendees = updates.pop("notify_attendees", False) or False
 
-    event.save()
-    audit_log(
-        logging.INFO,
-        "event_updated",
-        request,
-        target_type="event",
-        target_id=str(event_id),
-        details={"fields_changed": list(updates.keys())},
-    )
-    return Status(200, _event_out(event, request.auth))
+    # Handle status transition first (may be the only change in the payload)
+    if new_status is not None:
+        early = _handle_status_update(request, event, new_status, notify_attendees)
+        if early is not None:
+            return early
 
+    # Field edits are allowed on active, cancelled, or draft events
+    err_status = _apply_field_updates(request, event, event_id, updates)
+    if err_status:
+        return err_status
 
-@router.delete(
-    "/events/{event_id}/", response={204: None, 403: ErrorOut, 404: ErrorOut}, auth=JWTAuth()
-)
-def delete_event(request, event_id: UUID):
-    try:
-        event = Event.objects.get(id=event_id)
-    except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
-
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={"endpoint": "delete_event"},
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-
-    title = event.title
-    if event.photo:
-        event.photo.delete(save=False)
-    event.delete()
-    audit_log(
-        logging.INFO,
-        "event_deleted",
-        request,
-        target_type="event",
-        target_id=str(event_id),
-        details={"title": title},
-    )
-    return Status(204, None)
-
-
-@router.post(
-    "/events/{event_id}/photo/",
-    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
-    if photo.content_type not in _ALLOWED_IMAGE_TYPES:
-        return Status(400, ErrorOut(detail="File must be a JPEG, PNG, WebP, or GIF image."))
-    if photo.size and photo.size > _MAX_EVENT_PHOTO_SIZE:
-        return Status(400, ErrorOut(detail="Photo must be under 10 MB."))
-    try:
-        event = Event.objects.get(id=event_id)
-    except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={"endpoint": "upload_event_photo"},
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    if event.photo:
-        event.photo.delete(save=False)
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    event.photo.save(f"{event_id}.{ext}", photo, save=True)
-    audit_log(
-        logging.INFO, "event_photo_uploaded", request, target_type="event", target_id=str(event_id)
-    )
-    return Status(200, _event_out(event, request.auth))
-
-
-@router.delete(
-    "/events/{event_id}/photo/",
-    response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def delete_event_photo(request, event_id: UUID):
-    try:
-        event = Event.objects.get(id=event_id)
-    except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={"endpoint": "delete_event_photo"},
-        )
-        return Status(403, ErrorOut(detail="Permission denied."))
-    if event.photo:
-        event.photo.delete(save=False)
-        event.photo = ""
-        event.save(update_fields=["photo"])
-    audit_log(
-        logging.INFO, "event_photo_deleted", request, target_type="event", target_id=str(event_id)
-    )
-    return Status(200, _event_out(event, request.auth))
-
-
-@router.post(
-    "/events/{event_id}/rsvp/",
-    response={200: EventOut, 400: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
-    try:
-        event = (
-            Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-            .get(id=event_id)
-        )
-    except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
-
-    if event.visibility == PageVisibility.INVITE_ONLY:
-        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
-        if not _can_see_invite_only(
-            request.auth, co_host_ids, invited_user_ids, event.created_by_id
-        ):
-            return Status(404, ErrorOut(detail="Event not found."))
-
-    if not event.rsvp_enabled:
-        return Status(400, ErrorOut(detail="RSVPs are not enabled for this event."))
-
-    valid_statuses = RSVPStatus.values
-    if payload.status not in valid_statuses:
-        return Status(400, ErrorOut(detail=f"Status must be one of: {', '.join(valid_statuses)}."))
-
-    EventRSVP.objects.update_or_create(
-        event=event,
-        user=request.auth,
-        defaults={"status": payload.status, "has_plus_one": payload.has_plus_one},
-    )
-    audit_log(
-        logging.INFO,
-        "rsvp_changed",
-        request,
-        target_type="event",
-        target_id=str(event_id),
-        details={"status": payload.status},
-    )
+    # Re-fetch to pick up any M2M changes
     event.refresh_from_db()
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .get(id=event_id)
-    )
     return Status(200, _event_out(event, request.auth))
-
-
-@router.delete(
-    "/events/{event_id}/rsvp/",
-    response={204: None, 404: ErrorOut},
-    auth=JWTAuth(),
-)
-def delete_rsvp(request, event_id: UUID):
-    deleted, _ = EventRSVP.objects.filter(event_id=event_id, user=request.auth).delete()
-    if not deleted:
-        return Status(404, ErrorOut(detail="RSVP not found."))
-    audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
-    return Status(204, None)

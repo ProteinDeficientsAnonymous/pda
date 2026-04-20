@@ -1,10 +1,85 @@
 """Pydantic schemas for event endpoints."""
 
 from datetime import datetime
+from urllib.parse import urlparse
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from community.models import EventType, InvitePermission, PageVisibility
+from community._field_limits import FieldLimit
+from community.models import EventStatus, EventType, InvitePermission, PageVisibility
+
+
+def _require_path(url: str, domain_hint: str) -> str:
+    """Validate that a URL has a non-trivial path (not bare domain).
+
+    Returns the normalized https:// URL, or raises ValueError.
+    """
+    if not url:
+        return url
+    normalized = url if url.startswith(("http://", "https://")) else f"https://{url}"
+    try:
+        parsed = urlparse(normalized)
+    except ValueError:
+        raise ValueError("enter a valid URL")
+    if not parsed.netloc:
+        raise ValueError("enter a valid URL")
+    path = parsed.path.rstrip("/")
+    if not path:
+        raise ValueError(f"link must point to a specific page, not just {domain_hint}")
+    return normalized
+
+
+def _normalize_url(url: str) -> str:
+    return url if url.startswith(("http://", "https://")) else f"https://{url}"
+
+
+def _strip_www(host: str) -> str:
+    return host.removeprefix("www.")
+
+
+def _validate_whatsapp_url(url: str) -> str:
+    known_hosts = {"chat.whatsapp.com", "wa.me", "whats.app"}
+    if not url:
+        return url
+    try:
+        parsed = urlparse(_normalize_url(url))
+    except ValueError:
+        raise ValueError("enter a valid URL")
+    host = _strip_www(parsed.netloc.lower())
+    if host not in known_hosts:
+        raise ValueError("must be a WhatsApp link (chat.whatsapp.com, wa.me, or whats.app)")
+    return _require_path(url, "whatsapp.com")
+
+
+def _validate_partiful_url(url: str) -> str:
+    if not url:
+        return url
+    try:
+        parsed = urlparse(_normalize_url(url))
+    except ValueError:
+        raise ValueError("enter a valid URL")
+    host = _strip_www(parsed.netloc.lower())
+    if "partiful.com" not in host:
+        raise ValueError("must be a Partiful link (partiful.com/...)")
+    return _require_path(url, "partiful.com")
+
+
+def _validate_generic_url(url: str) -> str:
+    # Accepts either a bare domain (fast.com) or a full URL and normalizes to
+    # a full https:// URL on the way in. We don't require a path — "other_link"
+    # is commonly used for landing pages and flyers.
+    if not url:
+        return url
+    normalized = _normalize_url(url)
+    try:
+        parsed = urlparse(normalized)
+    except ValueError:
+        raise ValueError("enter a valid URL")
+    if not parsed.netloc or "." not in parsed.netloc:
+        raise ValueError("enter a valid URL")
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("URL must use http or https")
+    return normalized
 
 
 class RSVPGuestOut(BaseModel):
@@ -20,7 +95,7 @@ class EventListOut(BaseModel):
     id: str
     title: str
     description: str
-    start_datetime: datetime
+    start_datetime: datetime | None = None
     end_datetime: datetime | None = None
     location: str
     latitude: float | None = None
@@ -36,17 +111,27 @@ class EventListOut(BaseModel):
     cashapp_link: str = ""
     zelle_info: str = ""
     created_by_id: str | None = None
+    created_by_name: str | None = None
+    created_by_photo_url: str = ""
     co_host_ids: list[str] = []
     co_host_names: list[str] = []
+    co_host_photo_urls: list[str] = []
     datetime_tbd: bool = False
+    has_poll: bool = False
     allow_plus_ones: bool = False
+    max_attendees: int | None = None
+    attending_count: int = 0
+    waitlisted_count: int = 0
+    invited_count: int = 0
+    is_past: bool = False
+    status: str = "active"
 
 
 class EventOut(BaseModel):
     id: str
     title: str
     description: str
-    start_datetime: datetime
+    start_datetime: datetime | None = None
     end_datetime: datetime | None = None
     location: str
     latitude: float | None = None
@@ -61,6 +146,7 @@ class EventOut(BaseModel):
     rsvp_enabled: bool = False
     created_by_id: str | None = None
     created_by_name: str | None = None
+    created_by_photo_url: str = ""
     co_host_ids: list[str] = []
     co_host_names: list[str] = []
     co_host_photo_urls: list[str] = []
@@ -71,6 +157,10 @@ class EventOut(BaseModel):
     photo_url: str = ""
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
+    max_attendees: int | None = None
+    attending_count: int = 0
+    waitlisted_count: int = 0
+    invited_count: int = 0
     survey_slugs: list[str] = []
     datetime_poll_slug: str | None = None
     has_poll: bool = False
@@ -78,61 +168,112 @@ class EventOut(BaseModel):
     invited_user_names: list[str] = []
     invited_user_photo_urls: list[str] = []
     invite_permission: str = InvitePermission.ALL_MEMBERS
+    is_past: bool = False
+    status: str = "active"
 
 
 class RSVPIn(BaseModel):
-    status: str
+    status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
 
 
 class EventIn(BaseModel):
-    title: str
-    description: str = ""
-    start_datetime: datetime
+    title: str = Field(max_length=FieldLimit.TITLE)
+    description: str = Field(default="", max_length=FieldLimit.DESCRIPTION)
+    start_datetime: datetime | None = None
     end_datetime: datetime | None = None
-    location: str = ""
+    location: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
     latitude: float | None = None
     longitude: float | None = None
-    whatsapp_link: str = ""
-    partiful_link: str = ""
-    other_link: str = ""
-    price: str = ""
-    venmo_link: str = ""
-    cashapp_link: str = ""
-    zelle_info: str = ""
+    whatsapp_link: str = Field(default="", max_length=FieldLimit.URL)
+    partiful_link: str = Field(default="", max_length=FieldLimit.URL)
+    other_link: str = Field(default="", max_length=FieldLimit.URL)
+    price: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
+    venmo_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
+    cashapp_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
+    zelle_info: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
     rsvp_enabled: bool = False
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
-    event_type: str = EventType.COMMUNITY
-    visibility: str = PageVisibility.PUBLIC
-    invite_permission: str = InvitePermission.ALL_MEMBERS
+    max_attendees: int | None = None
+    event_type: str = Field(default=EventType.COMMUNITY, max_length=FieldLimit.CHOICE)
+    visibility: str = Field(default=PageVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
+    invite_permission: str = Field(
+        default=InvitePermission.ALL_MEMBERS, max_length=FieldLimit.CHOICE
+    )
     co_host_ids: list[str] = []
     invited_user_ids: list[str] = []
+    status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
+
+    @model_validator(mode="after")
+    def require_start_datetime_unless_tbd(self) -> "EventIn":
+        if not self.datetime_tbd and self.start_datetime is None:
+            raise ValueError("start_datetime is required when datetime_tbd is false")
+        return self
+
+    @field_validator("whatsapp_link", mode="before")
+    @classmethod
+    def validate_whatsapp(cls, v: str) -> str:
+        return _validate_whatsapp_url(v or "")
+
+    @field_validator("partiful_link", mode="before")
+    @classmethod
+    def validate_partiful(cls, v: str) -> str:
+        return _validate_partiful_url(v or "")
+
+    @field_validator("other_link", mode="before")
+    @classmethod
+    def validate_other(cls, v: str) -> str:
+        return _validate_generic_url(v or "")
 
 
 class EventPatchIn(BaseModel):
-    title: str | None = None
-    description: str | None = None
+    title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
+    description: str | None = Field(default=None, max_length=FieldLimit.DESCRIPTION)
     start_datetime: datetime | None = None
     end_datetime: datetime | None = None
-    location: str | None = None
+    location: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     latitude: float | None = None
     longitude: float | None = None
-    whatsapp_link: str | None = None
-    partiful_link: str | None = None
-    other_link: str | None = None
-    price: str | None = None
-    venmo_link: str | None = None
-    cashapp_link: str | None = None
-    zelle_info: str | None = None
+    whatsapp_link: str | None = Field(default=None, max_length=FieldLimit.URL)
+    partiful_link: str | None = Field(default=None, max_length=FieldLimit.URL)
+    other_link: str | None = Field(default=None, max_length=FieldLimit.URL)
+    price: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    venmo_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
+    cashapp_link: str | None = Field(default=None, max_length=FieldLimit.PAYMENT_HANDLE)
+    zelle_info: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     rsvp_enabled: bool | None = None
     datetime_tbd: bool | None = None
     allow_plus_ones: bool | None = None
-    event_type: str | None = None
-    visibility: str | None = None
-    invite_permission: str | None = None
+    max_attendees: int | None = None
+    event_type: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
+    visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
+    invite_permission: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     co_host_ids: list[str] | None = None
     invited_user_ids: list[str] | None = None
+    status: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
+    notify_attendees: bool | None = None
+
+    @field_validator("whatsapp_link", mode="before")
+    @classmethod
+    def validate_whatsapp(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        return _validate_whatsapp_url(v)
+
+    @field_validator("partiful_link", mode="before")
+    @classmethod
+    def validate_partiful(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        return _validate_partiful_url(v)
+
+    @field_validator("other_link", mode="before")
+    @classmethod
+    def validate_other(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        return _validate_generic_url(v)
 
 
 _MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB

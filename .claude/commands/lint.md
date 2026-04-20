@@ -11,7 +11,8 @@ Run the project's linting and formatting pipeline: ruff check (lint + auto-fix) 
 ## Quick Run
 
 ```bash
-make lint
+make agent-lint    # prefer in agents (quiet ruff)
+make lint          # verbose equivalent
 ```
 
 This runs `ruff check --fix` (unused imports, import sorting, pyupgrade) then `ruff format` on the entire `backend/` directory.
@@ -30,10 +31,4 @@ cd backend && uv run ruff check . && uv run ruff format --check .
 
 # Type check
 cd backend && uv run ty check .
-```
-
-## Full CI Check
-
-```bash
-make ci    # lint → check → test → typecheck → frontend-lint → frontend-test
 ```

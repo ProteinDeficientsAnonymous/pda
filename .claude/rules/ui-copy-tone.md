@@ -1,3 +1,12 @@
+---
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "frontend/src/screens/**"
+  - "frontend/src/components/**"
+  - "frontend/src/layout/**"
+---
+
 # UI Copy Tone
 
 All user-facing text in this app follows a casual, playful, lowercase tone. When writing or editing UI copy (button labels, headings, empty states, snackbar messages, dialog titles, helper text), follow these rules:

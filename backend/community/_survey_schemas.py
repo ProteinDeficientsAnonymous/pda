@@ -2,8 +2,9 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from community._field_limits import FieldLimit
 from community.models import SurveyQuestionType, SurveyVisibility
 
 
@@ -66,20 +67,20 @@ class SurveyListOut(BaseModel):
 
 
 class SurveyIn(BaseModel):
-    title: str
-    description: str = ""
-    slug: str
-    visibility: str = SurveyVisibility.PUBLIC
+    title: str = Field(max_length=FieldLimit.TITLE)
+    description: str = Field(default="", max_length=FieldLimit.DESCRIPTION)
+    slug: str = Field(max_length=FieldLimit.SLUG)
+    visibility: str = Field(default=SurveyVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
     is_active: bool = True
     one_response_per_user: bool = False
     linked_event_id: str | None = None
 
 
 class SurveyPatchIn(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    slug: str | None = None
-    visibility: str | None = None
+    title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
+    description: str | None = Field(default=None, max_length=FieldLimit.DESCRIPTION)
+    slug: str | None = Field(default=None, max_length=FieldLimit.SLUG)
+    visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     is_active: bool | None = None
     one_response_per_user: bool | None = None
     linked_event_id: str | None = None
@@ -90,8 +91,8 @@ class FinalizePollIn(BaseModel):
 
 
 class SurveyQuestionIn(BaseModel):
-    label: str
-    field_type: str = SurveyQuestionType.TEXT
+    label: str = Field(max_length=FieldLimit.SHORT_TEXT)
+    field_type: str = Field(default=SurveyQuestionType.TEXT, max_length=FieldLimit.CHOICE)
     options: list[str] = []
     required: bool = False
 
@@ -116,3 +117,15 @@ AvailabilityAnswer = dict[str, str]
 
 class SurveyAnswersIn(BaseModel):
     answers: dict[str, TextAnswer | AvailabilityAnswer]
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answer_lengths(
+        cls, v: dict[str, TextAnswer | AvailabilityAnswer]
+    ) -> dict[str, TextAnswer | AvailabilityAnswer]:
+        for key, answer in v.items():
+            if isinstance(answer, str) and len(answer) > FieldLimit.DESCRIPTION:
+                raise ValueError(
+                    f"Answer for question {key} exceeds {FieldLimit.DESCRIPTION} characters."
+                )
+        return v

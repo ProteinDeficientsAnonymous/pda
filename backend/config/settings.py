@@ -37,6 +37,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "config.middleware.CrossOriginIsolationMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -66,6 +67,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 AUTH_USER_MODEL = "users.User"
 
@@ -97,6 +99,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 if IS_PRODUCTION:
     WHITENOISE_ROOT = STATIC_ROOT / "flutter"
+    WHITENOISE_MAX_AGE = 60
 
 STORAGES: dict[str, dict[str, object]] = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
@@ -140,6 +143,10 @@ if IS_PRODUCTION:
     CORS_ALLOWED_ORIGINS = _cors_env.split(",") if _cors_env else []
 else:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://0.0.0.0:3000"]
+
+# httpOnly refresh cookie is sent cross-origin in dev (React :3000 → Django :8000).
+# Required so the browser includes the cookie in fetch/axios withCredentials requests.
+CORS_ALLOW_CREDENTIALS = True
 
 # Email
 VETTING_EMAIL = os.environ.get("VETTING_EMAIL", "")

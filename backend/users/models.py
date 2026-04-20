@@ -10,6 +10,13 @@ from django.utils import timezone
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
 
+class WeekStart:
+    SUNDAY = "sunday"
+    MONDAY = "monday"
+    VALID = {SUNDAY, MONDAY}
+    CHOICES = [(SUNDAY, "Sunday"), (MONDAY, "Monday")]
+
+
 class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
@@ -33,10 +40,16 @@ class User(AbstractUser):
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     needs_onboarding = models.BooleanField(default=False)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    bio = models.CharField(max_length=500, blank=True, default="")
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
     show_phone = models.BooleanField(default=True)
     show_email = models.BooleanField(default=True)
     is_paused = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    login_link_requested = models.BooleanField(default=False)
+    week_start = models.CharField(
+        max_length=10, choices=WeekStart.CHOICES, default=WeekStart.SUNDAY
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Remove inherited AbstractUser fields

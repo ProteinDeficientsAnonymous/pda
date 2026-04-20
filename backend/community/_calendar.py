@@ -11,9 +11,9 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.models import User as UserModel
 
-from community._events import _can_see_invite_only
+from community._event_helpers import _can_see_invite_only
 from community._shared import ErrorOut  # noqa: F401
-from community.models import Event, PageVisibility
+from community.models import Event, EventStatus, PageVisibility
 
 router = Router()
 
@@ -76,7 +76,8 @@ def calendar_feed(request, token: str = ""):
 
     cutoff = timezone.now() - timedelta(days=30)
     events = (
-        Event.objects.filter(start_datetime__gte=cutoff)
+        Event.objects.filter(start_datetime__gte=cutoff, datetime_tbd=False)
+        .exclude(status=EventStatus.CANCELLED)
         .select_related("created_by")
         .prefetch_related("co_hosts", "invited_users")
         .order_by("start_datetime")
@@ -95,17 +96,37 @@ def calendar_feed(request, token: str = ""):
     return response
 
 
+@router.get("/events/{event_id}/ics/", auth=None)
+def single_event_ics(request, event_id: str):
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        return HttpResponse("Event not found.", status=404, content_type="text/plain")
+
+    import icalendar
+
+    cal = icalendar.Calendar()
+    cal.add("prodid", "-//PDA//PDA Calendar//EN")
+    cal.add("version", "2.0")
+    cal.add_component(_build_vevent(event))
+
+    response = HttpResponse(cal.to_ical(), content_type="text/calendar")
+    response["Content-Disposition"] = f'inline; filename="{event.title}.ics"'
+    return response
+
+
 def _build_vevent(event):
     import icalendar
 
     vevent = icalendar.Event()
     vevent.add("uid", f"{event.id}@pda")
     vevent.add("dtstamp", timezone.now())
-    vevent.add("dtstart", event.start_datetime)
-    vevent.add(
-        "dtend",
-        event.end_datetime or event.start_datetime + timedelta(hours=2),
-    )
+    if event.start_datetime:
+        vevent.add("dtstart", event.start_datetime)
+        vevent.add(
+            "dtend",
+            event.end_datetime or event.start_datetime + timedelta(hours=2),
+        )
     vevent.add("summary", event.title)
     desc = _event_ics_description(event)
     if desc:
