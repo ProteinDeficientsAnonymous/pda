@@ -7,8 +7,6 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/auth/store';
-import { useHasAnyAdminPermission, useHasPermission } from '@/auth/useAuth';
-import { Permission } from '@/models/permissions';
 import { extractApiError } from '@/utils/errors';
 import { cn } from '@/utils/cn';
 
@@ -39,8 +37,6 @@ export function PdaMenuSheet({ open, onClose }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
-  const isAdmin = useHasAnyAdminPermission();
-  const canManageDocs = useHasPermission(Permission.ManageDocuments);
   const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
@@ -56,12 +52,7 @@ export function PdaMenuSheet({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const items: MenuItem[] = [
-    ...ALWAYS_ITEMS,
-    ...(isAuthed ? AUTHED_ITEMS : []),
-    ...(isAuthed && canManageDocs ? [{ to: '/docs', label: 'docs' }] : []),
-    ...(isAuthed && isAdmin ? [{ to: '/admin', label: 'admin' }] : []),
-  ];
+  const items: MenuItem[] = [...ALWAYS_ITEMS, ...(isAuthed ? AUTHED_ITEMS : [])];
 
   function go(to: string) {
     onClose();
