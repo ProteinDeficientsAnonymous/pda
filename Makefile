@@ -1,3 +1,9 @@
+# Auto-load .env so recipes see DATABASE_URL, SECRET_KEY, etc. without a
+# separate `source .env`. Leading dash silences the include if .env is missing
+# (fresh clones, CI). `export` pushes all make variables into recipe subshells.
+-include .env
+export
+
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop ci agent-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
