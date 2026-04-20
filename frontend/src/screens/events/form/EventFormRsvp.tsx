@@ -47,7 +47,8 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
           <TextField
             label="max attendees (optional)"
             type="number"
-            min={0}
+            min={1}
+            max={200}
             value={values.maxAttendees === null ? '' : String(values.maxAttendees)}
             onChange={(e) => {
               const v = e.target.value;

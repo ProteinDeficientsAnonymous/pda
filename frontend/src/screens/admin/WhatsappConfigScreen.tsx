@@ -73,6 +73,7 @@ function WhatsappConfigForm({ config }: { config: WhatsappConfig }) {
           onChange={(e) => {
             setBotUrl(e.target.value);
           }}
+          maxLength={256}
           placeholder="https://whatsapp-bot.example.com"
           hint="external URL the pda server will POST to"
         />
@@ -82,6 +83,7 @@ function WhatsappConfigForm({ config }: { config: WhatsappConfig }) {
           onChange={(e) => {
             setGroupId(e.target.value);
           }}
+          maxLength={256}
           placeholder="1234567890@g.us"
         />
         <TextField
@@ -91,6 +93,7 @@ function WhatsappConfigForm({ config }: { config: WhatsappConfig }) {
           onChange={(e) => {
             setSecret(e.target.value);
           }}
+          maxLength={256}
           placeholder={config.hasSecret ? '••••••••' : 'not set'}
           hint="leave empty to keep the current secret"
         />

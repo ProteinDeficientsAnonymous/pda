@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
+import { passwordRule } from '@/screens/auth/passwordRule';
 
 interface Props {
   open: boolean;
@@ -27,8 +28,9 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
 
   async function save() {
     setError(null);
-    if (next.length < 8 || !/[A-Za-z]/.test(next) || !/\d/.test(next)) {
-      setError('at least 8 characters with a letter and a number');
+    const parsed = passwordRule.safeParse(next);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'invalid password');
       return;
     }
     if (next !== confirm) {
@@ -69,6 +71,7 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
             setCurrent(e.target.value);
           }}
           autoComplete="current-password"
+          maxLength={72}
         />
         <TextField
           label="new password"
@@ -78,7 +81,7 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
             setNext(e.target.value);
           }}
           autoComplete="new-password"
-          hint="at least 8 characters, one letter, one number"
+          maxLength={72}
         />
         <TextField
           label="confirm new password"
@@ -88,6 +91,7 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
             setConfirm(e.target.value);
           }}
           autoComplete="new-password"
+          maxLength={72}
         />
       </div>
       {error ? (

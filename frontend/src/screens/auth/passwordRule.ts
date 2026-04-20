@@ -6,6 +6,6 @@ import { z } from 'zod';
 export const passwordRule = z
   .string()
   .min(8, 'at least 8 characters')
-  .max(128, 'too long')
+  .max(72, 'too long')
   .refine((v) => /[A-Za-z]/.test(v), 'must include at least one letter')
   .refine((v) => /\d/.test(v), 'must include at least one number');

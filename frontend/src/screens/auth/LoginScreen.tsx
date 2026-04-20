@@ -17,7 +17,7 @@ import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 type Step = 'phone' | 'password' | 'pending';
 
 const passwordSchema = z.object({
-  password: z.string().min(1, 'password required').max(128),
+  password: z.string().min(1, 'password required').max(72),
 });
 type PasswordValues = z.infer<typeof passwordSchema>;
 
