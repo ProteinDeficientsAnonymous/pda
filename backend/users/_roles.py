@@ -28,7 +28,7 @@ def list_roles(request):
                 name=r.name,
                 is_default=r.is_default,
                 permissions=r.effective_permissions,
-                user_count=r.user_count,
+                user_count=getattr(r, "user_count", 0),
             )
             for r in roles
         ],

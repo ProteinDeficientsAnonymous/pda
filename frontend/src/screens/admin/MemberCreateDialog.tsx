@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
 import { useCreateUser, type CreateUserResult } from '@/api/users';
+import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 interface Props {
   open: boolean;
@@ -100,8 +101,10 @@ function CredentialsView({
   onCopy: (v: boolean) => void;
   onClose: () => void;
 }) {
-  const magicLinkUrl = `${window.location.origin}/magic-login/${result.magicLinkToken}`;
+  const magicLinkUrl = buildMagicLinkUrl(result.magicLinkToken);
   const greeting = result.displayName || result.phoneNumber;
+  const welcomeMessage = buildWelcomeMessage(result.displayName, magicLinkUrl);
+  const smsHref = buildSmsHref(result.phoneNumber, welcomeMessage);
 
   async function copy() {
     await navigator.clipboard.writeText(magicLinkUrl);
@@ -123,6 +126,12 @@ function CredentialsView({
         <Button variant="secondary" onClick={() => void copy()}>
           {copied ? 'copied ✓' : 'copy link'}
         </Button>
+        <a
+          href={smsHref}
+          className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        >
+          send welcome message
+        </a>
       </div>
       <div className="mt-4 flex justify-end">
         <Button onClick={onClose}>done</Button>

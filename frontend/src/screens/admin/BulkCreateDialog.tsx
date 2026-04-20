@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Textarea } from '@/components/ui/Textarea';
 import { useBulkCreateUsers, type BulkCreateResponse, type BulkCreateResult } from '@/api/users';
+import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 interface Props {
   open: boolean;
@@ -134,9 +135,8 @@ function ResultsView({
 
 function MagicLinkRow({ result }: { result: BulkCreateResult }) {
   const [copied, setCopied] = useState(false);
-  const url = result.magicLinkToken
-    ? `${window.location.origin}/magic-login/${result.magicLinkToken}`
-    : '';
+  const url = result.magicLinkToken ? buildMagicLinkUrl(result.magicLinkToken) : '';
+  const smsHref = url ? buildSmsHref(result.phoneNumber, buildWelcomeMessage(null, url)) : '';
 
   async function copy() {
     if (!url) return;
@@ -151,9 +151,19 @@ function MagicLinkRow({ result }: { result: BulkCreateResult }) {
     <div className="flex flex-col gap-1 rounded-md border border-neutral-200 bg-white p-2">
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-sm font-medium text-neutral-900">{result.phoneNumber}</span>
-        <Button variant="secondary" onClick={() => void copy()}>
-          {copied ? 'copied ✓' : 'copy link'}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => void copy()}>
+            {copied ? 'copied ✓' : 'copy link'}
+          </Button>
+          {smsHref ? (
+            <a
+              href={smsHref}
+              className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            >
+              send welcome message
+            </a>
+          ) : null}
+        </div>
       </div>
       {url ? (
         <code className="overflow-x-auto rounded bg-neutral-100 px-2 py-1 text-xs break-all">

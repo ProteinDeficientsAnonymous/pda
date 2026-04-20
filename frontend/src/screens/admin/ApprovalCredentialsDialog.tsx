@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 interface Props {
   open: boolean;
@@ -22,17 +23,18 @@ export function ApprovalCredentialsDialog({
   phoneNumber,
   magicLinkToken,
 }: Props) {
-  const [copied, setCopied] = useState<'none' | 'link' | 'all'>('none');
+  const [copied, setCopied] = useState(false);
 
   if (!magicLinkToken) return null;
-  const magicLinkUrl = `${window.location.origin}/magic-login/${magicLinkToken}`;
-  const shareText = `hi ${displayName} 🌱 welcome to pda! use this link to sign in: ${magicLinkUrl}`;
+  const magicLinkUrl = buildMagicLinkUrl(magicLinkToken);
+  const welcomeMessage = buildWelcomeMessage(displayName, magicLinkUrl);
+  const smsHref = buildSmsHref(phoneNumber, welcomeMessage);
 
-  async function copy(value: string, kind: 'link' | 'all') {
-    await navigator.clipboard.writeText(value);
-    setCopied(kind);
+  async function copyLink() {
+    await navigator.clipboard.writeText(magicLinkUrl);
+    setCopied(true);
     window.setTimeout(() => {
-      setCopied('none');
+      setCopied(false);
     }, 2000);
   }
 
@@ -45,12 +47,15 @@ export function ApprovalCredentialsDialog({
         {magicLinkUrl}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => void copy(magicLinkUrl, 'link')}>
-          {copied === 'link' ? 'copied ✓' : 'copy link'}
+        <Button variant="secondary" onClick={() => void copyLink()}>
+          {copied ? 'copied ✓' : 'copy link'}
         </Button>
-        <Button variant="secondary" onClick={() => void copy(shareText, 'all')}>
-          {copied === 'all' ? 'copied ✓' : 'copy share message'}
-        </Button>
+        <a
+          href={smsHref}
+          className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        >
+          send welcome message
+        </a>
       </div>
       <div className="mt-4 flex justify-end">
         <Button onClick={onClose}>done</Button>

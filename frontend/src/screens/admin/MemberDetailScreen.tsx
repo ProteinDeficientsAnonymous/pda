@@ -20,6 +20,7 @@ import {
 import { useRoles } from '@/api/roles';
 import { ADMIN_ROLE_NAME } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 export default function MemberDetailScreen() {
   const { id = '' } = useParams<{ id: string }>();
@@ -83,7 +84,7 @@ function MemberDetailView({ member }: { member: Member }) {
         member={member}
       />
 
-      <MemberMagicLinkSection memberId={member.id} />
+      <MemberMagicLinkSection member={member} />
 
       {member.bio ? (
         <section className="mb-6 rounded-lg border border-neutral-200 bg-white p-4">
@@ -179,31 +180,65 @@ function MemberRolesSection({ member }: { member: Member }) {
   );
 }
 
-function MemberMagicLinkSection({ memberId }: { memberId: string }) {
-  const magic = useSendMemberMagicLink(memberId);
-  async function onSend() {
+function MemberMagicLinkSection({ member }: { member: Member }) {
+  const magic = useSendMemberMagicLink(member.id);
+  const [url, setUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function onGenerate() {
     try {
       const { magicLinkToken } = await magic.mutateAsync();
-      const url = `${window.location.origin}/magic-login/${magicLinkToken}`;
-      await navigator.clipboard.writeText(url);
-      toast.success('magic login link copied ✓');
+      setUrl(buildMagicLinkUrl(magicLinkToken));
     } catch (e) {
       toast.error(extractError(e));
     }
   }
+
+  async function onCopy() {
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    window.setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  }
+
+  const welcomeMessage = url ? buildWelcomeMessage(member.displayName, url) : '';
+  const smsHref = url ? buildSmsHref(member.phoneNumber, welcomeMessage) : '';
+
   return (
     <section className="mb-6">
       <h2 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">access</h2>
-      <Button
-        type="button"
-        variant="secondary"
-        disabled={magic.isPending}
-        onClick={() => void onSend()}
-      >
-        {magic.isPending ? 'working…' : 'copy magic login link'}
-      </Button>
+      {url ? (
+        <>
+          <div className="mb-2 overflow-x-auto rounded-md bg-neutral-100 px-3 py-2 font-mono text-xs break-all">
+            {url}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => void onCopy()}>
+              {copied ? 'copied ✓' : 'copy link'}
+            </Button>
+            <a
+              href={smsHref}
+              className="focus-visible:ring-brand-200 bg-surface text-foreground border-border-strong hover:bg-background inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            >
+              send welcome message
+            </a>
+          </div>
+        </>
+      ) : (
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={magic.isPending}
+          onClick={() => void onGenerate()}
+        >
+          {magic.isPending ? 'working…' : 'generate magic login link'}
+        </Button>
+      )}
       <p className="mt-1 text-xs text-neutral-500">
-        resets password flow for this member and copies a one-time login url for you to send them.
+        resets password flow for this member and generates a one-time login url for you to send
+        them.
       </p>
     </section>
   );
