@@ -212,10 +212,10 @@ function PasswordStep({
           }}
           className="text-sm text-brand-700 hover:text-brand-900"
         >
-          send me a login link instead
+          request a login link from an admin
         </button>
         <button type="button" onClick={onBack} className="text-sm text-brand-700 hover:text-brand-900">
-          that's not me
+          use a different number
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-muted">

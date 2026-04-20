@@ -41,16 +41,16 @@ function RequestLoginLinkForm({
     }
     try {
       await requestLink.mutateAsync(phone);
-      toast.success('check your texts for a link 🌱');
+      toast.success('request sent — an admin will reach out 🌱');
       onClose();
     } catch (err) {
-      const message = extractApiError(err, "couldn't send a link — try again");
+      const message = extractApiError(err, "couldn't send the request — try again");
       setError(message);
     }
   }
 
   return (
-    <Dialog open onClose={onClose} title="send me a login link">
+    <Dialog open onClose={onClose} title="request a login link">
       <form
         onSubmit={(e) => {
           void onSubmit(e);
@@ -58,7 +58,7 @@ function RequestLoginLinkForm({
         className="flex flex-col gap-4"
       >
         <p className="text-sm text-muted">
-          we'll text a one-tap login link to your number — works for invited members only
+          an admin will be pinged to send you a one-tap login link — works for invited members only
         </p>
         <PhoneField
           label="phone number"
@@ -76,7 +76,7 @@ function RequestLoginLinkForm({
             cancel
           </Button>
           <Button type="submit" disabled={requestLink.isPending}>
-            {requestLink.isPending ? 'sending…' : 'send link'}
+            {requestLink.isPending ? 'requesting…' : 'request link'}
           </Button>
         </div>
       </form>
