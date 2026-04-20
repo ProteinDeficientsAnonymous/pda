@@ -17,8 +17,6 @@ interface Props {
 export function MemberCreateDialog({ open, onClose }: Props) {
   const createUser = useCreateUser();
   const [phone, setPhone] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [result, setResult] = useState<CreateUserResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -31,14 +29,7 @@ export function MemberCreateDialog({ open, onClose }: Props) {
       return;
     }
     try {
-      const input: Parameters<typeof createUser.mutateAsync>[0] = {
-        phoneNumber: phone.trim(),
-      };
-      const trimmedName = displayName.trim();
-      if (trimmedName) input.displayName = trimmedName;
-      const trimmedEmail = email.trim();
-      if (trimmedEmail) input.email = trimmedEmail;
-      const created = await createUser.mutateAsync(input);
+      const created = await createUser.mutateAsync({ phoneNumber: phone.trim() });
       setResult(created);
     } catch (err) {
       setFormError(extractError(err));
@@ -47,8 +38,6 @@ export function MemberCreateDialog({ open, onClose }: Props) {
 
   function handleClose() {
     setPhone('');
-    setDisplayName('');
-    setEmail('');
     setFormError(null);
     setResult(null);
     setCopied(false);
@@ -72,31 +61,13 @@ export function MemberCreateDialog({ open, onClose }: Props) {
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
         <TextField
           label="phone number"
+          hint="they'll set their display name and email during onboarding"
           value={phone}
           maxLength={20}
           onChange={(e) => {
             setPhone(e.target.value);
           }}
           required
-        />
-        <TextField
-          label="display name"
-          hint="optional — they can set it during onboarding"
-          value={displayName}
-          maxLength={64}
-          onChange={(e) => {
-            setDisplayName(e.target.value);
-          }}
-        />
-        <TextField
-          label="email"
-          type="email"
-          hint="optional"
-          value={email}
-          maxLength={254}
-          onChange={(e) => {
-            setEmail(e.target.value);
-          }}
         />
         {formError ? (
           <p role="alert" className="text-sm text-red-600">

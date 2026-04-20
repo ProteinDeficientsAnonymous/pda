@@ -67,6 +67,7 @@ export default function ProfileScreen() {
       </section>
 
       <nav aria-label="account" className="mt-4 flex flex-col gap-2">
+        <ProfileLink to={`/members/${user.id}`} label="view profile" />
         <ProfileLink to="/settings" label="settings" />
         <ProfileLink to="/events/mine" label="my events" />
         {isAdmin ? <ProfileLink to="/admin" label="admin" /> : null}
