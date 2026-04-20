@@ -9,6 +9,7 @@ import { InvitedList } from './RsvpGuestList';
 import { EventAdminActions } from './EventAdminActions';
 import { EventFlagDialog } from './EventFlagDialog';
 import { InviteDialog } from './InviteDialog';
+import { AddCoHostDialog } from './AddCoHostDialog';
 import { hasPermission } from '@/models/permissions';
 import { Permission } from '@/models/permissions';
 import type { Event } from '@/models/event';
@@ -35,7 +36,7 @@ export function EventMemberSection({ event }: Props) {
 
   return (
     <div className="mt-8 flex flex-col gap-6">
-      <HostSection event={event} />
+      <HostSection event={event} canEdit={isCoHost && !isCancelled} />
       <LocationSection event={event} />
       <LinksSection event={event} />
       <CostSection event={event} />
@@ -89,7 +90,8 @@ function Card({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function HostSection({ event }: { event: Event }) {
+function HostSection({ event, canEdit }: { event: Event; canEdit: boolean }) {
+  const [addOpen, setAddOpen] = useState(false);
   const hosts: { id: string; name: string; photoUrl: string }[] = [];
   if (event.createdById && event.createdByName) {
     hosts.push({
@@ -105,15 +107,36 @@ function HostSection({ event }: { event: Event }) {
       photoUrl: event.coHostPhotoUrls[i] ?? '',
     });
   });
-  if (hosts.length === 0) return null;
+  if (hosts.length === 0 && !canEdit) return null;
   const label = hosts.length > 1 ? 'hosts' : 'host';
   return (
     <Card label={label}>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {hosts.map((h) => (
           <HostChip key={h.id} id={h.id} name={h.name} photoUrl={h.photoUrl} />
         ))}
+        {canEdit ? (
+          <button
+            type="button"
+            onClick={() => {
+              setAddOpen(true);
+            }}
+            aria-label="add co-host"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-surface-dim text-lg text-foreground-secondary hover:bg-surface-dim/70"
+          >
+            +
+          </button>
+        ) : null}
       </div>
+      {canEdit ? (
+        <AddCoHostDialog
+          event={event}
+          open={addOpen}
+          onClose={() => {
+            setAddOpen(false);
+          }}
+        />
+      ) : null}
     </Card>
   );
 }
