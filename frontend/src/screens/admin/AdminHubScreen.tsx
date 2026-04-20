@@ -56,6 +56,12 @@ const TILES: Tile[] = [
     description: 'bot connection + group config',
     perm: Permission.ManageWhatsapp,
   },
+  {
+    to: '/docs',
+    label: 'docs',
+    description: 'manage the shared document library',
+    perm: Permission.ManageDocuments,
+  },
 ];
 
 export default function AdminHubScreen() {
