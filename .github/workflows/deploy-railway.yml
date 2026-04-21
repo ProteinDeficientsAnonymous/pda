@@ -1,0 +1,105 @@
+name: deploy railway
+
+# Pin matches image pulled 2026-04-20; bump intentionally when upgrading CLI.
+on:
+  workflow_dispatch:
+    inputs:
+      railway_target:
+        description: railway environment to deploy (git ref must be staging or main)
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+
+jobs:
+  assert-branch:
+    name: require staging or main ref
+    runs-on: ubuntu-latest
+    steps:
+      - name: gate
+        run: |
+          case "${GITHUB_REF}" in
+            refs/heads/staging|refs/heads/main) ;;
+            *)
+              echo "workflow_dispatch is only allowed for refs/heads/staging or refs/heads/main (got ${GITHUB_REF})"
+              exit 1
+              ;;
+          esac
+
+  deploy-staging:
+    name: deploy to railway (staging)
+    needs: assert-branch
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.railway_target == 'staging' &&
+      (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    environment: railway-staging
+    concurrency:
+      group: railway-deploy-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: railway up (staging token only in this job)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_STAGING }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
+        run: |
+          set -eu
+          test -n "${RAILWAY_TOKEN}"
+          test -n "${RAILWAY_PROJECT_ID}"
+          test -n "${RAILWAY_ENVIRONMENT}"
+          test -n "${RAILWAY_SERVICE_NAME}"
+          docker run --rm --platform linux/amd64 \
+            -v "${GITHUB_WORKSPACE}:/workspace" \
+            -w /workspace \
+            -e RAILWAY_TOKEN \
+            ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c \
+            railway up --ci \
+              --project "${RAILWAY_PROJECT_ID}" \
+              --environment "${RAILWAY_ENVIRONMENT}" \
+              --service "${RAILWAY_SERVICE_NAME}"
+
+  deploy-production:
+    name: deploy to railway (production)
+    needs: assert-branch
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.railway_target == 'production' &&
+      (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    environment: railway-production
+    concurrency:
+      group: railway-deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: railway up (production token only in this job)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_PRODUCTION }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
+        run: |
+          set -eu
+          test -n "${RAILWAY_TOKEN}"
+          test -n "${RAILWAY_PROJECT_ID}"
+          test -n "${RAILWAY_ENVIRONMENT}"
+          test -n "${RAILWAY_SERVICE_NAME}"
+          docker run --rm --platform linux/amd64 \
+            -v "${GITHUB_WORKSPACE}:/workspace" \
+            -w /workspace \
+            -e RAILWAY_TOKEN \
+            ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c \
+            railway up --ci \
+              --project "${RAILWAY_PROJECT_ID}" \
+              --environment "${RAILWAY_ENVIRONMENT}" \
+              --service "${RAILWAY_SERVICE_NAME}"
