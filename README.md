@@ -43,6 +43,8 @@ See [CLAUDE.md](./CLAUDE.md) for full command reference.
 
 Staging is the preview environment for testing changes before they hit production. All new features and fixes should be verified on staging first.
 
+Manual Railway deploys via GitHub Actions (`workflow_dispatch`) are documented in [CLAUDE.md](./CLAUDE.md) (environment section).
+
 ## Contributing
 
 All changes go through `staging` before `main`.
