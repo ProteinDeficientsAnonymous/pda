@@ -15,6 +15,9 @@ on:
 permissions:
   contents: read
 
+env:
+  RAILWAY_CLI_IMAGE: ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c
+
 jobs:
   assert-branch:
     name: require staging or main ref
@@ -45,6 +48,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: print deploy context (no token)
+        env:
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_STAGING }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
+        run: |
+          echo "railway deploy context (staging target)"
+          echo "  github_ref=${GITHUB_REF}"
+          echo "  railway_project_id=${RAILWAY_PROJECT_ID}"
+          echo "  railway_environment=${RAILWAY_ENVIRONMENT}"
+          echo "  railway_service=${RAILWAY_SERVICE_NAME}"
+
       - name: railway up (staging token only in this job)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
@@ -57,15 +72,20 @@ jobs:
           test -n "${RAILWAY_PROJECT_ID}"
           test -n "${RAILWAY_ENVIRONMENT}"
           test -n "${RAILWAY_SERVICE_NAME}"
-          docker run --rm --platform linux/amd64 \
-            -v "${GITHUB_WORKSPACE}:/workspace" \
-            -w /workspace \
-            -e RAILWAY_TOKEN \
-            ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c \
-            railway up --ci \
-              --project "${RAILWAY_PROJECT_ID}" \
-              --environment "${RAILWAY_ENVIRONMENT}" \
-              --service "${RAILWAY_SERVICE_NAME}"
+          docker_run=(docker run --rm --platform linux/amd64
+            -v "${GITHUB_WORKSPACE}:/workspace"
+            -w /workspace
+            -e RAILWAY_TOKEN
+            "${RAILWAY_CLI_IMAGE}")
+          echo "railway cli version:"
+          "${docker_run[@]}" railway --version
+          echo "railway whoami (token identity):"
+          "${docker_run[@]}" railway whoami --json
+          echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
+          "${docker_run[@]}" railway up --ci --verbose \
+            --project "${RAILWAY_PROJECT_ID}" \
+            --environment "${RAILWAY_ENVIRONMENT}" \
+            --service "${RAILWAY_SERVICE_NAME}"
 
   deploy-production:
     name: deploy to railway (production)
@@ -82,6 +102,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: print deploy context (no token)
+        env:
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_PRODUCTION }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
+        run: |
+          echo "railway deploy context (production target)"
+          echo "  github_ref=${GITHUB_REF}"
+          echo "  railway_project_id=${RAILWAY_PROJECT_ID}"
+          echo "  railway_environment=${RAILWAY_ENVIRONMENT}"
+          echo "  railway_service=${RAILWAY_SERVICE_NAME}"
+
       - name: railway up (production token only in this job)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRODUCTION }}
@@ -94,12 +126,17 @@ jobs:
           test -n "${RAILWAY_PROJECT_ID}"
           test -n "${RAILWAY_ENVIRONMENT}"
           test -n "${RAILWAY_SERVICE_NAME}"
-          docker run --rm --platform linux/amd64 \
-            -v "${GITHUB_WORKSPACE}:/workspace" \
-            -w /workspace \
-            -e RAILWAY_TOKEN \
-            ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c \
-            railway up --ci \
-              --project "${RAILWAY_PROJECT_ID}" \
-              --environment "${RAILWAY_ENVIRONMENT}" \
-              --service "${RAILWAY_SERVICE_NAME}"
+          docker_run=(docker run --rm --platform linux/amd64
+            -v "${GITHUB_WORKSPACE}:/workspace"
+            -w /workspace
+            -e RAILWAY_TOKEN
+            "${RAILWAY_CLI_IMAGE}")
+          echo "railway cli version:"
+          "${docker_run[@]}" railway --version
+          echo "railway whoami (token identity):"
+          "${docker_run[@]}" railway whoami --json
+          echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
+          "${docker_run[@]}" railway up --ci --verbose \
+            --project "${RAILWAY_PROJECT_ID}" \
+            --environment "${RAILWAY_ENVIRONMENT}" \
+            --service "${RAILWAY_SERVICE_NAME}"
