@@ -65,7 +65,7 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
           RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
           RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_STAGING }}
-          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_STAGING }}
         run: |
           set -eu
           test -n "${RAILWAY_TOKEN}"
@@ -104,7 +104,7 @@ jobs:
         env:
           RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
           RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_PRODUCTION }}
-          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_PRODUCTION }}
         run: |
           echo "railway deploy context (production target)"
           echo "  github_ref=${GITHUB_REF}"
