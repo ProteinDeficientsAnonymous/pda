@@ -79,8 +79,6 @@ jobs:
             "${RAILWAY_CLI_IMAGE}")
           echo "railway cli version:"
           "${docker_run[@]}" railway --version
-          echo "railway whoami (token identity):"
-          "${docker_run[@]}" railway whoami --json
           echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
           "${docker_run[@]}" railway up --ci --verbose \
             --project "${RAILWAY_PROJECT_ID}" \
@@ -133,8 +131,6 @@ jobs:
             "${RAILWAY_CLI_IMAGE}")
           echo "railway cli version:"
           "${docker_run[@]}" railway --version
-          echo "railway whoami (token identity):"
-          "${docker_run[@]}" railway whoami --json
           echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
           "${docker_run[@]}" railway up --ci --verbose \
             --project "${RAILWAY_PROJECT_ID}" \
