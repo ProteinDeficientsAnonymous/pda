@@ -1,4 +1,4 @@
-// Fixed bottom nav — calendar / +event / profile.
+// Fixed bottom nav — calendar / my events / +event / members / profile.
 //
 // Mirrors Flutter's NavigationBar with labelBehavior=alwaysHide: labels are
 // visually hidden but present in the accessible name so screen readers can
@@ -25,9 +25,13 @@ export function BottomNav() {
       aria-label="primary"
       className="border-border bg-surface fixed inset-x-0 bottom-0 z-20 border-t pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="mx-auto grid h-14 max-w-6xl grid-cols-3">
+      <div className="mx-auto grid h-14 max-w-6xl grid-cols-5">
         <NavItem to="/calendar" label="calendar">
           {({ active }) => <CalendarIcon filled={active} />}
+        </NavItem>
+
+        <NavItem to="/events/mine" label="my events">
+          {({ active }) => <StarIcon filled={active} />}
         </NavItem>
 
         <div className="flex items-center justify-center">
@@ -45,6 +49,10 @@ export function BottomNav() {
             <PlusIcon />
           </button>
         </div>
+
+        <NavItem to="/members" label="members">
+          {({ active }) => <MembersIcon filled={active} />}
+        </NavItem>
 
         <NavItem to="/profile" label="profile">
           {({ active }) =>
@@ -111,6 +119,47 @@ function CalendarIcon({ filled }: { filled: boolean }) {
     >
       <rect x="3" y="5" width="18" height="16" rx="2" fill={filled ? 'currentColor' : 'none'} />
       <path d="M8 3v4M16 3v4M3 10h18" stroke={filled ? 'white' : 'currentColor'} />
+    </svg>
+  );
+}
+
+function StarIcon({ filled }: { filled: boolean }) {
+  // Star reads as "events i've starred / am part of".
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3l2.7 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.8 6.5 20.4l1.1-6.3L3 9.7l6.3-.9L12 3z" />
+    </svg>
+  );
+}
+
+function MembersIcon({ filled }: { filled: boolean }) {
+  // Two-person silhouette — distinct from the single-person ProfileIcon.
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="8" r="3.5" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" />
+      <path d="M16 14.5c3 .3 5.5 2.8 5.5 5.5" />
     </svg>
   );
 }

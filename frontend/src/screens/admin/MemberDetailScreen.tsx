@@ -48,7 +48,7 @@ function MemberDetailView({ member }: { member: Member }) {
     try {
       await archive.mutateAsync(member.id);
       toast.success('member archived ✓');
-      void navigate('/members');
+      void navigate('/admin/members');
     } catch (err) {
       toast.error(extractError(err));
     }
@@ -56,7 +56,10 @@ function MemberDetailView({ member }: { member: Member }) {
 
   return (
     <ContentContainer>
-      <Link to="/members" className="mb-4 inline-block text-sm text-neutral-500 hover:underline">
+      <Link
+        to="/admin/members"
+        className="mb-4 inline-block text-sm text-neutral-500 hover:underline"
+      >
         ← back to members
       </Link>
 
@@ -106,11 +109,7 @@ function MemberDetailView({ member }: { member: Member }) {
         />
       ) : (
         <div className="flex justify-between">
-          <Button
-            variant="secondary"
-            onClick={() => void onArchive()}
-            disabled={archive.isPending}
-          >
+          <Button variant="secondary" onClick={() => void onArchive()} disabled={archive.isPending}>
             {archive.isPending ? 'archiving…' : 'archive'}
           </Button>
           <Button

@@ -307,6 +307,41 @@ function fromWireProfile(w: WireMemberProfile): MemberProfile {
   };
 }
 
+// --- Member directory (any authed user) -------------------------------------
+// Authed-only list with phone/email pre-redacted per target's privacy flags.
+
+export interface DirectoryMember {
+  id: string;
+  displayName: string;
+  phoneNumber: string;
+  email: string;
+  profilePhotoUrl: string;
+}
+
+interface WireDirectoryMember {
+  id: string;
+  display_name: string;
+  phone_number: string;
+  email: string;
+  profile_photo_url: string;
+}
+
+export function useMembersDirectory() {
+  return useQuery({
+    queryKey: ['members-directory'] as const,
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireDirectoryMember[]>('/api/auth/users/directory/');
+      return data.map<DirectoryMember>((w) => ({
+        id: w.id,
+        displayName: w.display_name,
+        phoneNumber: w.phone_number,
+        email: w.email,
+        profilePhotoUrl: w.profile_photo_url,
+      }));
+    },
+  });
+}
+
 export function useMemberProfile(userId: string | undefined) {
   return useQuery({
     queryKey: ['member-profile', userId] as const,

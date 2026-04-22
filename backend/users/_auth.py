@@ -26,6 +26,7 @@ from users.schemas import (
     ErrorOut,
     LoginIn,
     LogoutOut,
+    MemberDirectoryOut,
     MemberProfileOut,
     MePatchIn,
     OnboardingIn,
@@ -281,6 +282,34 @@ def delete_photo(request):
         logging.INFO, "profile_photo_deleted", request, target_type="user", target_id=str(user.pk)
     )
     return Status(200, UserOut.from_user(user))
+
+
+@router.get(
+    "/users/directory/",
+    response={200: list[MemberDirectoryOut]},
+    auth=JWTAuth(),
+)
+def list_member_directory(request):
+    """Authed-only member directory. Respects each user's show_phone/show_email flags."""
+    users = User.objects.filter(
+        is_active=True,
+        is_paused=False,
+        archived_at__isnull=True,
+        needs_onboarding=False,
+    ).order_by("display_name", "phone_number")
+    return Status(
+        200,
+        [
+            MemberDirectoryOut(
+                id=str(u.id),
+                display_name=u.display_name or u.phone_number,
+                phone_number=u.phone_number if u.show_phone else "",
+                email=(u.email or "") if u.show_email else "",
+                profile_photo_url=media_path(u.profile_photo),
+            )
+            for u in users
+        ],
+    )
 
 
 @router.get(

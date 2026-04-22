@@ -102,6 +102,14 @@ class MemberProfileOut(BaseModel):
     login_link_requested: bool = False
 
 
+class MemberDirectoryOut(BaseModel):
+    id: str
+    display_name: str
+    phone_number: str = ""
+    email: str = ""
+    profile_photo_url: str = ""
+
+
 class UserCreateIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     display_name: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)

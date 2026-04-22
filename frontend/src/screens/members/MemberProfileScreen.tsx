@@ -58,7 +58,7 @@ function ContactLines({ member }: { member: MemberProfile }) {
     <div className="flex flex-col items-center gap-1">
       {hasPhone ? (
         <a
-          href={`tel:${member.phoneNumber}`}
+          href={`sms:${member.phoneNumber}`}
           className="text-foreground-secondary text-sm hover:underline"
         >
           {member.phoneNumber}

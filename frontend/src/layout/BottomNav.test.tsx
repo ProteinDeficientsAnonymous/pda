@@ -1,7 +1,6 @@
-// Unit tests for the bottom nav. Covers the three pieces Flutter's
-// CalendarScreen FAB-permission tests used to cover: all three
-// destinations render, the add-event button navigates to /events/add,
-// and the nav always mounts (no permission gate on the FAB).
+// Unit tests for the bottom nav. Covers all five destinations rendering,
+// the add-event button navigating to /events/add, and the nav always
+// mounting (no permission gate on the FAB).
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -33,12 +32,26 @@ function renderNav(initialPath = '/') {
 }
 
 describe('BottomNav', () => {
-  it('renders all three destinations: calendar, add event, profile', () => {
+  it('renders all five destinations: calendar, my events, add event, members, profile', () => {
     renderNav('/');
 
     expect(screen.getByRole('link', { name: /^calendar$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^my events$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^add event$/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^members$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+  });
+
+  it('my events link points at /events/mine', () => {
+    renderNav('/');
+    const link = screen.getByRole('link', { name: /^my events$/i });
+    expect(link).toHaveAttribute('href', '/events/mine');
+  });
+
+  it('members link points at /members', () => {
+    renderNav('/');
+    const link = screen.getByRole('link', { name: /^members$/i });
+    expect(link).toHaveAttribute('href', '/members');
   });
 
   it('add-event button navigates to /events/add', async () => {

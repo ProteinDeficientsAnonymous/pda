@@ -48,6 +48,7 @@ const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyRespon
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
+const MembersDirectory = lazyWithRetry(() => import('@/screens/members/MembersDirectoryScreen'));
 
 const Stub = lazyWithRetry(() => import('@/screens/NotImplemented'));
 
@@ -92,6 +93,7 @@ export const router = createBrowserRouter([
               { path: '/events/mine', element: el(<MyEvents />) },
               { path: '/events/add', element: el(<EventCreate />) },
               { path: '/events/:id/edit', element: el(<EventEdit />) },
+              { path: '/members', element: el(<MembersDirectory />) },
               { path: '/members/:userId', element: el(<MemberProfile />) },
             ],
           },
@@ -107,7 +109,7 @@ export const router = createBrowserRouter([
           {
             element: <RequirePermission perm={Permission.ManageUsers} />,
             children: [
-              { path: '/members', element: el(<Members />) },
+              { path: '/admin/members', element: el(<Members />) },
               { path: '/admin/members/:id', element: el(<MemberDetail />) },
             ],
           },

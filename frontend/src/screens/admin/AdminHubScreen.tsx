@@ -15,7 +15,7 @@ interface Tile {
 
 const TILES: Tile[] = [
   {
-    to: '/members',
+    to: '/admin/members',
     label: 'members',
     description: 'create, edit, pause, or reset accounts',
     perm: Permission.ManageUsers,

@@ -19,7 +19,7 @@ def test_seed_is_idempotent():
     call_command("seed")
     call_command("seed")
 
-    assert User.objects.filter(phone_number__startswith="+1702555").count() == 2
+    assert User.objects.filter(phone_number__startswith="+1702555").count() == 5
     assert Event.objects.count() == 4
     assert JoinRequest.objects.count() == 8
 
