@@ -49,7 +49,11 @@ export function ImageCropDialog({
     const { width, height } = e.currentTarget;
     if (lockedAspect !== undefined) {
       setCrop(
-        centerCrop(makeAspectCrop({ unit: '%', width: 80 }, lockedAspect, width, height), width, height),
+        centerCrop(
+          makeAspectCrop({ unit: '%', width: 80 }, lockedAspect, width, height),
+          width,
+          height,
+        ),
       );
       return;
     }
