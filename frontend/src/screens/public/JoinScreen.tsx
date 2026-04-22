@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
 import type { JoinQuestion } from '@/api/join';
+import { useAuth } from '@/auth/useAuth';
 import { Button } from '@/components/ui/Button';
 import { PhoneField } from '@/components/ui/PhoneField';
 import { Select } from '@/components/ui/Select';
@@ -20,12 +22,58 @@ function isMultiline(q: JoinQuestion): boolean {
 }
 
 export default function JoinScreen() {
+  const { isAuthed } = useAuth();
+  if (isAuthed) return <AlreadyMemberPanel />;
+  return <JoinFormLoader />;
+}
+
+function JoinFormLoader() {
   const { data: questions, isPending, isError } = useJoinQuestions();
   if (isPending) return <ContentLoading />;
   if (isError) {
     return <ContentError message="couldn't load the form — try refreshing" />;
   }
   return <JoinForm questions={questions} />;
+}
+
+function AlreadyMemberPanel() {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}/join`;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success('link copied 🌱');
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      toast.error("couldn't copy — try selecting the text");
+    }
+  }
+
+  return (
+    <ContentContainer>
+      <h1 className="mb-2 text-2xl font-medium tracking-tight">you're already in 🌱</h1>
+      <p className="text-foreground-tertiary mb-6 text-sm">
+        want to bring a friend? send them this link —
+      </p>
+      <div className="flex flex-col gap-3">
+        <input
+          readOnly
+          value={shareUrl}
+          onFocus={(e) => {
+            e.currentTarget.select();
+          }}
+          className="border-border bg-background w-full rounded-md border px-3 py-2 font-mono text-xs"
+        />
+        <Button variant="secondary" onClick={() => void copy()}>
+          {copied ? 'copied ✓' : 'copy link'}
+        </Button>
+      </div>
+    </ContentContainer>
+  );
 }
 
 function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
