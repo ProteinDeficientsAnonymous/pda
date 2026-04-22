@@ -31,7 +31,7 @@ export function BottomNav() {
         </NavItem>
 
         <NavItem to="/events/mine" label="my events">
-          {({ active }) => <TicketIcon filled={active} />}
+          {({ active }) => <StarIcon filled={active} />}
         </NavItem>
 
         <div className="flex items-center justify-center">
@@ -123,8 +123,8 @@ function CalendarIcon({ filled }: { filled: boolean }) {
   );
 }
 
-function TicketIcon({ filled }: { filled: boolean }) {
-  // Ticket silhouette reads as "events you're on the list for".
+function StarIcon({ filled }: { filled: boolean }) {
+  // Star reads as "events i've starred / am part of".
   return (
     <svg
       width="22"
@@ -137,8 +137,7 @@ function TicketIcon({ filled }: { filled: boolean }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V8z" />
-      <path d="M9 6v2M9 11v2M9 16v2" stroke={filled ? 'white' : 'currentColor'} />
+      <path d="M12 3l2.7 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.8 6.5 20.4l1.1-6.3L3 9.7l6.3-.9L12 3z" />
     </svg>
   );
 }

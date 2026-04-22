@@ -15,12 +15,18 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 type Filter = 'upcoming' | 'past' | 'drafts' | 'cancelled';
+type Scope = 'all' | 'hosting';
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: 'upcoming', label: 'upcoming' },
   { value: 'past', label: 'past' },
   { value: 'drafts', label: 'drafts' },
   { value: 'cancelled', label: 'cancelled' },
+];
+
+const SCOPES: { value: Scope; label: string }[] = [
+  { value: 'all', label: 'all' },
+  { value: 'hosting', label: 'hosting' },
 ];
 
 const EMPTY_COPY: Record<Filter, string> = {
@@ -44,6 +50,7 @@ function pickSourceQuery(
 export default function MyEventsScreen() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const [filter, setFilter] = useState<Filter>('upcoming');
+  const [scope, setScope] = useState<Scope>('all');
 
   const activeQuery = useEvents();
   const draftsQuery = useEvents(EventStatus.Draft);
@@ -65,13 +72,11 @@ export default function MyEventsScreen() {
         (a, b) => (b.startDatetime?.getTime() ?? 0) - (a.startDatetime?.getTime() ?? 0),
       );
     }
-    const mineActive = sourceData.filter(
-      (e) =>
-        e.createdById === userId ||
-        e.coHostIds.includes(userId) ||
-        e.myRsvp === RsvpStatus.Attending ||
-        e.myRsvp === RsvpStatus.Maybe,
-    );
+    const isHost = (e: Event) => e.createdById === userId || e.coHostIds.includes(userId);
+    const mineActive = sourceData.filter((e) => {
+      if (scope === 'hosting') return isHost(e);
+      return isHost(e) || e.myRsvp === RsvpStatus.Attending || e.myRsvp === RsvpStatus.Maybe;
+    });
     if (filter === 'upcoming') {
       return mineActive
         .filter((e) => !e.isPast)
@@ -80,7 +85,7 @@ export default function MyEventsScreen() {
     return mineActive
       .filter((e) => e.isPast)
       .sort((a, b) => (b.startDatetime?.getTime() ?? 0) - (a.startDatetime?.getTime() ?? 0));
-  }, [sourceQuery.data, userId, filter, isHostOnlyTab]);
+  }, [sourceQuery.data, userId, filter, isHostOnlyTab, scope]);
 
   if (sourceQuery.isPending) return <ContentLoading />;
   if (sourceQuery.isError) return <ContentError message="couldn't load events — try refreshing" />;
@@ -107,17 +112,34 @@ export default function MyEventsScreen() {
         />
       </div>
 
-      {mine.length === 0 ? (
-        <p className="text-muted text-sm">{EMPTY_COPY[filter]}</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {mine.map((e) => (
-            <li key={e.id}>
-              <EventRow event={e} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className={!isHostOnlyTab ? 'pb-24' : undefined}>
+        {mine.length === 0 ? (
+          <p className="text-muted text-sm">{EMPTY_COPY[filter]}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {mine.map((e) => (
+              <li key={e.id}>
+                <EventRow event={e} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {!isHostOnlyTab ? (
+        <div
+          className="border-border bg-surface/95 fixed inset-x-0 z-10 flex justify-center border-t px-4 py-3 backdrop-blur"
+          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
+        >
+          <SegmentedControl
+            name="my-events-scope"
+            ariaLabel="scope"
+            options={SCOPES}
+            value={scope}
+            onChange={setScope}
+          />
+        </div>
+      ) : null}
     </ContentContainer>
   );
 }
@@ -153,7 +175,6 @@ function EventRow({ event }: { event: Event }) {
             official
           </span>
         ) : null}
-        <span className="text-foreground-tertiary">{String(event.attendingCount)} going</span>
       </div>
     </Link>
   );

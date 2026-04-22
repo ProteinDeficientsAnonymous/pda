@@ -19,6 +19,8 @@ class SeedUser:
     phone_number: str
     display_name: str
     is_superuser: bool
+    email: str = ""
+    bio: str = ""
 
 
 @dataclass
@@ -54,11 +56,35 @@ SEED_USERS = [
         phone_number="+17025550001",
         display_name="Seed Admin",
         is_superuser=True,
+        email="admin@pda.test",
+        bio="org admin — ping me if anything's broken 🌿",
     ),
     SeedUser(
         phone_number="+17025550002",
         display_name="Seed Member",
         is_superuser=False,
+        email="member@pda.test",
+        bio="vegan six years, big into potlucks and mutual aid.",
+    ),
+    SeedUser(
+        phone_number="+17025550003",
+        display_name="Jamie Okafor",
+        is_superuser=False,
+        email="jamie@pda.test",
+        bio="food not bombs volunteer. cook, eat, organize.",
+    ),
+    SeedUser(
+        phone_number="+17025550004",
+        display_name="Rin Takahashi",
+        is_superuser=False,
+        email="rin@pda.test",
+    ),
+    SeedUser(
+        phone_number="+17025550005",
+        display_name="Ash Morales",
+        is_superuser=False,
+        email="ash@pda.test",
+        bio="plant-based chef, always down to swap recipes.",
     ),
 ]
 
@@ -236,9 +262,28 @@ class Command(BaseCommand):
         self._seed_content()
         self._print_summary()
 
+    def _backfill_user(self, user: User, data: "SeedUser") -> None:
+        """Fill in email/bio on existing users so reseeding picks up changes."""
+        updates: dict[str, str] = {}
+        if data.email and not user.email:
+            updates["email"] = data.email
+        if data.bio and not user.bio:
+            updates["bio"] = data.bio
+        if not updates:
+            self.stdout.write(f"  Already exists: {user.display_name}")
+            return
+        for k, v in updates.items():
+            setattr(user, k, v)
+        user.save(update_fields=list(updates.keys()))
+        self.stdout.write(f"  Backfilled {', '.join(updates)}: {user.display_name}")
+
     def _create_or_skip_user(self, data, admin_role, member_role) -> tuple[User, bool]:
         """Create user from seed data or return existing. Returns (user, created)."""
-        defaults: dict[str, object] = {"display_name": data.display_name}
+        defaults: dict[str, object] = {
+            "display_name": data.display_name,
+            "email": data.email,
+            "bio": data.bio,
+        }
         if data.is_superuser:
             defaults["is_superuser"] = True
             defaults["is_staff"] = True
@@ -251,7 +296,7 @@ class Command(BaseCommand):
             user.roles.add(admin_role if data.is_superuser else member_role)
             self.stdout.write(f"  Created user: {user.display_name}")
         else:
-            self.stdout.write(f"  Already exists: {user.display_name}")
+            self._backfill_user(user, data)
         return user, created
 
     def _seed_users(self) -> User:
