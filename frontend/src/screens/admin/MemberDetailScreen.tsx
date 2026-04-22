@@ -106,11 +106,14 @@ function MemberDetailView({ member }: { member: Member }) {
         />
       ) : (
         <div className="flex justify-between">
-          <Button variant="ghost" onClick={() => void onArchive()} disabled={archive.isPending}>
+          <Button
+            variant="secondary"
+            onClick={() => void onArchive()}
+            disabled={archive.isPending}
+          >
             {archive.isPending ? 'archiving…' : 'archive'}
           </Button>
           <Button
-            variant="secondary"
             onClick={() => {
               setEditing(true);
             }}
