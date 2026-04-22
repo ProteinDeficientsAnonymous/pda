@@ -26,14 +26,13 @@ export function icsUrl(eventId: string): string {
   return `/api/community/events/${eventId}/ics/`;
 }
 
-// Apple Calendar on iOS/macOS won't open a plain https://foo.ics link —
-// Safari saves it as a file instead. The webcal:// scheme is the official
-// hand-off: the OS recognizes it and asks Calendar.app to subscribe /
-// import. We convert our relative ics path to an absolute webcal:// URL.
-export function webcalUrl(eventId: string): string {
-  const path = icsUrl(eventId);
-  const absolute = new URL(path, window.location.origin);
-  absolute.protocol = 'webcal:';
+// Apple Calendar single-event add: we used to use webcal:// here, but that's
+// a *subscription* scheme — iOS/macOS treats the URL as an auto-refreshing
+// feed and creates a calendar subscription, not a one-off add. For a single
+// event that's the wrong UX. A plain https:// link to the .ics endpoint
+// prompts the OS to open Calendar.app and add the event once.
+export function appleCalendarUrl(eventId: string): string {
+  const absolute = new URL(icsUrl(eventId), window.location.origin);
   return absolute.toString();
 }
 
