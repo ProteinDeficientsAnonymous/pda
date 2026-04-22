@@ -4,6 +4,7 @@ import logging
 from datetime import timedelta
 
 from config.audit import audit_log
+from config.ratelimit import client_ip, rate_limit
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -26,7 +27,12 @@ class RequestLoginLinkOut(BaseModel):
 _REQUEST_LINK_RESPONSE = "if you've been invited, an admin will be in touch with your login link"
 
 
-@router.post("/request-login-link/", response={200: RequestLoginLinkOut}, auth=None)
+@router.post(
+    "/request-login-link/",
+    response={200: RequestLoginLinkOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="5/m")
 def request_login_link(request, payload: RequestLoginLinkIn):
     """Unauthenticated endpoint for invited users to re-request a magic login link.
 

@@ -150,7 +150,7 @@ function MemberRolesSection({ member }: { member: Member }) {
       <h2 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">roles</h2>
       <div className="flex flex-col gap-2">
         {allRoles.map((r) => (
-          <label key={r.id} className="flex items-center gap-2 text-sm">
+          <label key={r.id} className="flex cursor-pointer items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={selected.has(r.id)}
@@ -162,6 +162,7 @@ function MemberRolesSection({ member }: { member: Member }) {
                   return next;
                 });
               }}
+              className="accent-brand-600 h-4 w-4 cursor-pointer rounded"
             />
             <span>{r.name}</span>
           </label>

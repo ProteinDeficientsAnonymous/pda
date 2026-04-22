@@ -255,6 +255,7 @@ function RoleFilter({
                   onChange={(e) => {
                     toggle(name, e.target.checked);
                   }}
+                  className="accent-brand-600 h-4 w-4 cursor-pointer rounded"
                 />
                 <span>{name}</span>
               </label>
@@ -311,7 +312,6 @@ function filterAndSort(
 
 function MemberRow({ member }: { member: Member }) {
   const initials = (member.displayName || member.phoneNumber).slice(0, 2).toLowerCase();
-  const primaryRole = member.roles[0]?.name;
   return (
     <Link
       to={`/admin/members/${member.id}`}
@@ -337,16 +337,21 @@ function MemberRow({ member }: { member: Member }) {
         </p>
         <p className="truncate text-xs text-neutral-500">{member.phoneNumber}</p>
       </div>
-      {primaryRole ? (
-        <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">
-          {primaryRole}
-        </span>
-      ) : null}
-      {member.isPaused ? (
-        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
-          paused
-        </span>
-      ) : null}
+      <div className="flex shrink-0 flex-wrap justify-end gap-1">
+        {member.roles.map((role) => (
+          <span
+            key={role.id}
+            className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700"
+          >
+            {role.name}
+          </span>
+        ))}
+        {member.isPaused ? (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+            paused
+          </span>
+        ) : null}
+      </div>
     </Link>
   );
 }

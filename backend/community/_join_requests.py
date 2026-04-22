@@ -5,6 +5,7 @@ from datetime import datetime
 from uuid import UUID
 
 from config.audit import audit_log
+from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
@@ -189,8 +190,11 @@ def _check_phone_conflicts(validated_phone: str) -> tuple[int, str] | None:
 
 
 @router.post(
-    "/join-request/", response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut}, auth=None
+    "/join-request/",
+    response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut, 429: ErrorOut},
+    auth=None,
 )
+@rate_limit(key_func=client_ip, rate="3/h")
 def submit_join_request(request, payload: JoinRequestIn):
     display_name = payload.display_name.strip()
 

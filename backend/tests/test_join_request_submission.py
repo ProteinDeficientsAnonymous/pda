@@ -15,6 +15,15 @@ def why_join_id(db):
     return str(q.id) if q else ""
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.mark.django_db
 class TestJoinRequestSubmission:
     def test_submit_join_request(self, api_client, why_join_id):
@@ -361,3 +370,29 @@ class TestJoinRequestSubmission:
             content_type="application/json",
         )
         assert response.status_code == 201
+
+    def test_submit_join_request_rate_limited(self, api_client, why_join_id):
+        names = ["Alpha Leaf", "Beta Leaf", "Gamma Leaf"]
+        phones = ["+12025559100", "+12025559101", "+12025559102"]
+        for name, phone in zip(names, phones, strict=True):
+            resp = api_client.post(
+                "/api/community/join-request/",
+                {
+                    "display_name": name,
+                    "phone_number": phone,
+                    "answers": {why_join_id: "Liberation."},
+                },
+                content_type="application/json",
+            )
+            assert resp.status_code == 201
+        resp = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "One Too Many",
+                "phone_number": "+12025559104",
+                "answers": {why_join_id: "Liberation."},
+            },
+            content_type="application/json",
+        )
+        assert resp.status_code == 429
+        assert "too many" in resp.json()["detail"]

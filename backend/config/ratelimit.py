@@ -15,6 +15,18 @@ def _parse_rate(rate: str) -> tuple[int, int]:
     return int(count_str), _PERIOD_MAP[unit]
 
 
+def client_ip(request) -> str:
+    """Extract the real client IP, honoring X-Forwarded-For for proxy setups.
+
+    Railway / any reverse proxy hides the original client behind its own IP,
+    so REMOTE_ADDR alone would collapse every caller into a single bucket.
+    """
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "anon")
+
+
 def rate_limit(*, key_func, rate: str):
     """Rate-limit decorator for Django Ninja endpoints.
 

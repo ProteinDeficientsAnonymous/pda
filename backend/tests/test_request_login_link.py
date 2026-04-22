@@ -9,6 +9,15 @@ _URL = "/api/community/request-login-link/"
 _PHONE = "+12025558800"
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.mark.django_db
 class TestRequestLoginLink:
     def test_returns_200_for_existing_user(self, api_client):
@@ -114,3 +123,23 @@ class TestRequestLoginLink:
 
         user.refresh_from_db()
         assert user.login_link_requested is True
+
+    def test_rate_limited_after_five_requests_per_minute(self, api_client):
+        from django.core.cache import cache
+
+        cache.clear()
+        for _ in range(5):
+            resp = api_client.post(
+                _URL,
+                {"phone_number": "+15005550000"},
+                content_type="application/json",
+            )
+            assert resp.status_code == 200
+        resp = api_client.post(
+            _URL,
+            {"phone_number": "+15005550000"},
+            content_type="application/json",
+        )
+        assert resp.status_code == 429
+        assert "too many" in resp.json()["detail"]
+        cache.clear()
