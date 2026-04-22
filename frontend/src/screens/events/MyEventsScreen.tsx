@@ -108,7 +108,7 @@ export default function MyEventsScreen() {
       </div>
 
       {mine.length === 0 ? (
-        <p className="text-sm text-neutral-500">{EMPTY_COPY[filter]}</p>
+        <p className="text-muted text-sm">{EMPTY_COPY[filter]}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {mine.map((e) => (
@@ -126,11 +126,11 @@ function EventRow({ event }: { event: Event }) {
   return (
     <Link
       to={`/events/${event.id}`}
-      className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white p-3 hover:bg-neutral-50"
+      className="border-border bg-surface hover:bg-surface-dim flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors"
     >
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-neutral-800">{event.title}</p>
-        <p className="truncate text-xs text-neutral-500">
+        <p className="text-foreground truncate text-sm font-medium">{event.title}</p>
+        <p className="text-foreground-tertiary truncate text-xs">
           {event.datetimeTbd || !event.startDatetime
             ? 'tbd'
             : format(event.startDatetime, 'EEE MMM d, h:mm a').toLowerCase()}
@@ -139,17 +139,21 @@ function EventRow({ event }: { event: Event }) {
       </div>
       <div className="flex items-center gap-2 text-xs">
         {event.status === EventStatus.Cancelled ? (
-          <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-neutral-700">
+          <span className="bg-surface-dim text-foreground-secondary rounded-full px-2 py-0.5">
             cancelled
           </span>
         ) : null}
         {event.status === EventStatus.Draft ? (
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-900">draft</span>
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+            draft
+          </span>
         ) : null}
         {event.eventType === EventType.Official ? (
-          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">official</span>
+          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200">
+            official
+          </span>
         ) : null}
-        <span className="text-neutral-500">{String(event.attendingCount)} going</span>
+        <span className="text-foreground-tertiary">{String(event.attendingCount)} going</span>
       </div>
     </Link>
   );
