@@ -307,7 +307,7 @@ function MemberEditForm({
   return (
     <form
       onSubmit={(e) => void onSubmit(e)}
-      className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-4"
+      className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
     >
       <TextField
         label="display name"
