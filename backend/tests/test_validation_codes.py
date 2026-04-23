@@ -95,8 +95,7 @@ class TestValidationCodesShape:
         assert resp.status_code == 422
         detail = resp.json()["detail"]
         assert any(
-            e["code"] == Code.Url.PATH_REQUIRED and e["field"] == "whatsapp_link"
-            for e in detail
+            e["code"] == Code.Url.PATH_REQUIRED and e["field"] == "whatsapp_link" for e in detail
         )
 
     def test_generic_pydantic_error_gets_fallback_code(self, api_client, manage_events_headers):

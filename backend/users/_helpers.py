@@ -4,8 +4,8 @@ import secrets
 import string
 
 import phonenumbers
-
 from community._validation import Code, raise_validation
+
 from users.models import MagicLoginToken, User
 from users.roles import Role
 

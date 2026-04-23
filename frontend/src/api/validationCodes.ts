@@ -169,12 +169,24 @@ export function messageForCode(err: FieldError): string {
       return 'role not found';
     case Code.Role.NameAlreadyExists:
       return 'a role with that name already exists';
-    case Code.Role.ProtectedCannotEdit:
-      return "this role is built-in and can't be edited";
-    case Code.Role.ProtectedCannotRename:
-      return "this role is built-in and can't be renamed";
-    case Code.Role.ProtectedCannotDelete:
-      return "this role is built-in and can't be deleted";
+    case Code.Role.ProtectedCannotEdit: {
+      const name = typeof err.params?.role_name === 'string' ? err.params.role_name : null;
+      return name
+        ? `the "${name}" role is built-in and can't be edited`
+        : "this role is built-in and can't be edited";
+    }
+    case Code.Role.ProtectedCannotRename: {
+      const name = typeof err.params?.role_name === 'string' ? err.params.role_name : null;
+      return name
+        ? `the "${name}" role is built-in and can't be renamed`
+        : "this role is built-in and can't be renamed";
+    }
+    case Code.Role.ProtectedCannotDelete: {
+      const name = typeof err.params?.role_name === 'string' ? err.params.role_name : null;
+      return name
+        ? `the "${name}" role is built-in and can't be deleted`
+        : "this role is built-in and can't be deleted";
+    }
     case Code.Role.CannotRemoveOwnAdmin:
       return "you can't remove your own admin role";
     case Code.Role.CannotRemoveLastAdmin:
