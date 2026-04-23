@@ -10,6 +10,7 @@ import { useHasAnyAdminPermission } from '@/auth/useAuth';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from '@/screens/settings/AvatarUpload';
 import { cn } from '@/utils/cn';
+import { formatPhone } from '@/utils/formatPhone';
 import { BioEditDialog } from './BioEditDialog';
 
 export default function ProfileScreen() {
@@ -32,7 +33,7 @@ export default function ProfileScreen() {
         <AvatarUpload size="lg" />
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-2xl font-medium tracking-tight">{user.displayName}</h1>
-          <ContactLine value={user.phoneNumber} visible={user.showPhone} />
+          <ContactLine value={formatPhone(user.phoneNumber)} visible={user.showPhone} />
           {user.email ? <ContactLine value={user.email} visible={user.showEmail} /> : null}
         </div>
       </header>

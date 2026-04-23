@@ -5,6 +5,8 @@ from community.models import Event
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests.conftest import future_iso, past_iso
+
 
 @pytest.fixture
 def manage_events_user(db):
@@ -34,8 +36,8 @@ def sample_event(db):
     return Event.objects.create(
         title="Community Meetup",
         description="Monthly gathering",
-        start_datetime="2026-04-01T18:00:00Z",
-        end_datetime="2026-04-01T20:00:00Z",
+        start_datetime=future_iso(days=7),
+        end_datetime=future_iso(days=7, hours=2),
         location="The Vegan Cafe",
     )
 
@@ -50,8 +52,8 @@ class TestEventManagement:
             {
                 "title": "New Event",
                 "description": "A great event",
-                "start_datetime": "2026-05-01T18:00:00Z",
-                "end_datetime": "2026-05-01T20:00:00Z",
+                "start_datetime": future_iso(days=14),
+                "end_datetime": future_iso(days=14, hours=2),
                 "location": "Online",
             },
             content_type="application/json",
@@ -69,8 +71,8 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Named Event",
-                "start_datetime": "2026-05-01T18:00:00Z",
-                "end_datetime": "2026-05-01T20:00:00Z",
+                "start_datetime": future_iso(days=14),
+                "end_datetime": future_iso(days=14, hours=2),
             },
             content_type="application/json",
             **manage_events_headers,
@@ -95,8 +97,8 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Member Event",
-                "start_datetime": "2026-05-01T18:00:00Z",
-                "end_datetime": "2026-05-01T20:00:00Z",
+                "start_datetime": future_iso(days=14),
+                "end_datetime": future_iso(days=14, hours=2),
             },
             content_type="application/json",
             **headers,
@@ -108,8 +110,8 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Unauthenticated Event",
-                "start_datetime": "2026-05-01T18:00:00Z",
-                "end_datetime": "2026-05-01T20:00:00Z",
+                "start_datetime": future_iso(days=14),
+                "end_datetime": future_iso(days=14, hours=2),
             },
             content_type="application/json",
         )
@@ -120,8 +122,8 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Minimal Event",
-                "start_datetime": "2026-06-01T10:00:00Z",
-                "end_datetime": "2026-06-01T11:00:00Z",
+                "start_datetime": future_iso(days=30),
+                "end_datetime": future_iso(days=30, hours=1),
             },
             content_type="application/json",
             **manage_events_headers,
@@ -162,8 +164,8 @@ class TestEventManagement:
         event = Event.objects.create(
             title="My Event",
             description="Created by member",
-            start_datetime="2026-07-01T18:00:00Z",
-            end_datetime="2026-07-01T20:00:00Z",
+            start_datetime=future_iso(days=60),
+            end_datetime=future_iso(days=60, hours=2),
             location="Online",
             created_by=test_user,
         )
@@ -181,8 +183,8 @@ class TestEventManagement:
         event = Event.objects.create(
             title="Someone Else's Event",
             description="Created by manager",
-            start_datetime="2026-07-01T18:00:00Z",
-            end_datetime="2026-07-01T20:00:00Z",
+            start_datetime=future_iso(days=60),
+            end_datetime=future_iso(days=60, hours=2),
             location="Online",
             created_by=manage_events_user,
         )
@@ -232,7 +234,7 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Open-ended Event",
-                "start_datetime": "2026-05-01T18:00:00Z",
+                "start_datetime": future_iso(days=14),
             },
             content_type="application/json",
             **manage_events_headers,
@@ -245,8 +247,8 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Bad Event",
-                "start_datetime": "2026-05-01T20:00:00Z",
-                "end_datetime": "2026-05-01T18:00:00Z",
+                "start_datetime": future_iso(days=14, hours=2),
+                "end_datetime": future_iso(days=14),
             },
             content_type="application/json",
             **manage_events_headers,
@@ -259,7 +261,7 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Past Event",
-                "start_datetime": "2020-01-01T18:00:00Z",
+                "start_datetime": past_iso(days=90),
             },
             content_type="application/json",
             **manage_events_headers,
@@ -274,7 +276,7 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "TBD Event",
-                "start_datetime": "2020-01-01T18:00:00Z",
+                "start_datetime": past_iso(days=90),
                 "datetime_tbd": True,
             },
             content_type="application/json",
@@ -287,7 +289,7 @@ class TestEventManagement:
     ):
         response = api_client.patch(
             f"/api/community/events/{sample_event.id}/",
-            {"start_datetime": "2020-01-01T18:00:00Z"},
+            {"start_datetime": past_iso(days=90)},
             content_type="application/json",
             **manage_events_headers,
         )
@@ -300,7 +302,7 @@ class TestEventManagement:
         """Updating non-date fields on a past event should succeed."""
         past_event = Event.objects.create(
             title="Old Meetup",
-            start_datetime="2020-01-01T18:00:00Z",
+            start_datetime=past_iso(days=90),
         )
         response = api_client.patch(
             f"/api/community/events/{past_event.id}/",
@@ -326,7 +328,7 @@ class TestEventManagement:
     ):
         response = api_client.patch(
             f"/api/community/events/{sample_event.id}/",
-            {"end_datetime": "2026-04-01T17:00:00Z"},
+            {"end_datetime": future_iso(days=6)},
             content_type="application/json",
             **manage_events_headers,
         )
@@ -338,7 +340,7 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "Geocoded Meetup",
-                "start_datetime": "2026-07-01T18:00:00Z",
+                "start_datetime": future_iso(days=60),
                 "location": "The Vegan Cafe",
                 "latitude": 37.774929,
                 "longitude": -122.419416,
@@ -356,7 +358,7 @@ class TestEventManagement:
             "/api/community/events/",
             {
                 "title": "No Location Event",
-                "start_datetime": "2026-07-01T18:00:00Z",
+                "start_datetime": future_iso(days=60),
             },
             content_type="application/json",
             **manage_events_headers,
@@ -396,8 +398,8 @@ class TestEventManagement:
 
         event = Event.objects.create(
             title="Past Deletable Event",
-            start_datetime="2020-01-01T18:00:00Z",
-            end_datetime="2020-01-01T20:00:00Z",
+            start_datetime=past_iso(days=90),
+            end_datetime=past_iso(days=90),
             location="History",
             created_by=None,
         )
@@ -418,8 +420,8 @@ class TestEventManagement:
 
         event = Event.objects.create(
             title="My Past Event",
-            start_datetime="2020-08-01T18:00:00Z",
-            end_datetime="2020-08-01T20:00:00Z",
+            start_datetime=past_iso(days=60),
+            end_datetime=past_iso(days=60),
             location="Online",
             created_by=test_user,
         )
@@ -437,8 +439,8 @@ class TestEventManagement:
         """A member cannot delete an event they did not create."""
         event = Event.objects.create(
             title="Someone Else's Past Event",
-            start_datetime="2020-08-01T18:00:00Z",
-            end_datetime="2020-08-01T20:00:00Z",
+            start_datetime=past_iso(days=60),
+            end_datetime=past_iso(days=60),
             location="Online",
             created_by=manage_events_user,
         )
@@ -478,7 +480,7 @@ class TestEventRateLimiting:
         for i in range(10):
             resp = api_client.post(
                 "/api/community/events/",
-                {"title": f"Event {i}", "start_datetime": "2026-06-01T18:00:00Z"},
+                {"title": f"Event {i}", "start_datetime": future_iso(days=30)},
                 content_type="application/json",
                 **manage_events_headers,
             )
@@ -486,7 +488,7 @@ class TestEventRateLimiting:
         # 11th request should be rate limited
         resp = api_client.post(
             "/api/community/events/",
-            {"title": "One Too Many", "start_datetime": "2026-06-01T18:00:00Z"},
+            {"title": "One Too Many", "start_datetime": future_iso(days=30)},
             content_type="application/json",
             **manage_events_headers,
         )

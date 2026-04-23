@@ -119,6 +119,7 @@ function PollCreateDialogBody({ onClose, eventId, onBuffer, initialOptions }: Pr
                     updateRow(idx, next);
                   }}
                   optional={false}
+                  disablePast
                 />
               </div>
               <button

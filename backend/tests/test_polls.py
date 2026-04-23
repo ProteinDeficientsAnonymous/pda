@@ -6,6 +6,8 @@ import pytest
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
 from users.models import User  # noqa: F401 (imported for create_user side effect)
 
+from tests.conftest import future_iso
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -15,7 +17,7 @@ from users.models import User  # noqa: F401 (imported for create_user side effec
 def poll_event(db, test_user):
     return Event.objects.create(
         title="Poll Event",
-        start_datetime="2026-08-01T18:00:00Z",
+        start_datetime=future_iso(days=90),
         created_by=test_user,
     )
 
@@ -40,8 +42,8 @@ def other_headers(other_user):
 @pytest.fixture
 def poll_with_options(db, poll_event, test_user):
     poll = EventPoll.objects.create(event=poll_event, created_by=test_user)
-    PollOption.objects.create(poll=poll, datetime="2026-09-01T18:00:00Z", display_order=0)
-    PollOption.objects.create(poll=poll, datetime="2026-09-02T18:00:00Z", display_order=1)
+    PollOption.objects.create(poll=poll, datetime=future_iso(days=120), display_order=0)
+    PollOption.objects.create(poll=poll, datetime=future_iso(days=121), display_order=1)
     return poll
 
 
@@ -53,9 +55,7 @@ def poll_with_options(db, poll_event, test_user):
 @pytest.mark.django_db
 class TestCreatePoll:
     def test_create_poll_success(self, api_client, auth_headers, poll_event):
-        payload = {
-            "options": ["2026-09-01T18:00:00Z", "2026-09-02T18:00:00Z", "2026-09-03T18:00:00Z"]
-        }
+        payload = {"options": [future_iso(days=120), future_iso(days=121), future_iso(days=122)]}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/",
             data=json.dumps(payload),
@@ -83,7 +83,7 @@ class TestCreatePoll:
         assert response.status_code == 400
 
     def test_create_poll_with_one_option_succeeds(self, api_client, auth_headers, poll_event):
-        payload = {"options": ["2026-09-01T18:00:00Z"]}
+        payload = {"options": [future_iso(days=120)]}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/",
             data=json.dumps(payload),
@@ -95,7 +95,7 @@ class TestCreatePoll:
     def test_create_poll_duplicate_fails(
         self, api_client, auth_headers, poll_with_options, poll_event
     ):
-        payload = {"options": ["2026-10-01T18:00:00Z", "2026-10-02T18:00:00Z"]}
+        payload = {"options": [future_iso(days=150), future_iso(days=151)]}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/",
             data=json.dumps(payload),
@@ -105,7 +105,7 @@ class TestCreatePoll:
         assert response.status_code == 400
 
     def test_create_poll_non_creator_forbidden(self, api_client, other_headers, poll_event):
-        payload = {"options": ["2026-09-01T18:00:00Z", "2026-09-02T18:00:00Z"]}
+        payload = {"options": [future_iso(days=120), future_iso(days=121)]}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/",
             data=json.dumps(payload),
@@ -115,7 +115,7 @@ class TestCreatePoll:
         assert response.status_code == 403
 
     def test_create_poll_unauthenticated(self, api_client, poll_event):
-        payload = {"options": ["2026-09-01T18:00:00Z", "2026-09-02T18:00:00Z"]}
+        payload = {"options": [future_iso(days=120), future_iso(days=121)]}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/",
             data=json.dumps(payload),
@@ -126,7 +126,7 @@ class TestCreatePoll:
     def test_create_poll_event_not_found(self, api_client, auth_headers):
         import uuid
 
-        payload = {"options": ["2026-09-01T18:00:00Z", "2026-09-02T18:00:00Z"]}
+        payload = {"options": [future_iso(days=120), future_iso(days=121)]}
         response = api_client.post(
             f"/api/community/events/{uuid.uuid4()}/poll/",
             data=json.dumps(payload),

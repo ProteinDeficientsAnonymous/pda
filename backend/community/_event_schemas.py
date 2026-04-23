@@ -16,6 +16,18 @@ from community.models import (
 )
 
 
+def _validate_max_attendees(v: int | None) -> int | None:
+    """Accept null (unlimited) or an integer >= 1. Reject 0 and negatives."""
+    if v is None:
+        return v
+    if v < 1:
+        raise ValidationException(
+            ValidationCode.MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE,
+            field="max_attendees",
+        )
+    return v
+
+
 def _require_path(url: str, field: str) -> str:
     """Validate that a URL has a non-trivial path (not bare domain)."""
     if not url:
@@ -277,6 +289,11 @@ class EventIn(BaseModel):
     def validate_other(cls, v: str) -> str:
         return _validate_generic_url(v or "", field="other_link")
 
+    @field_validator("max_attendees", mode="after")
+    @classmethod
+    def validate_max_attendees(cls, v: int | None) -> int | None:
+        return _validate_max_attendees(v)
+
 
 class EventPatchIn(BaseModel):
     title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
@@ -325,6 +342,11 @@ class EventPatchIn(BaseModel):
         if v is None:
             return None
         return _validate_generic_url(v, field="other_link")
+
+    @field_validator("max_attendees", mode="after")
+    @classmethod
+    def validate_max_attendees(cls, v: int | None) -> int | None:
+        return _validate_max_attendees(v)
 
 
 _MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB

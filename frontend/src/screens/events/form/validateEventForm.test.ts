@@ -134,17 +134,22 @@ describe('validateEventForm', () => {
   });
 
   describe('maxAttendees', () => {
-    it('rejects negative maxAttendees', () => {
-      const errors = validateEventForm(validValues({ maxAttendees: -1 }));
-      expect(errors.maxAttendees).toBe('must be 0 or more');
+    it('rejects zero maxAttendees (see #362 — 0 means "no rsvps possible")', () => {
+      const errors = validateEventForm(validValues({ maxAttendees: 0 }));
+      expect(errors.maxAttendees).toBe('must be 1 or more (leave blank for unlimited)');
     });
 
-    it('accepts zero maxAttendees', () => {
-      const errors = validateEventForm(validValues({ maxAttendees: 0 }));
+    it('rejects negative maxAttendees', () => {
+      const errors = validateEventForm(validValues({ maxAttendees: -1 }));
+      expect(errors.maxAttendees).toBe('must be 1 or more (leave blank for unlimited)');
+    });
+
+    it('accepts any positive maxAttendees', () => {
+      const errors = validateEventForm(validValues({ maxAttendees: 1 }));
       expect(errors.maxAttendees).toBeUndefined();
     });
 
-    it('accepts null maxAttendees', () => {
+    it('accepts null maxAttendees (= unlimited, user cleared the field)', () => {
       const errors = validateEventForm(validValues({ maxAttendees: null }));
       expect(errors.maxAttendees).toBeUndefined();
     });

@@ -5,6 +5,8 @@ import json
 import pytest
 from community.models import Event, EventStatus
 
+from tests.conftest import future_iso, past_iso
+
 
 @pytest.fixture
 def creator(db):
@@ -78,7 +80,7 @@ def invitee(db):
 def sample_draft(db, creator):
     return Event.objects.create(
         title="Draft BBQ",
-        start_datetime="2027-06-01T18:00:00Z",
+        start_datetime=future_iso(days=180),
         created_by=creator,
         status=EventStatus.DRAFT,
     )
@@ -88,7 +90,7 @@ def sample_draft(db, creator):
 def future_active_event(db, creator):
     return Event.objects.create(
         title="Active BBQ",
-        start_datetime="2027-06-01T18:00:00Z",
+        start_datetime=future_iso(days=180),
         created_by=creator,
         status=EventStatus.ACTIVE,
     )
@@ -100,7 +102,7 @@ class TestCreateDraft:
         response = api_client.post(
             "/api/community/events/",
             data=json.dumps(
-                {"title": "My Draft", "start_datetime": "2027-06-01T18:00:00Z", "status": "draft"}
+                {"title": "My Draft", "start_datetime": future_iso(days=180), "status": "draft"}
             ),
             content_type="application/json",
             **creator_headers,
@@ -112,7 +114,7 @@ class TestCreateDraft:
         response = api_client.post(
             "/api/community/events/",
             data=json.dumps(
-                {"title": "Past Draft", "start_datetime": "2020-01-01T12:00:00Z", "status": "draft"}
+                {"title": "Past Draft", "start_datetime": past_iso(days=90), "status": "draft"}
             ),
             content_type="application/json",
             **creator_headers,
@@ -126,7 +128,7 @@ class TestCreateDraft:
             data=json.dumps(
                 {
                     "title": "Past Active",
-                    "start_datetime": "2020-01-01T12:00:00Z",
+                    "start_datetime": past_iso(days=90),
                     "status": "active",
                 }
             ),
@@ -141,7 +143,7 @@ class TestCreateDraft:
             data=json.dumps(
                 {
                     "title": "Bad Status",
-                    "start_datetime": "2027-06-01T18:00:00Z",
+                    "start_datetime": future_iso(days=180),
                     "status": "cancelled",
                 }
             ),
@@ -158,7 +160,7 @@ class TestCreateDraft:
             data=json.dumps(
                 {
                     "title": "Draft With Invitee",
-                    "start_datetime": "2027-06-01T18:00:00Z",
+                    "start_datetime": future_iso(days=180),
                     "status": "draft",
                     "invited_user_ids": [str(invitee.pk)],
                 }
@@ -178,7 +180,7 @@ class TestCreateDraft:
             data=json.dumps(
                 {
                     "title": "Draft With Cohost",
-                    "start_datetime": "2027-06-01T18:00:00Z",
+                    "start_datetime": future_iso(days=180),
                     "status": "draft",
                     "co_host_ids": [str(cohost.pk)],
                 }
@@ -193,7 +195,7 @@ class TestCreateDraft:
     def test_create_event_unauthenticated(self, api_client):
         response = api_client.post(
             "/api/community/events/",
-            data=json.dumps({"title": "Anon", "start_datetime": "2027-06-01T18:00:00Z"}),
+            data=json.dumps({"title": "Anon", "start_datetime": future_iso(days=180)}),
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -264,7 +266,7 @@ class TestPatchDraft:
     def test_patch_draft_past_datetime_rejected(self, api_client, sample_draft, creator_headers):
         response = api_client.patch(
             f"/api/community/events/{sample_draft.id}/",
-            data=json.dumps({"start_datetime": "2020-01-01T12:00:00Z"}),
+            data=json.dumps({"start_datetime": past_iso(days=90)}),
             content_type="application/json",
             **creator_headers,
         )
@@ -278,7 +280,7 @@ class TestPatchDraft:
         date is updated — even if the user only touches the title."""
         stale = Event.objects.create(
             title="Old Draft",
-            start_datetime="2020-01-01T12:00:00Z",
+            start_datetime=past_iso(days=90),
             created_by=creator,
             status=EventStatus.DRAFT,
         )
@@ -366,7 +368,7 @@ class TestPublishDraft:
     def test_publish_draft_past_start_rejected(self, api_client, creator_headers, creator):
         draft = Event.objects.create(
             title="Past Draft",
-            start_datetime="2020-01-01T12:00:00Z",
+            start_datetime=past_iso(days=90),
             created_by=creator,
             status=EventStatus.DRAFT,
         )
@@ -382,7 +384,7 @@ class TestPublishDraft:
         """datetime_tbd=True drafts skip the future-date check on publish."""
         draft = Event.objects.create(
             title="TBD Draft",
-            start_datetime="2020-01-01T12:00:00Z",
+            start_datetime=past_iso(days=90),
             datetime_tbd=True,
             created_by=creator,
             status=EventStatus.DRAFT,

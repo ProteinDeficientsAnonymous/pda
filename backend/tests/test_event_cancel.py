@@ -5,6 +5,8 @@ from community.models import Event, EventStatus
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests.conftest import future_iso, past_iso
+
 
 @pytest.fixture
 def manage_events_user(db):
@@ -38,8 +40,8 @@ def upcoming_event_with_rsvp(db, manage_events_user, test_user):
     event = Event.objects.create(
         title="Cancellable Event",
         description="Has attendees",
-        start_datetime="2027-04-01T18:00:00Z",
-        end_datetime="2027-04-01T20:00:00Z",
+        start_datetime=future_iso(days=180),
+        end_datetime=future_iso(days=180, hours=2),
         location="The Vegan Cafe",
         created_by=manage_events_user,
         rsvp_enabled=True,
@@ -54,8 +56,8 @@ def upcoming_event_no_attendees(db, manage_events_user):
     return Event.objects.create(
         title="Empty Event",
         description="No one invited",
-        start_datetime="2027-04-01T18:00:00Z",
-        end_datetime="2027-04-01T20:00:00Z",
+        start_datetime=future_iso(days=180),
+        end_datetime=future_iso(days=180, hours=2),
         location="The Vegan Cafe",
         created_by=manage_events_user,
     )
@@ -66,8 +68,8 @@ def past_event(db, manage_events_user):
     return Event.objects.create(
         title="Past Event",
         description="Already happened",
-        start_datetime="2020-01-01T18:00:00Z",
-        end_datetime="2020-01-01T20:00:00Z",
+        start_datetime=past_iso(days=90),
+        end_datetime=past_iso(days=90),
         location="History",
         created_by=manage_events_user,
     )

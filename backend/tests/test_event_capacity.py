@@ -4,6 +4,8 @@ import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from users.models import User
 
+from tests.conftest import future_iso
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -65,12 +67,13 @@ def headers4(user4):
 
 
 @pytest.fixture
-def capped_event(db):
+def capped_event(db, test_user):
     return Event.objects.create(
         title="Capped Event",
-        start_datetime="2026-06-01T18:00:00Z",
+        start_datetime=future_iso(days=30),
         rsvp_enabled=True,
         max_attendees=2,
+        created_by=test_user,
     )
 
 
@@ -78,7 +81,7 @@ def capped_event(db):
 def unlimited_event(db):
     return Event.objects.create(
         title="Unlimited Event",
-        start_datetime="2026-06-01T18:00:00Z",
+        start_datetime=future_iso(days=30),
         rsvp_enabled=True,
     )
 
@@ -316,3 +319,79 @@ class TestCapacityCounts:
         event_data = next(e for e in resp.json() if e["id"] == str(capped_event.id))
         assert event_data["attending_count"] == 1
         assert event_data["max_attendees"] == 2
+
+
+# ---------------------------------------------------------------------------
+# TestMaxAttendeesValidation (#362)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestMaxAttendeesValidation:
+    @staticmethod
+    def _future_iso(days: int = 30) -> str:
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        return (timezone.now() + timedelta(days=days)).isoformat()
+
+    def test_create_rejects_zero_max_attendees(self, api_client, auth_headers):
+        import json
+
+        resp = api_client.post(
+            "/api/community/events/",
+            data=json.dumps(
+                {
+                    "title": "No Seats",
+                    "start_datetime": self._future_iso(),
+                    "rsvp_enabled": True,
+                    "max_attendees": 0,
+                }
+            ),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 422
+        assert any(e["code"] == "max_attendees_must_be_at_least_one" for e in resp.json()["detail"])
+
+    def test_create_accepts_null_max_attendees(self, api_client, auth_headers):
+        import json
+
+        resp = api_client.post(
+            "/api/community/events/",
+            data=json.dumps(
+                {
+                    "title": "Unlimited",
+                    "start_datetime": self._future_iso(),
+                    "rsvp_enabled": True,
+                    "max_attendees": None,
+                }
+            ),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 201
+
+    def test_patch_rejects_zero_max_attendees(self, api_client, capped_event, auth_headers):
+        import json
+
+        resp = api_client.patch(
+            f"/api/community/events/{capped_event.id}/",
+            data=json.dumps({"max_attendees": 0}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 422
+        assert any(e["code"] == "max_attendees_must_be_at_least_one" for e in resp.json()["detail"])
+
+    def test_patch_accepts_null_max_attendees(self, api_client, capped_event, auth_headers):
+        import json
+
+        resp = api_client.patch(
+            f"/api/community/events/{capped_event.id}/",
+            data=json.dumps({"max_attendees": None}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200

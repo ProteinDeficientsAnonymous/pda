@@ -9,10 +9,14 @@ so the frontend owns UI copy.
 import pytest
 from community._validation import ValidationCode
 
-BASE_EVENT = {
-    "title": "Validation Test Event",
-    "start_datetime": "2026-06-01T18:00:00Z",
-}
+from tests.conftest import future_iso
+
+
+def base_event() -> dict:
+    return {
+        "title": "Validation Test Event",
+        "start_datetime": future_iso(days=30),
+    }
 
 
 @pytest.fixture
@@ -69,7 +73,7 @@ class TestValidationCodesShape:
     def test_invalid_whatsapp_host_returns_code_with_field(self, api_client, manage_events_headers):
         resp = api_client.post(
             "/api/community/events/",
-            {**BASE_EVENT, "whatsapp_link": "https://notwhatsapp.com/x"},
+            {**base_event(), "whatsapp_link": "https://notwhatsapp.com/x"},
             content_type="application/json",
             **manage_events_headers,
         )
@@ -84,7 +88,7 @@ class TestValidationCodesShape:
     ):
         resp = api_client.post(
             "/api/community/events/",
-            {**BASE_EVENT, "whatsapp_link": "https://chat.whatsapp.com/"},
+            {**base_event(), "whatsapp_link": "https://chat.whatsapp.com/"},
             content_type="application/json",
             **manage_events_headers,
         )
@@ -100,7 +104,7 @@ class TestValidationCodesShape:
         # Pydantic type error, not one of our ValidationCodes.
         resp = api_client.post(
             "/api/community/events/",
-            {**BASE_EVENT, "max_attendees": "not a number"},
+            {**base_event(), "max_attendees": "not a number"},
             content_type="application/json",
             **manage_events_headers,
         )
@@ -111,7 +115,7 @@ class TestValidationCodesShape:
     def test_missing_title_gets_field_required(self, api_client, manage_events_headers):
         resp = api_client.post(
             "/api/community/events/",
-            {"start_datetime": "2026-06-01T18:00:00Z"},
+            {"start_datetime": future_iso(days=30)},
             content_type="application/json",
             **manage_events_headers,
         )

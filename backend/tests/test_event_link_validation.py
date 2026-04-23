@@ -9,10 +9,14 @@ Validates that:
 
 import pytest
 
-BASE_EVENT = {
-    "title": "Link Test Event",
-    "start_datetime": "2026-06-01T18:00:00Z",
-}
+from tests.conftest import future_iso
+
+
+def base_event() -> dict:
+    return {
+        "title": "Link Test Event",
+        "start_datetime": future_iso(days=30),
+    }
 
 
 @pytest.fixture
@@ -38,7 +42,7 @@ class TestWhatsappLinkValidation:
     def _post(self, api_client, headers, whatsapp_link):
         return api_client.post(
             "/api/community/events/",
-            {**BASE_EVENT, "whatsapp_link": whatsapp_link},
+            {**base_event(), "whatsapp_link": whatsapp_link},
             content_type="application/json",
             **headers,
         )
@@ -75,7 +79,7 @@ class TestPartifulLinkValidation:
     def _post(self, api_client, headers, partiful_link):
         return api_client.post(
             "/api/community/events/",
-            {**BASE_EVENT, "partiful_link": partiful_link},
+            {**base_event(), "partiful_link": partiful_link},
             content_type="application/json",
             **headers,
         )
@@ -106,7 +110,7 @@ class TestOtherLinkValidation:
     def _post(self, api_client, headers, other_link):
         return api_client.post(
             "/api/community/events/",
-            {**BASE_EVENT, "other_link": other_link},
+            {**base_event(), "other_link": other_link},
             content_type="application/json",
             **headers,
         )
@@ -135,7 +139,7 @@ class TestLinkValidationOnPatch:
     def _create_event(self, api_client, headers):
         resp = api_client.post(
             "/api/community/events/",
-            BASE_EVENT,
+            base_event(),
             content_type="application/json",
             **headers,
         )

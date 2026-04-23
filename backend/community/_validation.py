@@ -20,6 +20,7 @@ class ValidationCode:
 
     # Event form
     START_DATETIME_REQUIRED_UNLESS_TBD = "start_datetime_required_unless_tbd"
+    MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE = "max_attendees_must_be_at_least_one"
     URL_INVALID = "url_invalid"
     URL_PATH_REQUIRED = "url_path_required"
     URL_SCHEME_MUST_BE_HTTP_OR_HTTPS = "url_scheme_must_be_http_or_https"

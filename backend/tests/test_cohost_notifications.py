@@ -10,6 +10,8 @@ from notifications.models import Notification, NotificationType
 from notifications.service import create_cohost_added_notifications
 from users.models import User
 
+from tests.conftest import future_iso
+
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 
@@ -44,8 +46,8 @@ def another_user(db) -> User:
 def sample_event(adder) -> Event:
     return Event.objects.create(
         title="Test Event",
-        start_datetime="2026-06-01T18:00:00Z",
-        end_datetime="2026-06-01T20:00:00Z",
+        start_datetime=future_iso(days=30),
+        end_datetime=future_iso(days=30, hours=2),
         created_by=adder,
     )
 
@@ -102,8 +104,8 @@ class TestCohostNotificationIntegration:
     def test_create_event_with_cohost_notifies(self, api_client, adder, cohost):
         payload = {
             "title": "Cohost Party",
-            "start_datetime": "2026-07-01T18:00:00Z",
-            "end_datetime": "2026-07-01T20:00:00Z",
+            "start_datetime": future_iso(days=60),
+            "end_datetime": future_iso(days=60, hours=2),
             "co_host_ids": [str(cohost.pk)],
         }
         response = api_client.post(
@@ -123,8 +125,8 @@ class TestCohostNotificationIntegration:
     def test_create_event_does_not_notify_creator(self, api_client, adder):
         payload = {
             "title": "Solo Host",
-            "start_datetime": "2026-07-01T18:00:00Z",
-            "end_datetime": "2026-07-01T20:00:00Z",
+            "start_datetime": future_iso(days=60),
+            "end_datetime": future_iso(days=60, hours=2),
             "co_host_ids": [str(adder.pk)],
         }
         api_client.post(

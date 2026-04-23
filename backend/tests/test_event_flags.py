@@ -8,6 +8,8 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests.conftest import future_iso
+
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 
@@ -46,8 +48,8 @@ def admin_user(db) -> User:
 def sample_event(db) -> Event:
     return Event.objects.create(
         title="Community Potluck",
-        start_datetime="2026-06-01T18:00:00Z",
-        end_datetime="2026-06-01T20:00:00Z",
+        start_datetime=future_iso(days=30),
+        end_datetime=future_iso(days=30, hours=2),
         location="The Vegan Cafe",
     )
 

@@ -14,6 +14,8 @@ interface Props {
   disabled?: boolean;
   error?: string | undefined;
   optional?: boolean;
+  /** Disable calendar days before today (inclusive). For event start times. */
+  disablePast?: boolean;
 }
 
 function isoToDate(iso: string | null): Date | undefined {
@@ -28,10 +30,24 @@ function dateToIso(date: Date, hours: number, minutes: number): string {
   return copy.toISOString();
 }
 
-export function DateTimePicker({ label, value, onChange, disabled, error, optional }: Props) {
+export function DateTimePicker({
+  label,
+  value,
+  onChange,
+  disabled,
+  error,
+  optional,
+  disablePast,
+}: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
+  // Start-of-today so "today" itself is still selectable.
+  const todayStart = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
 
   // Close on outside click
   useEffect(() => {
@@ -108,6 +124,7 @@ export function DateTimePicker({ label, value, onChange, disabled, error, option
             }}
             defaultMonth={selectedDate ?? new Date()}
             locale={enUS}
+            {...(disablePast ? { disabled: { before: todayStart } } : {})}
           />
           <div className="border-border mt-2 flex items-center gap-2 border-t pt-2">
             <label htmlFor="dt-time" className="text-muted text-xs">

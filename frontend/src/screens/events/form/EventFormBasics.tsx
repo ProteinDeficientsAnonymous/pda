@@ -110,6 +110,7 @@ export function EventFormBasics({
                   onChange({ startDatetime: iso });
                 }}
                 error={errors.startDatetime}
+                disablePast
               />
               <DateTimePicker
                 label="ends"

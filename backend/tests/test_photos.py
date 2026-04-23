@@ -10,6 +10,8 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests.conftest import future_iso
+
 
 def _make_test_image(fmt="JPEG", size=(20, 20)):
     buf = io.BytesIO()
@@ -53,7 +55,7 @@ def manager(db):
 def event(db, member):
     return Event.objects.create(
         title="Test Event",
-        start_datetime="2026-06-01T18:00:00Z",
+        start_datetime=future_iso(days=30),
         created_by=member,
     )
 

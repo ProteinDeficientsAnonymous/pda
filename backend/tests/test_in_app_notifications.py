@@ -15,6 +15,8 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests.conftest import future_iso
+
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
 
@@ -46,8 +48,8 @@ def another_user(db) -> User:
 def sample_event(inviter) -> Event:
     return Event.objects.create(
         title="Test Event",
-        start_datetime="2026-06-01T18:00:00Z",
-        end_datetime="2026-06-01T20:00:00Z",
+        start_datetime=future_iso(days=30),
+        end_datetime=future_iso(days=30, hours=2),
         created_by=inviter,
     )
 
@@ -244,8 +246,8 @@ class TestEventInviteIntegration:
     def test_create_event_with_invites_creates_notifications(self, api_client, inviter, invitee):
         payload = {
             "title": "Party",
-            "start_datetime": "2026-07-01T18:00:00Z",
-            "end_datetime": "2026-07-01T20:00:00Z",
+            "start_datetime": future_iso(days=60),
+            "end_datetime": future_iso(days=60, hours=2),
             "invited_user_ids": [str(invitee.pk)],
         }
         response = api_client.post(
@@ -260,8 +262,8 @@ class TestEventInviteIntegration:
     def test_create_event_inviter_not_notified(self, api_client, inviter):
         payload = {
             "title": "Solo",
-            "start_datetime": "2026-07-01T18:00:00Z",
-            "end_datetime": "2026-07-01T20:00:00Z",
+            "start_datetime": future_iso(days=60),
+            "end_datetime": future_iso(days=60, hours=2),
             "invited_user_ids": [str(inviter.pk)],
         }
         api_client.post(
@@ -301,8 +303,8 @@ class TestCanSeeInvited:
     ):
         event = Event.objects.create(
             title="Invite-only party",
-            start_datetime="2026-06-01T18:00:00Z",
-            end_datetime="2026-06-01T20:00:00Z",
+            start_datetime=future_iso(days=30),
+            end_datetime=future_iso(days=30, hours=2),
             created_by=inviter,
             visibility=PageVisibility.INVITE_ONLY,
         )
@@ -319,8 +321,8 @@ class TestCanSeeInvited:
     def test_host_can_see_invited_list_when_rsvp_disabled(self, api_client, inviter, invitee):
         event = Event.objects.create(
             title="No-rsvp party",
-            start_datetime="2026-06-01T18:00:00Z",
-            end_datetime="2026-06-01T20:00:00Z",
+            start_datetime=future_iso(days=30),
+            end_datetime=future_iso(days=30, hours=2),
             created_by=inviter,
             rsvp_enabled=False,
         )
@@ -339,8 +341,8 @@ class TestCanSeeInvited:
     ):
         event = Event.objects.create(
             title="Public with invites",
-            start_datetime="2026-06-01T18:00:00Z",
-            end_datetime="2026-06-01T20:00:00Z",
+            start_datetime=future_iso(days=30),
+            end_datetime=future_iso(days=30, hours=2),
             created_by=inviter,
             visibility=PageVisibility.PUBLIC,
         )
@@ -359,8 +361,8 @@ class TestCanSeeInvited:
     ):
         event = Event.objects.create(
             title="Invite-only party",
-            start_datetime="2026-06-01T18:00:00Z",
-            end_datetime="2026-06-01T20:00:00Z",
+            start_datetime=future_iso(days=30),
+            end_datetime=future_iso(days=30, hours=2),
             created_by=inviter,
             visibility=PageVisibility.INVITE_ONLY,
         )

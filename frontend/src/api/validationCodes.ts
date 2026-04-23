@@ -14,6 +14,7 @@
 export const ValidationCode = {
   // Event form
   StartDatetimeRequiredUnlessTbd: 'start_datetime_required_unless_tbd',
+  MaxAttendeesMustBeAtLeastOne: 'max_attendees_must_be_at_least_one',
   UrlInvalid: 'url_invalid',
   UrlPathRequired: 'url_path_required',
   UrlSchemeMustBeHttpOrHttps: 'url_scheme_must_be_http_or_https',
@@ -42,6 +43,8 @@ export function messageForCode(err: FieldError): string {
   switch (err.code) {
     case ValidationCode.StartDatetimeRequiredUnlessTbd:
       return 'pick a start time, or mark the time as tbd';
+    case ValidationCode.MaxAttendeesMustBeAtLeastOne:
+      return 'max attendees must be at least 1 — leave blank for unlimited';
     case ValidationCode.UrlInvalid:
       return 'enter a valid url';
     case ValidationCode.UrlPathRequired:

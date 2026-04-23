@@ -29,11 +29,13 @@ export function validateEventForm(values: EventFormValues): Errors {
     }
   }
 
+  // null = unlimited (leave the field blank). Otherwise must be a positive
+  // integer — 0 would let someone create an event nobody can rsvp to.
   if (
     values.maxAttendees !== null &&
-    (values.maxAttendees < 0 || !Number.isFinite(values.maxAttendees))
+    (values.maxAttendees < 1 || !Number.isFinite(values.maxAttendees))
   ) {
-    errors.maxAttendees = 'must be 0 or more';
+    errors.maxAttendees = 'must be 1 or more (leave blank for unlimited)';
   }
   return errors;
 }

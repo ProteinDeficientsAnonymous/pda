@@ -3,6 +3,8 @@
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 
+from tests.conftest import future_iso
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -13,8 +15,8 @@ def rsvp_event(db, test_user):
     return Event.objects.create(
         title="RSVP Event",
         description="An event with RSVPs enabled",
-        start_datetime="2026-06-01T18:00:00Z",
-        end_datetime="2026-06-01T20:00:00Z",
+        start_datetime=future_iso(days=30),
+        end_datetime=future_iso(days=30, hours=2),
         location="Community Space",
         rsvp_enabled=True,
         created_by=test_user,
@@ -25,8 +27,8 @@ def rsvp_event(db, test_user):
 def no_rsvp_event(db):
     return Event.objects.create(
         title="No RSVP Event",
-        start_datetime="2026-06-02T18:00:00Z",
-        end_datetime="2026-06-02T20:00:00Z",
+        start_datetime=future_iso(days=31),
+        end_datetime=future_iso(days=31, hours=2),
         rsvp_enabled=False,
     )
 
@@ -249,8 +251,8 @@ class TestCreateEventWithCohosts:
             "/api/community/events/",
             {
                 "title": "Cohost Event",
-                "start_datetime": "2026-07-01T18:00:00Z",
-                "end_datetime": "2026-07-01T20:00:00Z",
+                "start_datetime": future_iso(days=60),
+                "end_datetime": future_iso(days=60, hours=2),
                 "co_host_ids": [str(other_user.pk)],
             },
             content_type="application/json",
@@ -266,8 +268,8 @@ class TestCreateEventWithCohosts:
             "/api/community/events/",
             {
                 "title": "RSVP Event",
-                "start_datetime": "2026-07-01T18:00:00Z",
-                "end_datetime": "2026-07-01T20:00:00Z",
+                "start_datetime": future_iso(days=60),
+                "end_datetime": future_iso(days=60, hours=2),
                 "rsvp_enabled": True,
             },
             content_type="application/json",
@@ -294,8 +296,8 @@ class TestCreateEventWithCohosts:
             "/api/community/events/",
             {
                 "title": "Cohost Phone Test",
-                "start_datetime": "2026-08-01T18:00:00Z",
-                "end_datetime": "2026-08-01T20:00:00Z",
+                "start_datetime": future_iso(days=90),
+                "end_datetime": future_iso(days=90, hours=2),
                 "rsvp_enabled": True,
                 "co_host_ids": [str(other_user.pk)],
             },
