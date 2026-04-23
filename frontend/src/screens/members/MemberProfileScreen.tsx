@@ -5,6 +5,7 @@
 import { useParams } from 'react-router-dom';
 import { useMemberProfile, type MemberProfile } from '@/api/users';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { formatPhone } from '@/utils/formatPhone';
 
 export default function MemberProfileScreen() {
   const { userId = '' } = useParams<{ userId: string }>();
@@ -61,7 +62,7 @@ function ContactLines({ member }: { member: MemberProfile }) {
           href={`sms:${member.phoneNumber}`}
           className="text-foreground-secondary text-sm hover:underline"
         >
-          {member.phoneNumber}
+          {formatPhone(member.phoneNumber)}
         </a>
       ) : null}
       {hasEmail ? (

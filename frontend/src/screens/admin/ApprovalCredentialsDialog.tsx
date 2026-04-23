@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 interface Props {
@@ -41,7 +42,7 @@ export function ApprovalCredentialsDialog({
   return (
     <Dialog open={open} onClose={onClose} title={`welcome ${displayName}`}>
       <p className="text-foreground-secondary text-sm">
-        share this one-time login link with {phoneNumber}. it won't be shown again.
+        share this one-time login link with {formatPhone(phoneNumber)}. it won't be shown again.
       </p>
       <div className="bg-surface-dim mt-3 overflow-x-auto rounded-md px-3 py-2 font-mono text-xs break-all">
         {magicLinkUrl}

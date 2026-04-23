@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useMembersDirectory, type DirectoryMember } from '@/api/users';
 import { TextField } from '@/components/ui/TextField';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { formatPhone } from '@/utils/formatPhone';
 
 export default function MembersDirectoryScreen() {
   const { data = [], isPending, isError } = useMembersDirectory();
@@ -86,7 +87,7 @@ function DirectoryRow({ member }: { member: DirectoryMember }) {
         </p>
         {member.phoneNumber || member.email ? (
           <p className="text-foreground-tertiary truncate text-xs">
-            {member.phoneNumber || member.email}
+            {member.phoneNumber ? formatPhone(member.phoneNumber) : member.email}
           </p>
         ) : null}
       </div>

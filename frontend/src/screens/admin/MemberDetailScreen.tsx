@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
+import { formatPhone } from '@/utils/formatPhone';
 import {
   useArchiveUser,
   useSendMemberMagicLink,
@@ -45,7 +46,7 @@ function MemberDetailView({ member }: { member: Member }) {
   async function onArchive() {
     const confirmed = await confirm({
       title: 'archive member',
-      message: `archive ${member.displayName || member.phoneNumber}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+      message: `archive ${member.displayName || formatPhone(member.phoneNumber)}? they'll lose access immediately — you can restore them later by approving a new join request.`,
       confirmLabel: 'archive',
       destructive: true,
     });
@@ -72,9 +73,9 @@ function MemberDetailView({ member }: { member: Member }) {
         <MemberAvatar member={member} />
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-2xl font-medium tracking-tight">
-            {member.displayName || member.phoneNumber}
+            {member.displayName || formatPhone(member.phoneNumber)}
           </h1>
-          <p className="text-sm text-neutral-600">{member.phoneNumber}</p>
+          <p className="text-sm text-neutral-600">{formatPhone(member.phoneNumber)}</p>
           {member.email ? <p className="text-sm text-neutral-600">{member.email}</p> : null}
           {member.isPaused ? (
             <span className="mt-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
