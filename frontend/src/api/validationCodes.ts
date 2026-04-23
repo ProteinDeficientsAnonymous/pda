@@ -47,6 +47,27 @@ export const Code = {
     FlagNotFound: 'event.flag_not_found',
     FlagAlreadyFlagged: 'event.flag_already_flagged',
     FlagInvalidAction: 'event.flag_invalid_action',
+    RsvpsNotEnabled: 'event.rsvps_not_enabled',
+    RsvpsClosedCancelled: 'event.rsvps_closed_cancelled',
+    RsvpsClosedPast: 'event.rsvps_closed_past',
+    NoPlusOneSpots: 'event.no_plus_one_spots',
+    RsvpNotFound: 'event.rsvp_not_found',
+    AttendanceOpensLater: 'event.attendance_opens_later',
+    AttendanceOnlyForGoingRsvps: 'event.attendance_only_for_going_rsvps',
+    OnlyHostsCanViewStats: 'event.only_hosts_can_view_stats',
+    OnlyHostsCanMarkAttendance: 'event.only_hosts_can_mark_attendance',
+  },
+  Poll: {
+    NotFound: 'poll.not_found',
+    OptionsRequired: 'poll.options_required',
+    OptionsMustBeFuture: 'poll.options_must_be_future',
+    EventAlreadyHasPoll: 'poll.event_already_has_poll',
+    OptionNotFound: 'poll.option_not_found',
+    OptionAlreadyExists: 'poll.option_already_exists',
+    CannotModifyFinalized: 'poll.cannot_modify_finalized',
+    AlreadyFinalized: 'poll.already_finalized',
+    WinningOptionNotFound: 'poll.winning_option_not_found',
+    MinTwoOptions: 'poll.min_two_options',
   },
   Url: {
     Invalid: 'url.invalid',
@@ -202,6 +223,46 @@ export function messageForCode(err: FieldError): string {
       return "you've already flagged this event";
     case Code.Event.FlagInvalidAction:
       return 'invalid flag action';
+    case Code.Event.RsvpsNotEnabled:
+      return 'rsvps are not enabled for this event';
+    case Code.Event.RsvpsClosedCancelled:
+      return 'rsvps are closed for cancelled events';
+    case Code.Event.RsvpsClosedPast:
+      return 'rsvps are closed for past events';
+    case Code.Event.NoPlusOneSpots:
+      return "no spots available for a +1";
+    case Code.Event.RsvpNotFound:
+      return 'rsvp not found';
+    case Code.Event.AttendanceOpensLater:
+      return 'check-in opens an hour before the event starts';
+    case Code.Event.AttendanceOnlyForGoingRsvps:
+      return 'attendance can only be marked on going rsvps';
+    case Code.Event.OnlyHostsCanViewStats:
+      return 'only hosts can view event stats';
+    case Code.Event.OnlyHostsCanMarkAttendance:
+      return 'only hosts can mark attendance';
+
+    // Poll
+    case Code.Poll.NotFound:
+      return 'poll not found';
+    case Code.Poll.OptionsRequired:
+      return 'a poll requires at least 1 option';
+    case Code.Poll.OptionsMustBeFuture:
+      return 'poll options must be in the future';
+    case Code.Poll.EventAlreadyHasPoll:
+      return 'this event already has a poll';
+    case Code.Poll.OptionNotFound:
+      return 'poll option not found';
+    case Code.Poll.OptionAlreadyExists:
+      return 'that time is already an option in this poll';
+    case Code.Poll.CannotModifyFinalized:
+      return 'cannot modify a finalized poll';
+    case Code.Poll.AlreadyFinalized:
+      return 'this poll has already been finalized';
+    case Code.Poll.WinningOptionNotFound:
+      return 'winning option not found in this poll';
+    case Code.Poll.MinTwoOptions:
+      return 'a poll must have at least 2 options';
 
     // URL
     case Code.Url.Invalid:

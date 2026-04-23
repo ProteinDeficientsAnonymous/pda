@@ -52,6 +52,27 @@ class Code:
         FLAG_NOT_FOUND = "event.flag_not_found"
         FLAG_ALREADY_FLAGGED = "event.flag_already_flagged"
         FLAG_INVALID_ACTION = "event.flag_invalid_action"
+        RSVPS_NOT_ENABLED = "event.rsvps_not_enabled"
+        RSVPS_CLOSED_CANCELLED = "event.rsvps_closed_cancelled"
+        RSVPS_CLOSED_PAST = "event.rsvps_closed_past"
+        NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
+        RSVP_NOT_FOUND = "event.rsvp_not_found"
+        ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
+        ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
+        ONLY_HOSTS_CAN_VIEW_STATS = "event.only_hosts_can_view_stats"
+        ONLY_HOSTS_CAN_MARK_ATTENDANCE = "event.only_hosts_can_mark_attendance"
+
+    class Poll:
+        NOT_FOUND = "poll.not_found"
+        OPTIONS_REQUIRED = "poll.options_required"
+        OPTIONS_MUST_BE_FUTURE = "poll.options_must_be_future"
+        EVENT_ALREADY_HAS_POLL = "poll.event_already_has_poll"
+        OPTION_NOT_FOUND = "poll.option_not_found"
+        OPTION_ALREADY_EXISTS = "poll.option_already_exists"
+        CANNOT_MODIFY_FINALIZED = "poll.cannot_modify_finalized"
+        ALREADY_FINALIZED = "poll.already_finalized"
+        WINNING_OPTION_NOT_FOUND = "poll.winning_option_not_found"
+        MIN_TWO_OPTIONS = "poll.min_two_options"
 
     class Url:
         INVALID = "url.invalid"
