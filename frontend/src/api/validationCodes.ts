@@ -19,9 +19,34 @@
  */
 export const Code = {
   Event: {
+    NotFound: 'event.not_found',
     StartDatetimeRequiredUnlessTbd: 'event.start_datetime_required_unless_tbd',
     MaxAttendeesMustBeAtLeastOne: 'event.max_attendees_must_be_at_least_one',
+    StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
+    EndBeforeStart: 'event.end_before_start',
     AttendanceInvalidChoice: 'event.attendance_invalid_choice',
+    OfficialMustBePublic: 'event.official_must_be_public',
+    InvalidCreateStatus: 'event.invalid_create_status',
+    DateLockedByPoll: 'event.date_locked_by_poll',
+    InviteOnly: 'event.invite_only',
+    AuthRequired: 'event.auth_required',
+    CannotEditPast: 'event.cannot_edit_past',
+    AlreadyCancelled: 'event.already_cancelled',
+    CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
+    PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
+    NoAttendeesCannotBeCancelled: 'event.no_attendees_cannot_be_cancelled',
+    InvalidStatusTransition: 'event.invalid_status_transition',
+    CancelBeforeDelete: 'event.cancel_before_delete',
+    DraftFutureStartRequired: 'event.draft_future_start_required',
+    MaxAttendeesBelowRsvps: 'event.max_attendees_below_rsvps',
+    RsvpDisabled: 'event.rsvp_disabled',
+    RsvpInvalidStatus: 'event.rsvp_invalid_status',
+    RsvpFull: 'event.rsvp_full',
+    CapacityBelowAttending: 'event.capacity_below_attending',
+    InvitePermissionDenied: 'event.invite_permission_denied',
+    FlagNotFound: 'event.flag_not_found',
+    FlagAlreadyFlagged: 'event.flag_already_flagged',
+    FlagInvalidAction: 'event.flag_invalid_action',
   },
   Url: {
     Invalid: 'url.invalid',
@@ -117,12 +142,66 @@ export interface FieldError {
 export function messageForCode(err: FieldError): string {
   switch (err.code) {
     // Event
+    case Code.Event.NotFound:
+      return 'event not found';
     case Code.Event.StartDatetimeRequiredUnlessTbd:
       return 'pick a start time, or mark the time as tbd';
     case Code.Event.MaxAttendeesMustBeAtLeastOne:
       return 'max attendees must be at least 1 — leave blank for unlimited';
+    case Code.Event.StartDatetimeMustBeFuture:
+      return 'start date must be in the future';
+    case Code.Event.EndBeforeStart:
+      return 'end time must be after the start time';
     case Code.Event.AttendanceInvalidChoice:
       return 'pick a valid attendance option';
+    case Code.Event.OfficialMustBePublic:
+      return 'official events must be public';
+    case Code.Event.InvalidCreateStatus:
+      return "new events can only be saved as active or draft";
+    case Code.Event.DateLockedByPoll:
+      return "can't edit the date while a poll is active — finalize the poll first";
+    case Code.Event.InviteOnly:
+      return 'this event is invite only';
+    case Code.Event.AuthRequired:
+      return 'you need to sign in for that';
+    case Code.Event.CannotEditPast:
+      return "you can't edit an event in the past";
+    case Code.Event.AlreadyCancelled:
+      return 'this event has already been cancelled';
+    case Code.Event.CancelledCannotBeEdited:
+      return "cancelled events can't be edited";
+    case Code.Event.PastCannotBeCancelled:
+      return "past events can't be cancelled — delete instead";
+    case Code.Event.NoAttendeesCannotBeCancelled:
+      return "events with no invited users or rsvps can't be cancelled — delete instead";
+    case Code.Event.InvalidStatusTransition:
+      return 'invalid status change';
+    case Code.Event.CancelBeforeDelete:
+      return 'cancel this event before deleting it';
+    case Code.Event.DraftFutureStartRequired:
+      return 'drafts must have a future start time';
+    case Code.Event.MaxAttendeesBelowRsvps: {
+      const attending = typeof err.params?.attending === 'number' ? err.params.attending : null;
+      return attending !== null
+        ? `capacity must be at least ${String(attending)} — the current count of yes rsvps`
+        : 'capacity is too low for current rsvps';
+    }
+    case Code.Event.RsvpDisabled:
+      return 'rsvps are not enabled for this event';
+    case Code.Event.RsvpInvalidStatus:
+      return 'invalid rsvp status';
+    case Code.Event.RsvpFull:
+      return "this event is full — you'll be added to the waitlist";
+    case Code.Event.CapacityBelowAttending:
+      return 'capacity is below the current attending count';
+    case Code.Event.InvitePermissionDenied:
+      return 'only co-hosts can invite people to this event';
+    case Code.Event.FlagNotFound:
+      return 'flag not found';
+    case Code.Event.FlagAlreadyFlagged:
+      return "you've already flagged this event";
+    case Code.Event.FlagInvalidAction:
+      return 'invalid flag action';
 
     // URL
     case Code.Url.Invalid:

@@ -13,16 +13,16 @@ from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community._event_helpers import _has_attendees
-from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import Event, EventStatus
 
 
-def _cancel_event(request, event: Event, notify: bool) -> str | None:
-    """ACTIVE → CANCELLED. Returns error string or None."""
+def _cancel_event(request, event: Event, notify: bool) -> None:
+    """ACTIVE → CANCELLED. Raises ValidationException on failure."""
     if event.is_past:
-        return "Past events cannot be cancelled — use delete instead."
+        raise_validation(Code.Event.PAST_CANNOT_BE_CANCELLED, status_code=400)
     if not _has_attendees(event):
-        return "Events with no invited users or RSVPs cannot be cancelled — use delete instead."
+        raise_validation(Code.Event.NO_ATTENDEES_CANNOT_BE_CANCELLED, status_code=400)
     event.status = EventStatus.CANCELLED
     event.save(update_fields=["status"])
     if notify:
@@ -37,13 +37,12 @@ def _cancel_event(request, event: Event, notify: bool) -> str | None:
         target_id=str(event.id),
         details={"title": event.title, "notify_attendees": notify},
     )
-    return None
 
 
-def _delete_event(request, event: Event) -> str | None:
-    """ACTIVE|CANCELLED|DRAFT → DELETED. Returns error string or None."""
+def _delete_event(request, event: Event) -> None:
+    """ACTIVE|CANCELLED|DRAFT → DELETED. Raises ValidationException on failure."""
     if event.status == EventStatus.ACTIVE and not event.is_past and _has_attendees(event):
-        return "Cancel this event before deleting it."
+        raise_validation(Code.Event.CANCEL_BEFORE_DELETE, status_code=400)
     event.status = EventStatus.DELETED
     event.deleted_at = timezone.now()
     event.save(update_fields=["status", "deleted_at"])
@@ -55,7 +54,6 @@ def _delete_event(request, event: Event) -> str | None:
         target_id=str(event.id),
         details={"title": event.title},
     )
-    return None
 
 
 def _uncancel_event(request, event: Event) -> None:
@@ -89,10 +87,12 @@ def _set_event_participants(
             create_event_invite_notifications(event, invited_user_ids, request.auth)
 
 
-def _publish_draft(request, event: Event) -> str | None:
+def _publish_draft(request, event: Event) -> None:
     """DRAFT → ACTIVE. Re-validates dates, fires invitee notifications, audit logs."""
     if not event.datetime_tbd and event.start_datetime and event.start_datetime < timezone.now():
-        return "Start date must be in the future to publish."
+        raise_validation(
+            Code.Event.START_DATETIME_MUST_BE_FUTURE, field="start_datetime", status_code=400
+        )
     event.status = EventStatus.ACTIVE
     event.save(update_fields=["status"])
     invited_ids = [str(u.id) for u in event.invited_users.all()]
@@ -106,45 +106,52 @@ def _publish_draft(request, event: Event) -> str | None:
         target_id=str(event.id),
         details={"title": event.title},
     )
-    return None
 
 
-def _apply_status_transition(request, event: Event, new_status: str, notify: bool) -> str | None:
-    """Validate and apply a status transition. Returns an error message or None on success."""
+def _apply_status_transition(request, event: Event, new_status: str, notify: bool) -> None:
+    """Validate and apply a status transition. Raises ValidationException on failure."""
     current = event.status
     if current == new_status:
-        return None
+        return
     if current == EventStatus.DRAFT and new_status == EventStatus.ACTIVE:
-        return _publish_draft(request, event)
+        _publish_draft(request, event)
+        return
     if new_status == EventStatus.DELETED and current in (
         EventStatus.DRAFT,
         EventStatus.ACTIVE,
         EventStatus.CANCELLED,
     ):
-        return _delete_event(request, event)
+        _delete_event(request, event)
+        return
     if current == EventStatus.ACTIVE and new_status == EventStatus.CANCELLED:
-        return _cancel_event(request, event, notify)
+        _cancel_event(request, event, notify)
+        return
     if current == EventStatus.CANCELLED and new_status == EventStatus.ACTIVE:
         _uncancel_event(request, event)
-        return None
-    return f"Invalid status transition: {current} → {new_status}."
+        return
+    raise_validation(
+        Code.Event.INVALID_STATUS_TRANSITION,
+        status_code=400,
+        current=current,
+        requested=new_status,
+    )
 
 
 def _handle_status_update(request, event: Event, new_status: str, notify: bool):
-    """
-    Validate and apply a status transition from update_event.
-    Returns a Status response to send immediately, or None to continue processing field edits.
+    """Apply a status transition from update_event.
+
+    Returns a Status response to send immediately (for DELETE, which exits early
+    with the event representation), or None to continue processing field edits.
+    Raises ValidationException on validation failures.
     """
     # Uncancel requires creator/manager — co-hosts cannot uncancel
     if new_status == EventStatus.ACTIVE and event.is_cancelled:
         is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
         is_creator = event.created_by_id == request.auth.pk
         if not is_creator and not is_manager:
-            return Status(403, ErrorOut(detail="Permission denied."))
+            raise_validation(Code.Perm.DENIED, status_code=403, action="uncancel_event")
 
-    err = _apply_status_transition(request, event, new_status, notify)
-    if err is not None:
-        return Status(400, ErrorOut(detail=err))
+    _apply_status_transition(request, event, new_status, notify)
 
     # After a delete transition the event is gone — stop further processing
     if new_status == EventStatus.DELETED:

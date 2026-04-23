@@ -3,8 +3,10 @@
 import json
 
 import pytest
+from community._validation import Code
 from community.models import Event, EventStatus
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso, past_iso
 
 
@@ -119,8 +121,8 @@ class TestCreateDraft:
             content_type="application/json",
             **creator_headers,
         )
-        assert response.status_code == 400
-        assert "future" in response.json()["detail"].lower()
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE, "start_datetime")
 
     def test_create_active_event_past_start_rejected(self, api_client, creator_headers):
         response = api_client.post(
@@ -135,7 +137,8 @@ class TestCreateDraft:
             content_type="application/json",
             **creator_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE, "start_datetime")
 
     def test_create_event_invalid_status_rejected(self, api_client, creator_headers):
         response = api_client.post(
@@ -151,6 +154,7 @@ class TestCreateDraft:
             **creator_headers,
         )
         assert response.status_code == 400
+        assert_error_code(response, Code.Event.INVALID_CREATE_STATUS, "status")
 
     def test_create_draft_skips_invitee_notifications(self, api_client, creator_headers, invitee):
         from notifications.models import Notification
@@ -270,8 +274,8 @@ class TestPatchDraft:
             content_type="application/json",
             **creator_headers,
         )
-        assert response.status_code == 400
-        assert "future" in response.json()["detail"].lower()
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE, "start_datetime")
 
     def test_patch_stale_draft_rejects_unrelated_field_edits(
         self, api_client, creator, creator_headers
@@ -290,8 +294,8 @@ class TestPatchDraft:
             content_type="application/json",
             **creator_headers,
         )
-        assert response.status_code == 400
-        assert "future" in response.json()["detail"].lower()
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE, "start_datetime")
 
     def test_patch_startless_draft_title_succeeds(self, api_client, creator, creator_headers):
         """A draft with no start_datetime at all should still be editable —

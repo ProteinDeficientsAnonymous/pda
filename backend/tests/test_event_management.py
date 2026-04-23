@@ -1,10 +1,12 @@
 """Tests for event create/update/delete management endpoints."""
 
 import pytest
+from community._validation import Code
 from community.models import Event
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso, past_iso
 
 
@@ -157,7 +159,7 @@ class TestEventManagement:
             **auth_headers,
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "Permission denied."
+        assert_error_code(response, Code.Perm.DENIED)
 
     def test_member_can_edit_own_event(self, api_client, auth_headers, test_user):
         """A regular member can edit an event they created."""
@@ -195,7 +197,7 @@ class TestEventManagement:
             **auth_headers,
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "Permission denied."
+        assert_error_code(response, Code.Perm.DENIED)
 
     def test_update_event_requires_auth(self, api_client, sample_event):
         response = api_client.patch(
@@ -213,7 +215,7 @@ class TestEventManagement:
             **manage_events_headers,
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "Event not found."
+        assert_error_code(response, Code.Event.NOT_FOUND)
 
     def test_update_event_partial(self, api_client, manage_events_headers, sample_event):
         """PATCH with only one field should not overwrite others."""
@@ -253,8 +255,8 @@ class TestEventManagement:
             content_type="application/json",
             **manage_events_headers,
         )
-        assert response.status_code == 400
-        assert "end_datetime" in response.json()["detail"]
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.END_BEFORE_START, "end_datetime")
 
     def test_create_event_in_past_returns_400(self, api_client, manage_events_headers):
         response = api_client.post(
@@ -266,8 +268,8 @@ class TestEventManagement:
             content_type="application/json",
             **manage_events_headers,
         )
-        assert response.status_code == 400
-        assert "future" in response.json()["detail"]
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE, "start_datetime")
 
     def test_create_event_in_past_allowed_when_datetime_tbd(
         self, api_client, manage_events_headers
@@ -293,8 +295,8 @@ class TestEventManagement:
             content_type="application/json",
             **manage_events_headers,
         )
-        assert response.status_code == 400
-        assert "future" in response.json()["detail"]
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE, "start_datetime")
 
     def test_update_event_non_date_fields_on_past_event(
         self, api_client, manage_events_headers, db
@@ -332,8 +334,8 @@ class TestEventManagement:
             content_type="application/json",
             **manage_events_headers,
         )
-        assert response.status_code == 400
-        assert "end_datetime" in response.json()["detail"]
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.END_BEFORE_START, "end_datetime")
 
     def test_create_event_with_lat_lng(self, api_client, manage_events_headers):
         response = api_client.post(
@@ -460,7 +462,7 @@ class TestEventManagement:
             **manage_events_headers,
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "Event not found."
+        assert_error_code(response, Code.Event.NOT_FOUND)
 
     def test_delete_requires_auth(self, api_client, sample_event):
         response = api_client.patch(

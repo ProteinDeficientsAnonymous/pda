@@ -1,8 +1,10 @@
 """Tests for event RSVP endpoints and event detail GET."""
 
 import pytest
+from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso
 
 # ---------------------------------------------------------------------------
@@ -80,7 +82,7 @@ class TestGetEvent:
             **auth_headers,
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "Event not found."
+        assert_error_code(response, Code.Event.NOT_FOUND)
 
 
 # ---------------------------------------------------------------------------
