@@ -16,6 +16,7 @@ import {
 } from '@/api/docs';
 import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { TextField } from '@/components/ui/TextField';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -34,6 +35,7 @@ export default function DocsScreen() {
   const [newFolderName, setNewFolderName] = useState('');
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocFolderId, setNewDocFolderId] = useState('');
+  const { confirm, element: confirmElement } = useConfirm();
 
   const flatFolders = useMemo(() => (data ? flattenFolders(data) : []), [data]);
   const defaultDocFolderId = flatFolders[0]?.id ?? '';
@@ -151,10 +153,13 @@ export default function DocsScreen() {
               deleteFolder={deleteFolder}
               deleteDoc={deleteDoc}
               reorderDocs={reorderDocs}
+              confirm={confirm}
             />
           ))}
         </div>
       )}
+
+      {confirmElement}
     </ContentContainer>
   );
 }
@@ -172,6 +177,7 @@ function flattenFolders(folders: DocFolder[], prefix = ''): { id: string; label:
 type DeleteFolder = ReturnType<typeof useDeleteDocFolder>;
 type DeleteDoc = ReturnType<typeof useDeleteDocument>;
 type ReorderDocs = ReturnType<typeof useReorderDocuments>;
+type Confirm = ReturnType<typeof useConfirm>['confirm'];
 
 function FolderView({
   folder,
@@ -180,6 +186,7 @@ function FolderView({
   deleteFolder,
   deleteDoc,
   reorderDocs,
+  confirm,
 }: {
   folder: DocFolder;
   depth: number;
@@ -187,6 +194,7 @@ function FolderView({
   deleteFolder: DeleteFolder;
   deleteDoc: DeleteDoc;
   reorderDocs: ReorderDocs;
+  confirm: Confirm;
 }) {
   const Heading: ElementType = depth === 0 ? 'h2' : 'h3';
   return (
@@ -207,12 +215,19 @@ function FolderView({
             variant="ghost"
             className="text-muted text-xs"
             onClick={() => {
-              const ok = window.confirm(`delete folder "${folder.name}" and everything inside?`);
-              if (!ok) return;
-              void deleteFolder.mutateAsync(folder.id).then(
-                () => toast.success('folder deleted'),
-                () => toast.error("couldn't delete folder"),
-              );
+              void (async () => {
+                const ok = await confirm({
+                  title: 'delete folder',
+                  message: `delete folder "${folder.name}" and everything inside?`,
+                  confirmLabel: 'delete',
+                  destructive: true,
+                });
+                if (!ok) return;
+                await deleteFolder.mutateAsync(folder.id).then(
+                  () => toast.success('folder deleted'),
+                  () => toast.error("couldn't delete folder"),
+                );
+              })();
             }}
           >
             delete folder
@@ -235,12 +250,19 @@ function FolderView({
                 doc={d}
                 canManage
                 onDelete={() => {
-                  const ok = window.confirm(`delete "${d.title}"?`);
-                  if (!ok) return;
-                  void deleteDoc.mutateAsync(d.id).then(
-                    () => toast.success('document deleted'),
-                    () => toast.error("couldn't delete"),
-                  );
+                  void (async () => {
+                    const ok = await confirm({
+                      title: 'delete document',
+                      message: `delete "${d.title}"?`,
+                      confirmLabel: 'delete',
+                      destructive: true,
+                    });
+                    if (!ok) return;
+                    await deleteDoc.mutateAsync(d.id).then(
+                      () => toast.success('document deleted'),
+                      () => toast.error("couldn't delete"),
+                    );
+                  })();
                 }}
               />
             )}
@@ -254,12 +276,19 @@ function FolderView({
                     doc={d}
                     canManage
                     onDelete={() => {
-                      const ok = window.confirm(`delete "${d.title}"?`);
-                      if (!ok) return;
-                      void deleteDoc.mutateAsync(d.id).then(
-                        () => toast.success('document deleted'),
-                        () => toast.error("couldn't delete"),
-                      );
+                      void (async () => {
+                        const ok = await confirm({
+                          title: 'delete document',
+                          message: `delete "${d.title}"?`,
+                          confirmLabel: 'delete',
+                          destructive: true,
+                        });
+                        if (!ok) return;
+                        await deleteDoc.mutateAsync(d.id).then(
+                          () => toast.success('document deleted'),
+                          () => toast.error("couldn't delete"),
+                        );
+                      })();
                     }}
                   />
                 ) : (
@@ -281,6 +310,7 @@ function FolderView({
               deleteFolder={deleteFolder}
               deleteDoc={deleteDoc}
               reorderDocs={reorderDocs}
+              confirm={confirm}
             />
           ))}
         </div>

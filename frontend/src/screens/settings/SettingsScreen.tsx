@@ -6,6 +6,7 @@ import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
 import { useAccessibilityStore, type ThemeMode, type TextScale } from '@/accessibility/store';
 import { useCalendarToken, useRegenerateCalendarToken } from '@/api/calendar';
+import { useVersion } from '@/api/version';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from './AvatarUpload';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
@@ -79,6 +80,8 @@ export default function SettingsScreen() {
         <DyslexiaToggle checked={dyslexiaFont} onChange={toggleDyslexiaFont} />
         <TextScaleToggle value={textScale} onChange={setTextScale} />
       </Section>
+
+      <BuildInfo />
 
       <ChangePasswordDialog
         open={pwOpen}
@@ -174,6 +177,17 @@ function CalendarFeedSubscription() {
         </Button>
       )}
     </div>
+  );
+}
+
+function BuildInfo() {
+  const versionQ = useVersion();
+  if (!versionQ.data) return null;
+  const { commitShaShort, environment } = versionQ.data;
+  return (
+    <p className="text-muted mb-6 text-center text-xs">
+      build {commitShaShort} · {environment}
+    </p>
   );
 }
 

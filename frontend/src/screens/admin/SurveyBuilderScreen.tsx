@@ -8,6 +8,7 @@ import {
   type SurveyQuestion,
 } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { SortableList } from '@/components/SortableList';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { SurveyQuestionDialog } from './SurveyQuestionDialog';
@@ -22,6 +23,7 @@ export default function SurveyBuilderScreen() {
 
   const [editing, setEditing] = useState<SurveyQuestion | null>(null);
   const [creating, setCreating] = useState(false);
+  const { confirm, element: confirmElement } = useConfirm();
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load survey — try refreshing" />;
@@ -32,8 +34,14 @@ export default function SurveyBuilderScreen() {
     reorder.mutate(nextIds);
   }
 
-  function askDelete(q: SurveyQuestion) {
-    if (!window.confirm(`delete "${q.label}"? this also deletes responses to it.`)) return;
+  async function askDelete(q: SurveyQuestion) {
+    const ok = await confirm({
+      title: 'delete question',
+      message: `delete "${q.label}"? this also deletes responses to it.`,
+      confirmLabel: 'delete',
+      destructive: true,
+    });
+    if (!ok) return;
     del.mutate(q.id);
   }
 
@@ -125,7 +133,7 @@ export default function SurveyBuilderScreen() {
                   <Button
                     variant="ghost"
                     onClick={() => {
-                      askDelete(q);
+                      void askDelete(q);
                     }}
                   >
                     delete
@@ -152,6 +160,8 @@ export default function SurveyBuilderScreen() {
         }}
         existing={editing ?? undefined}
       />
+
+      {confirmElement}
     </ContentContainer>
   );
 }

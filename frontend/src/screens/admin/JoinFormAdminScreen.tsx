@@ -6,6 +6,7 @@ import { useState } from 'react';
 import type { JoinQuestion } from '@/api/join';
 import { useDeleteJoinQuestion, useJoinQuestions, useReorderJoinQuestions } from '@/api/join';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { SortableList } from '@/components/SortableList';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { JoinQuestionDialog } from './JoinQuestionDialog';
@@ -16,6 +17,7 @@ export default function JoinFormAdminScreen() {
   const del = useDeleteJoinQuestion();
   const [editing, setEditing] = useState<JoinQuestion | null>(null);
   const [creating, setCreating] = useState(false);
+  const { confirm, element: confirmElement } = useConfirm();
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load questions — try refreshing" />;
@@ -24,10 +26,14 @@ export default function JoinFormAdminScreen() {
     reorder.mutate(nextIds);
   }
 
-  function askDelete(q: JoinQuestion) {
-    // Small inline confirm instead of a full dialog — non-destructive-ish
-    // (deleting a question doesn't invalidate prior submissions).
-    if (!window.confirm(`delete "${q.label}"?`)) return;
+  async function askDelete(q: JoinQuestion) {
+    const ok = await confirm({
+      title: 'delete question',
+      message: `delete "${q.label}"?`,
+      confirmLabel: 'delete',
+      destructive: true,
+    });
+    if (!ok) return;
     del.mutate(q.id);
   }
 
@@ -83,7 +89,7 @@ export default function JoinFormAdminScreen() {
                   variant="ghost"
                   aria-label={`delete ${q.label}`}
                   onClick={() => {
-                    askDelete(q);
+                    void askDelete(q);
                   }}
                   className="!px-2"
                 >
@@ -108,6 +114,8 @@ export default function JoinFormAdminScreen() {
         }}
         existing={editing ?? undefined}
       />
+
+      {confirmElement}
     </ContentContainer>
   );
 }
