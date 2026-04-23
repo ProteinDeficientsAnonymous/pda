@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { formatPhone } from '@/utils/formatPhone';
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
 
@@ -334,9 +335,11 @@ function MemberRow({ member }: { member: Member }) {
       )}
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-sm font-medium">
-          {member.displayName || member.phoneNumber}
+          {member.displayName || formatPhone(member.phoneNumber)}
         </p>
-        <p className="text-foreground-tertiary truncate text-xs">{member.phoneNumber}</p>
+        <p className="text-foreground-tertiary truncate text-xs">
+          {formatPhone(member.phoneNumber)}
+        </p>
       </div>
       <div className="flex shrink-0 flex-wrap justify-end gap-1">
         {member.roles.map((role) => (

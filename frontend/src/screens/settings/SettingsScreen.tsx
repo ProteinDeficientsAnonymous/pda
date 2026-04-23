@@ -11,6 +11,7 @@ import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from './AvatarUpload';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { cn } from '@/utils/cn';
+import { formatPhone } from '@/utils/formatPhone';
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
@@ -37,7 +38,7 @@ export default function SettingsScreen() {
           value={user.displayName}
           onSave={(v) => updateProfile({ displayName: v })}
         />
-        <ReadOnly label="phone number" value={user.phoneNumber} />
+        <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
         <InlineText
           label="email"
           value={user.email}

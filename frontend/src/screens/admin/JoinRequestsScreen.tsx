@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { cn } from '@/utils/cn';
+import { formatPhone } from '@/utils/formatPhone';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 
@@ -47,7 +48,7 @@ export default function JoinRequestsScreen() {
   if (isError) return <ContentError message="couldn't load join requests — try refreshing" />;
 
   async function decideRequest(request: JoinRequestSummary, status: 'approved' | 'rejected') {
-    const name = request.displayName || request.phoneNumber;
+    const name = request.displayName || formatPhone(request.phoneNumber);
     const message =
       status === 'approved'
         ? `approve ${name}? once you approve someone you can't un-approve them — are you sure?`
@@ -76,7 +77,7 @@ export default function JoinRequestsScreen() {
   }
 
   async function unrejectRequest(request: JoinRequestSummary) {
-    const name = request.displayName || request.phoneNumber;
+    const name = request.displayName || formatPhone(request.phoneNumber);
     const ok = await confirm({
       title: 'un-reject request',
       message: `un-reject ${name}? this will move them back to pending review.`,
@@ -168,7 +169,7 @@ function JoinRequestCard({
         <div>
           <h2 className="text-base font-medium">{request.displayName}</h2>
           <p className="text-muted text-xs">
-            {request.phoneNumber} · submitted{' '}
+            {formatPhone(request.phoneNumber)} · submitted{' '}
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
           </p>
         </div>

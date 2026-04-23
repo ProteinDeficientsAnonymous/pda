@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
 import { useCreateUser, type CreateUserResult } from '@/api/users';
+import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 interface Props {
@@ -102,7 +103,7 @@ function CredentialsView({
   onClose: () => void;
 }) {
   const magicLinkUrl = buildMagicLinkUrl(result.magicLinkToken);
-  const greeting = result.displayName || result.phoneNumber;
+  const greeting = result.displayName || formatPhone(result.phoneNumber);
   const welcomeMessage = buildWelcomeMessage(result.displayName, magicLinkUrl);
   const smsHref = buildSmsHref(result.phoneNumber, welcomeMessage);
 
@@ -117,7 +118,8 @@ function CredentialsView({
   return (
     <Dialog open={open} onClose={onClose} title={`welcome ${greeting}`}>
       <p className="text-sm text-neutral-700">
-        share this one-time login link with {result.phoneNumber}. it won't be shown again.
+        share this one-time login link with {formatPhone(result.phoneNumber)}. it won't be shown
+        again.
       </p>
       <div className="mt-3 overflow-x-auto rounded-md bg-neutral-100 px-3 py-2 font-mono text-xs break-all">
         {magicLinkUrl}

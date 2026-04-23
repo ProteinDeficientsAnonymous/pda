@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Textarea } from '@/components/ui/Textarea';
 import { useBulkCreateUsers, type BulkCreateResponse, type BulkCreateResult } from '@/api/users';
+import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 interface Props {
@@ -119,7 +120,7 @@ function ResultsView({
           <ul className="flex flex-col gap-1">
             {failures.map((r) => (
               <li key={r.row} className="text-sm text-red-700">
-                {r.phoneNumber} — {r.error ?? 'unknown error'}
+                {formatPhone(r.phoneNumber)} — {r.error ?? 'unknown error'}
               </li>
             ))}
           </ul>
@@ -150,7 +151,9 @@ function MagicLinkRow({ result }: { result: BulkCreateResult }) {
   return (
     <div className="flex flex-col gap-1 rounded-md border border-neutral-200 bg-white p-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-sm font-medium text-neutral-900">{result.phoneNumber}</span>
+        <span className="truncate text-sm font-medium text-neutral-900">
+          {formatPhone(result.phoneNumber)}
+        </span>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => void copy()}>
             {copied ? 'copied ✓' : 'copy link'}

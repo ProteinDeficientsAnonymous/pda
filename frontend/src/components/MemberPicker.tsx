@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useUserSearch, type MemberSearchResult } from '@/api/userSearch';
 import { TextField } from './ui/TextField';
 import { cn } from '@/utils/cn';
+import { formatPhone } from '@/utils/formatPhone';
 
 interface Props {
   label: string;
@@ -54,7 +55,7 @@ export function MemberPicker({ label, selected, onChange, hint, excludeIds = [] 
                 className="hover:bg-background flex w-full items-center justify-between px-3 py-2 text-start text-sm"
               >
                 <span>{m.displayName}</span>
-                <span className="text-muted text-xs">{m.phoneNumber}</span>
+                <span className="text-muted text-xs">{formatPhone(m.phoneNumber)}</span>
               </button>
             </li>
           ))}
