@@ -6,7 +6,13 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from community._field_limits import FieldLimit
-from community.models import EventStatus, EventType, InvitePermission, PageVisibility
+from community.models import (
+    AttendanceStatus,
+    EventStatus,
+    EventType,
+    InvitePermission,
+    PageVisibility,
+)
 
 
 def _require_path(url: str, domain_hint: str) -> str:
@@ -89,6 +95,7 @@ class RSVPGuestOut(BaseModel):
     has_plus_one: bool = False
     phone: str | None = None
     photo_url: str = ""
+    attendance: str = AttendanceStatus.UNKNOWN
 
 
 class EventListOut(BaseModel):
@@ -175,6 +182,37 @@ class EventOut(BaseModel):
 class RSVPIn(BaseModel):
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
+
+
+class CancellationOut(BaseModel):
+    user_id: str
+    name: str
+    cancelled_at: datetime
+    days_before_event: int
+
+
+class EventStatsOut(BaseModel):
+    going_count: int = 0
+    maybe_count: int = 0
+    cant_go_count: int = 0
+    no_response_count: int = 0
+    waitlisted_count: int = 0
+    attended_count: int = 0
+    no_show_count: int = 0
+    not_marked_count: int = 0
+    cancellations: list[CancellationOut] = []
+
+
+class AttendanceIn(BaseModel):
+    attendance: str = Field(max_length=FieldLimit.CHOICE)
+
+    @field_validator("attendance")
+    @classmethod
+    def validate_attendance(cls, v: str) -> str:
+        valid = {AttendanceStatus.UNKNOWN, AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW}
+        if v not in valid:
+            raise ValueError(f"attendance must be one of: {', '.join(sorted(valid))}")
+        return v
 
 
 class EventIn(BaseModel):

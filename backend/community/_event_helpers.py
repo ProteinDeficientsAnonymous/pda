@@ -10,7 +10,7 @@ from users.permissions import PermissionKey
 
 from community._event_schemas import EventOut, RSVPGuestOut
 from community._shared import _authenticated_user, _members_only
-from community.models import Event, EventRSVP, RSVPStatus, SurveyQuestionType
+from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus, SurveyQuestionType
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -35,6 +35,7 @@ def _build_guest_list(rsvps, can_see_phones: bool) -> list[RSVPGuestOut]:
             has_plus_one=r.has_plus_one,
             phone=r.user.phone_number if can_see_phones else None,
             photo_url=media_path(r.user.profile_photo),
+            attendance=r.attendance,
         )
         for r in rsvps
     ]
@@ -81,6 +82,66 @@ def _attending_headcount_db(event: Event, exclude_user=None) -> int:
 def _waitlisted_count(event: Event) -> int:
     """Count waitlisted RSVPs from prefetched data."""
     return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.WAITLISTED)
+
+
+def _maybe_count(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.MAYBE)
+
+
+def _cant_go_count(event: Event) -> int:
+    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.CANT_GO)
+
+
+def _no_response_count(event: Event) -> int:
+    """Invited users who have no RSVP row."""
+    responded = {r.user_id for r in event.rsvps.all()}
+    return sum(1 for u in event.invited_users.all() if u.pk not in responded)
+
+
+def _attended_count(event: Event) -> int:
+    return sum(
+        1
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.ATTENDED
+    )
+
+
+def _no_show_count(event: Event) -> int:
+    return sum(
+        1
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.NO_SHOW
+    )
+
+
+def _not_marked_count(event: Event) -> int:
+    return sum(
+        1
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.UNKNOWN
+    )
+
+
+def _cancellations(event: Event) -> list[dict]:
+    """Return currently-CANT_GO RSVPs with inferred lead time (days before start).
+
+    Lossy for users who flipped between statuses — uses updated_at as proxy.
+    Returns [] if the event has no start_datetime.
+    """
+    if event.start_datetime is None:
+        return []
+    rows = [
+        {
+            "user_id": str(r.user_id),
+            "name": r.user.display_name or r.user.phone_number,
+            "cancelled_at": r.updated_at,
+            "days_before_event": (event.start_datetime - r.updated_at).days,
+        }
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.CANT_GO
+    ]
+    rows.sort(key=lambda x: x["cancelled_at"], reverse=True)
+    return rows
 
 
 def promote_from_waitlist(event: Event) -> None:

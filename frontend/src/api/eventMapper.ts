@@ -1,7 +1,8 @@
 // Wire (snake_case, ISO strings) → Event (camelCase, Date objects) mapper.
 // Kept separate from events.ts so the caller module stays ≤150 lines.
 
-import type { Event, EventGuest } from '@/models/event';
+import type { AttendanceStatusValue, Event, EventGuest } from '@/models/event';
+import { AttendanceStatus } from '@/models/event';
 
 interface WireGuest {
   user_id: string;
@@ -10,6 +11,7 @@ interface WireGuest {
   phone?: string | null;
   photo_url?: string;
   has_plus_one?: boolean;
+  attendance?: string;
 }
 
 export interface WireEvent {
@@ -65,6 +67,12 @@ export interface WireEvent {
   status?: string;
 }
 
+function mapAttendance(value: string | undefined): AttendanceStatusValue {
+  if (value === AttendanceStatus.Attended) return AttendanceStatus.Attended;
+  if (value === AttendanceStatus.NoShow) return AttendanceStatus.NoShow;
+  return AttendanceStatus.Unknown;
+}
+
 function mapGuest(g: WireGuest): EventGuest {
   return {
     userId: g.user_id,
@@ -73,6 +81,7 @@ function mapGuest(g: WireGuest): EventGuest {
     phone: g.phone ?? null,
     photoUrl: g.photo_url ?? '',
     hasPlusOne: g.has_plus_one ?? false,
+    attendance: mapAttendance(g.attendance),
   };
 }
 

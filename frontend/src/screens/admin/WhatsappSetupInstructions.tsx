@@ -50,17 +50,14 @@ const STEPS: Step[] = [
 
 export function WhatsappSetupInstructions() {
   return (
-    <details className="group mb-6 rounded-lg border border-neutral-200 bg-white">
-      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-neutral-800">
+    <details className="border-border bg-surface group mb-6 rounded-lg border">
+      <summary className="text-foreground flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium">
         <span>setup instructions</span>
-        <span
-          aria-hidden="true"
-          className="text-neutral-500 transition-transform group-open:rotate-180"
-        >
+        <span aria-hidden="true" className="text-muted transition-transform group-open:rotate-180">
           ▾
         </span>
       </summary>
-      <div className="border-t border-neutral-200 px-4 py-4">
+      <div className="border-border border-t px-4 py-4">
         <ol className="flex flex-col gap-4">
           {STEPS.map((step) => (
             <StepRow key={step.number} step={step} />
@@ -74,12 +71,12 @@ export function WhatsappSetupInstructions() {
 function StepRow({ step }: { step: Step }) {
   return (
     <li className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
+      <span className="bg-surface-dim text-foreground-secondary mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold">
         {step.number}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="text-sm font-semibold text-neutral-900">{step.title}</p>
-        <p className="text-sm text-neutral-600">{step.body}</p>
+        <p className="text-foreground text-sm font-semibold">{step.title}</p>
+        <p className="text-foreground-secondary text-sm">{step.body}</p>
         {step.code ? <CodeBlock code={step.code} /> : null}
       </div>
     </li>
@@ -97,14 +94,14 @@ function CodeBlock({ code }: { code: string }) {
   }
 
   return (
-    <div className="flex items-start gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-2">
-      <pre className="flex-1 overflow-x-auto px-1 py-1 font-mono text-xs leading-relaxed text-neutral-800">
+    <div className="border-border bg-surface-dim flex items-start gap-2 rounded-md border p-2">
+      <pre className="text-foreground flex-1 overflow-x-auto px-1 py-1 font-mono text-xs leading-relaxed">
         {code}
       </pre>
       <button
         type="button"
         onClick={() => void onCopy()}
-        className="flex-none rounded border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-700 hover:bg-neutral-100"
+        className="border-border bg-surface text-foreground-secondary hover:bg-surface-dim flex-none rounded border px-2 py-1 text-xs"
         aria-label="copy to clipboard"
       >
         copy

@@ -103,7 +103,7 @@ function WhatsappConfigForm({ config }: { config: WhatsappConfig }) {
             {error}
           </p>
         ) : null}
-        {saved ? <p className="text-sm text-green-700">saved ✓</p> : null}
+        {saved ? <p className="text-sm text-green-700 dark:text-green-400">saved ✓</p> : null}
 
         <div className="flex justify-end">
           <Button type="submit" disabled={update.isPending}>

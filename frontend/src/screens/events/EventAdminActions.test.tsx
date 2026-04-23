@@ -44,7 +44,8 @@ const BASE_EVENT: Event = {
   id: 'ev1',
   title: 'Test Event',
   description: '',
-  startDatetime: new Date('2025-06-01T18:00:00Z'),
+  // Upcoming by default — individual tests override for past/just-ended cases.
+  startDatetime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   endDatetime: null,
   location: '',
   latitude: null,
@@ -214,6 +215,8 @@ describe('EventAdminActions', () => {
 
     const pastCancelled: Event = {
       ...BASE_EVENT,
+      // A full day ago — well past the 6-hour grace window.
+      startDatetime: new Date(Date.now() - 24 * 60 * 60 * 1000),
       isPast: true,
       status: EventStatus.Cancelled,
     };
@@ -222,5 +225,53 @@ describe('EventAdminActions', () => {
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
+  });
+
+  // 6-hour grace window: hosts can still fix typos / tweak details during and
+  // just after the event.
+  it('creator can still edit an event that started 2 hours ago (within grace window)', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const justStarted: Event = {
+      ...BASE_EVENT,
+      startDatetime: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      endDatetime: null,
+      isPast: true,
+    };
+    renderActions(justStarted);
+
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+  });
+
+  it('creator cannot edit an event that ended 10 hours ago (past grace window)', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const longOver: Event = {
+      ...BASE_EVENT,
+      startDatetime: new Date(Date.now() - 12 * 60 * 60 * 1000),
+      endDatetime: new Date(Date.now() - 10 * 60 * 60 * 1000),
+      isPast: true,
+    };
+    renderActions(longOver);
+
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
+  });
+
+  it('creator uses endDatetime (not startDatetime) as the grace-window anchor', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    // Started 4h ago, still going (ends 1h from now). Well within grace.
+    const longRunning: Event = {
+      ...BASE_EVENT,
+      startDatetime: new Date(Date.now() - 4 * 60 * 60 * 1000),
+      endDatetime: new Date(Date.now() + 1 * 60 * 60 * 1000),
+      isPast: false,
+    };
+    renderActions(longRunning);
+
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
   });
 });

@@ -147,6 +147,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/users/directory/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Member Directory
+         * @description Authed-only member directory. Respects each user's show_phone/show_email flags.
+         */
+        get: operations["users__auth_list_member_directory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/{user_id}/profile/": {
         parameters: {
             query?: never;
@@ -650,6 +670,40 @@ export interface paths {
         post: operations["community__event_rsvps_upsert_rsvp"];
         /** Delete Rsvp */
         delete: operations["community__event_rsvps_delete_rsvp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/stats/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Stats */
+        get: operations["community__event_rsvps_get_event_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Attendance */
+        post: operations["community__event_rsvps_set_attendance"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1451,6 +1505,28 @@ export interface components {
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
         };
+        /** MemberDirectoryOut */
+        MemberDirectoryOut: {
+            /** Id */
+            id: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Phone Number
+             * @default
+             */
+            phone_number: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Profile Photo Url
+             * @default
+             */
+            profile_photo_url: string;
+        };
         /** MemberProfileOut */
         MemberProfileOut: {
             /** Id */
@@ -2208,6 +2284,11 @@ export interface components {
              * @default
              */
             photo_url: string;
+            /**
+             * Attendance
+             * @default unknown
+             */
+            attendance: string;
         };
         /** EventIn */
         EventIn: {
@@ -2376,6 +2457,73 @@ export interface components {
              * @default false
              */
             has_plus_one: boolean;
+        };
+        /** CancellationOut */
+        CancellationOut: {
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Cancelled At
+             * Format: date-time
+             */
+            cancelled_at: string;
+            /** Days Before Event */
+            days_before_event: number;
+        };
+        /** EventStatsOut */
+        EventStatsOut: {
+            /**
+             * Going Count
+             * @default 0
+             */
+            going_count: number;
+            /**
+             * Maybe Count
+             * @default 0
+             */
+            maybe_count: number;
+            /**
+             * Cant Go Count
+             * @default 0
+             */
+            cant_go_count: number;
+            /**
+             * No Response Count
+             * @default 0
+             */
+            no_response_count: number;
+            /**
+             * Waitlisted Count
+             * @default 0
+             */
+            waitlisted_count: number;
+            /**
+             * Attended Count
+             * @default 0
+             */
+            attended_count: number;
+            /**
+             * No Show Count
+             * @default 0
+             */
+            no_show_count: number;
+            /**
+             * Not Marked Count
+             * @default 0
+             */
+            not_marked_count: number;
+            /**
+             * Cancellations
+             * @default []
+             */
+            cancellations: components["schemas"]["CancellationOut"][];
+        };
+        /** AttendanceIn */
+        AttendanceIn: {
+            /** Attendance */
+            attendance: string;
         };
         /** EventFlagOut */
         EventFlagOut: {
@@ -3340,6 +3488,26 @@ export interface operations {
             };
         };
     };
+    users__auth_list_member_directory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberDirectoryOut"][];
+                };
+            };
+        };
+    };
     users__auth_get_member_profile: {
         parameters: {
             query?: never;
@@ -4189,6 +4357,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     community__join_requests_list_join_requests: {
@@ -4366,6 +4543,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RequestLoginLinkOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };
@@ -4684,6 +4870,109 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_rsvps_get_event_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventStatsOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_rsvps_set_attendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

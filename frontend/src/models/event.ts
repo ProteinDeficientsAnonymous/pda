@@ -40,6 +40,13 @@ export const RsvpServerStatus = {
   Waitlisted: 'waitlisted',
 } as const;
 
+export const AttendanceStatus = {
+  Unknown: 'unknown',
+  Attended: 'attended',
+  NoShow: 'no_show',
+} as const;
+export type AttendanceStatusValue = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
+
 export interface EventGuest {
   userId: string;
   name: string;
@@ -47,6 +54,26 @@ export interface EventGuest {
   phone: string | null;
   photoUrl: string;
   hasPlusOne: boolean;
+  attendance: AttendanceStatusValue;
+}
+
+export interface EventCancellation {
+  userId: string;
+  name: string;
+  cancelledAt: Date;
+  daysBeforeEvent: number;
+}
+
+export interface EventStats {
+  goingCount: number;
+  maybeCount: number;
+  cantGoCount: number;
+  noResponseCount: number;
+  waitlistedCount: number;
+  attendedCount: number;
+  noShowCount: number;
+  notMarkedCount: number;
+  cancellations: EventCancellation[];
 }
 
 // List endpoint returns a subset; detail endpoint returns everything.

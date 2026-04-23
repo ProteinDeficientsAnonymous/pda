@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import type { Event, EventGuest } from '@/models/event';
-import { RsvpServerStatus } from '@/models/event';
+import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
 
 type Tab = 'going' | 'maybe' | 'cant' | 'waitlist' | 'invited';
 
@@ -142,6 +142,7 @@ export function InvitedList({ event }: { event: Event }) {
               phone: null,
               photoUrl,
               hasPlusOne: false,
+              attendance: AttendanceStatus.Unknown,
             }}
           />
         );

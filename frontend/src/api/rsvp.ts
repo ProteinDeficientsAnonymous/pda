@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
 import { useAuthStore } from '@/auth/store';
 import { eventKeys } from './events';
+import { eventStatsKeys } from './eventStats';
 import { mapEvent, type WireEvent } from './eventMapper';
 import type { Event } from '@/models/event';
 import type { RsvpStatus } from '@/models/event';
@@ -45,6 +46,9 @@ export function useSetRsvp() {
     },
     onSuccess: (event) => {
       updateCaches(qc, event, isAuthed);
+      // Host stats include cancellations derived from CANT_GO rows — if this
+      // user just flipped in/out of that status, the panel must re-fetch.
+      void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(event.id) });
     },
   });
 }
@@ -62,6 +66,7 @@ export function useRemoveRsvp() {
       // invalidate — cheaper than a second round-trip.
       void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed) });
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });
 }

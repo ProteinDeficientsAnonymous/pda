@@ -10,11 +10,13 @@
       "WebFetch(domain:docs.railway.com)",
       "Skill(update-config)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(mkdir -p ~/.claude/hooks)",
+      "Read(//Users/leahpeker/.claude/**)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "github"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

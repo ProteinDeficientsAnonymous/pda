@@ -1,27 +1,47 @@
 """RSVP endpoints for events."""
 
 import logging
+from datetime import timedelta
 from uuid import UUID
 
 from config.audit import audit_log
 from config.ratelimit import rate_limit
 from django.db import transaction
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 
 from community._event_helpers import (
+    _attended_count,
+    _attending_headcount,
     _attending_headcount_db,
     _can_see_invite_only,
+    _cancellations,
+    _cant_go_count,
     _event_out,
+    _maybe_count,
+    _no_response_count,
+    _no_show_count,
+    _not_marked_count,
+    _waitlisted_count,
     promote_from_waitlist,
 )
-from community._event_schemas import EventOut, RSVPIn
+from community._event_schemas import AttendanceIn, EventOut, EventStatsOut, RSVPIn
 from community._events import _can_edit_event
 from community._shared import ErrorOut
 from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 
 router = Router()
+
+CHECK_IN_OPENS_BEFORE_START = timedelta(hours=1)
+
+
+def _check_in_open(event: Event) -> bool:
+    """Check-in opens 1 hour before start and never closes."""
+    if event.start_datetime is None:
+        return False
+    return timezone.now() >= event.start_datetime - CHECK_IN_OPENS_BEFORE_START
 
 
 def _validate_rsvp_access(
@@ -150,6 +170,84 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         .prefetch_related("co_hosts", "invited_users", "rsvps__user")
         .get(id=event_id)
     )
+    return Status(200, _event_out(event, request.auth))
+
+
+def _load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
+    return (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .filter(id=event_id)
+        .first()
+    )
+
+
+@router.get(
+    "/events/{event_id}/stats/",
+    response={200: EventStatsOut, 403: ErrorOut, 404: ErrorOut},
+    auth=JWTAuth(),
+)
+def get_event_stats(request, event_id: UUID):
+    event = _load_event_with_stats_prefetch(event_id)
+    if event is None:
+        return Status(404, ErrorOut(detail="Event not found."))
+    if not _can_edit_event(request.auth, event):
+        return Status(403, ErrorOut(detail="Only hosts can view event stats."))
+    return Status(
+        200,
+        EventStatsOut(
+            going_count=_attending_headcount(event),
+            maybe_count=_maybe_count(event),
+            cant_go_count=_cant_go_count(event),
+            no_response_count=_no_response_count(event),
+            waitlisted_count=_waitlisted_count(event),
+            attended_count=_attended_count(event),
+            no_show_count=_no_show_count(event),
+            not_marked_count=_not_marked_count(event),
+            cancellations=_cancellations(event),
+        ),
+    )
+
+
+@router.post(
+    "/events/{event_id}/rsvps/{user_id}/attendance/",
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    auth=JWTAuth(),
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="60/m")
+def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn):
+    event = (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .filter(id=event_id)
+        .first()
+    )
+    if event is None:
+        return Status(404, ErrorOut(detail="Event not found."))
+    if not _can_edit_event(request.auth, event):
+        return Status(403, ErrorOut(detail="Only hosts can mark attendance."))
+    if not _check_in_open(event):
+        return Status(400, ErrorOut(detail="Check-in opens an hour before the event starts."))
+
+    rsvp = EventRSVP.objects.filter(event=event, user_id=user_id).first()
+    if rsvp is None:
+        return Status(404, ErrorOut(detail="RSVP not found."))
+    if rsvp.status != RSVPStatus.ATTENDING:
+        return Status(400, ErrorOut(detail="Attendance can only be marked on going RSVPs."))
+
+    rsvp.attendance = payload.attendance
+    rsvp.save(update_fields=["attendance", "updated_at"])
+
+    audit_log(
+        logging.INFO,
+        "attendance_marked",
+        request,
+        target_type="event",
+        target_id=str(event_id),
+        details={"user_id": str(user_id), "attendance": payload.attendance},
+    )
+
+    event = _load_event_with_stats_prefetch(event_id)
     return Status(200, _event_out(event, request.auth))
 
 

@@ -59,7 +59,7 @@ function AdminActionRow({
   const hasNoAttendees = event.attendingCount === 0;
   const canDelete = (isCreator || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees;
-  const canEditEvent = !event.isPast;
+  const canEditEvent = isEditWindowOpen(event);
 
   async function onCancel() {
     setCancelError(null);
@@ -214,6 +214,17 @@ function AdminActionRow({
       </Dialog>
     </div>
   );
+}
+
+// Editing stays open until 6 hours after the event's end (or start, if no end
+// set) — gives hosts room to fix typos, post follow-ups, or tweak details
+// during and right after the event without hitting a stale-data wall.
+const EDIT_GRACE_MS = 6 * 60 * 60 * 1000;
+
+function isEditWindowOpen(event: Event): boolean {
+  const reference = event.endDatetime ?? event.startDatetime;
+  if (!reference) return true;
+  return Date.now() <= reference.getTime() + EDIT_GRACE_MS;
 }
 
 function extractMutationError(err: unknown): string {

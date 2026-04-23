@@ -67,6 +67,12 @@ class RSVPStatus(models.TextChoices):
     WAITLISTED = "waitlisted", "Waitlisted"
 
 
+class AttendanceStatus(models.TextChoices):
+    UNKNOWN = "unknown", "Unknown"
+    ATTENDED = "attended", "Attended"
+    NO_SHOW = "no_show", "No show"
+
+
 class PollAvailability:
     YES = "yes"
     MAYBE = "maybe"

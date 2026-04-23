@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from community.api import _build_guest_list, _can_see_phones, _find_my_rsvp
-from community.models import RSVPStatus
+from community.models import AttendanceStatus, RSVPStatus
 
 
 class TestCanSeePhones:
@@ -45,6 +45,7 @@ class TestBuildGuestList:
             user=SimpleNamespace(display_name=name, phone_number=phone, profile_photo=None),
             status=status,
             has_plus_one=False,
+            attendance=AttendanceStatus.UNKNOWN,
         )
 
     def test_empty_rsvps(self):

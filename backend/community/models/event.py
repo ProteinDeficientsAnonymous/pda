@@ -7,6 +7,7 @@ from django.db import models
 from django.utils import timezone
 
 from community.models.choices import (
+    AttendanceStatus,
     EventFlagStatus,
     EventStatus,
     EventType,
@@ -123,6 +124,11 @@ class EventRSVP(models.Model):
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="event_rsvps")
     status = models.CharField(max_length=20, choices=RSVPStatus.choices)
     has_plus_one = models.BooleanField(default=False)
+    attendance = models.CharField(
+        max_length=20,
+        choices=AttendanceStatus.choices,
+        default=AttendanceStatus.UNKNOWN,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
