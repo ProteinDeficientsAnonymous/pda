@@ -1,21 +1,11 @@
 name: deploy railway (production)
 
 # Manual production deploys only — staging auto-deploys from main via Railway's
-# GitHub integration.
-#
-# Normal deploys use main. Rollbacks can target any ref (tag, older commit,
-# hotfix branch) by running the workflow from that ref. The `confirm_sha` input
-# must match the short SHA of the ref being deployed — a speed bump so you
-# can't fat-finger prod.
-#
+# GitHub integration. Pick the ref from the "Run workflow" dropdown (main for
+# normal deploys; a tag or older commit for rollbacks).
 # Pin matches image pulled 2026-04-20; bump intentionally when upgrading CLI.
 on:
   workflow_dispatch:
-    inputs:
-      confirm_sha:
-        description: "short SHA of the commit you intend to deploy (first 7 chars) — must match HEAD"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -24,35 +14,8 @@ env:
   RAILWAY_CLI_IMAGE: ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c
 
 jobs:
-  confirm-and-warn:
-    name: confirm SHA and warn on non-main
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: verify confirm_sha matches HEAD
-        env:
-          CONFIRM_SHA: ${{ github.event.inputs.confirm_sha }}
-        run: |
-          set -eu
-          HEAD_SHORT="$(git rev-parse --short=7 HEAD)"
-          INPUT_SHORT="$(echo "${CONFIRM_SHA}" | tr '[:upper:]' '[:lower:]' | cut -c1-7)"
-          if [ "${HEAD_SHORT}" != "${INPUT_SHORT}" ]; then
-            echo "::error::confirm_sha mismatch — input='${INPUT_SHORT}' HEAD='${HEAD_SHORT}' on ref '${GITHUB_REF}'"
-            echo "you typed the wrong SHA, or you're on the wrong ref. aborting."
-            exit 1
-          fi
-          echo "confirm_sha matches HEAD (${HEAD_SHORT}) on ref ${GITHUB_REF}"
-
-      - name: warn if not deploying from main
-        run: |
-          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
-            echo "::warning::deploying to PRODUCTION from non-main ref '${GITHUB_REF}' — this should only happen for rollbacks or hotfixes"
-          fi
-
   deploy-production:
     name: deploy to railway (production)
-    needs: confirm-and-warn
     runs-on: ubuntu-latest
     environment: railway-production
     concurrency:
