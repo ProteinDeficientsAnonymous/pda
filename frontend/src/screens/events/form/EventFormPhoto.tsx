@@ -102,15 +102,17 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
         disabled={locked}
         aria-label={hasPhoto ? 'change cover photo' : 'add a cover photo'}
         className={cn(
-          'group relative aspect-video w-full overflow-hidden rounded-[var(--radius-md)]',
+          'group relative w-full overflow-hidden rounded-[var(--radius-md)]',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
-          hasPhoto ? 'bg-surface-raised' : 'border-brand-200 bg-brand-50 border-2 border-dashed',
+          hasPhoto
+            ? 'bg-surface-raised'
+            : 'border-brand-200 bg-brand-50 aspect-video border-2 border-dashed',
           locked && 'cursor-not-allowed opacity-60',
         )}
       >
         {hasPhoto ? (
           <>
-            <img src={displayUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={displayUrl} alt="" className="block h-auto max-h-[70vh] w-full" />
             <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
               <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
                 change photo

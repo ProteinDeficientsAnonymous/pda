@@ -29,7 +29,7 @@ export default function EventDetailScreen() {
         <img
           src={event.photoUrl}
           alt=""
-          className="mb-4 aspect-video w-full rounded-lg object-cover"
+          className="mb-4 h-auto max-h-[70vh] w-full rounded-lg"
           loading="lazy"
         />
       ) : null}
