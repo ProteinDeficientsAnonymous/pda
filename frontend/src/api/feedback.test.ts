@@ -38,7 +38,6 @@ describe('useSubmitFeedback', () => {
         route: '/calendar',
         userAgent: 'jsdom',
         userDisplayName: 'alice',
-        userPhone: '+12125551234',
         appVersion: '',
       },
     });
@@ -52,7 +51,6 @@ describe('useSubmitFeedback', () => {
         route: '/calendar',
         user_agent: 'jsdom',
         user_display_name: 'alice',
-        user_phone: '+12125551234',
         app_version: '',
       },
     });
@@ -70,7 +68,6 @@ describe('useSubmitFeedback', () => {
         route: '/',
         userAgent: '',
         userDisplayName: '',
-        userPhone: '',
         appVersion: '',
       },
     });
@@ -97,7 +94,6 @@ describe('useSubmitFeedback', () => {
           route: '/',
           userAgent: '',
           userDisplayName: '',
-          userPhone: '',
           appVersion: '',
         },
       }),

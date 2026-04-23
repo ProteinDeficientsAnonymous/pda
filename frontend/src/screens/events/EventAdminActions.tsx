@@ -1,11 +1,10 @@
-// Admin actions for events: edit, duplicate, cancel, archive. Visible only
-// to the creator, a co-host, or a user with manage_events. Matches
-// EventAdminActions from the flutter app.
+// Admin actions for events: edit, publish (drafts), cancel, delete.
+// Visible only to the creator, a co-host, or a user with manage_events.
 
 import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useArchiveEvent, useUpdateEvent } from '@/api/eventWrites';
+import { useCancelEvent, useDeleteEvent, useUpdateEvent } from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -47,24 +46,25 @@ function AdminActionRow({
   const navigate = useNavigate();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const update = useUpdateEvent(event.id);
-  const archive = useArchiveEvent(event.id);
+  const cancelMut = useCancelEvent(event.id);
+  const deleteMut = useDeleteEvent(event.id);
   const [publishError, setPublishError] = useState<string | null>(null);
 
   const isCancelled = event.status === EventStatus.Cancelled;
   const isDraft = event.status === EventStatus.Draft;
   const hasNoAttendees = event.attendingCount === 0;
-  const canArchive = (isCreator || canManage) && (isDraft || isCancelled || hasNoAttendees);
+  const canDelete = (isCreator || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees;
   const canEditEvent = isEditWindowOpen(event);
 
   async function onCancel() {
     setCancelError(null);
     try {
-      await archive.mutateAsync();
+      await cancelMut.mutateAsync();
       setCancelOpen(false);
     } catch (err) {
       setCancelError(extractMutationError(err));
@@ -80,13 +80,13 @@ function AdminActionRow({
     }
   }
 
-  async function onArchive() {
-    setArchiveError(null);
+  async function onDelete() {
+    setDeleteError(null);
     try {
-      await archive.mutateAsync();
+      await deleteMut.mutateAsync();
       void navigate('/calendar', { replace: true });
     } catch (err) {
-      setArchiveError(extractMutationError(err));
+      setDeleteError(extractMutationError(err));
     }
   }
 
@@ -118,15 +118,15 @@ function AdminActionRow({
             cancel event
           </Button>
         ) : null}
-        {canArchive ? (
+        {canDelete ? (
           <Button
             variant="secondary"
             onClick={() => {
-              setArchiveOpen(true);
+              setDeleteOpen(true);
             }}
             className="border-red-300 text-red-700 hover:bg-red-50"
           >
-            archive
+            delete
           </Button>
         ) : null}
       </div>
@@ -146,7 +146,7 @@ function AdminActionRow({
       >
         <p className="text-foreground-secondary text-sm">
           mark this event as cancelled? attendees will get a notification and see a cancelled badge
-          — you can't un-cancel from the React app yet.
+          — you can't un-cancel from the react app yet.
         </p>
         {cancelError ? (
           <p role="alert" className="mt-3 text-sm text-red-600">
@@ -167,48 +167,48 @@ function AdminActionRow({
             onClick={() => {
               void onCancel();
             }}
-            disabled={archive.isPending}
+            disabled={cancelMut.isPending}
           >
-            {archive.isPending ? 'cancelling…' : 'cancel event'}
+            {cancelMut.isPending ? 'cancelling…' : 'cancel event'}
           </Button>
         </div>
       </Dialog>
 
       <Dialog
-        open={archiveOpen}
+        open={deleteOpen}
         onClose={() => {
-          setArchiveOpen(false);
-          setArchiveError(null);
+          setDeleteOpen(false);
+          setDeleteError(null);
         }}
-        title="archive event"
+        title="delete event"
       >
         <p className="text-foreground-secondary text-sm">
-          archive this event? it will be marked cancelled and hidden from the active calendar. This
-          cannot be undone from the React app yet.
+          delete this event? it will be removed from the calendar and can't be recovered from the
+          react app.
         </p>
-        {archiveError ? (
+        {deleteError ? (
           <p role="alert" className="mt-3 text-sm text-red-600">
-            {archiveError}
+            {deleteError}
           </p>
         ) : null}
         <div className="mt-4 flex justify-end gap-2">
           <Button
             variant="ghost"
             onClick={() => {
-              setArchiveOpen(false);
-              setArchiveError(null);
+              setDeleteOpen(false);
+              setDeleteError(null);
             }}
-            disabled={archive.isPending}
+            disabled={deleteMut.isPending}
           >
             back
           </Button>
           <Button
             onClick={() => {
-              void onArchive();
+              void onDelete();
             }}
-            disabled={archive.isPending}
+            disabled={deleteMut.isPending}
           >
-            {archive.isPending ? 'archiving…' : 'archive'}
+            {deleteMut.isPending ? 'deleting…' : 'delete'}
           </Button>
         </div>
       </Dialog>

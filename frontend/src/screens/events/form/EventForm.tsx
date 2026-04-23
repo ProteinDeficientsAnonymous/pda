@@ -8,7 +8,7 @@
 // collapse by default so simple events don't feel like a chore — summary
 // badges on each header show what's already filled in.
 
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { apiClient } from '@/api/client';
@@ -89,6 +89,16 @@ export function EventForm({ existing }: Props) {
   const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<Blob | null>(null);
+  const pendingPhotoUrl = useMemo(
+    () => (pendingPhoto ? URL.createObjectURL(pendingPhoto) : null),
+    [pendingPhoto],
+  );
+  useEffect(() => {
+    if (!pendingPhotoUrl) return;
+    return () => {
+      URL.revokeObjectURL(pendingPhotoUrl);
+    };
+  }, [pendingPhotoUrl]);
   // Buffered poll options — create-flow only. On submit we fire create-event
   // then POST the poll. If the poll POST fails we still land on the new
   // event's detail page and the host can retry from there.
@@ -205,7 +215,7 @@ export function EventForm({ existing }: Props) {
       className="flex flex-col gap-4"
     >
       <EventFormPhoto
-        photoUrl={existing?.photoUrl ?? (pendingPhoto ? 'pending' : '')}
+        photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
         photoUpdatedAt={null}
         onCrop={onCropPhoto}
         onDelete={existing || pendingPhoto ? onDeletePhoto : undefined}

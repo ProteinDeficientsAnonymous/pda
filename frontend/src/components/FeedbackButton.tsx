@@ -86,8 +86,7 @@ export function FeedbackButton() {
         metadata: {
           route: location.pathname,
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-          userDisplayName: user?.displayName ?? '',
-          userPhone: user?.phoneNumber ?? '',
+          userDisplayName: (user?.displayName ?? '').split(' ')[0] ?? '',
           appVersion: '',
         },
       });

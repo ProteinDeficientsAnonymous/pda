@@ -6,6 +6,7 @@ import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
 import { useDeleteRole, useRoles, type Role } from '@/api/roles';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { RoleFormDialog } from './RoleFormDialog';
 
@@ -16,6 +17,7 @@ export function RolesTab() {
   const deleteRole = useDeleteRole();
   const [editing, setEditing] = useState<Role | null>(null);
   const [creating, setCreating] = useState(false);
+  const { confirm, element: confirmElement } = useConfirm();
 
   async function onDelete(role: Role) {
     if (PROTECTED_ROLE_NAMES.has(role.name)) return;
@@ -23,7 +25,12 @@ export function RolesTab() {
       role.userCount > 0
         ? `${String(role.userCount)} member${role.userCount === 1 ? ' has' : 's have'} the "${role.name}" role — deleting will remove it from ${role.userCount === 1 ? 'them' : 'all of them'}. continue?`
         : `delete the "${role.name}" role? this cannot be undone.`;
-    const confirmed = window.confirm(warning);
+    const confirmed = await confirm({
+      title: 'delete role',
+      message: warning,
+      confirmLabel: 'delete',
+      destructive: true,
+    });
     if (!confirmed) return;
     try {
       await deleteRole.mutateAsync(role.id);
@@ -119,6 +126,8 @@ export function RolesTab() {
           }}
         />
       ) : null}
+
+      {confirmElement}
     </>
   );
 }

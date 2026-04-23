@@ -11,7 +11,8 @@ import type { User } from '@/models/user';
 // Mock network-touching dependencies
 vi.mock('@/api/eventWrites', () => ({
   useUpdateEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
-  useArchiveEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
+  useCancelEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 import { EventAdminActions } from './EventAdminActions';
@@ -105,7 +106,7 @@ beforeEach(() => {
 });
 
 describe('EventAdminActions', () => {
-  it('creator sees edit and cancel (no archive) for active upcoming event with attendees', () => {
+  it('creator sees edit and cancel (no delete) for active upcoming event with attendees', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
 
@@ -113,12 +114,12 @@ describe('EventAdminActions', () => {
 
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancel event/i })).toBeInTheDocument();
-    // With attendees, the event must be cancelled before it can be archived.
-    expect(screen.queryByRole('button', { name: /^archive$/i })).not.toBeInTheDocument();
+    // With attendees, the event must be cancelled before it can be deleted.
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
-  // With no one RSVP'd, skip the cancel-then-archive two-step: show archive outright.
-  it('creator sees archive (no cancel) for active upcoming event with no attendees', () => {
+  // With no one RSVP'd, skip the cancel-then-delete two-step: show delete outright.
+  it('creator sees delete (no cancel) for active upcoming event with no attendees', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
 
@@ -126,11 +127,11 @@ describe('EventAdminActions', () => {
     renderActions(emptyEvent);
 
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^archive$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
   });
 
-  it('creator sees archive for draft event', () => {
+  it('creator sees delete for draft event', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
 
@@ -139,7 +140,7 @@ describe('EventAdminActions', () => {
 
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^publish$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^archive$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
   it('co-host sees edit and cancel buttons for upcoming event', () => {
@@ -150,8 +151,8 @@ describe('EventAdminActions', () => {
 
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancel event/i })).toBeInTheDocument();
-    // Co-host is not the creator, so no archive button (canArchive = isCreator || canManage)
-    expect(screen.queryByRole('button', { name: /^archive$/i })).not.toBeInTheDocument();
+    // Co-host is not the creator, so no delete button (canDelete = isCreator || canManage)
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
   it('creator sees no cancel button for a past event', () => {
@@ -162,10 +163,10 @@ describe('EventAdminActions', () => {
     const cancelledEvent: Event = { ...BASE_EVENT, status: EventStatus.Cancelled };
     renderActions(cancelledEvent);
 
-    // Edit and archive present, but no cancel-event button for already-cancelled events
+    // Edit and delete present, but no cancel-event button for already-cancelled events
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^archive$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
   it('regular member (not creator, not co-host) sees no admin action buttons', () => {
@@ -176,7 +177,7 @@ describe('EventAdminActions', () => {
 
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^archive$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
   it('unauthenticated user sees no admin action buttons', () => {
@@ -186,13 +187,12 @@ describe('EventAdminActions', () => {
 
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^archive$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
-  // Flutter gated delete on attendees count. React gates archive on status
-  // (draft/cancelled) and ignores attendees. This locks that behavior in:
-  // a draft event with attendees still shows archive.
-  it('creator sees archive for draft event regardless of attendees count', () => {
+  // A draft event with attendees still shows delete: drafts haven't been
+  // published, so there's nothing to cancel — users can delete directly.
+  it('creator sees delete for draft event regardless of attendees count', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
 
@@ -203,13 +203,13 @@ describe('EventAdminActions', () => {
     };
     renderActions(draftWithAttendees);
 
-    expect(screen.getByRole('button', { name: /^archive$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
-  // Events older than the 6-hour grace window can't be edited (would change
-  // historical record). Archive is still allowed on cancelled past events;
-  // cancel button hidden since it's already cancelled.
-  it('creator sees only archive (no edit) for a long-past cancelled event', () => {
+  // Past events can't be edited (would change historical record). Delete is
+  // still allowed on cancelled past events; cancel button hidden since it's
+  // already cancelled.
+  it('creator sees only delete (no edit) for a past cancelled event', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
 
@@ -223,7 +223,7 @@ describe('EventAdminActions', () => {
     renderActions(pastCancelled);
 
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^archive$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
   });
 

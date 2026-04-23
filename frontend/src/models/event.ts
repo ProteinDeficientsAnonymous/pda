@@ -17,6 +17,7 @@ export const EventStatus = {
   Active: 'active',
   Cancelled: 'cancelled',
   Draft: 'draft',
+  Deleted: 'deleted',
 } as const;
 
 export const InvitePermission = {

@@ -37,7 +37,6 @@ class FeedbackMetadataIn(BaseModel):
     route: str = Field(default="", max_length=500)
     user_agent: str = Field(default="", max_length=500)
     user_display_name: str = Field(default="", max_length=100)
-    user_phone: str = Field(default="", max_length=30)
     app_version: str = Field(default="", max_length=50)
 
 
@@ -78,9 +77,9 @@ def _build_feedback_metadata(meta: FeedbackMetadataIn) -> str:
     if meta.user_agent:
         lines.append(f"- **User Agent:** {meta.user_agent}")
     if meta.user_display_name:
-        lines.append(f"- **User:** {meta.user_display_name}")
-    if meta.user_phone:
-        lines.append(f"- **Phone:** {meta.user_phone}")
+        first_name = meta.user_display_name.split()[0] if meta.user_display_name.split() else ""
+        if first_name:
+            lines.append(f"- **User:** {first_name}")
     if meta.app_version:
         lines.append(f"- **App Version:** {meta.app_version}")
     return "\n".join(lines) if len(lines) > 2 else ""
@@ -129,8 +128,10 @@ def _build_issue_body(payload: FeedbackIn, auth_user) -> str:
         if metadata_section:
             parts.append(metadata_section)
 
-    if not isinstance(auth_user, AnonymousUser):
-        parts.append(f"\n_Submitted by {auth_user.display_name or auth_user.phone_number}_")
+    if not isinstance(auth_user, AnonymousUser) and auth_user.display_name:
+        first_name = auth_user.display_name.split()[0] if auth_user.display_name.split() else ""
+        if first_name:
+            parts.append(f"\n_Submitted by {first_name}_")
 
     return "\n\n".join(parts)
 

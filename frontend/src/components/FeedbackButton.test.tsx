@@ -156,7 +156,6 @@ describe('FeedbackButton', () => {
         route: '/events/mine',
         userAgent: 'jsdom-test-agent',
         userDisplayName: 'alice',
-        userPhone: '+12125551234',
       },
     });
     await waitFor(() => {
@@ -165,6 +164,29 @@ describe('FeedbackButton', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /send feedback/i })).not.toBeInTheDocument();
     });
+  });
+
+  it('sends only the first word of the display name and never sends phone', async () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: makeUser({ displayName: 'alice smith' }),
+      accessToken: 'tok',
+    });
+    const user = userEvent.setup();
+    renderButton();
+    await user.click(screen.getByRole('button', { name: /send feedback/i }));
+
+    await user.type(screen.getByRole('textbox', { name: /^title$/i }), 't');
+    await user.type(screen.getByRole('textbox', { name: /^description$/i }), 'd');
+    await user.click(screen.getByRole('button', { name: /^submit$/i }));
+
+    await waitFor(() => {
+      expect(submitFeedbackMock).toHaveBeenCalledTimes(1);
+    });
+    const payload = submitFeedbackMock.mock.calls[0]?.[0] as { metadata?: Record<string, unknown> };
+    const metadata = payload.metadata ?? {};
+    expect(metadata.userDisplayName).toBe('alice');
+    expect(metadata).not.toHaveProperty('userPhone');
   });
 
   it('exposes the github issue url in the success toast action', async () => {

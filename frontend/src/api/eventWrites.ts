@@ -13,7 +13,7 @@ import { mapEvent, type WireEvent } from './eventMapper';
 import type { Event } from '@/models/event';
 import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/paymentHandle';
 
-export type EventStatus = 'active' | 'draft' | 'cancelled';
+export type EventStatus = 'active' | 'draft' | 'cancelled' | 'deleted';
 
 export type VisibilityChoice = 'official' | 'public' | 'members_only' | 'invite_only';
 
@@ -139,11 +139,9 @@ function kebabToCamel(s: string): string {
   return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 }
 
-// Archive (a.k.a. cancel) an event. The backend has no DELETE route for
-// events — the only destructive path is PATCH status=cancelled. We always
-// send notify_attendees=true so RSVPs get pinged; the backend no-ops the
-// notification on draft→cancelled transitions.
-export function useArchiveEvent(eventId: string) {
+// Cancel an event (active → cancelled). Notifies attendees; the backend
+// no-ops notifications on draft→cancelled transitions.
+export function useCancelEvent(eventId: string) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
@@ -152,6 +150,24 @@ export function useArchiveEvent(eventId: string) {
         status: 'cancelled' satisfies EventStatus,
         notify_attendees: true,
       };
+      const { data } = await apiClient.patch<WireEvent>(`/api/community/events/${eventId}/`, body);
+      return mapEvent(data);
+    },
+    onSuccess: (event) => {
+      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+    },
+  });
+}
+
+// Delete an event. PATCHes status=deleted, which the backend accepts from
+// draft/active/cancelled. Active events with attendees must be cancelled first.
+export function useDeleteEvent(eventId: string) {
+  const qc = useQueryClient();
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useMutation({
+    mutationFn: async () => {
+      const body: WireBody = { status: 'deleted' satisfies EventStatus };
       const { data } = await apiClient.patch<WireEvent>(`/api/community/events/${eventId}/`, body);
       return mapEvent(data);
     },

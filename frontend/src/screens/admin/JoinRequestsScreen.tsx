@@ -9,6 +9,7 @@ import {
   type JoinRequestSummary,
 } from '@/api/join';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { cn } from '@/utils/cn';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -27,6 +28,7 @@ export default function JoinRequestsScreen() {
   const { data = [], isPending, isError } = useJoinRequests();
   const decide = useDecideJoinRequest();
   const unreject = useUnrejectJoinRequest();
+  const { confirm, element: confirmElement } = useConfirm();
 
   const [filter, setFilter] = useState<Filter>('pending');
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,13 @@ export default function JoinRequestsScreen() {
       status === 'approved'
         ? `approve ${name}? once you approve someone you can't un-approve them — are you sure?`
         : `reject ${name}? once you reject someone you can't un-reject them — are you sure?`;
-    if (!window.confirm(message)) return;
+    const ok = await confirm({
+      title: status === 'approved' ? 'approve request' : 'reject request',
+      message,
+      confirmLabel: status === 'approved' ? 'approve' : 'reject',
+      destructive: status === 'rejected',
+    });
+    if (!ok) return;
 
     setError(null);
     try {
@@ -69,7 +77,12 @@ export default function JoinRequestsScreen() {
 
   async function unrejectRequest(request: JoinRequestSummary) {
     const name = request.displayName || request.phoneNumber;
-    if (!window.confirm(`un-reject ${name}? this will move them back to pending review.`)) return;
+    const ok = await confirm({
+      title: 'un-reject request',
+      message: `un-reject ${name}? this will move them back to pending review.`,
+      confirmLabel: 'un-reject',
+    });
+    if (!ok) return;
 
     setError(null);
     try {
@@ -131,6 +144,7 @@ export default function JoinRequestsScreen() {
           magicLinkToken={credsFor.magicLinkToken}
         />
       ) : null}
+      {confirmElement}
     </ContentContainer>
   );
 }

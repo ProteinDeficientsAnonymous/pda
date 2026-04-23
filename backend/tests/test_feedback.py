@@ -141,6 +141,71 @@ class TestFeedback:
         )
         assert response.status_code == 422
 
+    def test_feedback_issue_body_uses_first_name_and_omits_phone(
+        self, api_client, settings, monkeypatch
+    ):
+        """Submitter identity in issue body should be just the first word of display name."""
+        import json
+
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr(
+            "community._feedback._get_github_app_token", lambda *_: "ghs_inst_token"
+        )
+        captured = _mock_urlopen(monkeypatch)
+
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+15551239999",
+            password="pw12345678",
+            display_name="alice smith",
+        )
+        from ninja_jwt.tokens import RefreshToken
+
+        refresh = RefreshToken.for_user(user)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {
+                "title": "something broke",
+                "description": "details",
+                "metadata": {"user_display_name": "alice smith"},
+            },
+            content_type="application/json",
+            **headers,
+        )
+        assert response.status_code == 201
+
+        issue_request = captured["calls"][-1]
+        body_payload = json.loads(issue_request.data.decode())
+        issue_body = body_payload["body"]
+        assert "alice" in issue_body
+        assert "smith" not in issue_body
+        assert "+15551239999" not in issue_body
+        assert "Phone" not in issue_body
+
+    def test_feedback_schema_rejects_user_phone_field(self, api_client, settings, monkeypatch):
+        """user_phone was intentionally removed — extra fields should not break anything."""
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr(
+            "community._feedback._get_github_app_token", lambda *_: "ghs_inst_token"
+        )
+        _mock_urlopen(monkeypatch)
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {
+                "title": "t",
+                "description": "d",
+                "metadata": {"user_phone": "+15551234567"},
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+
     def test_feedback_returns_503_on_github_api_failure(self, api_client, settings, monkeypatch):
         from urllib.error import URLError
 
