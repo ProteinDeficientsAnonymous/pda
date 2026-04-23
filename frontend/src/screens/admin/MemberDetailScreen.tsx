@@ -7,6 +7,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import {
@@ -39,11 +40,15 @@ function MemberDetailView({ member }: { member: Member }) {
   const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
   const archive = useArchiveUser();
+  const { confirm, element: confirmElement } = useConfirm();
 
   async function onArchive() {
-    const confirmed = window.confirm(
-      `archive ${member.displayName || member.phoneNumber}? they'll lose access immediately — you can restore them later by approving a new join request.`,
-    );
+    const confirmed = await confirm({
+      title: 'archive member',
+      message: `archive ${member.displayName || member.phoneNumber}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+      confirmLabel: 'archive',
+      destructive: true,
+    });
     if (!confirmed) return;
     try {
       await archive.mutateAsync(member.id);
@@ -121,6 +126,8 @@ function MemberDetailView({ member }: { member: Member }) {
           </Button>
         </div>
       )}
+
+      {confirmElement}
     </ContentContainer>
   );
 }

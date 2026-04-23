@@ -10,6 +10,7 @@ import {
   type SurveySummary,
 } from '@/api/surveyAdmin';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
@@ -21,12 +22,19 @@ export default function SurveyAdminListScreen() {
   const { data = [], isPending, isError } = useAdminSurveys();
   const del = useDeleteSurvey();
   const [creating, setCreating] = useState(false);
+  const { confirm, element: confirmElement } = useConfirm();
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load surveys — try refreshing" />;
 
-  function askDelete(s: SurveySummary) {
-    if (!window.confirm(`delete "${s.title}"? this also deletes responses.`)) return;
+  async function askDelete(s: SurveySummary) {
+    const ok = await confirm({
+      title: 'delete survey',
+      message: `delete "${s.title}"? this also deletes responses.`,
+      confirmLabel: 'delete',
+      destructive: true,
+    });
+    if (!ok) return;
     del.mutate(s.id);
   }
 
@@ -49,7 +57,12 @@ export default function SurveyAdminListScreen() {
         <ul className="flex flex-col gap-2">
           {data.map((s) => (
             <li key={s.id}>
-              <SurveyRow survey={s} onDelete={askDelete} />
+              <SurveyRow
+                survey={s}
+                onDelete={(survey) => {
+                  void askDelete(survey);
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -61,6 +74,8 @@ export default function SurveyAdminListScreen() {
           setCreating(false);
         }}
       />
+
+      {confirmElement}
     </ContentContainer>
   );
 }
