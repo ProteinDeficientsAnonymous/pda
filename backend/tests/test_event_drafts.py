@@ -108,7 +108,7 @@ class TestCreateDraft:
         assert response.status_code == 201
         assert response.json()["status"] == "draft"
 
-    def test_create_draft_allows_past_start(self, api_client, creator_headers):
+    def test_create_draft_past_start_rejected(self, api_client, creator_headers):
         response = api_client.post(
             "/api/community/events/",
             data=json.dumps(
@@ -117,7 +117,8 @@ class TestCreateDraft:
             content_type="application/json",
             **creator_headers,
         )
-        assert response.status_code == 201
+        assert response.status_code == 400
+        assert "future" in response.json()["detail"].lower()
 
     def test_create_active_event_past_start_rejected(self, api_client, creator_headers):
         response = api_client.post(
@@ -260,10 +261,49 @@ class TestDraftDetail:
 
 @pytest.mark.django_db
 class TestPatchDraft:
-    def test_patch_draft_past_datetime_ok(self, api_client, sample_draft, creator_headers):
+    def test_patch_draft_past_datetime_rejected(self, api_client, sample_draft, creator_headers):
         response = api_client.patch(
             f"/api/community/events/{sample_draft.id}/",
             data=json.dumps({"start_datetime": "2020-01-01T12:00:00Z"}),
+            content_type="application/json",
+            **creator_headers,
+        )
+        assert response.status_code == 400
+        assert "future" in response.json()["detail"].lower()
+
+    def test_patch_stale_draft_rejects_unrelated_field_edits(
+        self, api_client, creator, creator_headers
+    ):
+        """A draft whose start slipped into the past can't be saved until the
+        date is updated — even if the user only touches the title."""
+        stale = Event.objects.create(
+            title="Old Draft",
+            start_datetime="2020-01-01T12:00:00Z",
+            created_by=creator,
+            status=EventStatus.DRAFT,
+        )
+        response = api_client.patch(
+            f"/api/community/events/{stale.id}/",
+            data=json.dumps({"title": "new title"}),
+            content_type="application/json",
+            **creator_headers,
+        )
+        assert response.status_code == 400
+        assert "future" in response.json()["detail"].lower()
+
+    def test_patch_startless_draft_title_succeeds(self, api_client, creator, creator_headers):
+        """A draft with no start_datetime at all should still be editable —
+        progress-capture drafts are allowed to be dateless (see #357)."""
+        startless = Event.objects.create(
+            title="Dateless Draft",
+            start_datetime=None,
+            datetime_tbd=False,
+            created_by=creator,
+            status=EventStatus.DRAFT,
+        )
+        response = api_client.patch(
+            f"/api/community/events/{startless.id}/",
+            data=json.dumps({"title": "new title"}),
             content_type="application/json",
             **creator_headers,
         )

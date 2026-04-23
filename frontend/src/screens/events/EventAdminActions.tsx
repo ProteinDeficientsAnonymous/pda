@@ -59,7 +59,9 @@ function AdminActionRow({
   const hasNoAttendees = event.attendingCount === 0;
   const canDelete = (isCreator || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees;
-  const canEditEvent = isEditWindowOpen(event);
+  // Drafts are always editable — the edit-window cutoff protects the
+  // historical record of published events, which drafts don't have.
+  const canEditEvent = isDraft || isEditWindowOpen(event);
 
   async function onCancel() {
     setCancelError(null);

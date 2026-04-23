@@ -107,13 +107,22 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
     effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
-    # Draft events may hold placeholder/past start times until published.
-    check_past = "start_datetime" in updates and not event.is_draft
-    dt_error = _validate_event_datetimes(
-        effective_start, effective_end, effective_tbd, check_past=check_past
-    )
-    if dt_error:
-        return Status(400, ErrorOut(detail=dt_error))
+    # Drafts can legitimately have no start yet (see #357) — don't enforce
+    # "start required" or past-check when a draft stays dateless. But if the
+    # draft has a start (existing or being set), it must be a future date.
+    if event.is_draft and effective_start is None:
+        pass
+    else:
+        # Past-check applies when start_datetime is being touched, or on any
+        # edit to a draft that already has a start (stale-draft guard). Non-
+        # draft past events keep being tweakable for non-date fields within
+        # the 6-hour grace window (enforced client-side).
+        check_past = "start_datetime" in updates or event.is_draft
+        dt_error = _validate_event_datetimes(
+            effective_start, effective_end, effective_tbd, check_past=check_past
+        )
+        if dt_error:
+            return Status(400, ErrorOut(detail=dt_error))
     return None
 
 
@@ -270,8 +279,12 @@ def create_event(request, payload: EventIn):
     if _is_invalid_official_visibility(payload.event_type, payload.visibility):
         return Status(400, ErrorOut(detail="Official events must be public."))
 
-    # Drafts are intentionally saveable incomplete — skip the date checks.
-    if payload.status != EventStatus.DRAFT:
+    # Drafts can save without a start_datetime (see #357). But if a start IS
+    # provided, the same rules apply as for any event — must be in the future,
+    # end must be after start.
+    if payload.status == EventStatus.DRAFT and payload.start_datetime is None:
+        pass
+    else:
         dt_error = _validate_event_datetimes(
             payload.start_datetime,
             payload.end_datetime,

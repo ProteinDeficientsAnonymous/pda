@@ -259,6 +259,24 @@ describe('EventAdminActions', () => {
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
   });
 
+  // Drafts bypass the grace window — a stale draft (start slipped into the
+  // past before publish) must remain editable so the user can update the date.
+  it('creator can edit a draft with a start time well in the past', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const staleDraft: Event = {
+      ...BASE_EVENT,
+      status: EventStatus.Draft,
+      startDatetime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // a week ago
+      endDatetime: null,
+      isPast: true,
+    };
+    renderActions(staleDraft);
+
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+  });
+
   it('creator uses endDatetime (not startDatetime) as the grace-window anchor', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });

@@ -14,9 +14,12 @@ export function validateEventForm(values: EventFormValues): Errors {
   if (values.description.length > 2000) errors.description = 'too long';
   if (values.location.length > 300) errors.location = 'under 300 chars';
 
-  if (!values.datetimeTbd && values.status !== 'draft') {
-    if (!values.startDatetime) errors.startDatetime = 'required';
-    else if (new Date(values.startDatetime).getTime() < Date.now() - 60_000) {
+  // Drafts can save without a start date (progress-capture). Active events
+  // must have one. Either way, if a start is present it must be in the future.
+  if (!values.datetimeTbd) {
+    if (!values.startDatetime) {
+      if (values.status !== 'draft') errors.startDatetime = 'required';
+    } else if (new Date(values.startDatetime).getTime() < Date.now() - 60_000) {
       errors.startDatetime = 'start must be in the future';
     }
   }

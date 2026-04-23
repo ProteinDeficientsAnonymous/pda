@@ -86,7 +86,12 @@ export function EventForm({ existing }: Props) {
   );
   const [coHosts, setCoHosts] = useState<MemberSearchResult[]>([]);
   const [invited, setInvited] = useState<MemberSearchResult[]>([]);
-  const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>({});
+  // On edit, pre-run validation so issues in the loaded values (e.g. a stale
+  // draft whose start is now in the past) are visible immediately instead of
+  // waiting for the first save attempt.
+  const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>(() =>
+    existing ? validateEventForm(eventToFormValues(existing)) : {},
+  );
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<Blob | null>(null);
   const pendingPhotoUrl = useMemo(

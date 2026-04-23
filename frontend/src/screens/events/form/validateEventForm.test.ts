@@ -81,11 +81,18 @@ describe('validateEventForm', () => {
   });
 
   describe('startDatetime', () => {
-    it('requires startDatetime when not TBD and not draft', () => {
+    it('requires startDatetime on active events when not TBD', () => {
       const errors = validateEventForm(
         validValues({ startDatetime: '', datetimeTbd: false, status: 'active' }),
       );
       expect(errors.startDatetime).toBe('required');
+    });
+
+    it('does not require startDatetime on drafts (progress-capture)', () => {
+      const errors = validateEventForm(
+        validValues({ startDatetime: '', datetimeTbd: false, status: 'draft' }),
+      );
+      expect(errors.startDatetime).toBeUndefined();
     });
 
     it('does not require startDatetime when datetimeTbd is true', () => {
@@ -93,16 +100,15 @@ describe('validateEventForm', () => {
       expect(errors.startDatetime).toBeUndefined();
     });
 
-    it('does not require startDatetime for drafts', () => {
-      const errors = validateEventForm(
-        validValues({ startDatetime: '', datetimeTbd: false, status: 'draft' }),
-      );
-      expect(errors.startDatetime).toBeUndefined();
+    it('rejects startDatetime in the past for active events', () => {
+      const past = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 min ago
+      const errors = validateEventForm(validValues({ startDatetime: past, status: 'active' }));
+      expect(errors.startDatetime).toBe('start must be in the future');
     });
 
-    it('rejects startDatetime in the past', () => {
-      const past = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 min ago
-      const errors = validateEventForm(validValues({ startDatetime: past }));
+    it('rejects startDatetime in the past for drafts too (once a date is picked)', () => {
+      const past = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const errors = validateEventForm(validValues({ startDatetime: past, status: 'draft' }));
       expect(errors.startDatetime).toBe('start must be in the future');
     });
   });
