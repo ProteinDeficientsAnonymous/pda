@@ -2,9 +2,8 @@
 
 import pytest
 from community._validation import Code
-from users.roles import Role
-
 from tests._asserts import assert_error_code
+from users.roles import Role
 
 
 @pytest.mark.django_db

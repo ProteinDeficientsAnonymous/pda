@@ -10,9 +10,7 @@ from typing import Any
 _ANY_FIELD = object()  # Sentinel: "don't check the field, match on code alone"
 
 
-def assert_error_code(
-    response: Any, expected_code: str, expected_field: Any = _ANY_FIELD
-) -> dict:
+def assert_error_code(response: Any, expected_code: str, expected_field: Any = _ANY_FIELD) -> dict:
     """Assert a response carries the given validation code. Returns the match.
 
     ``expected_field``:

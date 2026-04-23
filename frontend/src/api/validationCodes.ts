@@ -77,6 +77,17 @@ export const Code = {
     CannotPauseAdmin: 'user.cannot_pause_admin',
     RoleIdsNotFound: 'user.role_ids_not_found',
   },
+  JoinRequest: {
+    NotFound: 'join_request.not_found',
+    AlreadyDecided: 'join_request.already_decided',
+    OnlyRejectedCanBeUnRejected: 'join_request.only_rejected_can_be_un_rejected',
+    PhoneAlreadyInvited: 'join_request.phone_already_invited',
+    PhoneAlreadyPending: 'join_request.phone_already_pending',
+    AnswerRequired: 'join_request.answer_required',
+    AnswerTooLong: 'join_request.answer_too_long',
+    AnswerInvalidOption: 'join_request.answer_invalid_option',
+    InvalidStatus: 'join_request.invalid_status',
+  },
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
     TooLarge: 'photo.too_large',
@@ -222,6 +233,34 @@ export function messageForCode(err: FieldError): string {
       return "admins can't be paused";
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
+
+    // Join request
+    case Code.JoinRequest.NotFound:
+      return 'join request not found';
+    case Code.JoinRequest.AlreadyDecided:
+      return 'this request has already been decided';
+    case Code.JoinRequest.OnlyRejectedCanBeUnRejected:
+      return 'only rejected requests can be un-rejected';
+    case Code.JoinRequest.PhoneAlreadyInvited:
+      return "that number is already in the community — try logging in instead";
+    case Code.JoinRequest.PhoneAlreadyPending:
+      return "a request for this number is already pending — we'll be in touch soon";
+    case Code.JoinRequest.AnswerRequired: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `"${label}" is required` : 'an answer is required';
+    }
+    case Code.JoinRequest.AnswerTooLong: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      const max = typeof err.params?.max === 'number' ? err.params.max : null;
+      if (label && max !== null) return `"${label}" must be at most ${String(max)} characters`;
+      return 'that answer is too long';
+    }
+    case Code.JoinRequest.AnswerInvalidOption: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `invalid option for "${label}"` : 'invalid option';
+    }
+    case Code.JoinRequest.InvalidStatus:
+      return 'invalid status for this action';
 
     // Photo
     case Code.Photo.TypeNotAllowed:

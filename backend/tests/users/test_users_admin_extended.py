@@ -2,7 +2,6 @@
 
 import pytest
 from community._validation import Code
-
 from tests._asserts import assert_error_code
 
 

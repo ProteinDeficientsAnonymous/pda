@@ -1,9 +1,12 @@
 """Tests for join request management (list, approve, reject)."""
 
 import pytest
+from community._validation import Code
 from community.models import JoinRequestStatus
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._asserts import assert_error_code
 
 
 @pytest.fixture
@@ -179,7 +182,7 @@ class TestJoinRequestManagement:
             **vettor_headers,
         )
         assert response.status_code == 400
-        assert "already been decided" in response.json()["detail"]
+        assert_error_code(response, Code.JoinRequest.ALREADY_DECIDED)
 
     def test_reject_after_reject_fails(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
@@ -195,7 +198,7 @@ class TestJoinRequestManagement:
             **vettor_headers,
         )
         assert response.status_code == 400
-        assert "already been decided" in response.json()["detail"]
+        assert_error_code(response, Code.JoinRequest.ALREADY_DECIDED)
 
     def test_approve_records_actor_and_timestamp(
         self, api_client, vettor_headers, vettor_user, sample_join_request

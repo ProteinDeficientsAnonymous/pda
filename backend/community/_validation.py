@@ -82,6 +82,17 @@ class Code:
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
 
+    class JoinRequest:
+        NOT_FOUND = "join_request.not_found"
+        ALREADY_DECIDED = "join_request.already_decided"
+        ONLY_REJECTED_CAN_BE_UN_REJECTED = "join_request.only_rejected_can_be_un_rejected"
+        PHONE_ALREADY_INVITED = "join_request.phone_already_invited"
+        PHONE_ALREADY_PENDING = "join_request.phone_already_pending"
+        ANSWER_REQUIRED = "join_request.answer_required"  # params: { label: str }
+        ANSWER_TOO_LONG = "join_request.answer_too_long"  # params: { label: str, max: int }
+        ANSWER_INVALID_OPTION = "join_request.answer_invalid_option"  # params: { label: str }
+        INVALID_STATUS = "join_request.invalid_status"  # params: { allowed: [str] }
+
     class Photo:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }
         TOO_LARGE = "photo.too_large"  # params: { max_mb: int }

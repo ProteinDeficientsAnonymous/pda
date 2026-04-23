@@ -84,7 +84,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_join_request_invalid_display_name(self, api_client, why_join_id):
         response = api_client.post(
@@ -96,7 +96,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_join_request_invalid_phone(self, api_client, why_join_id):
         response = api_client.post(
@@ -108,7 +108,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_join_request_optional_answers(self, api_client, why_join_id):
         response = api_client.post(
@@ -169,7 +169,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_missing_required_answer(self, api_client):
         response = api_client.post(
@@ -181,7 +181,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_display_name_too_long(self, api_client, why_join_id):
         response = api_client.post(
@@ -205,7 +205,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_display_name_with_email_rejected(self, api_client, why_join_id):
         response = api_client.post(
@@ -217,7 +217,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_submit_display_name_with_url_rejected(self, api_client, why_join_id):
         response = api_client.post(
@@ -229,7 +229,7 @@ class TestJoinRequestSubmission:
             },
             content_type="application/json",
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     @pytest.mark.parametrize(
         "name,phone",
@@ -314,7 +314,7 @@ class TestJoinRequestSubmission:
             content_type="application/json",
         )
         assert response.status_code == 409
-        assert response.json()["detail"] == "already_invited"
+        assert response.json()["detail"][0]["code"] == "join_request.phone_already_invited"
 
     def test_submit_existing_user_creates_no_join_request(self, api_client, why_join_id):
         from community.models import JoinRequest
