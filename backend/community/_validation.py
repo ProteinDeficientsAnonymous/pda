@@ -35,32 +35,21 @@ class Code:
         DATE_LOCKED_BY_POLL = "event.date_locked_by_poll"
         INVITE_ONLY = "event.invite_only"
         AUTH_REQUIRED = "event.auth_required"
-        CANNOT_EDIT_PAST = "event.cannot_edit_past"
-        ALREADY_CANCELLED = "event.already_cancelled"
         CANCELLED_CANNOT_BE_EDITED = "event.cancelled_cannot_be_edited"
         PAST_CANNOT_BE_CANCELLED = "event.past_cannot_be_cancelled"
         NO_ATTENDEES_CANNOT_BE_CANCELLED = "event.no_attendees_cannot_be_cancelled"
         INVALID_STATUS_TRANSITION = "event.invalid_status_transition"
         CANCEL_BEFORE_DELETE = "event.cancel_before_delete"
-        DRAFT_FUTURE_START_REQUIRED = "event.draft_future_start_required"
-        MAX_ATTENDEES_BELOW_RSVPS = "event.max_attendees_below_rsvps"
-        RSVP_DISABLED = "event.rsvp_disabled"
-        RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
-        RSVP_FULL = "event.rsvp_full"
-        CAPACITY_BELOW_ATTENDING = "event.capacity_below_attending"
-        INVITE_PERMISSION_DENIED = "event.invite_permission_denied"
-        FLAG_NOT_FOUND = "event.flag_not_found"
         FLAG_ALREADY_FLAGGED = "event.flag_already_flagged"
         FLAG_INVALID_ACTION = "event.flag_invalid_action"
         RSVPS_NOT_ENABLED = "event.rsvps_not_enabled"
         RSVPS_CLOSED_CANCELLED = "event.rsvps_closed_cancelled"
         RSVPS_CLOSED_PAST = "event.rsvps_closed_past"
+        RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
-        ONLY_HOSTS_CAN_VIEW_STATS = "event.only_hosts_can_view_stats"
-        ONLY_HOSTS_CAN_MARK_ATTENDANCE = "event.only_hosts_can_mark_attendance"
 
     class Poll:
         NOT_FOUND = "poll.not_found"
@@ -84,7 +73,6 @@ class Code:
 
     class Phone:
         INVALID = "phone.invalid"
-        REQUIRED = "phone.required"
         ALREADY_EXISTS = "phone.already_exists"
 
     class DisplayName:

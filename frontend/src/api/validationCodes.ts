@@ -30,32 +30,21 @@ export const Code = {
     DateLockedByPoll: 'event.date_locked_by_poll',
     InviteOnly: 'event.invite_only',
     AuthRequired: 'event.auth_required',
-    CannotEditPast: 'event.cannot_edit_past',
-    AlreadyCancelled: 'event.already_cancelled',
     CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
     PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
     NoAttendeesCannotBeCancelled: 'event.no_attendees_cannot_be_cancelled',
     InvalidStatusTransition: 'event.invalid_status_transition',
     CancelBeforeDelete: 'event.cancel_before_delete',
-    DraftFutureStartRequired: 'event.draft_future_start_required',
-    MaxAttendeesBelowRsvps: 'event.max_attendees_below_rsvps',
-    RsvpDisabled: 'event.rsvp_disabled',
-    RsvpInvalidStatus: 'event.rsvp_invalid_status',
-    RsvpFull: 'event.rsvp_full',
-    CapacityBelowAttending: 'event.capacity_below_attending',
-    InvitePermissionDenied: 'event.invite_permission_denied',
-    FlagNotFound: 'event.flag_not_found',
     FlagAlreadyFlagged: 'event.flag_already_flagged',
     FlagInvalidAction: 'event.flag_invalid_action',
     RsvpsNotEnabled: 'event.rsvps_not_enabled',
     RsvpsClosedCancelled: 'event.rsvps_closed_cancelled',
     RsvpsClosedPast: 'event.rsvps_closed_past',
+    RsvpInvalidStatus: 'event.rsvp_invalid_status',
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
     AttendanceOpensLater: 'event.attendance_opens_later',
     AttendanceOnlyForGoingRsvps: 'event.attendance_only_for_going_rsvps',
-    OnlyHostsCanViewStats: 'event.only_hosts_can_view_stats',
-    OnlyHostsCanMarkAttendance: 'event.only_hosts_can_mark_attendance',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -79,7 +68,6 @@ export const Code = {
   },
   Phone: {
     Invalid: 'phone.invalid',
-    Required: 'phone.required',
     AlreadyExists: 'phone.already_exists',
   },
   DisplayName: {
@@ -220,10 +208,6 @@ export function messageForCode(err: FieldError): string {
       return 'this event is invite only';
     case Code.Event.AuthRequired:
       return 'you need to sign in for that';
-    case Code.Event.CannotEditPast:
-      return "you can't edit an event in the past";
-    case Code.Event.AlreadyCancelled:
-      return 'this event has already been cancelled';
     case Code.Event.CancelledCannotBeEdited:
       return "cancelled events can't be edited";
     case Code.Event.PastCannotBeCancelled:
@@ -234,26 +218,8 @@ export function messageForCode(err: FieldError): string {
       return 'invalid status change';
     case Code.Event.CancelBeforeDelete:
       return 'cancel this event before deleting it';
-    case Code.Event.DraftFutureStartRequired:
-      return 'drafts must have a future start time';
-    case Code.Event.MaxAttendeesBelowRsvps: {
-      const attending = typeof err.params?.attending === 'number' ? err.params.attending : null;
-      return attending !== null
-        ? `capacity must be at least ${String(attending)} — the current count of yes rsvps`
-        : 'capacity is too low for current rsvps';
-    }
-    case Code.Event.RsvpDisabled:
-      return 'rsvps are not enabled for this event';
     case Code.Event.RsvpInvalidStatus:
       return 'invalid rsvp status';
-    case Code.Event.RsvpFull:
-      return "this event is full — you'll be added to the waitlist";
-    case Code.Event.CapacityBelowAttending:
-      return 'capacity is below the current attending count';
-    case Code.Event.InvitePermissionDenied:
-      return 'only co-hosts can invite people to this event';
-    case Code.Event.FlagNotFound:
-      return 'flag not found';
     case Code.Event.FlagAlreadyFlagged:
       return "you've already flagged this event";
     case Code.Event.FlagInvalidAction:
@@ -272,10 +238,6 @@ export function messageForCode(err: FieldError): string {
       return 'check-in opens an hour before the event starts';
     case Code.Event.AttendanceOnlyForGoingRsvps:
       return 'attendance can only be marked on going rsvps';
-    case Code.Event.OnlyHostsCanViewStats:
-      return 'only hosts can view event stats';
-    case Code.Event.OnlyHostsCanMarkAttendance:
-      return 'only hosts can mark attendance';
 
     // Poll
     case Code.Poll.NotFound:
@@ -314,8 +276,6 @@ export function messageForCode(err: FieldError): string {
       return 'link must be a partiful.com url';
 
     // Phone
-    case Code.Phone.Required:
-      return 'phone number is required';
     case Code.Phone.Invalid:
       return "that doesn't look like a valid phone number";
     case Code.Phone.AlreadyExists:
