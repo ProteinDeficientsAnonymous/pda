@@ -85,12 +85,7 @@ export function PollManageDialog({ open, onClose, poll }: Props) {
           <span className="text-sm font-medium">add an option</span>
           <div className="flex items-end gap-2">
             <div className="flex-1">
-              <DateTimePicker
-                label="date & time"
-                value={newIso}
-                onChange={setNewIso}
-                disablePast
-              />
+              <DateTimePicker label="date & time" value={newIso} onChange={setNewIso} disablePast />
             </div>
             <Button
               variant="secondary"
