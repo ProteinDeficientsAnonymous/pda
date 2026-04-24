@@ -1,9 +1,9 @@
 // Admin actions for events: edit, publish (drafts), cancel, delete.
 // Visible only to the creator, a co-host, or a user with manage_events.
 
-import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useCancelEvent, useDeleteEvent, useUpdateEvent } from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
@@ -230,10 +230,5 @@ function isEditWindowOpen(event: Event): boolean {
 }
 
 function extractMutationError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail.toLowerCase();
-  }
-  if (err instanceof Error && err.message) return err.message.toLowerCase();
-  return "couldn't update the event — try again";
+  return extractApiErrorOr(err, "couldn't update the event — try again");
 }

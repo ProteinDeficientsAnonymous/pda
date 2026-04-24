@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
@@ -141,9 +141,5 @@ function CameraIcon({ className }: { className?: string }) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't upload photo — try again";
+  return extractApiErrorOr(err, "couldn't upload photo — try again");
 }

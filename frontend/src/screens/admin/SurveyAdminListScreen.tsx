@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   useAdminSurveys,
   useCreateSurvey,
@@ -230,9 +230,5 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't complete that action — try again";
+  return extractApiErrorOr(err, "couldn't complete that action — try again");
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { isAxiosError } from 'axios';
 import { useParams } from 'react-router-dom';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useSubmitSurvey, useSurvey, type AnswerValue, type Survey } from '@/api/surveys';
 import { Button } from '@/components/ui/Button';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -118,9 +118,5 @@ function SurveyForm({ survey }: { survey: Survey }) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't submit — try again";
+  return extractApiErrorOr(err, "couldn't submit — try again");
 }

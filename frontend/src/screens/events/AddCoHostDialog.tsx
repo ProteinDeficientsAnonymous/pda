@@ -1,8 +1,8 @@
 // Add co-hosts to an event from the event detail view. Hosts + existing
 // co-hosts can open this from the hosts section.
 
-import { isAxiosError } from 'axios';
 import { useState } from 'react';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useUpdateEvent } from '@/api/eventWrites';
 import { MemberPicker } from '@/components/MemberPicker';
 import type { MemberSearchResult } from '@/api/userSearch';
@@ -59,9 +59,5 @@ export function AddCoHostDialog({ event, open, onClose }: Props) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't add co-hosts — try again";
+  return extractApiErrorOr(err, "couldn't add co-hosts — try again");
 }

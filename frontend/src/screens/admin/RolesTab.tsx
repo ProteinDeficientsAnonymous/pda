@@ -2,8 +2,8 @@
 // or delete. Protected roles (admin/member) can be edited but not deleted.
 
 import { useState } from 'react';
-import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useDeleteRole, useRoles, type Role } from '@/api/roles';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
@@ -36,12 +36,7 @@ export function RolesTab() {
       await deleteRole.mutateAsync(role.id);
       toast.success(`${role.name} deleted ✓`);
     } catch (err) {
-      if (isAxiosError(err)) {
-        const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-        toast.error(detail ?? "couldn't delete role — try again");
-        return;
-      }
-      toast.error("couldn't delete role — try again");
+      toast.error(extractApiErrorOr(err, "couldn't delete role — try again"));
     }
   }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
@@ -121,9 +121,5 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't update password — try again";
+  return extractApiErrorOr(err, "couldn't update password — try again");
 }

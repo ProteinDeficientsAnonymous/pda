@@ -4,8 +4,8 @@
 
 import { useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { TextField } from '@/components/ui/TextField';
@@ -371,9 +371,5 @@ function MemberEditForm({
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't save changes — try again";
+  return extractApiErrorOr(err, "couldn't save changes — try again");
 }

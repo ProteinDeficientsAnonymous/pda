@@ -5,7 +5,7 @@
 //   - +1 is a second POST with the same status + hasPlusOne: true
 //   - waitlisted state shows only "leave waitlist" (no maybe/can't pills)
 
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useState } from 'react';
 import { RsvpStatus, RsvpServerStatus, type Event } from '@/models/event';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
@@ -172,9 +172,5 @@ function Summary({ event }: { event: Event }) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't update your rsvp — try again";
+  return extractApiErrorOr(err, "couldn't update your rsvp — try again");
 }

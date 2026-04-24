@@ -112,7 +112,10 @@ describe('LoginScreen', () => {
     loginMock.mockRejectedValueOnce(
       Object.assign(new Error('401'), {
         isAxiosError: true,
-        response: { status: 401, data: { detail: 'invalid' } },
+        response: {
+          status: 401,
+          data: { detail: [{ code: 'auth.invalid_credentials', field: null }] },
+        },
       }),
     );
     const user = userEvent.setup();
@@ -129,10 +132,10 @@ describe('LoginScreen', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(toastErrorMock).toHaveBeenCalledWith('invalid phone or password');
+      expect(toastErrorMock).toHaveBeenCalledWith(expect.stringMatching(/don't match/i));
     });
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByText(/invalid phone or password/i)).toBeInTheDocument();
+    expect(screen.getByText(/don't match/i)).toBeInTheDocument();
   });
 
   it('shows invited banner when ?invited=true', () => {

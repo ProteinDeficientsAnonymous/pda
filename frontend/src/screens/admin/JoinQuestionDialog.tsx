@@ -2,7 +2,7 @@
 // parent screen stays focused on list semantics + reorder.
 
 import { useState } from 'react';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion, JoinQuestionInput, JoinQuestionType } from '@/api/join';
 import { useCreateJoinQuestion, useUpdateJoinQuestion } from '@/api/join';
 import { Button } from '@/components/ui/Button';
@@ -125,9 +125,5 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't save — try again";
+  return extractApiErrorOr(err, "couldn't save — try again");
 }
