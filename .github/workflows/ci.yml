@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel older runs of the same branch when a new push arrives — the latest
+# commit is the one we care about.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run backend CI
+        run: make agent-backend-ci
+
+      # agent-lint auto-fixes with ruff; fail if anything was reformatted so
+      # contributors format locally instead of relying on CI to silently fix.
+      - name: Fail if the working tree is dirty
+        run: git diff --exit-code
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: cd frontend && pnpm install --frozen-lockfile
+
+      - name: Run frontend CI
+        run: make agent-frontend-ci
+
+      # agent-frontend-format auto-writes with prettier; fail on diff so
+      # formatting is enforced on PRs rather than silently absorbed.
+      - name: Fail if the working tree is dirty
+        run: git diff --exit-code
