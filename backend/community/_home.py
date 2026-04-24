@@ -13,6 +13,7 @@ from users.permissions import PermissionKey
 from community._content_render import render_content_payload
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import HomePage
 
 router = Router()
@@ -73,7 +74,7 @@ def update_home(request, payload: HomePagePatchIn):
             request,
             details={"endpoint": "update_home", "required_permission": PermissionKey.EDIT_HOMEPAGE},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_home")
     h = HomePage.get()
     changed: list[str] = []
     if _apply_content_update(

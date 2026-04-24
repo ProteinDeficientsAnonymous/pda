@@ -14,6 +14,7 @@ from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import Event, EventFlag, EventFlagStatus
 
 router = Router()
@@ -67,7 +68,7 @@ def flag_event(request, event_id: UUID, data: EventFlagIn):
     event = get_object_or_404(Event, id=event_id)
 
     if EventFlag.objects.filter(event=event, flagged_by=request.auth).exists():
-        return Status(409, ErrorOut(detail="you already flagged this event"))
+        raise_validation(Code.Event.FLAG_ALREADY_FLAGGED, status_code=409)
 
     flag = EventFlag.objects.create(
         event=event,
@@ -90,7 +91,7 @@ def flag_event(request, event_id: UUID, data: EventFlagIn):
 )
 def list_event_flags(request, status: str | None = None):
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="list_event_flags")
 
     qs = EventFlag.objects.select_related("event", "flagged_by")
     if status:
@@ -106,11 +107,15 @@ def list_event_flags(request, status: str | None = None):
 )
 def review_event_flag(request, flag_id: UUID, data: EventFlagStatusIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="review_event_flag")
 
     if data.status not in _VALID_REVIEW_STATUSES:
-        valid = ", ".join(sorted(_VALID_REVIEW_STATUSES))
-        return Status(400, ErrorOut(detail=f"Status must be one of: {valid}."))
+        raise_validation(
+            Code.Event.FLAG_INVALID_ACTION,
+            field="status",
+            status_code=400,
+            allowed=sorted(_VALID_REVIEW_STATUSES),
+        )
 
     flag = get_object_or_404(EventFlag.objects.select_related("event", "flagged_by"), id=flag_id)
     flag.status = data.status

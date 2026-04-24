@@ -11,6 +11,8 @@ from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F40
 from pydantic import BaseModel
 from users.models import User as UserModel
 
+from community._validation import Code, raise_validation
+
 logger = logging.getLogger("pda.community")
 
 
@@ -41,31 +43,35 @@ class ErrorOut(BaseModel):
 _DISPLAY_NAME_REJECT_RE = re.compile(r'[\d@#$%^&*()+=\[\]{}<>|\\/:;!?~`"]')
 
 
-def validate_display_name(name: str) -> str | None:
-    """Return an error message if the display name is invalid, or None if valid.
+_DISPLAY_NAME_MAX_LENGTH = 64
+
+
+def validate_display_name(name: str, field: str = "display_name") -> None:
+    """Raise ValidationException if the display name is invalid.
 
     Allows Unicode letters, combining marks, apostrophes, hyphens, spaces, and periods.
     Rejects digits, email/URL characters, and names that contain no letters.
     """
     stripped = name.strip()
     if not stripped:
-        return "display name is required"
-    if len(stripped) > 64:
-        return "display name must be at most 64 characters"
+        raise_validation(Code.DisplayName.REQUIRED, field=field)
+    if len(stripped) > _DISPLAY_NAME_MAX_LENGTH:
+        raise_validation(
+            Code.DisplayName.TOO_LONG, field=field, max_length=_DISPLAY_NAME_MAX_LENGTH
+        )
     if _DISPLAY_NAME_REJECT_RE.search(stripped):
-        return "display name contains invalid characters — no numbers or symbols"
+        raise_validation(Code.DisplayName.INVALID_CHARS, field=field)
     if all(c in " '-." for c in stripped):
-        return "display name must contain at least one letter"
-    return None
+        raise_validation(Code.DisplayName.NEEDS_A_LETTER, field=field)
 
 
-def _validate_phone(raw: str) -> str:
+def _validate_phone(raw: str, field: str = "phone_number") -> str:
     try:
         parsed = phonenumbers.parse(raw, None)
-    except phonenumbers.phonenumberutil.NumberParseException as e:
-        raise ValueError(str(e)) from e
+    except phonenumbers.phonenumberutil.NumberParseException:
+        raise_validation(Code.Phone.INVALID, field=field)
     if not phonenumbers.is_valid_number(parsed):
-        raise ValueError(f"Invalid phone number: {raw}")
+        raise_validation(Code.Phone.INVALID, field=field)
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 

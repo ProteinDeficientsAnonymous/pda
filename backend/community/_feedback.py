@@ -13,6 +13,7 @@ from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 
 from community._shared import ErrorOut, _optional_jwt
+from community._validation import Code, raise_validation
 
 router = Router()
 
@@ -159,7 +160,7 @@ def submit_feedback(request, payload: FeedbackIn):
     )
     if not all([app_id, private_key, installation_id, repo]):
         logger.warning("Feedback submission rejected: GitHub App not configured")
-        return Status(503, ErrorOut(detail="Feedback submission is not configured."))
+        raise_validation(Code.Feedback.NOT_CONFIGURED, status_code=503)
 
     issue_body = _build_issue_body(payload, request.auth)
 
@@ -184,4 +185,4 @@ def submit_feedback(request, payload: FeedbackIn):
             getattr(exc, "code", "unknown"),
             response_body.decode() if response_body else "n/a",
         )
-        return Status(503, ErrorOut(detail="Failed to create feedback issue."))
+        raise_validation(Code.Feedback.CREATION_FAILED, status_code=503)

@@ -233,4 +233,4 @@ class TestFeedback:
             content_type="application/json",
         )
         assert response.status_code == 503
-        assert "Failed to create feedback issue" in response.json()["detail"]
+        assert response.json()["detail"][0]["code"] == "feedback.creation_failed"

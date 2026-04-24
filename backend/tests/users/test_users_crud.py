@@ -1,6 +1,8 @@
 """Tests for user create, bulk create, and search."""
 
 import pytest
+from community._validation import Code
+from tests._asserts import assert_error_code
 from users.roles import Role
 
 
@@ -13,7 +15,8 @@ class TestCreateUser:
             content_type="application/json",
             **manage_users_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
+        assert_error_code(response, Code.Phone.INVALID, "phone_number")
 
     def test_create_user_with_role_id(self, api_client, manage_users_headers, db):
         role = Role.objects.create(name="custom_role", permissions=[])
@@ -35,8 +38,8 @@ class TestCreateUser:
             content_type="application/json",
             **manage_users_headers,
         )
-        assert response.status_code == 400
-        assert response.json()["detail"] == "Role not found."
+        assert response.status_code == 404
+        assert_error_code(response, Code.Role.NOT_FOUND, "role_id")
 
     def test_create_user_sets_needs_onboarding(self, api_client, manage_users_headers):
         from users.models import User
@@ -106,6 +109,7 @@ class TestBulkCreateUsers:
         assert data["failed"] == 1
         failed = [r for r in data["results"] if not r["success"]]
         assert failed[0]["phone_number"] == "not-a-phone"
+        assert failed[0]["error"] == Code.Phone.INVALID
 
     def test_bulk_create_users_duplicate_phone(self, api_client, manage_users_headers, test_user):
         response = api_client.post(
@@ -119,7 +123,7 @@ class TestBulkCreateUsers:
         assert data["created"] == 1
         assert data["failed"] == 1
         failed = [r for r in data["results"] if not r["success"]]
-        assert "already exists" in failed[0]["error"]
+        assert failed[0]["error"] == Code.Phone.ALREADY_EXISTS
 
     def test_bulk_create_users_shared_temp_password(self, api_client, manage_users_headers):
         response = api_client.post(

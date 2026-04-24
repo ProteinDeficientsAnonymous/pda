@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -47,5 +48,5 @@ def mark_read(request, notification_id: UUID):
         is_read=True
     )
     if not updated:
-        return Status(404, ErrorOut(detail="Notification not found."))
+        raise_validation(Code.Notification.NOT_FOUND, status_code=404)
     return Status(200, {"detail": "ok"})

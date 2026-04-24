@@ -85,7 +85,7 @@ export function EventFormMoney({ values, onChange }: Props) {
         onChange={(e) => {
           onChange({ zelleInfo: e.target.value });
         }}
-        placeholder="email or phone"
+        placeholder="email address or phone number"
         maxLength={300}
       />
     </div>

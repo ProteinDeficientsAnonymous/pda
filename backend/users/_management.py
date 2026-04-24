@@ -4,6 +4,7 @@ import logging
 import re
 
 from community._shared import validate_display_name
+from community._validation import Code, ValidationException, raise_validation
 from config.audit import audit_log
 from django.db import models as dj_models
 from django.utils import timezone
@@ -52,19 +53,14 @@ def create_user(request, payload: UserCreateIn):
             request,
             details={"endpoint": "create_user", "required_permission": PermissionKey.CREATE_USER},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
     if payload.display_name:
-        name_error = validate_display_name(payload.display_name)
-        if name_error:
-            return Status(400, ErrorOut(detail=name_error))
+        validate_display_name(payload.display_name)
 
-    try:
-        user, magic_token = _create_user_with_role(
-            payload.phone_number, payload.display_name, payload.email, payload.role_id
-        )
-    except ValueError as e:
-        return Status(400, ErrorOut(detail=str(e)))
+    user, magic_token = _create_user_with_role(
+        payload.phone_number, payload.display_name, payload.email, payload.role_id
+    )
 
     audit_log(
         logging.INFO,
@@ -104,7 +100,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
                 "required_permission": PermissionKey.MANAGE_USERS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="bulk_create_users")
 
     member_role = Role.objects.filter(name="member", is_default=True).first()
     results: list[BulkUserResult] = []
@@ -112,11 +108,14 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
     failed = 0
 
     for i, raw_phone in enumerate(payload.phone_numbers):
+        # Per-row errors are embedded in a 200 response, not raised as 4xx.
+        # We catch ValidationException and surface its code as the result's
+        # error field — the frontend maps codes → copy via messageForCode.
         try:
             validated_phone = _validate_phone(raw_phone.strip())
-        except ValueError as e:
+        except ValidationException as e:
             results.append(
-                BulkUserResult(row=i + 1, phone_number=raw_phone, success=False, error=str(e))
+                BulkUserResult(row=i + 1, phone_number=raw_phone, success=False, error=e.code)
             )
             failed += 1
             continue
@@ -127,7 +126,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
                     row=i + 1,
                     phone_number=raw_phone,
                     success=False,
-                    error="Phone number already exists.",
+                    error=Code.Phone.ALREADY_EXISTS,
                 )
             )
             failed += 1
@@ -204,7 +203,7 @@ def list_users(request):
             request,
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
     users = (
         User.objects.filter(archived_at__isnull=True)
         .prefetch_related("roles")
@@ -228,16 +227,14 @@ def update_user(request, user_id: str, payload: UserPatchIn):
             target_id=user_id,
             details={"endpoint": "update_user", "required_permission": PermissionKey.MANAGE_USERS},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_user")
     try:
         user = User.objects.prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
-        return Status(404, ErrorOut(detail="User not found."))
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     old_is_paused = user.is_paused
-    err = _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
-    if err:
-        return Status(400, ErrorOut(detail=err))
+    _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     user.save()
 
     if payload.is_paused is not None and payload.is_paused != old_is_paused:
@@ -262,48 +259,34 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     return Status(200, UserOut.from_user(user))
 
 
-def _patch_phone(user: User, user_id: str, phone_number: str) -> str | None:
-    """Validate and apply a phone number change. Returns error string or None."""
+def _patch_phone(user: User, user_id: str, phone_number: str) -> None:
+    """Validate and apply a phone number change. Raises ValidationException on failure."""
     if User.objects.exclude(pk=user_id).filter(phone_number=phone_number).exists():
-        return "A user with that phone number already exists."
-    try:
-        user.phone_number = _validate_phone(phone_number)
-    except ValueError as e:
-        return str(e)
-    return None
+        raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
+    user.phone_number = _validate_phone(phone_number)
 
 
-def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str) -> str | None:
+def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str) -> None:
     if not is_paused:
-        return None
+        return
     if requester_id == str(user.pk):
-        return "You cannot pause your own account."
+        raise_validation(Code.User.CANNOT_PAUSE_SELF, status_code=400)
     if _is_admin(user):
-        return "Admins cannot be paused."
-    return None
+        raise_validation(Code.User.CANNOT_PAUSE_ADMIN, status_code=400)
 
 
-def _apply_user_patch(
-    user: User, user_id: str, payload: UserPatchIn, requester_id: str
-) -> str | None:
-    """Apply UserPatchIn fields to user. Returns an error message string on failure, else None."""
+def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_id: str) -> None:
+    """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
     if payload.phone_number is not None:
-        err = _patch_phone(user, user_id, payload.phone_number)
-        if err:
-            return err
+        _patch_phone(user, user_id, payload.phone_number)
     if payload.display_name is not None:
-        err = validate_display_name(payload.display_name)
-        if err:
-            return err
+        validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
     if payload.email is not None:
         user.email = payload.email
-    err = _validate_pause_change(user, payload.is_paused, requester_id)
-    if err:
-        return err
+    _validate_pause_change(user, payload.is_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
-    return None
 
 
 @router.delete(
@@ -321,17 +304,17 @@ def delete_user(request, user_id: str):
             target_id=user_id,
             details={"endpoint": "delete_user", "required_permission": PermissionKey.MANAGE_USERS},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="delete_user")
     try:
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
-        return Status(404, ErrorOut(detail="User not found."))
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
-        return Status(400, ErrorOut(detail="You cannot delete your own account."))
+        raise_validation(Code.User.CANNOT_DELETE_SELF, status_code=400)
     if _is_last_admin(user):
-        return Status(400, ErrorOut(detail="Cannot delete the last admin."))
+        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.archived_at is not None:
-        return Status(400, ErrorOut(detail="User is already archived."))
+        raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
     display_name = user.display_name
     user.archived_at = timezone.now()
     user.save(update_fields=["archived_at"])
@@ -364,23 +347,18 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
                 "required_permission": PermissionKey.MANAGE_USERS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_user_roles")
     try:
         user = User.objects.prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
-        return Status(404, ErrorOut(detail="User not found."))
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
 
     roles = list(Role.objects.filter(pk__in=payload.role_ids))
     if len(roles) != len(payload.role_ids):
-        return Status(400, ErrorOut(detail="One or more role IDs not found."))
+        raise_validation(Code.User.ROLE_IDS_NOT_FOUND, field="role_ids", status_code=400)
 
-    error = _validate_admin_role_change(user, request.auth.pk, roles)
-    if error:
-        return Status(400, ErrorOut(detail=error))
-
-    error = _validate_member_role_required(roles)
-    if error:
-        return Status(400, ErrorOut(detail=error))
+    _validate_admin_role_change(user, request.auth.pk, roles)
+    _validate_member_role_required(roles)
 
     old_role_ids = [str(r.id) for r in user.roles.all()]
     user.roles.set(roles)

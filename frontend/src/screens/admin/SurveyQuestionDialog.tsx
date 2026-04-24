@@ -2,7 +2,7 @@
 // textarea appears only for types that use them.
 
 import { useState } from 'react';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   useCreateSurveyQuestion,
   useUpdateSurveyQuestion,
@@ -155,9 +155,5 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't save — try again";
+  return extractApiErrorOr(err, "couldn't save — try again");
 }

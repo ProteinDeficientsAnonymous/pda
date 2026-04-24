@@ -2,9 +2,8 @@
 
 from functools import wraps
 
-from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from django.core.cache import cache
-from ninja.responses import Status
 
 _PERIOD_MAP = {"s": 1, "m": 60, "h": 3600, "d": 86400}
 
@@ -43,7 +42,7 @@ def rate_limit(*, key_func, rate: str):
             cache_key = f"rl:{view_func.__name__}:{key_func(request)}"
             current = cache.get(cache_key, 0)
             if current >= count:
-                return Status(429, ErrorOut(detail="too many requests — slow down"))
+                raise_validation(Code.Rate.LIMITED, status_code=429)
             cache.set(cache_key, current + 1, period)
             return view_func(request, *args, **kwargs)
 

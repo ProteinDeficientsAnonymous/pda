@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _validate_phone, logger  # noqa: F401
+from community._validation import ValidationException
 
 router = Router()
 
@@ -45,7 +46,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
 
     try:
         normalized = _validate_phone(payload.phone_number)
-    except ValueError:
+    except ValidationException:
         audit_log(
             logging.INFO,
             "magic_link_request_skipped_invalid_phone",

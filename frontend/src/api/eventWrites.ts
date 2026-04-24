@@ -7,10 +7,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { apiClient } from './client';
+import { extractApiErrorOr } from './apiErrors';
 import { useAuthStore } from '@/auth/store';
 import { eventKeys } from './events';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { messagesFromFieldErrors, type FieldError } from './validationCodes';
 import type { Event } from '@/models/event';
 import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/paymentHandle';
 
@@ -216,26 +216,11 @@ export function useDeleteEventPhoto(eventId: string) {
 }
 
 export function extractEventError(err: unknown): string {
-  if (isAxiosError(err)) {
-    if (err.response?.status === 429) {
-      return "you've hit the daily event-creation limit — try again tomorrow";
-    }
-    const data = err.response?.data as Record<string, unknown> | undefined;
-    if (data) {
-      // Backend returns one of two shapes:
-      //   { detail: "free-text" } — unhandled 4xx from route handlers
-      //   { detail: [{ code, field, params? }, ...] } — validation errors
-      if (typeof data.detail === 'string') return data.detail;
-      if (Array.isArray(data.detail)) {
-        const fieldErrors = data.detail.filter(
-          (e): e is FieldError =>
-            typeof e === 'object' && e !== null && typeof (e as FieldError).code === 'string',
-        );
-        if (fieldErrors.length > 0) return messagesFromFieldErrors(fieldErrors);
-      }
-    }
+  // Event-create has a hard daily rate limit; surface that specifically.
+  if (isAxiosError(err) && err.response?.status === 429) {
+    return "you've hit the daily event-creation limit — try again tomorrow";
   }
-  return "couldn't save the event — try again";
+  return extractApiErrorOr(err, "couldn't save the event — try again");
 }
 
 export function emptyEventFormValues(): EventFormValues {

@@ -18,6 +18,7 @@ from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _validate_phone, logger, validate_display_name
+from community._validation import Code, ValidationException, raise_validation
 from community.models import (
     JoinFormQuestion,
     JoinFormQuestionType,
@@ -41,8 +42,11 @@ class JoinRequestIn(BaseModel):
     def validate_answer_lengths(cls, v: dict[str, str]) -> dict[str, str]:
         for key, answer in v.items():
             if len(answer) > FieldLimit.DESCRIPTION:
-                raise ValueError(
-                    f"Answer for question {key} exceeds {FieldLimit.DESCRIPTION} characters."
+                raise_validation(
+                    Code.JoinRequest.ANSWER_TOO_LONG,
+                    field=f"answers.{key}",
+                    label=key,
+                    max=FieldLimit.DESCRIPTION,
                 )
         return v
 
@@ -119,19 +123,26 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
 def _validate_answers(
     answers: dict[str, str],
     questions: dict[str, JoinFormQuestion],
-) -> str | None:
-    """Validate answers against questions. Returns error message or None."""
+) -> None:
+    """Validate answers against questions. Raises ValidationException on failure."""
     for q_id, q in questions.items():
         answer = answers.get(q_id, "").strip()
         if q.required and not answer:
-            return f'"{q.label}" is required.'
+            raise_validation(
+                Code.JoinRequest.ANSWER_REQUIRED,
+                field=f"answers.{q_id}",
+                label=q.label,
+            )
         if (
             q.field_type == JoinFormQuestionType.SELECT
             and answer
             and answer not in (q.options or [])
         ):
-            return f'Invalid option for "{q.label}".'
-    return None
+            raise_validation(
+                Code.JoinRequest.ANSWER_INVALID_OPTION,
+                field=f"answers.{q_id}",
+                label=q.label,
+            )
 
 
 def _build_custom_answers(
@@ -176,17 +187,16 @@ def _honeypot_decoy_response(display_name: str, phone_number: str) -> JoinReques
     )
 
 
-def _check_phone_conflicts(validated_phone: str) -> tuple[int, str] | None:
-    """Return (status_code, detail) if phone is already taken, else None."""
+def _check_phone_conflicts(validated_phone: str) -> None:
+    """Raise ValidationException if phone is already taken."""
     from users.models import User
 
     if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
-        return 409, "already_invited"
+        raise_validation(Code.JoinRequest.PHONE_ALREADY_INVITED, status_code=409)
     if JoinRequest.objects.filter(
         phone_number=validated_phone, status=JoinRequestStatus.PENDING
     ).exists():
-        return 400, "a request for this number is already pending — we'll be in touch soon"
-    return None
+        raise_validation(Code.JoinRequest.PHONE_ALREADY_PENDING, status_code=400)
 
 
 @router.post(
@@ -208,24 +218,12 @@ def submit_join_request(request, payload: JoinRequestIn):
         )
         return Status(201, _honeypot_decoy_response(display_name, payload.phone_number))
 
-    name_error = validate_display_name(display_name)
-    if name_error:
-        return Status(400, ErrorOut(detail=name_error))
-
-    try:
-        validated_phone = _validate_phone(payload.phone_number)
-    except ValueError as e:
-        return Status(400, ErrorOut(detail=str(e)))
-
-    conflict = _check_phone_conflicts(validated_phone)
-    if conflict is not None:
-        code, detail = conflict
-        return Status(code, ErrorOut(detail=detail))
+    validate_display_name(display_name)
+    validated_phone = _validate_phone(payload.phone_number)
+    _check_phone_conflicts(validated_phone)
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
-    error = _validate_answers(payload.answers, questions)
-    if error:
-        return Status(400, ErrorOut(detail=error))
+    _validate_answers(payload.answers, questions)
 
     custom_answers = _build_custom_answers(payload.answers, questions)
 
@@ -265,7 +263,7 @@ def list_join_requests(request):
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
     from users.models import User
 
@@ -312,19 +310,24 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_join_request_status")
 
     valid_statuses = [JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED]
     if payload.status not in valid_statuses:
-        return Status(400, ErrorOut(detail=f"Status must be one of: {', '.join(valid_statuses)}."))
+        raise_validation(
+            Code.JoinRequest.INVALID_STATUS,
+            field="status",
+            status_code=400,
+            allowed=valid_statuses,
+        )
 
     try:
         join_request = JoinRequest.objects.get(id=id)
     except JoinRequest.DoesNotExist:
-        return Status(404, ErrorOut(detail="Join request not found."))
+        raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
     if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
-        return Status(400, ErrorOut(detail="This request has already been decided."))
+        raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
 
     _stamp_decision(join_request, payload.status, request.auth)
 
@@ -396,15 +399,15 @@ def unreject_join_request(request, id: UUID):
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="unreject_join_request")
 
     try:
         join_request = JoinRequest.objects.get(id=id)
     except JoinRequest.DoesNotExist:
-        return Status(404, ErrorOut(detail="Join request not found."))
+        raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
 
     if join_request.status != JoinRequestStatus.REJECTED:
-        return Status(400, ErrorOut(detail="Only rejected requests can be un-rejected."))
+        raise_validation(Code.JoinRequest.ONLY_REJECTED_CAN_BE_UN_REJECTED, status_code=400)
 
     join_request.status = JoinRequestStatus.PENDING
     join_request.save(update_fields=["status"])
@@ -427,7 +430,7 @@ def check_phone(request, payload: CheckPhoneIn):
 
     try:
         normalized = _validate_phone(payload.phone_number)
-    except ValueError:
+    except ValidationException:
         return Status(200, CheckPhoneOut(status="unknown"))
     if UserModel.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
         return Status(200, CheckPhoneOut(status="member"))

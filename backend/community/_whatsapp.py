@@ -12,6 +12,7 @@ from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import WhatsAppConfig
 
 router = Router()
@@ -49,7 +50,7 @@ def get_whatsapp_config(request):
                 "required_permission": PermissionKey.MANAGE_WHATSAPP,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_whatsapp")
     config = WhatsAppConfig.get()
     return Status(
         200,
@@ -77,7 +78,7 @@ def update_whatsapp_config(request, payload: WhatsAppConfigPatchIn):
                 "required_permission": PermissionKey.MANAGE_WHATSAPP,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_whatsapp")
     config = WhatsAppConfig.get()
     changed = []
     if payload.bot_url is not None:
@@ -123,7 +124,7 @@ def get_whatsapp_status(request):
                 "required_permission": PermissionKey.MANAGE_WHATSAPP,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_whatsapp")
     config = WhatsAppConfig.get()
     bot_url = config.bot_url or getattr(settings, "WHATSAPP_BOT_URL", "")
     if not bot_url:

@@ -4,8 +4,8 @@
 import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import {
@@ -249,11 +249,7 @@ function SurveyFinalizeControls({ surveyId, options }: { surveyId: string; optio
 }
 
 function extractApiDetail(err: unknown): string {
-  if (isAxiosError(err)) {
-    const d = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (d) return d;
-  }
-  return 'request failed';
+  return extractApiErrorOr(err, 'request failed');
 }
 
 function renderAnswer(raw: unknown): string {

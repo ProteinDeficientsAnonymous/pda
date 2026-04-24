@@ -80,17 +80,22 @@ def _survey_out(
     )
 
 
-def _apply_linked_event_update(updates: dict) -> tuple[dict, str | None]:
-    """Resolve linked_event_id → linked_event object in update dict. Returns (updates, error_detail)."""
+def _apply_linked_event_update(updates: dict) -> dict:
+    """Resolve linked_event_id → linked_event object in update dict.
+
+    Raises ValidationException if the referenced event doesn't exist.
+    """
+    from community._validation import Code, raise_validation
+
     eid = updates.pop("linked_event_id")
     if not eid:
         updates["linked_event"] = None
-        return updates, None
+        return updates
     try:
         updates["linked_event"] = Event.objects.get(id=eid)
     except Event.DoesNotExist:
-        return updates, "Event not found."
-    return updates, None
+        raise_validation(Code.Event.NOT_FOUND, field="linked_event_id", status_code=400)
+    return updates
 
 
 def _response_out(response: SurveyResponse, user_name: str | None) -> SurveyResponseOut:

@@ -33,6 +33,7 @@ from community._event_transitions import (
     _set_event_participants,
 )
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
+from community._validation import Code, raise_validation
 from community.models import (
     Event,
     EventStatus,
@@ -57,23 +58,20 @@ def _is_invalid_official_visibility(event_type: str, visibility: str) -> bool:
     return event_type == EventType.OFFICIAL and visibility != PageVisibility.PUBLIC
 
 
-def _validate_event_datetimes(
-    start, end, datetime_tbd: bool, *, check_past: bool = True
-) -> str | None:
-    """Return an error message if datetime fields are invalid, else None."""
+def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
+    """Raise ValidationException if datetime fields are invalid."""
     if start is None:
         if not datetime_tbd:
-            return "start_datetime is required when datetime_tbd is false."
-        return None
+            raise_validation(Code.Event.START_DATETIME_REQUIRED_UNLESS_TBD, field="start_datetime")
+        return
     if end is not None and end <= start:
-        return "end_datetime must be after start_datetime."
+        raise_validation(Code.Event.END_BEFORE_START, field="end_datetime")
     if check_past and not datetime_tbd and start < timezone.now():
-        return "Start date must be in the future."
-    return None
+        raise_validation(Code.Event.START_DATETIME_MUST_BE_FUTURE, field="start_datetime")
 
 
-def _validate_update_payload(request, event: Event, event_id, updates: dict) -> Status | None:
-    """Validate PATCH payload fields; return error Status or None."""
+def _validate_update_payload(request, event: Event, event_id, updates: dict) -> None:
+    """Validate PATCH payload fields. Raises ValidationException on failure."""
     if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
         PermissionKey.TAG_OFFICIAL_EVENT
     ):
@@ -88,11 +86,11 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
                 "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
     effective_type = updates.get("event_type", event.event_type)
     effective_visibility = updates.get("visibility", event.visibility)
     if _is_invalid_official_visibility(effective_type, effective_visibility):
-        return Status(400, ErrorOut(detail="Official events must be public."))
+        raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
     # While a poll is active, the poll is the source of truth for when. Block
     # direct edits to start/end so the event time can't drift from the poll.
     # Host must finalize (or delete) the poll before setting a time.
@@ -100,10 +98,7 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
         f in updates for f in ("start_datetime", "end_datetime", "datetime_tbd")
     )
     if time_fields_edited and hasattr(event, "poll") and event.poll.is_active:
-        return Status(
-            400,
-            ErrorOut(detail="can't edit the date while a poll is active — finalize the poll first"),
-        )
+        raise_validation(Code.Event.DATE_LOCKED_BY_POLL, status_code=400)
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
     effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
@@ -111,19 +106,13 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     # "start required" or past-check when a draft stays dateless. But if the
     # draft has a start (existing or being set), it must be a future date.
     if event.is_draft and effective_start is None:
-        pass
-    else:
-        # Past-check applies when start_datetime is being touched, or on any
-        # edit to a draft that already has a start (stale-draft guard). Non-
-        # draft past events keep being tweakable for non-date fields within
-        # the 6-hour grace window (enforced client-side).
-        check_past = "start_datetime" in updates or event.is_draft
-        dt_error = _validate_event_datetimes(
-            effective_start, effective_end, effective_tbd, check_past=check_past
-        )
-        if dt_error:
-            return Status(400, ErrorOut(detail=dt_error))
-    return None
+        return
+    # Past-check applies when start_datetime is being touched, or on any
+    # edit to a draft that already has a start (stale-draft guard). Non-
+    # draft past events keep being tweakable for non-date fields within
+    # the 6-hour grace window (enforced client-side).
+    check_past = "start_datetime" in updates or event.is_draft
+    _validate_event_datetimes(effective_start, effective_end, effective_tbd, check_past=check_past)
 
 
 def _build_events_queryset(status: str, auth_user, is_authed):
@@ -169,7 +158,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
     is_authed = auth_user is not None
 
     if status in (EventStatus.CANCELLED, EventStatus.DRAFT) and not is_authed:
-        return Status(403, ErrorOut(detail="Authentication required."))
+        raise_validation(Code.Event.AUTH_REQUIRED, status_code=403)
 
     events = _filter_invite_only(
         list(_build_events_queryset(status, auth_user, is_authed)), auth_user, status
@@ -230,23 +219,23 @@ def get_event(request, event_id: UUID):
             .get(id=event_id)
         )
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.is_deleted:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
     if event.is_draft and not (auth_user and _can_edit_event(auth_user, event)):
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if (
         event.visibility == PageVisibility.MEMBERS_ONLY
         and auth_user is None
         and event.event_type != EventType.OFFICIAL
     ):
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.visibility == PageVisibility.INVITE_ONLY:
         co_host_ids = {str(c.id) for c in event.co_hosts.all()}
         invited_user_ids = {str(u.id) for u in event.invited_users.all()}
         if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
-            return Status(403, ErrorOut(detail="This event is invite only."))
+            raise_validation(Code.Event.INVITE_ONLY, status_code=403)
     return Status(200, _event_out(event, request.auth))
 
 
@@ -261,7 +250,7 @@ def create_event(request, payload: EventIn):
     # Official events require tag_official_event permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
-        return Status(400, ErrorOut(detail="status must be 'active' or 'draft'."))
+        raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 
     if payload.event_type == EventType.OFFICIAL:
         if not request.auth.has_permission(PermissionKey.TAG_OFFICIAL_EVENT):
@@ -274,25 +263,21 @@ def create_event(request, payload: EventIn):
                     "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
                 },
             )
-            return Status(403, ErrorOut(detail="Permission denied."))
+            raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
 
     if _is_invalid_official_visibility(payload.event_type, payload.visibility):
-        return Status(400, ErrorOut(detail="Official events must be public."))
+        raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
     # Drafts can save without a start_datetime (see #357). But if a start IS
     # provided, the same rules apply as for any event — must be in the future,
     # end must be after start.
-    if payload.status == EventStatus.DRAFT and payload.start_datetime is None:
-        pass
-    else:
-        dt_error = _validate_event_datetimes(
+    if not (payload.status == EventStatus.DRAFT and payload.start_datetime is None):
+        _validate_event_datetimes(
             payload.start_datetime,
             payload.end_datetime,
             payload.datetime_tbd,
             check_past=True,
         )
-        if dt_error:
-            return Status(400, ErrorOut(detail=dt_error))
 
     event = Event.objects.create(
         title=payload.title,
@@ -336,13 +321,11 @@ def create_event(request, payload: EventIn):
     return Status(201, _event_out(event, request.auth))
 
 
-def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict):
-    """Apply non-status field edits to an event. Returns a status response on error, else None."""
+def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -> None:
+    """Apply non-status field edits to an event. Raises ValidationException on failure."""
     if not updates:
-        return None
-    err_status = _validate_update_payload(request, event, event_id, updates)
-    if err_status:
-        return err_status
+        return
+    _validate_update_payload(request, event, event_id, updates)
     co_host_ids = updates.pop("co_host_ids", None)
     invited_user_ids = updates.pop("invited_user_ids", None)
     for field, value in updates.items():
@@ -360,7 +343,6 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict):
         target_id=str(event_id),
         details={"fields_changed": list(updates.keys())},
     )
-    return None
 
 
 @router.patch(
@@ -376,10 +358,10 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             .get(id=event_id)
         )
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     if event.is_deleted:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     if not _can_edit_event(request.auth, event):
         audit_log(
@@ -390,7 +372,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             target_id=str(event_id),
             details={"endpoint": "update_event"},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
 
     updates = payload.model_dump(exclude_unset=True)
     new_status = updates.pop("status", None)
@@ -403,9 +385,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             return early
 
     # Field edits are allowed on active, cancelled, or draft events
-    err_status = _apply_field_updates(request, event, event_id, updates)
-    if err_status:
-        return err_status
+    _apply_field_updates(request, event, event_id, updates)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

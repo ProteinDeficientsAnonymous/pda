@@ -1,12 +1,14 @@
 """Pydantic schemas for event endpoints."""
 
+import re
 from datetime import datetime
 from urllib.parse import urlparse
 
+import phonenumbers
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from community._field_limits import FieldLimit
-from community._validation import ValidationCode, ValidationException
+from community._validation import Code, raise_validation
 from community.models import (
     AttendanceStatus,
     EventStatus,
@@ -15,14 +17,41 @@ from community.models import (
     PageVisibility,
 )
 
+# Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
+# overkill for a free-text payment field, and we don't need DNS lookups.
+_EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+def _looks_like_email(s: str) -> bool:
+    return bool(_EMAIL_RE.match(s))
+
+
+def _looks_like_phone(s: str) -> bool:
+    """Accept E.164 (+15551234567) or any string phonenumbers can parse as US."""
+    try:
+        parsed = phonenumbers.parse(s, "US")
+    except phonenumbers.phonenumberutil.NumberParseException:
+        return False
+    return phonenumbers.is_valid_number(parsed)
+
+
+def _validate_zelle_info(v: str | None) -> str | None:
+    """Zelle is a free-text field but should be either an email or a phone number."""
+    if v is None or v == "":
+        return v
+    stripped = v.strip()
+    if _looks_like_email(stripped) or _looks_like_phone(stripped):
+        return stripped
+    raise_validation(Code.Zelle.INVALID, field="zelle_info")
+
 
 def _validate_max_attendees(v: int | None) -> int | None:
     """Accept null (unlimited) or an integer >= 1. Reject 0 and negatives."""
     if v is None:
         return v
     if v < 1:
-        raise ValidationException(
-            ValidationCode.MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE,
+        raise_validation(
+            Code.Event.MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE,
             field="max_attendees",
         )
     return v
@@ -36,12 +65,12 @@ def _require_path(url: str, field: str) -> str:
     try:
         parsed = urlparse(normalized)
     except ValueError:
-        raise ValidationException(ValidationCode.URL_INVALID, field=field)
+        raise_validation(Code.Url.INVALID, field=field)
     if not parsed.netloc:
-        raise ValidationException(ValidationCode.URL_INVALID, field=field)
+        raise_validation(Code.Url.INVALID, field=field)
     path = parsed.path.rstrip("/")
     if not path:
-        raise ValidationException(ValidationCode.URL_PATH_REQUIRED, field=field)
+        raise_validation(Code.Url.PATH_REQUIRED, field=field)
     return normalized
 
 
@@ -60,13 +89,13 @@ def _validate_whatsapp_url(url: str, field: str) -> str:
     try:
         parsed = urlparse(_normalize_url(url))
     except ValueError:
-        raise ValidationException(ValidationCode.URL_INVALID, field=field)
+        raise_validation(Code.Url.INVALID, field=field)
     host = _strip_www(parsed.netloc.lower())
     if host not in known_hosts:
-        raise ValidationException(
-            ValidationCode.WHATSAPP_URL_NOT_RECOGNIZED,
+        raise_validation(
+            Code.Url.WHATSAPP_NOT_RECOGNIZED,
             field=field,
-            params={"allowed_hosts": sorted(known_hosts)},
+            allowed_hosts=sorted(known_hosts),
         )
     return _require_path(url, field=field)
 
@@ -77,10 +106,10 @@ def _validate_partiful_url(url: str, field: str) -> str:
     try:
         parsed = urlparse(_normalize_url(url))
     except ValueError:
-        raise ValidationException(ValidationCode.URL_INVALID, field=field)
+        raise_validation(Code.Url.INVALID, field=field)
     host = _strip_www(parsed.netloc.lower())
     if "partiful.com" not in host:
-        raise ValidationException(ValidationCode.PARTIFUL_URL_NOT_RECOGNIZED, field=field)
+        raise_validation(Code.Url.PARTIFUL_NOT_RECOGNIZED, field=field)
     return _require_path(url, field=field)
 
 
@@ -94,11 +123,11 @@ def _validate_generic_url(url: str, field: str) -> str:
     try:
         parsed = urlparse(normalized)
     except ValueError:
-        raise ValidationException(ValidationCode.URL_INVALID, field=field)
+        raise_validation(Code.Url.INVALID, field=field)
     if not parsed.netloc or "." not in parsed.netloc:
-        raise ValidationException(ValidationCode.URL_INVALID, field=field)
+        raise_validation(Code.Url.INVALID, field=field)
     if parsed.scheme not in ("http", "https"):
-        raise ValidationException(ValidationCode.URL_SCHEME_MUST_BE_HTTP_OR_HTTPS, field=field)
+        raise_validation(Code.Url.SCHEME_MUST_BE_HTTP_OR_HTTPS, field=field)
     return normalized
 
 
@@ -225,10 +254,10 @@ class AttendanceIn(BaseModel):
     def validate_attendance(cls, v: str) -> str:
         valid = {AttendanceStatus.UNKNOWN, AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW}
         if v not in valid:
-            raise ValidationException(
-                ValidationCode.ATTENDANCE_INVALID_CHOICE,
+            raise_validation(
+                Code.Event.ATTENDANCE_INVALID_CHOICE,
                 field="attendance",
-                params={"allowed": sorted(valid)},
+                allowed=sorted(valid),
             )
         return v
 
@@ -268,8 +297,8 @@ class EventIn(BaseModel):
         if self.status == EventStatus.DRAFT:
             return self
         if not self.datetime_tbd and self.start_datetime is None:
-            raise ValidationException(
-                ValidationCode.START_DATETIME_REQUIRED_UNLESS_TBD,
+            raise_validation(
+                Code.Event.START_DATETIME_REQUIRED_UNLESS_TBD,
                 field="start_datetime",
             )
         return self
@@ -288,6 +317,11 @@ class EventIn(BaseModel):
     @classmethod
     def validate_other(cls, v: str) -> str:
         return _validate_generic_url(v or "", field="other_link")
+
+    @field_validator("zelle_info", mode="after")
+    @classmethod
+    def validate_zelle(cls, v: str) -> str:
+        return _validate_zelle_info(v) or ""
 
     @field_validator("max_attendees", mode="after")
     @classmethod
@@ -342,6 +376,11 @@ class EventPatchIn(BaseModel):
         if v is None:
             return None
         return _validate_generic_url(v, field="other_link")
+
+    @field_validator("zelle_info", mode="after")
+    @classmethod
+    def validate_zelle(cls, v: str | None) -> str | None:
+        return _validate_zelle_info(v)
 
     @field_validator("max_attendees", mode="after")
     @classmethod

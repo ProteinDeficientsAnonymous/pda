@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   useUpdateWhatsappConfig,
   useWhatsappConfig,
@@ -122,9 +122,5 @@ function StatusDot({ state }: { state: 'connected' | 'offline' | 'checking' }) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't save — try again";
+  return extractApiErrorOr(err, "couldn't save — try again");
 }

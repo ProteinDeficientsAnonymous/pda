@@ -23,6 +23,7 @@ from community._survey_schemas import (
     SurveyResponseOut,
 )
 from community._survey_validators import _build_survey_answers, _validate_survey_answers
+from community._validation import Code, raise_validation
 from community.models import (
     DatetimePollResult,
     Survey,
@@ -43,10 +44,10 @@ def get_survey_public(request, slug: str):
     try:
         survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
     if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     return Status(200, _survey_out(survey, include_questions=True, requesting_user=auth_user))
 
 
@@ -59,14 +60,12 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     try:
         survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
     if survey.visibility == SurveyVisibility.MEMBERS_ONLY and auth_user is None:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     questions = {str(q.id): q for q in survey.questions.all()}
-    error = _validate_survey_answers(payload.answers, questions)
-    if error:
-        return Status(400, ErrorOut(detail=error))
+    _validate_survey_answers(payload.answers, questions)
     answers = _build_survey_answers(payload.answers, questions)
     user_name = (auth_user.display_name or auth_user.phone_number) if auth_user else None
     if survey.one_response_per_user and auth_user is not None:
@@ -104,7 +103,7 @@ def get_survey_tallies(request, survey_id: UUID):
     try:
         survey = Survey.objects.prefetch_related("questions").get(id=survey_id)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     poll_questions = [
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]
@@ -126,7 +125,7 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
             .get(id=survey_id)
         )
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
 
     event = survey.linked_event
     if not _has_finalize_permission(request, survey, event):
@@ -138,21 +137,21 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
             target_id=str(survey_id),
             details={"endpoint": "finalize_poll"},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_poll")
 
     if hasattr(survey, "poll_result"):
-        return Status(400, ErrorOut(detail="This poll has already been finalized."))
+        raise_validation(Code.Survey.POLL_ALREADY_FINALIZED, status_code=400)
 
     poll_questions = [
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]
     if not poll_questions:
-        return Status(400, ErrorOut(detail="Survey has no datetime poll question."))
+        raise_validation(Code.Survey.NO_DATETIME_POLL_QUESTION, status_code=400)
 
     winning_iso = payload.winning_datetime.isoformat()
     all_options = poll_questions[0].options or []
     if winning_iso not in all_options:
-        return Status(400, ErrorOut(detail="Winning datetime is not one of the poll options."))
+        raise_validation(Code.Survey.WINNING_DATETIME_NOT_IN_OPTIONS, status_code=400)
 
     DatetimePollResult.objects.create(
         survey=survey,

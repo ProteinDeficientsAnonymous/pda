@@ -19,6 +19,7 @@ from community._event_schemas import (
     EventOut,
 )
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import Event
 
 router = Router()
@@ -32,13 +33,23 @@ router = Router()
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
     if photo.content_type not in _ALLOWED_IMAGE_TYPES:
-        return Status(400, ErrorOut(detail="File must be a JPEG, PNG, WebP, or GIF image."))
+        raise_validation(
+            Code.Photo.TYPE_NOT_ALLOWED,
+            field="photo",
+            status_code=400,
+            allowed=sorted(_ALLOWED_IMAGE_TYPES),
+        )
     if photo.size and photo.size > _MAX_EVENT_PHOTO_SIZE:
-        return Status(400, ErrorOut(detail="Photo must be under 10 MB."))
+        raise_validation(
+            Code.Photo.TOO_LARGE,
+            field="photo",
+            status_code=400,
+            max_mb=_MAX_EVENT_PHOTO_SIZE // (1024 * 1024),
+        )
     try:
         event = Event.objects.get(id=event_id)
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
     is_creator = event.created_by_id == request.auth.pk
     is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
@@ -51,9 +62,9 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
             target_id=str(event_id),
             details={"endpoint": "upload_event_photo"},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="upload_event_photo")
     if event.is_cancelled:
-        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+        raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     if event.photo:
         event.photo.delete(save=False)
     name = photo.name or ""
@@ -75,7 +86,7 @@ def delete_event_photo(request, event_id: UUID):
     try:
         event = Event.objects.get(id=event_id)
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
     is_creator = event.created_by_id == request.auth.pk
     is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
@@ -88,9 +99,9 @@ def delete_event_photo(request, event_id: UUID):
             target_id=str(event_id),
             details={"endpoint": "delete_event_photo"},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="delete_event_photo")
     if event.is_cancelled:
-        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+        raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     if event.photo:
         event.photo.delete(save=False)
         event.photo = ""

@@ -1,8 +1,8 @@
 // Invite members to an event — adds user ids to invited_user_ids via PATCH.
 // Co-hosts + members (when invite_permission=all_members) can invite.
 
-import { isAxiosError } from 'axios';
 import { useState } from 'react';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useUpdateEvent } from '@/api/eventWrites';
 import { MemberPicker } from '@/components/MemberPicker';
 import type { MemberSearchResult } from '@/api/userSearch';
@@ -63,9 +63,5 @@ export function InviteDialog({ event, open, onClose }: Props) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't send invites — try again";
+  return extractApiErrorOr(err, "couldn't send invites — try again");
 }

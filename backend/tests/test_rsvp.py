@@ -1,8 +1,10 @@
 """Tests for event RSVP endpoints and event detail GET."""
 
 import pytest
+from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso
 
 # ---------------------------------------------------------------------------
@@ -80,7 +82,7 @@ class TestGetEvent:
             **auth_headers,
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "Event not found."
+        assert_error_code(response, Code.Event.NOT_FOUND)
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +139,7 @@ class TestRSVP:
             **auth_headers,
         )
         assert response.status_code == 400
-        assert "not enabled" in response.json()["detail"]
+        assert_error_code(response, Code.Event.RSVPS_NOT_ENABLED)
 
     def test_rsvp_event_not_found(self, api_client, auth_headers):
         response = api_client.post(
@@ -192,7 +194,7 @@ class TestRSVP:
             **auth_headers,
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "RSVP not found."
+        assert_error_code(response, Code.Event.RSVP_NOT_FOUND)
 
     def test_rsvp_delete_requires_auth(self, api_client, rsvp_event):
         response = api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/")

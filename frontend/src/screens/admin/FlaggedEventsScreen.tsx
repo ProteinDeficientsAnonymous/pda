@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { isAxiosError } from 'axios';
 import { Link } from 'react-router-dom';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useDecideFlag, useEventFlags, type FlagStatus, type EventFlag } from '@/api/eventFlags';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
@@ -151,9 +151,5 @@ function StatusBadge({ status }: { status: FlagStatus }) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't complete that action — try again";
+  return extractApiErrorOr(err, "couldn't complete that action — try again");
 }

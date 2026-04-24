@@ -13,6 +13,7 @@ from users.permissions import PermissionKey
 from community._content_render import render_content_payload
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import DocFolder, Document
 
 router = Router()
@@ -149,7 +150,7 @@ def list_folders(request):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
     top_level = DocFolder.objects.filter(parent__isnull=True).prefetch_related(
         "children", "documents", "children__documents"
     )
@@ -172,14 +173,14 @@ def create_folder(request, payload: FolderIn):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     parent = None
     if payload.parent_id:
         try:
             parent = DocFolder.objects.get(pk=payload.parent_id)
         except DocFolder.DoesNotExist:
-            return Status(404, ErrorOut(detail="Parent folder not found."))
+            raise_validation(Code.Docs.PARENT_FOLDER_NOT_FOUND, field="parent_id", status_code=404)
 
     folder = DocFolder.objects.create(name=payload.name, parent=parent)
     audit_log(
@@ -209,7 +210,7 @@ def reorder_folders(request, payload: ReorderIn):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     for i, fid in enumerate(payload.ids):
         DocFolder.objects.filter(pk=fid).update(display_order=i)
@@ -235,12 +236,12 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     try:
         folder = DocFolder.objects.get(pk=folder_id)
     except DocFolder.DoesNotExist:
-        return Status(404, ErrorOut(detail="Folder not found."))
+        raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
 
     updates = payload.model_dump(exclude_unset=True)
     if "parent_id" in updates:
@@ -251,7 +252,9 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
             try:
                 folder.parent = DocFolder.objects.get(pk=pid)
             except DocFolder.DoesNotExist:
-                return Status(404, ErrorOut(detail="Parent folder not found."))
+                raise_validation(
+                    Code.Docs.PARENT_FOLDER_NOT_FOUND, field="parent_id", status_code=404
+                )
 
     for key, value in updates.items():
         setattr(folder, key, value)
@@ -285,12 +288,12 @@ def delete_folder(request, folder_id: str):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     try:
         folder = DocFolder.objects.get(pk=folder_id)
     except DocFolder.DoesNotExist:
-        return Status(404, ErrorOut(detail="Folder not found."))
+        raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
 
     folder_name = folder.name
     folder.delete()
@@ -326,12 +329,12 @@ def create_document(request, payload: DocumentIn):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     try:
         folder = DocFolder.objects.get(pk=payload.folder_id)
     except DocFolder.DoesNotExist:
-        return Status(404, ErrorOut(detail="Folder not found."))
+        raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
 
     rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
     doc = Document.objects.create(
@@ -369,7 +372,7 @@ def reorder_documents(request, payload: ReorderIn):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     for i, did in enumerate(payload.ids):
         Document.objects.filter(pk=did).update(display_order=i)
@@ -393,11 +396,11 @@ def get_document(request, doc_id: str):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
     try:
         doc = Document.objects.get(pk=doc_id)
     except Document.DoesNotExist:
-        return Status(404, ErrorOut(detail="Document not found."))
+        raise_validation(Code.Docs.DOCUMENT_NOT_FOUND, status_code=404)
 
     return Status(200, _doc_to_out(doc))
 
@@ -420,12 +423,12 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     try:
         doc = Document.objects.get(pk=doc_id)
     except Document.DoesNotExist:
-        return Status(404, ErrorOut(detail="Document not found."))
+        raise_validation(Code.Docs.DOCUMENT_NOT_FOUND, status_code=404)
 
     updates = payload.model_dump(exclude_unset=True)
     if "folder_id" in updates:
@@ -433,7 +436,7 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
         try:
             doc.folder = DocFolder.objects.get(pk=fid)
         except DocFolder.DoesNotExist:
-            return Status(404, ErrorOut(detail="Folder not found."))
+            raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
 
     # If either content format was sent, re-render HTML from the winner.
     content_sent = "content" in updates or "content_pm" in updates
@@ -478,12 +481,12 @@ def delete_document(request, doc_id: str):
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
     try:
         doc = Document.objects.get(pk=doc_id)
     except Document.DoesNotExist:
-        return Status(404, ErrorOut(detail="Document not found."))
+        raise_validation(Code.Docs.DOCUMENT_NOT_FOUND, status_code=404)
 
     title = doc.title
     doc.delete()

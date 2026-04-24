@@ -1,6 +1,8 @@
 """Tests for user update, profile, delete, and magic link."""
 
 import pytest
+from community._validation import Code
+from tests._asserts import assert_error_code
 
 
 @pytest.mark.django_db
@@ -13,7 +15,7 @@ class TestUpdateUser:
             **manage_users_headers,
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "User not found."
+        assert_error_code(response, Code.User.NOT_FOUND)
 
     def test_update_user_duplicate_phone(
         self, api_client, manage_users_headers, test_user, other_user
@@ -24,8 +26,8 @@ class TestUpdateUser:
             content_type="application/json",
             **manage_users_headers,
         )
-        assert response.status_code == 400
-        assert "already exists" in response.json()["detail"]
+        assert response.status_code == 409
+        assert_error_code(response, Code.Phone.ALREADY_EXISTS, "phone_number")
 
     def test_update_user_invalid_phone(self, api_client, manage_users_headers, other_user):
         response = api_client.patch(
@@ -34,7 +36,8 @@ class TestUpdateUser:
             content_type="application/json",
             **manage_users_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
+        assert_error_code(response, Code.Phone.INVALID, "phone_number")
 
     def test_update_user_pause(self, api_client, manage_users_headers, other_user):
         response = api_client.patch(
@@ -85,7 +88,7 @@ class TestUpdateUser:
             **manage_users_headers,
         )
         assert response.status_code == 400
-        assert "admin" in response.json()["detail"].lower()
+        assert_error_code(response, Code.User.CANNOT_PAUSE_ADMIN)
         other_user.refresh_from_db()
         assert other_user.is_paused is False
 
@@ -115,7 +118,7 @@ class TestDeleteUser:
             **manage_users_headers,
         )
         assert response.status_code == 404
-        assert response.json()["detail"] == "User not found."
+        assert_error_code(response, Code.User.NOT_FOUND)
 
     def test_delete_user_requires_auth(self, api_client, other_user):
         response = api_client.delete(f"/api/auth/users/{other_user.pk}/")
@@ -152,7 +155,7 @@ class TestDeleteUser:
             **manage_users_headers,
         )
         assert response.status_code == 400
-        assert response.json()["detail"] == "User is already archived."
+        assert_error_code(response, Code.User.ALREADY_ARCHIVED)
 
     def test_archived_user_excluded_from_list(self, api_client, manage_users_headers, other_user):
         from django.utils import timezone
@@ -188,7 +191,7 @@ class TestDeleteUser:
             content_type="application/json",
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "this account is no longer active"
+        assert_error_code(response, Code.Auth.ACCOUNT_ARCHIVED)
 
     def test_archived_user_cannot_magic_login(self, api_client, other_user):
         from django.utils import timezone
@@ -200,7 +203,7 @@ class TestDeleteUser:
 
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
         assert response.status_code == 403
-        assert response.json()["detail"] == "this account is no longer active"
+        assert_error_code(response, Code.Auth.ACCOUNT_ARCHIVED)
 
 
 @pytest.mark.django_db

@@ -3,6 +3,7 @@
 import logging
 
 from community._shared import validate_display_name
+from community._validation import Code, raise_validation
 from config.audit import audit_log
 from config.media_proxy import media_path
 from django.http import HttpResponse
@@ -60,18 +61,18 @@ def login(request, payload: LoginIn, response: HttpResponse):
         audit_log(
             logging.WARNING, "login_failed", request, details={"reason": "invalid_credentials"}
         )
-        return Status(401, ErrorOut(detail="Invalid credentials"))
+        raise_validation(Code.Auth.INVALID_CREDENTIALS, status_code=401)
     user = User.objects.get(pk=auth_user.pk)
     if user.archived_at is not None:
         audit_log(
             logging.WARNING, "login_archived", request, target_type="user", target_id=str(user.pk)
         )
-        return Status(403, ErrorOut(detail="this account is no longer active"))
+        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if user.is_paused:
         audit_log(
             logging.WARNING, "login_paused", request, target_type="user", target_id=str(user.pk)
         )
-        return Status(403, ErrorOut(detail="your membership is currently paused"))
+        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     refresh = RefreshToken.for_user(user)
     request.auth = user
     refresh_str = str(refresh)
@@ -106,7 +107,7 @@ def magic_login(request, token: str, response: HttpResponse):
         audit_log(
             logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
         )
-        return Status(400, ErrorOut(detail="Invalid or expired login link."))
+        raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
     # Reject cross-user magic links: if the caller is already authenticated as a
     # different user, a silent session swap would let them complete onboarding /
     # password-set on behalf of the link's target. Force explicit logout first.
@@ -120,10 +121,7 @@ def magic_login(request, token: str, response: HttpResponse):
             target_id=str(magic.user.pk),
             details={"current_user_id": str(current_user.pk)},
         )
-        return Status(
-            403,
-            ErrorOut(detail="you're signed in as a different user — log out first"),
-        )
+        raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
     if magic.used or magic.is_expired:
         audit_log(
             logging.WARNING,
@@ -133,7 +131,7 @@ def magic_login(request, token: str, response: HttpResponse):
             target_id=str(magic.user.pk),
             details={"reason": "used_or_expired"},
         )
-        return Status(400, ErrorOut(detail="This login link has already been used or has expired."))
+        raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
     if magic.user.archived_at is not None:
         audit_log(
             logging.WARNING,
@@ -142,7 +140,7 @@ def magic_login(request, token: str, response: HttpResponse):
             target_type="user",
             target_id=str(magic.user.pk),
         )
-        return Status(403, ErrorOut(detail="this account is no longer active"))
+        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if magic.user.is_paused:
         audit_log(
             logging.WARNING,
@@ -151,7 +149,7 @@ def magic_login(request, token: str, response: HttpResponse):
             target_type="user",
             target_id=str(magic.user.pk),
         )
-        return Status(403, ErrorOut(detail="your membership is currently paused"))
+        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     magic.used = True
     magic.save(update_fields=["used"])
     refresh = RefreshToken.for_user(magic.user)
@@ -176,17 +174,17 @@ def refresh_token(request, payload: RefreshIn, response: HttpResponse):
     # that still send the refresh token in the JSON payload.
     token = read_refresh_cookie(request) or payload.refresh
     if not token:
-        return Status(401, ErrorOut(detail="Invalid or expired refresh token"))
+        raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
         refresh = RefreshToken(token)
         return Status(200, AccessOut(access=str(refresh.access_token)))
     except TokenError:
-        clear_refresh_cookie(response)
-        return Status(401, ErrorOut(detail="Invalid or expired refresh token"))
+        raise_validation(
+            Code.Auth.REFRESH_TOKEN_INVALID, status_code=401, clear_refresh_cookie=True
+        )
     except Exception:
         logger.exception("Unexpected error during token refresh")
-        clear_refresh_cookie(response)
-        return Status(401, ErrorOut(detail="Token refresh failed"))
+        raise_validation(Code.Auth.REFRESH_FAILED, status_code=401, clear_refresh_cookie=True)
 
 
 @router.post("/logout/", response={200: LogoutOut}, auth=None)
@@ -200,17 +198,19 @@ def logout(request, response: HttpResponse):
 def me(request):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.is_paused:
-        return Status(403, ErrorOut(detail="your membership is currently paused"))
+        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     return Status(200, UserOut.from_user(user))
 
 
-def _apply_me_patch(user, payload: MePatchIn):
-    """Apply MePatchIn fields to user. Returns (changed_fields, error_response)."""
-    changed = []
+def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
+    """Apply MePatchIn fields to user. Returns the list of changed fields.
+
+    Raises ValidationException on invalid input — caller lets it propagate
+    to the global handler.
+    """
+    changed: list[str] = []
     if payload.display_name is not None:
-        name_error = validate_display_name(payload.display_name)
-        if name_error:
-            return None, Status(400, ErrorOut(detail=name_error))
+        validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
         changed.append("display_name")
     if payload.email is not None:
@@ -231,15 +231,13 @@ def _apply_me_patch(user, payload: MePatchIn):
     if payload.week_start is not None:
         user.week_start = payload.week_start
         changed.append("week_start")
-    return changed, None
+    return changed
 
 
 @router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
 def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    changed, err = _apply_me_patch(user, payload)
-    if err is not None:
-        return err
+    changed = _apply_me_patch(user, payload)
     user.save()
     if changed:
         audit_log(
@@ -256,9 +254,19 @@ def update_me(request, payload: MePatchIn):
 @router.post("/me/photo/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
 def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
     if photo.content_type not in _ALLOWED_IMAGE_TYPES:
-        return Status(400, ErrorOut(detail="File must be a JPEG, PNG, WebP, or GIF image."))
+        raise_validation(
+            Code.Photo.TYPE_NOT_ALLOWED,
+            field="photo",
+            status_code=400,
+            allowed=sorted(_ALLOWED_IMAGE_TYPES),
+        )
     if photo.size and photo.size > _MAX_PHOTO_SIZE:
-        return Status(400, ErrorOut(detail="Photo must be under 5 MB."))
+        raise_validation(
+            Code.Photo.TOO_LARGE,
+            field="photo",
+            status_code=400,
+            max_mb=_MAX_PHOTO_SIZE // (1024 * 1024),
+        )
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.profile_photo:
         user.profile_photo.delete(save=False)
@@ -323,7 +331,7 @@ def get_member_profile(request, user_id: str):
             pk=user_id, is_active=True, is_paused=False, archived_at__isnull=True
         )
     except User.DoesNotExist:
-        return Status(404, ErrorOut(detail="Member not found."))
+        raise_validation(Code.Member.NOT_FOUND, status_code=404)
     is_own_profile = str(request.auth.pk) == user_id
     can_manage_users = request.auth.has_permission(PermissionKey.MANAGE_USERS)
     return Status(
@@ -344,12 +352,12 @@ def get_member_profile(request, user_id: str):
 def complete_onboarding(request, payload: OnboardingIn):
     pw_errors = validate_password(payload.new_password)
     if pw_errors:
-        return Status(400, ErrorOut(detail="; ".join(pw_errors)))
+        raise_validation(
+            Code.Password.INVALID, field="new_password", status_code=400, reasons=pw_errors
+        )
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if payload.display_name is not None:
-        name_error = validate_display_name(payload.display_name)
-        if name_error:
-            return Status(400, ErrorOut(detail=name_error))
+        validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
     if payload.email:
         user.email = payload.email
@@ -374,10 +382,14 @@ def change_password(request, payload: ChangePasswordIn):
             target_id=str(user.pk),
             details={"reason": "wrong_current_password"},
         )
-        return Status(400, ErrorOut(detail="Current password is incorrect."))
+        raise_validation(
+            Code.Auth.CURRENT_PASSWORD_INCORRECT, field="current_password", status_code=400
+        )
     pw_errors = validate_password(payload.new_password)
     if pw_errors:
-        return Status(400, ErrorOut(detail="; ".join(pw_errors)))
+        raise_validation(
+            Code.Password.INVALID, field="new_password", status_code=400, reasons=pw_errors
+        )
     user.set_password(payload.new_password)
     user.save()
     audit_log(logging.INFO, "password_changed", request, target_type="user", target_id=str(user.pk))

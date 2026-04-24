@@ -289,7 +289,7 @@ class TestSetAttendance:
             **_auth(host_user),
         )
         assert response.status_code == 400
-        assert "check-in" in response.json()["detail"].lower()
+        assert response.json()["detail"][0]["code"] == "event.attendance_opens_later"
 
     def test_rejects_when_rsvp_not_going(self, api_client, open_check_in_event, host_user, members):
         EventRSVP.objects.create(

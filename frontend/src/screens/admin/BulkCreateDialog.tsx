@@ -5,7 +5,7 @@
 // any per-row errors so the admin can retry the failed entries.
 
 import { useState, type SyntheticEvent } from 'react';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Textarea } from '@/components/ui/Textarea';
@@ -196,9 +196,5 @@ function normalizePhone(input: string): string {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't create members — try again";
+  return extractApiErrorOr(err, "couldn't create members — try again");
 }

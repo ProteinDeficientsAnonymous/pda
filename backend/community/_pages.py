@@ -14,6 +14,7 @@ from users.permissions import PermissionKey
 from community._content_render import render_content_payload
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _optional_jwt
+from community._validation import Code, raise_validation
 from community.models import EditablePage, PageVisibility
 
 router = Router()
@@ -53,7 +54,7 @@ def get_page(request, slug: str):
 
     if page.visibility == PageVisibility.MEMBERS_ONLY:
         if isinstance(request.auth, AnonymousUser):
-            return Status(403, ErrorOut(detail="Members only."))
+            raise_validation(Code.Page.MEMBERS_ONLY, status_code=403)
 
     return Status(200, _page_out(page))
 
@@ -72,7 +73,7 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
                 "required_permission": PermissionKey.EDIT_GUIDELINES,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_page")
 
     default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
     page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)

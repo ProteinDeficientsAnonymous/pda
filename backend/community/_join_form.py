@@ -12,6 +12,7 @@ from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut, logger  # noqa: F401
+from community._validation import Code, raise_validation
 from community.models import JoinFormQuestion, JoinFormQuestionType
 
 router = Router()
@@ -70,7 +71,7 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     max_order = JoinFormQuestion.objects.count()
     q = JoinFormQuestion.objects.create(
         label=payload.label,
@@ -106,7 +107,7 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     for idx, qid in enumerate(payload.question_ids):
         JoinFormQuestion.objects.filter(id=qid).update(display_order=idx)
     audit_log(logging.INFO, "join_form_questions_reordered", request)
@@ -132,11 +133,11 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     try:
         q = JoinFormQuestion.objects.get(id=question_id)
     except JoinFormQuestion.DoesNotExist:
-        return Status(404, ErrorOut(detail="Question not found."))
+        raise_validation(Code.JoinForm.QUESTION_NOT_FOUND, status_code=404)
     q.label = payload.label
     q.field_type = payload.field_type
     q.options = payload.options
@@ -171,11 +172,11 @@ def delete_join_form_question(request, question_id: UUID):
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     try:
         q = JoinFormQuestion.objects.get(id=question_id)
     except JoinFormQuestion.DoesNotExist:
-        return Status(404, ErrorOut(detail="Question not found."))
+        raise_validation(Code.JoinForm.QUESTION_NOT_FOUND, status_code=404)
     label = q.label
     q.delete()
     audit_log(

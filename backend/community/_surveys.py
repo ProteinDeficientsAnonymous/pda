@@ -25,6 +25,7 @@ from community._survey_schemas import (
     SurveyQuestionOut,
     SurveyResponseOut,
 )
+from community._validation import Code, raise_validation
 from community.models import (
     Event,
     Survey,
@@ -53,7 +54,7 @@ def list_surveys_admin(request):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     surveys = Survey.objects.all()
     return Status(
         200,
@@ -89,15 +90,15 @@ def create_survey(request, payload: SurveyIn):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     if Survey.objects.filter(slug=payload.slug).exists():
-        return Status(400, ErrorOut(detail="A survey with that slug already exists."))
+        raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
     linked_event = None
     if payload.linked_event_id:
         try:
             linked_event = Event.objects.get(id=payload.linked_event_id)
         except Event.DoesNotExist:
-            return Status(400, ErrorOut(detail="Event not found."))
+            raise_validation(Code.Event.NOT_FOUND, field="linked_event_id", status_code=400)
     survey = Survey.objects.create(
         title=payload.title,
         description=payload.description,
@@ -137,11 +138,11 @@ def get_survey_admin(request, survey_id: UUID):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         survey = Survey.objects.prefetch_related("questions").get(id=survey_id)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     return Status(200, _survey_out(survey, include_questions=True))
 
 
@@ -163,19 +164,17 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     updates = payload.model_dump(exclude_unset=True)
     if "linked_event_id" in updates:
-        updates, err = _apply_linked_event_update(updates)
-        if err:
-            return Status(400, ErrorOut(detail=err))
+        updates = _apply_linked_event_update(updates)
     if "slug" in updates and updates["slug"] != survey.slug:
         if Survey.objects.filter(slug=updates["slug"]).exists():
-            return Status(400, ErrorOut(detail="A survey with that slug already exists."))
+            raise_validation(Code.Survey.SLUG_ALREADY_EXISTS, field="slug", status_code=400)
     for key, value in updates.items():
         setattr(survey, key, value)
     survey.save(update_fields=list(updates.keys()))
@@ -208,11 +207,11 @@ def delete_survey(request, survey_id: UUID):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     title = survey.title
     survey.delete()
     audit_log(
@@ -247,11 +246,11 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     max_order = survey.questions.count()
     q = SurveyQuestion.objects.create(
         survey=survey,
@@ -290,11 +289,11 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
     except SurveyQuestion.DoesNotExist:
-        return Status(404, ErrorOut(detail="Question not found."))
+        raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
     q.label = payload.label
     q.field_type = payload.field_type
     q.options = payload.options
@@ -329,11 +328,11 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         q = SurveyQuestion.objects.get(id=question_id, survey_id=survey_id)
     except SurveyQuestion.DoesNotExist:
-        return Status(404, ErrorOut(detail="Question not found."))
+        raise_validation(Code.Survey.QUESTION_NOT_FOUND, status_code=404)
     q.delete()
     audit_log(
         logging.INFO,
@@ -364,11 +363,11 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     for idx, qid in enumerate(payload.question_ids):
         SurveyQuestion.objects.filter(id=qid, survey_id=survey_id).update(display_order=idx)
     audit_log(
@@ -403,11 +402,11 @@ def list_survey_responses(request, survey_id: UUID):
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
         survey = Survey.objects.get(id=survey_id)
     except Survey.DoesNotExist:
-        return Status(404, ErrorOut(detail="Survey not found."))
+        raise_validation(Code.Survey.NOT_FOUND, status_code=404)
     responses = survey.responses.select_related("user").all()
     return Status(
         200,

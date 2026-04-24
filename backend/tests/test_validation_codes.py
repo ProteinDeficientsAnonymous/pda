@@ -7,7 +7,7 @@ so the frontend owns UI copy.
 """
 
 import pytest
-from community._validation import ValidationCode
+from community._validation import Code
 
 from tests.conftest import future_iso
 
@@ -51,7 +51,7 @@ class TestValidationCodesShape:
         detail = resp.json()["detail"]
         assert isinstance(detail, list)
         assert any(
-            e["code"] == ValidationCode.START_DATETIME_REQUIRED_UNLESS_TBD
+            e["code"] == Code.Event.START_DATETIME_REQUIRED_UNLESS_TBD
             and e["field"] == "start_datetime"
             for e in detail
         )
@@ -79,7 +79,7 @@ class TestValidationCodesShape:
         )
         assert resp.status_code == 422
         detail = resp.json()["detail"]
-        match = next(e for e in detail if e["code"] == ValidationCode.WHATSAPP_URL_NOT_RECOGNIZED)
+        match = next(e for e in detail if e["code"] == Code.Url.WHATSAPP_NOT_RECOGNIZED)
         assert match["field"] == "whatsapp_link"
         assert "allowed_hosts" in match["params"]
 
@@ -95,13 +95,12 @@ class TestValidationCodesShape:
         assert resp.status_code == 422
         detail = resp.json()["detail"]
         assert any(
-            e["code"] == ValidationCode.URL_PATH_REQUIRED and e["field"] == "whatsapp_link"
-            for e in detail
+            e["code"] == Code.Url.PATH_REQUIRED and e["field"] == "whatsapp_link" for e in detail
         )
 
     def test_generic_pydantic_error_gets_fallback_code(self, api_client, manage_events_headers):
         # max_attendees expects int | None — a string triggers a default
-        # Pydantic type error, not one of our ValidationCodes.
+        # Pydantic type error, not one of our Code namespaces.
         resp = api_client.post(
             "/api/community/events/",
             {**base_event(), "max_attendees": "not a number"},

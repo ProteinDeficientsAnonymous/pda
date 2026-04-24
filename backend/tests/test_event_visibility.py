@@ -1,9 +1,12 @@
 """Tests for event public/auth visibility and invite-only access control."""
 
 import pytest
+from community._validation import Code
 from community.models import Event
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._asserts import assert_error_code
 
 
 @pytest.fixture
@@ -183,14 +186,14 @@ class TestInviteOnlyVisibility:
             f"/api/community/events/{event.id}/", **self._auth_headers(test_user)
         )
         assert response.status_code == 403
-        assert response.json()["detail"] == "This event is invite only."
+        assert_error_code(response, Code.Event.INVITE_ONLY)
 
     def test_get_event_403_for_anonymous(self, api_client, test_user):
         creator = self._make_user("+12025550207", "Creator7")
         event = self._make_invite_only_event(creator)
         response = api_client.get(f"/api/community/events/{event.id}/")
         assert response.status_code == 403
-        assert response.json()["detail"] == "This event is invite only."
+        assert_error_code(response, Code.Event.INVITE_ONLY)
 
     def test_get_event_200_for_invited_user(self, api_client, test_user):
         creator = self._make_user("+12025550208", "Creator8")

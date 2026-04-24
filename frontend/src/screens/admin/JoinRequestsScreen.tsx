@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { isAxiosError } from 'axios';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   useDecideJoinRequest,
   useJoinRequests,
@@ -266,9 +266,5 @@ function StatusBadge({ status }: { status: JoinRequestStatus }) {
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return "couldn't complete that action — try again";
+  return extractApiErrorOr(err, "couldn't complete that action — try again");
 }

@@ -4,6 +4,7 @@ import secrets
 import string
 
 import phonenumbers
+from community._validation import Code, raise_validation
 
 from users.models import MagicLoginToken, User
 from users.roles import Role
@@ -35,18 +36,18 @@ def _is_admin(user: User) -> bool:
     return user.roles.filter(name="admin", is_default=True).exists()
 
 
-def _validate_phone(raw: str) -> str:
-    """Parse, validate, and return E.164. Raises ValueError on invalid.
+def _validate_phone(raw: str, field: str = "phone_number") -> str:
+    """Parse, validate, and return E.164. Raises ValidationException on invalid.
 
     Defaults to US region so bare 10-digit numbers are accepted.
     Numbers with an explicit country code (e.g. +44...) are unaffected.
     """
     try:
         parsed = phonenumbers.parse(raw, "US")
-    except phonenumbers.phonenumberutil.NumberParseException as e:
-        raise ValueError(str(e)) from e
+    except phonenumbers.phonenumberutil.NumberParseException:
+        raise_validation(Code.Phone.INVALID, field=field)
     if not phonenumbers.is_valid_number(parsed):
-        raise ValueError(f"Invalid phone number: {raw}")
+        raise_validation(Code.Phone.INVALID, field=field)
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
@@ -60,11 +61,11 @@ def _create_user_with_role(
 ) -> tuple[User, str]:
     """Validate phone, create user, assign role. Returns (user, magic_link_token).
 
-    Raises ValueError on validation failure (bad phone, duplicate, bad role).
+    Raises ValidationException on validation failure (bad phone, duplicate, bad role).
     """
     validated_phone = _validate_phone(phone)
     if User.objects.filter(phone_number=validated_phone).exists():
-        raise ValueError("A user with that phone number already exists.")
+        raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
     user = User.objects.create_user(
         phone_number=validated_phone,
         display_name=display_name,
@@ -83,37 +84,32 @@ def _create_user_with_role(
                 user.roles.add(member_role)
     except Role.DoesNotExist:
         user.delete()
-        raise ValueError("Role not found.")
+        raise_validation(Code.Role.NOT_FOUND, field="role_id", status_code=404)
     magic_token = _create_magic_token(user)
     return user, magic_token
 
 
-def _validate_admin_role_change(
-    user: User, requesting_user_pk, new_roles: list[Role]
-) -> str | None:
-    """Return error message if admin role change is invalid, None if OK."""
+def _validate_admin_role_change(user: User, requesting_user_pk, new_roles: list[Role]) -> None:
+    """Raise ValidationException if an admin role change is invalid."""
     admin_role = Role.objects.filter(name="admin", is_default=True).first()
     if not admin_role:
-        return None
+        return
 
     is_self = str(user.pk) == str(requesting_user_pk)
     is_current_admin = user.roles.filter(pk=admin_role.pk).exists()
     removing_admin = admin_role not in new_roles
 
     if is_self and is_current_admin and removing_admin:
-        return "You cannot remove your own admin role."
+        raise_validation(Code.Role.CANNOT_REMOVE_OWN_ADMIN, status_code=400)
 
     if _is_last_admin(user) and removing_admin:
-        return "Cannot remove admin from the last admin."
-
-    return None
+        raise_validation(Code.Role.CANNOT_REMOVE_LAST_ADMIN, status_code=400)
 
 
-def _validate_member_role_required(new_roles: list[Role]) -> str | None:
-    """Return error if the new role set is missing the built-in member role."""
+def _validate_member_role_required(new_roles: list[Role]) -> None:
+    """Raise ValidationException if the new role set is missing the built-in member role."""
     member_role = Role.objects.filter(name="member", is_default=True).first()
     if not member_role:
-        return None
+        return
     if member_role not in new_roles:
-        return "Every user must keep the member role."
-    return None
+        raise_validation(Code.Role.MEMBER_ROLE_REQUIRED, status_code=400)

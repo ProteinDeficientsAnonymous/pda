@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { isAxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
 import type { JoinQuestion } from '@/api/join';
 import { useAuthStore } from '@/auth/store';
@@ -247,9 +247,5 @@ function QuestionField({
 }
 
 function extractError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
-    if (detail) return detail;
-  }
-  return 'something went wrong — try again';
+  return extractApiErrorOr(err, 'something went wrong — try again');
 }

@@ -2,6 +2,7 @@
 
 import logging
 
+from community._validation import Code, raise_validation
 from config.audit import audit_log
 from django.db.models import Count, Q
 from ninja import Router
@@ -48,9 +49,9 @@ def create_role(request, payload: RoleIn):
             request,
             details={"endpoint": "create_role", "required_permission": PermissionKey.MANAGE_ROLES},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="create_role")
     if Role.objects.filter(name=payload.name).exists():
-        return Status(400, ErrorOut(detail="A role with that name already exists."))
+        raise_validation(Code.Role.NAME_ALREADY_EXISTS, field="name", status_code=400)
     role = Role.objects.create(name=payload.name, permissions=payload.permissions)
     audit_log(
         logging.INFO,
@@ -86,23 +87,25 @@ def update_role(request, role_id: str, payload: RolePatchIn):
             target_id=role_id,
             details={"endpoint": "update_role", "required_permission": PermissionKey.MANAGE_ROLES},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="update_role")
     try:
         role = Role.objects.get(pk=role_id)
     except Role.DoesNotExist:
-        return Status(404, ErrorOut(detail="Role not found."))
+        raise_validation(Code.Role.NOT_FOUND, status_code=404)
 
     if role.is_default:
-        return Status(400, ErrorOut(detail=f"Cannot edit the built-in '{role.name}' role."))
+        raise_validation(Code.Role.PROTECTED_CANNOT_EDIT, status_code=400, role_name=role.name)
 
     old_name = role.name
     old_permissions = list(role.permissions)
 
     if payload.name is not None and payload.name != role.name:
         if role.name in PROTECTED_ROLE_NAMES:
-            return Status(400, ErrorOut(detail=f"Cannot rename protected role '{role.name}'."))
+            raise_validation(
+                Code.Role.PROTECTED_CANNOT_RENAME, status_code=400, role_name=role.name
+            )
         if Role.objects.exclude(pk=role_id).filter(name=payload.name).exists():
-            return Status(400, ErrorOut(detail="A role with that name already exists."))
+            raise_validation(Code.Role.NAME_ALREADY_EXISTS, field="name", status_code=400)
         role.name = payload.name
 
     if payload.permissions is not None:
@@ -148,13 +151,13 @@ def delete_role(request, role_id: str):
             target_id=role_id,
             details={"endpoint": "delete_role", "required_permission": PermissionKey.MANAGE_ROLES},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="delete_role")
     try:
         role = Role.objects.get(pk=role_id)
     except Role.DoesNotExist:
-        return Status(404, ErrorOut(detail="Role not found."))
+        raise_validation(Code.Role.NOT_FOUND, status_code=404)
     if role.name in PROTECTED_ROLE_NAMES:
-        return Status(400, ErrorOut(detail=f"Cannot delete protected role '{role.name}'."))
+        raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
     affected_user_count = role.users.filter(archived_at__isnull=True).count()
     role.delete()

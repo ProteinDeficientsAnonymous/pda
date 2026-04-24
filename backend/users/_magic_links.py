@@ -3,6 +3,7 @@
 import logging
 from datetime import timedelta
 
+from community._validation import Code, raise_validation
 from config.audit import audit_log
 from django.db import transaction
 from django.utils import timezone
@@ -38,13 +39,13 @@ def generate_magic_link(request, user_id: str):
                 "required_permission": PermissionKey.MANAGE_USERS,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="generate_magic_link")
 
     with transaction.atomic():
         try:
             user = User.objects.select_for_update().get(pk=user_id)
         except User.DoesNotExist:
-            return Status(404, ErrorOut(detail="User not found."))
+            raise_validation(Code.User.NOT_FOUND, status_code=404)
 
         # If another admin generated a link in the last 5 minutes, reuse it
         # instead of creating a duplicate. Resolves the race where multiple

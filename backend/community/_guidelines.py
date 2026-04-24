@@ -13,6 +13,7 @@ from users.permissions import PermissionKey
 from community._content_render import render_content_payload
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import FAQ, CommunityGuidelines
 
 router = Router()
@@ -66,7 +67,7 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
                 "required_permission": PermissionKey.EDIT_GUIDELINES,
             },
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_guidelines")
     g = CommunityGuidelines.get()
     _apply_update(g, payload)
     audit_log(
@@ -93,7 +94,7 @@ def update_faq(request, payload: GuidelinesPatchIn):
             request,
             details={"endpoint": "update_faq", "required_permission": PermissionKey.EDIT_FAQ},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_guidelines")
     f = FAQ.get()
     _apply_update(f, payload)
     audit_log(

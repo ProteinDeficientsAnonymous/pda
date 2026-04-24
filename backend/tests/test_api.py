@@ -1,4 +1,5 @@
 import pytest
+from community._validation import Code
 from users.api import (
     _create_user_with_role,
     _validate_admin_role_change,
@@ -6,6 +7,8 @@ from users.api import (
 )
 from users.permissions import PermissionKey
 from users.roles import Role
+
+from tests._asserts import assert_error_code
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -184,7 +187,8 @@ class TestUserManagementAPI:
             content_type="application/json",
             **admin_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 409
+        assert_error_code(response, Code.Phone.ALREADY_EXISTS)
 
     def test_create_user_assigns_member_role_by_default(self, api_client, admin_headers):
         response = api_client.post(
@@ -224,7 +228,7 @@ class TestUserManagementAPI:
             **admin_headers,
         )
         assert response.status_code == 400
-        assert "own account" in response.json()["detail"]
+        assert_error_code(response, Code.User.CANNOT_DELETE_SELF)
 
     def test_delete_user_cannot_delete_last_admin(
         self, api_client, manage_users_headers, admin_user
@@ -234,7 +238,7 @@ class TestUserManagementAPI:
             **manage_users_headers,
         )
         assert response.status_code == 400
-        assert "last admin" in response.json()["detail"]
+        assert_error_code(response, Code.User.CANNOT_DELETE_LAST_ADMIN)
 
     def test_delete_user_success(self, api_client, admin_headers):
         from users.models import User
@@ -252,7 +256,7 @@ class TestUserManagementAPI:
             **admin_headers,
         )
         assert response.status_code == 400
-        assert "own admin role" in response.json()["detail"]
+        assert_error_code(response, Code.Role.CANNOT_REMOVE_OWN_ADMIN)
 
     def test_update_user_roles_cannot_remove_member(self, api_client, admin_headers, test_user):
         member_role = Role.objects.get(name="member")
@@ -265,7 +269,7 @@ class TestUserManagementAPI:
             **admin_headers,
         )
         assert response.status_code == 400
-        assert "member role" in response.json()["detail"]
+        assert_error_code(response, Code.Role.MEMBER_ROLE_REQUIRED)
         assert test_user.roles.filter(name="member").exists()
 
 
@@ -289,23 +293,30 @@ class TestCreateUserWithRole:
         assert user.roles.filter(pk=role.pk).exists()
 
     def test_raises_on_duplicate_phone(self):
+        from community._validation import ValidationException
         from users.models import User
 
         User.objects.create_user(phone_number="+12025557777", password="pass123")
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role("+12025557777", "Dup", None, None)
+        assert exc_info.value.code == Code.Phone.ALREADY_EXISTS
 
     def test_raises_on_invalid_phone(self):
-        with pytest.raises(ValueError):
+        from community._validation import ValidationException
+
+        with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role("not-a-phone", "Bad Phone", None, None)
+        assert exc_info.value.code == Code.Phone.INVALID
 
     def test_raises_on_bad_role_and_deletes_user(self):
+        from community._validation import ValidationException
         from users.models import User
 
-        with pytest.raises(ValueError, match="Role not found"):
+        with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
                 "+12025556666", "Bad Role User", "b@e.com", "00000000-0000-0000-0000-000000000000"
             )
+        assert exc_info.value.code == Code.Role.NOT_FOUND
         assert not User.objects.filter(phone_number="+12025556666").exists()
 
 
@@ -320,17 +331,20 @@ class TestValidateAdminRoleChange:
         from users.models import User
 
         user = User.objects.create_user(phone_number="+12025550101", password="p", email="a@e.com")
-        assert _validate_admin_role_change(user, "other-pk", []) is None
+        # No admin role exists — should be a no-op (not raise)
+        _validate_admin_role_change(user, "other-pk", [])
 
     def test_returns_error_when_removing_own_admin(self):
+        from community._validation import ValidationException
         from users.models import User
 
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
         member_role = Role.objects.get_or_create(name="member", defaults={"is_default": True})[0]
         user = User.objects.create_user(phone_number="+12025550102", password="p", email="b@e.com")
         user.roles.add(admin_role)
-        result = _validate_admin_role_change(user, str(user.pk), [member_role])
-        assert result == "You cannot remove your own admin role."
+        with pytest.raises(ValidationException) as exc_info:
+            _validate_admin_role_change(user, str(user.pk), [member_role])
+        assert exc_info.value.code == Code.Role.CANNOT_REMOVE_OWN_ADMIN
 
     def test_returns_none_when_keeping_own_admin(self):
         from users.models import User
@@ -338,9 +352,11 @@ class TestValidateAdminRoleChange:
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
         user = User.objects.create_user(phone_number="+12025550103", password="p", email="c@e.com")
         user.roles.add(admin_role)
-        assert _validate_admin_role_change(user, str(user.pk), [admin_role]) is None
+        # Keeping admin — no-op
+        _validate_admin_role_change(user, str(user.pk), [admin_role])
 
     def test_returns_error_when_removing_last_admin(self):
+        from community._validation import ValidationException
         from users.models import User
 
         admin_role = Role.objects.get_or_create(name="admin", defaults={"is_default": True})[0]
@@ -348,8 +364,9 @@ class TestValidateAdminRoleChange:
         user = User.objects.create_user(phone_number="+12025550104", password="p", email="d@e.com")
         user.roles.add(admin_role)
         # Request from a different user (not self-removal)
-        result = _validate_admin_role_change(user, "someone-else", [member_role])
-        assert result == "Cannot remove admin from the last admin."
+        with pytest.raises(ValidationException) as exc_info:
+            _validate_admin_role_change(user, "someone-else", [member_role])
+        assert exc_info.value.code == Code.Role.CANNOT_REMOVE_LAST_ADMIN
 
 
 # ---------------------------------------------------------------------------
@@ -362,18 +379,25 @@ class TestValidateMemberRoleRequired:
     def test_returns_none_when_member_role_present(self):
         member_role = Role.objects.get_or_create(name="member", defaults={"is_default": True})[0]
         custom = Role.objects.create(name="greeter")
-        assert _validate_member_role_required([member_role, custom]) is None
+        # Member present — no-op
+        _validate_member_role_required([member_role, custom])
 
     def test_returns_error_when_member_role_missing(self):
+        from community._validation import ValidationException
+
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
         custom = Role.objects.create(name="greeter")
-        result = _validate_member_role_required([custom])
-        assert result == "Every user must keep the member role."
+        with pytest.raises(ValidationException) as exc_info:
+            _validate_member_role_required([custom])
+        assert exc_info.value.code == Code.Role.MEMBER_ROLE_REQUIRED
 
     def test_returns_error_when_new_roles_empty(self):
+        from community._validation import ValidationException
+
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
-        result = _validate_member_role_required([])
-        assert result == "Every user must keep the member role."
+        with pytest.raises(ValidationException) as exc_info:
+            _validate_member_role_required([])
+        assert exc_info.value.code == Code.Role.MEMBER_ROLE_REQUIRED
 
 
 # ---------------------------------------------------------------------------
@@ -442,7 +466,7 @@ class TestRoleManagementAPI:
             **manage_users_headers,
         )
         assert response.status_code == 400
-        assert "built-in" in response.json()["detail"]
+        assert_error_code(response, Code.Role.PROTECTED_CANNOT_EDIT)
 
     def test_patch_default_role_permissions_blocked(self, api_client, manage_users_headers):
         member_role = Role.objects.get(name="member")
@@ -453,7 +477,7 @@ class TestRoleManagementAPI:
             **manage_users_headers,
         )
         assert response.status_code == 400
-        assert "built-in" in response.json()["detail"]
+        assert_error_code(response, Code.Role.PROTECTED_CANNOT_EDIT)
         member_role.refresh_from_db()
         assert PermissionKey.MANAGE_EVENTS not in member_role.permissions
 
@@ -466,7 +490,7 @@ class TestRoleManagementAPI:
         admin_role = Role.objects.get(name="admin")
         response = api_client.delete(f"/api/auth/roles/{admin_role.id}/", **manage_users_headers)
         assert response.status_code == 400
-        assert "protected" in response.json()["detail"]
+        assert_error_code(response, Code.Role.PROTECTED_CANNOT_DELETE)
 
     def test_delete_role_with_users_succeeds(self, api_client, manage_users_headers, test_user):
         role = Role.objects.create(name="occupied", permissions=[])

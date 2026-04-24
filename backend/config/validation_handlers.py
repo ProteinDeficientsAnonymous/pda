@@ -25,11 +25,18 @@ def register_validation_handlers(api: NinjaAPI) -> None:
     def _handle_validation_exception(
         request: HttpRequest, exc: ValidationException
     ) -> HttpResponse:
-        return api.create_response(
+        response = api.create_response(
             request,
             {"detail": [_serialize_validation_exception(exc)]},
-            status=422,
+            status=exc.status_code,
         )
+        if exc.clear_refresh_cookie:
+            # Lazy import to keep users/ out of config/ dependency graph for
+            # modules that don't need cookie-clearing.
+            from users._refresh_cookie import clear_refresh_cookie
+
+            clear_refresh_cookie(response)
+        return response
 
     @api.exception_handler(NinjaValidationError)
     def _handle_ninja_validation_error(
@@ -70,9 +77,12 @@ def _serialize_pydantic_error(err: dict[str, Any]) -> dict[str, Any]:
 
 
 def _looks_like_validation_code(s: str) -> bool:
-    # Stable codes are snake_case identifiers. This guards against matching
-    # arbitrary free-text ValueErrors that slip through uncaptured.
-    return bool(s) and s.replace("_", "").isalnum() and "_" in s and s.islower()
+    # Stable codes are dotted snake_case identifiers (``event.foo_bar``,
+    # ``role.not_found``). Guards against matching arbitrary free-text
+    # ValueErrors that slip through uncaptured.
+    if not s or not s.islower():
+        return False
+    return all(part.replace("_", "").isalnum() and part for part in s.split("."))
 
 
 _NINJA_SOURCE_NAMES = frozenset({"body", "query", "path", "header", "form", "cookie", "file"})

@@ -1,10 +1,12 @@
 """Tests for event cancel/uncancel/delete status transitions via PATCH."""
 
 import pytest
+from community._validation import Code
 from community.models import Event, EventStatus
 from users.permissions import PermissionKey
 from users.roles import Role
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso, past_iso
 
 
@@ -110,7 +112,7 @@ class TestCancelEvent:
     def test_cancel_past_event_returns_400(self, api_client, manage_events_headers, past_event):
         response = _patch_status(api_client, manage_events_headers, past_event.id, "cancelled")
         assert response.status_code == 400
-        assert "past" in response.json()["detail"].lower()
+        assert_error_code(response, Code.Event.PAST_CANNOT_BE_CANCELLED)
 
     def test_cancel_event_no_attendees_returns_400(
         self, api_client, manage_events_headers, upcoming_event_no_attendees
@@ -119,7 +121,7 @@ class TestCancelEvent:
             api_client, manage_events_headers, upcoming_event_no_attendees.id, "cancelled"
         )
         assert response.status_code == 400
-        assert "delete" in response.json()["detail"].lower()
+        assert_error_code(response, Code.Event.NO_ATTENDEES_CANNOT_BE_CANCELLED)
 
     def test_cancel_with_notify_creates_notifications(
         self, api_client, manage_events_headers, upcoming_event_with_rsvp, test_user
@@ -332,7 +334,7 @@ class TestDeleteEvent:
             api_client, manage_events_headers, upcoming_event_with_rsvp.id, "deleted"
         )
         assert response.status_code == 400
-        assert "cancel" in response.json()["detail"].lower()
+        assert_error_code(response, Code.Event.CANCEL_BEFORE_DELETE)
 
     def test_delete_cancelled_event(
         self, api_client, manage_events_headers, upcoming_event_with_rsvp

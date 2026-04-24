@@ -141,5 +141,5 @@ class TestRequestLoginLink:
             content_type="application/json",
         )
         assert resp.status_code == 429
-        assert "too many" in resp.json()["detail"]
+        assert resp.json()["detail"][0]["code"] == "rate.limited"
         cache.clear()

@@ -30,6 +30,7 @@ from community._event_helpers import (
 from community._event_schemas import AttendanceIn, EventOut, EventStatsOut, RSVPIn
 from community._events import _can_edit_event
 from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
 
 router = Router()
@@ -44,28 +45,26 @@ def _check_in_open(event: Event) -> bool:
     return timezone.now() >= event.start_datetime - CHECK_IN_OPENS_BEFORE_START
 
 
-def _validate_rsvp_access(
-    user, event, co_host_ids: set[str], invited_user_ids: set[str]
-) -> Status | None:
-    """Return an error Status if the user cannot RSVP on this event, else None."""
+def _validate_rsvp_access(user, event, co_host_ids: set[str], invited_user_ids: set[str]) -> None:
+    """Raise ValidationException if the user cannot RSVP on this event."""
     if event.visibility == PageVisibility.INVITE_ONLY:
         if not _can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
-            return Status(404, ErrorOut(detail="Event not found."))
+            raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not event.rsvp_enabled:
-        return Status(400, ErrorOut(detail="RSVPs are not enabled for this event."))
+        raise_validation(Code.Event.RSVPS_NOT_ENABLED, status_code=400)
     if event.is_cancelled:
-        return Status(400, ErrorOut(detail="RSVPs are closed for cancelled events."))
+        raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
     if event.is_past and not _can_edit_event(user, event):
-        return Status(400, ErrorOut(detail="RSVPs are closed for past events."))
-    return None
+        raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
 
 
 def _resolve_rsvp_status(
     event: Event, user, requested_status: str, has_plus_one: bool
-) -> tuple[str, bool] | Status:
+) -> tuple[str, bool]:
     """Resolve final RSVP status accounting for capacity limits.
 
-    Returns (status, has_plus_one) or a Status error if the +1 is denied.
+    Returns (status, has_plus_one). Raises ValidationException if a +1 is
+    denied at capacity.
     """
     if requested_status != RSVPStatus.ATTENDING or event.max_attendees is None:
         return requested_status, has_plus_one
@@ -80,7 +79,7 @@ def _resolve_rsvp_status(
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     if existing and existing.status == RSVPStatus.ATTENDING:
         if has_plus_one:
-            return Status(400, ErrorOut(detail="No spots available for a +1."))
+            raise_validation(Code.Event.NO_PLUS_ONE_SPOTS, status_code=400)
         # Removing +1 is always fine
         return requested_status, has_plus_one
 
@@ -88,31 +87,30 @@ def _resolve_rsvp_status(
     return RSVPStatus.WAITLISTED, False
 
 
-def _validate_rsvp_status(status: str) -> Status | None:
-    """Validate the requested RSVP status. Returns a Status error or None."""
-    if status == RSVPStatus.WAITLISTED:
-        return Status(400, ErrorOut(detail="Invalid status."))
+def _validate_rsvp_status(status: str) -> None:
+    """Raise ValidationException if the requested RSVP status is invalid."""
     valid_statuses = {RSVPStatus.ATTENDING, RSVPStatus.MAYBE, RSVPStatus.CANT_GO}
-    if status not in valid_statuses:
-        return Status(
-            400, ErrorOut(detail=f"Status must be one of: {', '.join(sorted(valid_statuses))}.")
+    if status == RSVPStatus.WAITLISTED or status not in valid_statuses:
+        raise_validation(
+            Code.Event.RSVP_INVALID_STATUS,
+            field="status",
+            status_code=400,
+            allowed=sorted(valid_statuses),
         )
-    return None
 
 
-def _apply_rsvp_in_transaction(event_id, user, status: str, has_plus_one: bool):
-    """Execute RSVP upsert inside a locked transaction. Returns final_status or Status."""
+def _apply_rsvp_in_transaction(event_id, user, status: str, has_plus_one: bool) -> str:
+    """Execute RSVP upsert inside a locked transaction. Returns final_status.
+
+    Raises ValidationException on failure.
+    """
     event = Event.objects.select_for_update().get(id=event_id)
     co_host_ids = {str(c.id) for c in event.co_hosts.all()}
     invited_user_ids = {str(u.id) for u in event.invited_users.all()}
 
-    if err := _validate_rsvp_access(user, event, co_host_ids, invited_user_ids):
-        return err
+    _validate_rsvp_access(user, event, co_host_ids, invited_user_ids)
 
-    result = _resolve_rsvp_status(event, user, status, has_plus_one)
-    if isinstance(result, Status):
-        return result
-    final_status, final_plus_one = result
+    final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
 
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
@@ -143,19 +141,14 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     try:
         Event.objects.get(id=event_id)
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
-    if err := _validate_rsvp_status(payload.status):
-        return err
+    _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        result = _apply_rsvp_in_transaction(
+        final_status = _apply_rsvp_in_transaction(
             event_id, request.auth, payload.status, payload.has_plus_one
         )
-
-    if isinstance(result, Status):
-        return result
-    final_status = result
 
     audit_log(
         logging.INFO,
@@ -190,9 +183,9 @@ def _load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
 def get_event_stats(request, event_id: UUID):
     event = _load_event_with_stats_prefetch(event_id)
     if event is None:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_edit_event(request.auth, event):
-        return Status(403, ErrorOut(detail="Only hosts can view event stats."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="get_event_stats")
     return Status(
         200,
         EventStatsOut(
@@ -223,17 +216,17 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         .first()
     )
     if event is None:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_edit_event(request.auth, event):
-        return Status(403, ErrorOut(detail="Only hosts can mark attendance."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="set_attendance")
     if not _check_in_open(event):
-        return Status(400, ErrorOut(detail="Check-in opens an hour before the event starts."))
+        raise_validation(Code.Event.ATTENDANCE_OPENS_LATER, status_code=400)
 
     rsvp = EventRSVP.objects.filter(event=event, user_id=user_id).first()
     if rsvp is None:
-        return Status(404, ErrorOut(detail="RSVP not found."))
+        raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
     if rsvp.status != RSVPStatus.ATTENDING:
-        return Status(400, ErrorOut(detail="Attendance can only be marked on going RSVPs."))
+        raise_validation(Code.Event.ATTENDANCE_ONLY_FOR_GOING_RSVPS, status_code=400)
 
     rsvp.attendance = payload.attendance
     rsvp.save(update_fields=["attendance", "updated_at"])
@@ -260,17 +253,17 @@ def delete_rsvp(request, event_id: UUID):
     try:
         Event.objects.get(id=event_id)
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     with transaction.atomic():
         event = Event.objects.select_for_update().prefetch_related("co_hosts").get(id=event_id)
         if event.is_cancelled:
-            return Status(400, ErrorOut(detail="RSVPs are closed for cancelled events."))
+            raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
         if event.is_past and not _can_edit_event(request.auth, event):
-            return Status(400, ErrorOut(detail="RSVPs are closed for past events."))
+            raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
         rsvp = EventRSVP.objects.filter(event=event, user=request.auth).first()
         if not rsvp:
-            return Status(404, ErrorOut(detail="RSVP not found."))
+            raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:

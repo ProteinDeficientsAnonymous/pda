@@ -24,6 +24,7 @@ from community._event_poll_schemas import (
     VoterOut,
 )
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
+from community._validation import Code, raise_validation
 from community.models import (
     Event,
     EventPoll,
@@ -47,14 +48,12 @@ def _any_in_past(dts: list[datetime]) -> bool:
     return any(dt < cutoff for dt in dts)
 
 
-def _validate_poll_options(dts: list[datetime], *, require_at_least_one: bool):
-    """Returns an error Status if invalid, or None. Keeps endpoints below the
-    return-count threshold by bundling shape + past-time checks together."""
+def _validate_poll_options(dts: list[datetime], *, require_at_least_one: bool) -> None:
+    """Raise ValidationException if the poll options are invalid."""
     if require_at_least_one and len(dts) < 1:
-        return Status(400, ErrorOut(detail="A poll requires at least 1 option."))
+        raise_validation(Code.Poll.OPTIONS_REQUIRED, status_code=400)
     if _any_in_past(dts):
-        return Status(400, ErrorOut(detail="Poll options must be in the future."))
-    return None
+        raise_validation(Code.Poll.OPTIONS_MUST_BE_FUTURE, status_code=400)
 
 
 def _can_manage_poll(user, event: Event) -> bool:
@@ -133,7 +132,7 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
     try:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_manage_poll(request.auth, event):
         audit_log(
             logging.WARNING,
@@ -143,14 +142,12 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
             target_id=str(event_id),
             details={"endpoint": "create_event_poll"},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="create_event_poll")
     if event.status == EventStatus.CANCELLED:
-        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+        raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     if hasattr(event, "poll"):
-        return Status(400, ErrorOut(detail="This event already has a poll."))
-    option_err = _validate_poll_options(payload.options, require_at_least_one=True)
-    if option_err is not None:
-        return option_err
+        raise_validation(Code.Poll.EVENT_ALREADY_HAS_POLL, status_code=400)
+    _validate_poll_options(payload.options, require_at_least_one=True)
     with transaction.atomic():
         poll = EventPoll.objects.create(event=event, created_by=request.auth)
         for i, dt in enumerate(payload.options):
@@ -187,7 +184,7 @@ def get_event_poll(request, event_id: UUID):
             .get(event_id=event_id)
         )
     except EventPoll.DoesNotExist:
-        return Status(404, ErrorOut(detail="Poll not found."))
+        raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
     return Status(200, _poll_out(poll, auth_user))
 
@@ -206,21 +203,21 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
             .get(event_id=event_id, is_active=True)
         )
     except EventPoll.DoesNotExist:
-        return Status(404, ErrorOut(detail="Active poll not found."))
+        raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     if poll.event.status == EventStatus.CANCELLED:
-        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+        raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     for availability in payload.votes.values():
         if availability not in PollAvailability.VALID:
-            return Status(
-                400,
-                ErrorOut(
-                    detail=f'Invalid availability "{availability}" — must be "yes", "maybe", or "no".'
-                ),
+            raise_validation(
+                Code.Poll.INVALID_AVAILABILITY,
+                field="availability",
+                status_code=400,
+                value=availability,
             )
     option_ids = {str(pk) for pk in poll.options.values_list("id", flat=True)}
     for option_id in payload.votes:
         if option_id not in option_ids:
-            return Status(400, ErrorOut(detail=f'Option "{option_id}" not found in this poll.'))
+            raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=400, option_id=option_id)
     with transaction.atomic():
         # Remove votes for options no longer in the payload (user retracted)
         PollVote.objects.filter(
@@ -261,7 +258,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
     try:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_manage_poll(request.auth, event):
         audit_log(
             logging.WARNING,
@@ -271,12 +268,10 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             target_id=str(event_id),
             details={"endpoint": "finalize_event_poll"},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_event_poll")
     if event.status == EventStatus.CANCELLED:
-        return Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
-    poll, winning_option, err = _get_poll_and_option(event, payload.winning_option_id)
-    if err is not None:
-        return err
+        raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
+    poll, winning_option = _get_poll_and_option(event, payload.winning_option_id)
     with transaction.atomic():
         poll.winning_option = winning_option
         poll.finalized_by = request.auth
@@ -324,7 +319,7 @@ def delete_event_poll(request, event_id: UUID):
     try:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
-        return Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_manage_poll(request.auth, event):
         audit_log(
             logging.WARNING,
@@ -334,11 +329,11 @@ def delete_event_poll(request, event_id: UUID):
             target_id=str(event_id),
             details={"endpoint": "delete_event_poll"},
         )
-        return Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="delete_event_poll")
     try:
         poll = EventPoll.objects.get(event=event)
     except EventPoll.DoesNotExist:
-        return Status(404, ErrorOut(detail="Poll not found."))
+        raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     poll_id = str(poll.id)
     poll.delete()
     audit_log(
@@ -352,16 +347,16 @@ def delete_event_poll(request, event_id: UUID):
     return Status(204, None)
 
 
-def _get_active_poll(user, event_id: UUID):
-    """Return (event, poll, error_response) for poll option mutations."""
+def _get_active_poll(user, event_id: UUID) -> tuple[Event, EventPoll]:
+    """Return (event, poll) for poll option mutations. Raises on failure."""
     try:
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     except Event.DoesNotExist:
-        return None, None, Status(404, ErrorOut(detail="Event not found."))
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not _can_manage_poll(user, event):
-        return None, None, Status(403, ErrorOut(detail="Permission denied."))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_poll_option")
     if event.status == EventStatus.CANCELLED:
-        return None, None, Status(400, ErrorOut(detail="Cancelled events cannot be edited."))
+        raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     try:
         poll = (
             EventPoll.objects.select_related("winning_option")
@@ -369,14 +364,14 @@ def _get_active_poll(user, event_id: UUID):
             .get(event=event)
         )
     except EventPoll.DoesNotExist:
-        return None, None, Status(404, ErrorOut(detail="Poll not found."))
+        raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     if poll.winning_option_id is not None:
-        return None, None, Status(400, ErrorOut(detail="Cannot modify a finalized poll."))
-    return event, poll, None
+        raise_validation(Code.Poll.CANNOT_MODIFY_FINALIZED, status_code=400)
+    return event, poll
 
 
-def _get_poll_and_option(event, winning_option_id):
-    """Return (poll, winning_option, error) for finalize_event_poll."""
+def _get_poll_and_option(event, winning_option_id) -> tuple[EventPoll, PollOption]:
+    """Return (poll, winning_option) for finalize_event_poll. Raises on failure."""
     try:
         poll = (
             EventPoll.objects.select_related("winning_option")
@@ -384,14 +379,14 @@ def _get_poll_and_option(event, winning_option_id):
             .get(event=event)
         )
     except EventPoll.DoesNotExist:
-        return None, None, Status(404, ErrorOut(detail="Poll not found."))
+        raise_validation(Code.Poll.NOT_FOUND, status_code=404)
     if poll.winning_option_id is not None:
-        return None, None, Status(400, ErrorOut(detail="This poll has already been finalized."))
+        raise_validation(Code.Poll.ALREADY_FINALIZED, status_code=400)
     try:
         winning_option = poll.options.get(id=winning_option_id)
     except PollOption.DoesNotExist:
-        return None, None, Status(400, ErrorOut(detail="Winning option not found in this poll."))
-    return poll, winning_option, None
+        raise_validation(Code.Poll.WINNING_OPTION_NOT_FOUND, status_code=400)
+    return poll, winning_option
 
 
 @router.post(
@@ -401,17 +396,13 @@ def _get_poll_and_option(event, winning_option_id):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
-    _, poll, err = _get_active_poll(request.auth, event_id)
-    if err is not None:
-        return err
-    option_err = _validate_poll_options([payload.datetime], require_at_least_one=False)
-    if option_err is not None:
-        return option_err
+    _, poll = _get_active_poll(request.auth, event_id)
+    _validate_poll_options([payload.datetime], require_at_least_one=False)
     next_order = poll.options.count()
     try:
         PollOption.objects.create(poll=poll, datetime=payload.datetime, display_order=next_order)
     except Exception:
-        return Status(400, ErrorOut(detail="that time is already an option in this poll"))
+        raise_validation(Code.Poll.OPTION_ALREADY_EXISTS, status_code=400)
     audit_log(
         logging.INFO,
         "poll_option_added",
@@ -435,21 +426,17 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id: UUID):
-    _, poll, err = _get_active_poll(request.auth, event_id)
-    if err is not None:
-        return err
-    option_err = _validate_poll_options([payload.datetime], require_at_least_one=False)
-    if option_err is not None:
-        return option_err
+    _, poll = _get_active_poll(request.auth, event_id)
+    _validate_poll_options([payload.datetime], require_at_least_one=False)
     try:
         option = poll.options.get(id=option_id)
     except PollOption.DoesNotExist:
-        return Status(404, ErrorOut(detail="Option not found."))
+        raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
     try:
         option.datetime = payload.datetime
         option.save(update_fields=["datetime"])
     except Exception:
-        return Status(400, ErrorOut(detail="that time is already an option in this poll"))
+        raise_validation(Code.Poll.OPTION_ALREADY_EXISTS, status_code=400)
     audit_log(
         logging.INFO,
         "poll_option_updated",
@@ -473,15 +460,13 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def delete_poll_option(request, event_id: UUID, option_id: UUID):
-    _, poll, err = _get_active_poll(request.auth, event_id)
-    if err is not None:
-        return err
+    _, poll = _get_active_poll(request.auth, event_id)
     try:
         option = poll.options.get(id=option_id)
     except PollOption.DoesNotExist:
-        return Status(404, ErrorOut(detail="Option not found."))
+        raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
     if poll.options.count() <= 2:
-        return Status(400, ErrorOut(detail="A poll must have at least 2 options."))
+        raise_validation(Code.Poll.MIN_TWO_OPTIONS, status_code=400)
     option.delete()
     audit_log(
         logging.INFO,

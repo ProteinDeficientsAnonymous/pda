@@ -24,6 +24,19 @@
     ],
     "defaultMode": "acceptEdits"
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-legacy-error-patterns.py\""
+          }
+        ]
+      }
+    ]
+  },
   "env": {
     "BASH_DEFAULT_TIMEOUT_MS": "60000",
     "BASH_MAX_OUTPUT_LENGTH": "20000",
