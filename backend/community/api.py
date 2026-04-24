@@ -4,6 +4,7 @@ from ninja import Router
 
 from community._calendar import router as calendar_router
 from community._docs import router as docs_router
+from community._docs_documents import router as docs_documents_router
 from community._event_actions import router as event_actions_router
 from community._event_flags import router as event_flags_router
 
@@ -48,5 +49,6 @@ router.add_router("", polls_router)
 router.add_router("", surveys_router)
 router.add_router("", surveys_public_router)
 router.add_router("", docs_router)
+router.add_router("", docs_documents_router)
 router.add_router("", geocode_router)
 router.add_router("", version_router)
