@@ -273,7 +273,7 @@ export function messageForCode(err: FieldError): string {
     case Code.Url.WhatsappNotRecognized:
       return 'whatsapp link must be from chat.whatsapp.com, wa.me, or whats.app';
     case Code.Url.PartifulNotRecognized:
-      return 'link must be a partiful.com url';
+      return 'partiful link must be a partiful.com url';
 
     // Phone
     case Code.Phone.Invalid:
