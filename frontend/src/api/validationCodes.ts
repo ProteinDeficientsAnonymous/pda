@@ -204,7 +204,7 @@ export function messageForCode(err: FieldError): string {
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
     case Code.Event.InvalidCreateStatus:
-      return "new events can only be saved as active or draft";
+      return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
       return "can't edit the date while a poll is active — finalize the poll first";
     case Code.Event.InviteOnly:
@@ -234,7 +234,7 @@ export function messageForCode(err: FieldError): string {
     case Code.Event.RsvpsClosedPast:
       return 'rsvps are closed for past events';
     case Code.Event.NoPlusOneSpots:
-      return "no spots available for a +1";
+      return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
     case Code.Event.AttendanceOpensLater:
@@ -434,7 +434,7 @@ export function messageForCode(err: FieldError): string {
     case Code.JoinRequest.OnlyRejectedCanBeUnRejected:
       return 'only rejected requests can be un-rejected';
     case Code.JoinRequest.PhoneAlreadyInvited:
-      return "that number is already in the community — try logging in instead";
+      return 'that number is already in the community — try logging in instead';
     case Code.JoinRequest.PhoneAlreadyPending:
       return "a request for this number is already pending — we'll be in touch soon";
     case Code.JoinRequest.AnswerRequired: {

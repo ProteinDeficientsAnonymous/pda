@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  Code,
-  messageForCode,
-  messagesFromFieldErrors,
-  type FieldError,
-} from './validationCodes';
+import { Code, messageForCode, messagesFromFieldErrors, type FieldError } from './validationCodes';
 
 describe('messageForCode', () => {
   it('returns friendly copy for known event-form codes', () => {
@@ -17,12 +12,10 @@ describe('messageForCode', () => {
   });
 
   it('uses the field name for generic fallback codes', () => {
-    expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain(
-      'title',
+    expect(messageForCode({ code: Code.Generic.FieldRequired, field: 'title' })).toContain('title');
+    expect(messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' })).toContain(
+      'max attendees',
     );
-    expect(
-      messageForCode({ code: Code.Generic.FieldInvalid, field: 'max_attendees' }),
-    ).toContain('max attendees');
   });
 
   it('interpolates params for password errors', () => {

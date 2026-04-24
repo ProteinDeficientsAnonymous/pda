@@ -19,6 +19,29 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+
+    # Postgres 16 — matches docker-compose.yml for local dev. SQLite doesn't
+    # support JSONField `contains` lookups or pg_notify (SSE), so a handful
+    # of tests only pass against Postgres.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pda
+          POSTGRES_PASSWORD: pda
+          POSTGRES_DB: pda
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://pda:pda@localhost:5432/pda
+      SECRET_KEY: ci-only-not-used-in-prod
+
     steps:
       - uses: actions/checkout@v6
 
