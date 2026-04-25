@@ -46,6 +46,7 @@ class User(AbstractUser):
     email = models.EmailField(blank=True)
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     needs_onboarding = models.BooleanField(default=False)
+    onboarded_at = models.DateTimeField(null=True, blank=True)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)

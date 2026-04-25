@@ -70,6 +70,7 @@ describe('useJoinRequests', () => {
         approvedByName: null,
         rejectedAt: null,
         rejectedByName: null,
+        onboardedAt: null,
       },
     ]);
 

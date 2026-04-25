@@ -115,6 +115,7 @@ export interface JoinRequestSummary {
   approvedByName: string | null;
   rejectedAt: string | null;
   rejectedByName: string | null;
+  onboardedAt: string | null;
 }
 
 interface WireAnswer {
@@ -136,6 +137,7 @@ interface WireJoinRequest {
   approved_by_name?: string | null;
   rejected_at?: string | null;
   rejected_by_name?: string | null;
+  onboarded_at?: string | null;
 }
 
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
@@ -156,6 +158,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     approvedByName: w.approved_by_name ?? null,
     rejectedAt: w.rejected_at ?? null,
     rejectedByName: w.rejected_by_name ?? null,
+    onboardedAt: w.onboarded_at ?? null,
   };
 }
 

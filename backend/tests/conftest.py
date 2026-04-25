@@ -52,3 +52,42 @@ def auth_headers(test_user):
 
     refresh = RefreshToken.for_user(test_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def vettor_user(db):
+    from users.models import User
+    from users.permissions import PermissionKey
+    from users.roles import Role
+
+    user = User.objects.create_user(
+        phone_number="+12025550003",
+        password="vettorpass123",
+        display_name="Vettor",
+    )
+    role = Role.objects.create(name="vettor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def vettor_headers(vettor_user):
+    from ninja_jwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(vettor_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def sample_join_request(db):
+    from community.models import JoinFormQuestion, JoinRequest
+
+    q = JoinFormQuestion.objects.filter(required=True).first()
+    answers = {}
+    if q:
+        answers[str(q.id)] = {"label": q.label, "answer": "I believe in collective liberation."}
+    return JoinRequest.objects.create(
+        display_name="Sprout Seedling",
+        phone_number="+16505551234",
+        custom_answers=answers,
+    )

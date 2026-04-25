@@ -391,6 +391,7 @@ class TestCompleteOnboarding:
         assert data["needs_onboarding"] is False
         onboarding_user.refresh_from_db()
         assert onboarding_user.needs_onboarding is False
+        assert onboarding_user.onboarded_at is not None
         assert onboarding_user.check_password("SecurePass99!")
 
     def test_complete_onboarding_with_email(self, api_client, onboarding_headers, onboarding_user):

@@ -1,7 +1,7 @@
 """Join request submission, management, and check-phone endpoints."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from config.audit import audit_log
@@ -27,6 +27,10 @@ from community.models import (
 )
 
 router = Router()
+
+# Approved members stay visible in the join requests list for this many days
+# after they complete onboarding, so admins can confirm someone logged in.
+APPROVED_GRACE_DAYS = 3
 
 
 class JoinRequestIn(BaseModel):
@@ -70,6 +74,7 @@ class JoinRequestOut(BaseModel):
     approved_by_name: str | None = None
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
+    onboarded_at: datetime | None = None
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -117,6 +122,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         approved_by_name=jr.approved_by.display_name if jr.approved_by else None,
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.display_name if jr.rejected_by else None,
+        onboarded_at=user.onboarded_at if user else None,
     )
 
 
@@ -267,12 +273,18 @@ def list_join_requests(request):
 
     from users.models import User
 
-    onboarded_phones = User.objects.filter(needs_onboarding=False).values_list(
-        "phone_number", flat=True
-    )
+    cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
+    expired_phones = User.objects.filter(
+        needs_onboarding=False, onboarded_at__lt=cutoff
+    ).values_list("phone_number", flat=True)
+    # Legacy users onboarded before onboarded_at existed have it as null;
+    # treat them as already-expired so they don't linger in the list forever.
+    legacy_onboarded_phones = User.objects.filter(
+        needs_onboarding=False, onboarded_at__isnull=True
+    ).values_list("phone_number", flat=True)
     join_requests = JoinRequest.objects.exclude(
         status=JoinRequestStatus.APPROVED,
-        phone_number__in=onboarded_phones,
+        phone_number__in=list(expired_phones) + list(legacy_onboarded_phones),
     )
     return Status(200, [_join_request_out(jr) for jr in join_requests])
 

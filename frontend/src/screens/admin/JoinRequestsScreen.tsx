@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   useDecideJoinRequest,
@@ -106,6 +106,13 @@ export default function JoinRequestsScreen() {
           onChange={setFilter}
         />
       </div>
+
+      {filter === 'approved' ? (
+        <p className="text-muted mb-3 text-xs">
+          approved members stay here for 3 days after their first login — then they drop off the
+          list automatically
+        </p>
+      ) : null}
 
       {error ? (
         <p role="alert" className="text-destructive mb-3 text-sm">
@@ -237,10 +244,13 @@ function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
   if (request.status === 'approved' && request.approvedAt) {
     const who = request.approvedByName ?? 'an admin';
     return (
-      <p className="text-muted mt-3 text-xs">
-        approved by {who.toLowerCase()} on{' '}
-        {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
-      </p>
+      <>
+        <p className="text-muted mt-3 text-xs">
+          approved by {who.toLowerCase()} on{' '}
+          {format(new Date(request.approvedAt), 'MMM d, h:mm a').toLowerCase()}
+        </p>
+        <LoginStatus onboardedAt={request.onboardedAt} />
+      </>
     );
   }
   if (request.status === 'rejected' && request.rejectedAt) {
@@ -253,6 +263,14 @@ function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
     );
   }
   return null;
+}
+
+function LoginStatus({ onboardedAt }: { onboardedAt: string | null }) {
+  if (!onboardedAt) {
+    return <p className="text-muted mt-1 text-xs">hasn&rsquo;t logged in yet</p>;
+  }
+  const relative = formatDistanceToNow(new Date(onboardedAt), { addSuffix: true }).toLowerCase();
+  return <p className="text-muted mt-1 text-xs">logged in {relative}</p>;
 }
 
 function StatusBadge({ status }: { status: JoinRequestStatus }) {

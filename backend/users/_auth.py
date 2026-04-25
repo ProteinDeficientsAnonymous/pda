@@ -7,6 +7,7 @@ from community._validation import Code, raise_validation
 from config.audit import audit_log
 from config.media_proxy import media_path
 from django.http import HttpResponse
+from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
@@ -365,6 +366,8 @@ def complete_onboarding(request, payload: OnboardingIn):
     if payload.email:
         user.email = payload.email
     user.set_password(payload.new_password)
+    if user.needs_onboarding and user.onboarded_at is None:
+        user.onboarded_at = timezone.now()
     user.needs_onboarding = False
     user.save()
     audit_log(

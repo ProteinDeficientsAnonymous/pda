@@ -1836,6 +1836,8 @@ export interface components {
             rejected_at?: string | null;
             /** Rejected By Name */
             rejected_by_name?: string | null;
+            /** Onboarded At */
+            onboarded_at?: string | null;
         };
         /** JoinRequestIn */
         JoinRequestIn: {

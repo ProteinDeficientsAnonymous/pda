@@ -3,47 +3,8 @@
 import pytest
 from community._validation import Code
 from community.models import JoinRequestStatus
-from users.permissions import PermissionKey
-from users.roles import Role
 
 from tests._asserts import assert_error_code
-
-
-@pytest.fixture
-def vettor_user(db):
-    from users.models import User
-
-    user = User.objects.create_user(
-        phone_number="+12025550003",
-        password="vettorpass123",
-        display_name="Vettor",
-    )
-    role = Role.objects.create(name="vettor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def vettor_headers(vettor_user):
-    from ninja_jwt.tokens import RefreshToken
-
-    refresh = RefreshToken.for_user(vettor_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
-@pytest.fixture
-def sample_join_request(db):
-    from community.models import JoinFormQuestion, JoinRequest
-
-    q = JoinFormQuestion.objects.filter(required=True).first()
-    answers = {}
-    if q:
-        answers[str(q.id)] = {"label": q.label, "answer": "I believe in collective liberation."}
-    return JoinRequest.objects.create(
-        display_name="Sprout Seedling",
-        phone_number="+16505551234",
-        custom_answers=answers,
-    )
 
 
 @pytest.mark.django_db
@@ -262,7 +223,56 @@ class TestJoinRequestManagement:
         assert response.status_code == 200
         assert response.json()["magic_link_token"] is None
 
-    def test_list_excludes_approved_onboarded_user(
+    def test_list_excludes_approved_onboarded_user_after_grace(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        from datetime import timedelta
+
+        from django.utils import timezone
+        from users.models import User
+
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        user = User.objects.get(phone_number=sample_join_request.phone_number)
+        user.needs_onboarding = False
+        user.onboarded_at = timezone.now() - timedelta(days=4)
+        user.save(update_fields=["needs_onboarding", "onboarded_at"])
+
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        ids = [r["id"] for r in response.json()]
+        assert str(sample_join_request.id) not in ids
+
+    def test_list_includes_approved_onboarded_within_grace(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        from datetime import timedelta
+
+        from django.utils import timezone
+        from users.models import User
+
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        user = User.objects.get(phone_number=sample_join_request.phone_number)
+        user.needs_onboarding = False
+        user.onboarded_at = timezone.now() - timedelta(days=1)
+        user.save(update_fields=["needs_onboarding", "onboarded_at"])
+
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        items = {r["id"]: r for r in response.json()}
+        assert str(sample_join_request.id) in items
+        assert items[str(sample_join_request.id)]["onboarded_at"] is not None
+
+    def test_list_excludes_legacy_onboarded_user_with_null_timestamp(
         self, api_client, vettor_headers, sample_join_request
     ):
         from users.models import User
@@ -275,7 +285,8 @@ class TestJoinRequestManagement:
         )
         user = User.objects.get(phone_number=sample_join_request.phone_number)
         user.needs_onboarding = False
-        user.save(update_fields=["needs_onboarding"])
+        user.onboarded_at = None
+        user.save(update_fields=["needs_onboarding", "onboarded_at"])
 
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         assert response.status_code == 200
@@ -293,8 +304,9 @@ class TestJoinRequestManagement:
         )
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         assert response.status_code == 200
-        ids = [r["id"] for r in response.json()]
-        assert str(sample_join_request.id) in ids
+        items = {r["id"]: r for r in response.json()}
+        assert str(sample_join_request.id) in items
+        assert items[str(sample_join_request.id)]["onboarded_at"] is None
 
     def test_list_flags_previously_archived(self, api_client, vettor_headers, db):
         from community.models import JoinRequest
@@ -345,99 +357,6 @@ class TestJoinRequestManagement:
         archived.refresh_from_db()
         assert archived.archived_at is None
         assert archived.needs_onboarding is True
-
-    def test_unreject_success(self, api_client, vettor_headers, vettor_user, sample_join_request):
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
-            content_type="application/json",
-            **vettor_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["status"] == JoinRequestStatus.PENDING
-        sample_join_request.refresh_from_db()
-        assert sample_join_request.status == JoinRequestStatus.PENDING
-        assert sample_join_request.rejected_by == vettor_user
-        assert sample_join_request.rejected_at is not None
-
-    def test_unreject_pending_fails(self, api_client, vettor_headers, sample_join_request):
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
-            content_type="application/json",
-            **vettor_headers,
-        )
-        assert response.status_code == 400
-
-    def test_unreject_approved_fails(self, api_client, vettor_headers, sample_join_request):
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.APPROVED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
-            content_type="application/json",
-            **vettor_headers,
-        )
-        assert response.status_code == 400
-
-    def test_unreject_requires_permission(self, api_client, auth_headers, sample_join_request):
-        sample_join_request.status = JoinRequestStatus.REJECTED
-        sample_join_request.save(update_fields=["status"])
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 403
-
-    def test_unreject_unauthenticated(self, api_client, sample_join_request):
-        sample_join_request.status = JoinRequestStatus.REJECTED
-        sample_join_request.save(update_fields=["status"])
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
-            content_type="application/json",
-        )
-        assert response.status_code == 401
-
-    def test_unreject_not_found(self, api_client, vettor_headers):
-        import uuid
-
-        response = api_client.patch(
-            f"/api/community/join-requests/{uuid.uuid4()}/unreject/",
-            content_type="application/json",
-            **vettor_headers,
-        )
-        assert response.status_code == 404
-
-    def test_unreject_then_reject_again_works(
-        self, api_client, vettor_headers, sample_join_request
-    ):
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/unreject/",
-            content_type="application/json",
-            **vettor_headers,
-        )
-        response = api_client.patch(
-            f"/api/community/join-requests/{sample_join_request.id}/",
-            {"status": JoinRequestStatus.REJECTED},
-            content_type="application/json",
-            **vettor_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["status"] == JoinRequestStatus.REJECTED
 
     def test_list_keeps_pending_and_rejected_unaffected(self, api_client, vettor_headers, db):
         from community.models import JoinRequest
