@@ -5,6 +5,7 @@ All existing ``from community.models import X`` imports continue to work unchang
 
 from community.models.choices import (
     AttendanceStatus,
+    CoHostInviteStatus,
     EventFlagStatus,
     EventStatus,
     EventType,
@@ -17,6 +18,7 @@ from community.models.choices import (
     SurveyQuestionType,
     SurveyVisibility,
 )
+from community.models.cohost_invite import EventCoHostInvite
 from community.models.content import (
     FAQ,
     CommunityGuidelines,
@@ -39,6 +41,7 @@ from community.models.survey import (
 __all__ = [
     # choices
     "AttendanceStatus",
+    "CoHostInviteStatus",
     "EventFlagStatus",
     "EventStatus",
     "EventType",
@@ -50,6 +53,8 @@ __all__ = [
     "RSVPStatus",
     "SurveyQuestionType",
     "SurveyVisibility",
+    # cohost invite
+    "EventCoHostInvite",
     # content
     "CommunityGuidelines",
     "EditablePage",

@@ -1,11 +1,13 @@
 import { isAxiosError } from 'axios';
 import { Link, useParams } from 'react-router-dom';
+import { extractApiError } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
 import { EventMemberSection } from './EventMemberSection';
 import { EventPollCard } from './poll/EventPollCard';
@@ -18,7 +20,8 @@ export default function EventDetailScreen() {
   if (isPending) return <ContentLoading />;
   if (isError) {
     if (isAxiosError(error) && error.response?.status === 403) {
-      return <InviteOnlyNotice />;
+      const message = extractApiError(error) ?? "you don't have permission to see this event";
+      return <ForbiddenNotice message={message} />;
     }
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
@@ -41,6 +44,7 @@ export default function EventDetailScreen() {
 
       <WhenLine event={event} />
       <EventActions event={event} />
+      {isAuthed ? <CohostInviteBanner event={event} /> : null}
       <EventPollCard event={event} />
 
       {event.description ? (
@@ -101,13 +105,13 @@ function Badge({
   return <span className={`rounded-full px-2 py-0.5 text-xs ${tones[tone]}`}>{children}</span>;
 }
 
-function InviteOnlyNotice() {
+function ForbiddenNotice({ message }: { message: string }) {
   return (
     <ContentContainer>
       <section className="border-border bg-surface mt-8 rounded-lg border p-6">
-        <h2 className="mb-2 text-base font-medium">invite only 🌿</h2>
+        <h2 className="mb-2 text-base font-medium">{message}</h2>
         <p className="text-foreground-tertiary mb-4 text-sm">
-          this event is invite only — reach out to the host if you'd like to come along
+          if you think this is a mistake, reach out to the host
         </p>
         <Link
           to="/calendar"

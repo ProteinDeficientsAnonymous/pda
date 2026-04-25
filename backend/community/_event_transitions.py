@@ -6,12 +6,13 @@ from config.audit import audit_log
 from django.utils import timezone
 from ninja.responses import Status
 from notifications.service import (
-    create_cohost_added_notifications,
+    create_cohost_invite_notifications,
     create_event_invite_notifications,
 )
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
+from community._cohost_invite_helpers import diff_cohost_invites
 from community._event_helpers import _has_attendees
 from community._validation import Code, raise_validation
 from community.models import Event, EventStatus
@@ -73,12 +74,17 @@ def _uncancel_event(request, event: Event) -> None:
 def _set_event_participants(
     request, event: Event, co_host_ids: list, invited_user_ids: list
 ) -> None:
-    """Attach co-hosts and invitees to the event and send appropriate notifications."""
+    """Attach co-hosts and invitees to the event and send appropriate notifications.
+
+    Co-hosts go through the invite-approval flow: requested ids become PENDING
+    invites that the invitee can accept or decline. Even on drafts, invites are
+    created (and notified once step 3 wires the notification helper) — co-hosts
+    are collaborators on the draft, not just downstream attendees.
+    """
     if co_host_ids:
-        co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
-        event.co_hosts.set(co_hosts)
-        # Cohosts are notified immediately, even on drafts — they're collaborators.
-        create_cohost_added_notifications(event, co_host_ids, request.auth)
+        newly_invited, _ = diff_cohost_invites(event, co_host_ids, request.auth)
+        if newly_invited:
+            create_cohost_invite_notifications(event, newly_invited, request.auth)
     if invited_user_ids:
         invited = UserModel.objects.filter(pk__in=invited_user_ids)
         event.invited_users.set(invited)

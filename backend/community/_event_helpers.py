@@ -8,7 +8,11 @@ from config.media_proxy import media_path
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
-from community._event_schemas import EventOut, RSVPGuestOut
+from community._cohost_invite_helpers import (
+    get_my_pending_invite,
+    get_pending_invites_for_event,
+)
+from community._event_schemas import EventOut, PendingCoHostInviteOut, RSVPGuestOut
 from community._shared import _authenticated_user, _members_only
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus, SurveyQuestionType
 
@@ -198,6 +202,23 @@ def _can_see_invited(
     return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
+def _can_manage_cohost_invites(
+    requesting_user,
+    creator,
+    co_host_ids: set[str],
+) -> bool:
+    """Creator + accepted co-hosts can see pending invites and rescind them.
+
+    Admins are intentionally excluded — co-host management is a host-only
+    workflow, not an admin moderation surface.
+    """
+    if requesting_user is None:
+        return False
+    if creator is not None and requesting_user.pk == creator.pk:
+        return True
+    return str(requesting_user.pk) in co_host_ids
+
+
 def _can_see_invite_only(
     user, co_host_ids: set[str], invited_user_ids: set[str], created_by_id
 ) -> bool:
@@ -231,6 +252,23 @@ def _get_datetime_poll_slug(event: Event) -> str | None:
     return poll_survey
 
 
+def _pending_cohost_invites_out(
+    event: Event, auth_user, creator, co_host_ids: set[str]
+) -> list[PendingCoHostInviteOut]:
+    if not _can_manage_cohost_invites(auth_user, creator, co_host_ids):
+        return []
+    return [
+        PendingCoHostInviteOut(
+            id=str(inv.id),
+            user_id=str(inv.user_id),
+            user_name=inv.user.display_name or inv.user.phone_number,
+            user_photo_url=media_path(inv.user.profile_photo),
+            invited_at=inv.invited_at,
+        )
+        for inv in get_pending_invites_for_event(event)
+    ]
+
+
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
@@ -241,6 +279,10 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
+
+    pending_invites_out = _pending_cohost_invites_out(event, auth_user, creator, co_host_ids)
+    my_pending_invite = get_my_pending_invite(event, auth_user)
+    my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     return EventOut(
         id=str(event.id),
         title=event.title,
@@ -284,6 +326,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         invite_permission=event.invite_permission,
         is_past=event.is_past,
         status=event.status,
+        pending_cohost_invites=pending_invites_out,
+        my_pending_cohost_invite_id=my_pending_invite_id,
     )
 
 
@@ -292,25 +336,28 @@ def _update_co_hosts(
     co_host_ids: Iterable[str],
     updater: UserModel,
 ) -> None:
-    """Update event.co_hosts and notify newly added co-hosts."""
-    from notifications.service import broadcast_event_update, create_cohost_added_notifications
+    """Reconcile cohost invites against the requested ids and broadcast updates.
 
-    old_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
+    With the invite-approval flow, this no longer mutates ``event.co_hosts``
+    directly for newly-added users — those go to ``EventCoHostInvite`` as
+    PENDING and only land in ``event.co_hosts`` once accepted. Removals still
+    take effect immediately (the rescind helper drops them from
+    ``event.co_hosts`` if they had been accepted).
+    """
+    from notifications.service import broadcast_cohost_change, create_cohost_invite_notifications
+
+    from community._cohost_invite_helpers import diff_cohost_invites
+
     next_ids = {str(uid) for uid in co_host_ids}
-    co_hosts = UserModel.objects.filter(pk__in=co_host_ids)
-    event.co_hosts.set(co_hosts)
-    new_ids = next_ids - old_ids
-    if new_ids:
-        create_cohost_added_notifications(event, new_ids, updater)
-    # Silent live-update ping for anyone already viewing the event — so removed
-    # co-hosts and other stakeholders see the change without needing to reload.
-    # Exclude the updater (their local cache is already up-to-date).
-    if old_ids != next_ids:
-        removed_ids = old_ids - next_ids
-        broadcast_event_update(
+    newly_invited, removed_accepted_ids = diff_cohost_invites(event, next_ids, updater)
+    if newly_invited:
+        create_cohost_invite_notifications(event, newly_invited, updater)
+
+    if newly_invited or removed_accepted_ids:
+        broadcast_cohost_change(
             event,
             exclude_user_ids={str(updater.pk)},
-            extra_user_ids=removed_ids,
+            extra_user_ids=set(newly_invited) | set(removed_accepted_ids),
         )
 
 

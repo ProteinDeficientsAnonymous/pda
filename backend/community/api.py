@@ -6,6 +6,7 @@ from community._calendar import router as calendar_router
 from community._docs import router as docs_router
 from community._docs_documents import router as docs_documents_router
 from community._event_actions import router as event_actions_router
+from community._event_cohost_invites import router as event_cohost_invites_router
 from community._event_flags import router as event_flags_router
 
 # Re-export symbols imported directly in tests
@@ -45,6 +46,7 @@ router.add_router("", feedback_router)
 router.add_router("", events_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", event_actions_router)
+router.add_router("", event_cohost_invites_router)
 router.add_router("", event_flags_router)
 router.add_router("", calendar_router)
 router.add_router("", welcome_template_router)

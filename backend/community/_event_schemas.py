@@ -141,6 +141,14 @@ class RSVPGuestOut(BaseModel):
     attendance: str = AttendanceStatus.UNKNOWN
 
 
+class PendingCoHostInviteOut(BaseModel):
+    id: str
+    user_id: str
+    user_name: str
+    user_photo_url: str = ""
+    invited_at: datetime
+
+
 class EventListOut(BaseModel):
     id: str
     title: str
@@ -220,6 +228,8 @@ class EventOut(BaseModel):
     invite_permission: str = InvitePermission.ALL_MEMBERS
     is_past: bool = False
     status: str = "active"
+    pending_cohost_invites: list[PendingCoHostInviteOut] = []
+    my_pending_cohost_invite_id: str | None = None
 
 
 class RSVPIn(BaseModel):

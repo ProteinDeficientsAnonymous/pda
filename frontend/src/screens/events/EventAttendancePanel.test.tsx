@@ -70,6 +70,8 @@ const BASE_EVENT: Event = {
   invitedUserNames: [],
   invitedUserPhotoUrls: [],
   invitePermission: InvitePermission.AllMembers,
+  pendingCohostInvites: [],
+  myPendingCohostInviteId: null,
   eventType: EventType.Community,
   visibility: EventVisibility.Public,
   photoUrl: '',

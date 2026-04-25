@@ -7,7 +7,10 @@ class NotificationType(models.TextChoices):
     EVENT_INVITE = "event_invite", "Event Invite"
     EVENT_CANCELLED = "event_cancelled", "Event Cancelled"
     JOIN_REQUEST = "join_request", "Join Request"
-    COHOST_ADDED = "cohost_added", "Co-host Added"
+    COHOST_ADDED = "cohost_added", "Co-host Added"  # legacy: pre-invite-approval flow
+    COHOST_INVITE = "cohost_invite", "Co-host Invite"
+    COHOST_INVITE_ACCEPTED = "cohost_invite_accepted", "Co-host Invite Accepted"
+    COHOST_INVITE_DECLINED = "cohost_invite_declined", "Co-host Invite Declined"
     MAGIC_LINK_REQUEST = "magic_link_request", "Magic Link Request"
     WAITLIST_PROMOTED = "waitlist_promoted", "Waitlist Promoted"
     EVENT_FLAGGED = "event_flagged", "Event Flagged"

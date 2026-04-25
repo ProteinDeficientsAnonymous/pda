@@ -248,7 +248,11 @@ class TestRSVP:
 
 @pytest.mark.django_db
 class TestCreateEventWithCohosts:
-    def test_create_event_with_cohosts(self, api_client, auth_headers, other_user):
+    def test_create_event_with_cohosts_creates_pending_invite(
+        self, api_client, auth_headers, other_user
+    ):
+        # With the invite-approval flow (#363), passing ``co_host_ids`` queues
+        # a PENDING invite — the user is NOT in event.co_hosts until they accept.
         response = api_client.post(
             "/api/community/events/",
             {
@@ -262,8 +266,8 @@ class TestCreateEventWithCohosts:
         )
         assert response.status_code == 201
         data = response.json()
-        assert str(other_user.pk) in data["co_host_ids"]
-        assert other_user.display_name in data["co_host_names"]
+        assert data["co_host_ids"] == []
+        assert any(inv["user_id"] == str(other_user.pk) for inv in data["pending_cohost_invites"])
 
     def test_create_event_with_rsvp_enabled(self, api_client, auth_headers):
         response = api_client.post(
@@ -293,7 +297,9 @@ class TestCreateEventWithCohosts:
     def test_cohost_sees_guest_phones(
         self, api_client, auth_headers, other_user, other_headers, test_user
     ):
-        # Create event with other_user as co-host
+        # Create event inviting other_user as co-host (PENDING under the
+        # invite-approval flow), then have them accept so they're an actual
+        # co-host with phone visibility.
         create_resp = api_client.post(
             "/api/community/events/",
             {
@@ -308,8 +314,16 @@ class TestCreateEventWithCohosts:
         )
         assert create_resp.status_code == 201
         event_id = create_resp.json()["id"]
+        invite_id = create_resp.json()["pending_cohost_invites"][0]["id"]
 
-        # Creator RSVPs
+        # other_user accepts the invite → becomes an accepted co-host.
+        accept_resp = api_client.post(
+            f"/api/community/events/{event_id}/cohost-invites/{invite_id}/accept/",
+            **other_headers,
+        )
+        assert accept_resp.status_code == 200
+
+        # Creator RSVPs.
         api_client.post(
             f"/api/community/events/{event_id}/rsvp/",
             {"status": RSVPStatus.ATTENDING},
@@ -317,7 +331,7 @@ class TestCreateEventWithCohosts:
             **auth_headers,
         )
 
-        # Co-host fetches — should see phones
+        # Co-host fetches — should see phones.
         response = api_client.get(f"/api/community/events/{event_id}/", **other_headers)
         assert response.status_code == 200
         guests = response.json()["guests"]

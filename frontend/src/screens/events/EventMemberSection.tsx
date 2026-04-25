@@ -4,6 +4,8 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useRescindCohostInvite } from '@/api/cohostInvites';
 import { RsvpSection } from './RsvpSection';
 import { InvitedList } from './RsvpGuestList';
 import { EventAdminActions } from './EventAdminActions';
@@ -13,7 +15,7 @@ import { InviteDialog } from './InviteDialog';
 import { AddCoHostDialog } from './AddCoHostDialog';
 import { hasPermission } from '@/models/permissions';
 import { Permission } from '@/models/permissions';
-import type { Event } from '@/models/event';
+import type { Event, PendingCohostInvite } from '@/models/event';
 import { EventStatus, InvitePermission } from '@/models/event';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
@@ -110,13 +112,20 @@ function HostSection({ event, canEdit }: { event: Event; canEdit: boolean }) {
       photoUrl: event.coHostPhotoUrls[i] ?? '',
     });
   });
-  if (hosts.length === 0 && !canEdit) return null;
-  const label = hosts.length > 1 ? 'hosts' : 'host';
+  // Backend only includes pending invites for the creator + accepted co-hosts.
+  // Other viewers always get an empty list, so the chips never leak.
+  const pending = event.pendingCohostInvites;
+  if (hosts.length === 0 && pending.length === 0 && !canEdit) return null;
+  const totalChips = hosts.length + pending.length;
+  const label = totalChips > 1 ? 'hosts' : 'host';
   return (
     <Card label={label}>
       <div className="flex flex-wrap items-center gap-2">
         {hosts.map((h) => (
           <HostChip key={h.id} id={h.id} name={h.name} photoUrl={h.photoUrl} />
+        ))}
+        {pending.map((inv) => (
+          <PendingHostChip key={inv.id} eventId={event.id} invite={inv} canRescind={canEdit} />
         ))}
         {canEdit ? (
           <button
@@ -163,6 +172,71 @@ function HostChip({ id, name, photoUrl }: { id: string; name: string; photoUrl: 
       {name}
     </Link>
   );
+}
+
+function PendingHostChip({
+  eventId,
+  invite,
+  canRescind,
+}: {
+  eventId: string;
+  invite: PendingCohostInvite;
+  canRescind: boolean;
+}) {
+  const rescind = useRescindCohostInvite();
+  const tooltip = `invited ${formatRelativeDays(invite.invitedAt)} — hasn't responded yet`;
+  return (
+    <span
+      className="bg-surface-dim/60 text-foreground-secondary inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm opacity-60 grayscale"
+      title={tooltip}
+      aria-label={`${invite.userName} (pending)`}
+    >
+      {invite.userPhotoUrl ? (
+        <img
+          src={invite.userPhotoUrl}
+          alt=""
+          className="h-6 w-6 rounded-full object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="bg-toggle-off text-foreground-secondary flex h-6 w-6 items-center justify-center rounded-full text-xs"
+        >
+          {invite.userName.slice(0, 1).toLowerCase()}
+        </span>
+      )}
+      {invite.userName}
+      <span className="bg-surface-dim text-muted rounded-full px-1.5 py-0.5 text-[10px] uppercase">
+        pending
+      </span>
+      {canRescind ? (
+        <button
+          type="button"
+          aria-label={`rescind invite to ${invite.userName}`}
+          disabled={rescind.isPending}
+          onClick={() => {
+            rescind.mutate(
+              { eventId, inviteId: invite.id },
+              { onError: () => toast.error("couldn't rescind — try again") },
+            );
+          }}
+          className="text-muted hover:text-foreground ms-1 disabled:opacity-50"
+        >
+          ×
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
+// Returns "today", "yesterday", or "N days ago" for the host-row pending tooltip.
+function formatRelativeDays(date: Date): string {
+  const ms = Date.now() - date.getTime();
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  return `${String(days)} days ago`;
 }
 
 function LocationSection({ event }: { event: Event }) {

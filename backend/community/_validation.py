@@ -50,6 +50,7 @@ class Code:
         RSVP_NOT_FOUND = "event.rsvp_not_found"
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
+        PERM_DENIED = "event.perm_denied"  # params: { action?: str }
 
     class Poll:
         NOT_FOUND = "poll.not_found"
@@ -180,6 +181,12 @@ class Code:
 
     class Notification:
         NOT_FOUND = "notification.not_found"
+
+    class CoHostInvite:
+        NOT_FOUND = "cohost_invite.not_found"
+        NOT_PENDING = "cohost_invite.not_pending"
+        NOT_INVITEE = "cohost_invite.not_invitee"
+        NOT_HOST = "cohost_invite.not_host"
 
     class WelcomeTemplate:
         BODY_REQUIRED = "welcome_template.body_required"

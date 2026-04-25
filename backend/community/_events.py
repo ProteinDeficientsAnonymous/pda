@@ -13,6 +13,7 @@ from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
+from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
     _attending_headcount,
     _can_see_invite_only,
@@ -206,6 +207,34 @@ def list_events(request, status: str = EventStatus.ACTIVE):
     )
 
 
+def _can_see_draft(event: Event, auth_user) -> bool:
+    """Pending cohost invitees can see the draft they were invited to so they
+    can find the accept/decline banner. They aren't accepted co-hosts yet,
+    so `_can_edit_event` returns False — without this branch, they'd 404."""
+    if not auth_user:
+        return False
+    return _can_edit_event(auth_user, event) or has_pending_cohost_invite(event, auth_user)
+
+
+def _enforce_event_read_visibility(event: Event, auth_user) -> None:
+    """Raise the right ValidationException if `auth_user` shouldn't see this event."""
+    if event.is_deleted:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if event.is_draft and not _can_see_draft(event, auth_user):
+        raise_validation(Code.Event.PERM_DENIED, status_code=403, action="view_draft_event")
+    if (
+        event.visibility == PageVisibility.MEMBERS_ONLY
+        and auth_user is None
+        and event.event_type != EventType.OFFICIAL
+    ):
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if event.visibility == PageVisibility.INVITE_ONLY:
+        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
+        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
+        if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
+            raise_validation(Code.Event.INVITE_ONLY, status_code=403)
+
+
 @router.get(
     "/events/{event_id}/",
     response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
@@ -220,22 +249,8 @@ def get_event(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if event.is_deleted:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     auth_user = _authenticated_user(request.auth)
-    if event.is_draft and not (auth_user and _can_edit_event(auth_user, event)):
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if (
-        event.visibility == PageVisibility.MEMBERS_ONLY
-        and auth_user is None
-        and event.event_type != EventType.OFFICIAL
-    ):
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if event.visibility == PageVisibility.INVITE_ONLY:
-        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
-        if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
-            raise_validation(Code.Event.INVITE_ONLY, status_code=403)
+    _enforce_event_read_visibility(event, auth_user)
     return Status(200, _event_out(event, request.auth))
 
 

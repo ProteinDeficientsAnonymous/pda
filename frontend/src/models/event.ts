@@ -125,12 +125,26 @@ export interface Event {
   invitedUserPhotoUrls: string[];
   invitePermission: string;
 
+  // Co-host invite approval flow (#363). Pending list visible to creator +
+  // accepted co-hosts only; myPendingCohostInviteId set when the requesting
+  // user has a pending invite for this event (drives the accept/decline banner).
+  pendingCohostInvites: PendingCohostInvite[];
+  myPendingCohostInviteId: string | null;
+
   eventType: string;
   visibility: string;
   photoUrl: string;
 
   isPast: boolean;
   status: string;
+}
+
+export interface PendingCohostInvite {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhotoUrl: string;
+  invitedAt: Date;
 }
 
 // Maps an event to its chip/calendar css classes. Colocated with the model so

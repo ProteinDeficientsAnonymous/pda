@@ -27,6 +27,14 @@ class EventFlagStatus(models.TextChoices):
     ACTIONED = "actioned", "Actioned"
 
 
+class CoHostInviteStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    ACCEPTED = "accepted", "Accepted"
+    DECLINED = "declined", "Declined"
+    RESCINDED = "rescinded", "Rescinded"
+    EXPIRED = "expired", "Expired"
+
+
 class JoinRequestStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     APPROVED = "approved", "Approved"

@@ -564,6 +564,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/join-requests/{id}/resend-magic-link/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend Magic Link
+         * @description Mint a fresh magic-login link for an approved join request whose user
+         *     has not yet onboarded. Invalidates any prior unused magic tokens for the
+         *     user so the welcome message in the wild can't be claimed twice. Refuses
+         *     on already-logged-in users (use the members screen's password reset
+         *     flow for that).
+         */
+        post: operations["community__join_request_resend_resend_magic_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/request-login-link/": {
         parameters: {
             query?: never;
@@ -722,6 +746,57 @@ export interface paths {
         post: operations["community__event_actions_upload_event_photo"];
         /** Delete Event Photo */
         delete: operations["community__event_actions_delete_event_photo"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/cohost-invites/{invite_id}/accept/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Cohost Invite */
+        post: operations["community__event_cohost_invites_accept_cohost_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/cohost-invites/{invite_id}/decline/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline Cohost Invite */
+        post: operations["community__event_cohost_invites_decline_cohost_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/cohost-invites/{invite_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Rescind Cohost Invite */
+        delete: operations["community__event_cohost_invites_rescind_cohost_invite"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2297,6 +2372,32 @@ export interface components {
              * @default active
              */
             status: string;
+            /**
+             * Pending Cohost Invites
+             * @default []
+             */
+            pending_cohost_invites: components["schemas"]["PendingCoHostInviteOut"][];
+            /** My Pending Cohost Invite Id */
+            my_pending_cohost_invite_id?: string | null;
+        };
+        /** PendingCoHostInviteOut */
+        PendingCoHostInviteOut: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** User Name */
+            user_name: string;
+            /**
+             * User Photo Url
+             * @default
+             */
+            user_photo_url: string;
+            /**
+             * Invited At
+             * Format: date-time
+             */
+            invited_at: string;
         };
         /** RSVPGuestOut */
         RSVPGuestOut: {
@@ -4581,6 +4682,55 @@ export interface operations {
             };
         };
     };
+    community__join_request_resend_resend_magic_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApproveJoinRequestOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__login_link_request_login_link: {
         parameters: {
             query?: never;
@@ -5126,6 +5276,156 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_cohost_invites_accept_cohost_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                invite_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_cohost_invites_decline_cohost_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                invite_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_cohost_invites_rescind_cohost_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                invite_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Forbidden */

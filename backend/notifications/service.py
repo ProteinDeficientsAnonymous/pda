@@ -44,6 +44,28 @@ def _ping_event_update(user_ids: Iterable[str], event_id: str) -> None:
             cursor.execute(f"SELECT pg_notify('{_EVENT_UPDATES_CHANNEL}', %s)", [payload])
 
 
+def broadcast_cohost_change(
+    event: Event,
+    *,
+    exclude_user_ids: Iterable[str] = (),
+    extra_user_ids: Iterable[str] = (),
+) -> None:
+    """Live-update ping scoped to creator + accepted co-hosts.
+
+    Used when the cohost roster changes (accept / decline / rescind) so
+    the host-management UI refreshes for the people who care, without
+    pinging every member who's RSVP'd or been invited to the event.
+    """
+    recipients: set[str] = set()
+    if event.created_by_id:
+        recipients.add(str(event.created_by_id))
+    recipients.update(str(uid) for uid in event.co_hosts.values_list("pk", flat=True))
+    recipients.update(str(uid) for uid in extra_user_ids)
+    recipients.difference_update(str(uid) for uid in exclude_user_ids)
+    if recipients:
+        _ping_event_update(recipients, str(event.pk))
+
+
 def broadcast_event_update(
     event: Event,
     *,
@@ -180,28 +202,76 @@ def create_magic_link_request_notifications(user: User) -> None:
     _notify_users(str(recipient.pk) for recipient in recipients)
 
 
-def create_cohost_added_notifications(
+def create_cohost_invite_notifications(
     event: Event,
     new_user_ids: Iterable[str],
-    added_by: User,
+    invited_by: User,
 ) -> None:
+    """Notify users who just received a co-host invite for this event."""
     from notifications.models import Notification, NotificationType
 
-    added_by_id = str(added_by.pk)
-    added_by_name = added_by.display_name or added_by.phone_number
-    notified_ids = [uid for uid in new_user_ids if str(uid) != added_by_id]
+    invited_by_id = str(invited_by.pk)
+    invited_by_name = invited_by.display_name or invited_by.phone_number
+    notified_ids = [str(uid) for uid in new_user_ids if str(uid) != invited_by_id]
+    if not notified_ids:
+        return
     Notification.objects.bulk_create(
         [
             Notification(
                 recipient_id=user_id,
-                notification_type=NotificationType.COHOST_ADDED,
+                notification_type=NotificationType.COHOST_INVITE,
                 event=event,
-                message=f"{added_by_name} added you as a co-host for {event.title}",
+                related_user=invited_by,
+                message=(
+                    f"{invited_by_name} invited you to co-host {event.title} — tap to respond"
+                ),
             )
             for user_id in notified_ids
         ]
     )
     _notify_users(notified_ids)
+
+
+def create_cohost_invite_accepted_notification(
+    event: Event,
+    invitee: User,
+    inviter_id: str | None,
+) -> None:
+    """Notify the inviter that an invitee accepted their co-host invite."""
+    from notifications.models import Notification, NotificationType
+
+    if inviter_id is None or str(inviter_id) == str(invitee.pk):
+        return
+    invitee_name = invitee.display_name or invitee.phone_number
+    Notification.objects.create(
+        recipient_id=str(inviter_id),
+        notification_type=NotificationType.COHOST_INVITE_ACCEPTED,
+        event=event,
+        related_user=invitee,
+        message=f"{invitee_name} accepted your co-host invite for {event.title}",
+    )
+    _notify_users([str(inviter_id)])
+
+
+def create_cohost_invite_declined_notification(
+    event: Event,
+    invitee: User,
+    inviter_id: str | None,
+) -> None:
+    """Notify the inviter that an invitee declined their co-host invite."""
+    from notifications.models import Notification, NotificationType
+
+    if inviter_id is None or str(inviter_id) == str(invitee.pk):
+        return
+    invitee_name = invitee.display_name or invitee.phone_number
+    Notification.objects.create(
+        recipient_id=str(inviter_id),
+        notification_type=NotificationType.COHOST_INVITE_DECLINED,
+        event=event,
+        related_user=invitee,
+        message=f"{invitee_name} declined your co-host invite for {event.title}",
+    )
+    _notify_users([str(inviter_id)])
 
 
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:

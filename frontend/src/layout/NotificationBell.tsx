@@ -179,6 +179,9 @@ function notificationTarget(n: AppNotification): string | null {
   switch (n.notificationType) {
     case NotificationType.EventInvite:
     case NotificationType.CohostAdded:
+    case NotificationType.CohostInvite:
+    case NotificationType.CohostInviteAccepted:
+    case NotificationType.CohostInviteDeclined:
     case NotificationType.WaitlistPromoted:
     case NotificationType.EventCancelled:
       return n.eventId ? `/events/${n.eventId}` : null;

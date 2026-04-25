@@ -85,6 +85,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "can't edit the date while a poll is active — finalize the poll first";
     case Code.Event.InviteOnly:
       return 'this event is invite only';
+    case Code.Event.PermDenied:
+      return "you don't have permission to see this event";
     case Code.Event.AuthRequired:
       return 'you need to sign in for that';
     case Code.Event.CancelledCannotBeEdited:
@@ -365,6 +367,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "couldn't submit feedback — try again";
     case Code.Notification.NotFound:
       return 'notification not found';
+    case Code.CoHostInvite.NotFound:
+      return 'invite not found';
+    case Code.CoHostInvite.NotPending:
+      return 'this invite has already been resolved';
+    case Code.CoHostInvite.NotInvitee:
+      return "this isn't your invite to respond to";
+    case Code.CoHostInvite.NotHost:
+      return 'only the event host can do that';
 
     // Welcome template
     case Code.WelcomeTemplate.BodyRequired:

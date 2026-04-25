@@ -40,6 +40,8 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     invitedUserNames: [],
     invitedUserPhotoUrls: [],
     invitePermission: 'all_members',
+    pendingCohostInvites: [],
+    myPendingCohostInviteId: null,
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',

@@ -251,7 +251,7 @@ export function EventForm({ existing }: Props) {
           selected={coHosts}
           onChange={setCoHosts}
           excludeIds={user ? [user.id] : []}
-          hint="co-hosts can edit the event and manage rsvps"
+          hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
         />
       </CollapsibleCard>
 

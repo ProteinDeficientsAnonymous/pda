@@ -1,7 +1,7 @@
 // Wire (snake_case, ISO strings) → Event (camelCase, Date objects) mapper.
 // Kept separate from events.ts so the caller module stays ≤150 lines.
 
-import type { AttendanceStatusValue, Event, EventGuest } from '@/models/event';
+import type { AttendanceStatusValue, Event, EventGuest, PendingCohostInvite } from '@/models/event';
 import { AttendanceStatus } from '@/models/event';
 
 interface WireGuest {
@@ -59,12 +59,23 @@ export interface WireEvent {
   invited_user_photo_urls?: string[];
   invite_permission?: string;
 
+  pending_cohost_invites?: WirePendingCohostInvite[];
+  my_pending_cohost_invite_id?: string | null;
+
   event_type?: string;
   visibility?: string;
   photo_url?: string;
 
   is_past?: boolean;
   status?: string;
+}
+
+interface WirePendingCohostInvite {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_photo_url?: string;
+  invited_at: string;
 }
 
 function mapAttendance(value: string | undefined): AttendanceStatusValue {
@@ -82,6 +93,16 @@ function mapGuest(g: WireGuest): EventGuest {
     photoUrl: g.photo_url ?? '',
     hasPlusOne: g.has_plus_one ?? false,
     attendance: mapAttendance(g.attendance),
+  };
+}
+
+function mapPendingCohostInvite(w: WirePendingCohostInvite): PendingCohostInvite {
+  return {
+    id: w.id,
+    userId: w.user_id,
+    userName: w.user_name,
+    userPhotoUrl: w.user_photo_url ?? '',
+    invitedAt: new Date(w.invited_at),
   };
 }
 
@@ -130,6 +151,9 @@ export function mapEvent(e: WireEvent): Event {
     invitedUserNames: e.invited_user_names ?? [],
     invitedUserPhotoUrls: e.invited_user_photo_urls ?? [],
     invitePermission: e.invite_permission ?? 'all_members',
+
+    pendingCohostInvites: (e.pending_cohost_invites ?? []).map(mapPendingCohostInvite),
+    myPendingCohostInviteId: e.my_pending_cohost_invite_id ?? null,
 
     eventType: e.event_type ?? 'community',
     visibility: e.visibility ?? 'public',
