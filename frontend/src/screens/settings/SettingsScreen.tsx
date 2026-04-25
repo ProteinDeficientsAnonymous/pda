@@ -6,6 +6,7 @@ import { TextField } from '@/components/ui/TextField';
 import { useAuthStore } from '@/auth/store';
 import { useAccessibilityStore, type ThemeMode, type TextScale } from '@/accessibility/store';
 import { useCalendarToken, useRegenerateCalendarToken } from '@/api/calendar';
+import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { useVersion } from '@/api/version';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from './AvatarUpload';
@@ -354,12 +355,12 @@ function CalendarFeedScopeToggle({
   value,
   onChange,
 }: {
-  value: 'all' | 'mine';
-  onChange: (v: 'all' | 'mine') => Promise<void>;
+  value: CalendarFeedScopeValue;
+  onChange: (v: CalendarFeedScopeValue) => Promise<void>;
 }) {
-  const options: { value: 'all' | 'mine'; label: string }[] = [
-    { value: 'all', label: 'all events' },
-    { value: 'mine', label: 'my events' },
+  const options: { value: CalendarFeedScopeValue; label: string }[] = [
+    { value: CalendarFeedScope.All, label: 'all events' },
+    { value: CalendarFeedScope.Mine, label: 'my events' },
   ];
   return (
     <SegmentedControl

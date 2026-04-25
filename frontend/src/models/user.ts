@@ -2,6 +2,12 @@
 // generated types come online, swap these for `components['schemas']['UserOut']`
 // narrowings in api/auth.ts — this file should disappear.
 
+export const CalendarFeedScope = {
+  All: 'all',
+  Mine: 'mine',
+} as const;
+export type CalendarFeedScopeValue = (typeof CalendarFeedScope)[keyof typeof CalendarFeedScope];
+
 export interface Role {
   id: string;
   name: string;
@@ -21,7 +27,7 @@ export interface User {
   showPhone: boolean;
   showEmail: boolean;
   weekStart: 'sunday' | 'monday';
-  calendarFeedScope: 'all' | 'mine';
+  calendarFeedScope: CalendarFeedScopeValue;
   profilePhotoUrl: string;
   photoUpdatedAt: string | null;
   roles: Role[];
