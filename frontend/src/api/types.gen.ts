@@ -830,6 +830,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/welcome-template/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Welcome Template */
+        get: operations["community__welcome_template_get_welcome_template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Welcome Template */
+        patch: operations["community__welcome_template_update_welcome_template"];
+        trace?: never;
+    };
     "/api/community/whatsapp/config/": {
         parameters: {
             query?: never;
@@ -1222,7 +1240,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Create Document */
-        post: operations["community__docs_create_document"];
+        post: operations["community__docs_documents_create_document"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1238,7 +1256,7 @@ export interface paths {
         };
         get?: never;
         /** Reorder Documents */
-        put: operations["community__docs_reorder_documents"];
+        put: operations["community__docs_documents_reorder_documents"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1254,15 +1272,15 @@ export interface paths {
             cookie?: never;
         };
         /** Get Document */
-        get: operations["community__docs_get_document"];
+        get: operations["community__docs_documents_get_document"];
         put?: never;
         post?: never;
         /** Delete Document */
-        delete: operations["community__docs_delete_document"];
+        delete: operations["community__docs_documents_delete_document"];
         options?: never;
         head?: never;
         /** Update Document */
-        patch: operations["community__docs_update_document"];
+        patch: operations["community__docs_documents_update_document"];
         trace?: never;
     };
     "/api/community/geocode/": {
@@ -2581,6 +2599,21 @@ export interface components {
             token: string;
             /** Feed Url */
             feed_url: string;
+        };
+        /** WelcomeTemplateOut */
+        WelcomeTemplateOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WelcomeTemplatePatchIn */
+        WelcomeTemplatePatchIn: {
+            /** Body */
+            body?: string | null;
         };
         /** WhatsAppConfigOut */
         WhatsAppConfigOut: {
@@ -5341,6 +5374,68 @@ export interface operations {
             };
         };
     };
+    community__welcome_template_get_welcome_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WelcomeTemplateOut"];
+                };
+            };
+        };
+    };
+    community__welcome_template_update_welcome_template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WelcomeTemplatePatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WelcomeTemplateOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__whatsapp_get_whatsapp_config: {
         parameters: {
             query?: never;
@@ -6663,7 +6758,7 @@ export interface operations {
             };
         };
     };
-    community__docs_create_document: {
+    community__docs_documents_create_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -6705,7 +6800,7 @@ export interface operations {
             };
         };
     };
-    community__docs_reorder_documents: {
+    community__docs_documents_reorder_documents: {
         parameters: {
             query?: never;
             header?: never;
@@ -6740,7 +6835,7 @@ export interface operations {
             };
         };
     };
-    community__docs_get_document: {
+    community__docs_documents_get_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -6780,7 +6875,7 @@ export interface operations {
             };
         };
     };
-    community__docs_delete_document: {
+    community__docs_documents_delete_document: {
         parameters: {
             query?: never;
             header?: never;
@@ -6822,7 +6917,7 @@ export interface operations {
             };
         };
     };
-    community__docs_update_document: {
+    community__docs_documents_update_document: {
         parameters: {
             query?: never;
             header?: never;
