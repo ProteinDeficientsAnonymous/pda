@@ -9,7 +9,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0048_eventrsvp_attendance"),
+        ("community", "0050_seed_welcome_template"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
