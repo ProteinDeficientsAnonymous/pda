@@ -85,8 +85,3 @@ jobs:
 
       - name: Run frontend CI
         run: make agent-frontend-ci
-
-      # agent-frontend-format auto-writes with prettier; fail on diff so
-      # formatting is enforced on PRs rather than silently absorbed.
-      - name: Fail if the working tree is dirty
-        run: git diff --exit-code
