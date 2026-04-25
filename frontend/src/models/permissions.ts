@@ -7,6 +7,7 @@ export const Permission = {
   ApproveJoinRequests: 'approve_join_requests',
   ManageEvents: 'manage_events',
   EditGuidelines: 'edit_guidelines',
+  EditWelcomeMessage: 'edit_welcome_message',
   ManageWhatsapp: 'manage_whatsapp',
   EditFaq: 'edit_faq',
   EditHomepage: 'edit_homepage',

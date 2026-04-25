@@ -627,6 +627,20 @@
         "value": "notification.not_found",
         "params": []
       }
+    ],
+    "WelcomeTemplate": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "welcome_template.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "welcome_template.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
     ]
   }
 }

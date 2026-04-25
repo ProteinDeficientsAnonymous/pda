@@ -196,3 +196,47 @@ export function useUpdateEditablePage(slug: string) {
     },
   });
 }
+
+// --- Welcome message template (plain text, edited by vetters). --------------
+
+export interface WelcomeTemplate {
+  body: string;
+  updatedAt: string;
+}
+
+interface WireWelcomeTemplate {
+  body: string;
+  updated_at: string;
+}
+
+function mapWelcomeTemplate(data: WireWelcomeTemplate): WelcomeTemplate {
+  return { body: data.body, updatedAt: data.updated_at };
+}
+
+export function useWelcomeTemplate() {
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useQuery({
+    queryKey: ['welcome-template'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireWelcomeTemplate>('/api/community/welcome-template/');
+      return mapWelcomeTemplate(data);
+    },
+    enabled: isAuthed,
+  });
+}
+
+export function useUpdateWelcomeTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: string) => {
+      const { data } = await apiClient.patch<WireWelcomeTemplate>(
+        '/api/community/welcome-template/',
+        { body },
+      );
+      return mapWelcomeTemplate(data);
+    },
+    onSuccess: (template) => {
+      qc.setQueryData(['welcome-template'], template);
+    },
+  });
+}

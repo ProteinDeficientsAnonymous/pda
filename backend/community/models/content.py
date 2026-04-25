@@ -106,6 +106,31 @@ class EditablePage(models.Model):
         return obj
 
 
+class WelcomeMessageTemplate(models.Model):
+    """Singleton — only one row ever exists (pk=1).
+
+    Plain-text template for the welcome SMS/WhatsApp message vetters send
+    after approving a join request. Placeholders ${NAME}, ${SENDER_NAME},
+    ${MAGIC_LINK} are substituted client-side at render time.
+    """
+
+    body = models.TextField(default="", max_length=4000)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+        verbose_name = "Welcome Message Template"
+        verbose_name_plural = "Welcome Message Template"
+
+    def __str__(self) -> str:
+        return "Welcome Message Template"
+
+    @classmethod
+    def get(cls) -> "WelcomeMessageTemplate":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class WhatsAppConfig(models.Model):
     """Singleton model — only one row ever exists (pk=1).
 

@@ -158,6 +158,10 @@ export const Code = {
   Notification: {
     NotFound: 'notification.not_found',
   },
+  WelcomeTemplate: {
+    BodyRequired: 'welcome_template.body_required',
+    BodyTooLong: 'welcome_template.body_too_long',
+  },
 } as const;
 
 export type ValidationCode =
@@ -270,7 +274,9 @@ export type ValidationCode =
   | 'join_form.question_not_found'
   | 'feedback.not_configured'
   | 'feedback.creation_failed'
-  | 'notification.not_found';
+  | 'notification.not_found'
+  | 'welcome_template.body_required'
+  | 'welcome_template.body_too_long';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -383,4 +389,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'feedback.not_configured': [],
   'feedback.creation_failed': [],
   'notification.not_found': [],
+  'welcome_template.body_required': [],
+  'welcome_template.body_too_long': ['max_length'],
 };

@@ -21,3 +21,4 @@ class FieldLimit:
     BOT_SECRET = 256
     PAYMENT_HANDLE = 100
     BIO = 500
+    WELCOME_TEMPLATE = 4000

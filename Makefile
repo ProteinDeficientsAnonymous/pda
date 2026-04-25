@@ -11,7 +11,7 @@ export
         dump-codes generate-codes check-codes \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity \
-        agent-frontend-lint agent-frontend-format agent-frontend-test agent-frontend-typecheck
+        agent-frontend-lint agent-frontend-format agent-frontend-format-check agent-frontend-test agent-frontend-typecheck
 
 help:
 	@echo "Backend commands:"
@@ -209,6 +209,9 @@ agent-frontend-lint:
 agent-frontend-format:
 	cd frontend && pnpm exec prettier --write --log-level warn .
 
+agent-frontend-format-check:
+	cd frontend && pnpm exec prettier --check --log-level warn .
+
 agent-frontend-test:
 	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
 
@@ -222,7 +225,7 @@ agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-comple
 agent-frontend-ci: parallel-agent-frontend
 
 parallel-agent-frontend:
-	$(MAKE) -j4 agent-frontend-lint agent-frontend-format agent-frontend-test agent-frontend-typecheck
+	$(MAKE) -j4 agent-frontend-lint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck
 
 # Dev (concurrent backend + frontend)
 dev:
