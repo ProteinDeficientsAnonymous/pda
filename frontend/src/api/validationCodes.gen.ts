@@ -129,6 +129,8 @@ export const Code = {
     AnswerTooLong: 'join_request.answer_too_long',
     AnswerInvalidOption: 'join_request.answer_invalid_option',
     InvalidStatus: 'join_request.invalid_status',
+    NotApproved: 'join_request.not_approved',
+    AlreadyLoggedIn: 'join_request.already_logged_in',
   },
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
@@ -263,6 +265,8 @@ export type ValidationCode =
   | 'join_request.answer_too_long'
   | 'join_request.answer_invalid_option'
   | 'join_request.invalid_status'
+  | 'join_request.not_approved'
+  | 'join_request.already_logged_in'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
   | 'perm.denied'
@@ -377,6 +381,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.answer_too_long': ['label', 'max'],
   'join_request.answer_invalid_option': ['label'],
   'join_request.invalid_status': ['allowed'],
+  'join_request.not_approved': [],
+  'join_request.already_logged_in': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
   'perm.denied': ['action'],

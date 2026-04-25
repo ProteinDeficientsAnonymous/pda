@@ -544,6 +544,16 @@
         "params": [
           "allowed"
         ]
+      },
+      {
+        "name": "NOT_APPROVED",
+        "value": "join_request.not_approved",
+        "params": []
+      },
+      {
+        "name": "ALREADY_LOGGED_IN",
+        "value": "join_request.already_logged_in",
+        "params": []
       }
     ],
     "Photo": [

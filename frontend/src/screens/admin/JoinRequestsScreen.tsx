@@ -5,6 +5,7 @@ import {
   JoinRequestStatus,
   useDecideJoinRequest,
   useJoinRequests,
+  useResendMagicLink,
   useUnrejectJoinRequest,
   type JoinRequestSummary,
 } from '@/api/join';
@@ -35,6 +36,7 @@ export default function JoinRequestsScreen() {
   const { data = [], isPending, isError } = useJoinRequests();
   const decide = useDecideJoinRequest();
   const unreject = useUnrejectJoinRequest();
+  const resend = useResendMagicLink();
   const { confirm, element: confirmElement } = useConfirm();
 
   const [filter, setFilter] = useState<Filter>(Filter.PENDING);
@@ -99,6 +101,30 @@ export default function JoinRequestsScreen() {
     }
   }
 
+  async function resendWelcome(request: JoinRequestSummary) {
+    const name = request.displayName || formatPhone(request.phoneNumber);
+    const ok = await confirm({
+      title: 're-send welcome',
+      message: `re-send welcome to ${name}? this generates a fresh login link — any earlier link you sent them still works until it's used or expires.`,
+      confirmLabel: 're-send',
+    });
+    if (!ok) return;
+
+    setError(null);
+    try {
+      const result = await resend.mutateAsync(request.id);
+      if (result.magicLinkToken) {
+        setCredsFor({
+          displayName: result.displayName,
+          phoneNumber: result.phoneNumber,
+          magicLinkToken: result.magicLinkToken,
+        });
+      }
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
   return (
     <ContentContainer>
       <h1 className="mb-6 text-2xl font-medium tracking-tight">join requests</h1>
@@ -134,12 +160,15 @@ export default function JoinRequestsScreen() {
             <li key={r.id}>
               <JoinRequestCard
                 request={r}
-                busy={decide.isPending || unreject.isPending}
+                busy={decide.isPending || unreject.isPending || resend.isPending}
                 onDecide={(status) => {
                   void decideRequest(r, status);
                 }}
                 onUnreject={() => {
                   void unrejectRequest(r);
+                }}
+                onResend={() => {
+                  void resendWelcome(r);
                 }}
               />
             </li>
@@ -168,14 +197,17 @@ function JoinRequestCard({
   busy,
   onDecide,
   onUnreject,
+  onResend,
 }: {
   request: JoinRequestSummary;
   busy: boolean;
   onDecide: (status: Decision) => void;
   onUnreject: () => void;
+  onResend: () => void;
 }) {
   const isPending = request.status === JoinRequestStatus.PENDING;
   const isRejected = request.status === JoinRequestStatus.REJECTED;
+  const canResend = request.status === JoinRequestStatus.APPROVED && request.onboardedAt === null;
   return (
     <article className="border-border bg-surface rounded-lg border p-4">
       <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -237,6 +269,13 @@ function JoinRequestCard({
             <div className="mt-3">
               <Button variant="secondary" onClick={onUnreject} disabled={busy}>
                 un-reject
+              </Button>
+            </div>
+          ) : null}
+          {canResend ? (
+            <div className="mt-3">
+              <Button variant="secondary" onClick={onResend} disabled={busy}>
+                re-send welcome
               </Button>
             </div>
           ) : null}

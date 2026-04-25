@@ -22,6 +22,7 @@ from community._geocode import router as geocode_router
 from community._guidelines import router as guidelines_router
 from community._home import router as home_router
 from community._join_form import router as join_form_router
+from community._join_request_resend import router as join_request_resend_router
 from community._join_requests import router as join_requests_router
 from community._login_link import router as login_link_router
 from community._pages import router as pages_router
@@ -38,6 +39,7 @@ router.add_router("", home_router)
 router.add_router("", pages_router)
 router.add_router("", join_form_router)
 router.add_router("", join_requests_router)
+router.add_router("", join_request_resend_router)
 router.add_router("", login_link_router)
 router.add_router("", feedback_router)
 router.add_router("", events_router)

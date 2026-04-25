@@ -329,6 +329,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     }
     case Code.JoinRequest.InvalidStatus:
       return 'invalid status for this action';
+    case Code.JoinRequest.NotApproved:
+      return 'this request needs to be approved first';
+    case Code.JoinRequest.AlreadyLoggedIn:
+      return "they've already logged in — re-sending a welcome link won't help";
 
     // Photo
     case Code.Photo.TypeNotAllowed:

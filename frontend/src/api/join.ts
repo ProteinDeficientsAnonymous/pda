@@ -321,3 +321,21 @@ export function useUnrejectJoinRequest() {
     },
   });
 }
+
+export function useResendMagicLink() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.post<WireDecision>(
+        `/api/community/join-requests/${id}/resend-magic-link/`,
+      );
+      return {
+        id: data.id,
+        displayName: data.display_name,
+        phoneNumber: data.phone_number,
+        status: data.status,
+        magicLinkToken: data.magic_link_token,
+        userId: data.user_id,
+      } satisfies JoinRequestDecision;
+    },
+  });
+}
