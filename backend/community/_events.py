@@ -221,7 +221,7 @@ def _enforce_event_read_visibility(event: Event, auth_user) -> None:
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.is_draft and not _can_see_draft(event, auth_user):
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+        raise_validation(Code.Event.PERM_DENIED, status_code=403, action="view_draft_event")
     if (
         event.visibility == PageVisibility.MEMBERS_ONLY
         and auth_user is None

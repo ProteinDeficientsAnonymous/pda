@@ -85,6 +85,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "can't edit the date while a poll is active — finalize the poll first";
     case Code.Event.InviteOnly:
       return 'this event is invite only';
+    case Code.Event.PermDenied:
+      return "you don't have permission to see this event";
     case Code.Event.AuthRequired:
       return 'you need to sign in for that';
     case Code.Event.CancelledCannotBeEdited:

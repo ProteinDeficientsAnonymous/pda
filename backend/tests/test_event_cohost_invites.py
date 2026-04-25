@@ -403,7 +403,7 @@ class TestDraftVisibility:
         # The invitee is not yet a host, so they don't see the pending list.
         assert body["pending_cohost_invites"] == []
 
-    def test_outsider_still_404s_on_draft(self, api_client, creator, invitee, other_member):
+    def test_outsider_403s_on_draft(self, api_client, creator, invitee, other_member):
         data = _create_event_via_api(
             api_client,
             creator,
@@ -414,7 +414,7 @@ class TestDraftVisibility:
             f"/api/community/events/{data['id']}/",
             **_auth_headers(other_member),
         )
-        assert response.status_code == 404
+        assert response.status_code == 403
 
     def test_cohost_invitee_can_accept_invite_to_a_draft(self, api_client, creator, invitee):
         data = _create_event_via_api(

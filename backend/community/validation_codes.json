@@ -130,6 +130,13 @@
         "name": "ATTENDANCE_ONLY_FOR_GOING_RSVPS",
         "value": "event.attendance_only_for_going_rsvps",
         "params": []
+      },
+      {
+        "name": "PERM_DENIED",
+        "value": "event.perm_denied",
+        "params": [
+          "action?"
+        ]
       }
     ],
     "Poll": [

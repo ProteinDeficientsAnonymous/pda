@@ -251,13 +251,15 @@ class TestDraftDetail:
         response = api_client.get(f"/api/community/events/{sample_draft.id}/", **creator_headers)
         assert response.status_code == 200
 
-    def test_draft_detail_404_for_other_member(self, api_client, sample_draft, other_headers):
+    def test_draft_detail_403_for_other_member(self, api_client, sample_draft, other_headers):
         response = api_client.get(f"/api/community/events/{sample_draft.id}/", **other_headers)
-        assert response.status_code == 404
+        assert response.status_code == 403
+        assert_error_code(response, Code.Event.PERM_DENIED)
 
-    def test_draft_detail_404_for_unauthenticated(self, api_client, sample_draft):
+    def test_draft_detail_403_for_unauthenticated(self, api_client, sample_draft):
         response = api_client.get(f"/api/community/events/{sample_draft.id}/")
-        assert response.status_code == 404
+        assert response.status_code == 403
+        assert_error_code(response, Code.Event.PERM_DENIED)
 
     def test_draft_detail_visible_to_cohost(self, api_client, sample_draft, cohost, cohost_headers):
         sample_draft.co_hosts.add(cohost)
