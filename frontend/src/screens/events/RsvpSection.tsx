@@ -9,6 +9,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useState } from 'react';
 import { RsvpStatus, RsvpServerStatus, type Event } from '@/models/event';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 import { RsvpGuestList } from './RsvpGuestList';
@@ -29,11 +30,15 @@ const PILLS: { status: InputStatus; label: string }[] = [
 export function RsvpSection({ event, canSeeInvited }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
+  const myUserId = useAuthStore((s) => s.user?.id);
   const [error, setError] = useState<string | null>(null);
 
   const myRsvp = event.myRsvp;
   const onWaitlist = myRsvp === RsvpServerStatus.Waitlisted;
-  const myGuest = event.guests.find((g) => g.status === myRsvp);
+  // Match by user id, not status — multiple guests share the same status,
+  // so a status match returns some other attendee's record and the +1
+  // toggle reflects the wrong user (issue #368).
+  const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = event.maxAttendees !== null && event.attendingCount >= event.maxAttendees;
 
