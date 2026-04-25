@@ -8,6 +8,8 @@ from uuid import UUID
 
 from config.audit import audit_log
 from config.ratelimit import rate_limit
+from django.db import transaction
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
@@ -29,11 +31,12 @@ router = Router()
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def resend_magic_link(request, id: UUID):
     """Mint a fresh magic-login link for an approved join request whose user
-    has not yet onboarded. Lets admins re-share the welcome message when the
-    original link was lost. Refuses on already-logged-in users (use the
-    members screen's password reset flow for that)."""
+    has not yet onboarded. Invalidates any prior unused magic tokens for the
+    user so the welcome message in the wild can't be claimed twice. Refuses
+    on already-logged-in users (use the members screen's password reset
+    flow for that)."""
     from users._helpers import _create_magic_token
-    from users.models import User
+    from users.models import MagicLoginToken, User
 
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
         audit_log(
@@ -67,14 +70,22 @@ def resend_magic_link(request, id: UUID):
     if not user.needs_onboarding:
         raise_validation(Code.JoinRequest.ALREADY_LOGGED_IN, status_code=400)
 
-    magic_token = _create_magic_token(user)
+    with transaction.atomic():
+        invalidated = MagicLoginToken.objects.filter(
+            user=user, used=False, expires_at__gt=timezone.now()
+        ).update(used=True)
+        magic_token = _create_magic_token(user)
     audit_log(
         logging.INFO,
         "join_request_magic_link_resent",
         request,
         target_type="join_request",
         target_id=str(join_request.id),
-        details={"display_name": join_request.display_name, "user_id": str(user.id)},
+        details={
+            "display_name": join_request.display_name,
+            "user_id": str(user.id),
+            "invalidated_token_count": invalidated,
+        },
     )
     return Status(
         200,

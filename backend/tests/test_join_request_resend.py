@@ -35,6 +35,30 @@ class TestResendMagicLink:
         assert body["magic_link_token"] != original_token
         assert body["status"] == JoinRequestStatus.APPROVED
 
+    def test_resend_invalidates_previous_unused_tokens(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        from users.models import MagicLoginToken, User
+
+        approve_response = _approve(api_client, vettor_headers, sample_join_request)
+        original_token = approve_response.json()["magic_link_token"]
+
+        response = api_client.post(
+            f"/api/community/join-requests/{sample_join_request.id}/resend-magic-link/",
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        new_token = response.json()["magic_link_token"]
+
+        user = User.objects.get(phone_number=sample_join_request.phone_number)
+        assert MagicLoginToken.objects.get(user=user, token=original_token).used is True
+        assert MagicLoginToken.objects.get(user=user, token=new_token).used is False
+
+        # The old token should now be rejected by the magic-login endpoint.
+        old_login = api_client.get(f"/api/auth/magic-login/{original_token}/")
+        assert old_login.status_code == 400
+
     def test_pending_request_rejected(self, api_client, vettor_headers, sample_join_request):
         response = api_client.post(
             f"/api/community/join-requests/{sample_join_request.id}/resend-magic-link/",

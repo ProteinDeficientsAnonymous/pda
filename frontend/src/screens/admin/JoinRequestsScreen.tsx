@@ -105,7 +105,7 @@ export default function JoinRequestsScreen() {
     const name = request.displayName || formatPhone(request.phoneNumber);
     const ok = await confirm({
       title: 're-send welcome',
-      message: `re-send welcome to ${name}? this generates a fresh login link — any earlier link you sent them still works until it's used or expires.`,
+      message: `re-send welcome to ${name}? this generates a fresh login link and invalidates any earlier link you sent them.`,
       confirmLabel: 're-send',
     });
     if (!ok) return;
