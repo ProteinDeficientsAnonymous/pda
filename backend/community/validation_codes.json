@@ -1,0 +1,632 @@
+{
+  "domains": {
+    "Event": [
+      {
+        "name": "NOT_FOUND",
+        "value": "event.not_found",
+        "params": []
+      },
+      {
+        "name": "START_DATETIME_REQUIRED_UNLESS_TBD",
+        "value": "event.start_datetime_required_unless_tbd",
+        "params": []
+      },
+      {
+        "name": "MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE",
+        "value": "event.max_attendees_must_be_at_least_one",
+        "params": []
+      },
+      {
+        "name": "START_DATETIME_MUST_BE_FUTURE",
+        "value": "event.start_datetime_must_be_future",
+        "params": []
+      },
+      {
+        "name": "END_BEFORE_START",
+        "value": "event.end_before_start",
+        "params": []
+      },
+      {
+        "name": "ATTENDANCE_INVALID_CHOICE",
+        "value": "event.attendance_invalid_choice",
+        "params": []
+      },
+      {
+        "name": "OFFICIAL_MUST_BE_PUBLIC",
+        "value": "event.official_must_be_public",
+        "params": []
+      },
+      {
+        "name": "INVALID_CREATE_STATUS",
+        "value": "event.invalid_create_status",
+        "params": []
+      },
+      {
+        "name": "DATE_LOCKED_BY_POLL",
+        "value": "event.date_locked_by_poll",
+        "params": []
+      },
+      {
+        "name": "INVITE_ONLY",
+        "value": "event.invite_only",
+        "params": []
+      },
+      {
+        "name": "AUTH_REQUIRED",
+        "value": "event.auth_required",
+        "params": []
+      },
+      {
+        "name": "CANCELLED_CANNOT_BE_EDITED",
+        "value": "event.cancelled_cannot_be_edited",
+        "params": []
+      },
+      {
+        "name": "PAST_CANNOT_BE_CANCELLED",
+        "value": "event.past_cannot_be_cancelled",
+        "params": []
+      },
+      {
+        "name": "NO_ATTENDEES_CANNOT_BE_CANCELLED",
+        "value": "event.no_attendees_cannot_be_cancelled",
+        "params": []
+      },
+      {
+        "name": "INVALID_STATUS_TRANSITION",
+        "value": "event.invalid_status_transition",
+        "params": []
+      },
+      {
+        "name": "CANCEL_BEFORE_DELETE",
+        "value": "event.cancel_before_delete",
+        "params": []
+      },
+      {
+        "name": "FLAG_ALREADY_FLAGGED",
+        "value": "event.flag_already_flagged",
+        "params": []
+      },
+      {
+        "name": "FLAG_INVALID_ACTION",
+        "value": "event.flag_invalid_action",
+        "params": []
+      },
+      {
+        "name": "RSVPS_NOT_ENABLED",
+        "value": "event.rsvps_not_enabled",
+        "params": []
+      },
+      {
+        "name": "RSVPS_CLOSED_CANCELLED",
+        "value": "event.rsvps_closed_cancelled",
+        "params": []
+      },
+      {
+        "name": "RSVPS_CLOSED_PAST",
+        "value": "event.rsvps_closed_past",
+        "params": []
+      },
+      {
+        "name": "RSVP_INVALID_STATUS",
+        "value": "event.rsvp_invalid_status",
+        "params": []
+      },
+      {
+        "name": "NO_PLUS_ONE_SPOTS",
+        "value": "event.no_plus_one_spots",
+        "params": []
+      },
+      {
+        "name": "RSVP_NOT_FOUND",
+        "value": "event.rsvp_not_found",
+        "params": []
+      },
+      {
+        "name": "ATTENDANCE_OPENS_LATER",
+        "value": "event.attendance_opens_later",
+        "params": []
+      },
+      {
+        "name": "ATTENDANCE_ONLY_FOR_GOING_RSVPS",
+        "value": "event.attendance_only_for_going_rsvps",
+        "params": []
+      }
+    ],
+    "Poll": [
+      {
+        "name": "NOT_FOUND",
+        "value": "poll.not_found",
+        "params": []
+      },
+      {
+        "name": "OPTIONS_REQUIRED",
+        "value": "poll.options_required",
+        "params": []
+      },
+      {
+        "name": "OPTIONS_MUST_BE_FUTURE",
+        "value": "poll.options_must_be_future",
+        "params": []
+      },
+      {
+        "name": "EVENT_ALREADY_HAS_POLL",
+        "value": "poll.event_already_has_poll",
+        "params": []
+      },
+      {
+        "name": "OPTION_NOT_FOUND",
+        "value": "poll.option_not_found",
+        "params": []
+      },
+      {
+        "name": "OPTION_ALREADY_EXISTS",
+        "value": "poll.option_already_exists",
+        "params": []
+      },
+      {
+        "name": "CANNOT_MODIFY_FINALIZED",
+        "value": "poll.cannot_modify_finalized",
+        "params": []
+      },
+      {
+        "name": "ALREADY_FINALIZED",
+        "value": "poll.already_finalized",
+        "params": []
+      },
+      {
+        "name": "WINNING_OPTION_NOT_FOUND",
+        "value": "poll.winning_option_not_found",
+        "params": []
+      },
+      {
+        "name": "MIN_TWO_OPTIONS",
+        "value": "poll.min_two_options",
+        "params": []
+      },
+      {
+        "name": "INVALID_AVAILABILITY",
+        "value": "poll.invalid_availability",
+        "params": []
+      }
+    ],
+    "Url": [
+      {
+        "name": "INVALID",
+        "value": "url.invalid",
+        "params": []
+      },
+      {
+        "name": "PATH_REQUIRED",
+        "value": "url.path_required",
+        "params": []
+      },
+      {
+        "name": "SCHEME_MUST_BE_HTTP_OR_HTTPS",
+        "value": "url.scheme_must_be_http_or_https",
+        "params": []
+      },
+      {
+        "name": "WHATSAPP_NOT_RECOGNIZED",
+        "value": "url.whatsapp_not_recognized",
+        "params": []
+      },
+      {
+        "name": "PARTIFUL_NOT_RECOGNIZED",
+        "value": "url.partiful_not_recognized",
+        "params": []
+      }
+    ],
+    "Phone": [
+      {
+        "name": "INVALID",
+        "value": "phone.invalid",
+        "params": []
+      },
+      {
+        "name": "ALREADY_EXISTS",
+        "value": "phone.already_exists",
+        "params": []
+      }
+    ],
+    "Zelle": [
+      {
+        "name": "INVALID",
+        "value": "zelle.invalid",
+        "params": []
+      }
+    ],
+    "DisplayName": [
+      {
+        "name": "REQUIRED",
+        "value": "display_name.required",
+        "params": []
+      },
+      {
+        "name": "TOO_LONG",
+        "value": "display_name.too_long",
+        "params": [
+          "max_length"
+        ]
+      },
+      {
+        "name": "INVALID_CHARS",
+        "value": "display_name.invalid_chars",
+        "params": []
+      },
+      {
+        "name": "NEEDS_A_LETTER",
+        "value": "display_name.needs_a_letter",
+        "params": []
+      }
+    ],
+    "Auth": [
+      {
+        "name": "INVALID_CREDENTIALS",
+        "value": "auth.invalid_credentials",
+        "params": []
+      },
+      {
+        "name": "ACCOUNT_ARCHIVED",
+        "value": "auth.account_archived",
+        "params": []
+      },
+      {
+        "name": "ACCOUNT_PAUSED",
+        "value": "auth.account_paused",
+        "params": []
+      },
+      {
+        "name": "MAGIC_LINK_INVALID_OR_EXPIRED",
+        "value": "auth.magic_link_invalid_or_expired",
+        "params": []
+      },
+      {
+        "name": "MAGIC_LINK_ALREADY_USED",
+        "value": "auth.magic_link_already_used",
+        "params": []
+      },
+      {
+        "name": "ALREADY_SIGNED_IN_AS_DIFFERENT_USER",
+        "value": "auth.already_signed_in_as_different_user",
+        "params": []
+      },
+      {
+        "name": "REFRESH_TOKEN_INVALID",
+        "value": "auth.refresh_token_invalid",
+        "params": []
+      },
+      {
+        "name": "REFRESH_FAILED",
+        "value": "auth.refresh_failed",
+        "params": []
+      },
+      {
+        "name": "CURRENT_PASSWORD_INCORRECT",
+        "value": "auth.current_password_incorrect",
+        "params": []
+      }
+    ],
+    "Password": [
+      {
+        "name": "INVALID",
+        "value": "password.invalid",
+        "params": [
+          "reasons"
+        ]
+      }
+    ],
+    "Role": [
+      {
+        "name": "NOT_FOUND",
+        "value": "role.not_found",
+        "params": []
+      },
+      {
+        "name": "NAME_ALREADY_EXISTS",
+        "value": "role.name_already_exists",
+        "params": []
+      },
+      {
+        "name": "PROTECTED_CANNOT_EDIT",
+        "value": "role.protected_cannot_edit",
+        "params": []
+      },
+      {
+        "name": "PROTECTED_CANNOT_RENAME",
+        "value": "role.protected_cannot_rename",
+        "params": []
+      },
+      {
+        "name": "PROTECTED_CANNOT_DELETE",
+        "value": "role.protected_cannot_delete",
+        "params": []
+      },
+      {
+        "name": "CANNOT_REMOVE_OWN_ADMIN",
+        "value": "role.cannot_remove_own_admin",
+        "params": []
+      },
+      {
+        "name": "CANNOT_REMOVE_LAST_ADMIN",
+        "value": "role.cannot_remove_last_admin",
+        "params": []
+      },
+      {
+        "name": "MEMBER_ROLE_REQUIRED",
+        "value": "role.member_role_required",
+        "params": []
+      }
+    ],
+    "Member": [
+      {
+        "name": "NOT_FOUND",
+        "value": "member.not_found",
+        "params": []
+      }
+    ],
+    "User": [
+      {
+        "name": "NOT_FOUND",
+        "value": "user.not_found",
+        "params": []
+      },
+      {
+        "name": "CANNOT_DELETE_SELF",
+        "value": "user.cannot_delete_self",
+        "params": []
+      },
+      {
+        "name": "CANNOT_DELETE_LAST_ADMIN",
+        "value": "user.cannot_delete_last_admin",
+        "params": []
+      },
+      {
+        "name": "ALREADY_ARCHIVED",
+        "value": "user.already_archived",
+        "params": []
+      },
+      {
+        "name": "CANNOT_PAUSE_SELF",
+        "value": "user.cannot_pause_self",
+        "params": []
+      },
+      {
+        "name": "CANNOT_PAUSE_ADMIN",
+        "value": "user.cannot_pause_admin",
+        "params": []
+      },
+      {
+        "name": "ROLE_IDS_NOT_FOUND",
+        "value": "user.role_ids_not_found",
+        "params": []
+      }
+    ],
+    "Survey": [
+      {
+        "name": "NOT_FOUND",
+        "value": "survey.not_found",
+        "params": []
+      },
+      {
+        "name": "SLUG_ALREADY_EXISTS",
+        "value": "survey.slug_already_exists",
+        "params": []
+      },
+      {
+        "name": "QUESTION_NOT_FOUND",
+        "value": "survey.question_not_found",
+        "params": []
+      },
+      {
+        "name": "NO_DATETIME_POLL_QUESTION",
+        "value": "survey.no_datetime_poll_question",
+        "params": []
+      },
+      {
+        "name": "WINNING_DATETIME_NOT_IN_OPTIONS",
+        "value": "survey.winning_datetime_not_in_options",
+        "params": []
+      },
+      {
+        "name": "POLL_ALREADY_FINALIZED",
+        "value": "survey.poll_already_finalized",
+        "params": []
+      },
+      {
+        "name": "ANSWER_REQUIRED",
+        "value": "survey.answer_required",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_FORMAT",
+        "value": "survey.answer_invalid_format",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_OPTION",
+        "value": "survey.answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_MUST_BE_NUMBER",
+        "value": "survey.answer_must_be_number",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_MUST_BE_YES_NO",
+        "value": "survey.answer_must_be_yes_no",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_RATING_OUT_OF_RANGE",
+        "value": "survey.answer_rating_out_of_range",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_DATETIME_OPTION",
+        "value": "survey.answer_invalid_datetime_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_AVAILABILITY",
+        "value": "survey.answer_invalid_availability",
+        "params": [
+          "label",
+          "value"
+        ]
+      }
+    ],
+    "JoinRequest": [
+      {
+        "name": "NOT_FOUND",
+        "value": "join_request.not_found",
+        "params": []
+      },
+      {
+        "name": "ALREADY_DECIDED",
+        "value": "join_request.already_decided",
+        "params": []
+      },
+      {
+        "name": "ONLY_REJECTED_CAN_BE_UN_REJECTED",
+        "value": "join_request.only_rejected_can_be_un_rejected",
+        "params": []
+      },
+      {
+        "name": "PHONE_ALREADY_INVITED",
+        "value": "join_request.phone_already_invited",
+        "params": []
+      },
+      {
+        "name": "PHONE_ALREADY_PENDING",
+        "value": "join_request.phone_already_pending",
+        "params": []
+      },
+      {
+        "name": "ANSWER_REQUIRED",
+        "value": "join_request.answer_required",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "ANSWER_TOO_LONG",
+        "value": "join_request.answer_too_long",
+        "params": [
+          "label",
+          "max"
+        ]
+      },
+      {
+        "name": "ANSWER_INVALID_OPTION",
+        "value": "join_request.answer_invalid_option",
+        "params": [
+          "label"
+        ]
+      },
+      {
+        "name": "INVALID_STATUS",
+        "value": "join_request.invalid_status",
+        "params": [
+          "allowed"
+        ]
+      }
+    ],
+    "Photo": [
+      {
+        "name": "TYPE_NOT_ALLOWED",
+        "value": "photo.type_not_allowed",
+        "params": [
+          "allowed"
+        ]
+      },
+      {
+        "name": "TOO_LARGE",
+        "value": "photo.too_large",
+        "params": [
+          "max_mb"
+        ]
+      }
+    ],
+    "Perm": [
+      {
+        "name": "DENIED",
+        "value": "perm.denied",
+        "params": [
+          "action?"
+        ]
+      }
+    ],
+    "Rate": [
+      {
+        "name": "LIMITED",
+        "value": "rate.limited",
+        "params": []
+      }
+    ],
+    "Page": [
+      {
+        "name": "MEMBERS_ONLY",
+        "value": "page.members_only",
+        "params": []
+      }
+    ],
+    "Docs": [
+      {
+        "name": "FOLDER_NOT_FOUND",
+        "value": "docs.folder_not_found",
+        "params": []
+      },
+      {
+        "name": "PARENT_FOLDER_NOT_FOUND",
+        "value": "docs.parent_folder_not_found",
+        "params": []
+      },
+      {
+        "name": "DOCUMENT_NOT_FOUND",
+        "value": "docs.document_not_found",
+        "params": []
+      }
+    ],
+    "JoinForm": [
+      {
+        "name": "QUESTION_NOT_FOUND",
+        "value": "join_form.question_not_found",
+        "params": []
+      }
+    ],
+    "Feedback": [
+      {
+        "name": "NOT_CONFIGURED",
+        "value": "feedback.not_configured",
+        "params": []
+      },
+      {
+        "name": "CREATION_FAILED",
+        "value": "feedback.creation_failed",
+        "params": []
+      }
+    ],
+    "Notification": [
+      {
+        "name": "NOT_FOUND",
+        "value": "notification.not_found",
+        "params": []
+      }
+    ]
+  }
+}

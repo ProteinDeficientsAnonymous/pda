@@ -8,6 +8,7 @@ export
         createsuperuser seed db-start db-stop ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
+        dump-codes generate-codes check-codes \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity \
         agent-frontend-lint agent-frontend-format agent-frontend-test agent-frontend-typecheck
@@ -37,7 +38,10 @@ help:
 	@echo "  make frontend-format-check  Prettier check (no write)"
 	@echo "  make frontend-test        Run Vitest suite"
 	@echo "  make frontend-typecheck   Run TypeScript check"
-	@echo "  make frontend-types       Generate API types from OpenAPI"
+	@echo "  make frontend-types       Generate API types from OpenAPI + regen validation codes"
+	@echo "  make dump-codes           Dump backend Code catalog to validation_codes.json"
+	@echo "  make generate-codes       Regen frontend validationCodes.gen.ts"
+	@echo "  make check-codes          Fail if code catalog artifacts are stale (CI)"
 	@echo ""
 	@echo "Workflow commands:"
 	@echo "  make dev              Run Django + Vite concurrently (default)"
@@ -140,13 +144,26 @@ frontend-test:
 frontend-typecheck:
 	cd frontend && pnpm typecheck
 
-frontend-types:
+frontend-types: dump-codes generate-codes
 	cd frontend && pnpm types:api
+
+# Dump the backend Code catalog (community/_validation.py) to validation_codes.json.
+dump-codes:
+	cd backend && uv run python manage.py dump_validation_codes
+
+# Regenerate frontend/src/api/validationCodes.gen.ts from validation_codes.json.
+generate-codes:
+	node frontend/scripts/generate-validation-codes.mjs
+
+# CI parity check — fails when either artifact is out of date.
+check-codes:
+	cd backend && uv run python manage.py dump_validation_codes --check
+	node frontend/scripts/generate-validation-codes.mjs --check
 
 # CI (run before every commit)
 ci: backend-ci frontend-ci
 
-backend-ci: lint check test typecheck complexity
+backend-ci: lint check test typecheck complexity check-codes
 
 frontend-ci: parallel-frontend
 
@@ -200,7 +217,7 @@ agent-frontend-typecheck:
 
 agent-ci: agent-backend-ci agent-frontend-ci
 
-agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity
+agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity check-codes
 
 agent-frontend-ci: parallel-agent-frontend
 

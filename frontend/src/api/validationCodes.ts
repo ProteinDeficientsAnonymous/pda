@@ -1,183 +1,47 @@
-// Machine-readable validation error codes from the backend.
-// The backend raises ValidationException(code, field, params?) and a global
-// Ninja handler reshapes those (and generic Pydantic errors) into
+// UI copy for machine-readable validation errors.
+//
+// Backend raises ValidationException(code, field, params?) and a global Ninja
+// handler reshapes those (plus Pydantic errors) into
 // { detail: [{ code, field, params? }, ...] }.
 //
-// This file mirrors backend/community/_validation.py — the string values must
-// match exactly. UI copy lives here (all user-facing text is owned by the FE).
+// The `Code` tree and `ValidationCode` union are generated from the backend
+// (see validationCodes.gen.ts). This file owns the UI copy for each code and
+// re-exports `Code` with an added FE-only `Generic` namespace for the
+// Pydantic-shape codes the handler emits.
 //
-// To add a new code:
-//   1. Add the constant to Code.<Domain> below AND the backend's Code.<Domain>
-//      (identical string value).
-//   2. Add a case in messageForCode() below.
-//
-// Unknown codes fall back to a generic message — never display the raw code.
+// Adding a code:
+//   1. Add the constant in backend/community/_validation.py.
+//   2. Run `make generate-codes` (regenerates validationCodes.gen.ts).
+//   3. Add a `case` in messageForKnownCode() below — TS will fail the build
+//      until every generated code has a case.
+
+import { Code as GeneratedCode, type ValidationCode } from './validationCodes.gen';
 
 /**
- * Namespaced validation codes. String values are the API contract —
- * never rename once shipped. Mirrors backend Code class.
+ * FE-only codes. The global error handler emits these for generic Pydantic
+ * errors (type coerce failures, missing fields) that don't map to a domain
+ * ValidationException. Kept separate from the generated backend catalog.
  */
-export const Code = {
-  Event: {
-    NotFound: 'event.not_found',
-    StartDatetimeRequiredUnlessTbd: 'event.start_datetime_required_unless_tbd',
-    MaxAttendeesMustBeAtLeastOne: 'event.max_attendees_must_be_at_least_one',
-    StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
-    EndBeforeStart: 'event.end_before_start',
-    AttendanceInvalidChoice: 'event.attendance_invalid_choice',
-    OfficialMustBePublic: 'event.official_must_be_public',
-    InvalidCreateStatus: 'event.invalid_create_status',
-    DateLockedByPoll: 'event.date_locked_by_poll',
-    InviteOnly: 'event.invite_only',
-    AuthRequired: 'event.auth_required',
-    CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
-    PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
-    NoAttendeesCannotBeCancelled: 'event.no_attendees_cannot_be_cancelled',
-    InvalidStatusTransition: 'event.invalid_status_transition',
-    CancelBeforeDelete: 'event.cancel_before_delete',
-    FlagAlreadyFlagged: 'event.flag_already_flagged',
-    FlagInvalidAction: 'event.flag_invalid_action',
-    RsvpsNotEnabled: 'event.rsvps_not_enabled',
-    RsvpsClosedCancelled: 'event.rsvps_closed_cancelled',
-    RsvpsClosedPast: 'event.rsvps_closed_past',
-    RsvpInvalidStatus: 'event.rsvp_invalid_status',
-    NoPlusOneSpots: 'event.no_plus_one_spots',
-    RsvpNotFound: 'event.rsvp_not_found',
-    AttendanceOpensLater: 'event.attendance_opens_later',
-    AttendanceOnlyForGoingRsvps: 'event.attendance_only_for_going_rsvps',
-  },
-  Poll: {
-    NotFound: 'poll.not_found',
-    OptionsRequired: 'poll.options_required',
-    OptionsMustBeFuture: 'poll.options_must_be_future',
-    EventAlreadyHasPoll: 'poll.event_already_has_poll',
-    OptionNotFound: 'poll.option_not_found',
-    OptionAlreadyExists: 'poll.option_already_exists',
-    CannotModifyFinalized: 'poll.cannot_modify_finalized',
-    AlreadyFinalized: 'poll.already_finalized',
-    WinningOptionNotFound: 'poll.winning_option_not_found',
-    MinTwoOptions: 'poll.min_two_options',
-    InvalidAvailability: 'poll.invalid_availability',
-  },
-  Url: {
-    Invalid: 'url.invalid',
-    PathRequired: 'url.path_required',
-    SchemeMustBeHttpOrHttps: 'url.scheme_must_be_http_or_https',
-    WhatsappNotRecognized: 'url.whatsapp_not_recognized',
-    PartifulNotRecognized: 'url.partiful_not_recognized',
-  },
-  Phone: {
-    Invalid: 'phone.invalid',
-    AlreadyExists: 'phone.already_exists',
-  },
-  Zelle: {
-    Invalid: 'zelle.invalid',
-  },
-  DisplayName: {
-    Required: 'display_name.required',
-    TooLong: 'display_name.too_long',
-    InvalidChars: 'display_name.invalid_chars',
-    NeedsALetter: 'display_name.needs_a_letter',
-  },
-  Auth: {
-    InvalidCredentials: 'auth.invalid_credentials',
-    AccountArchived: 'auth.account_archived',
-    AccountPaused: 'auth.account_paused',
-    MagicLinkInvalidOrExpired: 'auth.magic_link_invalid_or_expired',
-    MagicLinkAlreadyUsed: 'auth.magic_link_already_used',
-    AlreadySignedInAsDifferentUser: 'auth.already_signed_in_as_different_user',
-    RefreshTokenInvalid: 'auth.refresh_token_invalid',
-    RefreshFailed: 'auth.refresh_failed',
-    CurrentPasswordIncorrect: 'auth.current_password_incorrect',
-  },
-  Password: {
-    Invalid: 'password.invalid',
-  },
-  Role: {
-    NotFound: 'role.not_found',
-    NameAlreadyExists: 'role.name_already_exists',
-    ProtectedCannotEdit: 'role.protected_cannot_edit',
-    ProtectedCannotRename: 'role.protected_cannot_rename',
-    ProtectedCannotDelete: 'role.protected_cannot_delete',
-    CannotRemoveOwnAdmin: 'role.cannot_remove_own_admin',
-    CannotRemoveLastAdmin: 'role.cannot_remove_last_admin',
-    MemberRoleRequired: 'role.member_role_required',
-  },
-  Member: {
-    NotFound: 'member.not_found',
-  },
-  User: {
-    NotFound: 'user.not_found',
-    CannotDeleteSelf: 'user.cannot_delete_self',
-    CannotDeleteLastAdmin: 'user.cannot_delete_last_admin',
-    AlreadyArchived: 'user.already_archived',
-    CannotPauseSelf: 'user.cannot_pause_self',
-    CannotPauseAdmin: 'user.cannot_pause_admin',
-    RoleIdsNotFound: 'user.role_ids_not_found',
-  },
-  Survey: {
-    NotFound: 'survey.not_found',
-    SlugAlreadyExists: 'survey.slug_already_exists',
-    QuestionNotFound: 'survey.question_not_found',
-    NoDatetimePollQuestion: 'survey.no_datetime_poll_question',
-    WinningDatetimeNotInOptions: 'survey.winning_datetime_not_in_options',
-    PollAlreadyFinalized: 'survey.poll_already_finalized',
-    AnswerRequired: 'survey.answer_required',
-    AnswerInvalidFormat: 'survey.answer_invalid_format',
-    AnswerInvalidOption: 'survey.answer_invalid_option',
-    AnswerMustBeNumber: 'survey.answer_must_be_number',
-    AnswerMustBeYesNo: 'survey.answer_must_be_yes_no',
-    AnswerRatingOutOfRange: 'survey.answer_rating_out_of_range',
-    AnswerInvalidDatetimeOption: 'survey.answer_invalid_datetime_option',
-    AnswerInvalidAvailability: 'survey.answer_invalid_availability',
-  },
-  JoinRequest: {
-    NotFound: 'join_request.not_found',
-    AlreadyDecided: 'join_request.already_decided',
-    OnlyRejectedCanBeUnRejected: 'join_request.only_rejected_can_be_un_rejected',
-    PhoneAlreadyInvited: 'join_request.phone_already_invited',
-    PhoneAlreadyPending: 'join_request.phone_already_pending',
-    AnswerRequired: 'join_request.answer_required',
-    AnswerTooLong: 'join_request.answer_too_long',
-    AnswerInvalidOption: 'join_request.answer_invalid_option',
-    InvalidStatus: 'join_request.invalid_status',
-  },
-  Photo: {
-    TypeNotAllowed: 'photo.type_not_allowed',
-    TooLarge: 'photo.too_large',
-  },
-  Perm: {
-    Denied: 'perm.denied',
-  },
-  Rate: {
-    Limited: 'rate.limited',
-  },
-  Page: {
-    MembersOnly: 'page.members_only',
-  },
-  Docs: {
-    FolderNotFound: 'docs.folder_not_found',
-    ParentFolderNotFound: 'docs.parent_folder_not_found',
-    DocumentNotFound: 'docs.document_not_found',
-  },
-  JoinForm: {
-    QuestionNotFound: 'join_form.question_not_found',
-  },
-  Feedback: {
-    NotConfigured: 'feedback.not_configured',
-    CreationFailed: 'feedback.creation_failed',
-  },
-  Notification: {
-    NotFound: 'notification.not_found',
-  },
-
-  // Generic fallbacks emitted by the handler for Pydantic errors without
-  // a custom code (type mismatches, missing fields, etc.).
-  Generic: {
-    FieldRequired: 'field_required',
-    FieldInvalid: 'field_invalid',
-  },
+const GenericCodes = {
+  FieldRequired: 'field_required',
+  FieldInvalid: 'field_invalid',
 } as const;
+
+export type GenericCode = (typeof GenericCodes)[keyof typeof GenericCodes];
+
+export const Code = {
+  ...GeneratedCode,
+  Generic: GenericCodes,
+} as const;
+
+export type { ValidationCode };
+
+/**
+ * Every code FE knows how to render. Includes both backend codes (generated
+ * from the Code catalog) and FE-only Generic codes. Used to give
+ * `messageForKnownCode` an exhaustiveness check at the type level.
+ */
+export type KnownCode = ValidationCode | GenericCode;
 
 export interface FieldError {
   code: string;
@@ -187,7 +51,19 @@ export interface FieldError {
 
 /** Return user-facing copy for a single field error. */
 export function messageForCode(err: FieldError): string {
-  switch (err.code) {
+  if (isKnownCode(err.code)) {
+    return messageForKnownCode(err.code, err);
+  }
+  return "something's not right — double-check your entries";
+}
+
+/**
+ * Exhaustive over `KnownCode`. Adding a new code to the backend will fail the
+ * build here until a `case` is added, eliminating silent fallbacks for
+ * codes the FE forgot to ship copy for.
+ */
+function messageForKnownCode(code: KnownCode, err: FieldError): string {
+  switch (code) {
     // Event
     case Code.Event.NotFound:
       return 'event not found';
@@ -486,15 +362,22 @@ export function messageForCode(err: FieldError): string {
     case Code.Notification.NotFound:
       return 'notification not found';
 
-    // Generic fallbacks
+    // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
       return err.field ? `${err.field.replace(/_/g, ' ')} is required` : 'this field is required';
     case Code.Generic.FieldInvalid:
       return err.field ? `${err.field.replace(/_/g, ' ')} is not valid` : 'this field is not valid';
 
     default:
-      return "something's not right — double-check your entries";
+      return assertNever(code);
   }
+}
+
+// If TS flags this line with "Argument of type 'X' is not assignable to
+// parameter of type 'never'", the named code has no case in the switch above.
+// Add one, then re-run `pnpm typecheck`.
+function assertNever(code: never): never {
+  throw new Error(`unhandled validation code: ${String(code)}`);
 }
 
 /** Join multiple field errors into a single human-readable sentence. */
@@ -509,6 +392,24 @@ export function messagesFromFieldErrors(errors: FieldError[]): string {
     return true;
   });
   return uniq.join(' · ');
+}
+
+function isKnownCode(code: string): code is KnownCode {
+  return KNOWN_CODES.has(code);
+}
+
+const KNOWN_CODES: ReadonlySet<string> = new Set<string>([...collectCodeValues(Code)]);
+
+function collectCodeValues(tree: Record<string, unknown>): string[] {
+  const out: string[] = [];
+  for (const value of Object.values(tree)) {
+    if (typeof value === 'string') {
+      out.push(value);
+    } else if (value && typeof value === 'object') {
+      out.push(...collectCodeValues(value as Record<string, unknown>));
+    }
+  }
+  return out;
 }
 
 function extractStringArray(params: Record<string, unknown> | undefined, key: string): string[] {
