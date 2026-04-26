@@ -85,3 +85,17 @@ def _authenticated_user(requesting_user) -> "UserModel | None":
 def _members_only(value, default, is_authed: bool):
     """Return value if user is authenticated, default otherwise."""
     return value if is_authed else default
+
+
+def event_url(event) -> str:
+    """Build the PDA event detail URL.
+
+    Uses ``SITE_URL`` when configured (prod/staging); falls back to a relative
+    path in dev so callers (or the frontend) can resolve it against the
+    appropriate origin. Centralized here because outbound surfaces (calendar
+    descriptions, future SMS / push / email reminders) all need the same link.
+    """
+    from django.conf import settings
+
+    site_url = getattr(settings, "SITE_URL", "")
+    return f"{site_url}/events/{event.id}" if site_url else f"/events/{event.id}"

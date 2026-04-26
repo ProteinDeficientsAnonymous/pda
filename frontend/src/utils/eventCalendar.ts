@@ -52,12 +52,16 @@ export async function shareEventUrl(event: Event): Promise<void> {
   await nav.clipboard.writeText(url);
 }
 
+// Mirrors backend `_event_ics_description` — both surfaces must end with a
+// "View on PDA: <url>" line so users can jump from a calendar event back to
+// the detail page (#347). If you change one, change the other.
 function buildDescription(event: Event): string {
   const parts: string[] = [];
   if (event.description) parts.push(event.description);
   if (event.whatsappLink) parts.push(`WhatsApp: ${event.whatsappLink}`);
   if (event.partifulLink) parts.push(`Partiful: ${event.partifulLink}`);
   if (event.otherLink) parts.push(`Link: ${event.otherLink}`);
+  parts.push(`View on PDA: ${window.location.origin}/events/${event.id}`);
   return parts.join('\n');
 }
 
