@@ -246,13 +246,19 @@ export function EventForm({ existing }: Props) {
             : undefined
         }
       >
-        <MemberPicker
-          label="co-hosts"
-          selected={coHosts}
-          onChange={setCoHosts}
-          excludeIds={user ? [user.id] : []}
-          hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
-        />
+        {existing?.isPast ? (
+          <p className="text-foreground-tertiary text-sm">
+            this event is in the past — co-host invites are closed
+          </p>
+        ) : (
+          <MemberPicker
+            label="co-hosts"
+            selected={coHosts}
+            onChange={setCoHosts}
+            excludeIds={user ? [user.id] : []}
+            hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
+          />
+        )}
       </CollapsibleCard>
 
       <CollapsibleCard

@@ -8,6 +8,7 @@ import json
 from datetime import timedelta
 
 import pytest
+from community._validation import Code
 from community.models import (
     CoHostInviteStatus,
     Event,
@@ -19,6 +20,7 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -332,6 +334,97 @@ class TestLazyExpire:
         assert response.status_code == 200
         invite.refresh_from_db()
         assert invite.status == CoHostInviteStatus.EXPIRED
+
+
+# ─── Past-event guard (#385) ──────────────────────────────────────────────────
+
+
+def _make_event_past(event: Event) -> None:
+    past = timezone.now() - timedelta(days=1)
+    Event.objects.filter(pk=event.pk).update(
+        start_datetime=past - timedelta(hours=1),
+        end_datetime=past,
+    )
+
+
+@pytest.mark.django_db
+class TestPastEventGuard:
+    def test_create_with_cohost_on_past_start_already_blocked_by_event_validator(
+        self, api_client, creator, invitee
+    ):
+        # Sanity check: creating an event with a past start_datetime is blocked
+        # at the EventIn validator (422). So this guard only matters via patch
+        # onto an event that *became* past after creation, and via direct
+        # callers of diff_cohost_invites that bypass EventIn.
+        from tests.conftest import past_iso
+
+        response = api_client.post(
+            "/api/community/events/",
+            data=json.dumps(
+                {
+                    "title": "Past Potluck",
+                    "start_datetime": past_iso(days=1),
+                    "end_datetime": past_iso(days=1),
+                    "status": EventStatus.ACTIVE,
+                    "co_host_ids": [str(invitee.pk)],
+                }
+            ),
+            content_type="application/json",
+            **_auth_headers(creator),
+        )
+        assert response.status_code == 422
+        assert_error_code(response, Code.Event.START_DATETIME_MUST_BE_FUTURE)
+
+    def test_patch_add_cohost_on_past_event_rejected(self, api_client, creator, invitee):
+        data = _create_event_via_api(api_client, creator, co_host_ids=[])
+        event_id = data["id"]
+        _make_event_past(Event.objects.get(id=event_id))
+        response = api_client.patch(
+            f"/api/community/events/{event_id}/",
+            data=json.dumps({"co_host_ids": [str(invitee.pk)]}),
+            content_type="application/json",
+            **_auth_headers(creator),
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.CoHostInvite.EVENT_IS_PAST)
+        assert EventCoHostInvite.objects.filter(event_id=event_id).count() == 0
+
+    def test_patch_remove_cohost_on_past_event_still_works(
+        self, api_client, creator, event_with_pending_invite, invitee
+    ):
+        # Removal is housekeeping — should keep working after the event ends.
+        event, invite = event_with_pending_invite
+        _make_event_past(event)
+        # Invite would have been lazily expired on read; patch with empty list
+        # rescinds it (lazy expire flips it to EXPIRED first; the rescind
+        # branch is a noop for non-active statuses).
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            data=json.dumps({"co_host_ids": []}),
+            content_type="application/json",
+            **_auth_headers(creator),
+        )
+        assert response.status_code == 200
+
+    def test_patch_with_no_diff_on_past_event_is_noop(
+        self, api_client, creator, event_with_pending_invite, invitee
+    ):
+        # If the input matches the existing accepted set, no upsert happens —
+        # the guard should NOT fire just because the event is past.
+        event, invite = event_with_pending_invite
+        # First accept the invite so the user is in event.co_hosts.
+        api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
+            **_auth_headers(invitee),
+        )
+        _make_event_past(event)
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            data=json.dumps({"co_host_ids": [str(invitee.pk)]}),
+            content_type="application/json",
+            **_auth_headers(creator),
+        )
+        assert response.status_code == 200
 
 
 # ─── EventOut visibility ──────────────────────────────────────────────────────

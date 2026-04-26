@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 from django.utils import timezone
 
+from community._validation import Code, raise_validation
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
 
 if TYPE_CHECKING:
@@ -99,11 +100,18 @@ def diff_cohost_invites(
 
     The event creator is silently filtered out of the requested ids — they're
     already a host and don't need a co-host invite for their own event.
+
+    Raises ``Code.CoHostInvite.EVENT_IS_PAST`` if the input would create or
+    revive a pending invite on a past event. Removals continue to work — the
+    host can still trim the roster after the fact.
     """
     next_ids = {str(uid) for uid in co_host_ids}
     if event.created_by_id is not None:
         next_ids.discard(str(event.created_by_id))
     existing_by_user = {str(inv.user_id): inv for inv in event.cohost_invites.all()}
+
+    if event.is_past and _would_upsert_any(next_ids, existing_by_user):
+        raise_validation(Code.CoHostInvite.EVENT_IS_PAST, status_code=400)
 
     newly_invited: list[str] = []
     accepted_co_host_ids_to_remove: list[str] = []
@@ -121,6 +129,23 @@ def diff_cohost_invites(
             event.co_hosts.remove(*accepted_co_host_ids_to_remove)
 
     return newly_invited, accepted_co_host_ids_to_remove
+
+
+def _would_upsert_any(next_ids: set[str], existing_by_user: dict[str, EventCoHostInvite]) -> bool:
+    """True if any requested id would result in a create-or-revive.
+
+    Mirrors the logic in ``_upsert_pending_invite`` so we can guard before
+    running it: an id is "upsert-y" if there's no existing row, OR there is
+    one but it's in a non-active state (declined / rescinded / expired /
+    removed) that would get flipped back to pending.
+    """
+    for user_id in next_ids:
+        existing = existing_by_user.get(user_id)
+        if existing is None:
+            return True
+        if existing.status not in _ACTIVE_OR_PENDING:
+            return True
+    return False
 
 
 def get_pending_invites_for_event(event: Event) -> list[EventCoHostInvite]:

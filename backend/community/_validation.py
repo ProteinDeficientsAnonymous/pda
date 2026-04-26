@@ -189,6 +189,7 @@ class Code:
         NOT_HOST = "cohost_invite.not_host"
         NOT_REMOVABLE = "cohost_invite.not_removable"  # invite is in a terminal state
         WOULD_LEAVE_HOSTLESS = "cohost_invite.would_leave_hostless"
+        EVENT_IS_PAST = "cohost_invite.event_is_past"
 
     class WelcomeTemplate:
         BODY_REQUIRED = "welcome_template.body_required"

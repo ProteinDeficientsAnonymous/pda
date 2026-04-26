@@ -379,6 +379,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "this invite can't be removed";
     case Code.CoHostInvite.WouldLeaveHostless:
       return "you can't step down — every event needs at least one host";
+    case Code.CoHostInvite.EventIsPast:
+      return "can't invite co-hosts to a past event";
 
     // Welcome template
     case Code.WelcomeTemplate.BodyRequired:
