@@ -42,7 +42,12 @@ export function EventMemberSection({ event }: Props) {
 
   return (
     <div className="mt-8 flex flex-col gap-6">
-      <HostSection event={event} canEdit={isCoHost && !isCancelled} viewerId={user.id} />
+      <HostSection
+        event={event}
+        canEdit={isCoHost && !isCancelled}
+        canInviteCohost={isCoHost && !isCancelled && !event.isPast}
+        viewerId={user.id}
+      />
       <LocationSection event={event} />
       <LinksSection event={event} />
       <CostSection event={event} />
@@ -107,10 +112,12 @@ interface HostRow {
 function HostSection({
   event,
   canEdit,
+  canInviteCohost,
   viewerId,
 }: {
   event: Event;
   canEdit: boolean;
+  canInviteCohost: boolean;
   viewerId: string;
 }) {
   const [addOpen, setAddOpen] = useState(false);
@@ -183,7 +190,7 @@ function HostSection({
         {pending.map((inv) => (
           <PendingHostChip key={inv.id} eventId={event.id} invite={inv} canRescind={canEdit} />
         ))}
-        {canEdit ? (
+        {canInviteCohost ? (
           <button
             type="button"
             onClick={() => {
@@ -196,7 +203,7 @@ function HostSection({
           </button>
         ) : null}
       </div>
-      {canEdit ? (
+      {canInviteCohost ? (
         <AddCoHostDialog
           event={event}
           open={addOpen}

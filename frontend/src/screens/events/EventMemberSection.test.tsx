@@ -187,6 +187,30 @@ describe('EventMemberSection — accepted host row', () => {
   });
 });
 
+describe('EventMemberSection — past event gates (#385)', () => {
+  it('hides the + button on past events', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...BASE_EVENT, isPast: true });
+    expect(screen.queryByRole('button', { name: /add co-host/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the + button on non-past events for host viewer', () => {
+    // Sanity check that the gate is doing the right thing — should still render
+    // when the event is in the future.
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection(BASE_EVENT);
+    expect(screen.getByRole('button', { name: /add co-host/i })).toBeInTheDocument();
+  });
+
+  it('still allows × on accepted host chips for past events (housekeeping)', () => {
+    // Removing an accepted cohost must keep working post-event — backend allows
+    // it, so the FE should too.
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...ACCEPTED_COHOST_EVENT, isPast: true });
+    expect(screen.getByRole('button', { name: /remove bob as co-host/i })).toBeInTheDocument();
+  });
+});
+
 describe('EventMemberSection — pending host row', () => {
   it('renders pending invitee chips for a host viewer', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
