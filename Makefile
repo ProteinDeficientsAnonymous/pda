@@ -8,7 +8,7 @@ export
         createsuperuser seed db-start db-stop ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
-        dump-codes generate-codes check-codes dump-openapi check-openapi-types \
+        dump-codes generate-codes check-codes dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity \
         agent-frontend-lint agent-frontend-format agent-frontend-format-check agent-frontend-test agent-frontend-typecheck
@@ -160,11 +160,18 @@ dump-openapi:
 generate-codes:
 	node frontend/scripts/generate-validation-codes.mjs
 
-# CI parity check — fails when any generated artifact is out of date.
+# CI parity check — fails when any backend-generated artifact is out of
+# date. types.gen.ts is checked separately in frontend-types-check, since
+# the openapi-typescript invocation requires pnpm (not on the backend job).
 check-codes:
 	cd backend && uv run python manage.py dump_validation_codes --check
 	node frontend/scripts/generate-validation-codes.mjs --check
 	cd backend && uv run python manage.py dump_openapi_schema --check
+
+# Verify frontend/src/api/types.gen.ts is in sync with backend/openapi_schema.json.
+# Wired into parallel-frontend / parallel-agent-frontend so it runs where
+# pnpm is installed.
+frontend-types-check:
 	cd frontend && pnpm types:api:check
 
 # CI (run before every commit)
@@ -174,9 +181,10 @@ backend-ci: lint check test typecheck complexity check-codes
 
 frontend-ci: parallel-frontend
 
-# ESLint, Prettier, Vitest, and tsc are independent — run in parallel to cut wall-clock time.
+# ESLint, Prettier, Vitest, tsc, and the types.gen.ts parity check are
+# independent — run in parallel to cut wall-clock time.
 parallel-frontend:
-	$(MAKE) -j4 frontend-lint frontend-format-check frontend-test frontend-typecheck
+	$(MAKE) -j5 frontend-lint frontend-format-check frontend-test frontend-typecheck frontend-types-check
 
 # CI with quiet runners (same steps as ci; still auto-fixes via ruff)
 agent-lint:
@@ -232,7 +240,7 @@ agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-comple
 agent-frontend-ci: parallel-agent-frontend
 
 parallel-agent-frontend:
-	$(MAKE) -j4 agent-frontend-lint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck
+	$(MAKE) -j5 agent-frontend-lint agent-frontend-format-check agent-frontend-test agent-frontend-typecheck frontend-types-check
 
 # Dev (concurrent backend + frontend)
 dev:
