@@ -187,6 +187,37 @@ describe('EventMemberSection — accepted host row', () => {
   });
 });
 
+describe('EventMemberSection — past event gates (#385)', () => {
+  it('disables the + button on past events with a tooltip explaining why', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...BASE_EVENT, isPast: true });
+    const addBtn = screen.getByRole('button', { name: /add co-host/i });
+    expect(addBtn).toBeDisabled();
+    // Custom CSS tooltip: a sibling span with role="tooltip" that's revealed
+    // on hover via group-hover. Native title= doesn't fire on disabled buttons.
+    const tooltip = screen.getByRole('tooltip');
+    expect(tooltip).toHaveTextContent("can't invite co-hosts to a past event");
+    expect(addBtn).toHaveAttribute('aria-describedby', tooltip.id);
+  });
+
+  it('+ button is enabled on non-past events for host viewer', () => {
+    // Sanity check that the gate is doing the right thing — should still be
+    // active when the event is in the future.
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection(BASE_EVENT);
+    const addBtn = screen.getByRole('button', { name: /add co-host/i });
+    expect(addBtn).toBeEnabled();
+  });
+
+  it('still allows × on accepted host chips for past events (housekeeping)', () => {
+    // Removing an accepted cohost must keep working post-event — backend allows
+    // it, so the FE should too.
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...ACCEPTED_COHOST_EVENT, isPast: true });
+    expect(screen.getByRole('button', { name: /remove bob as co-host/i })).toBeInTheDocument();
+  });
+});
+
 describe('EventMemberSection — pending host row', () => {
   it('renders pending invitee chips for a host viewer', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
