@@ -1,4 +1,4 @@
-import { isAxiosError } from 'axios';
+import { getApiStatus } from '@/api/apiErrors';
 import { useEditablePage, useUpdateEditablePage } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
@@ -15,7 +15,7 @@ export default function DonateScreen() {
 
   if (isPending) return <ContentLoading />;
   if (error) {
-    if (isAxiosError(error) && error.response?.status === 403) {
+    if (getApiStatus(error) === 403) {
       return <ContentError message="this page is for members only" />;
     }
     return <ContentError message="couldn't load the donate page — try refreshing" />;

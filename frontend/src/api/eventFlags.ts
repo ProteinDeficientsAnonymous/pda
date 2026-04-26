@@ -6,8 +6,9 @@
 // Transitions: pending → dismissed | actioned. Cannot go back to pending.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
 import { apiClient } from './client';
+import { getApiStatus, hasErrorCode } from './apiErrors';
+import { Code } from './validationCodes';
 
 export type FlagStatus = 'pending' | 'dismissed' | 'actioned';
 
@@ -84,16 +85,14 @@ export function useFlagEvent(eventId: string) {
         });
         return mapFlag(data);
       } catch (err) {
-        if (isAxiosError(err)) {
-          if (err.response?.status === 409) {
-            throw new FlagEventError('already-flagged', "you've already flagged this event");
-          }
-          if (err.response?.status === 429) {
-            throw new FlagEventError(
-              'rate-limited',
-              "you've flagged too many events — try again later",
-            );
-          }
+        if (hasErrorCode(err, Code.Event.FlagAlreadyFlagged)) {
+          throw new FlagEventError('already-flagged', "you've already flagged this event");
+        }
+        if (getApiStatus(err) === 429) {
+          throw new FlagEventError(
+            'rate-limited',
+            "you've flagged too many events — try again later",
+          );
         }
         throw new FlagEventError('unknown', "couldn't submit — try again");
       }

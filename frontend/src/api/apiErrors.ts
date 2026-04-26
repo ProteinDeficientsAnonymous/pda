@@ -43,3 +43,27 @@ export function extractApiError(err: unknown): string | null {
 export function extractApiErrorOr(err: unknown, fallback: string): string {
   return extractApiError(err) ?? fallback;
 }
+
+/**
+ * HTTP status from any API error, or null if the error isn't an axios error
+ * with a response. Use this instead of importing `isAxiosError` directly so
+ * call sites don't reach into `error.response?.status` on their own.
+ */
+export function getApiStatus(err: unknown): number | null {
+  if (!isAxiosError(err)) return null;
+  return err.response?.status ?? null;
+}
+
+/**
+ * True if the error carries a structured-detail entry with the given code.
+ * Prefer this over status-based branching when the code is more specific than
+ * the status (e.g. distinguishing flag_already_flagged from any 409).
+ */
+export function hasErrorCode(err: unknown, code: string): boolean {
+  if (!isAxiosError(err)) return false;
+  const data = err.response?.data as Record<string, unknown> | undefined;
+  if (!data || !Array.isArray(data.detail)) return false;
+  return data.detail.some(
+    (e) => typeof e === 'object' && e !== null && (e as { code?: unknown }).code === code,
+  );
+}

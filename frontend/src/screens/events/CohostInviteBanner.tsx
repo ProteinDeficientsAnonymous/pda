@@ -3,9 +3,10 @@
 // banner relies on `myPendingCohostInviteId` from EventOut, which the backend
 // clears via lazy expiration once the event ends.
 
-import { isAxiosError } from 'axios';
 import { toast } from 'sonner';
+import { hasErrorCode } from '@/api/apiErrors';
 import { useAcceptCohostInvite, useDeclineCohostInvite } from '@/api/cohostInvites';
+import { Code } from '@/api/validationCodes';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
 
@@ -53,9 +54,9 @@ export function CohostInviteBanner({ event }: Props) {
               { eventId: event.id, inviteId },
               {
                 onError: (err) => {
-                  // 400 with "not_pending" means someone (e.g. inviter rescinding) raced us.
+                  // not_pending means someone (e.g. inviter rescinding) raced us.
                   // Treat as success — the banner will disappear on the next refetch.
-                  if (isAxiosError(err) && err.response?.status === 400) return;
+                  if (hasErrorCode(err, Code.CoHostInvite.NotPending)) return;
                   toast.error("couldn't decline — try again");
                 },
               },

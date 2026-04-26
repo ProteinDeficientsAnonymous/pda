@@ -1,6 +1,5 @@
-import { isAxiosError } from 'axios';
 import { Link, useParams } from 'react-router-dom';
-import { extractApiError } from '@/api/apiErrors';
+import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
@@ -19,7 +18,7 @@ export default function EventDetailScreen() {
 
   if (isPending) return <ContentLoading />;
   if (isError) {
-    if (isAxiosError(error) && error.response?.status === 403) {
+    if (getApiStatus(error) === 403) {
       const message = extractApiError(error) ?? "you don't have permission to see this event";
       return <ForbiddenNotice message={message} />;
     }
