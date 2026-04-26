@@ -123,9 +123,7 @@ describe('EventMemberSection — accepted host row', () => {
   it('renders × on accepted co-host chip for host viewer', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
-    expect(
-      screen.getByRole('button', { name: /remove bob as co-host/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /remove bob as co-host/i })).toBeInTheDocument();
   });
 
   it('does NOT render × on creator chip', () => {
@@ -158,9 +156,7 @@ describe('EventMemberSection — accepted host row', () => {
   it('shows step-down × when viewer is the cohost themselves', () => {
     useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
-    expect(
-      screen.getByRole('button', { name: /step down as co-host/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /step down as co-host/i })).toBeInTheDocument();
   });
 
   it('self-step-down shows confirm dialog and does NOT fire mutation until confirmed', async () => {

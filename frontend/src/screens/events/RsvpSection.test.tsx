@@ -90,6 +90,7 @@ function makeEvent(overrides: Partial<Event>): Event {
     coHostIds: [],
     coHostNames: [],
     coHostPhotoUrls: [],
+    coHostInviteIds: [],
     guests: [],
     myRsvp: RsvpServerStatus.Attending,
     surveySlugs: [],
