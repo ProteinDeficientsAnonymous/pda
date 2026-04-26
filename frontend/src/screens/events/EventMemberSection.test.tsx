@@ -193,9 +193,11 @@ describe('EventMemberSection — past event gates (#385)', () => {
     renderSection({ ...BASE_EVENT, isPast: true });
     const addBtn = screen.getByRole('button', { name: /add co-host/i });
     expect(addBtn).toBeDisabled();
-    // Tooltip lives on the wrapper span — browsers don't fire mouseenter on
-    // disabled buttons, so wrapping is the standard fix.
-    expect(addBtn.parentElement).toHaveAttribute('title', "can't invite co-hosts to a past event");
+    // Custom CSS tooltip: a sibling span with role="tooltip" that's revealed
+    // on hover via group-hover. Native title= doesn't fire on disabled buttons.
+    const tooltip = screen.getByRole('tooltip');
+    expect(tooltip).toHaveTextContent("can't invite co-hosts to a past event");
+    expect(addBtn).toHaveAttribute('aria-describedby', tooltip.id);
   });
 
   it('+ button is enabled on non-past events for host viewer', () => {
