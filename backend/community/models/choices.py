@@ -33,6 +33,7 @@ class CoHostInviteStatus(models.TextChoices):
     DECLINED = "declined", "Declined"
     RESCINDED = "rescinded", "Rescinded"
     EXPIRED = "expired", "Expired"
+    REMOVED = "removed", "Removed"
 
 
 class JoinRequestStatus(models.TextChoices):

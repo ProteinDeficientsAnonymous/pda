@@ -208,6 +208,11 @@ class EventOut(BaseModel):
     co_host_ids: list[str] = []
     co_host_names: list[str] = []
     co_host_photo_urls: list[str] = []
+    # Parallel to co_host_ids: each accepted co-host's invite id, used by the
+    # × button on host chips to remove or step down. None for grandfathered
+    # rows that pre-date the invite-approval flow (shouldn't happen post-#363
+    # data migration; defensive parallel-array invariant).
+    co_host_invite_ids: list[str | None] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
     event_type: str = EventType.COMMUNITY

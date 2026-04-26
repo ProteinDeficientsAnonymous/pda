@@ -274,6 +274,27 @@ def create_cohost_invite_declined_notification(
     _notify_users([str(inviter_id)])
 
 
+def create_cohost_removed_notification(event: Event, removed_user: User, remover: User) -> None:
+    """Notify a co-host that they've been removed from an event by someone else.
+
+    Caller is responsible for skipping self-removal — no need to notify
+    yourself that you stepped down.
+    """
+    from notifications.models import Notification, NotificationType
+
+    if str(remover.pk) == str(removed_user.pk):
+        return
+    remover_name = remover.display_name or remover.phone_number
+    Notification.objects.create(
+        recipient_id=str(removed_user.pk),
+        notification_type=NotificationType.COHOST_REMOVED,
+        event=event,
+        related_user=remover,
+        message=f"{remover_name} removed you as a co-host of {event.title}",
+    )
+    _notify_users([str(removed_user.pk)])
+
+
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
     from community.models import RSVPStatus
 

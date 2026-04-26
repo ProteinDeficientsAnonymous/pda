@@ -269,6 +269,23 @@ def _pending_cohost_invites_out(
     ]
 
 
+def _accepted_invite_ids_for_co_hosts(event: Event, co_hosts: list) -> list[str | None]:
+    """Build the parallel array of invite ids matching event.co_hosts order.
+
+    None for any co-host without an accepted invite row (defensive — shouldn't
+    happen post-#363 data migration; kept to preserve the parallel-array
+    invariant if a future migration ever leaves the data in an odd shape).
+    """
+    from community.models import CoHostInviteStatus, EventCoHostInvite
+
+    invite_id_by_user = dict(
+        EventCoHostInvite.objects.filter(
+            event=event, status=CoHostInviteStatus.ACCEPTED
+        ).values_list("user_id", "id")
+    )
+    return [str(invite_id_by_user[u.id]) if u.id in invite_id_by_user else None for u in co_hosts]
+
+
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
@@ -283,6 +300,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     pending_invites_out = _pending_cohost_invites_out(event, auth_user, creator, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
+    co_host_invite_ids = _accepted_invite_ids_for_co_hosts(event, co_hosts)
     return EventOut(
         id=str(event.id),
         title=event.title,
@@ -312,6 +330,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[u.display_name or u.phone_number for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
+        co_host_invite_ids=co_host_invite_ids,
         guests=_members_only(_build_guest_list(rsvps, phones_visible), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
         event_type=event.event_type,

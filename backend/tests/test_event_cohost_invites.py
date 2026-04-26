@@ -297,10 +297,11 @@ class TestRescind:
         assert response.status_code == 403
 
     def test_cannot_rescind_already_resolved_invite(
-        self, api_client, creator, event_with_pending_invite, invitee
+        self, api_client, creator, event_with_pending_invite
     ):
+        # DECLINED is a terminal state — neither host nor invitee can act on it.
         event, invite = event_with_pending_invite
-        invite.status = CoHostInviteStatus.ACCEPTED
+        invite.status = CoHostInviteStatus.DECLINED
         invite.save(update_fields=["status"])
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/",

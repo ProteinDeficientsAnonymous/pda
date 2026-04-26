@@ -665,6 +665,16 @@
         "name": "NOT_HOST",
         "value": "cohost_invite.not_host",
         "params": []
+      },
+      {
+        "name": "NOT_REMOVABLE",
+        "value": "cohost_invite.not_removable",
+        "params": []
+      },
+      {
+        "name": "WOULD_LEAVE_HOSTLESS",
+        "value": "cohost_invite.would_leave_hostless",
+        "params": []
       }
     ],
     "WelcomeTemplate": [

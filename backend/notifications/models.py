@@ -11,6 +11,7 @@ class NotificationType(models.TextChoices):
     COHOST_INVITE = "cohost_invite", "Co-host Invite"
     COHOST_INVITE_ACCEPTED = "cohost_invite_accepted", "Co-host Invite Accepted"
     COHOST_INVITE_DECLINED = "cohost_invite_declined", "Co-host Invite Declined"
+    COHOST_REMOVED = "cohost_removed", "Co-host Removed"
     MAGIC_LINK_REQUEST = "magic_link_request", "Magic Link Request"
     WAITLIST_PROMOTED = "waitlist_promoted", "Waitlist Promoted"
     EVENT_FLAGGED = "event_flagged", "Event Flagged"
