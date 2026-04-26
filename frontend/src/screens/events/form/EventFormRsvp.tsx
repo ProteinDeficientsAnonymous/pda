@@ -60,7 +60,7 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
               onChange({ maxAttendees: v === '' ? null : Number(v) });
             }}
             error={errors.maxAttendees}
-            className="[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+            className="[-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
         </>
       ) : null}
