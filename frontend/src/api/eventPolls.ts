@@ -2,9 +2,9 @@
 // Mirrors backend/community/_polls.py. GET is optional-auth, so unauthed
 // viewers see counts but not their own votes.
 
-import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
+import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { eventKeys } from './events';
 import { mapEventPoll, type WireEventPoll } from './eventPollMapper';
 import { useAuthStore } from '@/auth/store';
@@ -25,7 +25,7 @@ async function fetchEventPoll(eventId: string): Promise<EventPoll | null> {
     const { data } = await apiClient.get<WireEventPoll>(pollUrl(eventId));
     return mapEventPoll(data);
   } catch (err) {
-    if (isAxiosError(err) && err.response?.status === 404) return null;
+    if (getApiStatus(err) === 404) return null;
     throw err;
   }
 }
@@ -40,12 +40,8 @@ export function useEventPoll(eventId: string, hasPoll: boolean) {
 }
 
 function extractPollError(err: unknown): string {
-  if (isAxiosError(err)) {
-    if (err.response?.status === 429) return 'slow down — try again in a moment';
-    const data = err.response?.data as { detail?: unknown } | undefined;
-    if (typeof data?.detail === 'string') return data.detail;
-  }
-  return "couldn't update the poll — try again";
+  if (getApiStatus(err) === 429) return 'slow down — try again in a moment';
+  return extractApiErrorOr(err, "couldn't update the poll — try again");
 }
 
 function invalidateEventAndPoll(

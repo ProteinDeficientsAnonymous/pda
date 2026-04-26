@@ -5,9 +5,8 @@
 // dedicated error so the UI can show a sane message.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
 import { apiClient } from './client';
-import { extractApiErrorOr } from './apiErrors';
+import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { useAuthStore } from '@/auth/store';
 import { eventKeys } from './events';
 import { mapEvent, type WireEvent } from './eventMapper';
@@ -217,7 +216,7 @@ export function useDeleteEventPhoto(eventId: string) {
 
 export function extractEventError(err: unknown): string {
   // Event-create has a hard daily rate limit; surface that specifically.
-  if (isAxiosError(err) && err.response?.status === 429) {
+  if (getApiStatus(err) === 429) {
     return "you've hit the daily event-creation limit — try again tomorrow";
   }
   return extractApiErrorOr(err, "couldn't save the event — try again");
