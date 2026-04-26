@@ -107,6 +107,10 @@ class TestCalendarFeed:
         assert "Join us!" in content
         assert "WhatsApp: https://chat.whatsapp.com/abc" in content
         assert "Partiful: https://partiful.com/e/xyz" in content
+        # The "View on PDA: <url>" trailer is what the frontend "add to
+        # calendar" button and the .ics feed both use to link people back to
+        # the event detail page (issue #347).
+        assert "View on PDA: http" in content
 
     def test_feed_invalid_token_403(self, api_client):
         resp = api_client.get("/api/community/calendar/feed/?token=bogus-token")

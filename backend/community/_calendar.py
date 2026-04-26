@@ -14,7 +14,7 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community._event_helpers import _can_see_invite_only
-from community._shared import ErrorOut  # noqa: F401
+from community._shared import ErrorOut, event_url  # noqa: F401
 from community.models import Event, EventStatus, PageVisibility, RSVPStatus
 
 router = Router()
@@ -105,7 +105,7 @@ def calendar_feed(request, token: str = ""):
             invited_user_ids = {str(u.id) for u in event.invited_users.all()}
             if not _can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
                 continue
-        cal.add_component(_build_vevent(event))
+        cal.add_component(_build_vevent(event, request))
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
     response["Content-Disposition"] = 'inline; filename="pda-calendar.ics"'
@@ -124,14 +124,14 @@ def single_event_ics(request, event_id: str):
     cal = icalendar.Calendar()
     cal.add("prodid", "-//PDA//PDA Calendar//EN")
     cal.add("version", "2.0")
-    cal.add_component(_build_vevent(event))
+    cal.add_component(_build_vevent(event, request))
 
     response = HttpResponse(cal.to_ical(), content_type="text/calendar")
     response["Content-Disposition"] = f'inline; filename="{event.title}.ics"'
     return response
 
 
-def _build_vevent(event):
+def _build_vevent(event, request: HttpRequest | None = None):
     import icalendar
 
     vevent = icalendar.Event()
@@ -144,7 +144,12 @@ def _build_vevent(event):
             event.end_datetime or event.start_datetime + timedelta(hours=2),
         )
     vevent.add("summary", event.title)
-    desc = _event_ics_description(event)
+    target_url = (
+        request.build_absolute_uri(f"/events/{event.id}")
+        if request is not None
+        else event_url(event)
+    )
+    desc = _event_ics_description(event, target_url)
     if desc:
         vevent.add("description", desc)
     if event.location:
@@ -152,7 +157,11 @@ def _build_vevent(event):
     return vevent
 
 
-def _event_ics_description(event):
+def _event_ics_description(event, target_url: str) -> str:
+    """Description body for .ics events. The frontend's "add to calendar"
+    button has its own builder; both must end with a `View on PDA: <url>`
+    line so users can jump back to the event page (#347).
+    """
     parts = []
     if event.description:
         parts.append(event.description)
@@ -162,4 +171,5 @@ def _event_ics_description(event):
         parts.append(f"Partiful: {event.partiful_link}")
     if event.other_link:
         parts.append(f"Link: {event.other_link}")
+    parts.append(f"View on PDA: {target_url}")
     return "\n".join(parts)

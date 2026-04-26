@@ -21,6 +21,11 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
+# Public origin used to build links in outbound payloads (calendar descriptions,
+# emails). Empty in dev — consumers fall back to the request host or to relative
+# paths the frontend can resolve against window.location.origin.
+SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")
+
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
