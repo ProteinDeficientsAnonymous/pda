@@ -51,6 +51,7 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
           <TextField
             label="max attendees (optional)"
             type="number"
+            inputMode="numeric"
             min={1}
             max={200}
             value={values.maxAttendees === null ? '' : String(values.maxAttendees)}
@@ -59,6 +60,7 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
               onChange({ maxAttendees: v === '' ? null : Number(v) });
             }}
             error={errors.maxAttendees}
+            className="[-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
         </>
       ) : null}

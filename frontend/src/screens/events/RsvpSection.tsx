@@ -85,7 +85,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
         />
       ) : (
         <>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {PILLS.map((p) => (
               <RsvpPill
                 key={p.status}
@@ -97,15 +97,17 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
             ))}
           </div>
           {atCapacity && myRsvp !== RsvpServerStatus.Attending ? (
-            <p className="text-warning text-xs">
+            <p className="text-warning text-center text-xs">
               event is full — tapping "i'm going" adds you to the waitlist
             </p>
           ) : null}
           {event.allowPlusOnes &&
           (myRsvp === RsvpServerStatus.Attending || myRsvp === RsvpServerStatus.Maybe) ? (
-            <Button variant="secondary" onClick={() => void togglePlusOne()} disabled={busy}>
-              {hasPlusOne ? 'remove +1' : 'bring a +1'}
-            </Button>
+            <div className="flex justify-center">
+              <Button variant="secondary" onClick={() => void togglePlusOne()} disabled={busy}>
+                {hasPlusOne ? 'remove +1' : 'bring a +1'}
+              </Button>
+            </div>
           ) : null}
         </>
       )}
