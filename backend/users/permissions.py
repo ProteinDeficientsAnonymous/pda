@@ -8,7 +8,6 @@ class PermissionKey(models.TextChoices):
     APPROVE_JOIN_REQUESTS = "approve_join_requests", "Approve join requests"
     MANAGE_EVENTS = "manage_events", "Manage events"
     EDIT_GUIDELINES = "edit_guidelines", "Edit community guidelines"
-    EDIT_WELCOME_MESSAGE = "edit_welcome_message", "Edit welcome message template"
     MANAGE_WHATSAPP = "manage_whatsapp", "Manage WhatsApp configuration"
     EDIT_FAQ = "edit_faq", "Edit FAQ"
     EDIT_HOMEPAGE = "edit_homepage", "Edit homepage"

@@ -54,7 +54,7 @@ export function ApprovalCredentialsDialog({
   const smsHref = buildSmsHref(phoneNumber, welcomeMessage);
   const whatsappHref = buildWhatsAppHref(phoneNumber, welcomeMessage);
   const sendButtonsDisabled = templateQ.isPending;
-  const canEditTemplate = hasPermission(currentUser, Permission.EditWelcomeMessage);
+  const canEditTemplate = hasPermission(currentUser, Permission.ApproveJoinRequests);
 
   async function copyLink() {
     await navigator.clipboard.writeText(magicLinkUrl);

@@ -89,7 +89,7 @@ describe('ApprovalCredentialsDialog', () => {
           id: 'r1',
           name: 'vetter',
           isDefault: false,
-          permissions: ['edit_welcome_message'],
+          permissions: ['approve_join_requests'],
         },
       ],
     });

@@ -16,7 +16,7 @@ def edit_welcome_user(db):
         display_name="Welcome Editor",
     )
     role = Role.objects.create(
-        name="welcome_editor", permissions=[PermissionKey.EDIT_WELCOME_MESSAGE]
+        name="welcome_editor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS]
     )
     user.roles.add(role)
     return user

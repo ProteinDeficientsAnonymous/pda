@@ -1,5 +1,5 @@
 // Sub-modal opened from ApprovalCredentialsDialog. Lets users with
-// EDIT_WELCOME_MESSAGE edit the shared template. Plain-text only —
+// APPROVE_JOIN_REQUESTS edit the shared template. Plain-text only —
 // placeholders ${NAME}, ${SENDER_NAME}, ${MAGIC_LINK} are substituted at
 // render time by renderWelcomeMessage().
 
