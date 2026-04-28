@@ -10,7 +10,6 @@ import { useRescindCohostInvite } from '@/api/cohostInvites';
 import { RsvpSection } from './RsvpSection';
 import { InvitedList } from './RsvpGuestList';
 import { EventAdminActions } from './EventAdminActions';
-import { EventAttendancePanel } from './EventAttendancePanel';
 import { EventFlagDialog } from './EventFlagDialog';
 import { InviteDialog } from './InviteDialog';
 import { AddCoHostDialog } from './AddCoHostDialog';
@@ -64,7 +63,6 @@ export function EventMemberSection({ event }: Props) {
         </Card>
       ) : null}
       {canInvite ? <InviteSection event={event} /> : null}
-      {canSeeInvited && event.rsvpEnabled ? <EventAttendancePanel event={event} /> : null}
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
     </div>

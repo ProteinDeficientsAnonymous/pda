@@ -179,4 +179,26 @@ describe('EventDetailScreen', () => {
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /request to join/i })).toBeInTheDocument();
   });
+
+  it('shows event-settings kebab for the creator', () => {
+    const creator: User = { ...AUTHED_USER, id: 'user1' };
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('button', { name: /event settings/i })).toBeInTheDocument();
+  });
+
+  it('hides event-settings kebab from non-host members', () => {
+    useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
+  });
+
+  it('hides event-settings kebab from unauthenticated guests', () => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    renderScreen();
+
+    expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
+  });
 });

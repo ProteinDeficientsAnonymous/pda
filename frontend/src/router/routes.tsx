@@ -29,6 +29,7 @@ const Calendar = lazyWithRetry(() => import('@/screens/calendar/CalendarScreen')
 const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScreen'));
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
+const EventAttendance = lazyWithRetry(() => import('@/screens/events/EventAttendanceScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const Profile = lazyWithRetry(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen'));
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
               { path: '/events/mine', element: el(<MyEvents />) },
               { path: '/events/add', element: el(<EventCreate />) },
               { path: '/events/:id/edit', element: el(<EventEdit />) },
+              { path: '/events/:id/attendance', element: el(<EventAttendance />) },
               { path: '/members', element: el(<MembersDirectory />) },
               { path: '/members/:userId', element: el(<MemberProfile />) },
             ],

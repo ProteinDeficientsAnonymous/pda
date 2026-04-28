@@ -19,7 +19,6 @@ vi.mock('@/api/cohostInvites', () => ({
 vi.mock('./RsvpSection', () => ({ RsvpSection: () => <div data-testid="rsvp-section" /> }));
 vi.mock('./RsvpGuestList', () => ({ InvitedList: () => null }));
 vi.mock('./EventAdminActions', () => ({ EventAdminActions: () => null }));
-vi.mock('./EventAttendancePanel', () => ({ EventAttendancePanel: () => null }));
 vi.mock('./EventFlagDialog', () => ({ EventFlagDialog: () => null }));
 vi.mock('./InviteDialog', () => ({ InviteDialog: () => null }));
 vi.mock('./AddCoHostDialog', () => ({ AddCoHostDialog: () => null }));

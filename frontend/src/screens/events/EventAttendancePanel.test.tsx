@@ -129,9 +129,6 @@ describe('EventAttendancePanel', () => {
     mockStats(BASE_STATS);
     renderPanel(BASE_EVENT);
 
-    // Card is collapsed by default; expand it.
-    fireEvent.click(screen.getByRole('button', { name: /attendance/i }));
-
     expect(screen.getByText(/going/)).toBeInTheDocument();
     expect(screen.getByText(/can't go/)).toBeInTheDocument();
     expect(screen.getByText(/no response/)).toBeInTheDocument();
@@ -140,8 +137,6 @@ describe('EventAttendancePanel', () => {
   it('hides check-in buttons until an hour before the event', () => {
     mockStats(BASE_STATS);
     renderPanel(BASE_EVENT);
-    fireEvent.click(screen.getByRole('button', { name: /attendance/i }));
-
     expect(screen.queryByRole('button', { name: /^attended$/i })).not.toBeInTheDocument();
     expect(screen.getByText(/check-in opens an hour before the event/i)).toBeInTheDocument();
   });
@@ -154,8 +149,6 @@ describe('EventAttendancePanel', () => {
       startDatetime: new Date(Date.now() + 30 * 60 * 1000),
     };
     renderPanel(soonEvent);
-    fireEvent.click(screen.getByRole('button', { name: /attendance/i }));
-
     const attendedBtn = screen.getByRole('button', { name: /^attended$/i });
     fireEvent.click(attendedBtn);
 
@@ -169,16 +162,12 @@ describe('EventAttendancePanel', () => {
     mockStats(BASE_STATS);
     const pastEvent: Event = { ...BASE_EVENT, isPast: true };
     renderPanel(pastEvent);
-    fireEvent.click(screen.getByRole('button', { name: /attendance/i }));
-
     expect(screen.getByRole('button', { name: /^attended$/i })).toBeInTheDocument();
   });
 
   it('renders cancellations list before the event opens for check-in', () => {
     mockStats(BASE_STATS);
     renderPanel(BASE_EVENT);
-    fireEvent.click(screen.getByRole('button', { name: /attendance/i }));
-
     expect(screen.getByText(/cancelled 3 days before/i)).toBeInTheDocument();
   });
 
@@ -202,8 +191,6 @@ describe('EventAttendancePanel', () => {
     };
     mockStats(stats);
     renderPanel(BASE_EVENT);
-    fireEvent.click(screen.getByRole('button', { name: /attendance/i }));
-
     expect(screen.getByText('early bird')).toBeInTheDocument();
     expect(screen.getByText('late one')).toBeInTheDocument();
 
@@ -227,8 +214,6 @@ describe('EventAttendancePanel', () => {
   it('shows error state when stats fail to load', () => {
     mockStats(null, 'error');
     renderPanel(BASE_EVENT);
-    fireEvent.click(screen.getByRole('button', { name: /attendance/i }));
-
     expect(screen.getByText(/couldn't load stats/i)).toBeInTheDocument();
   });
 });
