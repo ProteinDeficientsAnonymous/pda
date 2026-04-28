@@ -445,7 +445,7 @@ function formatPrice(price: string): string {
 function InviteSection({ event }: { event: Event }) {
   const [open, setOpen] = useState(false);
   return (
-    <Card label="invite">
+    <div className="flex justify-center">
       <Button
         variant="secondary"
         onClick={() => {
@@ -461,7 +461,7 @@ function InviteSection({ event }: { event: Event }) {
           setOpen(false);
         }}
       />
-    </Card>
+    </div>
   );
 }
 

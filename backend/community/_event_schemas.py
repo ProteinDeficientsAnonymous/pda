@@ -302,7 +302,6 @@ class EventIn(BaseModel):
         default=InvitePermission.ALL_MEMBERS, max_length=FieldLimit.CHOICE
     )
     co_host_ids: list[str] = []
-    invited_user_ids: list[str] = []
     status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
 
     @model_validator(mode="after")
@@ -367,7 +366,6 @@ class EventPatchIn(BaseModel):
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     invite_permission: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     co_host_ids: list[str] | None = None
-    invited_user_ids: list[str] | None = None
     status: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     notify_attendees: bool | None = None
 

@@ -136,11 +136,6 @@ export function EventForm({ existing }: Props) {
     const merged: EventFormValues = {
       ...values,
       coHostIds: coHosts.map((m) => m.id),
-      // Form no longer manages member invites — InviteDialog on the event
-      // page does that. Send an empty list on create (BE accepts it) and rely
-      // on the patchBody scrub below to omit it on edit-PATCH so we don't
-      // clobber existing invitees.
-      invitedUserIds: [],
       status: nextStatus,
     };
     const errs = validateEventForm(merged);
@@ -161,10 +156,10 @@ export function EventForm({ existing }: Props) {
         // While a poll is active, the poll owns the time. Send a Partial
         // that omits start/end/tbd so useUpdateEvent's undefined-filter drops
         // them from the PATCH body (backend rejects those edits).
-        // Also drop coHostIds when the picker hasn't been touched, and always
-        // drop invitedUserIds (the form doesn't manage invites). Both are
-        // many-to-many relations the form can't fully reconstruct — letting
-        // an empty list through would clobber whatever's already on the BE.
+        // Also drop coHostIds when the picker hasn't been touched: it's a
+        // many-to-many relation the form can't fully reconstruct from
+        // EventOut (no phone numbers on the wire), so an empty list would
+        // clobber whatever's already on the BE.
         const patchBody: Partial<EventFormValues> = timeLocked
           ? (() => {
               const { startDatetime: _s, endDatetime: _e, datetimeTbd: _t, ...rest } = merged;
@@ -172,7 +167,6 @@ export function EventForm({ existing }: Props) {
             })()
           : { ...merged };
         if (!coHostsDirty) delete patchBody.coHostIds;
-        delete patchBody.invitedUserIds;
         await update.mutateAsync(patchBody);
         if (nextStatus === 'draft') toast.success('saved draft');
         void navigate(`/events/${existing.id}`);

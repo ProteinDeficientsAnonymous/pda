@@ -792,14 +792,6 @@
             "title": "Invite Permission",
             "type": "string"
           },
-          "invited_user_ids": {
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "title": "Invited User Ids",
-            "type": "array"
-          },
           "latitude": {
             "anyOf": [
               {
@@ -1572,20 +1564,6 @@
             ],
             "title": "Invite Permission"
           },
-          "invited_user_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Invited User Ids"
-          },
           "latitude": {
             "anyOf": [
               {
@@ -2296,6 +2274,24 @@
           }
         },
         "title": "HomePagePatchIn",
+        "type": "object"
+      },
+      "InviteIn": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user_ids"
+        ],
+        "title": "InviteIn",
         "type": "object"
       },
       "JoinFormQuestionIn": {
@@ -6799,6 +6795,84 @@
           }
         },
         "summary": "Single Event Ics",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/invitations/": {
+      "post": {
+        "operationId": "community__event_invitations_invite_to_event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ],
+        "summary": "Invite To Event",
         "tags": [
           "community"
         ]

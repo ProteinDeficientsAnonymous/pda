@@ -243,52 +243,45 @@ class TestMarkReadAPI:
 
 @pytest.mark.django_db
 class TestEventInviteIntegration:
-    def test_create_event_with_invites_creates_notifications(self, api_client, inviter, invitee):
+    def test_invite_endpoint_creates_notifications(self, api_client, inviter, invitee):
         payload = {
             "title": "Party",
             "start_datetime": future_iso(days=60),
             "end_datetime": future_iso(days=60, hours=2),
-            "invited_user_ids": [str(invitee.pk)],
         }
-        response = api_client.post(
+        create_response = api_client.post(
             "/api/community/events/",
             payload,
             content_type="application/json",
             **_auth_headers(inviter),
         )
-        assert response.status_code == 201
+        assert create_response.status_code == 201
+        event_id = create_response.json()["id"]
+
+        invite_response = api_client.post(
+            f"/api/community/events/{event_id}/invitations/",
+            {"user_ids": [str(invitee.pk)]},
+            content_type="application/json",
+            **_auth_headers(inviter),
+        )
+        assert invite_response.status_code == 200
         assert Notification.objects.filter(recipient=invitee).count() == 1
 
-    def test_create_event_inviter_not_notified(self, api_client, inviter):
-        payload = {
-            "title": "Solo",
-            "start_datetime": future_iso(days=60),
-            "end_datetime": future_iso(days=60, hours=2),
-            "invited_user_ids": [str(inviter.pk)],
-        }
-        api_client.post(
-            "/api/community/events/",
-            payload,
-            content_type="application/json",
-            **_auth_headers(inviter),
-        )
-        assert Notification.objects.filter(recipient=inviter).count() == 0
-
-    def test_update_event_only_notifies_newly_invited(
+    def test_invite_endpoint_only_notifies_newly_invited(
         self, api_client, inviter, invitee, another_user, sample_event
     ):
-        # Pre-invite invitee
+        # Pre-invite invitee directly on the model.
         sample_event.invited_users.set([invitee])
 
-        # Update to also add another_user
-        response = api_client.patch(
-            f"/api/community/events/{sample_event.id}/",
-            {"invited_user_ids": [str(invitee.pk), str(another_user.pk)]},
+        # Call the invitations endpoint with both ids — set-union semantics
+        # means invitee is silently skipped, only another_user gets notified.
+        response = api_client.post(
+            f"/api/community/events/{sample_event.id}/invitations/",
+            {"user_ids": [str(invitee.pk), str(another_user.pk)]},
             content_type="application/json",
             **_auth_headers(inviter),
         )
         assert response.status_code == 200
-        # Only another_user should get a notification (invitee was already invited)
         assert Notification.objects.filter(recipient=another_user).count() == 1
         assert Notification.objects.filter(recipient=invitee).count() == 0
 

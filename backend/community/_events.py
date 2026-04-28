@@ -20,7 +20,6 @@ from community._event_helpers import (
     _event_out,
     _get_creator_name,
     _update_co_hosts,
-    _update_invited_users,
     _waitlisted_count,
 )
 from community._event_schemas import (
@@ -100,11 +99,6 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     )
     if time_fields_edited and hasattr(event, "poll") and event.poll.is_active:
         raise_validation(Code.Event.DATE_LOCKED_BY_POLL, status_code=400)
-    # Past events accept tweaks to most fields (description, links, etc.) but
-    # not new member invites — there's no event left to invite anyone to.
-    # Cohost invites have their own endpoint and gate on is_past separately.
-    if "invited_user_ids" in updates and event.is_past:
-        raise_validation(Code.Perm.DENIED, status_code=403, action="invite_to_past_event")
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
     effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)
@@ -324,7 +318,7 @@ def create_event(request, payload: EventIn):
         status=payload.status,
         created_by=request.auth,
     )
-    _set_event_participants(request, event, payload.co_host_ids, payload.invited_user_ids)
+    _set_event_participants(request, event, payload.co_host_ids)
     audit_log(
         logging.INFO,
         "event_created_draft" if event.is_draft else "event_created",
@@ -347,13 +341,10 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         return
     _validate_update_payload(request, event, event_id, updates)
     co_host_ids = updates.pop("co_host_ids", None)
-    invited_user_ids = updates.pop("invited_user_ids", None)
     for field, value in updates.items():
         setattr(event, field, value)
     if co_host_ids is not None:
         _update_co_hosts(event, co_host_ids, request.auth)
-    if invited_user_ids is not None:
-        _update_invited_users(event, invited_user_ids, request.auth)
     event.save()
     audit_log(
         logging.INFO,

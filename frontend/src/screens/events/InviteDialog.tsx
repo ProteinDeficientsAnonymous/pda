@@ -1,9 +1,11 @@
-// Invite members to an event — adds user ids to invited_user_ids via PATCH.
-// Co-hosts + members (when invite_permission=all_members) can invite.
+// Invite members to an event — calls the dedicated invitations endpoint
+// (POST /events/{id}/invitations/), which adds with set-union semantics so
+// it can never clobber the existing invitee list. Co-hosts + members (when
+// invite_permission=all_members) can invite.
 
 import { useState } from 'react';
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useUpdateEvent } from '@/api/eventWrites';
+import { useInviteToEvent } from '@/api/eventWrites';
 import { MemberPicker } from '@/components/MemberPicker';
 import type { MemberSearchResult } from '@/api/userSearch';
 import { Button } from '@/components/ui/Button';
@@ -17,15 +19,14 @@ interface Props {
 }
 
 export function InviteDialog({ event, open, onClose }: Props) {
-  const update = useUpdateEvent(event.id);
+  const invite = useInviteToEvent(event.id);
   const [added, setAdded] = useState<MemberSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function submit() {
     setError(null);
-    const combined = Array.from(new Set([...event.invitedUserIds, ...added.map((m) => m.id)]));
     try {
-      await update.mutateAsync({ invitedUserIds: combined });
+      await invite.mutateAsync(added.map((m) => m.id));
       setAdded([]);
       onClose();
     } catch (err) {
@@ -51,11 +52,11 @@ export function InviteDialog({ event, open, onClose }: Props) {
         </p>
       ) : null}
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose} disabled={update.isPending}>
+        <Button variant="ghost" onClick={onClose} disabled={invite.isPending}>
           cancel
         </Button>
-        <Button onClick={() => void submit()} disabled={update.isPending || added.length === 0}>
-          {update.isPending ? 'inviting…' : `invite ${String(added.length)}`}
+        <Button onClick={() => void submit()} disabled={invite.isPending || added.length === 0}>
+          {invite.isPending ? 'inviting…' : `invite ${String(added.length)}`}
         </Button>
       </div>
     </Dialog>

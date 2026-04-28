@@ -57,7 +57,6 @@ export interface EventFormValues {
   cashappLink: string;
   zelleInfo: string;
   coHostIds: string[];
-  invitedUserIds: string[];
   status: EventStatus;
 }
 
@@ -88,7 +87,6 @@ function toWireBody(values: EventFormValues): WireBody {
     cashapp_link: toCashAppUrl(values.cashappLink),
     zelle_info: values.zelleInfo,
     co_host_ids: values.coHostIds,
-    invited_user_ids: values.invitedUserIds,
     status: values.status,
   };
 }
@@ -101,6 +99,28 @@ export function useCreateEvent() {
       const { data } = await apiClient.post<WireEvent>(
         '/api/community/events/',
         toWireBody(values),
+      );
+      return mapEvent(data);
+    },
+    onSuccess: (event) => {
+      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+    },
+  });
+}
+
+// Invite-only mutation. Lives outside useUpdateEvent because the event form
+// no longer manages invitations — they're handled exclusively by the
+// per-event invite endpoint, which is add-only (set-union semantics) and so
+// can't accidentally clobber an existing invitee list.
+export function useInviteToEvent(eventId: string) {
+  const qc = useQueryClient();
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const { data } = await apiClient.post<WireEvent>(
+        `/api/community/events/${eventId}/invitations/`,
+        { user_ids: userIds },
       );
       return mapEvent(data);
     },
@@ -247,7 +267,6 @@ export function emptyEventFormValues(): EventFormValues {
     cashappLink: '',
     zelleInfo: '',
     coHostIds: [],
-    invitedUserIds: [],
     status: 'active',
   };
 }
@@ -280,7 +299,6 @@ export function eventToFormValues(e: Event): EventFormValues {
     cashappLink: fromCashAppUrl(e.cashappLink),
     zelleInfo: e.zelleInfo,
     coHostIds: e.coHostIds,
-    invitedUserIds: e.invitedUserIds,
     status: e.status as EventStatus,
   };
 }

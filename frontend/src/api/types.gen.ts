@@ -677,6 +677,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/invitations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invite To Event */
+        post: operations["community__event_invitations_invite_to_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/photo/": {
         parameters: {
             query?: never;
@@ -1797,11 +1814,6 @@ export interface components {
              * @default all_members
              */
             invite_permission: string;
-            /**
-             * Invited User Ids
-             * @default []
-             */
-            invited_user_ids: string[];
             /** Latitude */
             latitude?: number | null;
             /**
@@ -2202,8 +2214,6 @@ export interface components {
             event_type?: string | null;
             /** Invite Permission */
             invite_permission?: string | null;
-            /** Invited User Ids */
-            invited_user_ids?: string[] | null;
             /** Latitude */
             latitude?: number | null;
             /** Location */
@@ -2465,6 +2475,11 @@ export interface components {
             content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
+        };
+        /** InviteIn */
+        InviteIn: {
+            /** User Ids */
+            user_ids: string[];
         };
         /** JoinFormQuestionIn */
         JoinFormQuestionIn: {
@@ -5088,6 +5103,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    community__event_invitations_invite_to_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
             };
         };
     };

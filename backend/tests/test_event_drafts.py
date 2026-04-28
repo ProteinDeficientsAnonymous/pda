@@ -156,24 +156,19 @@ class TestCreateDraft:
         assert response.status_code == 400
         assert_error_code(response, Code.Event.INVALID_CREATE_STATUS, "status")
 
-    def test_create_draft_skips_invitee_notifications(self, api_client, creator_headers, invitee):
+    def test_invite_to_draft_skips_invitee_notifications(
+        self, api_client, creator_headers, invitee, sample_draft
+    ):
         from notifications.models import Notification
 
         response = api_client.post(
-            "/api/community/events/",
-            data=json.dumps(
-                {
-                    "title": "Draft With Invitee",
-                    "start_datetime": future_iso(days=180),
-                    "status": "draft",
-                    "invited_user_ids": [str(invitee.pk)],
-                }
-            ),
+            f"/api/community/events/{sample_draft.id}/invitations/",
+            data=json.dumps({"user_ids": [str(invitee.pk)]}),
             content_type="application/json",
             **creator_headers,
         )
-        assert response.status_code == 201
-        # Invitees should NOT be notified until publish
+        assert response.status_code == 200
+        # Invitees should NOT be notified until publish.
         assert not Notification.objects.filter(recipient=invitee).exists()
 
     def test_create_draft_fires_cohost_notifications(self, api_client, creator_headers, cohost):

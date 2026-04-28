@@ -9,7 +9,6 @@ from notifications.service import (
     create_cohost_invite_notifications,
     create_event_invite_notifications,
 )
-from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import diff_cohost_invites
@@ -71,26 +70,21 @@ def _uncancel_event(request, event: Event) -> None:
     )
 
 
-def _set_event_participants(
-    request, event: Event, co_host_ids: list, invited_user_ids: list
-) -> None:
-    """Attach co-hosts and invitees to the event and send appropriate notifications.
+def _set_event_participants(request, event: Event, co_host_ids: list) -> None:
+    """Attach co-hosts to the event and send invite notifications.
 
     Co-hosts go through the invite-approval flow: requested ids become PENDING
     invites that the invitee can accept or decline. Even on drafts, invites are
     created (and notified once step 3 wires the notification helper) — co-hosts
     are collaborators on the draft, not just downstream attendees.
+
+    Member invitations (vs. co-host invitations) are handled by the dedicated
+    POST /events/{id}/invitations/ endpoint, not by event create/update.
     """
     if co_host_ids:
         newly_invited, _ = diff_cohost_invites(event, co_host_ids, request.auth)
         if newly_invited:
             create_cohost_invite_notifications(event, newly_invited, request.auth)
-    if invited_user_ids:
-        invited = UserModel.objects.filter(pk__in=invited_user_ids)
-        event.invited_users.set(invited)
-        # Invitee notifications are deferred until the draft is published.
-        if not event.is_draft:
-            create_event_invite_notifications(event, invited_user_ids, request.auth)
 
 
 def _publish_draft(request, event: Event) -> None:

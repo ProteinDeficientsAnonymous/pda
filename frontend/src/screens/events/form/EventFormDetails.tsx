@@ -19,11 +19,12 @@ const VISIBILITY_OPTIONS: { value: VisibilityChoice; label: string; officialOnly
 
 const VISIBILITY_HELPER: Record<VisibilityChoice, string> = {
   members_only: 'only signed-in members can see this event',
-  public: 'anyone can see this in the calendar — but location, links, and rsvp stay members-only',
+  public:
+    'anyone can see this in the calendar — but only members can see location, links, and rsvp',
   invite_only:
     'only the people you invite can see this event — you can send invites from the event page after saving',
   official:
-    'publicly listed as an official pda event — location, links, and rsvp stay members-only',
+    'publicly listed as an official pda event — only members can see location, links, and rsvp',
 };
 
 interface Props {
