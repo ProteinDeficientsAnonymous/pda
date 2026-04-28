@@ -36,6 +36,20 @@ class CoHostInviteStatus(models.TextChoices):
     REMOVED = "removed", "Removed"
 
 
+class EventTextBlastDeliveryStatus(models.TextChoices):
+    QUEUED = "queued", "Queued"
+    SENT = "sent", "Sent"
+    FAILED = "failed", "Failed"
+
+
+class RecipientFilterSentinel:
+    """Non-RSVP filter values for text-blast recipient selection. Combined with
+    RSVPStatus values in the per-blast filter list (e.g. ["attending",
+    "invited_no_response"])."""
+
+    INVITED_NO_RESPONSE = "invited_no_response"
+
+
 class JoinRequestStatus(models.TextChoices):
     PENDING = "pending", "Pending"
     APPROVED = "approved", "Approved"
