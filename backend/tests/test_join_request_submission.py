@@ -27,12 +27,15 @@ def _clear_rate_limit_cache():
 @pytest.mark.django_db
 class TestJoinRequestSubmission:
     def test_submit_join_request(self, api_client, why_join_id):
+        from community.models import JoinRequest
+
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Leafy G",
                 "phone_number": "+12025551234",
                 "answers": {why_join_id: "I want to connect with other vegans."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -41,6 +44,37 @@ class TestJoinRequestSubmission:
         assert data["display_name"] == "Leafy G"
         assert data["phone_number"] == "+12025551234"
         assert len(data["answers"]) >= 1
+        # Consent timestamp recorded — proof for Twilio toll-free verification.
+        jr = JoinRequest.objects.get(phone_number="+12025551234")
+        assert jr.sms_consent_at is not None
+
+    def test_submit_rejected_without_sms_consent(self, api_client, why_join_id):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Leafy G",
+                "phone_number": "+12025551235",
+                "answers": {why_join_id: "I want to connect with other vegans."},
+                # sms_consent omitted — defaults to False on the schema.
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"][0]["code"] == "join_request.sms_consent_required"
+
+    def test_submit_rejected_when_sms_consent_explicitly_false(self, api_client, why_join_id):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Leafy G",
+                "phone_number": "+12025551236",
+                "answers": {why_join_id: "I want to connect with other vegans."},
+                "sms_consent": False,
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"][0]["code"] == "join_request.sms_consent_required"
 
     def test_submit_honeypot_silently_drops_request(self, api_client, why_join_id):
         from community.models import JoinRequest
@@ -51,6 +85,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Bot Spammer",
                 "phone_number": "+12025557777",
                 "answers": {why_join_id: "spammy text"},
+                "sms_consent": True,
                 "website": "http://spam.example.com",
             },
             content_type="application/json",
@@ -67,6 +102,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Real Person",
                 "phone_number": "+12025558888",
                 "answers": {why_join_id: "I care about animals."},
+                "sms_consent": True,
                 "website": "",
             },
             content_type="application/json",
@@ -81,6 +117,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Leafy G",
                 "phone_number": "+12025551234",
                 "answers": {},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -93,6 +130,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Leafy123",
                 "phone_number": "+12025551234",
                 "answers": {why_join_id: "Liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -105,6 +143,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Leafy G",
                 "phone_number": "not-a-number",
                 "answers": {why_join_id: "Liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -117,6 +156,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Leafy G",
                 "phone_number": "+13105551234",
                 "answers": {why_join_id: "Liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -135,6 +175,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Test Person",
                 "phone_number": "+14155551234",
                 "answers": {why_join_id: "Because liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -154,6 +195,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Test Person",
                 "phone_number": "+14155551234",
                 "answers": {why_join_id: "Because liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -166,6 +208,7 @@ class TestJoinRequestSubmission:
                 "display_name": "   ",
                 "phone_number": "+12025550701",
                 "answers": {why_join_id: "I care"},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -178,6 +221,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Alice",
                 "phone_number": "+12025550702",
                 "answers": {},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -190,6 +234,7 @@ class TestJoinRequestSubmission:
                 "display_name": "A" * 65,
                 "phone_number": "+12025550703",
                 "answers": {why_join_id: "I care"},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -202,6 +247,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Alice2",
                 "phone_number": "+12025550704",
                 "answers": {why_join_id: "I care"},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -214,6 +260,7 @@ class TestJoinRequestSubmission:
                 "display_name": "user@example.com",
                 "phone_number": "+12025550705",
                 "answers": {why_join_id: "I care"},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -226,6 +273,7 @@ class TestJoinRequestSubmission:
                 "display_name": "http://evil.com",
                 "phone_number": "+12025550706",
                 "answers": {why_join_id: "I care"},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -247,6 +295,7 @@ class TestJoinRequestSubmission:
                 "display_name": name,
                 "phone_number": phone,
                 "answers": {why_join_id: "Collective liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -259,6 +308,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Mary-Jane O'Brien",
                 "phone_number": "+12025550708",
                 "answers": {why_join_id: "Collective liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -271,6 +321,7 @@ class TestJoinRequestSubmission:
                 "display_name": "New Sprout",
                 "phone_number": "+19175551234",
                 "answers": {why_join_id: "Collective liberation matters."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -292,6 +343,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Leafy New",
                 "phone_number": "+12025559002",
                 "answers": {why_join_id: "Collective liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -310,6 +362,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Already Here",
                 "phone_number": "+12025551299",
                 "answers": {why_join_id: "Liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -327,6 +380,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Already Here",
                 "phone_number": "+12025551298",
                 "answers": {why_join_id: "Liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -347,6 +401,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Coming Back",
                 "phone_number": "+12025551297",
                 "answers": {why_join_id: "i want to return"},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -366,6 +421,7 @@ class TestJoinRequestSubmission:
                 "display_name": "Leafy G",
                 "phone_number": "+12025559003",
                 "answers": {why_join_id: "Liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )
@@ -381,6 +437,7 @@ class TestJoinRequestSubmission:
                     "display_name": name,
                     "phone_number": phone,
                     "answers": {why_join_id: "Liberation."},
+                    "sms_consent": True,
                 },
                 content_type="application/json",
             )
@@ -391,6 +448,7 @@ class TestJoinRequestSubmission:
                 "display_name": "One Too Many",
                 "phone_number": "+12025559104",
                 "answers": {why_join_id: "Liberation."},
+                "sms_consent": True,
             },
             content_type="application/json",
         )

@@ -153,6 +153,7 @@ class Code:
         INVALID_STATUS = "join_request.invalid_status"  # params: { allowed: [str] }
         NOT_APPROVED = "join_request.not_approved"
         ALREADY_LOGGED_IN = "join_request.already_logged_in"
+        SMS_CONSENT_REQUIRED = "join_request.sms_consent_required"
 
     class Photo:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }

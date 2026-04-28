@@ -51,6 +51,7 @@ export interface SubmitJoinRequestPayload {
   displayName: string;
   phoneNumber: string;
   answers: Record<string, string>;
+  smsConsent: boolean;
   website: string;
 }
 
@@ -69,6 +70,7 @@ export function useSubmitJoinRequest() {
           display_name: payload.displayName,
           phone_number: payload.phoneNumber,
           answers: payload.answers,
+          sms_consent: payload.smsConsent,
           website: payload.website,
         });
       } catch (err) {

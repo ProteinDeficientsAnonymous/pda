@@ -20,6 +20,7 @@ const Home = lazyWithRetry(() => import('@/screens/public/HomeScreen'));
 const Faq = lazyWithRetry(() => import('@/screens/public/FaqScreen'));
 const Donate = lazyWithRetry(() => import('@/screens/public/DonateScreen'));
 const Install = lazyWithRetry(() => import('@/screens/public/InstallAppScreen'));
+const SmsPolicy = lazyWithRetry(() => import('@/screens/public/SmsPolicyScreen'));
 const Guidelines = lazyWithRetry(() => import('@/screens/public/GuidelinesScreen'));
 const Volunteer = lazyWithRetry(() => import('@/screens/public/VolunteerScreen'));
 const Join = lazyWithRetry(() => import('@/screens/public/JoinScreen'));
@@ -81,6 +82,7 @@ export const router = createBrowserRouter([
           { path: '/donate', element: el(<Donate />) },
           { path: '/install', element: el(<Install />) },
           { path: '/faq', element: el(<Faq />) },
+          { path: '/sms-policy', element: el(<SmsPolicy />) },
 
           // ---- authed ----
           {

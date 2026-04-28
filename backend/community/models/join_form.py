@@ -55,6 +55,11 @@ class JoinRequest(models.Model):
         on_delete=models.SET_NULL,
         related_name="rejected_join_requests",
     )
+    # Set when the user checks the SMS-consent box on the join form. Required
+    # at the API level, but stored as nullable so historical pre-consent rows
+    # remain queryable. Used as proof-of-consent for Twilio toll-free
+    # verification + ongoing TCPA defensibility.
+    sms_consent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         app_label = "community"

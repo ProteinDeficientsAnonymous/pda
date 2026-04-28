@@ -132,6 +132,7 @@ export const Code = {
     InvalidStatus: 'join_request.invalid_status',
     NotApproved: 'join_request.not_approved',
     AlreadyLoggedIn: 'join_request.already_logged_in',
+    SmsConsentRequired: 'join_request.sms_consent_required',
   },
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
@@ -278,6 +279,7 @@ export type ValidationCode =
   | 'join_request.invalid_status'
   | 'join_request.not_approved'
   | 'join_request.already_logged_in'
+  | 'join_request.sms_consent_required'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
   | 'perm.denied'
@@ -402,6 +404,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.invalid_status': ['allowed'],
   'join_request.not_approved': [],
   'join_request.already_logged_in': [],
+  'join_request.sms_consent_required': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
   'perm.denied': ['action'],

@@ -37,6 +37,10 @@ class JoinRequestIn(BaseModel):
     display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     answers: dict[str, str] = {}
+    # SMS consent. UI presents a required checkbox tied to /sms-policy;
+    # we record consent timestamp on the join request as proof for Twilio's
+    # toll-free verification + ongoing TCPA defensibility.
+    sms_consent: bool = False
     # Honeypot: hidden field human users never fill in. Bots auto-complete
     # every input, so a non-empty value is a strong spam signal.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
@@ -207,7 +211,7 @@ def _check_phone_conflicts(validated_phone: str) -> None:
 
 @router.post(
     "/join-request/",
-    response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut, 429: ErrorOut},
+    response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut, 429: ErrorOut},
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="3/h")
@@ -224,6 +228,9 @@ def submit_join_request(request, payload: JoinRequestIn):
         )
         return Status(201, _honeypot_decoy_response(display_name, payload.phone_number))
 
+    if not payload.sms_consent:
+        raise_validation(Code.JoinRequest.SMS_CONSENT_REQUIRED, field="sms_consent")
+
     validate_display_name(display_name)
     validated_phone = _validate_phone(payload.phone_number)
     _check_phone_conflicts(validated_phone)
@@ -237,6 +244,7 @@ def submit_join_request(request, payload: JoinRequestIn):
         display_name=display_name,
         phone_number=validated_phone,
         custom_answers=custom_answers,
+        sms_consent_at=timezone.now(),
     )
 
     logger.info("Join request submitted by %s", display_name)

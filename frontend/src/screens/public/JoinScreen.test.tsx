@@ -84,6 +84,49 @@ describe('JoinScreen', () => {
       expect(screen.getByText('name required')).toBeInTheDocument();
     });
     expect(screen.getByText('phone required')).toBeInTheDocument();
+    expect(screen.getByText(/please agree to receive sms/i)).toBeInTheDocument();
+  });
+
+  it('blocks submit when name + phone are filled but sms consent is unchecked', async () => {
+    const mutateAsync = vi.fn();
+    mockUseSubmitJoinRequest.mockReturnValue({
+      ...defaultSubmitResult,
+      mutateAsync,
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+
+    const user = userEvent.setup();
+    renderWith(<JoinScreen />);
+
+    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/please agree to receive sms/i)).toBeInTheDocument();
+    });
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('passes smsConsent: true to the API when the box is checked', async () => {
+    const mutateAsync = vi.fn().mockResolvedValueOnce(undefined);
+    mockUseSubmitJoinRequest.mockReturnValue({
+      ...defaultSubmitResult,
+      mutateAsync,
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+
+    const user = userEvent.setup();
+    renderWithRoutes();
+
+    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalled();
+    });
+    const arg = mutateAsync.mock.calls[0]?.[0] as { smsConsent: boolean };
+    expect(arg.smsConsent).toBe(true);
   });
 
   it('shows error message on API submission failure', async () => {
@@ -103,6 +146,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
@@ -122,6 +166,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
@@ -142,6 +187,7 @@ describe('JoinScreen', () => {
     // Fill out form
     await user.type(screen.getByLabelText(/display name/i), 'Alex Jones');
     await user.type(screen.getByLabelText(/phone number/i), '+15559876543');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
 
     // Submit
     await user.click(screen.getByRole('button', { name: /submit request/i }));

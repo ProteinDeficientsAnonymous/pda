@@ -561,6 +561,11 @@
         "name": "ALREADY_LOGGED_IN",
         "value": "join_request.already_logged_in",
         "params": []
+      },
+      {
+        "name": "SMS_CONSENT_REQUIRED",
+        "value": "join_request.sms_consent_required",
+        "params": []
       }
     ],
     "Photo": [

@@ -240,6 +240,7 @@ class TestApplicationEventLogging:
                     "display_name": "Alice",
                     "phone_number": "+12025551234",
                     "answers": answers,
+                    "sms_consent": True,
                 },
                 content_type="application/json",
             )
@@ -291,6 +292,7 @@ class TestApplicationEventLogging:
                     "display_name": "Bob",
                     "phone_number": "+13105551234",
                     "answers": answers,
+                    "sms_consent": True,
                 },
                 content_type="application/json",
             )

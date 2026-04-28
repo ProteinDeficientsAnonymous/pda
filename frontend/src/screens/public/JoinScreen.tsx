@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
@@ -83,6 +83,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [smsConsent, setSmsConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   // Honeypot: real users never touch this. Bots auto-fill every input — when
@@ -94,6 +95,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     if (!displayName.trim()) next.displayName = 'name required';
     else if (!/^[\p{L}\p{M}' \-.]+$/u.test(displayName)) next.displayName = 'letters only';
     if (!phoneNumber.trim()) next.phoneNumber = 'phone required';
+    if (!smsConsent) next.smsConsent = 'please agree to receive sms about events';
     for (const q of questions) {
       const val = (answers[q.id] ?? '').trim();
       if (q.required && !val) next[q.id] = 'required';
@@ -113,6 +115,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
         displayName: displayName.trim(),
         phoneNumber: phoneNumber.trim(),
         answers: nonEmpty,
+        smsConsent,
         website,
       });
       void navigate('/join/success', { replace: true });
@@ -178,6 +181,30 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
             error={errors[q.id]}
           />
         ))}
+
+        <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
+          <input
+            type="checkbox"
+            checked={smsConsent}
+            onChange={(e) => {
+              setSmsConsent(e.target.checked);
+            }}
+            className="mt-1"
+            aria-describedby={errors.smsConsent ? 'sms-consent-error' : undefined}
+          />
+          <span>
+            i agree to pda's{' '}
+            <Link to="/sms-policy" target="_blank" className="text-brand-700 underline">
+              sms policy
+            </Link>{' '}
+            — i may receive event-related text messages and can reply STOP to opt out.
+          </span>
+        </label>
+        {errors.smsConsent ? (
+          <p id="sms-consent-error" role="alert" className="text-destructive -mt-2 text-xs">
+            {errors.smsConsent}
+          </p>
+        ) : null}
 
         {serverError ? (
           <p role="alert" className="text-destructive text-sm">
