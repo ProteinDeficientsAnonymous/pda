@@ -1,16 +1,6 @@
-// Host-only attendance panel. Gated upstream in EventMemberSection — component
-// itself expects to only render when the viewer is creator/co-host/admin.
-//
-// Sections:
-//   - stats row + cancellations list: always visible.
-//   - check-in controls: open 1h before start, never close.
-// Cancellation lead time is inferred from `CANT_GO` rows' updated_at — lossy
-// for users who flipped statuses (see docs/event-attendance-stats-plan.md).
-
 import { useState } from 'react';
 
 import { useEventStats, useSetAttendance } from '@/api/eventStats';
-import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import type {
   AttendanceStatusValue,
   Event,
@@ -40,30 +30,28 @@ export function EventAttendancePanel({ event }: Props) {
   const goingGuests = event.guests.filter((g) => g.status === RsvpServerStatus.Attending);
   const checkInOpen = isCheckInOpen(event);
 
+  if (stats.isLoading) {
+    return <p className="text-muted text-sm">loading stats…</p>;
+  }
+  if (stats.isError || !stats.data) {
+    return <p className="text-sm text-red-600">couldn't load stats — try refreshing</p>;
+  }
   return (
-    <CollapsibleCard title="attendance">
-      {stats.isLoading ? (
-        <p className="text-muted text-sm">loading stats…</p>
-      ) : stats.isError || !stats.data ? (
-        <p className="text-sm text-red-600">couldn't load stats — try refreshing</p>
+    <div className="flex flex-col gap-4">
+      <StatsRow stats={stats.data} />
+      {checkInOpen ? (
+        <CheckInList
+          guests={goingGuests}
+          onMark={(userId, attendance) => {
+            setAttendance.mutate({ userId, attendance });
+          }}
+          isPending={setAttendance.isPending}
+        />
       ) : (
-        <div className="flex flex-col gap-4">
-          <StatsRow stats={stats.data} />
-          {checkInOpen ? (
-            <CheckInList
-              guests={goingGuests}
-              onMark={(userId, attendance) => {
-                setAttendance.mutate({ userId, attendance });
-              }}
-              isPending={setAttendance.isPending}
-            />
-          ) : (
-            <p className="text-muted text-xs">check-in opens an hour before the event</p>
-          )}
-          <CancellationsList cancellations={stats.data.cancellations} />
-        </div>
+        <p className="text-muted text-xs">check-in opens an hour before the event</p>
       )}
-    </CollapsibleCard>
+      <CancellationsList cancellations={stats.data.cancellations} />
+    </div>
   );
 }
 

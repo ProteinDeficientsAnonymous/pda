@@ -6,12 +6,15 @@ import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility } from '@/models/event';
+import { Permission, hasPermission } from '@/models/permissions';
+import type { User } from '@/models/user';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
 
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
+import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { EventMemberSection } from './EventMemberSection';
 import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
@@ -24,6 +27,7 @@ function photoSrc(url: string, updatedAt: string | null): string {
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
+  const user = useAuthStore((s) => s.user);
   const { data: event, isPending, isError, error } = useEvent(id);
 
   if (isPending) return <ContentLoading />;
@@ -34,6 +38,8 @@ export default function EventDetailScreen() {
     }
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
+
+  const showKebab = isAuthed && canManageEventSettings(event, user);
 
   return (
     <ContentContainer>
@@ -51,6 +57,11 @@ export default function EventDetailScreen() {
           {event.title}
         </h1>
         <VisibilityBadge event={event} />
+        {showKebab ? (
+          <div className="ml-auto">
+            <EventDetailKebabMenu eventId={event.id} />
+          </div>
+        ) : null}
       </div>
 
       <WhenLine event={event} />
@@ -117,6 +128,13 @@ function Badge({
     lavender: 'bg-highlight-subtle text-highlight',
   };
   return <span className={`rounded-full px-2 py-0.5 text-xs ${tones[tone]}`}>{children}</span>;
+}
+
+function canManageEventSettings(event: Event, user: User | null): boolean {
+  if (!user) return false;
+  if (user.id === event.createdById) return true;
+  if (event.coHostIds.includes(user.id)) return true;
+  return hasPermission(user, Permission.ManageEvents);
 }
 
 function ForbiddenNotice({ message }: { message: string }) {
