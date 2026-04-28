@@ -2,7 +2,8 @@
 
 Plain-text template stored as a singleton (pk=1). Read by any authed user
 (vetters need it to render the message); edited by users with
-EDIT_WELCOME_MESSAGE.
+APPROVE_JOIN_REQUESTS — the welcome template is part of the approval
+workflow, so anyone who can approve requests can also tune the copy.
 """
 
 import logging
@@ -50,14 +51,14 @@ def get_welcome_template(request):
     auth=JWTAuth(),
 )
 def update_welcome_template(request, payload: WelcomeTemplatePatchIn):
-    if not request.auth.has_permission(PermissionKey.EDIT_WELCOME_MESSAGE):
+    if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
         audit_log(
             logging.WARNING,
             "permission_denied",
             request,
             details={
                 "endpoint": "update_welcome_template",
-                "required_permission": PermissionKey.EDIT_WELCOME_MESSAGE,
+                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="edit_welcome_message")
