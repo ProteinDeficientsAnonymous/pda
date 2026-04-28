@@ -14,7 +14,6 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community._event_helpers import _can_see_invite_only
-from community._shared import ErrorOut, event_url  # noqa: F401
 from community.models import Event, EventStatus, PageVisibility, RSVPStatus
 
 router = Router()
@@ -131,7 +130,7 @@ def single_event_ics(request, event_id: str):
     return response
 
 
-def _build_vevent(event, request: HttpRequest | None = None):
+def _build_vevent(event, request: HttpRequest):
     import icalendar
 
     vevent = icalendar.Event()
@@ -144,11 +143,7 @@ def _build_vevent(event, request: HttpRequest | None = None):
             event.end_datetime or event.start_datetime + timedelta(hours=2),
         )
     vevent.add("summary", event.title)
-    target_url = (
-        request.build_absolute_uri(f"/events/{event.id}")
-        if request is not None
-        else event_url(event)
-    )
+    target_url = request.build_absolute_uri(f"/events/{event.id}")
     desc = _event_ics_description(event, target_url)
     if desc:
         vevent.add("description", desc)
