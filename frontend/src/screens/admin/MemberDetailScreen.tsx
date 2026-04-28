@@ -62,10 +62,7 @@ function MemberDetailView({ member }: { member: Member }) {
 
   return (
     <ContentContainer>
-      <Link
-        to="/admin/members"
-        className="mb-4 inline-block text-sm text-neutral-500 hover:underline"
-      >
+      <Link to="/admin/members" className="text-muted mb-4 inline-block text-sm hover:underline">
         ← back to members
       </Link>
 
@@ -75,10 +72,12 @@ function MemberDetailView({ member }: { member: Member }) {
           <h1 className="text-2xl font-medium tracking-tight">
             {member.displayName || formatPhone(member.phoneNumber)}
           </h1>
-          <p className="text-sm text-neutral-600">{formatPhone(member.phoneNumber)}</p>
-          {member.email ? <p className="text-sm text-neutral-600">{member.email}</p> : null}
+          <p className="text-foreground-secondary text-sm">{formatPhone(member.phoneNumber)}</p>
+          {member.email ? (
+            <p className="text-foreground-secondary text-sm">{member.email}</p>
+          ) : null}
           {member.isPaused ? (
-            <span className="mt-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+            <span className="bg-warning-subtle text-warning mt-1 rounded-full px-2 py-0.5 text-xs">
               paused
             </span>
           ) : null}
@@ -96,9 +95,9 @@ function MemberDetailView({ member }: { member: Member }) {
       <MemberMagicLinkSection member={member} />
 
       {member.bio ? (
-        <section className="mb-6 rounded-lg border border-neutral-200 bg-white p-4">
-          <h2 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">bio</h2>
-          <p className="text-sm whitespace-pre-wrap text-neutral-800">{member.bio}</p>
+        <section className="border-border bg-surface mb-6 rounded-lg border p-4">
+          <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">bio</h2>
+          <p className="text-foreground text-sm whitespace-pre-wrap">{member.bio}</p>
         </section>
       ) : null}
 
@@ -151,13 +150,13 @@ function MemberRolesSection({ member }: { member: Member }) {
   }
 
   if (isPending) {
-    return <p className="mb-4 text-sm text-neutral-500">loading roles…</p>;
+    return <p className="text-muted mb-4 text-sm">loading roles…</p>;
   }
   if (isError) return null;
 
   return (
     <section className="mb-4">
-      <h2 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">roles</h2>
+      <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">roles</h2>
       <div className="flex flex-col gap-2">
         {allRoles.map((r) => (
           <label key={r.id} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -219,10 +218,10 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
 
   return (
     <section className="mb-6">
-      <h2 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">access</h2>
+      <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">access</h2>
       {url ? (
         <>
-          <div className="mb-2 overflow-x-auto rounded-md bg-neutral-100 px-3 py-2 font-mono text-xs break-all">
+          <div className="bg-surface-dim text-foreground mb-2 overflow-x-auto rounded-md px-3 py-2 font-mono text-xs break-all">
             {url}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -247,7 +246,7 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
           {magic.isPending ? 'working…' : 'generate magic login link'}
         </Button>
       )}
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="text-muted mt-1 text-xs">
         resets password flow for this member and generates a one-time login url for you to send
         them.
       </p>
@@ -265,7 +264,7 @@ function MemberAvatar({ member }: { member: Member }) {
   return (
     <span
       aria-hidden="true"
-      className="flex h-28 w-28 items-center justify-center rounded-full bg-neutral-200 text-3xl text-neutral-600"
+      className="bg-surface-dim text-foreground-secondary flex h-28 w-28 items-center justify-center rounded-full text-3xl"
     >
       {initials}
     </span>
@@ -350,7 +349,7 @@ function MemberEditForm({
         onChange={setIsPaused}
         disabled={targetIsAdmin}
       />
-      {targetIsAdmin ? <p className="text-xs text-neutral-500">admins can't be paused</p> : null}
+      {targetIsAdmin ? <p className="text-muted text-xs">admins can't be paused</p> : null}
 
       {error ? (
         <p role="alert" className="text-sm text-red-600">

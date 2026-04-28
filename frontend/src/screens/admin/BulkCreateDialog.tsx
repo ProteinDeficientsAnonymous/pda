@@ -96,14 +96,14 @@ function ResultsView({
 
   return (
     <Dialog open={open} onClose={onClose} title="bulk results">
-      <p className="text-sm text-neutral-700">
+      <p className="text-foreground-secondary text-sm">
         created {response.created} of {response.created + response.failed} — share each magic link
         with its recipient; links won't be shown again.
       </p>
 
       {successes.length > 0 ? (
         <section className="mt-4">
-          <h3 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">created</h3>
+          <h3 className="text-muted mb-2 text-xs font-medium tracking-wide">created</h3>
           <ul className="flex flex-col gap-2">
             {successes.map((r) => (
               <li key={r.row}>
@@ -116,10 +116,10 @@ function ResultsView({
 
       {failures.length > 0 ? (
         <section className="mt-4">
-          <h3 className="mb-2 text-xs font-medium tracking-wide text-neutral-500">failed</h3>
+          <h3 className="text-muted mb-2 text-xs font-medium tracking-wide">failed</h3>
           <ul className="flex flex-col gap-1">
             {failures.map((r) => (
-              <li key={r.row} className="text-sm text-red-700">
+              <li key={r.row} className="text-destructive text-sm">
                 {formatPhone(r.phoneNumber)} — {r.error ?? 'unknown error'}
               </li>
             ))}
@@ -149,9 +149,9 @@ function MagicLinkRow({ result }: { result: BulkCreateResult }) {
   }
 
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-neutral-200 bg-white p-2">
+    <div className="border-border bg-surface flex flex-col gap-1 rounded-md border p-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-sm font-medium text-neutral-900">
+        <span className="text-foreground truncate text-sm font-medium">
           {formatPhone(result.phoneNumber)}
         </span>
         <div className="flex gap-2">
@@ -169,7 +169,7 @@ function MagicLinkRow({ result }: { result: BulkCreateResult }) {
         </div>
       </div>
       {url ? (
-        <code className="overflow-x-auto rounded bg-neutral-100 px-2 py-1 text-xs break-all">
+        <code className="bg-surface-dim text-foreground overflow-x-auto rounded px-2 py-1 text-xs break-all">
           {url}
         </code>
       ) : null}

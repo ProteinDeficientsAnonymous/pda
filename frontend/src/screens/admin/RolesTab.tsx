@@ -56,17 +56,17 @@ export function RolesTab() {
       </div>
 
       {data.length === 0 ? (
-        <p className="text-sm text-neutral-500">no roles yet 🌿</p>
+        <p className="text-muted text-sm">no roles yet 🌿</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {data.map((role) => (
             <li
               key={role.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white p-3"
+              className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-neutral-900">{role.name}</p>
-                <p className="truncate text-xs text-neutral-500">
+                <p className="text-foreground truncate text-sm font-medium">{role.name}</p>
+                <p className="text-muted truncate text-xs">
                   {role.permissions.length === 0
                     ? 'no permissions'
                     : `${String(role.permissions.length)} permission${role.permissions.length === 1 ? '' : 's'}`}
