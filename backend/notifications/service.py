@@ -295,6 +295,27 @@ def create_cohost_removed_notification(event: Event, removed_user: User, remover
     _notify_users([str(removed_user.pk)])
 
 
+def create_text_blast_failures_notification(event: Event, sender: User, failure_count: int) -> None:
+    """Tell the host that some recipients didn't get their blast.
+
+    Fired only when at least one delivery in a blast failed at the Twilio
+    layer (invalid number, carrier rejection, rate limit, etc.). The host
+    can drill into the blast detail screen to see per-recipient errors.
+    """
+    from notifications.models import Notification, NotificationType
+
+    if failure_count <= 0:
+        return
+    plural = "person" if failure_count == 1 else "people"
+    Notification.objects.create(
+        recipient_id=str(sender.pk),
+        notification_type=NotificationType.TEXT_BLAST_FAILURES,
+        event=event,
+        message=f"text blast for {event.title}: {failure_count} {plural} didn't get it",
+    )
+    _notify_users([str(sender.pk)])
+
+
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
     from community.models import RSVPStatus
 

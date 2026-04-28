@@ -700,6 +700,45 @@
           "max_length"
         ]
       }
+    ],
+    "TextBlast": [
+      {
+        "name": "NOT_HOST",
+        "value": "text_blast.not_host",
+        "params": []
+      },
+      {
+        "name": "EVENT_CANCELLED",
+        "value": "text_blast.event_cancelled",
+        "params": []
+      },
+      {
+        "name": "NO_RECIPIENTS",
+        "value": "text_blast.no_recipients",
+        "params": []
+      },
+      {
+        "name": "INVALID_FILTER",
+        "value": "text_blast.invalid_filter",
+        "params": []
+      },
+      {
+        "name": "NOT_CONFIGURED",
+        "value": "text_blast.not_configured",
+        "params": []
+      },
+      {
+        "name": "SEND_FAILED",
+        "value": "text_blast.send_failed",
+        "params": []
+      },
+      {
+        "name": "EVENT_LIMIT_REACHED",
+        "value": "text_blast.event_limit_reached",
+        "params": [
+          "limit"
+        ]
+      }
     ]
   }
 }

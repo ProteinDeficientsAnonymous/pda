@@ -4,6 +4,11 @@ import pytest
 from django.test import Client
 from django.utils import timezone
 
+# Shared fixtures for the text-blast test files (#403). Listed here so pytest
+# auto-discovers them in `test_event_blasts.py` and `test_event_blasts_webhook.py`
+# without each test file having to re-import them (which trips ruff F811).
+pytest_plugins = ("tests._event_blasts_shared",)
+
 
 def future_iso(days: int = 30, hours: int = 0, minutes: int = 0) -> str:
     """ISO 8601 string N days/hours/minutes ahead of now.

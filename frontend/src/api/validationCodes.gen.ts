@@ -175,6 +175,15 @@ export const Code = {
     BodyRequired: 'welcome_template.body_required',
     BodyTooLong: 'welcome_template.body_too_long',
   },
+  TextBlast: {
+    NotHost: 'text_blast.not_host',
+    EventCancelled: 'text_blast.event_cancelled',
+    NoRecipients: 'text_blast.no_recipients',
+    InvalidFilter: 'text_blast.invalid_filter',
+    NotConfigured: 'text_blast.not_configured',
+    SendFailed: 'text_blast.send_failed',
+    EventLimitReached: 'text_blast.event_limit_reached',
+  },
 } as const;
 
 export type ValidationCode =
@@ -300,7 +309,14 @@ export type ValidationCode =
   | 'cohost_invite.would_leave_hostless'
   | 'cohost_invite.event_is_past'
   | 'welcome_template.body_required'
-  | 'welcome_template.body_too_long';
+  | 'welcome_template.body_too_long'
+  | 'text_blast.not_host'
+  | 'text_blast.event_cancelled'
+  | 'text_blast.no_recipients'
+  | 'text_blast.invalid_filter'
+  | 'text_blast.not_configured'
+  | 'text_blast.send_failed'
+  | 'text_blast.event_limit_reached';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -426,4 +442,11 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'cohost_invite.event_is_past': [],
   'welcome_template.body_required': [],
   'welcome_template.body_too_long': ['max_length'],
+  'text_blast.not_host': [],
+  'text_blast.event_cancelled': [],
+  'text_blast.no_recipients': [],
+  'text_blast.invalid_filter': [],
+  'text_blast.not_configured': [],
+  'text_blast.send_failed': [],
+  'text_blast.event_limit_reached': ['limit'],
 };

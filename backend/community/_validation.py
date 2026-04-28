@@ -196,6 +196,15 @@ class Code:
         BODY_REQUIRED = "welcome_template.body_required"
         BODY_TOO_LONG = "welcome_template.body_too_long"  # params: { max_length: int }
 
+    class TextBlast:
+        NOT_HOST = "text_blast.not_host"
+        EVENT_CANCELLED = "text_blast.event_cancelled"
+        NO_RECIPIENTS = "text_blast.no_recipients"
+        INVALID_FILTER = "text_blast.invalid_filter"
+        NOT_CONFIGURED = "text_blast.not_configured"
+        SEND_FAILED = "text_blast.send_failed"
+        EVENT_LIMIT_REACHED = "text_blast.event_limit_reached"  # params: { limit: int }
+
 
 class ValidationException(Exception):
     """Raised by validators and route handlers to signal a structured error.

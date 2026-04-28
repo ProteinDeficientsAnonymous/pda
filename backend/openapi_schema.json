@@ -3716,6 +3716,153 @@
         "title": "SurveyResponseOut",
         "type": "object"
       },
+      "TextBlastDeliveryOut": {
+        "properties": {
+          "error_message": {
+            "title": "Error Message",
+            "type": "string"
+          },
+          "phone_number_masked": {
+            "title": "Phone Number Masked",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "user_name": {
+            "title": "User Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "user_name",
+          "phone_number_masked",
+          "status",
+          "error_message"
+        ],
+        "title": "TextBlastDeliveryOut",
+        "type": "object"
+      },
+      "TextBlastIn": {
+        "properties": {
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "recipient_filters": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Recipient Filters",
+            "type": "array"
+          }
+        },
+        "required": [
+          "message",
+          "recipient_filters"
+        ],
+        "title": "TextBlastIn",
+        "type": "object"
+      },
+      "TextBlastListOut": {
+        "properties": {
+          "blasts": {
+            "items": {
+              "$ref": "#/components/schemas/TextBlastOut"
+            },
+            "title": "Blasts",
+            "type": "array"
+          },
+          "blasts_remaining": {
+            "title": "Blasts Remaining",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "blasts",
+          "blasts_remaining"
+        ],
+        "title": "TextBlastListOut",
+        "type": "object"
+      },
+      "TextBlastOut": {
+        "properties": {
+          "deliveries": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TextBlastDeliveryOut"
+            },
+            "title": "Deliveries",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "recipient_count": {
+            "title": "Recipient Count",
+            "type": "integer"
+          },
+          "recipient_filters": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipient Filters",
+            "type": "array"
+          },
+          "sender_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Id"
+          },
+          "sender_name": {
+            "title": "Sender Name",
+            "type": "string"
+          },
+          "sent_at": {
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sender_id",
+          "sender_name",
+          "message",
+          "recipient_filters",
+          "recipient_count",
+          "sent_at"
+        ],
+        "title": "TextBlastOut",
+        "type": "object"
+      },
       "TokenOut": {
         "properties": {
           "access": {
@@ -7962,6 +8109,228 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/text-blasts/": {
+      "get": {
+        "operationId": "community__event_blasts_list_text_blasts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextBlastListOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ],
+        "summary": "List Text Blasts",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community__event_blasts_send_text_blast",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextBlastIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextBlastOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ],
+        "summary": "Send Text Blast",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/text-blasts/{blast_id}/": {
+      "get": {
+        "operationId": "community__event_blasts_get_text_blast_detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "blast_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Blast Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextBlastOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "JWTAuth": []
+          }
+        ],
+        "summary": "Get Text Blast Detail",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/faq/": {
       "get": {
         "operationId": "community__guidelines_get_faq",
@@ -9870,6 +10239,50 @@
           }
         ],
         "summary": "Get Survey Tallies",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/twilio/inbound/": {
+      "post": {
+        "description": "Receive an inbound SMS from Twilio. Signature-validated.\n\nOn \"M\" body: mute the most-recent event the sender received a blast for,\nthen reply with TwiML confirming the mute. Anything else: empty TwiML\n(Twilio's native STOP keyword handles full-account opt-out at the\ncarrier layer, before our webhook even fires).",
+        "operationId": "community__event_blasts_twilio_inbound",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Twilio Inbound",
         "tags": [
           "community"
         ]
