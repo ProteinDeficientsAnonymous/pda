@@ -156,6 +156,13 @@ WHATSAPP_BOT_URL = os.environ.get("WHATSAPP_BOT_URL", "http://localhost:3001")
 WHATSAPP_BOT_SECRET = os.environ.get("WHATSAPP_BOT_SECRET", "")
 WHATSAPP_GROUP_ID = os.environ.get("WHATSAPP_GROUP_ID", "")
 
+# Twilio (SMS). Optional integration — empty defaults; call sites check absence
+# and surface a structured "not configured" error rather than crashing.
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")  # E.164
+TWILIO_INBOUND_WEBHOOK_URL = os.environ.get("TWILIO_INBOUND_WEBHOOK_URL", "")
+
 # Logging
 LOGGING = {
     "version": 1,
