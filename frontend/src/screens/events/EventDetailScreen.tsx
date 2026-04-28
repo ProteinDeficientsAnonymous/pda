@@ -5,6 +5,7 @@ import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
+import { linkifyText } from '@/utils/linkifyText';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
@@ -49,7 +50,7 @@ export default function EventDetailScreen() {
       {event.description ? (
         <section className="mt-6">
           <h2 className="text-muted mb-2 text-sm font-medium">about</h2>
-          <p className="text-foreground whitespace-pre-wrap">{event.description}</p>
+          <p className="text-foreground whitespace-pre-wrap">{linkifyText(event.description)}</p>
         </section>
       ) : null}
 
