@@ -1,14 +1,18 @@
-// Always-visible zone: title, start + end, tbd toggle, location.
+// Always-visible zone: title, tbd toggle, start + end, poll button, location.
 // Description / visibility / event type moved into the details section.
 //
-// Poll integration: a "propose dates" button lives above the start/end
-// pickers. Two modes:
+// Layout order (when no poll/buffered dates): tbd toggle → start/end pickers
+// → centered "poll for dates" button. The tbd toggle stays above the pickers
+// so checking it cleanly hides the picker row without making any control
+// below shift in place.
+//
+// Poll integration: the "poll for dates" button has two modes:
 //   - create-flow (no existing event): opens PollCreateDialog in buffer
 //     mode; the parent queues Date[]s and fires them after useCreateEvent.
-//     Queued options hide the tbd toggle + pickers.
+//     Queued options replace the pickers + toggle with a summary card.
 //   - edit-flow (existing, no poll): opens PollCreateDialog in live mode,
 //     which POSTs immediately. Once the poll exists the parent re-renders
-//     with timeLocked=true and the create button disappears.
+//     with timeLocked=true and the button disappears.
 
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -81,18 +85,6 @@ export function EventFormBasics({
         />
       ) : (
         <>
-          {canShowProposeButton ? (
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setPollOpen(true);
-              }}
-              className="self-start"
-            >
-              poll for dates
-            </Button>
-          ) : null}
-
           <Toggle
             label="date & time tbd"
             checked={values.datetimeTbd}
@@ -122,6 +114,18 @@ export function EventFormBasics({
                 optional
               />
             </div>
+          ) : null}
+
+          {canShowProposeButton ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setPollOpen(true);
+              }}
+              className="self-center"
+            >
+              poll for dates
+            </Button>
           ) : null}
         </>
       )}
