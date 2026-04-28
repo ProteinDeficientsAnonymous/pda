@@ -26,12 +26,7 @@ export function EventAdminActions({ event }: Props) {
   const canEdit = isCreator || isCoHost || canManage;
   if (!canEdit) return null;
 
-  return (
-    <section className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-4">
-      <h2 className="text-muted mb-1 text-xs font-medium tracking-wide">event actions</h2>
-      <AdminActionRow event={event} isCreator={isCreator} canManage={canManage} />
-    </section>
-  );
+  return <AdminActionRow event={event} isCreator={isCreator} canManage={canManage} />;
 }
 
 function AdminActionRow({
@@ -94,7 +89,7 @@ function AdminActionRow({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         {canEditEvent ? (
           <Button variant="secondary" onClick={() => void navigate(`/events/${event.id}/edit`)}>
             edit

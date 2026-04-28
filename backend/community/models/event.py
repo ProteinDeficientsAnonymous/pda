@@ -95,9 +95,15 @@ class Event(models.Model):
 
     @property
     def is_past(self) -> bool:
+        # TBD events have no decided time, so they're explicitly not "past" —
+        # RSVPs, cohost invites, cancellations, etc. should all still apply.
+        # Treating them as past silently broke the RSVP section, the
+        # standalone-invited card, the cohost-invite banner, and admin filters.
+        if self.datetime_tbd:
+            return False
         cutoff = self.end_datetime or self.start_datetime
         if cutoff is None:
-            return True
+            return False
         return cutoff < timezone.now()
 
     @property

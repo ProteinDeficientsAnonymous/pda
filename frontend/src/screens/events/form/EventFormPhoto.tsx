@@ -125,7 +125,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
               📸
             </span>
             <span className="text-sm font-medium">add a cover photo</span>
-            <span className="text-brand-600/80 text-xs">tap to pick — landscape to portrait</span>
+            <span className="text-brand-600/80 text-xs">tap to pick</span>
           </span>
         )}
       </button>

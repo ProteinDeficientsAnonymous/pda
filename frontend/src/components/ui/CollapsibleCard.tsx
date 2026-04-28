@@ -14,8 +14,6 @@ import { cn } from '@/utils/cn';
 
 interface Props {
   title: string;
-  /** Decorative leading emoji/icon shown on the header. */
-  emoji?: string;
   /** Shown on the right of the header when collapsed and no error present. */
   summary?: ReactNode;
   /** Displayed as a red chip on the right when present (e.g. "1 issue"). */
@@ -29,7 +27,6 @@ interface Props {
 
 export function CollapsibleCard({
   title,
-  emoji,
   summary,
   error,
   defaultOpen = false,
@@ -57,11 +54,6 @@ export function CollapsibleCard({
         className="focus-visible:ring-brand-200 hover:bg-brand-50/50 flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <span className="flex items-center gap-2">
-          {emoji ? (
-            <span aria-hidden="true" className="text-base">
-              {emoji}
-            </span>
-          ) : null}
           <span className="text-foreground text-sm font-medium">{title}</span>
         </span>
         <span className="flex items-center gap-2">

@@ -100,6 +100,11 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
     )
     if time_fields_edited and hasattr(event, "poll") and event.poll.is_active:
         raise_validation(Code.Event.DATE_LOCKED_BY_POLL, status_code=400)
+    # Past events accept tweaks to most fields (description, links, etc.) but
+    # not new member invites — there's no event left to invite anyone to.
+    # Cohost invites have their own endpoint and gate on is_past separately.
+    if "invited_user_ids" in updates and event.is_past:
+        raise_validation(Code.Perm.DENIED, status_code=403, action="invite_to_past_event")
     effective_start = updates.get("start_datetime", event.start_datetime)
     effective_end = updates.get("end_datetime", event.end_datetime)
     effective_tbd = updates.get("datetime_tbd", event.datetime_tbd)

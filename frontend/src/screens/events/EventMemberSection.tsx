@@ -36,7 +36,9 @@ export function EventMemberSection({ event }: Props) {
   const canSeeInvited = isCoHost || canManageEvents;
   const isCancelled = event.status === EventStatus.Cancelled;
   const canInvite =
-    !isCancelled && (isCoHost || event.invitePermission === InvitePermission.AllMembers);
+    !isCancelled &&
+    !event.isPast &&
+    (isCoHost || event.invitePermission === InvitePermission.AllMembers);
   const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
   const showStandaloneInvited = !showRsvp && canSeeInvited && event.invitedCount > 0;
 

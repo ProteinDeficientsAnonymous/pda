@@ -40,7 +40,7 @@ export function EventAttendancePanel({ event }: Props) {
   const checkInOpen = isCheckInOpen(event);
 
   return (
-    <CollapsibleCard title="attendance" emoji="📋">
+    <CollapsibleCard title="attendance">
       {stats.isLoading ? (
         <p className="text-muted text-sm">loading stats…</p>
       ) : stats.isError || !stats.data ? (
