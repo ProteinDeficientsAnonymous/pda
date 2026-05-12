@@ -1,6 +1,7 @@
 // Hero cover photo for the event form. The whole banner is one big button —
-// tap anywhere to pick. Crop happens via the shared ImageCropDialog, which
-// lets the user freely drag/resize a crop box over the image.
+// tap anywhere to pick, or drag-and-drop an image onto it on desktop. Crop
+// happens via the shared ImageCropDialog, which lets the user freely
+// drag/resize a crop box over the image.
 // On create the cropped blob is staged and uploaded after the event POST
 // returns an id; on edit it uploads immediately.
 
@@ -18,6 +19,16 @@ const ALLOWED_MIME = [
   'image/heif',
 ];
 
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+const TYPE_ERROR = 'pick a jpeg, png, webp, gif, or heic image';
+const SIZE_ERROR = 'photo must be under 10 MB';
+
+function validateFile(f: File): string | null {
+  if (!ALLOWED_MIME.includes(f.type)) return TYPE_ERROR;
+  if (f.size > MAX_PHOTO_BYTES) return SIZE_ERROR;
+  return null;
+}
+
 interface Props {
   photoUrl: string;
   photoUpdatedAt: string | null;
@@ -29,9 +40,11 @@ interface Props {
 
 export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dragDepthRef = useRef(0);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
   const displayUrl = photoUrl
     ? photoUpdatedAt
@@ -45,20 +58,56 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
     if (!locked) inputRef.current?.click();
   }
 
+  function acceptFile(f: File) {
+    const err = validateFile(f);
+    if (err) {
+      setError(err);
+      return;
+    }
+    setFile(f);
+  }
+
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     setError(null);
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    if (!ALLOWED_MIME.includes(f.type)) {
-      setError('pick a jpeg, png, webp, gif, or heic image');
-      return;
-    }
-    if (f.size > 10 * 1024 * 1024) {
-      setError('photo must be under 10 MB');
-      return;
-    }
-    setFile(f);
+    acceptFile(f);
+  }
+
+  // Only treat drags carrying files as drop targets — ignore text/HTML drags.
+  function isFileDrag(e: React.DragEvent): boolean {
+    return Array.from(e.dataTransfer.types).includes('Files');
+  }
+
+  function onDragEnter(e: React.DragEvent) {
+    if (locked || !isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepthRef.current += 1;
+    setDragOver(true);
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    if (locked || !isFileDrag(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+
+  function onDragLeave(e: React.DragEvent) {
+    if (locked || !isFileDrag(e)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setDragOver(false);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    if (locked || !isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepthRef.current = 0;
+    setDragOver(false);
+    setError(null);
+    const f = e.dataTransfer.files[0];
+    if (!f) return;
+    acceptFile(f);
   }
 
   async function handleCrop(blob: Blob) {
@@ -99,6 +148,10 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
       <button
         type="button"
         onClick={open}
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
         disabled={locked}
         aria-label={hasPhoto ? 'change cover photo' : 'add a cover photo'}
         className={cn(
@@ -107,6 +160,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
           hasPhoto
             ? 'bg-surface-raised'
             : 'border-brand-200 bg-brand-50 aspect-video border-2 border-dashed',
+          dragOver && 'border-brand-500 ring-brand-300 ring-2',
           locked && 'cursor-not-allowed opacity-60',
         )}
       >
@@ -125,9 +179,17 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
               📸
             </span>
             <span className="text-sm font-medium">add a cover photo</span>
-            <span className="text-brand-600/80 text-xs">tap to pick</span>
+            <span className="text-brand-600/80 text-xs">tap or drop a photo</span>
           </span>
         )}
+        {dragOver ? (
+          <div
+            aria-hidden="true"
+            className="bg-brand-50/90 text-brand-700 pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-medium"
+          >
+            drop to use this photo
+          </div>
+        ) : null}
       </button>
 
       {hasPhoto && onDelete ? (
