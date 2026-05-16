@@ -17,6 +17,7 @@ from community._event_comment_schemas import (
     EventCommentListOut,
     EventCommentOut,
     EventCommentReplyOut,
+    ReactionToggleIn,
 )
 from community._events import _enforce_event_read_visibility
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
@@ -26,6 +27,7 @@ from community.models import (
     EventComment,
     EventCommentReaction,
     EventRSVP,
+    ReactionEmoji,
 )
 
 router = Router()
@@ -244,3 +246,58 @@ def delete_comment(request, event_id: UUID, comment_id: UUID):
             comment.deleted_at = timezone.now()
             comment.save(update_fields=["deleted_at", "updated_at"])
     return Status(204, None)
+
+
+_VALID_EMOJIS = {e.value for e in ReactionEmoji}
+
+
+@router.post(
+    "/events/{event_id}/comments/{comment_id}/reactions/",
+    response={
+        200: EventCommentOut,
+        403: ErrorOut,
+        404: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
+    auth=JWTAuth(),
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
+def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: ReactionToggleIn):
+    try:
+        event = (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "invited_users")
+            .get(id=event_id)
+        )
+    except Event.DoesNotExist:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    user = request.auth
+    _enforce_event_read_visibility(event, user)
+    _require_rsvp_for_post(event, user)
+    if payload.emoji not in _VALID_EMOJIS:
+        raise_validation(Code.Comment.INVALID_EMOJI, status_code=422)
+    try:
+        comment = EventComment.objects.get(id=comment_id, event=event)
+    except EventComment.DoesNotExist:
+        raise_validation(Code.Comment.NOT_FOUND, status_code=404)
+    if comment.deleted_at is not None:
+        raise_validation(Code.Comment.NOT_FOUND, status_code=404)
+    with transaction.atomic():
+        existing = EventCommentReaction.objects.filter(
+            comment=comment, user=user, emoji=payload.emoji
+        ).first()
+        if existing:
+            existing.delete()
+        else:
+            EventCommentReaction.objects.create(comment=comment, user=user, emoji=payload.emoji)
+    # The toggle endpoint returns the parent top-level comment so the FE can
+    # update either a top-level row (when comment is top-level) or the reply's
+    # row (when comment is a reply). When it's a reply, we return the parent.
+    target_id = comment.id if comment.parent_id is None else comment.parent_id
+    target = (
+        EventComment.objects.select_related("author")
+        .prefetch_related("replies__author", "reactions", "replies__reactions")
+        .get(id=target_id)
+    )
+    return Status(200, _comment_out(target, event, user))
