@@ -1,15 +1,17 @@
 """EventComment endpoints — list, post, reply, delete, react."""
 
-from __future__ import annotations
-
 from uuid import UUID
 
 from config.media_proxy import media_path
+from config.ratelimit import rate_limit
+from django.db import transaction
 from ninja import Router
 from ninja.responses import Status
+from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._event_comment_schemas import (
+    CommentBodyIn,
     CommentReactionSummaryOut,
     EventCommentListOut,
     EventCommentOut,
@@ -124,6 +126,11 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
     )
 
 
+def _require_rsvp_for_post(event: Event, user) -> None:
+    if not _viewer_has_rsvp(event, user):
+        raise_validation(Code.Comment.RSVP_REQUIRED, status_code=403)
+
+
 # ---------- endpoints ----------
 
 
@@ -144,3 +151,26 @@ def list_comments(request, event_id: UUID):
     auth_user = _authenticated_user(request.auth)
     _enforce_event_read_visibility(event, auth_user)
     return Status(200, _build_list_out(event, auth_user))
+
+
+@router.post(
+    "/events/{event_id}/comments/",
+    response={201: EventCommentOut, 403: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
+    auth=JWTAuth(),
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
+def post_comment(request, event_id: UUID, payload: CommentBodyIn):
+    try:
+        event = (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "invited_users")
+            .get(id=event_id)
+        )
+    except Event.DoesNotExist:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    user = request.auth
+    _enforce_event_read_visibility(event, user)
+    _require_rsvp_for_post(event, user)
+    with transaction.atomic():
+        comment = EventComment.objects.create(event=event, author=user, body=payload.body)
+    return Status(201, _comment_out(comment, event, user))
