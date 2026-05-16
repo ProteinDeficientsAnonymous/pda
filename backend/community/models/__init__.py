@@ -19,6 +19,7 @@ from community.models.choices import (
     SurveyVisibility,
 )
 from community.models.cohost_invite import EventCoHostInvite
+from community.models.comment import EventComment, EventCommentReaction, ReactionEmoji
 from community.models.content import (
     FAQ,
     CommunityGuidelines,
@@ -72,6 +73,10 @@ __all__ = [
     # join form
     "JoinFormQuestion",
     "JoinRequest",
+    # comment
+    "EventComment",
+    "EventCommentReaction",
+    "ReactionEmoji",
     # poll
     "EventPoll",
     "PollOption",
