@@ -181,6 +181,7 @@ class EventListOut(BaseModel):
     attending_count: int = 0
     waitlisted_count: int = 0
     invited_count: int = 0
+    comment_count: int = 0
     is_past: bool = False
     status: str = "active"
 
@@ -224,6 +225,7 @@ class EventOut(BaseModel):
     attending_count: int = 0
     waitlisted_count: int = 0
     invited_count: int = 0
+    comment_count: int = 0
     survey_slugs: list[str] = []
     datetime_poll_slug: str | None = None
     has_poll: bool = False

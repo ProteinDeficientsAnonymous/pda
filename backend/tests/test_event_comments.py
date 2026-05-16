@@ -405,3 +405,32 @@ class TestCommentVisibility:
             **rsvp_headers,
         )
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestEventOutCommentCount:
+    def test_event_list_includes_comment_count(
+        self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
+    ):
+        EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="one")
+        c2 = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="two")
+        # Deleted comments do not count.
+        c2.deleted_at = timezone.now()
+        c2.save(update_fields=["deleted_at"])
+        response = api_client.get("/api/community/events/", **rsvp_headers)
+        assert response.status_code == 200
+        events_data = response.json()
+        # EventListOut is returned as a bare list (see response={200: list[EventListOut]} in _events.py:155).
+        target = next(e for e in events_data if e["id"] == str(event_with_rsvp.id))
+        assert target["comment_count"] == 1
+
+    def test_event_detail_includes_comment_count(
+        self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
+    ):
+        EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="one")
+        response = api_client.get(
+            f"/api/community/events/{event_with_rsvp.id}/",
+            **rsvp_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["comment_count"] == 1

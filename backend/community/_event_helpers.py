@@ -301,6 +301,9 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     co_host_invite_ids = _accepted_invite_ids_for_co_hosts(event, co_hosts)
+    comment_count = getattr(event, "comment_count", None)
+    if comment_count is None:
+        comment_count = event.comments.filter(deleted_at__isnull=True).count()
     return EventOut(
         id=str(event.id),
         title=event.title,
@@ -324,6 +327,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         attending_count=_attending_headcount(event),
         waitlisted_count=_waitlisted_count(event),
         invited_count=len(all_invited),
+        comment_count=comment_count,
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
         created_by_name=_get_creator_name(creator),
         created_by_photo_url=media_path(creator.profile_photo) if creator else "",

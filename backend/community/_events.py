@@ -6,7 +6,7 @@ from uuid import UUID
 from config.audit import audit_log
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -121,6 +121,13 @@ def _build_events_queryset(status: str, auth_user, is_authed):
         return (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "invited_users", "rsvps", "poll")
+            .annotate(
+                comment_count=Count(
+                    "comments",
+                    filter=Q(comments__deleted_at__isnull=True),
+                    distinct=True,
+                )
+            )
             .filter(status=status)
             .filter(Q(created_by=auth_user) | Q(co_hosts=auth_user))
             .distinct()
@@ -128,6 +135,13 @@ def _build_events_queryset(status: str, auth_user, is_authed):
     qs = (
         Event.objects.select_related("created_by")
         .prefetch_related("co_hosts", "invited_users", "rsvps", "poll")
+        .annotate(
+            comment_count=Count(
+                "comments",
+                filter=Q(comments__deleted_at__isnull=True),
+                distinct=True,
+            )
+        )
         .filter(status=EventStatus.ACTIVE)
     )
     if not is_authed:
@@ -196,6 +210,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 attending_count=_attending_headcount(e),
                 waitlisted_count=_waitlisted_count(e),
                 invited_count=e.invited_users.count(),
+                comment_count=e.comment_count,
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
                 is_past=e.is_past,
