@@ -79,6 +79,7 @@ class EventCommentReaction(models.Model):
     user = models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE,
+        related_name="event_comment_reactions",
     )
     emoji = models.CharField(
         max_length=8,

@@ -56,6 +56,22 @@ class TestEventCommentModel:
         with pytest.raises(ValidationError):
             nested.full_clean()
 
+    def test_reply_cross_event_fails_clean(self, test_user):
+        event_a = Event.objects.create(
+            title="Event A",
+            start_datetime="2030-01-01T00:00:00Z",
+            created_by=test_user,
+        )
+        event_b = Event.objects.create(
+            title="Event B",
+            start_datetime="2030-01-01T00:00:00Z",
+            created_by=test_user,
+        )
+        parent = EventComment.objects.create(event=event_a, author=test_user, body="parent")
+        cross = EventComment(event=event_b, author=test_user, body="cross", parent=parent)
+        with pytest.raises(ValidationError):
+            cross.full_clean()
+
 
 @pytest.mark.django_db
 class TestEventCommentReactionModel:
