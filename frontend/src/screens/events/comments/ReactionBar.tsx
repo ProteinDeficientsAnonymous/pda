@@ -5,7 +5,7 @@ interface Props {
   reactions: CommentReactionSummary[];
   canReact: boolean;
   onToggle: (emoji: ReactionEmojiValue) => void;
-  disabledReason?: string;
+  disabledReason?: string | undefined;
 }
 
 export function ReactionBar({ reactions, canReact, onToggle, disabledReason }: Props) {
