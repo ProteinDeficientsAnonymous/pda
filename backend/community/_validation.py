@@ -65,6 +65,14 @@ class Code:
         MIN_TWO_OPTIONS = "poll.min_two_options"
         INVALID_AVAILABILITY = "poll.invalid_availability"
 
+    class Comment:
+        NOT_FOUND = "comment.not_found"
+        REPLY_DEPTH_EXCEEDED = "comment.reply_depth_exceeded"
+        INVALID_EMOJI = "comment.invalid_emoji"
+        RSVP_REQUIRED = "comment.rsvp_required"
+        PERM_DENIED = "comment.perm_denied"
+        EVENT_MISMATCH = "comment.event_mismatch"
+
     class Url:
         INVALID = "url.invalid"
         PATH_REQUIRED = "url.path_required"
