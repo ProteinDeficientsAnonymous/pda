@@ -33,9 +33,6 @@ describe('CommentComposer', () => {
   it('shows counter warning color near limit', () => {
     render(<CommentComposer onSubmit={vi.fn()} submitting={false} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'x'.repeat(460) } });
-    expect(screen.getByTestId('comment-char-counter')).toHaveAttribute(
-      'data-state',
-      'warning',
-    );
+    expect(screen.getByTestId('comment-char-counter')).toHaveAttribute('data-state', 'warning');
   });
 });

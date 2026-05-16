@@ -12,7 +12,10 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/auth/store', () => {
-  const state = { status: 'authed', user: { id: 'u-me', displayName: 'Me', profilePhotoUrl: null } };
+  const state = {
+    status: 'authed',
+    user: { id: 'u-me', displayName: 'Me', profilePhotoUrl: null },
+  };
   const useAuthStore = vi.fn((selector?: (s: typeof state) => unknown) =>
     selector ? selector(state) : state,
   ) as unknown as {
@@ -38,8 +41,12 @@ function renderCard() {
   );
 }
 
-beforeEach(() => { vi.clearAllMocks(); });
-afterEach(() => { vi.restoreAllMocks(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('EventCommentsCard', () => {
   it('shows the composer when the viewer can post', async () => {

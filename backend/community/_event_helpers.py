@@ -286,6 +286,14 @@ def _accepted_invite_ids_for_co_hosts(event: Event, co_hosts: list) -> list[str 
     return [str(invite_id_by_user[u.id]) if u.id in invite_id_by_user else None for u in co_hosts]
 
 
+def _resolve_comment_count(event: Event) -> int:
+    """Read the annotated comment_count, falling back to a per-event count query."""
+    annotated = getattr(event, "comment_count", None)
+    if annotated is not None:
+        return annotated
+    return event.comments.filter(deleted_at__isnull=True).count()
+
+
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
@@ -301,9 +309,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     co_host_invite_ids = _accepted_invite_ids_for_co_hosts(event, co_hosts)
-    comment_count = getattr(event, "comment_count", None)
-    if comment_count is None:
-        comment_count = event.comments.filter(deleted_at__isnull=True).count()
+    comment_count = _resolve_comment_count(event)
     return EventOut(
         id=str(event.id),
         title=event.title,

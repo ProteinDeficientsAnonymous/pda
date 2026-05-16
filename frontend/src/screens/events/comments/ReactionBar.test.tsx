@@ -13,7 +13,7 @@ const summary = (emoji: string, count: number, mine = false): CommentReactionSum
 });
 
 describe('ReactionBar', () => {
-  it('renders all 6 emojis and shows counts > 0', () => {
+  it('renders only existing reactions with their counts', () => {
     render(
       <ReactionBar
         reactions={[summary(ReactionEmoji.Heart, 3, true)]}
@@ -24,25 +24,38 @@ describe('ReactionBar', () => {
     const heart = screen.getByRole('button', { name: /❤️/u });
     expect(heart).toHaveAttribute('aria-pressed', 'true');
     expect(heart).toHaveTextContent('3');
+    // Other emojis are not in the bar; they're only in the picker (closed).
+    expect(screen.queryByRole('button', { name: /🔥/u })).not.toBeInTheDocument();
   });
 
-  it('omits count when zero', () => {
+  it('shows the add-reaction button when canReact', () => {
     render(<ReactionBar reactions={[]} canReact onToggle={vi.fn()} />);
-    const fire = screen.getByRole('button', { name: /🔥/u });
-    expect(fire).not.toHaveTextContent('0');
+    expect(screen.getByRole('button', { name: /add reaction/i })).toBeInTheDocument();
   });
 
-  it('disables all buttons when canReact is false', () => {
+  it('hides the add-reaction button when canReact is false', () => {
     render(<ReactionBar reactions={[]} canReact={false} onToggle={vi.fn()} />);
-    for (const btn of screen.getAllByRole('button')) {
-      expect(btn).toBeDisabled();
-    }
+    expect(screen.queryByRole('button', { name: /add reaction/i })).not.toBeInTheDocument();
   });
 
-  it('calls onToggle with the emoji', () => {
+  it('opens the picker on add-reaction click and toggles the chosen emoji', () => {
     const onToggle = vi.fn();
     render(<ReactionBar reactions={[]} canReact onToggle={onToggle} />);
+    fireEvent.click(screen.getByRole('button', { name: /add reaction/i }));
     fireEvent.click(screen.getByRole('button', { name: /🌱/u }));
     expect(onToggle).toHaveBeenCalledWith(ReactionEmoji.Seedling);
+  });
+
+  it('clicking an existing reaction toggles it', () => {
+    const onToggle = vi.fn();
+    render(
+      <ReactionBar
+        reactions={[summary(ReactionEmoji.Heart, 1, true)]}
+        canReact
+        onToggle={onToggle}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /❤️/u }));
+    expect(onToggle).toHaveBeenCalledWith(ReactionEmoji.Heart);
   });
 });

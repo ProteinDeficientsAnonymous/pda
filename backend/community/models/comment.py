@@ -8,9 +8,13 @@ docs/superpowers/specs/2026-05-15-event-comments-reactions-design.md.
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.db import models
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
 
 
 class ReactionEmoji(models.TextChoices):
@@ -23,6 +27,13 @@ class ReactionEmoji(models.TextChoices):
 
 
 class EventComment(models.Model):
+    if TYPE_CHECKING:
+        event_id: uuid.UUID
+        author_id: uuid.UUID
+        parent_id: uuid.UUID | None
+        replies: Manager[EventComment]
+        reactions: Manager[EventCommentReaction]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey(
         "community.Event",
@@ -70,6 +81,10 @@ class EventComment(models.Model):
 
 
 class EventCommentReaction(models.Model):
+    if TYPE_CHECKING:
+        comment_id: uuid.UUID
+        user_id: uuid.UUID
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     comment = models.ForeignKey(
         EventComment,

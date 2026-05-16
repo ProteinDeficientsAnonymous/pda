@@ -20,13 +20,7 @@ interface Props {
   reactDisabledReason?: string | undefined;
 }
 
-export function CommentItem({
-  comment,
-  eventId,
-  canReact,
-  canReply,
-  reactDisabledReason,
-}: Props) {
+export function CommentItem({ comment, eventId, canReact, canReply, reactDisabledReason }: Props) {
   const toggleReaction = useToggleReaction(eventId);
   const deleteComment = useDeleteComment(eventId);
   const postReply = usePostReply(eventId);
@@ -40,7 +34,11 @@ export function CommentItem({
   const handleDelete = () => {
     deleteComment.mutate(
       { commentId: comment.id },
-      { onSuccess: () => { setConfirmOpen(false); } },
+      {
+        onSuccess: () => {
+          setConfirmOpen(false);
+        },
+      },
     );
   };
 
@@ -57,15 +55,9 @@ export function CommentItem({
     <article className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         {comment.authorPhotoUrl ? (
-          <img
-            src={comment.authorPhotoUrl}
-            alt=""
-            className="h-8 w-8 rounded-full object-cover"
-          />
+          <img src={comment.authorPhotoUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
         ) : null}
-        <span className="text-sm font-medium">
-          {comment.authorDisplayName.toLowerCase()}
-        </span>
+        <span className="text-sm font-medium">{comment.authorDisplayName.toLowerCase()}</span>
         <span className="text-foreground-tertiary text-xs">
           {formatRelative(comment.createdAt)}
         </span>
@@ -87,7 +79,9 @@ export function CommentItem({
             {canReply ? (
               <button
                 type="button"
-                onClick={() => { setReplyOpen((v) => !v); }}
+                onClick={() => {
+                  setReplyOpen((v) => !v);
+                }}
                 className="text-foreground-tertiary text-xs hover:underline"
               >
                 {replyOpen ? 'cancel' : 'reply'}
@@ -96,7 +90,9 @@ export function CommentItem({
             {comment.canDelete ? (
               <button
                 type="button"
-                onClick={() => { setConfirmOpen(true); }}
+                onClick={() => {
+                  setConfirmOpen(true);
+                }}
                 className="text-foreground-tertiary text-xs hover:underline"
               >
                 delete
@@ -132,7 +128,9 @@ export function CommentItem({
       ) : null}
       <DeleteCommentDialog
         open={confirmOpen}
-        onClose={() => { setConfirmOpen(false); }}
+        onClose={() => {
+          setConfirmOpen(false);
+        }}
         onConfirm={handleDelete}
         submitting={deleteComment.isPending}
       />

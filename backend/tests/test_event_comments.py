@@ -71,15 +71,38 @@ class TestPostComment:
         )
         assert response.status_code == 401
 
-    def test_post_requires_rsvp(self, api_client, auth_headers, event):
+    def test_post_requires_rsvp(self, api_client, event):
+        # A logged-in user who is NOT the creator, not a co-host, not an admin,
+        # and has no RSVP. Hosts/admins bypass the RSVP gate; bystanders don't.
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+
+        bystander = User.objects.create_user(
+            phone_number="+12025550909",
+            password="bystanderpass",
+            display_name="Bystander",
+        )
+        refresh = RefreshToken.for_user(bystander)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/",
             data=json.dumps({"body": "hi"}),
             content_type="application/json",
-            **auth_headers,
+            **headers,
         )
         assert response.status_code == 403
         assert response.json()["detail"][0]["code"] == "comment.rsvp_required"
+
+    def test_event_creator_can_post_without_rsvp(self, api_client, auth_headers, event):
+        # test_user is event.created_by; no EventRSVP exists for them.
+        response = api_client.post(
+            f"/api/community/events/{event.id}/comments/",
+            data=json.dumps({"body": "host comment"}),
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 201, response.content
+        assert response.json()["body"] == "host comment"
 
     def test_post_creates_comment(self, api_client, rsvp_headers, event_with_rsvp):
         response = api_client.post(
@@ -325,14 +348,24 @@ class TestReactionToggle:
         assert response.status_code == 422
         assert response.json()["detail"][0]["code"] == "comment.invalid_emoji"
 
-    def test_reaction_requires_rsvp(self, api_client, auth_headers, event):
-        # auth_headers is test_user, who created the event but did not RSVP
+    def test_reaction_requires_rsvp(self, api_client, event):
+        # A bystander (not creator, not co-host, not admin, no RSVP).
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+
+        bystander = User.objects.create_user(
+            phone_number="+12025551010",
+            password="bystanderpass",
+            display_name="Bystander",
+        )
+        refresh = RefreshToken.for_user(bystander)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
         comment = EventComment.objects.create(event=event, author=event.created_by, body="hi")
         response = api_client.post(
             f"/api/community/events/{event.id}/comments/{comment.id}/reactions/",
             data=json.dumps({"emoji": "❤️"}),
             content_type="application/json",
-            **auth_headers,
+            **headers,
         )
         assert response.status_code == 403
 

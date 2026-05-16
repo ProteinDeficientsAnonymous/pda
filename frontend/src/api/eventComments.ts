@@ -5,12 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
 import { eventKeys } from './events';
-import {
-  mapComment,
-  mapCommentList,
-  mapReply,
-  type WireCommentList,
-} from './eventCommentMapper';
+import { mapComment, mapCommentList, mapReply, type WireCommentList } from './eventCommentMapper';
 import { useAuthStore } from '@/auth/store';
 import type {
   EventComment,
@@ -155,9 +150,7 @@ export function useDeleteComment(eventId: string) {
             return {
               ...c,
               replies: c.replies.map((r) =>
-                r.id === commentId
-                  ? { ...r, isDeleted: true, body: '', reactions: [] }
-                  : r,
+                r.id === commentId ? { ...r, isDeleted: true, body: '', reactions: [] } : r,
               ),
             };
           }),
@@ -187,15 +180,17 @@ interface ToggleReactionVars {
   emoji: ReactionEmojiValue;
 }
 
-function toggleOnRow<T extends EventCommentReply>(row: T, commentId: string, emoji: ReactionEmojiValue): T {
+function toggleOnRow<T extends EventCommentReply>(
+  row: T,
+  commentId: string,
+  emoji: ReactionEmojiValue,
+): T {
   if (row.id !== commentId) return row;
   const existing = row.reactions.find((r) => r.emoji === emoji);
   let next = row.reactions.slice();
   if (existing?.reactedByMe) {
     next = next
-      .map((r) =>
-        r.emoji === emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r,
-      )
+      .map((r) => (r.emoji === emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r))
       .filter((r) => r.count > 0);
   } else if (existing) {
     next = next.map((r) =>

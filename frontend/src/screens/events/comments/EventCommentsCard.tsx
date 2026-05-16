@@ -57,9 +57,7 @@ export function EventCommentsCard({ eventId }: Props) {
     return (
       <section className="border-border-strong bg-surface rounded-lg border p-4">
         <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">comments</h2>
-        <p className="text-foreground-tertiary text-sm">
-          couldn't load comments — try refreshing.
-        </p>
+        <p className="text-foreground-tertiary text-sm">couldn't load comments — try refreshing.</p>
       </section>
     );
   }

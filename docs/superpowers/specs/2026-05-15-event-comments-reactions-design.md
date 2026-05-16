@@ -57,7 +57,7 @@ Two boolean predicates govern the UI and the API:
 
 Notes:
 
-- Hosts and admins do **not** bypass `can_post_comments`. If they want to comment, they RSVP. They retain a separate moderation power (deleting other people's comments).
+- Hosts (event creator + co-hosts) and admins (`ManageEvents`) **do** bypass the RSVP requirement for posting. The original spec said they shouldn't; reversed during manual QA because requiring a host to RSVP to their own event in order to chat about it was friction without value.
 - `can_delete` is computed per-comment: `True` if the viewer is the author, the event creator, a co-host, or holds the `ManageEvents` permission.
 - Non-member commenting is explicitly deferred until the guest-RSVP flow lands and produces a stable identity (session token, magic link, etc.).
 

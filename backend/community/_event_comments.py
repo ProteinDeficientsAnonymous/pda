@@ -42,6 +42,26 @@ def _viewer_has_rsvp(event: Event, user) -> bool:
     return EventRSVP.objects.filter(event=event, user=user).exists()
 
 
+def _can_post_comments(
+    event: Event,
+    user,
+    co_host_pks: set[str] | None = None,
+) -> bool:
+    """Posting requires either an RSVP or host/admin privilege on the event."""
+    if user is None:
+        return False
+    if user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    if event.created_by_id == user.pk:
+        return True
+    if co_host_pks is not None:
+        if str(user.pk) in co_host_pks:
+            return True
+    elif event.co_hosts.filter(pk=user.pk).exists():
+        return True
+    return _viewer_has_rsvp(event, user)
+
+
 def _can_delete_comment(
     event: Event,
     comment: EventComment,
@@ -133,7 +153,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
         .prefetch_related("replies__author", "reactions", "replies__reactions")
         .order_by("-created_at")
     )
-    can_post = viewer is not None and _viewer_has_rsvp(event, viewer)
+    can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
     if viewer is None:
         reason: str | None = "login_required"
     elif not can_post:
@@ -148,7 +168,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
 
 
 def _require_rsvp_for_post(event: Event, user) -> None:
-    if not _viewer_has_rsvp(event, user):
+    if not _can_post_comments(event, user):
         raise_validation(Code.Comment.RSVP_REQUIRED, status_code=403)
 
 

@@ -12,8 +12,7 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/auth/store', () => ({
-  useAuthStore: (selector: (s: { status: string }) => unknown) =>
-    selector({ status: 'authed' }),
+  useAuthStore: (selector: (s: { status: string }) => unknown) => selector({ status: 'authed' }),
 }));
 
 import type { EventComment } from '@/models/eventComment';

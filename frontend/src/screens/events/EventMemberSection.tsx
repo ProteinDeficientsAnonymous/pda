@@ -65,8 +65,8 @@ export function EventMemberSection({ event }: Props) {
         </Card>
       ) : null}
       {canInvite ? <InviteSection event={event} /> : null}
-      {canSeeInvited && event.rsvpEnabled ? <EventAttendancePanel event={event} /> : null}
       <EventCommentsCard eventId={event.id} />
+      {canSeeInvited && event.rsvpEnabled ? <EventAttendancePanel event={event} /> : null}
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
     </div>

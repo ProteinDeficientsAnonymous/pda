@@ -8,7 +8,10 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/auth/store', () => {
-  const state = { status: 'authed', user: { id: 'u-me', displayName: 'Me', profilePhotoUrl: null } };
+  const state = {
+    status: 'authed',
+    user: { id: 'u-me', displayName: 'Me', profilePhotoUrl: null },
+  };
   const useAuthStore = vi.fn((selector?: (s: typeof state) => unknown) =>
     selector ? selector(state) : state,
   ) as unknown as {
@@ -76,9 +79,7 @@ describe('useEventComments', () => {
       canPost: true,
       cannotPostReason: null,
     });
-    expect(mockedGet).toHaveBeenCalledWith(
-      `/api/community/events/${EVENT_ID}/comments/`,
-    );
+    expect(mockedGet).toHaveBeenCalledWith(`/api/community/events/${EVENT_ID}/comments/`);
   });
 
   it('maps cannot_post_reason correctly', async () => {
@@ -137,7 +138,14 @@ describe('useDeleteComment', () => {
     let resolveDelete: (() => void) | undefined;
     mockedDelete.mockReturnValueOnce(
       new Promise((resolve) => {
-        resolveDelete = () => resolve({ data: undefined, status: 204, statusText: 'No Content', headers: {}, config: {} as never });
+        resolveDelete = () =>
+          resolve({
+            data: undefined,
+            status: 204,
+            statusText: 'No Content',
+            headers: {},
+            config: {} as never,
+          });
       }),
     );
     // invalidateQueries triggers a refetch — stub it
@@ -284,9 +292,9 @@ describe('useToggleReaction', () => {
 
     const { result } = renderHook(() => useToggleReaction(EVENT_ID), { wrapper: Wrapper });
 
-    await expect(
-      result.current.mutateAsync({ commentId: 'c-1', emoji: '👍' }),
-    ).rejects.toThrow('network fail');
+    await expect(result.current.mutateAsync({ commentId: 'c-1', emoji: '👍' })).rejects.toThrow(
+      'network fail',
+    );
 
     const rolledBack = qc.getQueryData<ReturnType<typeof mapCommentList>>(key)!;
     const reaction = rolledBack.items[0]?.reactions.find((r) => r.emoji === '👍');

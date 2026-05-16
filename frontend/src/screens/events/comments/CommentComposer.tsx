@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
-import { Textarea } from '@/components/ui/Textarea';
 
 const MAX = 500;
 const WARN = 450;
@@ -55,8 +54,8 @@ export function CommentComposer({
 
   return (
     <div className="flex flex-col gap-2">
-      <Textarea
-        label={label}
+      <textarea
+        aria-label={label}
         value={value}
         onChange={(e) => {
           setValue(e.target.value);
@@ -71,6 +70,7 @@ export function CommentComposer({
             void submit();
           }
         }}
+        className="focus:border-brand-500 focus:ring-brand-200 border-border-strong bg-surface min-h-[80px] w-full rounded-md border px-3 py-2 text-sm transition-colors outline-none focus:ring-2"
       />
       <div className="flex items-center justify-between">
         <span
@@ -80,7 +80,12 @@ export function CommentComposer({
         >
           {value.length}/{MAX}
         </span>
-        <Button onClick={() => { void submit(); }} disabled={disabled}>
+        <Button
+          onClick={() => {
+            void submit();
+          }}
+          disabled={disabled}
+        >
           post
         </Button>
       </div>
