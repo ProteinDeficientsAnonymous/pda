@@ -42,7 +42,12 @@ def _viewer_has_rsvp(event: Event, user) -> bool:
     return EventRSVP.objects.filter(event=event, user=user).exists()
 
 
-def _can_delete_comment(event: Event, comment: EventComment, user) -> bool:
+def _can_delete_comment(
+    event: Event,
+    comment: EventComment,
+    user,
+    co_host_pks: set[str] | None = None,
+) -> bool:
     """Authors can always delete their own; creator / co-host / MANAGE_EVENTS can delete others'."""
     if user is None:
         return False
@@ -52,6 +57,8 @@ def _can_delete_comment(event: Event, comment: EventComment, user) -> bool:
         return True
     if event.created_by_id == user.pk:
         return True
+    if co_host_pks is not None:
+        return str(user.pk) in co_host_pks
     return event.co_hosts.filter(pk=user.pk).exists()
 
 
@@ -76,7 +83,12 @@ def _safe_photo_url(user) -> str:
     return media_path(user.profile_photo)
 
 
-def _comment_reply_out(comment: EventComment, event: Event, viewer) -> EventCommentReplyOut:
+def _comment_reply_out(
+    comment: EventComment,
+    event: Event,
+    viewer,
+    co_host_pks: set[str] | None = None,
+) -> EventCommentReplyOut:
     is_deleted = comment.deleted_at is not None
     reactions = (
         []
@@ -95,20 +107,26 @@ def _comment_reply_out(comment: EventComment, event: Event, viewer) -> EventComm
         is_deleted=is_deleted,
         created_at=comment.created_at,
         reactions=reactions,
-        can_delete=_can_delete_comment(event, comment, viewer),
+        can_delete=_can_delete_comment(event, comment, viewer, co_host_pks=co_host_pks),
     )
 
 
-def _comment_out(comment: EventComment, event: Event, viewer) -> EventCommentOut:
+def _comment_out(
+    comment: EventComment,
+    event: Event,
+    viewer,
+    co_host_pks: set[str] | None = None,
+) -> EventCommentOut:
     reply_list = sorted(comment.replies.all(), key=lambda r: r.created_at)
-    base = _comment_reply_out(comment, event, viewer)
+    base = _comment_reply_out(comment, event, viewer, co_host_pks=co_host_pks)
     return EventCommentOut(
         **base.model_dump(),
-        replies=[_comment_reply_out(r, event, viewer) for r in reply_list],
+        replies=[_comment_reply_out(r, event, viewer, co_host_pks=co_host_pks) for r in reply_list],
     )
 
 
 def _build_list_out(event: Event, viewer) -> EventCommentListOut:
+    co_host_pks = {str(u.pk) for u in event.co_hosts.all()}  # uses prefetch cache
     comments = (
         EventComment.objects.filter(event=event, parent__isnull=True)
         .select_related("author")
@@ -123,7 +141,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
     else:
         reason = None
     return EventCommentListOut(
-        items=[_comment_out(c, event, viewer) for c in comments],
+        items=[_comment_out(c, event, viewer, co_host_pks=co_host_pks) for c in comments],
         can_post=can_post,
         cannot_post_reason=reason,
     )

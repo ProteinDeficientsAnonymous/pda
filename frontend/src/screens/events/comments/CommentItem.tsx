@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
+import { toast } from 'sonner';
+
 import { useDeleteComment, usePostReply, useToggleReaction } from '@/api/eventComments';
+import { extractApiError } from '@/api/apiErrors';
 import type { EventComment, ReactionEmojiValue } from '@/models/eventComment';
 
 import { CommentComposer } from './CommentComposer';
@@ -41,11 +44,13 @@ export function CommentItem({
     );
   };
 
-  const handleSubmitReply = (body: string) => {
-    postReply.mutate(
-      { parentId: comment.id, body },
-      { onSuccess: () => { setReplyOpen(false); } },
-    );
+  const handleSubmitReply = async (body: string) => {
+    try {
+      await postReply.mutateAsync({ parentId: comment.id, body });
+      setReplyOpen(false);
+    } catch (err) {
+      toast.error(extractApiError(err) ?? "couldn't post your reply");
+    }
   };
 
   return (

@@ -1,4 +1,7 @@
+import { toast } from 'sonner';
+
 import { useEventComments, usePostComment } from '@/api/eventComments';
+import { extractApiError } from '@/api/apiErrors';
 import type { CannotPostReason } from '@/models/eventComment';
 
 import { CommentComposer } from './CommentComposer';
@@ -22,7 +25,7 @@ function ComposerOrPrompt({
 }: {
   canPost: boolean;
   cannotPostReason: CannotPostReason | null | undefined;
-  onSubmit: (body: string) => void;
+  onSubmit: (body: string) => void | Promise<void>;
   submitting: boolean;
 }) {
   if (canPost) {
@@ -70,7 +73,13 @@ export function EventCommentsCard({ eventId }: Props) {
       <ComposerOrPrompt
         canPost={data.canPost}
         cannotPostReason={data.cannotPostReason}
-        onSubmit={(body) => { postComment.mutate({ body }); }}
+        onSubmit={async (body) => {
+          try {
+            await postComment.mutateAsync({ body });
+          } catch (err) {
+            toast.error(extractApiError(err) ?? "couldn't post your comment");
+          }
+        }}
         submitting={postComment.isPending}
       />
       <CommentThread

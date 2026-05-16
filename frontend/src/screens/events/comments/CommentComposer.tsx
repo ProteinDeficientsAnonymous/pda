@@ -7,7 +7,7 @@ const MAX = 500;
 const WARN = 450;
 
 interface Props {
-  onSubmit: (body: string) => void;
+  onSubmit: (body: string) => void | Promise<void>;
   submitting: boolean;
   placeholder?: string;
   autoFocus?: boolean;
@@ -38,10 +38,19 @@ export function CommentComposer({
   const state = counterState(value.length);
   const disabled = submitting || trimmed.length === 0 || state === 'over';
 
-  const submit = () => {
+  const submit = async () => {
     if (disabled) return;
-    onSubmit(trimmed);
-    setValue('');
+    const result = onSubmit(trimmed);
+    if (result instanceof Promise) {
+      try {
+        await result;
+        setValue('');
+      } catch {
+        // keep value so the user can retry; the parent should show a toast
+      }
+    } else {
+      setValue('');
+    }
   };
 
   return (
@@ -59,7 +68,7 @@ export function CommentComposer({
         onKeyDown={(e) => {
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
-            submit();
+            void submit();
           }
         }}
       />
@@ -71,7 +80,7 @@ export function CommentComposer({
         >
           {value.length}/{MAX}
         </span>
-        <Button onClick={submit} disabled={disabled}>
+        <Button onClick={() => { void submit(); }} disabled={disabled}>
           post
         </Button>
       </div>

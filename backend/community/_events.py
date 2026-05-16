@@ -259,6 +259,13 @@ def get_event(request, event_id: UUID):
         event = (
             Event.objects.select_related("created_by")
             .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .annotate(
+                comment_count=Count(
+                    "comments",
+                    filter=Q(comments__deleted_at__isnull=True),
+                    distinct=True,
+                )
+            )
             .get(id=event_id)
         )
     except Event.DoesNotExist:
