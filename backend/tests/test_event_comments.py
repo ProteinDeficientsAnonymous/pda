@@ -467,3 +467,35 @@ class TestEventOutCommentCount:
         )
         assert response.status_code == 200
         assert response.json()["comment_count"] == 1
+
+
+from notifications.models import Notification, NotificationType  # noqa: E402
+
+
+@pytest.mark.django_db
+class TestReplyNotifications:
+    def test_reply_creates_notification_for_parent_author(
+        self, api_client, rsvp_user, rsvp_headers, event_with_rsvp, db
+    ):
+        # parent authored by a different RSVPd user
+        from users.models import User
+
+        author = User.objects.create_user(
+            phone_number="+12025550808",
+            password="authorpass",
+            display_name="Author",
+        )
+        EventRSVP.objects.create(event=event_with_rsvp, user=author, status=RSVPStatus.ATTENDING)
+        parent = EventComment.objects.create(event=event_with_rsvp, author=author, body="parent")
+        # rsvp_user replies
+        response = api_client.post(
+            f"/api/community/events/{event_with_rsvp.id}/comments/{parent.id}/replies/",
+            data=json.dumps({"body": "reply"}),
+            content_type="application/json",
+            **rsvp_headers,
+        )
+        assert response.status_code == 201
+        notifs = Notification.objects.filter(
+            recipient=author, notification_type=NotificationType.COMMENT_REPLY
+        )
+        assert notifs.count() == 1
