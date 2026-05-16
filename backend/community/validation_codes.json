@@ -196,6 +196,38 @@
         "params": []
       }
     ],
+    "Comment": [
+      {
+        "name": "NOT_FOUND",
+        "value": "comment.not_found",
+        "params": []
+      },
+      {
+        "name": "REPLY_DEPTH_EXCEEDED",
+        "value": "comment.reply_depth_exceeded",
+        "params": []
+      },
+      {
+        "name": "INVALID_EMOJI",
+        "value": "comment.invalid_emoji",
+        "params": []
+      },
+      {
+        "name": "RSVP_REQUIRED",
+        "value": "comment.rsvp_required",
+        "params": []
+      },
+      {
+        "name": "PERM_DENIED",
+        "value": "comment.perm_denied",
+        "params": []
+      },
+      {
+        "name": "EVENT_MISMATCH",
+        "value": "comment.event_mismatch",
+        "params": []
+      }
+    ],
     "Url": [
       {
         "name": "INVALID",
