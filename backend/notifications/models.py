@@ -15,6 +15,8 @@ class NotificationType(models.TextChoices):
     MAGIC_LINK_REQUEST = "magic_link_request", "Magic Link Request"
     WAITLIST_PROMOTED = "waitlist_promoted", "Waitlist Promoted"
     EVENT_FLAGGED = "event_flagged", "Event Flagged"
+    COMMENT_REPLY = "comment_reply", "Comment Reply"
+    EVENT_COMMENT = "event_comment", "Event Comment"
 
 
 class Notification(models.Model):

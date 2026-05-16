@@ -212,8 +212,11 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
     user = request.auth
     _enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
+    from notifications.service import notify_event_comment
+
     with transaction.atomic():
         comment = EventComment.objects.create(event=event, author=user, body=payload.body)
+        notify_event_comment(comment)
     return Status(201, _comment_out(comment, event, user))
 
 
@@ -249,10 +252,13 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
         raise_validation(Code.Comment.NOT_FOUND, status_code=404)
     if parent.parent_id is not None:
         raise_validation(Code.Comment.REPLY_DEPTH_EXCEEDED, status_code=422)
+    from notifications.service import notify_comment_reply
+
     with transaction.atomic():
         reply = EventComment.objects.create(
             event=event, author=user, body=payload.body, parent=parent
         )
+        notify_comment_reply(reply)
     return Status(201, _comment_reply_out(reply, event, user))
 
 

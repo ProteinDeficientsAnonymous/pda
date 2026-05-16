@@ -369,3 +369,67 @@ def create_waitlist_promoted_notifications(
         ]
     )
     _notify_users(user_ids)
+
+
+def notify_comment_reply(reply) -> None:
+    """Notify the parent comment's author that someone replied to them.
+
+    No-op if `reply` is a top-level comment or if the replier is the
+    parent's author.
+    """
+    from notifications.models import Notification, NotificationType
+
+    if reply.parent_id is None:
+        return
+    parent_author_id = reply.parent.author_id
+    if str(parent_author_id) == str(reply.author_id):
+        return
+    replier_name = reply.author.display_name or reply.author.phone_number
+    event_title = reply.event.title
+    Notification.objects.create(
+        recipient_id=parent_author_id,
+        notification_type=NotificationType.COMMENT_REPLY,
+        event=reply.event,
+        related_user=reply.author,
+        message=f"{replier_name} replied to your comment on {event_title}",
+    )
+    _notify_users([str(parent_author_id)])
+
+
+def notify_event_comment(comment) -> None:
+    """Notify event creator + co-hosts when someone posts a top-level comment.
+
+    No-op for replies (those use notify_comment_reply). The commenter is
+    excluded from the recipient list — a host commenting on their own event
+    doesn't notify themselves.
+    """
+    from notifications.models import Notification, NotificationType
+
+    if comment.parent_id is not None:
+        return
+    event = comment.event
+    author_id_str = str(comment.author_id)
+    recipient_ids: set[str] = set()
+    if event.created_by_id is not None:
+        recipient_ids.add(str(event.created_by_id))
+    recipient_ids.update(str(u.pk) for u in event.co_hosts.all())
+    recipient_ids.discard(author_id_str)
+    if not recipient_ids:
+        return
+    commenter_name = comment.author.display_name or comment.author.phone_number
+    event_title = event.title
+    message = f"{commenter_name} commented on {event_title}"
+    recipient_id_list = sorted(recipient_ids)
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=rid,
+                notification_type=NotificationType.EVENT_COMMENT,
+                event=event,
+                related_user=comment.author,
+                message=message,
+            )
+            for rid in recipient_id_list
+        ]
+    )
+    _notify_users(recipient_id_list)
