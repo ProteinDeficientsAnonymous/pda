@@ -180,7 +180,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Email.Invalid:
       return "that doesn't look like a valid email";
     case Code.Email.AlreadyExists:
-      return "that email is already on another account — try a different one or contact admin";
+      return 'that email is already on another account — try a different one or contact admin';
     case Code.Email.Required:
       return 'email required';
 

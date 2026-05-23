@@ -46,7 +46,10 @@ describe('RequireEmail', () => {
   it('shows conflict error inline', async () => {
     vi.mocked(updateProfile).mockRejectedValue({
       isAxiosError: true,
-      response: { status: 409, data: { detail: [{ code: 'email.already_exists', field: 'email' }] } },
+      response: {
+        status: 409,
+        data: { detail: [{ code: 'email.already_exists', field: 'email' }] },
+      },
     });
     render(<RequireEmail />);
     await userEvent.type(screen.getByLabelText(/email/i), 'taken@example.com');

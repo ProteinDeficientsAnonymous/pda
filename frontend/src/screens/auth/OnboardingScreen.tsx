@@ -14,7 +14,7 @@ import { PasswordChecklist } from './PasswordChecklist';
 
 const schema = z.object({
   displayName: z.string().min(1, 'name required').max(64),
-  email: z.string().min(1, 'email required').email('not a valid email'),
+  email: z.string().min(1, 'email required').pipe(z.email('not a valid email')),
   newPassword: passwordRule,
 });
 

@@ -229,8 +229,6 @@ describe('email validation', () => {
     await userEvent.type(screen.getByLabelText(/email/i), 'Tester@Example.com');
     await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
     await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
-    expect(submit).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'Tester@Example.com' }),
-    );
+    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ email: 'Tester@Example.com' }));
   });
 });
