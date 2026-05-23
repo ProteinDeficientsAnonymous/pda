@@ -193,7 +193,7 @@ class ErrorOut(BaseModel):
 class OnboardingIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
-    email: EmailStr
+    email: EmailStr | None = None
 
 
 class UserSearchOut(BaseModel):

@@ -408,7 +408,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_password_too_short(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "short", "email": "named@example.com"},
+            {"display_name": "Named", "new_password": "short"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -419,7 +419,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_missing_uppercase(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "nouppercase123!", "email": "named@example.com"},
+            {"display_name": "Named", "new_password": "nouppercase123!"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -430,7 +430,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_missing_number(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "NoNumberHere!!!", "email": "named@example.com"},
+            {"display_name": "Named", "new_password": "NoNumberHere!!!"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -441,7 +441,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_missing_special_char(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "NoSpecialChar1X", "email": "named@example.com"},
+            {"display_name": "Named", "new_password": "NoSpecialChar1X"},
             content_type="application/json",
             **onboarding_headers,
         )

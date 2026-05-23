@@ -366,7 +366,10 @@ def complete_onboarding(request, payload: OnboardingIn):
     if payload.display_name is not None:
         validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
-    _check_and_set_email(user, payload.email, exclude_pk=user.pk)
+    if payload.email is not None:
+        _check_and_set_email(user, payload.email, exclude_pk=user.pk)
+    elif not user.email:
+        raise_validation(Code.Email.REQUIRED, field="email", status_code=422)
     user.set_password(payload.new_password)
     if user.needs_onboarding and user.onboarded_at is None:
         user.onboarded_at = timezone.now()

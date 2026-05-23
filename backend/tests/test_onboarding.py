@@ -13,6 +13,7 @@ class TestOnboardingEmail:
             **needs_onboarding_auth_headers,
         )
         assert resp.status_code == 422
+        assert resp.json()["detail"][0]["code"] == "email.required"
 
     def test_malformed_email_rejected(self, api_client, needs_onboarding_auth_headers):
         resp = api_client.post(
@@ -64,3 +65,26 @@ class TestOnboardingEmail:
         )
         assert resp.status_code == 409
         assert resp.json()["detail"][0]["code"] == "email.already_exists"
+
+    def test_existing_email_user_can_skip(self, api_client, db):
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550111",
+            password="x",
+            display_name="Existing",
+            email="existing@example.com",
+            needs_onboarding=True,
+        )
+        refresh = RefreshToken.for_user(user)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={"new_password": "abcd1234ABCD!"},
+            content_type="application/json",
+            **headers,
+        )
+        assert resp.status_code == 200, resp.content
+        user.refresh_from_db()
+        assert user.email == "existing@example.com"  # unchanged
