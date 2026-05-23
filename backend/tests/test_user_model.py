@@ -34,7 +34,9 @@ class TestUserModel:
             phone_number="+15550001002",
             password="testpass123",
         )
-        assert user.email == ""
+        assert user.email is None
+        user.refresh_from_db()
+        assert user.email is None
 
     def test_str_returns_display_name_or_phone(self):
         from users.models import User
@@ -69,3 +71,21 @@ class TestUserModel:
 
         with pytest.raises(ValueError, match="Phone number is required"):
             User.objects.create_user(phone_number="", password="testpass123")
+
+
+@pytest.mark.django_db
+class TestUserEmailField:
+    def test_two_users_with_null_email_allowed(self):
+        from users.models import User
+
+        User.objects.create_user(phone_number="+12025550101", display_name="a", email=None)
+        # Should NOT raise IntegrityError — multiple NULLs allowed.
+        User.objects.create_user(phone_number="+12025550102", display_name="b", email=None)
+
+    def test_duplicate_non_null_email_rejected(self):
+        from django.db import IntegrityError
+        from users.models import User
+
+        User.objects.create_user(phone_number="+12025550101", display_name="a", email="dup@example.com")
+        with pytest.raises(IntegrityError):
+            User.objects.create_user(phone_number="+12025550102", display_name="b", email="dup@example.com")

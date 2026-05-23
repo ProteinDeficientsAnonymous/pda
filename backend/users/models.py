@@ -43,7 +43,7 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
     display_name = models.CharField(max_length=64, blank=True)
-    email = models.EmailField(blank=True)
+    email = models.EmailField(unique=True, null=True, blank=True)
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     needs_onboarding = models.BooleanField(default=False)
     onboarded_at = models.DateTimeField(null=True, blank=True)
