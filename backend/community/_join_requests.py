@@ -13,7 +13,7 @@ from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from notifications.service import create_join_request_notifications
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
@@ -36,6 +36,7 @@ APPROVED_GRACE_DAYS = 3
 class JoinRequestIn(BaseModel):
     display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
+    email: EmailStr
     answers: dict[str, str] = {}
     # SMS consent. UI presents a required checkbox tied to /sms-policy;
     # we record consent timestamp on the join request as proof for Twilio's
@@ -240,9 +241,12 @@ def submit_join_request(request, payload: JoinRequestIn):
 
     custom_answers = _build_custom_answers(payload.answers, questions)
 
+    normalized_email = payload.email.strip().lower()
+
     join_request = JoinRequest.objects.create(
         display_name=display_name,
         phone_number=validated_phone,
+        email=normalized_email,
         custom_answers=custom_answers,
         sms_consent_at=timezone.now(),
     )

@@ -238,6 +238,7 @@ class TestApplicationEventLogging:
                 "/api/community/join-request/",
                 data={
                     "display_name": "Alice",
+                    "email": "applicant@example.com",
                     "phone_number": "+12025551234",
                     "answers": answers,
                     "sms_consent": True,
@@ -290,6 +291,7 @@ class TestApplicationEventLogging:
                 "/api/community/join-request/",
                 data={
                     "display_name": "Bob",
+                    "email": "applicant@example.com",
                     "phone_number": "+13105551234",
                     "answers": answers,
                     "sms_consent": True,
