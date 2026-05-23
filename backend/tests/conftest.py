@@ -89,7 +89,10 @@ def manage_users_user(db):
         password="adminpass123",
         display_name="Admin User",
     )
-    role = Role.objects.create(name="admin_mgr", permissions=[PermissionKey.MANAGE_USERS])
+    role = Role.objects.create(
+        name="admin_mgr",
+        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
+    )
     user.roles.add(role)
     return user
 

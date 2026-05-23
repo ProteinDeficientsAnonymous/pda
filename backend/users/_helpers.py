@@ -103,10 +103,13 @@ def _create_user_with_role(
     validated_phone = _validate_phone(phone)
     if User.objects.filter(phone_number=validated_phone).exists():
         raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
+    normalized_email = _normalize_email(email)
+    if normalized_email and User.objects.filter(email=normalized_email).exists():
+        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
     user = User.objects.create_user(
         phone_number=validated_phone,
         display_name=display_name,
-        email=_normalize_email(email),
+        email=normalized_email,
         needs_onboarding=needs_onboarding,
     )
     user.set_unusable_password()

@@ -43,7 +43,7 @@ router = Router()
 
 @router.post(
     "/create-user/",
-    response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut},
+    response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut, 409: ErrorOut},
     auth=JWTAuth(),
 )
 def create_user(request, payload: UserCreateIn):
