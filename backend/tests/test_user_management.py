@@ -1,0 +1,38 @@
+import pytest
+
+
+@pytest.mark.django_db
+class TestAdminPatchEmail:
+    def test_admin_patch_email_rejects_duplicate(self, api_client, manage_users_headers, db):
+        from users.models import User
+
+        User.objects.create_user(
+            phone_number="+12025550199", display_name="other", email="taken@example.com"
+        )
+        target = User.objects.create_user(
+            phone_number="+12025550101", display_name="b"
+        )
+        resp = api_client.patch(
+            f"/api/auth/users/{target.id}/",
+            data={"email": "Taken@Example.com"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert resp.status_code == 409
+        assert resp.json()["detail"][0]["code"] == "email.already_exists"
+
+    def test_admin_patch_email_lowercases(self, api_client, manage_users_headers, db):
+        from users.models import User
+
+        target = User.objects.create_user(
+            phone_number="+12025550101", display_name="b"
+        )
+        resp = api_client.patch(
+            f"/api/auth/users/{target.id}/",
+            data={"email": "Foo@Example.com"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert resp.status_code == 200
+        target.refresh_from_db()
+        assert target.email == "foo@example.com"

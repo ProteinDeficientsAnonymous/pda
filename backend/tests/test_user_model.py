@@ -91,6 +91,48 @@ class TestUserEmailField:
             User.objects.create_user(phone_number="+12025550102", display_name="b", email="dup@example.com")
 
 
+@pytest.mark.django_db
+class TestCheckAndSetEmail:
+    def test_assigns_normalized(self):
+        from users._helpers import _check_and_set_email
+        from users.models import User
+
+        u = User(phone_number="+12025550101", display_name="a")
+        _check_and_set_email(u, "Foo@Example.COM")
+        assert u.email == "foo@example.com"
+
+    def test_blank_assigns_none(self):
+        from users._helpers import _check_and_set_email
+        from users.models import User
+
+        u = User(phone_number="+12025550101", display_name="a")
+        _check_and_set_email(u, "  ")
+        assert u.email is None
+
+    def test_raises_on_collision(self):
+        from community._validation import ValidationException
+        from users._helpers import _check_and_set_email
+        from users.models import User
+
+        User.objects.create_user(
+            phone_number="+12025550199", display_name="other", email="taken@example.com"
+        )
+        target = User(phone_number="+12025550101", display_name="a")
+        with pytest.raises(ValidationException):
+            _check_and_set_email(target, "Taken@Example.com")
+
+    def test_exclude_pk_allows_self_update(self):
+        from users._helpers import _check_and_set_email
+        from users.models import User
+
+        existing = User.objects.create_user(
+            phone_number="+12025550101", display_name="a", email="me@example.com"
+        )
+        # Should not raise — same user re-submitting their own email
+        _check_and_set_email(existing, "Me@Example.com", exclude_pk=existing.pk)
+        assert existing.email == "me@example.com"
+
+
 class TestNormalizeEmail:
     def test_lowercases(self):
         from users._helpers import _normalize_email

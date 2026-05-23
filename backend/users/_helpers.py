@@ -2,6 +2,7 @@
 
 import secrets
 import string
+import uuid
 
 import phonenumbers
 from community._validation import Code, raise_validation
@@ -46,6 +47,30 @@ def _normalize_email(raw: str | None) -> str | None:
         return None
     cleaned = raw.strip().lower()
     return cleaned or None
+
+
+def _check_and_set_email(
+    user: User,
+    raw: str | None,
+    *,
+    exclude_pk: uuid.UUID | str | None = None,
+) -> None:
+    """Normalize email, enforce uniqueness, and assign to user.email.
+
+    Raises ValidationException(409, "email.already_exists") on collision.
+    Passes the normalized value (possibly None) through to ``user.email``.
+
+    Pass ``exclude_pk`` for the self-update case so users can re-submit
+    their own current email without a false collision.
+    """
+    normalized = _normalize_email(raw)
+    if normalized:
+        qs = User.objects.filter(email=normalized)
+        if exclude_pk is not None:
+            qs = qs.exclude(pk=exclude_pk)
+        if qs.exists():
+            raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+    user.email = normalized
 
 
 def _validate_phone(raw: str, field: str = "phone_number") -> str:
