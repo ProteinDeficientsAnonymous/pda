@@ -19,6 +19,7 @@ interface Props {
 export function MemberCreateDialog({ open, onClose }: Props) {
   const createUser = useCreateUser();
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [result, setResult] = useState<CreateUserResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -31,7 +32,11 @@ export function MemberCreateDialog({ open, onClose }: Props) {
       return;
     }
     try {
-      const created = await createUser.mutateAsync({ phoneNumber: phone.trim() });
+      const trimmed = email.trim();
+      const created = await createUser.mutateAsync({
+        phoneNumber: phone.trim(),
+        ...(trimmed ? { email: trimmed } : {}),
+      });
       setResult(created);
     } catch (err) {
       setFormError(extractError(err));
@@ -40,6 +45,7 @@ export function MemberCreateDialog({ open, onClose }: Props) {
 
   function handleClose() {
     setPhone('');
+    setEmail('');
     setFormError(null);
     setResult(null);
     setCopied(false);
@@ -63,13 +69,22 @@ export function MemberCreateDialog({ open, onClose }: Props) {
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
         <TextField
           label="phone number"
-          hint="they'll set their display name and email during onboarding"
+          hint="they'll set their display name during onboarding"
           value={phone}
           maxLength={20}
           onChange={(e) => {
             setPhone(e.target.value);
           }}
           required
+        />
+        <TextField
+          label="email (optional)"
+          type="email"
+          hint="if you skip, they'll be asked for one at first login"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+          }}
         />
         {formError ? (
           <p role="alert" className="text-sm text-red-600">
