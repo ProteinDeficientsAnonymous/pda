@@ -12,7 +12,9 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:www.npmjs.com)",
       "Bash(mkdir -p ~/.claude/hooks)",
-      "Read(//Users/leahpeker/.claude/**)"
+      "Read(//Users/leahpeker/.claude/**)",
+      "Skill(superpowers:using-superpowers)",
+      "Skill(superpowers:brainstorming)"
     ]
   },
   "enableAllProjectMcpServers": true,
