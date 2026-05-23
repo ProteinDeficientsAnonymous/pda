@@ -5,12 +5,14 @@
 //   <RequireAuth>        — bounces unauthed users to /login?redirect=<path>.
 //   <RequirePermission>  — additionally checks a permission key; bounces to /calendar.
 //   <OnboardingGate>     — routes needs_onboarding users to /onboarding or /new-password.
+//   <EmailGate>          — blocks authed users without an email until they supply one.
 //
 // The onboarding gate wraps the WHOLE app so it applies on every navigation,
 // matching the Flutter behavior.
 
 import { useEffect, type ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { RequireEmail } from '@/components/RequireEmail';
 import { useAuthStore } from './store';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 
@@ -110,6 +112,19 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
   }
   if (!hasPermission(user, perm)) {
     return <Navigate to="/calendar" replace />;
+  }
+  return <Outlet />;
+}
+
+// ----------------------------------------------------------------------------
+// EmailGate — blocks the app for authed users without an email. Composes
+// AFTER OnboardingGate so needs_onboarding users finish that flow first.
+// ----------------------------------------------------------------------------
+
+export function EmailGate() {
+  const user = useAuthStore((s) => s.user);
+  if (user && !user.needsOnboarding && !user.email) {
+    return <RequireEmail />;
   }
   return <Outlet />;
 }

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { useAuthStore } from './store';
-import { RequireAuth, RequirePermission, OnboardingGate } from './guards';
+import { RequireAuth, RequirePermission, OnboardingGate, EmailGate } from './guards';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
@@ -241,5 +241,79 @@ describe('OnboardingGate', () => {
 
     expect(screen.getByText('calendar page')).toBeInTheDocument();
     expect(screen.queryByText('login page')).not.toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// EmailGate
+// ---------------------------------------------------------------------------
+
+describe('EmailGate', () => {
+  it('renders RequireEmail when authed user lacks email', () => {
+    const user = makeUser({ email: '' });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <Routes>
+          <Route element={<EmailGate />}>
+            <Route path="/calendar" element={<div>calendar</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/add your email/i)).toBeInTheDocument();
+    expect(screen.queryByText('calendar')).not.toBeInTheDocument();
+  });
+
+  it('renders Outlet when authed user has email', () => {
+    const user = makeUser({ email: 'foo@example.com' });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <Routes>
+          <Route element={<EmailGate />}>
+            <Route path="/calendar" element={<div>calendar</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('calendar')).toBeInTheDocument();
+  });
+
+  it('renders Outlet for unauthed (null user)', () => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route element={<EmailGate />}>
+            <Route path="/login" element={<div>login</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('login')).toBeInTheDocument();
+  });
+
+  it('renders Outlet when needs_onboarding (OnboardingGate handles routing)', () => {
+    const user = makeUser({ email: '', needsOnboarding: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/onboarding']}>
+        <Routes>
+          <Route element={<EmailGate />}>
+            <Route path="/onboarding" element={<div>onboarding</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('onboarding')).toBeInTheDocument();
   });
 });
