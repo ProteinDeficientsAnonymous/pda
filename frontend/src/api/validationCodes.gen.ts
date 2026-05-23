@@ -67,6 +67,11 @@ export const Code = {
     Invalid: 'phone.invalid',
     AlreadyExists: 'phone.already_exists',
   },
+  Email: {
+    Invalid: 'email.invalid',
+    AlreadyExists: 'email.already_exists',
+    Required: 'email.required',
+  },
   Zelle: {
     Invalid: 'zelle.invalid',
   },
@@ -237,6 +242,9 @@ export type ValidationCode =
   | 'url.partiful_not_recognized'
   | 'phone.invalid'
   | 'phone.already_exists'
+  | 'email.invalid'
+  | 'email.already_exists'
+  | 'email.required'
   | 'zelle.invalid'
   | 'display_name.required'
   | 'display_name.too_long'
@@ -368,6 +376,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'url.partiful_not_recognized': [],
   'phone.invalid': [],
   'phone.already_exists': [],
+  'email.invalid': [],
+  'email.already_exists': [],
+  'email.required': [],
   'zelle.invalid': [],
   'display_name.required': [],
   'display_name.too_long': ['max_length'],
