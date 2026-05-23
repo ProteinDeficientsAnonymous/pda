@@ -315,7 +315,7 @@ def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
 
 @router.patch(
     "/join-requests/{id}/",
-    response={200: ApproveJoinRequestOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: ApproveJoinRequestOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 409: ErrorOut},
     auth=JWTAuth(),
 )
 def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
@@ -363,7 +363,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             _, magic_token = _create_user_with_role(
                 join_request.phone_number,
                 join_request.display_name,
-                "",
+                join_request.email,
                 None,
             )
             user_created = True
