@@ -89,3 +89,22 @@ class TestUserEmailField:
         User.objects.create_user(phone_number="+12025550101", display_name="a", email="dup@example.com")
         with pytest.raises(IntegrityError):
             User.objects.create_user(phone_number="+12025550102", display_name="b", email="dup@example.com")
+
+
+class TestNormalizeEmail:
+    def test_lowercases(self):
+        from users._helpers import _normalize_email
+
+        assert _normalize_email("Foo@Example.COM") == "foo@example.com"
+
+    def test_strips_whitespace(self):
+        from users._helpers import _normalize_email
+
+        assert _normalize_email("  foo@example.com  ") == "foo@example.com"
+
+    def test_blank_returns_none(self):
+        from users._helpers import _normalize_email
+
+        assert _normalize_email("") is None
+        assert _normalize_email("   ") is None
+        assert _normalize_email(None) is None

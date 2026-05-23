@@ -36,6 +36,18 @@ def _is_admin(user: User) -> bool:
     return user.roles.filter(name="admin", is_default=True).exists()
 
 
+def _normalize_email(raw: str | None) -> str | None:
+    """Lowercase + strip an email. Returns None for blank input.
+
+    Centralized so server-side enforcement is consistent across endpoints.
+    Frontend should NOT rely on this — normalize there too.
+    """
+    if not raw:
+        return None
+    cleaned = raw.strip().lower()
+    return cleaned or None
+
+
 def _validate_phone(raw: str, field: str = "phone_number") -> str:
     """Parse, validate, and return E.164. Raises ValidationException on invalid.
 
@@ -69,7 +81,7 @@ def _create_user_with_role(
     user = User.objects.create_user(
         phone_number=validated_phone,
         display_name=display_name,
-        email=email or "",
+        email=_normalize_email(email),
         needs_onboarding=needs_onboarding,
     )
     user.set_unusable_password()
