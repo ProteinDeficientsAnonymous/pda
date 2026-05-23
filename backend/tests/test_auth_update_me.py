@@ -51,3 +51,48 @@ class TestUpdateMe:
             **auth_headers,
         )
         assert response.status_code == 422
+
+
+@pytest.mark.django_db
+class TestPatchMeEmail:
+    def test_update_email_lowercases(self, api_client, auth_headers, test_user):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"email": "FOO@Example.com"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        test_user.refresh_from_db()
+        assert test_user.email == "foo@example.com"
+
+    def test_duplicate_email_rejected(self, api_client, auth_headers, db):
+        from users.models import User
+
+        User.objects.create_user(
+            phone_number="+12025550199", display_name="other", email="taken@example.com"
+        )
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"email": "taken@example.com"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 409
+        body = resp.json()
+        assert body["detail"][0]["code"] == "email.already_exists"
+
+    def test_duplicate_email_case_insensitive(self, api_client, auth_headers, db):
+        from users.models import User
+
+        User.objects.create_user(
+            phone_number="+12025550199", display_name="other", email="taken@example.com"
+        )
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"email": "Taken@Example.com"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 409
+        assert resp.json()["detail"][0]["code"] == "email.already_exists"

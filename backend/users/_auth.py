@@ -14,6 +14,7 @@ from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
+from users._helpers import _normalize_email
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
@@ -215,7 +216,10 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
         user.display_name = payload.display_name.strip()
         changed.append("display_name")
     if payload.email is not None:
-        user.email = payload.email
+        normalized = _normalize_email(payload.email)
+        if normalized and User.objects.exclude(pk=user.pk).filter(email=normalized).exists():
+            raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+        user.email = normalized
         changed.append("email")
     if payload.bio is not None:
         user.bio = payload.bio.strip()
@@ -238,7 +242,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     return changed
 
 
-@router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+@router.patch("/me/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=JWTAuth())
 def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     changed = _apply_me_patch(user, payload)
