@@ -110,6 +110,7 @@ describe('useJoinRequests', () => {
 const validPayload = {
   displayName: 'Sam Green',
   phoneNumber: '+12125559876',
+  email: 'sam@example.com',
   answers: { 'q-1': 'Because community', 'q-2': 'A friend' },
   smsConsent: true,
   website: '',

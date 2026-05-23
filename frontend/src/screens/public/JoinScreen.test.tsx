@@ -99,6 +99,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
@@ -119,6 +120,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
@@ -146,6 +148,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
@@ -166,6 +169,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
@@ -187,6 +191,7 @@ describe('JoinScreen', () => {
     // Fill out form
     await user.type(screen.getByLabelText(/display name/i), 'Alex Jones');
     await user.type(screen.getByLabelText(/phone number/i), '+15559876543');
+    await user.type(screen.getByLabelText(/email/i), 'alex@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
 
     // Submit
@@ -198,5 +203,34 @@ describe('JoinScreen', () => {
     });
     expect(screen.getByText(/vetting member will review/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /back to home/i })).toBeInTheDocument();
+  });
+});
+
+describe('email validation', () => {
+  it('shows email required when blank', async () => {
+    renderWith(<JoinScreen />);
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
+    await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
+    expect(await screen.findByText(/email required/i)).toBeInTheDocument();
+  });
+
+  it('passes email to submit', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    mockUseSubmitJoinRequest.mockReturnValue({
+      mutateAsync: submit,
+      isPending: false,
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+
+    renderWith(<JoinScreen />);
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    await userEvent.type(screen.getByLabelText(/email/i), 'Tester@Example.com');
+    await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
+    await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'Tester@Example.com' }),
+    );
   });
 });
