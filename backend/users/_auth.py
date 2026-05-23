@@ -353,7 +353,9 @@ def get_member_profile(request, user_id: str):
     )
 
 
-@router.post("/complete-onboarding/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+@router.post(
+    "/complete-onboarding/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=JWTAuth()
+)
 def complete_onboarding(request, payload: OnboardingIn):
     pw_errors = validate_password(payload.new_password)
     if pw_errors:
@@ -364,8 +366,7 @@ def complete_onboarding(request, payload: OnboardingIn):
     if payload.display_name is not None:
         validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
-    if payload.email:
-        user.email = payload.email
+    _check_and_set_email(user, payload.email, exclude_pk=user.pk)
     user.set_password(payload.new_password)
     if user.needs_onboarding and user.onboarded_at is None:
         user.onboarded_at = timezone.now()
