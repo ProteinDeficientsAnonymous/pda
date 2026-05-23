@@ -48,9 +48,7 @@ class TestAdminPatchEmail:
         User.objects.create_user(
             phone_number="+12025550199", display_name="other", email="taken@example.com"
         )
-        target = User.objects.create_user(
-            phone_number="+12025550101", display_name="b"
-        )
+        target = User.objects.create_user(phone_number="+12025550101", display_name="b")
         resp = api_client.patch(
             f"/api/auth/users/{target.id}/",
             data={"email": "Taken@Example.com"},
@@ -63,9 +61,7 @@ class TestAdminPatchEmail:
     def test_admin_patch_email_lowercases(self, api_client, manage_users_headers, db):
         from users.models import User
 
-        target = User.objects.create_user(
-            phone_number="+12025550101", display_name="b"
-        )
+        target = User.objects.create_user(phone_number="+12025550101", display_name="b")
         resp = api_client.patch(
             f"/api/auth/users/{target.id}/",
             data={"email": "Foo@Example.com"},

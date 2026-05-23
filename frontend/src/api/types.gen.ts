@@ -2863,11 +2863,8 @@ export interface components {
         OnboardingIn: {
             /** Display Name */
             display_name?: string | null;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
+            /** Email */
+            email?: string | null;
             /** New Password */
             new_password: string;
         };

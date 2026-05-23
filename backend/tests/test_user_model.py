@@ -86,9 +86,13 @@ class TestUserEmailField:
         from django.db import IntegrityError
         from users.models import User
 
-        User.objects.create_user(phone_number="+12025550101", display_name="a", email="dup@example.com")
+        User.objects.create_user(
+            phone_number="+12025550101", display_name="a", email="dup@example.com"
+        )
         with pytest.raises(IntegrityError):
-            User.objects.create_user(phone_number="+12025550102", display_name="b", email="dup@example.com")
+            User.objects.create_user(
+                phone_number="+12025550102", display_name="b", email="dup@example.com"
+            )
 
 
 @pytest.mark.django_db

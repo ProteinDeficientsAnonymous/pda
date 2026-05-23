@@ -381,7 +381,11 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_success(self, api_client, onboarding_headers, onboarding_user):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "New Name", "new_password": "SecurePass99!", "email": "newname@example.com"},
+            {
+                "display_name": "New Name",
+                "new_password": "SecurePass99!",
+                "email": "newname@example.com",
+            },
             content_type="application/json",
             **onboarding_headers,
         )
@@ -462,7 +466,11 @@ class TestCompleteOnboarding:
     ):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "  Padded Name  ", "new_password": "SecurePass99!", "email": "padded@example.com"},
+            {
+                "display_name": "  Padded Name  ",
+                "new_password": "SecurePass99!",
+                "email": "padded@example.com",
+            },
             content_type="application/json",
             **onboarding_headers,
         )

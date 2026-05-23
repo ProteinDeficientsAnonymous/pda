@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('community', '0056_alter_eventcommentreaction_user'),
+        ("community", "0056_alter_eventcommentreaction_user"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='joinrequest',
-            name='email',
-            field=models.EmailField(blank=True, default='', max_length=254),
+            model_name="joinrequest",
+            name="email",
+            field=models.EmailField(blank=True, default="", max_length=254),
         ),
     ]

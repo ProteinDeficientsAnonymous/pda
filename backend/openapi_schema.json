@@ -3075,9 +3075,16 @@
             "title": "Display Name"
           },
           "email": {
-            "format": "email",
-            "title": "Email",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "email",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           },
           "new_password": {
             "maxLength": 128,
@@ -3086,8 +3093,7 @@
           }
         },
         "required": [
-          "new_password",
-          "email"
+          "new_password"
         ],
         "title": "OnboardingIn",
         "type": "object"
