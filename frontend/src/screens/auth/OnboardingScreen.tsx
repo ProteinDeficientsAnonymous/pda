@@ -14,7 +14,7 @@ import { PasswordChecklist } from './PasswordChecklist';
 
 const schema = z.object({
   displayName: z.string().min(1, 'name required').max(64),
-  email: z.union([z.email('not a valid email'), z.literal('')]).optional(),
+  email: z.string().min(1, 'email required').email('not a valid email'),
   newPassword: passwordRule,
 });
 
@@ -41,7 +41,7 @@ export default function OnboardingScreen() {
     try {
       await completeOnboarding({
         displayName: values.displayName,
-        email: values.email === '' ? undefined : values.email,
+        email: values.email,
         newPassword: values.newPassword,
       });
       void navigate('/guidelines', { replace: true });
@@ -60,12 +60,11 @@ export default function OnboardingScreen() {
           error={errors.displayName?.message}
         />
         <TextField
-          label="email (optional)"
+          label="email"
           type="email"
           autoComplete="email"
           {...register('email')}
           error={errors.email?.message}
-          hint="used only for account recovery"
         />
         <PasswordChecklist value={passwordValue} />
         <PasswordField
