@@ -29,3 +29,34 @@ class TestEmailSenderProtocol:
                 return SendResult(success=True)
 
         assert isinstance(FakeSender(), EmailSender)
+
+
+class TestConsoleSender:
+    def test_send_returns_success(self):
+        from notifications._console_sender import ConsoleSender
+
+        sender = ConsoleSender()
+        result = sender.send(
+            to="user@example.com",
+            subject="hello",
+            html="<p>hi</p>",
+            text="hi",
+        )
+        assert result.success is True
+        assert result.error is None
+
+    def test_send_logs_email(self, caplog):
+        import logging
+        from notifications._console_sender import ConsoleSender
+
+        with caplog.at_level(logging.INFO, logger="notifications.console_sender"):
+            ConsoleSender().send(
+                to="user@example.com",
+                subject="hello",
+                html="<p>hi</p>",
+                text="hi",
+            )
+        # Verify the log captured the recipient and subject
+        log_text = "\n".join(r.message for r in caplog.records)
+        assert "user@example.com" in log_text
+        assert "hello" in log_text
