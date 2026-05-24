@@ -94,42 +94,8 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     user.login_link_requested = True
     user.save(update_fields=["login_link_requested"])
 
-    # Try email delivery first if the user has an email on file.
-    email_send_succeeded = False
-    if user.email:
-        try:
-            magic_link_url = f"{settings.FRONTEND_BASE_URL}/magic-login/{magic_token}"
-            send_result = send_magic_login_email(
-                sender=get_email_sender(),
-                to=user.email,
-                display_name=user.display_name or "",
-                magic_link_url=magic_link_url,
-            )
-            if send_result.success:
-                email_send_succeeded = True
-                audit_log(
-                    logging.INFO,
-                    "magic_link_email_sent",
-                    request,
-                    target_type="user",
-                    target_id=str(user.pk),
-                    details={"provider_message_id": send_result.provider_message_id},
-                )
-            else:
-                audit_log(
-                    logging.WARNING,
-                    "magic_link_email_failed",
-                    request,
-                    target_type="user",
-                    target_id=str(user.pk),
-                    details={"error": send_result.error},
-                )
-        except Exception:
-            logger.exception("Unexpected error sending magic-login email")
-            # email_send_succeeded stays False → admin notify fallback fires
-
     # Fall through to admin notification if email didn't deliver.
-    if not email_send_succeeded:
+    if not _try_email_delivery(request=request, user=user, magic_token=magic_token):
         try:
             create_magic_link_request_notifications(user)
         except Exception:
@@ -143,3 +109,44 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         )
 
     return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+
+
+def _try_email_delivery(*, request, user, magic_token) -> bool:
+    """Try delivering the magic link via email.
+
+    Returns True on success, False if we should fall through to the
+    admin-notification path. Any unexpected error is logged and treated
+    as a failure so the caller still falls through.
+    """
+    if not user.email:
+        return False
+    try:
+        magic_link_url = f"{settings.FRONTEND_BASE_URL}/magic-login/{magic_token}"
+        send_result = send_magic_login_email(
+            sender=get_email_sender(),
+            to=user.email,
+            display_name=user.display_name or "",
+            magic_link_url=magic_link_url,
+        )
+        if send_result.success:
+            audit_log(
+                logging.INFO,
+                "magic_link_email_sent",
+                request,
+                target_type="user",
+                target_id=str(user.pk),
+                details={"provider_message_id": send_result.provider_message_id},
+            )
+            return True
+        audit_log(
+            logging.WARNING,
+            "magic_link_email_failed",
+            request,
+            target_type="user",
+            target_id=str(user.pk),
+            details={"error": send_result.error},
+        )
+        return False
+    except Exception:
+        logger.exception("Unexpected error sending magic-login email")
+        return False

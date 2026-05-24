@@ -53,8 +53,8 @@ function RequestLoginLinkForm({
       <Dialog open onClose={onClose} title="request a login link">
         <div className="flex flex-col gap-4">
           <p className="text-muted text-sm">
-            if there's an account for that number, we sent a login link to the email on file —
-            check your inbox, including spam 🌱
+            if there's an account for that number, we sent a login link to the email on file — check
+            your inbox, including spam 🌱
           </p>
           <div className="flex justify-end">
             <Button type="button" onClick={onClose}>
