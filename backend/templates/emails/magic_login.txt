@@ -1,0 +1,9 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+here's your one-time login link for pda:
+
+{{ magic_link_url }}
+
+this link expires in 7 days. if you didn't request it, you can ignore this email.
+
+— pda
