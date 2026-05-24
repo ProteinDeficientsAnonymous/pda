@@ -117,3 +117,56 @@ class TestResendSender:
         assert params["subject"] == "hello"
         assert params["html"] == "<p>hi</p>"
         assert params["text"] == "hi"
+
+
+class TestGetEmailSender:
+    def test_returns_resend_sender_when_key_set(self, settings):
+        from notifications._resend_sender import ResendSender
+        from notifications.email_sender import get_email_sender, reset_email_sender_cache
+
+        reset_email_sender_cache()
+        settings.RESEND_API_KEY = "test_key"
+        settings.RESEND_FROM_EMAIL = "noreply@example.com"
+        try:
+            sender = get_email_sender()
+            assert isinstance(sender, ResendSender)
+        finally:
+            reset_email_sender_cache()
+
+    def test_returns_console_sender_when_no_key_in_dev(self, settings):
+        from notifications._console_sender import ConsoleSender
+        from notifications.email_sender import get_email_sender, reset_email_sender_cache
+
+        reset_email_sender_cache()
+        settings.RESEND_API_KEY = ""
+        try:
+            sender = get_email_sender()
+            assert isinstance(sender, ConsoleSender)
+        finally:
+            reset_email_sender_cache()
+
+    def test_caches_sender_across_calls(self, settings):
+        from notifications.email_sender import get_email_sender, reset_email_sender_cache
+
+        reset_email_sender_cache()
+        settings.RESEND_API_KEY = ""
+        try:
+            first = get_email_sender()
+            second = get_email_sender()
+            assert first is second
+        finally:
+            reset_email_sender_cache()
+
+    def test_raises_in_production_with_no_key(self, monkeypatch):
+        import pytest
+        from django.conf import settings
+        from notifications.email_sender import get_email_sender, reset_email_sender_cache
+
+        reset_email_sender_cache()
+        monkeypatch.setattr(settings, "RESEND_API_KEY", "")
+        monkeypatch.setattr(settings, "IS_PRODUCTION", True)
+        try:
+            with pytest.raises(RuntimeError, match="RESEND_API_KEY"):
+                get_email_sender()
+        finally:
+            reset_email_sender_cache()
