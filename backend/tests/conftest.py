@@ -79,6 +79,53 @@ def vettor_headers(vettor_user):
 
 
 @pytest.fixture
+def manage_users_user(db):
+    from users.models import User
+    from users.permissions import PermissionKey
+    from users.roles import Role
+
+    user = User.objects.create_user(
+        phone_number="+12025550010",
+        password="adminpass123",
+        display_name="Admin User",
+    )
+    role = Role.objects.create(
+        name="admin_mgr",
+        permissions=[PermissionKey.MANAGE_USERS, PermissionKey.CREATE_USER],
+    )
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def manage_users_headers(manage_users_user):
+    from ninja_jwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(manage_users_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def needs_onboarding_user(db):
+    from users.models import User
+
+    return User.objects.create_user(
+        phone_number="+12025550110",
+        password="x",
+        display_name="",
+        needs_onboarding=True,
+    )
+
+
+@pytest.fixture
+def needs_onboarding_auth_headers(needs_onboarding_user):
+    from ninja_jwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(needs_onboarding_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
 def sample_join_request(db):
     from community.models import JoinFormQuestion, JoinRequest
 

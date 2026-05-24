@@ -50,6 +50,7 @@ export function useJoinQuestions() {
 export interface SubmitJoinRequestPayload {
   displayName: string;
   phoneNumber: string;
+  email: string;
   answers: Record<string, string>;
   smsConsent: boolean;
   website: string;
@@ -69,6 +70,7 @@ export function useSubmitJoinRequest() {
         await apiClient.post('/api/community/join-request/', {
           display_name: payload.displayName,
           phone_number: payload.phoneNumber,
+          email: payload.email,
           answers: payload.answers,
           sms_consent: payload.smsConsent,
           website: payload.website,

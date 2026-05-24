@@ -389,3 +389,48 @@ class TestJoinRequestManagement:
         assert str(pending.id) in ids
         assert str(rejected.id) in ids
         assert str(approved.id) not in ids
+
+
+@pytest.mark.django_db
+class TestApprovalEmail:
+    def test_approval_copies_email_to_new_user(self, api_client, vettor_headers):
+        from community.models import JoinRequest, JoinRequestStatus
+        from users.models import User
+
+        jr = JoinRequest.objects.create(
+            display_name="Applicant",
+            phone_number="+12025550101",
+            email="applicant@example.com",
+            status=JoinRequestStatus.PENDING,
+        )
+        resp = api_client.patch(
+            f"/api/community/join-requests/{jr.id}/",
+            data={"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert resp.status_code == 200, resp.content
+        user = User.objects.get(phone_number="+12025550101")
+        assert user.email == "applicant@example.com"
+
+    def test_approval_conflict_when_email_taken(self, api_client, vettor_headers):
+        from community.models import JoinRequest, JoinRequestStatus
+        from users.models import User
+
+        User.objects.create_user(
+            phone_number="+12025550199", display_name="other", email="taken@example.com"
+        )
+        jr = JoinRequest.objects.create(
+            display_name="Applicant",
+            phone_number="+12025550101",
+            email="taken@example.com",
+            status=JoinRequestStatus.PENDING,
+        )
+        resp = api_client.patch(
+            f"/api/community/join-requests/{jr.id}/",
+            data={"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert resp.status_code == 409
+        assert resp.json()["detail"][0]["code"] == "email.already_exists"

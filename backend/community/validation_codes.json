@@ -267,6 +267,23 @@
         "params": []
       }
     ],
+    "Email": [
+      {
+        "name": "INVALID",
+        "value": "email.invalid",
+        "params": []
+      },
+      {
+        "name": "ALREADY_EXISTS",
+        "value": "email.already_exists",
+        "params": []
+      },
+      {
+        "name": "REQUIRED",
+        "value": "email.required",
+        "params": []
+      }
+    ],
     "Zelle": [
       {
         "name": "INVALID",

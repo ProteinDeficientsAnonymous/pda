@@ -176,6 +176,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Phone.AlreadyExists:
       return 'a member with that phone number already exists';
 
+    // Email
+    case Code.Email.Invalid:
+      return "that doesn't look like a valid email";
+    case Code.Email.AlreadyExists:
+      return 'that email is already on another account — try a different one or contact admin';
+    case Code.Email.Required:
+      return 'email required';
+
     // Zelle
     case Code.Zelle.Invalid:
       return 'zelle must be an email address or phone number';

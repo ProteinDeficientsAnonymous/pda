@@ -14,6 +14,7 @@ from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.tokens import RefreshToken
 
+from users._helpers import _check_and_set_email
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
@@ -215,7 +216,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
         user.display_name = payload.display_name.strip()
         changed.append("display_name")
     if payload.email is not None:
-        user.email = payload.email
+        _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
     if payload.bio is not None:
         user.bio = payload.bio.strip()
@@ -238,7 +239,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     return changed
 
 
-@router.patch("/me/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+@router.patch("/me/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=JWTAuth())
 def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     changed = _apply_me_patch(user, payload)
@@ -352,7 +353,9 @@ def get_member_profile(request, user_id: str):
     )
 
 
-@router.post("/complete-onboarding/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+@router.post(
+    "/complete-onboarding/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=JWTAuth()
+)
 def complete_onboarding(request, payload: OnboardingIn):
     pw_errors = validate_password(payload.new_password)
     if pw_errors:
@@ -363,8 +366,10 @@ def complete_onboarding(request, payload: OnboardingIn):
     if payload.display_name is not None:
         validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
-    if payload.email:
-        user.email = payload.email
+    if payload.email is not None:
+        _check_and_set_email(user, payload.email, exclude_pk=user.pk)
+    elif not user.email:
+        raise_validation(Code.Email.REQUIRED, field="email", status_code=422)
     user.set_password(payload.new_password)
     if user.needs_onboarding and user.onboarded_at is None:
         user.onboarded_at = timezone.now()

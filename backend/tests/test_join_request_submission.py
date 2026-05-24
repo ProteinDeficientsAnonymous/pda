@@ -34,6 +34,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Leafy G",
                 "phone_number": "+12025551234",
+                "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
                 "sms_consent": True,
             },
@@ -54,6 +55,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Leafy G",
                 "phone_number": "+12025551235",
+                "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
                 # sms_consent omitted — defaults to False on the schema.
             },
@@ -68,6 +70,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Leafy G",
                 "phone_number": "+12025551236",
+                "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
                 "sms_consent": False,
             },
@@ -84,6 +87,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Bot Spammer",
                 "phone_number": "+12025557777",
+                "email": "bot@example.com",
                 "answers": {why_join_id: "spammy text"},
                 "sms_consent": True,
                 "website": "http://spam.example.com",
@@ -101,6 +105,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Real Person",
                 "phone_number": "+12025558888",
+                "email": "real@example.com",
                 "answers": {why_join_id: "I care about animals."},
                 "sms_consent": True,
                 "website": "",
@@ -155,6 +160,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Leafy G",
                 "phone_number": "+13105551234",
+                "email": "leafy@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
             },
@@ -174,6 +180,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Test Person",
                 "phone_number": "+14155551234",
+                "email": "testperson@example.com",
                 "answers": {why_join_id: "Because liberation."},
                 "sms_consent": True,
             },
@@ -194,6 +201,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Test Person",
                 "phone_number": "+14155551234",
+                "email": "testperson@example.com",
                 "answers": {why_join_id: "Because liberation."},
                 "sms_consent": True,
             },
@@ -207,6 +215,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "   ",
                 "phone_number": "+12025550701",
+                "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
             },
@@ -214,12 +223,13 @@ class TestJoinRequestSubmission:
         )
         assert response.status_code == 422
 
-    def test_submit_missing_required_answer(self, api_client):
+    def test_submit_missing_required_answer(self, api_client, why_join_id):
         response = api_client.post(
             "/api/community/join-request/",
             {
                 "display_name": "Alice",
                 "phone_number": "+12025550702",
+                "email": "applicant@example.com",
                 "answers": {},
                 "sms_consent": True,
             },
@@ -233,6 +243,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "A" * 65,
                 "phone_number": "+12025550703",
+                "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
             },
@@ -246,6 +257,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Alice2",
                 "phone_number": "+12025550704",
+                "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
             },
@@ -259,6 +271,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "user@example.com",
                 "phone_number": "+12025550705",
+                "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
             },
@@ -272,6 +285,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "http://evil.com",
                 "phone_number": "+12025550706",
+                "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
             },
@@ -294,6 +308,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": name,
                 "phone_number": phone,
+                "email": "applicant@example.com",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
             },
@@ -307,6 +322,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Mary-Jane O'Brien",
                 "phone_number": "+12025550708",
+                "email": "maryjane@example.com",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
             },
@@ -320,6 +336,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "New Sprout",
                 "phone_number": "+19175551234",
+                "email": "newsprout@example.com",
                 "answers": {why_join_id: "Collective liberation matters."},
                 "sms_consent": True,
             },
@@ -342,6 +359,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Leafy New",
                 "phone_number": "+12025559002",
+                "email": "leafynew@example.com",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
             },
@@ -361,6 +379,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Already Here",
                 "phone_number": "+12025551299",
+                "email": "alreadyhere@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
             },
@@ -379,6 +398,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Already Here",
                 "phone_number": "+12025551298",
+                "email": "alreadyhere@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
             },
@@ -400,6 +420,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Coming Back",
                 "phone_number": "+12025551297",
+                "email": "comingback@example.com",
                 "answers": {why_join_id: "i want to return"},
                 "sms_consent": True,
             },
@@ -420,6 +441,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "Leafy G",
                 "phone_number": "+12025559003",
+                "email": "leafy@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
             },
@@ -430,12 +452,14 @@ class TestJoinRequestSubmission:
     def test_submit_join_request_rate_limited(self, api_client, why_join_id):
         names = ["Alpha Leaf", "Beta Leaf", "Gamma Leaf"]
         phones = ["+12025559100", "+12025559101", "+12025559102"]
-        for name, phone in zip(names, phones, strict=True):
+        emails = ["alpha@example.com", "beta@example.com", "gamma@example.com"]
+        for name, phone, email in zip(names, phones, emails, strict=True):
             resp = api_client.post(
                 "/api/community/join-request/",
                 {
                     "display_name": name,
                     "phone_number": phone,
+                    "email": email,
                     "answers": {why_join_id: "Liberation."},
                     "sms_consent": True,
                 },
@@ -447,6 +471,7 @@ class TestJoinRequestSubmission:
             {
                 "display_name": "One Too Many",
                 "phone_number": "+12025559104",
+                "email": "onetoomany@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
             },

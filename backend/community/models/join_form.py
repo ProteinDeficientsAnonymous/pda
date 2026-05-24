@@ -32,6 +32,7 @@ class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     display_name = models.CharField(max_length=64)
     phone_number = models.CharField(max_length=20)
+    email = models.EmailField(blank=True, default="")
     custom_answers = models.JSONField(default=dict, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(

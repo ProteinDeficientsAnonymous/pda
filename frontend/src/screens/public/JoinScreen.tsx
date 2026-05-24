@@ -82,6 +82,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
 
   const [displayName, setDisplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [smsConsent, setSmsConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -95,6 +96,8 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     if (!displayName.trim()) next.displayName = 'name required';
     else if (!/^[\p{L}\p{M}' \-.]+$/u.test(displayName)) next.displayName = 'letters only';
     if (!phoneNumber.trim()) next.phoneNumber = 'phone required';
+    if (!email.trim()) next.email = 'email required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';
     if (!smsConsent) next.smsConsent = 'please agree to receive sms about events';
     for (const q of questions) {
       const val = (answers[q.id] ?? '').trim();
@@ -114,6 +117,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
       await submit.mutateAsync({
         displayName: displayName.trim(),
         phoneNumber: phoneNumber.trim(),
+        email: email.trim(),
         answers: nonEmpty,
         smsConsent,
         website,
@@ -168,6 +172,17 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
           onChange={setPhoneNumber}
           error={errors.phoneNumber}
           hint="use the number you use (or will use) to connect with the community"
+        />
+        <TextField
+          label="email"
+          type="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+          }}
+          autoComplete="email"
+          error={errors.email}
+          required
         />
 
         {questions.map((q) => (

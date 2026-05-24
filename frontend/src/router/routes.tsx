@@ -6,7 +6,7 @@
 // All screens are lazy-loaded (React.lazy) — 1:1 replacement for DeferredScreen.
 
 import { createBrowserRouter } from 'react-router-dom';
-import { AuthBoot, OnboardingGate, RequireAuth, RequirePermission } from '@/auth/guards';
+import { AuthBoot, EmailGate, OnboardingGate, RequireAuth, RequirePermission } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
 import { Permission } from '@/models/permissions';
 import { lazyEl as el, lazyWithRetry } from './lazyRoute';
@@ -62,96 +62,101 @@ export const router = createBrowserRouter([
     ),
     errorElement: <RootRouteError />,
     children: [
-      // Auth screens render edge-to-edge (no AppShell).
-      { path: '/login', element: el(<Login />) },
-      { path: '/magic-login/:token', element: el(<MagicLogin />) },
-      { path: '/onboarding', element: el(<Onboarding />) },
-      { path: '/new-password', element: el(<NewPassword />) },
-
-      // Everything else uses the shared shell (nav + outlet).
       {
-        element: <AppShell />,
+        element: <EmailGate />,
         children: [
-          // ---- public ----
-          { path: '/', element: el(<Home />) },
-          { path: '/join', element: el(<Join />) },
-          { path: '/join/success', element: el(<JoinSuccess />) },
-          { path: '/calendar', element: el(<Calendar />) },
-          { path: '/events/:id', element: el(<EventDetail />) },
-          { path: '/surveys/:slug', element: el(<Survey />) },
-          { path: '/donate', element: el(<Donate />) },
-          { path: '/install', element: el(<Install />) },
-          { path: '/faq', element: el(<Faq />) },
-          { path: '/sms-policy', element: el(<SmsPolicy />) },
+          // Auth screens render edge-to-edge (no AppShell).
+          { path: '/login', element: el(<Login />) },
+          { path: '/magic-login/:token', element: el(<MagicLogin />) },
+          { path: '/onboarding', element: el(<Onboarding />) },
+          { path: '/new-password', element: el(<NewPassword />) },
 
-          // ---- authed ----
+          // Everything else uses the shared shell (nav + outlet).
           {
-            element: <RequireAuth />,
+            element: <AppShell />,
             children: [
-              { path: '/guidelines', element: el(<Guidelines />) },
-              { path: '/settings', element: el(<Settings />) },
-              { path: '/profile', element: el(<Profile />) },
-              { path: '/volunteer', element: el(<Volunteer />) },
-              { path: '/events/mine', element: el(<MyEvents />) },
-              { path: '/events/add', element: el(<EventCreate />) },
-              { path: '/events/:id/edit', element: el(<EventEdit />) },
-              { path: '/members', element: el(<MembersDirectory />) },
-              { path: '/members/:userId', element: el(<MemberProfile />) },
-            ],
-          },
+              // ---- public ----
+              { path: '/', element: el(<Home />) },
+              { path: '/join', element: el(<Join />) },
+              { path: '/join/success', element: el(<JoinSuccess />) },
+              { path: '/calendar', element: el(<Calendar />) },
+              { path: '/events/:id', element: el(<EventDetail />) },
+              { path: '/surveys/:slug', element: el(<Survey />) },
+              { path: '/donate', element: el(<Donate />) },
+              { path: '/install', element: el(<Install />) },
+              { path: '/faq', element: el(<Faq />) },
+              { path: '/sms-policy', element: el(<SmsPolicy />) },
 
-          // ---- admin hub: any authed user can visit; the hub itself shows
-          //      only the tiles their permissions allow.
-          {
-            element: <RequireAuth />,
-            children: [{ path: '/admin', element: el(<AdminHub />) }],
-          },
+              // ---- authed ----
+              {
+                element: <RequireAuth />,
+                children: [
+                  { path: '/guidelines', element: el(<Guidelines />) },
+                  { path: '/settings', element: el(<Settings />) },
+                  { path: '/profile', element: el(<Profile />) },
+                  { path: '/volunteer', element: el(<Volunteer />) },
+                  { path: '/events/mine', element: el(<MyEvents />) },
+                  { path: '/events/add', element: el(<EventCreate />) },
+                  { path: '/events/:id/edit', element: el(<EventEdit />) },
+                  { path: '/members', element: el(<MembersDirectory />) },
+                  { path: '/members/:userId', element: el(<MemberProfile />) },
+                ],
+              },
 
-          // ---- permissioned ----
-          {
-            element: <RequirePermission perm={Permission.ManageUsers} />,
-            children: [
-              { path: '/admin/members', element: el(<Members />) },
-              { path: '/admin/members/:id', element: el(<MemberDetail />) },
-            ],
-          },
-          {
-            element: <RequirePermission perm={Permission.ApproveJoinRequests} />,
-            children: [{ path: '/join-requests', element: el(<JoinRequestsAdmin />) }],
-          },
-          {
-            element: <RequirePermission perm={Permission.ManageEvents} />,
-            children: [
-              { path: '/events/manage', element: el(<EventManagement />) },
-              { path: '/admin/flagged-events', element: el(<FlaggedEvents />) },
-            ],
-          },
-          {
-            element: <RequirePermission perm={Permission.ManageWhatsapp} />,
-            children: [{ path: '/admin/whatsapp', element: el(<WhatsappConfig />) }],
-          },
-          {
-            element: <RequirePermission perm={Permission.ManageDocuments} />,
-            children: [
-              { path: '/docs', element: el(<Docs />) },
-              { path: '/docs/:id', element: el(<DocDetail />) },
-            ],
-          },
-          {
-            element: <RequirePermission perm={Permission.EditJoinQuestions} />,
-            children: [{ path: '/admin/join-form', element: el(<JoinFormAdmin />) }],
-          },
-          {
-            element: <RequirePermission perm={Permission.ManageSurveys} />,
-            children: [
-              { path: '/admin/surveys', element: el(<SurveyAdminList />) },
-              { path: '/admin/surveys/:id', element: el(<SurveyBuilder />) },
-              { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
-            ],
-          },
+              // ---- admin hub: any authed user can visit; the hub itself shows
+              //      only the tiles their permissions allow.
+              {
+                element: <RequireAuth />,
+                children: [{ path: '/admin', element: el(<AdminHub />) }],
+              },
 
-          // ---- catch-all ----
-          { path: '*', element: el(<Stub />) },
+              // ---- permissioned ----
+              {
+                element: <RequirePermission perm={Permission.ManageUsers} />,
+                children: [
+                  { path: '/admin/members', element: el(<Members />) },
+                  { path: '/admin/members/:id', element: el(<MemberDetail />) },
+                ],
+              },
+              {
+                element: <RequirePermission perm={Permission.ApproveJoinRequests} />,
+                children: [{ path: '/join-requests', element: el(<JoinRequestsAdmin />) }],
+              },
+              {
+                element: <RequirePermission perm={Permission.ManageEvents} />,
+                children: [
+                  { path: '/events/manage', element: el(<EventManagement />) },
+                  { path: '/admin/flagged-events', element: el(<FlaggedEvents />) },
+                ],
+              },
+              {
+                element: <RequirePermission perm={Permission.ManageWhatsapp} />,
+                children: [{ path: '/admin/whatsapp', element: el(<WhatsappConfig />) }],
+              },
+              {
+                element: <RequirePermission perm={Permission.ManageDocuments} />,
+                children: [
+                  { path: '/docs', element: el(<Docs />) },
+                  { path: '/docs/:id', element: el(<DocDetail />) },
+                ],
+              },
+              {
+                element: <RequirePermission perm={Permission.EditJoinQuestions} />,
+                children: [{ path: '/admin/join-form', element: el(<JoinFormAdmin />) }],
+              },
+              {
+                element: <RequirePermission perm={Permission.ManageSurveys} />,
+                children: [
+                  { path: '/admin/surveys', element: el(<SurveyAdminList />) },
+                  { path: '/admin/surveys/:id', element: el(<SurveyBuilder />) },
+                  { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
+                ],
+              },
+
+              // ---- catch-all ----
+              { path: '*', element: el(<Stub />) },
+            ],
+          },
         ],
       },
     ],

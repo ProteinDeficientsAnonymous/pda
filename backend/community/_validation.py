@@ -84,6 +84,11 @@ class Code:
         INVALID = "phone.invalid"
         ALREADY_EXISTS = "phone.already_exists"
 
+    class Email:
+        INVALID = "email.invalid"
+        ALREADY_EXISTS = "email.already_exists"
+        REQUIRED = "email.required"
+
     class Zelle:
         INVALID = "zelle.invalid"
 

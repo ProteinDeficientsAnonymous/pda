@@ -2628,6 +2628,11 @@
             "title": "Display Name",
             "type": "string"
           },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
           "phone_number": {
             "maxLength": 20,
             "title": "Phone Number",
@@ -2647,7 +2652,8 @@
         },
         "required": [
           "display_name",
-          "phone_number"
+          "phone_number",
+          "email"
         ],
         "title": "JoinRequestIn",
         "type": "object"
@@ -4522,6 +4528,16 @@
               }
             },
             "description": "Bad Request"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [
@@ -4579,6 +4595,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [
@@ -4798,6 +4824,16 @@
               }
             },
             "description": "Bad Request"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [
@@ -5394,6 +5430,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [
@@ -9324,6 +9370,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [

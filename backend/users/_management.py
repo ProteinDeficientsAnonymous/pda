@@ -13,6 +13,7 @@ from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
 
 from users._helpers import (
+    _check_and_set_email,
     _create_magic_token,
     _create_user_with_role,
     _is_admin,
@@ -42,7 +43,7 @@ router = Router()
 
 @router.post(
     "/create-user/",
-    response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut},
+    response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut, 409: ErrorOut},
     auth=JWTAuth(),
 )
 def create_user(request, payload: UserCreateIn):
@@ -214,7 +215,7 @@ def list_users(request):
 
 @router.patch(
     "/users/{user_id}/",
-    response={200: UserOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: UserOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 409: ErrorOut},
     auth=JWTAuth(),
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
@@ -283,7 +284,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
         validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
     if payload.email is not None:
-        user.email = payload.email
+        _check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
     if payload.is_paused is not None:
         user.is_paused = payload.is_paused
