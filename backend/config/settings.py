@@ -214,3 +214,9 @@ if IS_PRODUCTION and os.environ.get("EMAIL_HOST"):
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
+
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "")
+
+if IS_PRODUCTION and RESEND_API_KEY and not RESEND_FROM_EMAIL:
+    raise ValueError("RESEND_FROM_EMAIL must be set when RESEND_API_KEY is configured")
