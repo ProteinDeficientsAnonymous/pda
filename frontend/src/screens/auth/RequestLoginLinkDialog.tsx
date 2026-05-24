@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { PhoneField } from '@/components/ui/PhoneField';
@@ -13,7 +12,7 @@ interface Props {
   onClose: () => void;
 }
 
-// Outer wrapper unmounts the form on close so internal state (phone, error)
+// Outer wrapper unmounts the form on close so internal state (phone, error, sent)
 // is reseeded from `initialPhone` each time the dialog opens — no effect-based
 // state syncing required.
 export function RequestLoginLinkDialog({ open, initialPhone, onClose }: Props) {
@@ -30,6 +29,7 @@ function RequestLoginLinkForm({
 }) {
   const [phone, setPhone] = useState(initialPhone);
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const requestLink = useRequestLoginLink();
 
   async function onSubmit(e: React.SyntheticEvent) {
@@ -41,12 +41,29 @@ function RequestLoginLinkForm({
     }
     try {
       await requestLink.mutateAsync(phone);
-      toast.success('request sent — an admin will reach out 🌱');
-      onClose();
+      setSent(true);
     } catch (err) {
       const message = extractApiError(err, "couldn't send the request — try again");
       setError(message);
     }
+  }
+
+  if (sent) {
+    return (
+      <Dialog open onClose={onClose} title="request a login link">
+        <div className="flex flex-col gap-4">
+          <p className="text-muted text-sm">
+            if there's an account for that number, we sent a login link to the email on file —
+            check your inbox, including spam 🌱
+          </p>
+          <div className="flex justify-end">
+            <Button type="button" onClick={onClose}>
+              done
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    );
   }
 
   return (
@@ -58,7 +75,7 @@ function RequestLoginLinkForm({
         className="flex flex-col gap-4"
       >
         <p className="text-muted text-sm">
-          an admin will be pinged to send you a one-tap login link — works for invited members only
+          enter your phone number and we'll send a one-tap login link to the email on file
         </p>
         <PhoneField
           label="phone number"
