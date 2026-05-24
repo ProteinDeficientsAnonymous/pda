@@ -41,9 +41,7 @@ def get_email_sender() -> EmailSender:
         _cached_sender = ResendSender()
     else:
         if getattr(settings, "IS_PRODUCTION", False):
-            raise RuntimeError(
-                "RESEND_API_KEY is required in production but is not set"
-            )
+            raise RuntimeError("RESEND_API_KEY is required in production but is not set")
         from notifications._console_sender import ConsoleSender
 
         _cached_sender = ConsoleSender()

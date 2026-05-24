@@ -17,6 +17,7 @@ def _make_approver():
     approver.roles.add(role)
     return approver
 
+
 _URL = "/api/community/request-login-link/"
 _PHONE = "+12025558800"
 
@@ -196,18 +197,16 @@ class TestRequestLoginLinkEmailDelivery:
         # Email sent successfully — admin notification must NOT fire
         fake_email_sender.send.assert_called_once()
         assert not Notification.objects.filter(
-            recipient=approver, notification_type=NotificationType.MAGIC_LINK_REQUEST, related_user=user
+            recipient=approver,
+            notification_type=NotificationType.MAGIC_LINK_REQUEST,
+            related_user=user,
         ).exists()
 
-    def test_user_with_email_send_fails_still_returns_200(
-        self, api_client, fake_email_sender
-    ):
+    def test_user_with_email_send_fails_still_returns_200(self, api_client, fake_email_sender):
         from notifications.email_sender import SendResult
         from users.models import User
 
-        fake_email_sender.send.return_value = SendResult(
-            success=False, error="invalid recipient"
-        )
+        fake_email_sender.send.return_value = SendResult(success=False, error="invalid recipient")
         approver = _make_approver()
         user = User.objects.create_user(
             phone_number="+12025550101",

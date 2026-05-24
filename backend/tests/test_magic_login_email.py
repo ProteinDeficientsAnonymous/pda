@@ -4,7 +4,6 @@ import re
 from unittest.mock import MagicMock
 
 import pytest
-
 from notifications._email_helpers import send_magic_login_email
 from notifications.email_sender import SendResult
 

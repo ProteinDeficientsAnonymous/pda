@@ -49,6 +49,7 @@ class TestConsoleSender:
 
     def test_send_logs_email(self, caplog):
         import logging
+
         from notifications._console_sender import ConsoleSender
 
         with caplog.at_level(logging.INFO, logger="notifications.console_sender"):
