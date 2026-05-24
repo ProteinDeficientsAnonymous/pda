@@ -5,9 +5,12 @@ from datetime import timedelta
 
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
+from django.conf import settings
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications._email_helpers import send_magic_login_email
+from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
 
 from community._field_limits import FieldLimit
@@ -87,19 +90,56 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         )
         return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
 
-    _create_magic_token(user)
+    magic_token = _create_magic_token(user)
     user.login_link_requested = True
     user.save(update_fields=["login_link_requested"])
-    try:
-        create_magic_link_request_notifications(user)
-    except Exception:
-        logger.exception("Failed to create magic link request notifications")
-    audit_log(
-        logging.INFO,
-        "magic_link_requested",
-        request,
-        target_type="user",
-        target_id=str(user.pk),
-    )
+
+    # Try email delivery first if the user has an email on file.
+    email_send_succeeded = False
+    if user.email:
+        try:
+            magic_link_url = f"{settings.FRONTEND_BASE_URL}/magic-login/{magic_token}"
+            send_result = send_magic_login_email(
+                sender=get_email_sender(),
+                to=user.email,
+                display_name=user.display_name or "",
+                magic_link_url=magic_link_url,
+            )
+            if send_result.success:
+                email_send_succeeded = True
+                audit_log(
+                    logging.INFO,
+                    "magic_link_email_sent",
+                    request,
+                    target_type="user",
+                    target_id=str(user.pk),
+                    details={"provider_message_id": send_result.provider_message_id},
+                )
+            else:
+                audit_log(
+                    logging.WARNING,
+                    "magic_link_email_failed",
+                    request,
+                    target_type="user",
+                    target_id=str(user.pk),
+                    details={"error": send_result.error},
+                )
+        except Exception:
+            logger.exception("Unexpected error sending magic-login email")
+            # email_send_succeeded stays False → admin notify fallback fires
+
+    # Fall through to admin notification if email didn't deliver.
+    if not email_send_succeeded:
+        try:
+            create_magic_link_request_notifications(user)
+        except Exception:
+            logger.exception("Failed to create magic link request notifications")
+        audit_log(
+            logging.INFO,
+            "magic_link_requested",
+            request,
+            target_type="user",
+            target_id=str(user.pk),
+        )
 
     return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))

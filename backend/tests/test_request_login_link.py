@@ -5,6 +5,18 @@ from notifications.models import Notification, NotificationType
 from users.permissions import PermissionKey
 from users.roles import Role
 
+
+def _make_approver():
+    """Create a user with APPROVE_JOIN_REQUESTS permission and return them."""
+    from users.models import User
+
+    approver = User.objects.create_user(
+        phone_number="+12025559001", password="pass", display_name="Approver"
+    )
+    role = Role.objects.create(name="vetter", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
+    approver.roles.add(role)
+    return approver
+
 _URL = "/api/community/request-login-link/"
 _PHONE = "+12025558800"
 
@@ -143,3 +155,121 @@ class TestRequestLoginLink:
         assert resp.status_code == 429
         assert resp.json()["detail"][0]["code"] == "rate.limited"
         cache.clear()
+
+
+@pytest.mark.django_db
+class TestRequestLoginLinkEmailDelivery:
+    def test_user_with_email_send_succeeds(self, api_client, fake_email_sender):
+        from users.models import User
+
+        User.objects.create_user(
+            phone_number="+12025550101",
+            display_name="Sam",
+            email="sam@example.com",
+        )
+        resp = api_client.post(
+            "/api/community/request-login-link/",
+            data={"phone_number": "+12025550101"},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        fake_email_sender.send.assert_called_once()
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["to"] == "sam@example.com"
+
+    def test_user_with_email_send_succeeds_skips_admin_notification(
+        self, api_client, fake_email_sender
+    ):
+        from users.models import User
+
+        approver = _make_approver()
+        user = User.objects.create_user(
+            phone_number="+12025550101",
+            display_name="Sam",
+            email="sam@example.com",
+        )
+        api_client.post(
+            "/api/community/request-login-link/",
+            data={"phone_number": "+12025550101"},
+            content_type="application/json",
+        )
+        # Email sent successfully — admin notification must NOT fire
+        fake_email_sender.send.assert_called_once()
+        assert not Notification.objects.filter(
+            recipient=approver, notification_type=NotificationType.MAGIC_LINK_REQUEST, related_user=user
+        ).exists()
+
+    def test_user_with_email_send_fails_still_returns_200(
+        self, api_client, fake_email_sender
+    ):
+        from notifications.email_sender import SendResult
+        from users.models import User
+
+        fake_email_sender.send.return_value = SendResult(
+            success=False, error="invalid recipient"
+        )
+        approver = _make_approver()
+        user = User.objects.create_user(
+            phone_number="+12025550101",
+            display_name="Sam",
+            email="bad@example.com",
+        )
+        resp = api_client.post(
+            "/api/community/request-login-link/",
+            data={"phone_number": "+12025550101"},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        fake_email_sender.send.assert_called_once()
+        # Admin notification fallback SHOULD fire on email send failure
+        notif = Notification.objects.get(
+            recipient=approver, notification_type=NotificationType.MAGIC_LINK_REQUEST
+        )
+        assert notif.related_user_id == user.pk  # ty: ignore[unresolved-attribute]
+
+    def test_user_with_no_email_skips_send(self, api_client, fake_email_sender):
+        from users.models import User
+
+        approver = _make_approver()
+        user = User.objects.create_user(
+            phone_number="+12025550101",
+            display_name="Sam",
+            email=None,
+        )
+        resp = api_client.post(
+            "/api/community/request-login-link/",
+            data={"phone_number": "+12025550101"},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        fake_email_sender.send.assert_not_called()
+        # Admin notification still fires — no-email path is unchanged
+        notif = Notification.objects.get(
+            recipient=approver, notification_type=NotificationType.MAGIC_LINK_REQUEST
+        )
+        assert notif.related_user_id == user.pk  # ty: ignore[unresolved-attribute]
+
+    def test_unexpected_email_error_falls_through(self, api_client, fake_email_sender):
+        """If something unexpected raises inside the email branch (template missing,
+        bug in helper, etc.), the endpoint still returns 200 and the admin
+        notification fallback fires."""
+        from users.models import User
+
+        fake_email_sender.send.side_effect = RuntimeError("unexpected boom")
+        approver = _make_approver()
+        user = User.objects.create_user(
+            phone_number="+12025550101",
+            display_name="Sam",
+            email="sam@example.com",
+        )
+        resp = api_client.post(
+            "/api/community/request-login-link/",
+            data={"phone_number": "+12025550101"},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        # Admin notification fallback should have fired
+        notif = Notification.objects.get(
+            recipient=approver, notification_type=NotificationType.MAGIC_LINK_REQUEST
+        )
+        assert notif.related_user_id == user.pk  # ty: ignore[unresolved-attribute]

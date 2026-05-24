@@ -220,3 +220,8 @@ RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "")
 
 if IS_PRODUCTION and RESEND_API_KEY and not RESEND_FROM_EMAIL:
     raise ValueError("RESEND_FROM_EMAIL must be set when RESEND_API_KEY is configured")
+
+# Frontend URL used to construct magic-login links in transactional emails.
+# In production, set to the public app URL (e.g. https://pda.example.com).
+# In dev/test, defaults to localhost:3000.
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
