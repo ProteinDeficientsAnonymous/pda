@@ -138,3 +138,24 @@ def sample_join_request(db):
         phone_number="+16505551234",
         custom_answers=answers,
     )
+
+
+@pytest.fixture
+def fake_email_sender(monkeypatch):
+    """Replace the cached email sender with a Mock so integration tests can assert sends.
+
+    Yields the Mock so tests can inspect call args and tweak return values.
+    """
+    from unittest.mock import MagicMock
+
+    from notifications import email_sender as email_sender_module
+    from notifications.email_sender import SendResult
+
+    fake = MagicMock()
+    fake.send.return_value = SendResult(success=True, provider_message_id="test_msg")
+
+    # Set the module-level cache directly. get_email_sender() returns
+    # whatever is in _cached_sender if it's not None.
+    monkeypatch.setattr(email_sender_module, "_cached_sender", fake)
+    yield fake
+    # monkeypatch auto-cleans up.
