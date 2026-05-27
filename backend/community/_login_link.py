@@ -26,9 +26,24 @@ class RequestLoginLinkIn(BaseModel):
 
 class RequestLoginLinkOut(BaseModel):
     detail: str
+    # "email" when an email was sent; "admin" for every other case (no email
+    # on file, send failed, unknown phone, etc.). Bundling the unknown-phone
+    # case into "admin" weakens anti-enumeration slightly — an attacker who
+    # sees "email" learns the account exists AND has an email — but the
+    # honest UX of telling email-having users to check their inbox is worth
+    # the small leak, especially given the 5/m rate limit on this endpoint.
+    delivery: str
 
 
-_REQUEST_LINK_RESPONSE = "if you've been invited, an admin will be in touch with your login link"
+_DELIVERY_EMAIL = "email"
+_DELIVERY_ADMIN = "admin"
+_EMAIL_RESPONSE = (
+    "if there's an account for that number, we sent a login link to the email on file — "
+    "check your inbox, including spam"
+)
+_ADMIN_RESPONSE = (
+    "if there's an account for that number, an admin will follow up with your login link"
+)
 
 
 @router.post(
@@ -55,7 +70,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             "magic_link_request_skipped_invalid_phone",
             request,
         )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+        return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
     user = User.objects.filter(phone_number=normalized, archived_at__isnull=True).first()
     if user is None:
@@ -64,7 +79,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             "magic_link_request_skipped_unknown_phone",
             request,
         )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+        return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
     if user.login_link_requested:
         audit_log(
@@ -74,7 +89,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             target_type="user",
             target_id=str(user.pk),
         )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+        return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
     recent_token_exists = MagicLoginToken.objects.filter(
         user=user,
@@ -88,27 +103,33 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             target_type="user",
             target_id=str(user.pk),
         )
-        return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+        return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
     magic_token = _create_magic_token(user)
     user.login_link_requested = True
     user.save(update_fields=["login_link_requested"])
 
-    # Fall through to admin notification if email didn't deliver.
-    if not _try_email_delivery(request=request, user=user, magic_token=magic_token):
-        try:
-            create_magic_link_request_notifications(user)
-        except Exception:
-            logger.exception("Failed to create magic link request notifications")
-        audit_log(
-            logging.INFO,
-            "magic_link_requested",
-            request,
-            target_type="user",
-            target_id=str(user.pk),
+    email_success = _try_email_delivery(request=request, user=user, magic_token=magic_token)
+    if email_success:
+        return Status(
+            200,
+            RequestLoginLinkOut(detail=_EMAIL_RESPONSE, delivery=_DELIVERY_EMAIL),
         )
 
-    return Status(200, RequestLoginLinkOut(detail=_REQUEST_LINK_RESPONSE))
+    # No email or send failed — fall through to admin notification.
+    try:
+        create_magic_link_request_notifications(user)
+    except Exception:
+        logger.exception("Failed to create magic link request notifications")
+    audit_log(
+        logging.INFO,
+        "magic_link_requested",
+        request,
+        target_type="user",
+        target_id=str(user.pk),
+    )
+
+    return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
 
 def _try_email_delivery(*, request, user, magic_token) -> bool:

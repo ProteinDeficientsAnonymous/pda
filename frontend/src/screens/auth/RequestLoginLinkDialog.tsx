@@ -3,7 +3,7 @@ import { isValidPhoneNumber } from 'react-phone-number-input';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { PhoneField } from '@/components/ui/PhoneField';
-import { useRequestLoginLink } from '@/api/auth';
+import { useRequestLoginLink, type RequestLoginLinkDelivery } from '@/api/auth';
 import { extractApiError } from '@/utils/errors';
 
 interface Props {
@@ -29,7 +29,7 @@ function RequestLoginLinkForm({
 }) {
   const [phone, setPhone] = useState(initialPhone);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [delivery, setDelivery] = useState<RequestLoginLinkDelivery | null>(null);
   const requestLink = useRequestLoginLink();
 
   async function onSubmit(e: React.SyntheticEvent) {
@@ -40,22 +40,23 @@ function RequestLoginLinkForm({
       return;
     }
     try {
-      await requestLink.mutateAsync(phone);
-      setSent(true);
+      const result = await requestLink.mutateAsync(phone);
+      setDelivery(result.delivery);
     } catch (err) {
       const message = extractApiError(err, "couldn't send the request — try again");
       setError(message);
     }
   }
 
-  if (sent) {
+  if (delivery !== null) {
+    const message =
+      delivery === 'email'
+        ? "if there's an account for that number, we sent a login link to the email on file — check your inbox, including spam 🌱"
+        : "if there's an account for that number, an admin will follow up with your login link — sit tight 🌱";
     return (
       <Dialog open onClose={onClose} title="request a login link">
         <div className="flex flex-col gap-4">
-          <p className="text-muted text-sm">
-            if there's an account for that number, we sent a login link to the email on file — check
-            your inbox, including spam 🌱
-          </p>
+          <p className="text-muted text-sm">{message}</p>
           <div className="flex justify-end">
             <Button type="button" onClick={onClose}>
               done

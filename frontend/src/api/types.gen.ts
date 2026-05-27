@@ -2993,6 +2993,8 @@ export interface components {
         };
         /** RequestLoginLinkOut */
         RequestLoginLinkOut: {
+            /** Delivery */
+            delivery: string;
             /** Detail */
             detail: string;
         };

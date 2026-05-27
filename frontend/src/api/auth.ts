@@ -191,13 +191,19 @@ export async function deleteProfilePhoto(): Promise<User> {
 
 // --- request login link -----------------------------------------------------
 
+export type RequestLoginLinkDelivery = 'email' | 'admin';
+
 interface RequestLoginLinkOut {
   detail: string;
+  delivery: RequestLoginLinkDelivery;
 }
 
 export function useRequestLoginLink() {
-  // Endpoint always returns 200 (anti-enumeration) — we surface a generic
-  // success regardless of whether the phone matches a real account.
+  // Endpoint always returns 200 (anti-enumeration). The `delivery` field
+  // distinguishes "we emailed you" from "an admin will follow up" so the
+  // UI can render honest copy — the unknown-phone case is bundled into the
+  // admin path so the response shape doesn't reveal whether the account
+  // exists when no email was sent.
   return useMutation({
     mutationFn: async (phoneNumber: string) => {
       const { data } = await authClient.post<RequestLoginLinkOut>(

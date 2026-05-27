@@ -41,11 +41,16 @@ class TestRequestLoginLink:
         assert response.status_code == 200
 
     def test_returns_200_for_unknown_phone(self, api_client):
-        """Always returns 200 regardless of whether phone exists (anti-enumeration)."""
+        """Always returns 200 regardless of whether phone exists (anti-enumeration).
+
+        Unknown phones get the admin-fallback response shape so the response
+        doesn't reveal "no account" vs "account with no email".
+        """
         response = api_client.post(
             _URL, {"phone_number": "+12025559999"}, content_type="application/json"
         )
         assert response.status_code == 200
+        assert response.json()["delivery"] == "admin"
 
     def test_returns_200_for_invalid_phone(self, api_client):
         response = api_client.post(
@@ -174,6 +179,8 @@ class TestRequestLoginLinkEmailDelivery:
             content_type="application/json",
         )
         assert resp.status_code == 200
+        assert resp.json()["delivery"] == "email"
+        assert "email on file" in resp.json()["detail"]
         fake_email_sender.send.assert_called_once()
         sent = fake_email_sender.send.call_args.kwargs
         assert sent["to"] == "sam@example.com"
@@ -241,6 +248,8 @@ class TestRequestLoginLinkEmailDelivery:
             content_type="application/json",
         )
         assert resp.status_code == 200
+        assert resp.json()["delivery"] == "admin"
+        assert "admin will follow up" in resp.json()["detail"]
         fake_email_sender.send.assert_not_called()
         # Admin notification still fires — no-email path is unchanged
         notif = Notification.objects.get(

@@ -3347,13 +3347,18 @@
       },
       "RequestLoginLinkOut": {
         "properties": {
+          "delivery": {
+            "title": "Delivery",
+            "type": "string"
+          },
           "detail": {
             "title": "Detail",
             "type": "string"
           }
         },
         "required": [
-          "detail"
+          "detail",
+          "delivery"
         ],
         "title": "RequestLoginLinkOut",
         "type": "object"
