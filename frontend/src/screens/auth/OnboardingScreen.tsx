@@ -22,6 +22,10 @@ type FormValues = z.infer<typeof schema>;
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+  // Prefill displayName for legacy users who were approved before email was
+  // required — they already have a name on file and only need to add email
+  // + set a password.
+  const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -32,7 +36,7 @@ export default function OnboardingScreen() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { displayName: '', email: '', newPassword: '' },
+    defaultValues: { displayName: existingDisplayName, email: '', newPassword: '' },
   });
   const passwordValue = useWatch({ control, name: 'newPassword' });
 

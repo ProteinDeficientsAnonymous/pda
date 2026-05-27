@@ -185,8 +185,12 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
-  it('redirects a password-reset user (needsOnboarding=true, has displayName) to /new-password', () => {
-    const user = makeUser({ needsOnboarding: true, displayName: 'Alice' });
+  it('redirects a password-reset user (needsOnboarding=true, has displayName + email) to /new-password', () => {
+    const user = makeUser({
+      needsOnboarding: true,
+      displayName: 'Alice',
+      email: 'alice@example.com',
+    });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
@@ -203,6 +207,29 @@ describe('OnboardingGate', () => {
 
     expect(screen.getByText('new password page')).toBeInTheDocument();
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('redirects a legacy user (needsOnboarding=true, has displayName but no email) to /onboarding', () => {
+    // Pre-email-requirement users were approved with a displayName but never
+    // supplied an email. On first login they must end up at /onboarding so
+    // they can add one — /new-password has no email field and would loop.
+    const user = makeUser({ needsOnboarding: true, displayName: 'Alice', email: '' });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/calendar" element={<div>calendar page</div>} />
+            <Route path="/onboarding" element={<div>onboarding page</div>} />
+            <Route path="/new-password" element={<div>new password page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('onboarding page')).toBeInTheDocument();
+    expect(screen.queryByText('new password page')).not.toBeInTheDocument();
   });
 
   it('redirects an onboarding-complete user on /onboarding to /guidelines', () => {

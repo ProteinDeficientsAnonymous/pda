@@ -66,9 +66,12 @@ export function OnboardingGate() {
 
   if (user?.needsOnboarding) {
     // Two shapes:
-    //   - first-time user (empty displayName)  → /onboarding (name + password)
-    //   - password reset (has displayName)     → /new-password (password only)
-    const target = user.displayName.length > 0 ? '/new-password' : '/onboarding';
+    //   - password reset (has displayName + email)  → /new-password (password only)
+    //   - everyone else                             → /onboarding (collects whatever's missing)
+    // Users approved before email was required can land here with a displayName
+    // but no email — they need /onboarding so they can supply one.
+    const hasNameAndEmail = user.displayName.length > 0 && !!user.email;
+    const target = hasNameAndEmail ? '/new-password' : '/onboarding';
     if (path !== target) {
       return <Navigate to={target} replace />;
     }
