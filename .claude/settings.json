@@ -42,5 +42,17 @@
     "BASH_MAX_OUTPUT_LENGTH": "20000",
     "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1"
   },
+  "extraKnownMarketplaces": {
+    "skillet": {
+      "source": {
+        "source": "github",
+        "repo": "mungbeanfanfiction/skillet"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "skillet@skillet": true
+  },
   "cleanupPeriodDays": 30
 }
