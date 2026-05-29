@@ -3,7 +3,7 @@
 // count refetch. Polling is a fallback (30s when SSE is disconnected, 5 min
 // when connected).
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/auth/store';
@@ -17,6 +17,9 @@ import {
 import { useEventSource } from '@/hooks/useEventSource';
 import { NotificationType, type AppNotification } from '@/models/notification';
 import { cn } from '@/utils/cn';
+import { reportError } from '@/utils/errorReporter';
+
+const ROUTE = '/notifications';
 
 const AUTO_READ_DELAY_MS = 1500;
 
@@ -59,12 +62,28 @@ export function NotificationBell() {
   // the user time to actually see what's new before we clear the badge.
   // Closing (or unmounting) within the window cancels the pending call; a new
   // SSE-pushed notification bumps `count`, which resets the timer.
-  const markAllMutate = markAll.mutateAsync;
+  //
+  // We use `mutate` (not `mutateAsync`) with an inline `onError` so a rejected
+  // mark-all never becomes an unhandled promise rejection. After a failure we
+  // latch `autoMarkFailedRef` so the effect won't re-fire in a tight loop while
+  // `count` stays non-zero; the latch clears whenever the dropdown closes, so
+  // the next open retries once.
+  const markAllMutate = markAll.mutate;
   const markAllPending = markAll.isPending;
+  const autoMarkFailedRef = useRef(false);
   useEffect(() => {
-    if (!open || count === 0 || markAllPending) return;
+    if (!open) {
+      autoMarkFailedRef.current = false;
+      return;
+    }
+    if (count === 0 || markAllPending || autoMarkFailedRef.current) return;
     const timer = setTimeout(() => {
-      void markAllMutate();
+      markAllMutate(undefined, {
+        onError: (err) => {
+          autoMarkFailedRef.current = true;
+          void reportError(err, ROUTE, { action: 'mark-all-read' });
+        },
+      });
     }, AUTO_READ_DELAY_MS);
     return () => {
       clearTimeout(timer);
@@ -120,7 +139,16 @@ export function NotificationBell() {
                       <NotificationRow
                         n={n}
                         onMarkRead={() => {
-                          if (!n.isRead) void markRead.mutateAsync(n.id);
+                          if (!n.isRead) {
+                            markRead.mutate(n.id, {
+                              onError: (err) => {
+                                void reportError(err, ROUTE, {
+                                  action: 'mark-read',
+                                  notificationId: n.id,
+                                });
+                              },
+                            });
+                          }
                         }}
                         onClose={() => {
                           setOpen(false);

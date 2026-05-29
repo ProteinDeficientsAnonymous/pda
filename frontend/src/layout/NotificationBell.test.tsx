@@ -25,6 +25,12 @@ vi.mock('@/hooks/useEventSource', () => ({
   useEventSource: vi.fn(),
 }));
 
+// errorReporter posts to the backend — stub it so onError handlers don't try
+// to hit the network in tests.
+vi.mock('@/utils/errorReporter', () => ({
+  reportError: vi.fn().mockResolvedValue(undefined),
+}));
+
 import {
   useUnreadCount,
   useNotifications,
@@ -39,7 +45,7 @@ const mockUseMarkNotificationRead = vi.mocked(useMarkNotificationRead);
 const mockUseMarkAllNotificationsRead = vi.mocked(useMarkAllNotificationsRead);
 
 function makeMutation(overrides = {}) {
-  return { mutateAsync: vi.fn(), isPending: false, ...overrides };
+  return { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, ...overrides };
 }
 
 function makeQc() {
@@ -177,29 +183,34 @@ describe('NotificationBell auto-clear on open', () => {
   });
 
   it('fires mark-all-read after the delay when opened with unread items', () => {
-    const mutateAsync = vi.fn().mockResolvedValue(undefined);
+    const mutate = vi.fn();
     mockUseUnreadCount.mockReturnValue({ data: 2 } as unknown as ReturnType<typeof useUnreadCount>);
     mockUseMarkAllNotificationsRead.mockReturnValue(
-      makeMutation({ mutateAsync }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
+      makeMutation({ mutate }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
     );
 
     renderBell();
 
     fireEvent.click(screen.getByRole('button', { name: /notifications \(2 unread\)/i }));
-    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
 
     act(() => {
       vi.advanceTimersByTime(AUTO_READ_DELAY_MS);
     });
 
-    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(mutate).toHaveBeenCalledTimes(1);
+    // Called with an onError handler so a rejection can't become unhandled.
+    expect(mutate).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it('does not fire when the dropdown is opened with zero unread', () => {
-    const mutateAsync = vi.fn().mockResolvedValue(undefined);
+    const mutate = vi.fn();
     mockUseUnreadCount.mockReturnValue({ data: 0 } as unknown as ReturnType<typeof useUnreadCount>);
     mockUseMarkAllNotificationsRead.mockReturnValue(
-      makeMutation({ mutateAsync }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
+      makeMutation({ mutate }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
     );
 
     renderBell();
@@ -210,14 +221,14 @@ describe('NotificationBell auto-clear on open', () => {
       vi.advanceTimersByTime(AUTO_READ_DELAY_MS * 2);
     });
 
-    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
   });
 
   it('cancels the pending mark-all call if the dropdown closes within the delay', () => {
-    const mutateAsync = vi.fn().mockResolvedValue(undefined);
+    const mutate = vi.fn();
     mockUseUnreadCount.mockReturnValue({ data: 3 } as unknown as ReturnType<typeof useUnreadCount>);
     mockUseMarkAllNotificationsRead.mockReturnValue(
-      makeMutation({ mutateAsync }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
+      makeMutation({ mutate }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
     );
 
     renderBell();
@@ -233,14 +244,14 @@ describe('NotificationBell auto-clear on open', () => {
       vi.advanceTimersByTime(AUTO_READ_DELAY_MS * 2);
     });
 
-    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
   });
 
   it('resets the timer when the dropdown is reopened', () => {
-    const mutateAsync = vi.fn().mockResolvedValue(undefined);
+    const mutate = vi.fn();
     mockUseUnreadCount.mockReturnValue({ data: 1 } as unknown as ReturnType<typeof useUnreadCount>);
     mockUseMarkAllNotificationsRead.mockReturnValue(
-      makeMutation({ mutateAsync }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
+      makeMutation({ mutate }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
     );
 
     renderBell();
@@ -257,12 +268,72 @@ describe('NotificationBell auto-clear on open', () => {
     act(() => {
       vi.advanceTimersByTime(AUTO_READ_DELAY_MS - 500);
     });
-    expect(mutateAsync).not.toHaveBeenCalled();
+    expect(mutate).not.toHaveBeenCalled();
 
     // Now advance the rest of the new full delay — fires exactly once
     act(() => {
       vi.advanceTimersByTime(500);
     });
-    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-fire in a tight loop after a failure while the panel stays open', () => {
+    // mutate reports failure synchronously via its onError callback.
+    const mutate = vi.fn((_vars, opts?: { onError?: (e: unknown) => void }) => {
+      opts?.onError?.(new Error('boom'));
+    });
+    mockUseUnreadCount.mockReturnValue({ data: 4 } as unknown as ReturnType<typeof useUnreadCount>);
+    mockUseMarkAllNotificationsRead.mockReturnValue(
+      makeMutation({ mutate }) as unknown as ReturnType<typeof useMarkAllNotificationsRead>,
+    );
+
+    renderBell();
+
+    fireEvent.click(screen.getByRole('button', { name: /notifications \(4 unread\)/i }));
+    act(() => {
+      vi.advanceTimersByTime(AUTO_READ_DELAY_MS);
+    });
+    expect(mutate).toHaveBeenCalledTimes(1);
+
+    // Even though count stays non-zero and the panel stays open, the failure
+    // latch prevents another attempt — no tight retry loop.
+    act(() => {
+      vi.advanceTimersByTime(AUTO_READ_DELAY_MS * 5);
+    });
+    expect(mutate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('NotificationBell mark-read error handling', () => {
+  it('uses mutate with an onError handler when a row is tapped (no unhandled rejection)', async () => {
+    const user = userEvent.setup();
+    const mutate = vi.fn();
+    mockUseUnreadCount.mockReturnValue({ data: 1 } as unknown as ReturnType<typeof useUnreadCount>);
+    mockUseNotifications.mockReturnValue({
+      isPending: false,
+      data: [
+        {
+          id: 'n9',
+          notificationType: NotificationType.EventComment,
+          eventId: 'evt1',
+          relatedUserId: null,
+          message: 'someone commented',
+          isRead: false,
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+      ],
+    } as unknown as ReturnType<typeof useNotifications>);
+    mockUseMarkNotificationRead.mockReturnValue(
+      makeMutation({ mutate }) as unknown as ReturnType<typeof useMarkNotificationRead>,
+    );
+
+    renderBell();
+    await user.click(screen.getByRole('button', { name: /notifications \(1 unread\)/i }));
+    await user.click(await screen.findByRole('button', { name: /someone commented/i }));
+
+    expect(mutate).toHaveBeenCalledWith(
+      'n9',
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 });

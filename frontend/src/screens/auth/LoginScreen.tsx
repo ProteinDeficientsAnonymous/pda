@@ -13,6 +13,7 @@ import { useAuthStore } from '@/auth/store';
 import { checkPhone } from '@/api/join';
 import { extractApiError } from '@/utils/errors';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
+import { safeRedirect } from './redirect';
 
 type Step = 'phone' | 'password' | 'pending';
 
@@ -88,8 +89,7 @@ export default function LoginScreen() {
           setStep('phone');
         }}
         onSuccess={() => {
-          const redirect = params.get('redirect');
-          void navigate(redirect ? decodeURIComponent(redirect) : '/calendar', { replace: true });
+          void navigate(safeRedirect(params.get('redirect')), { replace: true });
         }}
         loginFn={login}
       />
