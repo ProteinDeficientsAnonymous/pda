@@ -1524,6 +1524,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notifications/sse-ticket/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Sse Ticket
+         * @description Mint a short-lived single-use ticket for opening the SSE stream.
+         *
+         *     EventSource can't send an Authorization header, so the stream is opened
+         *     with ?ticket=<opaque>. The ticket is bound to this user, expires in ~60s,
+         *     and is consumed on first use — keeping the JWT itself out of the URL.
+         */
+        post: operations["notifications_api_create_sse_ticket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/unread-count/": {
         parameters: {
             query?: never;
@@ -3038,6 +3062,11 @@ export interface components {
             /** Permissions */
             permissions?: string[] | null;
         };
+        /** SseTicketOut */
+        SseTicketOut: {
+            /** Ticket */
+            ticket: string;
+        };
         /** SurveyAnswersIn */
         SurveyAnswersIn: {
             /** Answers */
@@ -3229,8 +3258,6 @@ export interface components {
         TokenOut: {
             /** Access */
             access: string;
-            /** Refresh */
-            refresh: string;
         };
         /** UnreadCountOut */
         UnreadCountOut: {
@@ -3631,6 +3658,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     users__auth_logout: {
@@ -3684,6 +3720,15 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7948,6 +7993,35 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    notifications_api_create_sse_ticket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SseTicketOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };

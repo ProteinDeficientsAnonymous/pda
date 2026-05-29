@@ -1,6 +1,17 @@
+import secrets
 import uuid
+from datetime import timedelta
 
 from django.db import models
+from django.utils import timezone
+
+# Short-lived single-use ticket for opening the SSE stream. The browser
+# EventSource API can't send an Authorization header, so the JWT used to live
+# in the query string (?token=) — which leaks via access logs, Referer, and
+# browser history. Instead the client fetches a ticket from an authenticated
+# endpoint, then passes the opaque ticket as ?ticket=. It's bound to one user,
+# expires in seconds, and is consumed (marked used) on first stream open.
+_SSE_TICKET_TTL = timedelta(seconds=60)
 
 
 class NotificationType(models.TextChoices):
@@ -58,3 +69,34 @@ class Notification(models.Model):
 
     def __str__(self) -> str:
         return f"{self.notification_type} for {self.recipient}"
+
+
+class SseTicket(models.Model):
+    """Short-lived, single-use ticket authorizing one SSE stream connection."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Opaque high-entropy secret passed as ?ticket=. Indexed for fast lookup.
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="sse_tickets",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [models.Index(fields=["expires_at"])]
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at
+
+    @classmethod
+    def mint_for_user(cls, user) -> "SseTicket":
+        return cls.objects.create(
+            token=secrets.token_urlsafe(32),
+            user=user,
+            expires_at=timezone.now() + _SSE_TICKET_TTL,
+        )

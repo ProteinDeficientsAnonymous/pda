@@ -22,8 +22,10 @@ class LoginIn(BaseModel):
 
 
 class TokenOut(BaseModel):
+    # No `refresh` field: the SPA reads the refresh token from the httpOnly
+    # cookie set on the response, never from the JSON body. Returning it in
+    # the body would expose it to JS (XSS theft) for no benefit.
     access: str
-    refresh: str
 
 
 class RefreshIn(BaseModel):

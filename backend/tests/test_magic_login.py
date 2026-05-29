@@ -7,6 +7,16 @@ from ninja_jwt.tokens import RefreshToken
 from tests._asserts import assert_error_code
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    # magic-login is rate-limited (5/m keyed on client IP); isolate counts.
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.mark.django_db
 class TestMagicLogin:
     def test_magic_login_valid_returns_tokens(self, api_client, test_user):
@@ -17,7 +27,8 @@ class TestMagicLogin:
         assert response.status_code == 200
         data = response.json()
         assert "access" in data
-        assert "refresh" in data
+        # Refresh token rides the httpOnly cookie, not the JSON body.
+        assert "refresh" not in data
 
     def test_magic_login_invalid_token(self, api_client, db):
         response = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
@@ -114,3 +125,27 @@ class TestMagicLogin:
         test_user.refresh_from_db()
         assert test_user.needs_password_reset is False
         assert test_user.has_usable_password() is True
+
+    def test_replay_after_consume_is_rejected(self, api_client, test_user):
+        """A second consume of an already-consumed token must fail (TOCTOU replay
+        guard: fetch + used-check + mark-used run atomically under a row lock)."""
+        from users.models import MagicLoginToken
+
+        magic = MagicLoginToken.create_for_user(test_user)
+        first = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert first.status_code == 200
+        second = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert second.status_code == 400
+        assert_error_code(second, Code.Auth.MAGIC_LINK_ALREADY_USED)
+
+    def test_magic_login_rate_limited(self, api_client, test_user):
+        from django.core.cache import cache
+
+        cache.clear()
+        # First 5 calls pass the limiter (invalid tokens → 400, but not 429).
+        for _ in range(5):
+            resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
+            assert resp.status_code == 400
+        resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
+        assert resp.status_code == 429
+        assert resp.json()["detail"][0]["code"] == "rate.limited"

@@ -35,8 +35,8 @@ interface WireUser {
 }
 
 interface TokenOut {
+  // No `refresh`: the refresh token arrives via the httpOnly cookie, never the body.
   access: string;
-  refresh: string;
 }
 
 interface AccessOut {

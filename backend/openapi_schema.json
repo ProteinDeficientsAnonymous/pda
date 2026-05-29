@@ -3471,6 +3471,19 @@
         "title": "RolePatchIn",
         "type": "object"
       },
+      "SseTicketOut": {
+        "properties": {
+          "ticket": {
+            "title": "Ticket",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket"
+        ],
+        "title": "SseTicketOut",
+        "type": "object"
+      },
       "SurveyAnswersIn": {
         "properties": {
           "answers": {
@@ -3951,15 +3964,10 @@
           "access": {
             "title": "Access",
             "type": "string"
-          },
-          "refresh": {
-            "title": "Refresh",
-            "type": "string"
           }
         },
         "required": [
-          "access",
-          "refresh"
+          "access"
         ],
         "title": "TokenOut",
         "type": "object"
@@ -4682,6 +4690,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "summary": "Login",
@@ -4757,6 +4775,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "summary": "Magic Login",
@@ -10859,6 +10887,44 @@
           }
         ],
         "summary": "Mark All Read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/notifications/sse-ticket/": {
+      "post": {
+        "description": "Mint a short-lived single-use ticket for opening the SSE stream.\n\nEventSource can't send an Authorization header, so the stream is opened\nwith ?ticket=<opaque>. The ticket is bound to this user, expires in ~60s,\nand is consumed on first use \u2014 keeping the JWT itself out of the URL.",
+        "operationId": "notifications_api_create_sse_ticket",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseTicketOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Sse Ticket",
         "tags": [
           "notifications"
         ]

@@ -15,3 +15,7 @@ class NotificationOut(BaseModel):
 
 class UnreadCountOut(BaseModel):
     count: int
+
+
+class SseTicketOut(BaseModel):
+    ticket: str

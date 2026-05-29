@@ -17,16 +17,34 @@ _HEARTBEAT_INTERVAL = 30  # seconds
 
 
 @sync_to_async
-def _get_user_from_token(token_str: str) -> AbstractBaseUser | None:
-    """Validate a JWT access token and return the user, or None."""
-    from django.contrib.auth import get_user_model
-    from ninja_jwt.tokens import AccessToken
+def _consume_ticket(ticket_str: str) -> AbstractBaseUser | None:
+    """Atomically validate + consume a single-use SSE ticket, return its user.
 
+    Locks the ticket row (select_for_update) so two concurrent connections
+    can't both consume the same ticket. Returns None for missing, expired,
+    or already-used tickets — those are expected, not errors. Unexpected
+    failures propagate so they surface in logs rather than masquerading as
+    "invalid ticket".
+    """
+    from django.contrib.auth import get_user_model
+    from django.db import transaction
+
+    from notifications.models import SseTicket
+
+    with transaction.atomic():
+        try:
+            ticket = SseTicket.objects.select_for_update().get(token=ticket_str)
+        except SseTicket.DoesNotExist:
+            return None
+        if ticket.used or ticket.is_expired:
+            return None
+        ticket.used = True
+        ticket.save(update_fields=["used"])
+        user_id = ticket.user_id
+    User = get_user_model()
     try:
-        validated = AccessToken(token_str)
-        User = get_user_model()
-        return User.objects.get(pk=validated["user_id"])
-    except Exception:
+        return User.objects.get(pk=user_id)
+    except User.DoesNotExist:
         return None
 
 
@@ -82,18 +100,23 @@ async def _sse_generator(user_id: str):
 
 
 async def notification_stream(request):
-    """SSE endpoint — GET /api/notifications/stream/?token=<jwt>"""
+    """SSE endpoint — GET /api/notifications/stream/?ticket=<opaque>
+
+    Auth uses a short-lived single-use ticket (minted by POST
+    /api/notifications/sse-ticket/) rather than the JWT, so the access token
+    never appears in the URL (and thus not in logs / Referer / history).
+    """
     db = settings.DATABASES.get("default", {})
     if "postgresql" not in db.get("ENGINE", ""):
         return JsonResponse({"detail": "SSE requires PostgreSQL"}, status=503)
 
-    token = request.GET.get("token")
-    if not token:
-        return JsonResponse({"detail": "token required"}, status=401)
+    ticket = request.GET.get("ticket")
+    if not ticket:
+        return JsonResponse({"detail": "ticket required"}, status=401)
 
-    user = await _get_user_from_token(token)
+    user = await _consume_ticket(ticket)
     if user is None:
-        return JsonResponse({"detail": "invalid token"}, status=401)
+        return JsonResponse({"detail": "invalid ticket"}, status=401)
 
     response = StreamingHttpResponse(
         _sse_generator(str(user.pk)),

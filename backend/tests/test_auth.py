@@ -11,6 +11,17 @@ from tests._asserts import assert_error_code
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    # /login/ is rate-limited (5/m keyed on client IP). Tests share the same
+    # REMOTE_ADDR, so clear the cache around each test to keep counts isolated.
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.fixture
 def onboarding_user(db):
     from users.models import User
@@ -45,7 +56,9 @@ class TestLogin:
         assert response.status_code == 200
         data = response.json()
         assert "access" in data
-        assert "refresh" in data
+        # The refresh token is delivered via the httpOnly cookie only — never
+        # in the JSON body (would expose it to JS / XSS theft for no benefit).
+        assert "refresh" not in data
 
     def test_login_wrong_password(self, api_client, test_user):
         response = api_client.post(
