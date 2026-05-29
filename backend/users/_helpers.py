@@ -16,9 +16,13 @@ def _generate_temp_password(length: int = 16) -> str:
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
-def _create_magic_token(user: User) -> str:
-    """Create a one-time magic login token. Returns the token UUID string."""
-    magic = MagicLoginToken.create_for_user(user)
+def _create_magic_token(user: User, *, requires_password_reset: bool = False) -> str:
+    """Create a one-time magic login token. Returns the token UUID string.
+
+    Pass requires_password_reset=True for self-service login links so consuming
+    the token forces a password reset (admin onboarding links leave it False).
+    """
+    magic = MagicLoginToken.create_for_user(user, requires_password_reset=requires_password_reset)
     return str(magic.token)
 
 

@@ -47,6 +47,12 @@ class User(AbstractUser):
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     needs_onboarding = models.BooleanField(default=False)
     onboarded_at = models.DateTimeField(null=True, blank=True)
+    # PERSISTENT USER STATE: "this person still owes us a new password." Set on
+    # consume of a self-service login link (see MagicLoginToken.requires_password_reset),
+    # read by the frontend from /me/ on every load to force a /new-password redirect,
+    # and cleared by complete_onboarding. Distinct from needs_onboarding (first-time
+    # name+password setup), which routes to /onboarding instead.
+    needs_password_reset = models.BooleanField(default=False)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
@@ -100,16 +106,24 @@ class MagicLoginToken(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
+    # LINK KIND: marks this token as a self-service "request a login link" token
+    # (vs. an admin onboarding link). The consume endpoint is shared by both, so the
+    # token carries which it is; consuming a token with this set flips the user's
+    # persistent User.needs_password_reset. Admin onboarding links leave this False.
+    requires_password_reset = models.BooleanField(default=False)
 
     @property
     def is_expired(self) -> bool:
         return timezone.now() > self.expires_at
 
     @classmethod
-    def create_for_user(cls, user: "User") -> "MagicLoginToken":
+    def create_for_user(
+        cls, user: "User", *, requires_password_reset: bool = False
+    ) -> "MagicLoginToken":
         return cls.objects.create(
             user=user,
             expires_at=timezone.now() + timedelta(days=7),
+            requires_password_reset=requires_password_reset,
         )
 
 

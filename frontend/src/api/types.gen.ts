@@ -3303,6 +3303,11 @@ export interface components {
              * @default false
              */
             needs_onboarding: boolean;
+            /**
+             * Needs Password Reset
+             * @default false
+             */
+            needs_password_reset: boolean;
             /** Phone Number */
             phone_number: string;
             /**

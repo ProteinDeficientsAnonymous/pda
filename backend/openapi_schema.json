@@ -4093,6 +4093,11 @@
             "title": "Needs Onboarding",
             "type": "boolean"
           },
+          "needs_password_reset": {
+            "default": false,
+            "title": "Needs Password Reset",
+            "type": "boolean"
+          },
           "phone_number": {
             "title": "Phone Number",
             "type": "string"

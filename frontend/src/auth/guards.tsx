@@ -64,7 +64,12 @@ export function OnboardingGate() {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
-  if (user?.needsOnboarding) {
+  // Two signals force a password set, both gated the same way:
+  //   - needsOnboarding      — admin-created account, first-time setup
+  //   - needsPasswordReset   — consumed a self-service login link, must reset pw
+  const mustSetPassword = !!user && (user.needsOnboarding || user.needsPasswordReset);
+
+  if (user && mustSetPassword) {
     // Two shapes:
     //   - password reset (has displayName + email)  → /new-password (password only)
     //   - everyone else                             → /onboarding (collects whatever's missing)
@@ -76,7 +81,7 @@ export function OnboardingGate() {
       return <Navigate to={target} replace />;
     }
   } else if (user) {
-    // Authed user with onboarding complete shouldn't sit on onboarding screens.
+    // Authed user with nothing pending shouldn't sit on onboarding screens.
     if (path === '/onboarding') return <Navigate to="/guidelines" replace />;
     if (path === '/new-password') return <Navigate to="/calendar" replace />;
     if (path === '/login') return <Navigate to="/calendar" replace />;

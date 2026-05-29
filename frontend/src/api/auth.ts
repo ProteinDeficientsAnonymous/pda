@@ -24,6 +24,7 @@ interface WireUser {
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
+  needs_password_reset?: boolean;
   show_phone?: boolean;
   show_email?: boolean;
   week_start?: 'sunday' | 'monday';
@@ -63,6 +64,7 @@ function mapUser(u: WireUser): User {
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
+    needsPasswordReset: u.needs_password_reset ?? false,
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
     weekStart: u.week_start ?? 'sunday',
@@ -191,7 +193,7 @@ export async function deleteProfilePhoto(): Promise<User> {
 
 // --- request login link -----------------------------------------------------
 
-export type RequestLoginLinkDelivery = 'email' | 'admin';
+export type RequestLoginLinkDelivery = 'email' | 'admin' | 'cooldown';
 
 interface RequestLoginLinkOut {
   detail: string;
