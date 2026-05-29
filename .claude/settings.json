@@ -5,6 +5,8 @@
       "Edit",
       "MultiEdit",
       "Write",
+      "Agent",
+      "Task",
       "Bash(uv:*)",
       "Bash(make:*)",
       "Bash(python:*)",
