@@ -220,6 +220,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'your session expired — please sign in again';
     case Code.Auth.CurrentPasswordIncorrect:
       return "current password doesn't match";
+    case Code.Auth.PasswordResetRequired:
+      return 'please set a new password to continue';
+    case Code.Auth.OnboardingRequired:
+      return 'finish setting up your account to continue';
 
     // Password
     case Code.Password.Invalid: {
@@ -227,6 +231,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       if (reasons.length > 0) return reasons.join(' · ');
       return 'password is not strong enough';
     }
+    case Code.Password.SameAsOld:
+      return 'new password must be different from your current one';
 
     // Role
     case Code.Role.NotFound:

@@ -4393,7 +4393,7 @@
       }
     },
     "securitySchemes": {
-      "JWTAuth": {
+      "GatedJWTAuth": {
         "scheme": "bearer",
         "type": "http"
       },
@@ -4448,7 +4448,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Bulk Create Users",
@@ -4495,7 +4495,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Change Password",
@@ -4548,11 +4548,21 @@
               }
             },
             "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
           }
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Complete Onboarding",
@@ -4619,7 +4629,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create User",
@@ -4793,7 +4803,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Me",
@@ -4848,7 +4858,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Me",
@@ -4875,7 +4885,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Photo",
@@ -4931,7 +4941,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Upload Photo",
@@ -5004,7 +5014,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Roles",
@@ -5059,7 +5069,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Role",
@@ -5119,7 +5129,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Role",
@@ -5194,7 +5204,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Role",
@@ -5235,7 +5245,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Users",
@@ -5267,7 +5277,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Member Directory",
@@ -5309,7 +5319,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Search Users",
@@ -5369,7 +5379,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete User",
@@ -5454,7 +5464,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update User",
@@ -5511,7 +5521,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Generate Magic Link",
@@ -5558,7 +5568,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Member Profile",
@@ -5635,7 +5645,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update User Roles",
@@ -5688,7 +5698,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Calendar Token",
@@ -5713,7 +5723,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Generate Calendar Token",
@@ -5802,7 +5812,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Document",
@@ -5843,7 +5853,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Folders",
@@ -5898,7 +5908,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Folder",
@@ -5947,7 +5957,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Reorder Folders",
@@ -6006,7 +6016,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Folder",
@@ -6071,7 +6081,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Folder",
@@ -6120,7 +6130,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Reorder Documents",
@@ -6179,7 +6189,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Document",
@@ -6234,7 +6244,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Document",
@@ -6299,7 +6309,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Document",
@@ -6336,7 +6346,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Report Error",
@@ -6394,7 +6404,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Event Flags",
@@ -6472,7 +6482,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Review Event Flag",
@@ -6589,7 +6599,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Event",
@@ -6723,7 +6733,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Event",
@@ -6802,7 +6812,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Rescind Cohost Invite",
@@ -6880,7 +6890,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Accept Cohost Invite",
@@ -6958,7 +6968,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Decline Cohost Invite",
@@ -7102,7 +7112,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Post Comment",
@@ -7173,7 +7183,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Comment",
@@ -7271,7 +7281,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Toggle Reaction",
@@ -7369,7 +7379,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Post Reply",
@@ -7457,7 +7467,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Flag Event",
@@ -7560,7 +7570,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Invite To Event",
@@ -7618,7 +7628,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Event Photo",
@@ -7715,7 +7725,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Upload Event Photo",
@@ -7776,7 +7786,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Event Poll",
@@ -7908,7 +7918,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Event Poll",
@@ -7996,7 +8006,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Finalize Event Poll",
@@ -8084,7 +8094,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Add Poll Option",
@@ -8172,7 +8182,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Poll Option",
@@ -8268,7 +8278,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Poll Option",
@@ -8356,7 +8366,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Vote On Event Poll",
@@ -8407,7 +8417,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Rsvp",
@@ -8483,7 +8493,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Upsert Rsvp",
@@ -8581,7 +8591,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Set Attendance",
@@ -8639,7 +8649,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Event Stats",
@@ -8706,7 +8716,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Faq",
@@ -8813,7 +8823,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Geocode",
@@ -8840,7 +8850,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Guidelines",
@@ -8885,7 +8895,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Guidelines",
@@ -8952,7 +8962,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Home",
@@ -9025,7 +9035,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Join Form Question",
@@ -9076,7 +9086,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Reorder Join Form Questions",
@@ -9127,7 +9137,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Join Form Question",
@@ -9193,7 +9203,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Join Form Question",
@@ -9306,7 +9316,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Join Requests",
@@ -9394,7 +9404,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Join Request Status",
@@ -9463,7 +9473,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Resend Magic Link",
@@ -9531,7 +9541,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Unreject Join Request",
@@ -9633,7 +9643,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Page",
@@ -9733,7 +9743,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Survey",
@@ -9774,7 +9784,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Surveys Admin",
@@ -9949,7 +9959,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Survey",
@@ -10025,7 +10035,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Survey",
@@ -10083,7 +10093,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Survey Admin",
@@ -10161,7 +10171,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Finalize Poll",
@@ -10229,7 +10239,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Create Survey Question",
@@ -10301,7 +10311,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Reorder Survey Questions",
@@ -10362,7 +10372,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Delete Survey Question",
@@ -10438,7 +10448,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Survey Question",
@@ -10500,7 +10510,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Survey Responses",
@@ -10562,7 +10572,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Survey Tallies",
@@ -10611,7 +10621,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Welcome Template",
@@ -10666,7 +10676,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Welcome Template",
@@ -10703,7 +10713,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Whatsapp Config",
@@ -10748,7 +10758,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Update Whatsapp Config",
@@ -10785,7 +10795,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Get Whatsapp Status",
@@ -10816,7 +10826,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "List Notifications",
@@ -10845,7 +10855,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Mark All Read",
@@ -10872,7 +10882,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Unread Count",
@@ -10922,7 +10932,7 @@
         },
         "security": [
           {
-            "JWTAuth": []
+            "GatedJWTAuth": []
           }
         ],
         "summary": "Mark Read",

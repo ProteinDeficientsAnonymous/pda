@@ -5,11 +5,11 @@ import logging
 import time
 from urllib.request import Request, urlopen
 
+from config.auth import gated_jwt
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 
 from community._shared import ErrorOut, _optional_jwt
@@ -51,7 +51,7 @@ class FeedbackOut(BaseModel):
     html_url: str
 
 
-@router.post("/error-report/", response={201: ErrorReportOut}, auth=JWTAuth())
+@router.post("/error-report/", response={201: ErrorReportOut}, auth=gated_jwt)
 def report_error(request, payload: ErrorReportIn):
     extra = {
         k: v

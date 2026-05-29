@@ -15,6 +15,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { RequireEmail } from '@/components/RequireEmail';
 import { useAuthStore } from './store';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
+import { passwordSetupRedirect } from '@/models/user';
 
 // ----------------------------------------------------------------------------
 // AuthBoot — kick off session restore exactly once on mount.
@@ -64,21 +65,13 @@ export function OnboardingGate() {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
-  // Two signals force a password set, both gated the same way:
-  //   - needsOnboarding      — admin-created account, first-time setup
-  //   - needsPasswordReset   — consumed a self-service login link, must reset pw
-  const mustSetPassword = !!user && (user.needsOnboarding || user.needsPasswordReset);
+  // passwordSetupRedirect is the shared source of truth (also used by
+  // MagicLoginScreen) for where a setup-pending user must go.
+  const setupTarget = passwordSetupRedirect(user);
 
-  if (user && mustSetPassword) {
-    // Two shapes:
-    //   - password reset (has displayName + email)  → /new-password (password only)
-    //   - everyone else                             → /onboarding (collects whatever's missing)
-    // Users approved before email was required can land here with a displayName
-    // but no email — they need /onboarding so they can supply one.
-    const hasNameAndEmail = user.displayName.length > 0 && !!user.email;
-    const target = hasNameAndEmail ? '/new-password' : '/onboarding';
-    if (path !== target) {
-      return <Navigate to={target} replace />;
+  if (setupTarget) {
+    if (path !== setupTarget) {
+      return <Navigate to={setupTarget} replace />;
     }
   } else if (user) {
     // Authed user with nothing pending shouldn't sit on onboarding screens.

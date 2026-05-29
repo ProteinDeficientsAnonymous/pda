@@ -5,6 +5,7 @@ import logging
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 from config.audit import audit_log
+from config.auth import gated_jwt
 from config.media_proxy import media_path
 from django.http import HttpResponse
 from django.utils import timezone
@@ -212,7 +213,7 @@ def logout(request, response: HttpResponse):
     return Status(200, LogoutOut(detail="logged out"))
 
 
-@router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=JWTAuth())
+@router.get("/me/", response={200: UserOut, 401: ErrorOut, 403: ErrorOut}, auth=gated_jwt)
 def me(request):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.is_paused:
@@ -255,7 +256,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     return changed
 
 
-@router.patch("/me/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=JWTAuth())
+@router.patch("/me/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=gated_jwt)
 def update_me(request, payload: MePatchIn):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     changed = _apply_me_patch(user, payload)
@@ -272,7 +273,7 @@ def update_me(request, payload: MePatchIn):
     return Status(200, UserOut.from_user(user))
 
 
-@router.post("/me/photo/", response={200: UserOut, 400: ErrorOut}, auth=JWTAuth())
+@router.post("/me/photo/", response={200: UserOut, 400: ErrorOut}, auth=gated_jwt)
 def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
     if photo.content_type not in _ALLOWED_IMAGE_TYPES:
         raise_validation(
@@ -300,7 +301,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
     return Status(200, UserOut.from_user(user))
 
 
-@router.delete("/me/photo/", response={200: UserOut}, auth=JWTAuth())
+@router.delete("/me/photo/", response={200: UserOut}, auth=gated_jwt)
 def delete_photo(request):
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.profile_photo:
@@ -316,7 +317,7 @@ def delete_photo(request):
 @router.get(
     "/users/directory/",
     response={200: list[MemberDirectoryOut]},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def list_member_directory(request):
     """Authed-only member directory. Respects each user's show_phone/show_email flags."""
@@ -344,7 +345,7 @@ def list_member_directory(request):
 @router.get(
     "/users/{user_id}/profile/",
     response={200: MemberProfileOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def get_member_profile(request, user_id: str):
     try:
@@ -370,7 +371,9 @@ def get_member_profile(request, user_id: str):
 
 
 @router.post(
-    "/complete-onboarding/", response={200: UserOut, 400: ErrorOut, 409: ErrorOut}, auth=JWTAuth()
+    "/complete-onboarding/",
+    response={200: UserOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut},
+    auth=gated_jwt,
 )
 def complete_onboarding(request, payload: OnboardingIn):
     pw_errors = validate_password(payload.new_password)
@@ -379,6 +382,11 @@ def complete_onboarding(request, payload: OnboardingIn):
             Code.Password.INVALID, field="new_password", status_code=400, reasons=pw_errors
         )
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    # Reject reusing the current password. Only meaningful when the user still
+    # has a usable one — a forced-reset user has an unusable password, so
+    # check_password always fails and this is correctly skipped.
+    if user.has_usable_password() and user.check_password(payload.new_password):
+        raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
     if payload.display_name is not None:
         validate_display_name(payload.display_name)
         user.display_name = payload.display_name.strip()
@@ -398,7 +406,7 @@ def complete_onboarding(request, payload: OnboardingIn):
     return Status(200, UserOut.from_user(user))
 
 
-@router.post("/change-password/", response={200: ErrorOut, 400: ErrorOut}, auth=JWTAuth())
+@router.post("/change-password/", response={200: ErrorOut, 400: ErrorOut}, auth=gated_jwt)
 def change_password(request, payload: ChangePasswordIn):
     user = User.objects.get(pk=request.auth.pk)
     if not user.check_password(payload.current_password):
@@ -418,7 +426,13 @@ def change_password(request, payload: ChangePasswordIn):
         raise_validation(
             Code.Password.INVALID, field="new_password", status_code=400, reasons=pw_errors
         )
+    # current_password was just verified correct, so a matching new password is a
+    # no-op reuse — reject it.
+    if user.check_password(payload.new_password):
+        raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
     user.set_password(payload.new_password)
+    # Setting a password also satisfies a pending forced reset.
+    user.needs_password_reset = False
     user.save()
     audit_log(logging.INFO, "password_changed", request, target_type="user", target_id=str(user.pk))
     return Status(200, ErrorOut(detail="Password updated successfully."))

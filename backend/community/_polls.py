@@ -5,13 +5,13 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._event_poll_schemas import (
@@ -125,7 +125,7 @@ def _poll_out(poll: EventPoll, requesting_user=None) -> EventPollOut:
 @router.post(
     "/events/{event_id}/poll/",
     response={201: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/h")
 def create_event_poll(request, event_id: UUID, payload: EventPollIn):
@@ -192,7 +192,7 @@ def get_event_poll(request, event_id: UUID):
 @router.post(
     "/events/{event_id}/poll/vote/",
     response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
@@ -251,7 +251,7 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
 @router.post(
     "/events/{event_id}/poll/finalize/",
     response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/h")
 def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
@@ -312,7 +312,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
 @router.delete(
     "/events/{event_id}/poll/",
     response={204: None, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/h")
 def delete_event_poll(request, event_id: UUID):
@@ -392,7 +392,7 @@ def _get_poll_and_option(event, winning_option_id) -> tuple[EventPoll, PollOptio
 @router.post(
     "/events/{event_id}/poll/options/",
     response={201: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
@@ -422,7 +422,7 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
 @router.patch(
     "/events/{event_id}/poll/options/{option_id}/",
     response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id: UUID):
@@ -456,7 +456,7 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
 @router.delete(
     "/events/{event_id}/poll/options/{option_id}/",
     response={200: EventPollOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/h")
 def delete_poll_option(request, event_id: UUID, option_id: UUID):

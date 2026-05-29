@@ -9,9 +9,9 @@ import logging
 from datetime import datetime
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -141,7 +141,7 @@ def _has_manage_docs(user) -> bool:
 @router.get(
     "/docs/folders/",
     response={200: list[DocFolderOut], 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def list_folders(request):
     if not _has_manage_docs(request.auth):
@@ -164,7 +164,7 @@ def list_folders(request):
 @router.post(
     "/docs/folders/",
     response={201: DocFolderOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def create_folder(request, payload: FolderIn):
     if not _has_manage_docs(request.auth):
@@ -201,7 +201,7 @@ def create_folder(request, payload: FolderIn):
 @router.put(
     "/docs/folders/reorder/",
     response={200: dict, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def reorder_folders(request, payload: ReorderIn):
     if not _has_manage_docs(request.auth):
@@ -225,7 +225,7 @@ def reorder_folders(request, payload: ReorderIn):
 @router.patch(
     "/docs/folders/{folder_id}/",
     response={200: DocFolderOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_folder(request, folder_id: str, payload: FolderPatchIn):
     if not _has_manage_docs(request.auth):
@@ -277,7 +277,7 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
 @router.delete(
     "/docs/folders/{folder_id}/",
     response={200: dict, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_folder(request, folder_id: str):
     if not _has_manage_docs(request.auth):

@@ -3,10 +3,10 @@
 import logging
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from django.conf import settings
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -37,7 +37,7 @@ class WhatsAppStatusOut(BaseModel):
 @router.get(
     "/whatsapp/config/",
     response={200: WhatsAppConfigOut, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def get_whatsapp_config(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_WHATSAPP):
@@ -65,7 +65,7 @@ def get_whatsapp_config(request):
 @router.patch(
     "/whatsapp/config/",
     response={200: WhatsAppConfigOut, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_whatsapp_config(request, payload: WhatsAppConfigPatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_WHATSAPP):
@@ -111,7 +111,7 @@ def update_whatsapp_config(request, payload: WhatsAppConfigPatchIn):
 @router.get(
     "/whatsapp/status/",
     response={200: WhatsAppStatusOut, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def get_whatsapp_status(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_WHATSAPP):

@@ -4,13 +4,13 @@ import logging
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
 from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import has_pending_cohost_invite
@@ -278,7 +278,7 @@ def get_event(request, event_id: UUID):
 @router.post(
     "/events/",
     response={201: EventOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/d")
 def create_event(request, payload: EventIn):
@@ -381,7 +381,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
 @router.patch(
     "/events/{event_id}/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:

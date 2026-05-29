@@ -4,9 +4,9 @@ import logging
 from datetime import datetime
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -50,12 +50,12 @@ def _apply_update(obj: FAQ | CommunityGuidelines, payload: GuidelinesPatchIn) ->
     obj.save()
 
 
-@router.get("/guidelines/", response={200: GuidelinesOut}, auth=JWTAuth())
+@router.get("/guidelines/", response={200: GuidelinesOut}, auth=gated_jwt)
 def get_guidelines(request):
     return Status(200, _singleton_out(CommunityGuidelines.get()))
 
 
-@router.patch("/guidelines/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
+@router.patch("/guidelines/", response={200: GuidelinesOut, 403: ErrorOut}, auth=gated_jwt)
 def update_guidelines(request, payload: GuidelinesPatchIn):
     if not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
         audit_log(
@@ -85,7 +85,7 @@ def get_faq(request):
     return Status(200, _singleton_out(FAQ.get()))
 
 
-@router.patch("/faq/", response={200: GuidelinesOut, 403: ErrorOut}, auth=JWTAuth())
+@router.patch("/faq/", response={200: GuidelinesOut, 403: ErrorOut}, auth=gated_jwt)
 def update_faq(request, payload: GuidelinesPatchIn):
     if not request.auth.has_permission(PermissionKey.EDIT_FAQ):
         audit_log(

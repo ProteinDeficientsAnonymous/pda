@@ -13,10 +13,10 @@ import logging
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from notifications.service import create_event_invite_notifications
 from pydantic import BaseModel, Field
 from users.models import User as UserModel
@@ -53,7 +53,7 @@ def _can_invite_to_event(user, event: Event) -> bool:
 @router.post(
     "/events/{event_id}/invitations/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def invite_to_event(request, event_id: UUID, payload: InviteIn):
     event = get_object_or_404(

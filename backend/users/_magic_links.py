@@ -5,11 +5,11 @@ from datetime import timedelta
 
 from community._validation import Code, raise_validation
 from config.audit import audit_log
+from config.auth import gated_jwt
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from notifications.models import Notification, NotificationType
 from notifications.service import _notify_users
 
@@ -24,7 +24,7 @@ router = Router()
 @router.post(
     "/users/{user_id}/magic-link/",
     response={200: ResetPasswordOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def generate_magic_link(request, user_id: str):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):

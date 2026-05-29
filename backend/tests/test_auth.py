@@ -218,6 +218,45 @@ class TestChangePassword:
         assert response.status_code == 400
         assert_error_code(response, Code.Auth.CURRENT_PASSWORD_INCORRECT)
 
+    def test_change_password_rejects_reuse(self, api_client, db):
+        """New password must differ from the current one."""
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550401", password="ReusedPass123!", display_name="Reuse"
+        )
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        response = api_client.post(
+            "/api/auth/change-password/",
+            {"current_password": "ReusedPass123!", "new_password": "ReusedPass123!"},
+            content_type="application/json",
+            **headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.Password.SAME_AS_OLD, "new_password")
+
+    def test_change_password_clears_needs_password_reset(self, api_client, db):
+        """Setting a password via change-password satisfies a pending forced reset."""
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550402", password="OldPass123!", display_name="Pending"
+        )
+        user.needs_password_reset = True
+        user.save(update_fields=["needs_password_reset"])
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        response = api_client.post(
+            "/api/auth/change-password/",
+            {"current_password": "OldPass123!", "new_password": "BrandNew456!"},
+            content_type="application/json",
+            **headers,
+        )
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assert user.needs_password_reset is False
+
     def test_change_password_too_short(self, api_client, auth_headers):
         response = api_client.post(
             "/api/auth/change-password/",

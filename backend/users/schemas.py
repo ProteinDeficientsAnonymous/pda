@@ -195,7 +195,9 @@ class ErrorOut(BaseModel):
 class OnboardingIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
-    email: EmailStr | None = None
+    # OptionalEmail (like the other schemas) so an empty-string email from the
+    # client coerces to None instead of failing EmailStr validation.
+    email: OptionalEmail = None
 
 
 class UserSearchOut(BaseModel):

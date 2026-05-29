@@ -4,9 +4,9 @@ import logging
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
@@ -97,7 +97,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
 @router.get(
     "/surveys/{survey_id}/tallies/",
     response={200: list[PollResultsOut], 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def get_survey_tallies(request, survey_id: UUID):
     try:
@@ -115,7 +115,7 @@ def get_survey_tallies(request, survey_id: UUID):
 @router.post(
     "/surveys/{survey_id}/finalize/",
     response={200: SurveyOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
     try:

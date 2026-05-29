@@ -5,11 +5,11 @@ import time
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._event_helpers import _event_out
@@ -28,7 +28,7 @@ router = Router()
 @router.post(
     "/events/{event_id}/photo/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="20/h")
 def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...)):  # ty: ignore[call-non-callable]
@@ -80,7 +80,7 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
 @router.delete(
     "/events/{event_id}/photo/",
     response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_event_photo(request, event_id: UUID):
     try:

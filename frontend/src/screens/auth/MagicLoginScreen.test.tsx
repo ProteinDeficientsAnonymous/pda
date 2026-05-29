@@ -67,6 +67,14 @@ describe('MagicLoginScreen', () => {
     expect(await screen.findByText('new password page')).toBeInTheDocument();
   });
 
+  it('routes a needsPasswordReset user with NO email to /onboarding (matches the gate)', async () => {
+    // Regression: MagicLoginScreen used to send any named user to /new-password,
+    // which the gate then bounced to /onboarding. Both must now agree.
+    currentUser = makeUser({ needsPasswordReset: true, displayName: 'Alice', email: '' });
+    renderAt('tok-noemail');
+    expect(await screen.findByText('onboarding page')).toBeInTheDocument();
+  });
+
   it('routes a plain login (no flags) to /calendar', async () => {
     currentUser = makeUser({ needsPasswordReset: false, needsOnboarding: false });
     renderAt('tok-2');

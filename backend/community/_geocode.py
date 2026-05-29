@@ -3,9 +3,9 @@
 import logging
 
 import httpx
+from config.auth import gated_jwt
 from django.http import HttpRequest
 from ninja import Router
-from ninja_jwt.authentication import JWTAuth
 
 from community._shared import ErrorOut
 
@@ -16,7 +16,7 @@ router = Router()
 _PHOTON_URL = "https://photon.komoot.io/api/"
 
 
-@router.get("/geocode/", auth=JWTAuth(), response={200: dict, 502: ErrorOut})
+@router.get("/geocode/", auth=gated_jwt, response={200: dict, 502: ErrorOut})
 def geocode(request: HttpRequest, q: str, limit: int = 5):
     """Proxy geocoding requests to Photon, biased toward NYC."""
     try:

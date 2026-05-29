@@ -108,9 +108,12 @@ class Code:
         REFRESH_TOKEN_INVALID = "auth.refresh_token_invalid"
         REFRESH_FAILED = "auth.refresh_failed"
         CURRENT_PASSWORD_INCORRECT = "auth.current_password_incorrect"
+        PASSWORD_RESET_REQUIRED = "auth.password_reset_required"
+        ONBOARDING_REQUIRED = "auth.onboarding_required"
 
     class Password:
         INVALID = "password.invalid"  # params: { reasons: string[] }
+        SAME_AS_OLD = "password.same_as_old"
 
     class Role:
         NOT_FOUND = "role.not_found"

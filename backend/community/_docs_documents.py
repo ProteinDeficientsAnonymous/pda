@@ -8,9 +8,9 @@ from there — single source of truth.
 import logging
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._content_render import render_content_payload
@@ -35,7 +35,7 @@ router = Router()
 @router.post(
     "/docs/",
     response={201: DocumentOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def create_document(request, payload: DocumentIn):
     if not _has_manage_docs(request.auth):
@@ -78,7 +78,7 @@ def create_document(request, payload: DocumentIn):
 @router.put(
     "/docs/reorder/",
     response={200: dict, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def reorder_documents(request, payload: ReorderIn):
     if not _has_manage_docs(request.auth):
@@ -102,7 +102,7 @@ def reorder_documents(request, payload: ReorderIn):
 @router.get(
     "/docs/{doc_id}/",
     response={200: DocumentOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def get_document(request, doc_id: str):
     if not _has_manage_docs(request.auth):
@@ -127,7 +127,7 @@ def get_document(request, doc_id: str):
 @router.patch(
     "/docs/{doc_id}/",
     response={200: DocumentOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_document(request, doc_id: str, payload: DocumentPatchIn):
     if not _has_manage_docs(request.auth):
@@ -185,7 +185,7 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
 @router.delete(
     "/docs/{doc_id}/",
     response={200: dict, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_document(request, doc_id: str):
     if not _has_manage_docs(request.auth):

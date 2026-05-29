@@ -9,12 +9,12 @@ The DELETE endpoint covers both flows once an invite exists:
 
 from uuid import UUID
 
+from config.auth import gated_jwt
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from notifications.service import (
     broadcast_cohost_change,
     create_cohost_invite_accepted_notification,
@@ -51,7 +51,7 @@ def _reload_event_for_response(event_id: UUID) -> Event:
 @router.post(
     "/events/{event_id}/cohost-invites/{invite_id}/accept/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
     invite = _get_invite_or_404(event_id, invite_id)
@@ -80,7 +80,7 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
 @router.post(
     "/events/{event_id}/cohost-invites/{invite_id}/decline/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def decline_cohost_invite(request, event_id: UUID, invite_id: UUID):
     invite = _get_invite_or_404(event_id, invite_id)
@@ -142,7 +142,7 @@ def _remove_accepted(invite: EventCoHostInvite, requester, is_host: bool, is_sel
 @router.delete(
     "/events/{event_id}/cohost-invites/{invite_id}/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def rescind_cohost_invite(request, event_id: UUID, invite_id: UUID):
     """Rescind a pending invite OR remove an accepted co-host.
