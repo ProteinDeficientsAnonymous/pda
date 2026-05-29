@@ -13,6 +13,7 @@ import { extractApiError } from '@/utils/errors';
 
 import { AuthLayout } from './AuthLayout';
 import { ConsentChecklist } from './ConsentChecklist';
+import { OnboardingProfileStep } from './OnboardingProfileStep';
 import { PasswordChecklist } from './PasswordChecklist';
 import { passwordRule } from './passwordRule';
 import { useConsentChecklist } from './useConsentChecklist';
@@ -25,6 +26,7 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+type Step = 'account' | 'profile';
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
@@ -33,6 +35,7 @@ export default function OnboardingScreen() {
   // checkboxes render only for users with outstanding consent (admin-created accounts)
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const [step, setStep] = useState<Step>('account');
   const [serverError, setServerError] = useState<string | null>(null);
   const { consents, checked, toggle, allChecked, acceptedTypes } = useConsentChecklist(user);
 
@@ -58,11 +61,26 @@ export default function OnboardingScreen() {
         newPassword: values.newPassword,
         consentTypes: acceptedTypes,
       });
-      const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
-      void navigate(next, { replace: true });
+      setStep('profile');
     } catch (err) {
       setServerError(extractApiError(err, "couldn't finish onboarding — try again"));
     }
+  }
+
+  if (step === 'profile') {
+    return (
+      <AuthLayout
+        title="make it yours ✨"
+        subtitle="add a photo and a few words so folks can put a face to your name — you can always do this later"
+      >
+        <OnboardingProfileStep
+          onDone={() => {
+            const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
+            void navigate(next, { replace: true });
+          }}
+        />
+      </AuthLayout>
+    );
   }
 
   return (
