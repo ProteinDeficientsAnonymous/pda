@@ -149,3 +149,82 @@ class TestDeltaToHtmlBlocks:
         result = delta_to_html(delta)
         assert "<p>First paragraph</p>" in result
         assert "<p>Second paragraph</p>" in result
+
+
+class TestDeltaToHtmlUrlSchemes:
+    def _delta(self, ops):
+        return json.dumps(ops)
+
+    def test_link_javascript_scheme_stripped(self):
+        delta = self._delta(
+            [
+                {"insert": "click", "attributes": {"link": "javascript:alert(1)"}},
+                {"insert": "\n"},
+            ]
+        )
+        result = delta_to_html(delta)
+        assert "javascript:" not in result
+        # No safe href => no anchor wrapper; text survives.
+        assert "<a " not in result
+        assert "click" in result
+
+    def test_link_data_scheme_stripped(self):
+        delta = self._delta(
+            [
+                {"insert": "x", "attributes": {"link": "data:text/html,<script>"}},
+                {"insert": "\n"},
+            ]
+        )
+        result = delta_to_html(delta)
+        assert "data:" not in result
+        assert "<a " not in result
+
+    def test_link_https_survives(self):
+        delta = self._delta(
+            [
+                {"insert": "click here", "attributes": {"link": "https://example.com"}},
+                {"insert": "\n"},
+            ]
+        )
+        result = delta_to_html(delta)
+        assert '<a href="https://example.com">click here</a>' in result
+
+    def test_link_mailto_survives(self):
+        delta = self._delta(
+            [
+                {"insert": "mail", "attributes": {"link": "mailto:a@b.test"}},
+                {"insert": "\n"},
+            ]
+        )
+        result = delta_to_html(delta)
+        assert '<a href="mailto:a@b.test">mail</a>' in result
+
+    def test_link_relative_survives(self):
+        delta = self._delta(
+            [
+                {"insert": "go", "attributes": {"link": "/events/1"}},
+                {"insert": "\n"},
+            ]
+        )
+        result = delta_to_html(delta)
+        assert '<a href="/events/1">go</a>' in result
+
+    def test_image_javascript_src_stripped(self):
+        delta = self._delta([{"insert": {"image": "javascript:alert(1)"}}, {"insert": "\n"}])
+        result = delta_to_html(delta)
+        assert "javascript:" not in result
+        # Unsafe src => image dropped entirely.
+        assert "<img" not in result
+
+    def test_image_data_src_stripped(self):
+        delta = self._delta([{"insert": {"image": "data:image/png;base64,AAAA"}}, {"insert": "\n"}])
+        result = delta_to_html(delta)
+        assert "data:" not in result
+        assert "<img" not in result
+
+    def test_image_https_survives(self):
+        delta = self._delta(
+            [{"insert": {"image": "https://example.com/img.png"}}, {"insert": "\n"}]
+        )
+        result = delta_to_html(delta)
+        assert '<img src="https://example.com/img.png">' in result
