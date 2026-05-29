@@ -117,8 +117,10 @@ const validPayload = {
 };
 
 describe('useSubmitJoinRequest', () => {
-  it('throws AlreadyInvitedError when server responds with 409', async () => {
-    const conflict = makeAxiosError(409, { detail: 'already_invited' });
+  it('throws AlreadyInvitedError on a phone_already_invited 409', async () => {
+    const conflict = makeAxiosError(409, {
+      detail: [{ code: 'join_request.phone_already_invited', field: null }],
+    });
     mockedPost.mockRejectedValueOnce(conflict);
 
     const { result } = renderHook(() => useSubmitJoinRequest(), {
@@ -131,6 +133,22 @@ describe('useSubmitJoinRequest', () => {
 
     await waitFor(() => expect(result.current.error).toBeInstanceOf(AlreadyInvitedError));
     expect((result.current.error as AlreadyInvitedError).name).toBe('AlreadyInvitedError');
+  });
+
+  it('does not redirect on an email.already_exists 409 — stays on the form', async () => {
+    const conflict = makeAxiosError(409, {
+      detail: [{ code: 'email.already_exists', field: 'email' }],
+    });
+    mockedPost.mockRejectedValueOnce(conflict);
+
+    const { result } = renderHook(() => useSubmitJoinRequest(), {
+      wrapper: wrapper(),
+    });
+
+    await expect(result.current.mutateAsync(validPayload)).rejects.not.toBeInstanceOf(
+      AlreadyInvitedError,
+    );
+    expect(result.current.error).not.toBeInstanceOf(AlreadyInvitedError);
   });
 
   it('surfaces validation detail string when server responds with 400', async () => {

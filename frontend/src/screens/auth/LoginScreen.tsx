@@ -212,7 +212,7 @@ function PasswordStep({
           }}
           className="text-brand-700 hover:text-brand-900 text-sm"
         >
-          request a login link from an admin
+          request a login link
         </button>
         <button
           type="button"

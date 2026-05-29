@@ -1,0 +1,89 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import type { User } from '@/models/user';
+import MagicLoginScreen from './MagicLoginScreen';
+
+// MagicLoginScreen calls the store's magicLogin action, then reads
+// useAuthStore.getState().user to decide where to navigate. We mock the store so
+// the action populates a controllable user and getState() returns it.
+let currentUser: User | null = null;
+const magicLoginMock = vi.fn(async () => {
+  // user is seeded per-test before the screen mounts
+});
+
+function makeUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 'u1',
+    phoneNumber: '+12125550001',
+    displayName: 'Alice',
+    email: 'alice@example.com',
+    bio: '',
+    isSuperuser: false,
+    isStaff: false,
+    needsOnboarding: false,
+    needsPasswordReset: false,
+    showPhone: false,
+    showEmail: false,
+    weekStart: 'sunday',
+    calendarFeedScope: 'all',
+    profilePhotoUrl: '',
+    photoUpdatedAt: null,
+    roles: [],
+    ...overrides,
+  };
+}
+
+vi.mock('@/auth/store', () => ({
+  useAuthStore: Object.assign(
+    (selector: (s: { magicLogin: typeof magicLoginMock }) => unknown) =>
+      selector({ magicLogin: magicLoginMock }),
+    { getState: () => ({ user: currentUser }) },
+  ),
+}));
+
+function renderAt(token: string) {
+  return render(
+    <MemoryRouter initialEntries={[`/magic-login/${token}`]}>
+      <Routes>
+        <Route path="/magic-login/:token" element={<MagicLoginScreen />} />
+        <Route path="/new-password" element={<div>new password page</div>} />
+        <Route path="/onboarding" element={<div>onboarding page</div>} />
+        <Route path="/calendar" element={<div>calendar page</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+describe('MagicLoginScreen', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    currentUser = null;
+  });
+
+  it('routes a needsPasswordReset user (has displayName) to /new-password', async () => {
+    currentUser = makeUser({ needsPasswordReset: true, displayName: 'Alice' });
+    renderAt('tok-1');
+    expect(await screen.findByText('new password page')).toBeInTheDocument();
+  });
+
+  it('routes a plain login (no flags) to /calendar', async () => {
+    currentUser = makeUser({ needsPasswordReset: false, needsOnboarding: false });
+    renderAt('tok-2');
+    expect(await screen.findByText('calendar page')).toBeInTheDocument();
+  });
+
+  it('routes a first-time user (needsOnboarding, empty displayName) to /onboarding', async () => {
+    currentUser = makeUser({ needsOnboarding: true, displayName: '' });
+    renderAt('tok-3');
+    expect(await screen.findByText('onboarding page')).toBeInTheDocument();
+  });
+
+  it('consumes the token via the store magicLogin action', async () => {
+    currentUser = makeUser();
+    renderAt('tok-4');
+    await waitFor(() => {
+      expect(magicLoginMock).toHaveBeenCalledWith('tok-4');
+    });
+  });
+});

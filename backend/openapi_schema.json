@@ -3347,13 +3347,18 @@
       },
       "RequestLoginLinkOut": {
         "properties": {
+          "delivery": {
+            "title": "Delivery",
+            "type": "string"
+          },
           "detail": {
             "title": "Detail",
             "type": "string"
           }
         },
         "required": [
-          "detail"
+          "detail",
+          "delivery"
         ],
         "title": "RequestLoginLinkOut",
         "type": "object"
@@ -4086,6 +4091,11 @@
           "needs_onboarding": {
             "default": false,
             "title": "Needs Onboarding",
+            "type": "boolean"
+          },
+          "needs_password_reset": {
+            "default": false,
+            "title": "Needs Password Reset",
             "type": "boolean"
           },
           "phone_number": {

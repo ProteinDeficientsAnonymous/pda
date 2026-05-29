@@ -24,6 +24,9 @@ export interface User {
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;
+  // Set after consuming a self-service magic login link: the user authenticated
+  // without a password and must set a new one (routes to /new-password).
+  needsPasswordReset: boolean;
   showPhone: boolean;
   showEmail: boolean;
   weekStart: 'sunday' | 'monday';

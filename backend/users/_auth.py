@@ -154,6 +154,22 @@ def magic_login(request, token: str, response: HttpResponse):
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     magic.used = True
     magic.save(update_fields=["used"])
+    if magic.requires_password_reset:
+        # Self-service login link: the user got in without a password, so force a
+        # reset before normal use. set_unusable_password() ensures the old password
+        # can't be used until they pick a new one (cleared by complete_onboarding).
+        # Also clear login_link_requested so future link requests aren't skipped.
+        magic.user.needs_password_reset = True
+        magic.user.login_link_requested = False
+        magic.user.set_unusable_password()
+        magic.user.save(update_fields=["needs_password_reset", "login_link_requested", "password"])
+        audit_log(
+            logging.INFO,
+            "magic_login_requires_password_reset",
+            request,
+            target_type="user",
+            target_id=str(magic.user.pk),
+        )
     refresh = RefreshToken.for_user(magic.user)
     request.auth = magic.user
     refresh_str = str(refresh)
@@ -374,6 +390,7 @@ def complete_onboarding(request, payload: OnboardingIn):
     if user.needs_onboarding and user.onboarded_at is None:
         user.onboarded_at = timezone.now()
     user.needs_onboarding = False
+    user.needs_password_reset = False
     user.save()
     audit_log(
         logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)

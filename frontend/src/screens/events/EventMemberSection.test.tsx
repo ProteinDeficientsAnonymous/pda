@@ -83,6 +83,7 @@ const CREATOR: User = {
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
+  needsPasswordReset: false,
   showPhone: false,
   showEmail: false,
   weekStart: 'sunday',

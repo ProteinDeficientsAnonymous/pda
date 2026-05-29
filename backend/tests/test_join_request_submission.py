@@ -7,23 +7,6 @@ from users.permissions import PermissionKey
 from users.roles import Role
 
 
-@pytest.fixture
-def why_join_id(db):
-    from community.models import JoinFormQuestion
-
-    q = JoinFormQuestion.objects.filter(required=True).first()
-    return str(q.id) if q else ""
-
-
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    from django.core.cache import cache
-
-    cache.clear()
-    yield
-    cache.clear()
-
-
 @pytest.mark.django_db
 class TestJoinRequestSubmission:
     def test_submit_join_request(self, api_client, why_join_id):
@@ -369,67 +352,6 @@ class TestJoinRequestSubmission:
         notif = Notification.objects.get(recipient=approver)
         assert notif.notification_type == NotificationType.JOIN_REQUEST
         assert "Leafy New" in notif.message
-
-    def test_submit_existing_user_returns_409(self, api_client, why_join_id):
-        from users.models import User
-
-        User.objects.create_user(phone_number="+12025551299", password="pass")
-        response = api_client.post(
-            "/api/community/join-request/",
-            {
-                "display_name": "Already Here",
-                "phone_number": "+12025551299",
-                "email": "alreadyhere@example.com",
-                "answers": {why_join_id: "Liberation."},
-                "sms_consent": True,
-            },
-            content_type="application/json",
-        )
-        assert response.status_code == 409
-        assert response.json()["detail"][0]["code"] == "join_request.phone_already_invited"
-
-    def test_submit_existing_user_creates_no_join_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
-        from users.models import User
-
-        User.objects.create_user(phone_number="+12025551298", password="pass")
-        api_client.post(
-            "/api/community/join-request/",
-            {
-                "display_name": "Already Here",
-                "phone_number": "+12025551298",
-                "email": "alreadyhere@example.com",
-                "answers": {why_join_id: "Liberation."},
-                "sms_consent": True,
-            },
-            content_type="application/json",
-        )
-        assert not JoinRequest.objects.filter(phone_number="+12025551298").exists()
-
-    def test_archived_user_can_resubmit_join_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
-        from django.utils import timezone
-        from users.models import User
-
-        archived = User.objects.create_user(phone_number="+12025551297", password="pass")
-        archived.archived_at = timezone.now()
-        archived.save(update_fields=["archived_at"])
-
-        response = api_client.post(
-            "/api/community/join-request/",
-            {
-                "display_name": "Coming Back",
-                "phone_number": "+12025551297",
-                "email": "comingback@example.com",
-                "answers": {why_join_id: "i want to return"},
-                "sms_consent": True,
-            },
-            content_type="application/json",
-        )
-        assert response.status_code == 201
-        body = response.json()
-        assert body["previously_archived"] is True
-        assert JoinRequest.objects.filter(phone_number="+12025551297").exists()
 
     def test_submit_notification_failure_does_not_block(self, api_client, why_join_id, monkeypatch):
         def _fail(*args, **kwargs):

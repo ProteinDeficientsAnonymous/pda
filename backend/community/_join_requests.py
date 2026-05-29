@@ -198,12 +198,23 @@ def _honeypot_decoy_response(display_name: str, phone_number: str) -> JoinReques
     )
 
 
-def _check_phone_conflicts(validated_phone: str) -> None:
-    """Raise ValidationException if phone is already taken."""
+def _check_submission_conflicts(validated_phone: str, normalized_email: str) -> None:
+    """Raise ValidationException if phone or email is already taken.
+
+    Archived accounts are ignored so a former member can re-join with the
+    same phone/email. Catching the email collision here (parallel to the
+    phone check) means an applicant sees the error on the form rather than
+    the admin hitting it at approval time.
+    """
     from users.models import User
 
     if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
         raise_validation(Code.JoinRequest.PHONE_ALREADY_INVITED, status_code=409)
+    if (
+        normalized_email
+        and User.objects.filter(email=normalized_email, archived_at__isnull=True).exists()
+    ):
+        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
     if JoinRequest.objects.filter(
         phone_number=validated_phone, status=JoinRequestStatus.PENDING
     ).exists():
@@ -234,14 +245,13 @@ def submit_join_request(request, payload: JoinRequestIn):
 
     validate_display_name(display_name)
     validated_phone = _validate_phone(payload.phone_number)
-    _check_phone_conflicts(validated_phone)
+    normalized_email = payload.email.strip().lower()
+    _check_submission_conflicts(validated_phone, normalized_email)
 
     questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
     _validate_answers(payload.answers, questions)
 
     custom_answers = _build_custom_answers(payload.answers, questions)
-
-    normalized_email = payload.email.strip().lower()
 
     join_request = JoinRequest.objects.create(
         display_name=display_name,

@@ -41,6 +41,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,
+    needsPasswordReset: false,
     showPhone: false,
     showEmail: false,
     weekStart: 'sunday',
@@ -230,6 +231,54 @@ describe('OnboardingGate', () => {
 
     expect(screen.getByText('onboarding page')).toBeInTheDocument();
     expect(screen.queryByText('new password page')).not.toBeInTheDocument();
+  });
+
+  it('redirects a needsPasswordReset user (has displayName + email) to /new-password', () => {
+    const user = makeUser({
+      needsOnboarding: false,
+      needsPasswordReset: true,
+      displayName: 'Bob',
+      email: 'bob@example.com',
+    });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/calendar" element={<div>calendar page</div>} />
+            <Route path="/new-password" element={<div>new password page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('new password page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('does not bounce a needsPasswordReset user away from /new-password', () => {
+    const user = makeUser({
+      needsOnboarding: false,
+      needsPasswordReset: true,
+      displayName: 'Bob',
+      email: 'bob@example.com',
+    });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/new-password']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/new-password" element={<div>new password page</div>} />
+            <Route path="/calendar" element={<div>calendar page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('new password page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
   it('redirects an onboarding-complete user on /onboarding to /guidelines', () => {
