@@ -15,13 +15,20 @@ vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
 }));
 
+vi.mock('@/screens/settings/AvatarUpload', () => ({
+  AvatarUpload: () => <div data-testid="avatar-upload" />,
+}));
+
 describe('OnboardingScreen', () => {
   const completeOnboarding = vi.fn();
+  const updateProfile = vi.fn();
 
   beforeEach(() => {
     completeOnboarding.mockReset();
+    updateProfile.mockReset();
+    updateProfile.mockResolvedValue(undefined);
     vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ completeOnboarding } as never),
+      selector({ completeOnboarding, updateProfile, user: null } as never),
     );
   });
 
@@ -54,5 +61,35 @@ describe('OnboardingScreen', () => {
       email: 'tester@example.com',
       newPassword: 'abcd1234ABCD!',
     });
+  });
+
+  it('advances to the profile step after successful account setup', async () => {
+    completeOnboarding.mockResolvedValue(undefined);
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(await screen.findByRole('button', { name: /^done$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /do this later/i })).toBeInTheDocument();
+  });
+
+  it('stays on the account step when account setup fails', async () => {
+    completeOnboarding.mockRejectedValue(new Error('nope'));
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(await screen.findByText(/couldn't finish onboarding/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^done$/i })).not.toBeInTheDocument();
   });
 });
