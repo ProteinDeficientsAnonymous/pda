@@ -33,8 +33,8 @@ def manage_users_headers(manage_users_user):
 
 @pytest.mark.django_db
 class TestRoleManagementAPI:
-    def test_list_roles_authenticated(self, api_client, auth_headers):
-        response = api_client.get("/api/auth/roles/", **auth_headers)
+    def test_list_roles_authenticated(self, api_client, manage_users_headers):
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
         assert response.status_code == 200
         names = [r["name"] for r in response.json()]
         assert "admin" in names
@@ -43,6 +43,13 @@ class TestRoleManagementAPI:
     def test_list_roles_unauthenticated(self, api_client):
         response = api_client.get("/api/auth/roles/")
         assert response.status_code == 401
+
+    def test_list_roles_plain_member_forbidden(self, api_client, auth_headers):
+        # The role→permission matrix is admin-tier data; a plain member must
+        # not be able to read it (Issue 452).
+        response = api_client.get("/api/auth/roles/", **auth_headers)
+        assert response.status_code == 403
+        assert_error_code(response, Code.Perm.DENIED)
 
     def test_create_role_success(self, api_client, manage_users_headers):
         response = api_client.post(
@@ -126,10 +133,10 @@ class TestRoleManagementAPI:
         assert not Role.objects.filter(pk=role.id).exists()
         assert not test_user.roles.filter(name="occupied").exists()
 
-    def test_list_roles_includes_user_count(self, api_client, auth_headers, test_user):
+    def test_list_roles_includes_user_count(self, api_client, manage_users_headers, test_user):
         role = Role.objects.create(name="popular", permissions=[])
         test_user.roles.add(role)
-        response = api_client.get("/api/auth/roles/", **auth_headers)
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
         assert response.status_code == 200
         popular = next(r for r in response.json() if r["name"] == "popular")
         assert popular["user_count"] == 1

@@ -383,6 +383,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     // Page / Docs / JoinForm / Feedback / Notification
     case Code.Page.MembersOnly:
       return 'members only';
+    case Code.Page.VisibilityInvalid:
+      return 'invalid visibility setting';
     case Code.Docs.FolderNotFound:
       return 'folder not found';
     case Code.Docs.ParentFolderNotFound:

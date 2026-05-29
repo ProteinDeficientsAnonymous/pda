@@ -290,3 +290,29 @@ class TestGenerateMagicLink:
         assert notif.is_read is True
         other_user.refresh_from_db()
         assert other_user.login_link_requested is False
+
+
+@pytest.mark.django_db
+class TestSearchUsersRespectsShowPhone:
+    """Issue 452 — search_users must honor the per-user show_phone flag."""
+
+    def _find(self, response, user_id):
+        return next(u for u in response.json() if u["id"] == str(user_id))
+
+    def test_phone_shown_when_show_phone_true(self, api_client, manage_users_headers, other_user):
+        other_user.show_phone = True
+        other_user.save(update_fields=["show_phone"])
+        response = api_client.get("/api/auth/users/search/?q=Other", **manage_users_headers)
+        assert response.status_code == 200
+        assert self._find(response, other_user.pk)["phone_number"] == other_user.phone_number
+
+    def test_phone_blanked_when_show_phone_false(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.show_phone = False
+        other_user.save(update_fields=["show_phone"])
+        response = api_client.get("/api/auth/users/search/?q=Other", **manage_users_headers)
+        assert response.status_code == 200
+        match = self._find(response, other_user.pk)
+        # Field stays present (callers depend on the key) but is blanked.
+        assert match["phone_number"] == ""

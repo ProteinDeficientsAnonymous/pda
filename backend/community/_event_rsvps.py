@@ -16,7 +16,6 @@ from community._event_helpers import (
     _attended_count,
     _attending_headcount,
     _attending_headcount_db,
-    _can_see_invite_only,
     _cancellations,
     _cant_go_count,
     _event_out,
@@ -28,10 +27,10 @@ from community._event_helpers import (
     promote_from_waitlist,
 )
 from community._event_schemas import AttendanceIn, EventOut, EventStatsOut, RSVPIn
-from community._events import _can_edit_event
+from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventRSVP, PageVisibility, RSVPStatus
+from community.models import Event, EventRSVP, RSVPStatus
 
 router = Router()
 
@@ -45,11 +44,15 @@ def _check_in_open(event: Event) -> bool:
     return timezone.now() >= event.start_datetime - CHECK_IN_OPENS_BEFORE_START
 
 
-def _validate_rsvp_access(user, event, co_host_ids: set[str], invited_user_ids: set[str]) -> None:
+def _validate_rsvp_access(user, event) -> None:
     """Raise ValidationException if the user cannot RSVP on this event."""
-    if event.visibility == PageVisibility.INVITE_ONLY:
-        if not _can_see_invite_only(user, co_host_ids, invited_user_ids, event.created_by_id):
-            raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    # Enforce read visibility first: this rejects deleted (404), invite-only the
+    # caller can't see (403), and members-only-to-anon events — the same gating
+    # get_event applies. Draft events the caller can merely *see* (e.g. a pending
+    # cohost invitee) still must not RSVP, so guard drafts to editors below.
+    _enforce_event_read_visibility(event, user)
+    if event.is_draft and not _can_edit_event(user, event):
+        raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
     if not event.rsvp_enabled:
         raise_validation(Code.Event.RSVPS_NOT_ENABLED, status_code=400)
     if event.is_cancelled:
@@ -105,10 +108,8 @@ def _apply_rsvp_in_transaction(event_id, user, status: str, has_plus_one: bool) 
     Raises ValidationException on failure.
     """
     event = Event.objects.select_for_update().get(id=event_id)
-    co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-    invited_user_ids = {str(u.id) for u in event.invited_users.all()}
 
-    _validate_rsvp_access(user, event, co_host_ids, invited_user_ids)
+    _validate_rsvp_access(user, event)
 
     final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
 
@@ -133,7 +134,7 @@ def _apply_rsvp_in_transaction(event_id, user, status: str, has_plus_one: bool) 
 
 @router.post(
     "/events/{event_id}/rsvp/",
-    response={200: EventOut, 400: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
@@ -248,7 +249,7 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
 
 @router.delete(
     "/events/{event_id}/rsvp/",
-    response={204: None, 400: ErrorOut, 404: ErrorOut},
+    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
     auth=gated_jwt,
 )
 def delete_rsvp(request, event_id: UUID):
@@ -259,6 +260,9 @@ def delete_rsvp(request, event_id: UUID):
 
     with transaction.atomic():
         event = Event.objects.select_for_update().prefetch_related("co_hosts").get(id=event_id)
+        _enforce_event_read_visibility(event, request.auth)
+        if event.is_draft and not _can_edit_event(request.auth, event):
+            raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
         if event.is_cancelled:
             raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
         if event.is_past and not _can_edit_event(request.auth, event):

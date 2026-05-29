@@ -433,3 +433,33 @@ class TestDraftVisibility:
         assert response.status_code == 200
         invite.refresh_from_db()
         assert invite.status == CoHostInviteStatus.ACCEPTED
+
+
+# ─── Deleted-event guard (Issue 455) ────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestCohostInviteOnDeletedEvent:
+    def test_accept_on_deleted_event_404(self, api_client, event_with_pending_invite, invitee):
+        event, invite = event_with_pending_invite
+        event.status = EventStatus.DELETED
+        event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/{invite.id}/accept/",
+            **_auth_headers(invitee),
+        )
+        assert response.status_code == 404
+        invite.refresh_from_db()
+        assert invite.status == CoHostInviteStatus.PENDING
+
+    def test_decline_on_deleted_event_404(self, api_client, event_with_pending_invite, invitee):
+        event, invite = event_with_pending_invite
+        event.status = EventStatus.DELETED
+        event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/{invite.id}/decline/",
+            **_auth_headers(invitee),
+        )
+        assert response.status_code == 404
+        invite.refresh_from_db()
+        assert invite.status == CoHostInviteStatus.PENDING

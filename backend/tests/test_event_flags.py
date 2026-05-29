@@ -214,3 +214,44 @@ class TestFlagReview:
             **_auth_headers(other_member),
         )
         assert response.status_code == 403
+
+
+# ─── Visibility gating on flag submission (Issue 455) ───────────────────────
+
+
+@pytest.mark.django_db
+class TestFlagVisibilityGating:
+    def test_cannot_flag_invite_only_event_not_invited(self, api_client, member, other_member):
+        from community.models import PageVisibility
+
+        event = Event.objects.create(
+            title="Private gathering",
+            start_datetime=future_iso(days=30),
+            visibility=PageVisibility.INVITE_ONLY,
+            created_by=other_member,
+        )
+        response = api_client.post(
+            f"/api/community/events/{event.id}/flag/",
+            {"reason": "probing existence"},
+            content_type="application/json",
+            **_auth_headers(member),
+        )
+        assert response.status_code == 403
+        assert not EventFlag.objects.filter(event=event).exists()
+
+    def test_cannot_flag_deleted_event(self, api_client, member):
+        from community.models import EventStatus
+
+        event = Event.objects.create(
+            title="Removed event",
+            start_datetime=future_iso(days=30),
+            status=EventStatus.DELETED,
+        )
+        response = api_client.post(
+            f"/api/community/events/{event.id}/flag/",
+            {"reason": "should 404"},
+            content_type="application/json",
+            **_auth_headers(member),
+        )
+        assert response.status_code == 404
+        assert not EventFlag.objects.filter(event=event).exists()

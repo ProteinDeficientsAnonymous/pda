@@ -196,6 +196,88 @@ class TestCheckPhone:
         assert response.status_code == 200
         assert response.json()["status"] == "unknown"
 
+    def test_check_phone_rate_limited(self, api_client, db):
+        # Membership oracle — must be rate limited (Issue 457).
+        last_status = None
+        for i in range(25):
+            resp = api_client.post(
+                "/api/community/check-phone/",
+                {"phone_number": "+12025559999"},
+                content_type="application/json",
+            )
+            last_status = resp.status_code
+            if last_status == 429:
+                break
+        assert last_status == 429
+
+
+# ---------------------------------------------------------------------------
+# TestEditablePages — visibility gating + visibility validation (Issue 455)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestEditablePages:
+    def _create_page(self, slug, visibility):
+        from community.models import EditablePage
+
+        page = EditablePage.get_or_create_page(slug)
+        page.visibility = visibility
+        page.save(update_fields=["visibility"])
+        return page
+
+    def test_public_page_served_to_anon(self, api_client, db):
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.PUBLIC)
+        response = api_client.get("/api/community/pages/about/")
+        assert response.status_code == 200
+
+    def test_members_only_page_blocked_for_anon(self, api_client, db):
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.MEMBERS_ONLY)
+        response = api_client.get("/api/community/pages/about/")
+        assert response.status_code == 403
+
+    def test_invite_only_page_blocked_for_anon(self, api_client, db):
+        # Previously only MEMBERS_ONLY was gated, so INVITE_ONLY leaked to anon.
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.INVITE_ONLY)
+        response = api_client.get("/api/community/pages/about/")
+        assert response.status_code == 403
+
+    def test_invite_only_page_served_to_authed(self, api_client, auth_headers, db):
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.INVITE_ONLY)
+        response = api_client.get("/api/community/pages/about/", **auth_headers)
+        assert response.status_code == 200
+
+    def test_update_page_rejects_invalid_visibility(
+        self, api_client, manage_guidelines_headers, db
+    ):
+        response = api_client.patch(
+            "/api/community/pages/about/",
+            {"visibility": "everyone-please"},
+            content_type="application/json",
+            **manage_guidelines_headers,
+        )
+        assert response.status_code == 400
+
+    def test_update_page_accepts_valid_visibility(self, api_client, manage_guidelines_headers, db):
+        from community.models import PageVisibility
+
+        response = api_client.patch(
+            "/api/community/pages/about/",
+            {"visibility": PageVisibility.MEMBERS_ONLY},
+            content_type="application/json",
+            **manage_guidelines_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["visibility"] == PageVisibility.MEMBERS_ONLY
+
 
 # ---------------------------------------------------------------------------
 # TestErrorReport

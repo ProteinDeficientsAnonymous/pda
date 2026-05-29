@@ -234,3 +234,99 @@ class TestFeedback:
         )
         assert response.status_code == 503
         assert response.json()["detail"][0]["code"] == "feedback.creation_failed"
+
+
+@pytest.mark.django_db
+class TestFeedbackSanitization:
+    """Issue 457 — neutralize markdown/@mentions and escape metadata."""
+
+    def _submit(self, api_client, monkeypatch, settings, payload):
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr(
+            "community._feedback._get_github_app_token", lambda *_: "ghs_inst_token"
+        )
+        captured = _mock_urlopen(monkeypatch)
+        response = api_client.post(
+            "/api/community/feedback/",
+            payload,
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+        return captured["calls"][-1]
+
+    def test_description_is_fenced_to_neutralize_mentions(self, api_client, settings, monkeypatch):
+        import json
+
+        req = self._submit(
+            api_client,
+            monkeypatch,
+            settings,
+            {
+                "title": "spammy",
+                "description": "ping @leahpeker and see #1 — **bold**",
+            },
+        )
+        body = json.loads(req.data.decode())["body"]
+        # The free text must live inside a fenced code block so @mentions and
+        # #refs render inert.
+        assert "```" in body
+        fenced = body.split("```")[1]
+        assert "@leahpeker" in fenced  # still present, but inside the fence
+
+    def test_description_cannot_break_out_of_fence(self, api_client, settings, monkeypatch):
+        import json
+
+        # User tries to close the fence and inject active markdown afterwards.
+        malicious = "```\n@everyone escaped"
+        req = self._submit(
+            api_client,
+            monkeypatch,
+            settings,
+            {"title": "escape attempt", "description": malicious},
+        )
+        body = json.loads(req.data.decode())["body"]
+        # The opening fence must be longer than any backtick run in the content,
+        # so the user's ``` does not terminate the block.
+        first_fence = body.split("\n", 1)[0]
+        assert first_fence.count("`") >= 4
+
+    def test_metadata_user_agent_is_inline_code_escaped(self, api_client, settings, monkeypatch):
+        import json
+
+        req = self._submit(
+            api_client,
+            monkeypatch,
+            settings,
+            {
+                "title": "ua injection",
+                "description": "x",
+                "metadata": {"user_agent": "Evil`code`@here"},
+            },
+        )
+        body = json.loads(req.data.decode())["body"]
+        # Backticks in the UA are neutralized so they can't open a code span.
+        assert "Evil'code'@here" in body
+
+
+@pytest.mark.django_db
+class TestFeedbackRateLimit:
+    def test_feedback_rate_limited(self, api_client, settings, monkeypatch):
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr(
+            "community._feedback._get_github_app_token", lambda *_: "ghs_inst_token"
+        )
+        _mock_urlopen(monkeypatch)
+
+        last_status = None
+        for i in range(10):
+            resp = api_client.post(
+                "/api/community/feedback/",
+                {"title": f"report {i}", "description": "details"},
+                content_type="application/json",
+            )
+            last_status = resp.status_code
+            if last_status == 429:
+                break
+        assert last_status == 429, "expected unauthenticated feedback to hit the rate limit"

@@ -2,7 +2,7 @@
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso
@@ -337,3 +337,55 @@ class TestCreateEventWithCohosts:
         guests = response.json()["guests"]
         assert len(guests) == 1
         assert guests[0]["phone"] == test_user.phone_number
+
+
+# ---------------------------------------------------------------------------
+# Draft / deleted RSVP gating (Issue 455)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestRSVPDraftDeletedGating:
+    def test_rsvp_blocked_on_draft_for_non_editor(self, api_client, other_headers, rsvp_event):
+        # rsvp_event is owned by test_user; other_user can't edit it.
+        rsvp_event.status = EventStatus.DRAFT
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **other_headers,
+        )
+        assert response.status_code == 403
+        assert not EventRSVP.objects.filter(event=rsvp_event).exists()
+
+    def test_rsvp_allowed_on_draft_for_creator(self, api_client, auth_headers, rsvp_event):
+        rsvp_event.status = EventStatus.DRAFT
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+
+    def test_rsvp_blocked_on_deleted_event(self, api_client, auth_headers, rsvp_event):
+        rsvp_event.status = EventStatus.DELETED
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 404
+
+    def test_delete_rsvp_blocked_on_deleted_event(self, api_client, auth_headers, rsvp_event):
+        EventRSVP.objects.create(
+            event=rsvp_event, user=rsvp_event.created_by, status=RSVPStatus.ATTENDING
+        )
+        rsvp_event.status = EventStatus.DELETED
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/", **auth_headers)
+        assert response.status_code == 404

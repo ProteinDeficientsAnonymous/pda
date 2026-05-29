@@ -57,3 +57,34 @@ class TestJoinRequestEmail:
         assert resp.status_code == 201, resp.content
         jr = JoinRequest.objects.get(phone_number="+12025550101")
         assert jr.email == "foo@example.com"
+
+
+class TestVettingEmailHeaderInjection:
+    """Issue 457 — CR/LF in interpolated values must not forge email headers."""
+
+    def test_strip_header_newlines_collapses_crlf(self):
+        from community._join_requests import _strip_header_newlines
+
+        out = _strip_header_newlines("Eve\r\nBcc: victim@example.com")
+        assert "\n" not in out
+        assert "\r" not in out
+        assert out == "Eve Bcc: victim@example.com"
+
+    @pytest.mark.django_db
+    def test_vetting_email_subject_is_single_line(self, settings):
+        from community._join_requests import _send_join_request_email
+        from django.core import mail
+
+        settings.VETTING_EMAIL = "vetting@example.com"
+        settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+        mail.outbox = []
+
+        _send_join_request_email(
+            display_name="Mallory\r\nSubject: spoofed",
+            phone="+12025550101",
+            custom_answers={},
+        )
+        assert len(mail.outbox) == 1
+        subject = mail.outbox[0].subject
+        assert "\n" not in subject
+        assert "\r" not in subject

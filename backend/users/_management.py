@@ -184,7 +184,10 @@ def search_users(request, q: str = ""):
             UserSearchOut(
                 id=str(u.id),
                 display_name=u.display_name or u.phone_number,
-                phone_number=u.phone_number,
+                # Respect each member's privacy flag — blank the phone rather
+                # than dropping the field, so callers (co-host/invite picker)
+                # don't break on a missing key. Mirrors the member directory.
+                phone_number=u.phone_number if u.show_phone else "",
             )
             for u in qs
         ],
