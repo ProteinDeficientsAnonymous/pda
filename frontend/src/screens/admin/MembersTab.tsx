@@ -92,6 +92,12 @@ export function MembersTab() {
         ) : null}
       </div>
 
+      {data.length > 0 ? (
+        <p className="text-foreground-tertiary mb-3 text-sm">
+          {data.length === 1 ? '1 member' : `${String(data.length)} members`}
+        </p>
+      ) : null}
+
       <MembersList
         members={visible}
         selectedRoles={selectedRoles}
@@ -340,6 +346,11 @@ function MemberRow({ member }: { member: Member }) {
         <p className="text-foreground-tertiary truncate text-xs">
           {formatPhone(member.phoneNumber)}
         </p>
+        {member.email ? (
+          <p className="text-foreground-tertiary truncate text-xs">{member.email.toLowerCase()}</p>
+        ) : (
+          <p className="text-foreground-tertiary/60 truncate text-xs italic">no email</p>
+        )}
       </div>
       <div className="flex shrink-0 flex-wrap justify-end gap-1">
         {member.roles.map((role) => (
