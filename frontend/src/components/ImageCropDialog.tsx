@@ -6,22 +6,13 @@
 // blob via onCrop.
 
 import { useRef, useState } from 'react';
-import ReactCrop, {
-  centerCrop,
-  makeAspectCrop,
-  type Crop,
-  type PercentCrop,
-  type PixelCrop,
-} from 'react-image-crop';
+import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { cropImage } from '@/utils/cropImage';
+import { initialCrop } from './initialCrop';
 import { Button } from './ui/Button';
 
 export type CropShape = 'round' | 'rect';
-
-// Tailwind `max-h-80` → 20rem → 320px. Kept in sync with the wrapper + img
-// classes below so the initial crop math matches what the user sees.
-const MAX_PREVIEW_PX = 320;
 
 interface Props {
   file: File;
@@ -47,23 +38,7 @@ export function ImageCropDialog({
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    if (lockedAspect !== undefined) {
-      setCrop(
-        centerCrop(
-          makeAspectCrop({ unit: '%', width: 80 }, lockedAspect, width, height),
-          width,
-          height,
-        ),
-      );
-      return;
-    }
-    // Rect (free-form) mode: the image is constrained to MAX_PREVIEW_PX in CSS,
-    // so a flat 80%-of-natural crop can overshoot the visible image when the
-    // photo is portrait or otherwise taller than the container. Cap the
-    // initial crop height at the rendered preview height instead.
-    const previewHeight = Math.min(height, MAX_PREVIEW_PX);
-    const heightPct = Math.min(80, (previewHeight / height) * 80);
-    setCrop(centerCrop({ unit: '%', x: 0, y: 0, width: 80, height: heightPct }, width, height));
+    setCrop(initialCrop(width, height, shape));
   }
 
   function handleCancel() {
