@@ -1,252 +1,209 @@
 ---
 name: add-permission-gated-page
-description: Scaffold a new editable singleton content page in the PDA app end-to-end (permission key + Django singleton model + ninja GET/PATCH endpoints + React screen + data hooks + route + nav + tests), following the FAQ/Guidelines pattern. Use when adding a new content page that a permission-holding role can edit.
-argument-hint: "<page_slug> [\"Page Title\"] [public|authed]"
+description: Scaffold a new permission-gated admin/restricted page in the PDA app — a page whose ACCESS requires a permission. Wires the RequirePermission route guard + AdminHub tile (frontend UX) and a backend GET endpoint that returns 403 without the permission (the real gate). Use for an admin/management screen only certain roles may open. For an openly-viewable page whose editing is gated, use add-editable-page instead.
+argument-hint: "<route_slug> [\"Title\"] <permission_key>"
 ---
 
-# Add a Permission-Gated Editable Page
+# Add a Permission-Gated Page
 
-Adds a new **singleton content page** (one DB row, rich-text body, view by everyone-or-authed,
-edit by a permission-holding role) end-to-end across the Django backend and the React/TS
-frontend. The canonical template is the existing **FAQ** (public) and **Guidelines** (authed)
-pages — copy them exactly.
+Adds a page whose **access** is restricted to users holding a permission — the
+Docs / JoinRequests / Members-admin pattern. Wired full-stack across the React/TS frontend
+and the Django backend.
 
-This skill is **self-contained**: it includes the permission-key step inline, so you do not
-need to run `add-new-permission` first (though that skill covers step 1 in isolation).
+**Gating model — important.** Unlike an editable content page (which is openly viewable),
+this page should not be reachable at all without the permission:
+- **Frontend** wraps the route in `<RequirePermission perm={...} />` (redirects before the
+  screen mounts) and surfaces the page as an **AdminHub tile** that only appears for
+  permitted users. This is UX/routing only.
+- **Backend is the real gate** — the page's data endpoint checks
+  `request.auth.has_permission(MANAGE_X)` and returns **403** otherwise. A redirect alone is
+  not security; the 403 is what actually enforces access. (To instead make a page openly
+  viewable but edit-gated, use `add-editable-page`.)
+
+## Permission key
+
+This page is gated by a permission (typically a `manage_*` key). **If it needs a NEW
+permission, run `add-new-permission` first** (it adds the `PermissionKey` enum member + the
+frontend `Permission` mirror). If you're reusing an existing key (e.g. an admin screen under
+`manage_users`), skip that. The steps below assume the key already exists.
 
 ## Arguments
 
-- `page_slug` — snake/kebab single word used in the URL and API path, e.g. `resources`.
-- `Page Title` — human-facing label for the nav and `<h1>` (defaults to the slug, lowercased
-  — note the existing pages render lowercase titles like `faq`, `guidelines`).
-- `public|authed` — whether the page is viewable logged-out (`public`, like FAQ) or
-  requires login (`authed`, like Guidelines). Default `authed`. Ask if unclear.
+- `route_slug` — the URL path, e.g. `sponsors` → `/admin/sponsors` (admin screens conventionally
+  live under `/admin/...`; some, like `/join-requests`, are top-level — match the closest peer).
+- `Title` — human-facing label for the AdminHub tile and the `<h1>` (lowercase, like the
+  existing tiles: `members`, `join requests`).
+- `permission_key` — the gating key, e.g. `manage_sponsors` → `Permission.ManageSponsors` /
+  `PermissionKey.MANAGE_SPONSORS`.
 
-Derive before starting (example for slug `resources`):
-- `PERM_CONST` = `EDIT_RESOURCES`, perm string `edit_resources`, `Permission.EditResources`
-- `ModelName` = `Resources` (PascalCase of slug)
-- route `/resources`, API path `/api/community/resources/`
-- query key `['resources']`
+Derive (example slug `sponsors`, key `manage_sponsors`):
+- `PermCamel` = `ManageSponsors`, `PERM_CONST` = `MANAGE_SPONSORS`
+- `ScreenName` = `SponsorsScreen`, route `/admin/sponsors`, API path `/api/community/sponsors/`
+
+---
+
+## Frontend
+
+### Step 1 — Route guard: `frontend/src/router/routes.tsx`
+
+Add a lazy import alongside the other admin screens:
+
+```tsx
+const Sponsors = lazyWithRetry(() => import('@/screens/admin/SponsorsScreen'));
+```
+
+Then add the route wrapped in `RequirePermission`. If a sibling admin route already uses the
+SAME permission, add your path to its existing `children`; otherwise add a new block:
+
+```tsx
+{
+  element: <RequirePermission perm={Permission.ManageSponsors} />,
+  children: [{ path: '/admin/sponsors', element: el(<Sponsors />) }],
+},
+```
+
+`RequirePermission` (in `frontend/src/auth/guards.tsx`) redirects unauthed users to
+`/login?redirect=...` and authed-but-unpermitted users to `/calendar` — so the screen never
+mounts without the permission.
+
+### Step 2 — AdminHub tile: `frontend/src/screens/admin/AdminHubScreen.tsx`
+
+Permission-gated pages are **not** added to the main nav (`PdaMenuSheet.tsx`) — that's only
+for public/authed-everyone links. Instead they're discovered through the AdminHub, which
+filters tiles by permission (`TILES.filter((t) => hasPermission(user, t.perm))`).
+
+Add an entry to the `TILES` array:
+
+```tsx
+{
+  to: '/admin/sponsors',
+  label: 'sponsors',
+  description: 'manage the sponsor list',
+  perm: Permission.ManageSponsors,
+},
+```
+
+### Step 3 — Screen: `frontend/src/screens/admin/SponsorsScreen.tsx` (new file)
+
+A starter screen. It does **not** need its own `hasPermission` check — the route guard
+already enforces access. Use `ContentContainer` / `ContentLoading` / `ContentError` like the
+other admin screens (reference `JoinRequestsScreen.tsx`). Data-driven version:
+
+```tsx
+import { useSponsors } from '@/api/sponsors';
+import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+
+export default function SponsorsScreen() {
+  const { data = [], isPending, isError } = useSponsors();
+
+  if (isPending) return <ContentLoading />;
+  if (isError) return <ContentError message="couldn't load sponsors — try refreshing" />;
+
+  return (
+    <ContentContainer>
+      <h1 className="mb-6 text-2xl font-medium tracking-tight">sponsors</h1>
+      {/* render data */}
+    </ContentContainer>
+  );
+}
+```
+
+If the page is static (no data), drop the hook and just render the content (see
+`SmsPolicyScreen.tsx` for the bare shape). The data hook (`useSponsors`) lives in a new or
+existing `frontend/src/api/*.ts` module using react-query + `apiClient` — model it on the
+existing query hooks in `frontend/src/api/content.ts` / `join.ts`.
+
+### Step 4 — Screen test: `frontend/src/screens/admin/SponsorsScreen.test.tsx` (new file)
+
+Test the screen renders its states (loading / error / data) with the data hook mocked,
+following the existing admin/public screen tests (they mock the `@/api/*` hook and wrap in
+`QueryClientProvider` + `MemoryRouter`; drive `useAuthStore.setState` for the user).
+
+Note: the route guard's redirect-without-permission behavior is exercised by
+`RequirePermission`'s own tests, not per-screen — but if you want belt-and-suspenders, render
+the route subtree with an unpermitted user and assert the screen does not appear.
 
 ---
 
 ## Backend
 
-### Step 1 — Permission key: `backend/users/permissions.py`
+> Only if the page has its own data endpoint. If it reuses an existing gated endpoint, skip
+> to Verify. If it's a purely static page, there's no backend at all.
 
-Add a member to `PermissionKey(models.TextChoices)`, grouped with the other `EDIT_*` content
-keys (the enum is logically grouped, **not** alphabetical):
+### Step 5 — Gated endpoint: `backend/community/_sponsors.py` (new file)
 
-```python
-EDIT_RESOURCES = "edit_resources", "Edit resources"
-```
-
-### Step 2 — Singleton model: `backend/community/models/content.py`
-
-Add a model copying `FAQ` / `CommunityGuidelines` exactly (three content fields + the
-`get()` singleton accessor):
+The **real gate.** Copy the `backend/community/_docs.py` shape — a `_has_x` helper plus a GET
+that 403s before returning any data:
 
 ```python
-class Resources(models.Model):
-    """Singleton model — only one row ever exists (pk=1)."""
-
-    content = models.TextField(default="", max_length=50000)        # legacy Quill delta
-    content_pm = models.TextField(default="", max_length=50000)     # ProseMirror/TipTap JSON
-    content_html = models.TextField(default="", max_length=100000)  # rendered HTML (read)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        app_label = "community"
-        verbose_name = "Resources"
-        verbose_name_plural = "Resources"
-
-    def __str__(self):
-        return "Resources"
-
-    @classmethod
-    def get(cls) -> "Resources":
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
-```
-
-### Step 3 — Export it: `backend/community/models/__init__.py`
-
-Add `Resources` to BOTH the `from community.models.content import (...)` block AND the
-content section of `__all__` (keep both lists tidy).
-
-### Step 4 — Endpoints: `backend/community/_resources.py` (new file)
-
-Copy `backend/community/_guidelines.py`. **Reuse the existing `GuidelinesOut` /
-`GuidelinesPatchIn` schemas and the `_singleton_out` / `_apply_update` shape** — every
-singleton page shares the same wire format, so import or replicate them rather than
-inventing new schemas. New file:
-
-```python
-"""Resources endpoints."""
+"""Sponsors (admin) endpoints."""
 
 import logging
-from datetime import datetime
 
 from config.audit import audit_log
 from ninja import Router
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
-from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
-from community._content_render import render_content_payload
-from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Resources
 
 router = Router()
 
 
-class ResourcesOut(BaseModel):
-    content: str
-    content_pm: str
-    content_html: str
-    updated_at: datetime
+def _has_manage_sponsors(user) -> bool:
+    return user.has_permission(PermissionKey.MANAGE_SPONSORS)
 
 
-class ResourcesPatchIn(BaseModel):
-    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
-    content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
-
-
-def _singleton_out(obj: Resources) -> ResourcesOut:
-    return ResourcesOut(
-        content=obj.content,
-        content_pm=obj.content_pm,
-        content_html=obj.content_html,
-        updated_at=obj.updated_at,
-    )
-
-
-def _apply_update(obj: Resources, payload: ResourcesPatchIn) -> None:
-    rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
-    obj.content = rendered.content
-    obj.content_pm = rendered.content_pm
-    obj.content_html = rendered.content_html
-    obj.save()
-
-
-# GET auth: use `auth=None` for a PUBLIC page (like FAQ), or `auth=JWTAuth()`
-# for an AUTHED page (like Guidelines). Pick per the public|authed argument.
-@router.get("/resources/", response={200: ResourcesOut}, auth=JWTAuth())
-def get_resources(request):
-    return Status(200, _singleton_out(Resources.get()))
-
-
-@router.patch("/resources/", response={200: ResourcesOut, 403: ErrorOut}, auth=JWTAuth())
-def update_resources(request, payload: ResourcesPatchIn):
-    if not request.auth.has_permission(PermissionKey.EDIT_RESOURCES):
+@router.get("/sponsors/", response={200: list[SponsorOut], 403: ErrorOut}, auth=JWTAuth())
+def list_sponsors(request):
+    if not _has_manage_sponsors(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
             request,
             details={
-                "endpoint": "update_resources",
-                "required_permission": PermissionKey.EDIT_RESOURCES,
+                "endpoint": "list_sponsors",
+                "required_permission": PermissionKey.MANAGE_SPONSORS,
             },
         )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_resources")
-    r = Resources.get()
-    _apply_update(r, payload)
-    audit_log(
-        logging.INFO,
-        "resources_updated",
-        request,
-        target_type="resources",
-        details={"format": "prosemirror" if payload.content_pm else "delta"},
-    )
-    return Status(200, _singleton_out(r))
+        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_sponsors")
+    # ... return the data ...
+    return Status(200, [...])
 ```
 
-> Tip: if you prefer not to duplicate the schema/helpers, you can `from community._guidelines
-> import GuidelinesOut, GuidelinesPatchIn` and reuse them — that's what FAQ and Guidelines
-> already do (they share one `_singleton_out`). The standalone version above is fine too.
+This 403-before-data is the difference from an editable page (where GET is open). Define
+`SponsorOut` and any model the same way the existing `_docs.py` / models do.
 
-### Step 5 — Register the router: `backend/community/api.py`
-
-Add the import with the other `_xxx import router as xxx_router` lines and register it with
-the other `router.add_router("", xxx_router)` calls:
+### Step 6 — Register the router: `backend/community/api.py`
 
 ```python
-from community._resources import router as resources_router
+from community._sponsors import router as sponsors_router
 # ...
-router.add_router("", resources_router)
+router.add_router("", sponsors_router)
 ```
 
-### Step 6 — Tests: `backend/tests/test_community.py`
+### Step 7 — Backend tests: `backend/tests/test_community.py` (or `test_sponsors.py`)
 
-Add fixtures (pick an unused `+1202555XXXX` phone number — scan the file for the next free
-one) and a test class. Pattern:
+Add a fixture for a user whose role grants `MANAGE_SPONSORS` (unused `+1202555XXXX` phone)
+and assert the **access** gate:
 
 ```python
-@pytest.fixture
-def edit_resources_user(db):
-    from users.models import User
-
-    user = User.objects.create_user(
-        phone_number="+12025550404",  # next unused number in this file
-        password="resourcespass",
-        display_name="Resources Editor",
-    )
-    role = Role.objects.create(name="resources_editor", permissions=[PermissionKey.EDIT_RESOURCES])
-    user.roles.add(role)
-    return user
-
-
-@pytest.fixture
-def edit_resources_headers(edit_resources_user):
-    from ninja_jwt.tokens import RefreshToken
-
-    refresh = RefreshToken.for_user(edit_resources_user)
-    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
-
-
 @pytest.mark.django_db
-class TestResources:
-    def test_get_authenticated(self, api_client, auth_headers):
-        r = api_client.get("/api/community/resources/", **auth_headers)
-        assert r.status_code == 200
-        assert "content" in r.json() and "updated_at" in r.json()
+class TestSponsorsAccess:
+    def test_list_with_permission(self, api_client, manage_sponsors_headers):
+        assert api_client.get("/api/community/sponsors/", **manage_sponsors_headers).status_code == 200
 
-    def test_get_unauthenticated(self, api_client):
-        # 200 if the page is PUBLIC (auth=None), 401 if AUTHED (auth=JWTAuth()).
-        r = api_client.get("/api/community/resources/")
-        assert r.status_code == 401  # flip to 200 for a public page
+    def test_list_without_permission(self, api_client, auth_headers):
+        # authed but lacks manage_sponsors → 403 (NOT just hidden)
+        assert api_client.get("/api/community/sponsors/", **auth_headers).status_code == 403
 
-    def test_update_with_permission(self, api_client, edit_resources_headers):
-        r = api_client.patch(
-            "/api/community/resources/",
-            {"content_pm": '{"type":"doc","content":[]}'},
-            content_type="application/json",
-            **edit_resources_headers,
-        )
-        assert r.status_code == 200
-
-    def test_update_requires_permission(self, api_client, auth_headers):
-        r = api_client.patch(
-            "/api/community/resources/",
-            {"content_pm": "{}"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert r.status_code == 403
-
-    def test_update_requires_auth(self, api_client):
-        r = api_client.patch(
-            "/api/community/resources/",
-            {"content_pm": "{}"},
-            content_type="application/json",
-        )
-        assert r.status_code == 401
+    def test_list_unauthenticated(self, api_client):
+        assert api_client.get("/api/community/sponsors/").status_code == 401
 ```
 
-### Step 7 — Migration
+### Step 8 — Migration (if a model was added)
 
 ```bash
 make migrate
@@ -254,139 +211,27 @@ make migrate
 
 ---
 
-## Frontend
-
-### Step 8 — Permission mirror: `frontend/src/models/permissions.ts`
-
-Add the matching entry (string must equal the backend key exactly):
-
-```ts
-EditResources: 'edit_resources',
-```
-
-### Step 9 — Data hooks: `frontend/src/api/content.ts`
-
-Add a query hook and reuse the `makeSimplePatch` factory for the mutation. Choose the read
-variant by public|authed:
-
-```ts
-// PUBLIC page (like FAQ): no auth gate, simple key.
-export function useResources() {
-  return useQuery({
-    queryKey: ['resources'],
-    queryFn: () => fetchSimple('/api/community/resources/'),
-  });
-}
-
-// AUTHED page (like Guidelines): gate the fetch on auth, include {authed} in the key.
-// export function useResources() {
-//   const isAuthed = useAuthStore((s) => s.status === 'authed');
-//   return useQuery({
-//     queryKey: ['resources', { authed: isAuthed }],
-//     queryFn: () => fetchSimple('/api/community/resources/'),
-//     enabled: isAuthed,
-//   });
-// }
-
-export const useUpdateResources = makeSimplePatch('/api/community/resources/', ['resources']);
-```
-
-Reuse the existing `fetchSimple` and `makeSimplePatch` helpers — do not hand-roll axios calls.
-
-### Step 10 — Screen: `frontend/src/screens/public/ResourcesScreen.tsx` (new file)
-
-Copy `FaqScreen.tsx` verbatim, swapping faq→resources:
-
-```tsx
-import { useResources, useUpdateResources } from '@/api/content';
-import { useAuthStore } from '@/auth/store';
-import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
-import { Permission, hasPermission } from '@/models/permissions';
-import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
-
-export default function ResourcesScreen() {
-  const { data, isPending, isError } = useResources();
-  const user = useAuthStore((s) => s.user);
-  const canEdit = hasPermission(user, Permission.EditResources);
-  const update = useUpdateResources();
-
-  if (isPending) return <ContentLoading />;
-  if (isError) return <ContentError message="couldn't load resources — try refreshing" />;
-
-  return (
-    <ContentContainer>
-      <h1 className="mb-4 text-2xl font-medium tracking-tight">resources</h1>
-      <EditableHtmlBlock
-        canEdit={canEdit}
-        contentHtml={data.contentHtml}
-        initialPm={data.contentPm}
-        onSave={(contentPm) => update.mutateAsync(contentPm).then(() => undefined)}
-        placeholder="resources content"
-      />
-    </ContentContainer>
-  );
-}
-```
-
-`EditableHtmlBlock` already provides the Edit button, autosave, TipTap editor, and view mode —
-do not rebuild any of that.
-
-### Step 11 — Route: `frontend/src/router/routes.tsx`
-
-Add the lazy import alongside the other `public/` screens, then add the route:
-
-```tsx
-const Resources = lazyWithRetry(() => import('@/screens/public/ResourcesScreen'));
-```
-
-Place `{ path: '/resources', element: el(<Resources />) }`:
-- **Authed page** → inside the `<RequireAuth />` children group (like `/guidelines`).
-- **Public page** → with the public routes (like `/faq`), outside `RequireAuth`.
-
-### Step 12 — Nav: `frontend/src/layout/PdaMenuSheet.tsx`
-
-Add a menu item to the right array:
-- **Public** → `ALWAYS_ITEMS` (shown logged-out, like `/faq`).
-- **Authed** → `AUTHED_ITEMS` (shown only when logged in, like `/guidelines`).
-
-```ts
-{ to: '/resources', label: 'resources' },
-```
-
-### Step 13 — Screen test: `frontend/src/screens/public/ResourcesScreen.test.tsx` (new file)
-
-Copy `FaqScreen.test.tsx`, swapping faq→resources. It mocks `@/api/content` and the
-`RichEditor`, drives `useAuthStore.setState`, and asserts: loading state, no Edit button
-for a member without `edit_resources`, Edit button for a user whose role has `edit_resources`.
-
----
-
-## Step 14 — Verify
+## Step 9 — Verify
 
 ```bash
 make ci
 ```
 
-Fix anything that fails — especially tests that enumerate permission keys or that assumed a
-fixed set of `/api/community/*` routes.
-
 ## Reference files (read these — they are the source of truth)
 
 | Concern | File |
 |---------|------|
-| Permission enum | `backend/users/permissions.py` |
-| Singleton models | `backend/community/models/content.py`, `models/__init__.py` |
-| Endpoint pattern | `backend/community/_guidelines.py` (FAQ + Guidelines) |
+| Permission key (if new — run `add-new-permission`) | `backend/users/permissions.py`, `frontend/src/models/permissions.ts` |
+| Route guard | `frontend/src/auth/guards.tsx` (`RequirePermission`) |
+| Route wrap pattern | `frontend/src/router/routes.tsx` |
+| AdminHub tiles | `frontend/src/screens/admin/AdminHubScreen.tsx` |
+| Admin screen example | `frontend/src/screens/admin/JoinRequestsScreen.tsx` |
+| Backend gated read (403) | `backend/community/_docs.py` (`_has_manage_docs` + GET 403) |
 | Router registration | `backend/community/api.py` |
 | Backend tests | `backend/tests/test_community.py` |
-| Frontend perms | `frontend/src/models/permissions.ts` |
-| Data hooks | `frontend/src/api/content.ts` |
-| Screen + editor | `frontend/src/screens/public/FaqScreen.tsx`, `components/EditableHtmlBlock.tsx` |
-| Route + nav | `frontend/src/router/routes.tsx`, `frontend/src/layout/PdaMenuSheet.tsx` |
-| Screen test | `frontend/src/screens/public/FaqScreen.test.tsx` |
 
-## Note — not the same as `EditablePage`
+## Note — gating ACCESS vs gating EDITING
 
-PDA also has a generic `EditablePage` model with a `community/_pages.py` router and
-`useEditablePage(slug)` hook — that's a *different* mechanism (dynamic, slug-addressed pages).
-This skill scaffolds a **dedicated singleton page** like FAQ/Guidelines. Don't conflate them.
+This skill gates *who can open the page* (route guard + backend GET 403). If instead you want
+an openly-viewable page whose *content* can be edited by a permission-holder (FAQ/Guidelines
+style — GET open, PATCH gated), use **`add-editable-page`**.
