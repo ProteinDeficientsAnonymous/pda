@@ -20,6 +20,11 @@ export function OnboardingProfileStep({ onDone }: Props) {
 
   const hasPhoto = Boolean(user?.profilePhotoUrl);
 
+  function onSkip() {
+    setError(null);
+    onDone();
+  }
+
   async function onFinish() {
     const trimmed = bio.trim();
     if (!trimmed) {
@@ -64,8 +69,9 @@ export function OnboardingProfileStep({ onDone }: Props) {
       </Button>
       <button
         type="button"
-        onClick={onDone}
-        className="text-foreground-tertiary hover:text-foreground text-sm underline transition-colors"
+        onClick={onSkip}
+        disabled={saving}
+        className="text-foreground-tertiary hover:text-foreground focus-visible:ring-brand-200 text-sm underline transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         do this later
       </button>
