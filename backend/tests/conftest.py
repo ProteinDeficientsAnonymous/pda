@@ -35,6 +35,23 @@ def api_client():
 
 
 @pytest.fixture
+def why_join_id(db):
+    from community.models import JoinFormQuestion
+
+    q = JoinFormQuestion.objects.filter(required=True).first()
+    return str(q.id) if q else ""
+
+
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture
 def test_user(db):
     from users.models import User
 

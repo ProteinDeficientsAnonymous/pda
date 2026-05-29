@@ -2,12 +2,15 @@
 // fields (display_name, phone_number) are NOT in the question list — the form
 // composes them with the server questions.
 //
-// The submit endpoint has three notable error shapes:
-//   400 { detail }                  — validation (bad name, duplicate pending, etc.)
-//   409 { detail: 'already_invited' } — phone already matches a user → /login?invited=true
+// The submit endpoint has these notable error shapes:
+//   400 { detail }                                   — validation (bad name, duplicate pending, etc.)
+//   409 phone_already_invited — phone already matches a user → /login?invited=true
+//   409 email.already_exists  — email matches another user → surfaced inline on the form
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
+import { hasErrorCode } from './apiErrors';
+import { Code } from './validationCodes.gen';
 
 export type JoinQuestionType = 'text' | 'select';
 
@@ -76,8 +79,12 @@ export function useSubmitJoinRequest() {
           website: payload.website,
         });
       } catch (err) {
-        const status = (err as { response?: { status?: number } }).response?.status;
-        if (status === 409) throw new AlreadyInvitedError();
+        // A phone collision means this person already has an account — send
+        // them to login. An email collision (or any other error) stays on the
+        // form so they can correct it.
+        if (hasErrorCode(err, Code.JoinRequest.PhoneAlreadyInvited)) {
+          throw new AlreadyInvitedError();
+        }
         throw err;
       }
     },

@@ -41,6 +41,14 @@ vi.mock('./ChangePasswordDialog', () => ({
   ChangePasswordDialog: () => null,
 }));
 
+// CalendarFeedSubscription fires a real apiClient request (useCalendarToken).
+// Without a server the axios interceptor treats the 401 as session-expired and
+// force-logs-out the store mid-test — nulling `user`, so SettingsScreen renders
+// null and the DOM empties. Stub it like the other API-backed sub-components.
+vi.mock('./CalendarFeedSubscription', () => ({
+  CalendarFeedSubscription: () => null,
+}));
+
 // updateProfile is called as a mutation on the store — stub it so tests don't
 // hit the real API
 vi.mock('@/api/auth', () => ({
@@ -67,6 +75,7 @@ const TEST_USER: User = {
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
+  needsPasswordReset: false,
   showPhone: false,
   showEmail: false,
   weekStart: 'sunday',
@@ -120,5 +129,28 @@ describe('SettingsScreen', () => {
     await waitFor(() => {
       expect(useAccessibilityStore.getState().themeMode).toBe('dark');
     });
+  });
+
+  it('surfaces the error when saving an email that is already in use', async () => {
+    const authApi = await import('@/api/auth');
+    vi.mocked(authApi.updateProfile).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 409,
+        data: { detail: [{ code: 'email.already_exists', field: 'email' }] },
+      },
+    });
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit email/i }));
+    const field = screen.getByLabelText(/^email$/i);
+    await user.clear(field);
+    await user.type(field, 'taken@example.com');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(await screen.findByText(/already on another account/i)).toBeInTheDocument();
+    // Field stays in edit mode so the user can correct it.
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
   });
 });

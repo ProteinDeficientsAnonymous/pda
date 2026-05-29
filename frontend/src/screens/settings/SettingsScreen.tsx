@@ -6,6 +6,7 @@ import { useAuthStore } from '@/auth/store';
 import { useAccessibilityStore, type ThemeMode, type TextScale } from '@/accessibility/store';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { useVersion } from '@/api/version';
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
@@ -141,6 +142,7 @@ function InlineText({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function commit() {
     if (draft.trim() === value) {
@@ -148,9 +150,12 @@ function InlineText({
       return;
     }
     setSaving(true);
+    setError(null);
     try {
       await onSave(draft.trim());
       setEditing(false);
+    } catch (err) {
+      setError(extractApiErrorOr(err, "couldn't save — try again"));
     } finally {
       setSaving(false);
     }
@@ -167,6 +172,7 @@ function InlineText({
           variant="ghost"
           onClick={() => {
             setDraft(value);
+            setError(null);
             setEditing(true);
           }}
           aria-label={`edit ${label}`}
@@ -183,14 +189,17 @@ function InlineText({
         <TextField
           label={label}
           value={draft}
+          error={error ?? undefined}
           onChange={(e) => {
             setDraft(e.target.value);
+            if (error) setError(null);
           }}
         />
       </div>
       <Button
         variant="ghost"
         onClick={() => {
+          setError(null);
           setEditing(false);
         }}
         disabled={saving}
