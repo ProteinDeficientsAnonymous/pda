@@ -30,27 +30,93 @@ class JsonFormatter(logging.Formatter):
 
 
 # Patterns that indicate sensitive data (case-insensitive key=value style).
-# The .+ at the end captures the rest of the value including spaces (e.g. "Bearer <token>").
+# The value capture is non-greedy and stops at whitespace, comma, or quote so
+# that multiple k=v pairs on one line each get redacted independently rather
+# than the first match swallowing the rest of the line. Quoted values are
+# captured in full (including spaces) up to the closing quote.
+_SENSITIVE_KEYWORDS = (
+    "password",
+    "token",
+    "secret",
+    "authorization",
+    "api_key",
+    "apikey",
+    "jwt",
+    "session",
+    "cookie",
+    "set-cookie",
+    "refresh",
+    "otp",
+    "code",
+    "phone_number",
+    "phone",
+)
+# Optional auth scheme whose credential follows the scheme word (e.g. "Bearer <token>").
+_AUTH_SCHEME = r"(?:Bearer|Basic|Token|JWT)\s+"
 _SENSITIVE_KEY_RE = re.compile(
-    r"(password|token|secret|authorization|phone_number|phone)\s*[=:]\s*.+",
+    r"(?P<key>" + "|".join(_SENSITIVE_KEYWORDS) + r")"
+    r"(?P<sep>\s*[=:]\s*)"
+    r"(?P<value>\"[^\"]*\"|'[^']*'|(?:" + _AUTH_SCHEME + r")?\S+)",
     re.IGNORECASE,
 )
 
 # E.164 phone number pattern: + followed by 10-15 digits.
 _E164_RE = re.compile(r"\+\d{10,15}")
 
+# Matches a dict key (in structured extras) that is itself sensitive, so the
+# whole value is redacted regardless of its content (e.g. {"authorization": "Bearer x"}).
+_SENSITIVE_KEY_NAME_RE = re.compile(
+    r"^(?:" + "|".join(_SENSITIVE_KEYWORDS) + r")$",
+    re.IGNORECASE,
+)
+
+
+def _redact_text(text: str) -> str:
+    """Redact sensitive key=value pairs and phone numbers in a string."""
+    redacted = _SENSITIVE_KEY_RE.sub(
+        lambda m: f"{m.group('key')}{m.group('sep')}[REDACTED]",
+        text,
+    )
+    return _E164_RE.sub("[REDACTED]", redacted)
+
+
+def _redact_dict_entry(key: object, value: object) -> object:
+    """Redact a dict value whose key name is sensitive; otherwise recurse."""
+    if isinstance(key, str) and _SENSITIVE_KEY_NAME_RE.match(key):
+        return "[REDACTED]"
+    return _redact_value(value)
+
+
+def _redact_value(value: object) -> object:
+    """Recursively redact sensitive data in extras, preserving non-string types."""
+    if isinstance(value, str):
+        return _redact_text(value)
+    if isinstance(value, dict):
+        return {k: _redact_dict_entry(k, v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return type(value)(_redact_value(v) for v in value)
+    return value
+
 
 class SensitiveDataFilter(logging.Filter):
-    """Redacts sensitive data from log messages before they reach handlers."""
+    """Redacts sensitive data from log messages and structured extras."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.msg = _SENSITIVE_KEY_RE.sub(
-            lambda m: (
-                m.group(0).split("=")[0].split(":")[0] + "=[REDACTED]"
-                if "=" in m.group(0)
-                else m.group(0).split(":")[0] + ": [REDACTED]"
-            ),
-            str(record.msg),
-        )
-        record.msg = _E164_RE.sub("[REDACTED]", record.msg)
+        # Redact the fully-rendered message, then collapse args so that the
+        # message and its format args can never desync. record.getMessage()
+        # applies %-formatting when args are present and is a no-op otherwise.
+        record.msg = _redact_text(record.getMessage())
+        record.args = ()
+
+        # Scrub sensitive values in structured extras emitted by JsonFormatter.
+        # If the extra's key name is itself sensitive (e.g. extra={"password": x}),
+        # redact the whole value; otherwise recurse into the value's contents.
+        for key, value in record.__dict__.items():
+            if key in _STANDARD_FIELDS:
+                continue
+            if _SENSITIVE_KEY_NAME_RE.match(key):
+                record.__dict__[key] = "[REDACTED]"
+            else:
+                record.__dict__[key] = _redact_value(value)
+
         return True
