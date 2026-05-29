@@ -3730,6 +3730,19 @@
         "title": "RolePatchIn",
         "type": "object"
       },
+      "SseTicketOut": {
+        "properties": {
+          "ticket": {
+            "title": "Ticket",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket"
+        ],
+        "title": "SseTicketOut",
+        "type": "object"
+      },
       "SurveyAnswersIn": {
         "properties": {
           "answers": {
@@ -4986,6 +4999,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "summary": "Login",
@@ -5061,6 +5084,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "summary": "Magic Login",
@@ -11395,6 +11428,44 @@
           }
         ],
         "summary": "Mark All Read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/notifications/sse-ticket/": {
+      "post": {
+        "description": "Mint a short-lived single-use ticket for opening the SSE stream.\n\nLets the client open the stream with ?ticket= instead of the JWT (EventSource\ncan't send an auth header).",
+        "operationId": "notifications_api_create_sse_ticket",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseTicketOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Sse Ticket",
         "tags": [
           "notifications"
         ]
