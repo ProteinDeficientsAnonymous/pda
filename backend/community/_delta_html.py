@@ -7,6 +7,8 @@ ProseMirror via ``community._prosemirror_html`` instead.
 import json
 from html import escape
 
+from community._html_safety import safe_image_src, safe_link_href
+
 # Each line is (list_of_spans, line_attrs_dict)
 # A span is (text_or_sentinel, attrs_dict)
 _Line = tuple[list[tuple[str, dict]], dict]
@@ -51,7 +53,7 @@ def _parse_op(op: dict, current_spans: list, lines: list) -> None:
     attrs = op.get("attributes") or {}
 
     if isinstance(insert, dict):
-        image_url = insert.get("image", "")
+        image_url = safe_image_src(insert.get("image", ""))
         if image_url:
             current_spans.append(("__image__", {"src": escape(image_url)}))
         return
@@ -122,7 +124,7 @@ def _apply_inline_attrs(chunk: str, attrs: dict) -> str:
         chunk = f"<s>{chunk}</s>"
     if attrs.get("code"):
         chunk = f"<code>{chunk}</code>"
-    link = attrs.get("link")
+    link = safe_link_href(attrs.get("link"))
     if link:
         chunk = f'<a href="{escape(link)}">{chunk}</a>'
     return chunk

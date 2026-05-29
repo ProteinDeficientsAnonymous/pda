@@ -234,6 +234,83 @@ class TestTextAlign:
         assert prosemirror_to_html(pm) == '<p style="text-align: center"><br></p>'
 
 
+class TestUrlSchemeSanitization:
+    def test_link_javascript_scheme_stripped(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","content":['
+            '{"type":"text","text":"x","marks":[{"type":"link","attrs":'
+            '{"href":"javascript:alert(1)"}}]}]}]}'
+        )
+        html = prosemirror_to_html(pm)
+        assert "javascript:" not in html
+        assert html == '<p><a href="">x</a></p>'
+
+    def test_link_data_scheme_stripped(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","content":['
+            '{"type":"text","text":"x","marks":[{"type":"link","attrs":'
+            '{"href":"data:text/html,<script>"}}]}]}]}'
+        )
+        html = prosemirror_to_html(pm)
+        assert "data:" not in html
+
+    def test_link_https_survives(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","content":['
+            '{"type":"text","text":"x","marks":[{"type":"link","attrs":'
+            '{"href":"https://x.test/path"}}]}]}]}'
+        )
+        assert prosemirror_to_html(pm) == '<p><a href="https://x.test/path">x</a></p>'
+
+    def test_link_mailto_survives(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","content":['
+            '{"type":"text","text":"x","marks":[{"type":"link","attrs":'
+            '{"href":"mailto:a@b.test"}}]}]}]}'
+        )
+        assert prosemirror_to_html(pm) == '<p><a href="mailto:a@b.test">x</a></p>'
+
+    def test_link_relative_survives(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","content":['
+            '{"type":"text","text":"x","marks":[{"type":"link","attrs":'
+            '{"href":"/events/1"}}]}]}]}'
+        )
+        assert prosemirror_to_html(pm) == '<p><a href="/events/1">x</a></p>'
+
+    def test_cta_javascript_href_stripped(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"cta","attrs":'
+            '{"href":"javascript:alert(1)","label":"go","variant":"primary"}}]}'
+        )
+        html = prosemirror_to_html(pm)
+        assert "javascript:" not in html
+        assert 'href=""' in html
+
+    def test_block_image_javascript_src_stripped(self):
+        pm = '{"type":"doc","content":[{"type":"image","attrs":{"src":"javascript:alert(1)"}}]}'
+        html = prosemirror_to_html(pm)
+        assert "javascript:" not in html
+        assert html == '<img src="">'
+
+    def test_block_image_data_src_stripped(self):
+        pm = '{"type":"doc","content":[{"type":"image","attrs":{"src":"data:image/png;base64,AAAA"}}]}'
+        html = prosemirror_to_html(pm)
+        assert "data:" not in html
+
+    def test_block_image_https_survives(self):
+        pm = '{"type":"doc","content":[{"type":"image","attrs":{"src":"https://x.test/a.png"}}]}'
+        assert prosemirror_to_html(pm) == '<img src="https://x.test/a.png">'
+
+    def test_inline_image_javascript_src_stripped(self):
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","content":['
+            '{"type":"image","attrs":{"src":"javascript:alert(1)"}}]}]}'
+        )
+        html = prosemirror_to_html(pm)
+        assert "javascript:" not in html
+
+
 @pytest.mark.django_db
 class TestContentPmEndpoint:
     def test_home_accepts_content_pm(self, api_client, edit_homepage_headers):
