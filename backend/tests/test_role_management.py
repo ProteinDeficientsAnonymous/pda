@@ -72,6 +72,30 @@ class TestRoleManagementAPI:
         )
         assert response.status_code == 400
 
+    def test_create_role_rejects_unknown_permission(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/roles/",
+            {"name": "bogus", "permissions": ["not_a_real_permission"]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 422
+        assert_error_code(response, Code.Role.INVALID_PERMISSION)
+        assert not Role.objects.filter(name="bogus").exists()
+
+    def test_update_role_rejects_unknown_permission(self, api_client, manage_users_headers):
+        role = Role.objects.create(name="custom_perm", permissions=[])
+        response = api_client.patch(
+            f"/api/auth/roles/{role.id}/",
+            {"permissions": [PermissionKey.MANAGE_EVENTS, "bogus_permission"]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 422
+        assert_error_code(response, Code.Role.INVALID_PERMISSION)
+        role.refresh_from_db()
+        assert role.permissions == []
+
     def test_patch_role_permissions(self, api_client, manage_users_headers):
         role = Role.objects.create(name="custom", permissions=[])
         response = api_client.patch(

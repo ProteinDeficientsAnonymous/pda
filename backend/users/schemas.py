@@ -1,10 +1,29 @@
 from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
+from community._validation import Code, raise_validation
 from config.media_proxy import media_path
-from pydantic import BaseModel, BeforeValidator, EmailStr, Field
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator
 
 from users.models import User
+from users.permissions import PermissionKey
+
+
+def _validate_permission_keys(permissions: list[str]) -> list[str]:
+    """Reject any permission key not defined in PermissionKey.
+
+    Roles persist permissions to a JSONField with no DB-level enforcement,
+    so unknown/typo'd keys would silently become dead grants. Validate here.
+    """
+    valid = set(PermissionKey.values)
+    for perm in permissions:
+        if perm not in valid:
+            raise_validation(
+                Code.Role.INVALID_PERMISSION,
+                field="permissions",
+                permission=perm,
+            )
+    return permissions
 
 
 def _empty_str_to_none(v: str | None) -> str | None:
@@ -182,10 +201,22 @@ class RoleIn(BaseModel):
     name: str = Field(max_length=FieldLimit.ROLE_NAME)
     permissions: list[str] = []
 
+    @field_validator("permissions")
+    @classmethod
+    def validate_permissions(cls, v: list[str]) -> list[str]:
+        return _validate_permission_keys(v)
+
 
 class RolePatchIn(BaseModel):
     name: str | None = Field(default=None, max_length=FieldLimit.ROLE_NAME)
     permissions: list[str] | None = None
+
+    @field_validator("permissions")
+    @classmethod
+    def validate_permissions(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        return _validate_permission_keys(v)
 
 
 class ErrorOut(BaseModel):

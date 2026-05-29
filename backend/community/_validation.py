@@ -123,6 +123,8 @@ class Code:
         PROTECTED_CANNOT_DELETE = "role.protected_cannot_delete"
         CANNOT_REMOVE_OWN_ADMIN = "role.cannot_remove_own_admin"
         CANNOT_REMOVE_LAST_ADMIN = "role.cannot_remove_last_admin"
+        CANNOT_GRANT_ADMIN = "role.cannot_grant_admin"
+        INVALID_PERMISSION = "role.invalid_permission"  # params: { permission: str }
         MEMBER_ROLE_REQUIRED = "role.member_role_required"
 
     class Member:

@@ -60,7 +60,11 @@ def create_user(request, payload: UserCreateIn):
         validate_display_name(payload.display_name)
 
     user, magic_token = _create_user_with_role(
-        payload.phone_number, payload.display_name, payload.email, payload.role_id
+        payload.phone_number,
+        payload.display_name,
+        payload.email,
+        payload.role_id,
+        requesting_user=request.auth,
     )
 
     audit_log(
@@ -358,7 +362,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if len(roles) != len(payload.role_ids):
         raise_validation(Code.User.ROLE_IDS_NOT_FOUND, field="role_ids", status_code=400)
 
-    _validate_admin_role_change(user, request.auth.pk, roles)
+    _validate_admin_role_change(user, request.auth, roles)
     _validate_member_role_required(roles)
 
     old_role_ids = [str(r.id) for r in user.roles.all()]

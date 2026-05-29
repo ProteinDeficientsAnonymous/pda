@@ -106,6 +106,8 @@ export const Code = {
     ProtectedCannotDelete: 'role.protected_cannot_delete',
     CannotRemoveOwnAdmin: 'role.cannot_remove_own_admin',
     CannotRemoveLastAdmin: 'role.cannot_remove_last_admin',
+    CannotGrantAdmin: 'role.cannot_grant_admin',
+    InvalidPermission: 'role.invalid_permission',
     MemberRoleRequired: 'role.member_role_required',
   },
   Member: {
@@ -273,6 +275,8 @@ export type ValidationCode =
   | 'role.protected_cannot_delete'
   | 'role.cannot_remove_own_admin'
   | 'role.cannot_remove_last_admin'
+  | 'role.cannot_grant_admin'
+  | 'role.invalid_permission'
   | 'role.member_role_required'
   | 'member.not_found'
   | 'user.not_found'
@@ -410,6 +414,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'role.protected_cannot_delete': [],
   'role.cannot_remove_own_admin': [],
   'role.cannot_remove_last_admin': [],
+  'role.cannot_grant_admin': [],
+  'role.invalid_permission': ['permission'],
   'role.member_role_required': [],
   'member.not_found': [],
   'user.not_found': [],

@@ -381,6 +381,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
                 join_request.display_name,
                 join_request.email,
                 None,
+                requesting_user=request.auth,
             )
             user_created = True
         elif existing_user.archived_at is not None:

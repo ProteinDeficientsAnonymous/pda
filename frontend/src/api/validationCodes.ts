@@ -261,6 +261,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't remove your own admin role";
     case Code.Role.CannotRemoveLastAdmin:
       return "can't remove admin from the last admin — promote someone else first";
+    case Code.Role.CannotGrantAdmin:
+      return 'only an admin can grant the admin role';
+    case Code.Role.InvalidPermission: {
+      const perm = typeof err.params?.permission === 'string' ? err.params.permission : null;
+      return perm ? `unknown permission: ${perm}` : 'one or more permissions are invalid';
+    }
     case Code.Role.MemberRoleRequired:
       return 'every user must keep the member role';
 

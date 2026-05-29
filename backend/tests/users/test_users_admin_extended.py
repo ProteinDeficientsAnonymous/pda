@@ -290,3 +290,42 @@ class TestGenerateMagicLink:
         assert notif.is_read is True
         other_user.refresh_from_db()
         assert other_user.login_link_requested is False
+
+
+@pytest.mark.django_db
+class TestUpdateUserRoles:
+    def test_non_admin_cannot_grant_admin_role(self, api_client, manage_users_headers, other_user):
+        from users.roles import Role
+
+        admin_role = Role.objects.get(name="admin")
+        member_role = Role.objects.get(name="member")
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/roles/",
+            {"role_ids": [str(member_role.id), str(admin_role.id)]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 403
+        assert_error_code(response, Code.Role.CANNOT_GRANT_ADMIN)
+        assert not other_user.roles.filter(name="admin").exists()
+
+    def test_admin_can_grant_admin_role(self, api_client, other_user):
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+        from users.roles import Role
+
+        admin_role = Role.objects.get(name="admin")
+        member_role = Role.objects.get(name="member")
+        admin_user = User.objects.create_user(phone_number="+12025550401", password="adminpass123")
+        admin_user.roles.add(admin_role)
+        refresh = RefreshToken.for_user(admin_user)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/roles/",
+            {"role_ids": [str(member_role.id), str(admin_role.id)]},
+            content_type="application/json",
+            **headers,
+        )
+        assert response.status_code == 200
+        assert other_user.roles.filter(name="admin").exists()
