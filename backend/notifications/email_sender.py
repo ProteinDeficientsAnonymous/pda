@@ -9,10 +9,13 @@ Resolution: `get_email_sender()` returns the right implementation based on
 and test use the console sender.
 """
 
+import logging
 from typing import Protocol, runtime_checkable
 
 from django.conf import settings
 from pydantic import BaseModel
+
+logger = logging.getLogger("notifications.email_sender")
 
 
 class SendResult(BaseModel):
@@ -39,12 +42,14 @@ def get_email_sender() -> EmailSender:
         from notifications._resend_sender import ResendSender
 
         _cached_sender = ResendSender()
+        logger.info("email sender resolved: ResendSender")
     else:
         if getattr(settings, "IS_PRODUCTION", False):
             raise RuntimeError("RESEND_API_KEY is required in production but is not set")
         from notifications._console_sender import ConsoleSender
 
         _cached_sender = ConsoleSender()
+        logger.info("email sender resolved: ConsoleSender (no RESEND_API_KEY)")
     return _cached_sender
 
 

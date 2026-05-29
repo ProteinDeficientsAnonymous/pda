@@ -40,6 +40,14 @@ describe('RequestLoginLinkDialog', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows cooldown copy when backend reports cooldown delivery', async () => {
+    mutateAsync.mockResolvedValue({ detail: 'ok', delivery: 'cooldown' });
+    render(<RequestLoginLinkDialog open onClose={() => {}} />);
+    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    await userEvent.click(screen.getByRole('button', { name: /request link/i }));
+    expect(await screen.findByText(/you recently requested a login link/i)).toBeInTheDocument();
+  });
+
   it('does not show success copy before submission', () => {
     render(<RequestLoginLinkDialog open onClose={() => {}} />);
     expect(

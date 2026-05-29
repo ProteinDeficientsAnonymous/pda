@@ -26,23 +26,31 @@ class RequestLoginLinkIn(BaseModel):
 
 class RequestLoginLinkOut(BaseModel):
     detail: str
-    # "email" when an email was sent; "admin" for every other case (no email
-    # on file, send failed, unknown phone, etc.). Bundling the unknown-phone
-    # case into "admin" weakens anti-enumeration slightly — an attacker who
-    # sees "email" learns the account exists AND has an email — but the
-    # honest UX of telling email-having users to check their inbox is worth
-    # the small leak, especially given the 5/m rate limit on this endpoint.
+    # "email"    — a fresh link was emailed.
+    # "cooldown" — a real account requested a link within the last 5 minutes;
+    #              we ask them to check their inbox or wait.
+    # "admin"    — every other case (no email on file, send failed, unknown
+    #              phone, invalid phone): an admin will follow up.
+    # The "email"/"cooldown" responses only occur for real accounts, so they
+    # weaken anti-enumeration slightly — but the honest UX is worth the small
+    # leak, especially given the 5/m rate limit on this endpoint. Unknown and
+    # invalid phones stay in the neutral "admin" bucket.
     delivery: str
 
 
 _DELIVERY_EMAIL = "email"
 _DELIVERY_ADMIN = "admin"
+_DELIVERY_COOLDOWN = "cooldown"
 _EMAIL_RESPONSE = (
     "if there's an account for that number, we sent a login link to the email on file — "
     "check your inbox, including spam"
 )
 _ADMIN_RESPONSE = (
     "if there's an account for that number, an admin will follow up with your login link"
+)
+_COOLDOWN_RESPONSE = (
+    "you recently requested a login link — check your inbox, including spam, "
+    "or request another in a few minutes"
 )
 
 
@@ -81,19 +89,12 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         )
         return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
-    if user.login_link_requested:
-        audit_log(
-            logging.INFO,
-            "magic_link_request_skipped_already_pending",
-            request,
-            target_type="user",
-            target_id=str(user.pk),
-        )
-        return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
-
+    # Cooldown: a link was already minted within the last 2 minutes. Re-requesting
+    # is allowed (no permanent block), but we throttle to one fresh link per window
+    # and tell the user to check their inbox or wait.
     recent_token_exists = MagicLoginToken.objects.filter(
         user=user,
-        created_at__gte=timezone.now() - timedelta(minutes=5),
+        created_at__gte=timezone.now() - timedelta(minutes=2),
     ).exists()
     if recent_token_exists:
         audit_log(
@@ -103,20 +104,28 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             target_type="user",
             target_id=str(user.pk),
         )
-        return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
+        return Status(
+            200, RequestLoginLinkOut(detail=_COOLDOWN_RESPONSE, delivery=_DELIVERY_COOLDOWN)
+        )
 
-    magic_token = _create_magic_token(user)
-    user.login_link_requested = True
-    user.save(update_fields=["login_link_requested"])
+    # Invalidate any prior unused links so only the newest one works — avoids
+    # multiple valid links floating around the user's inbox.
+    MagicLoginToken.objects.filter(user=user, used=False).update(used=True)
+    magic_token = _create_magic_token(user, requires_password_reset=True)
 
     email_success = _try_email_delivery(request=request, user=user, magic_token=magic_token)
     if email_success:
+        # Email path: do NOT set login_link_requested — re-requests stay unblocked
+        # (the 5-minute cooldown above is the only throttle).
         return Status(
             200,
             RequestLoginLinkOut(detail=_EMAIL_RESPONSE, delivery=_DELIVERY_EMAIL),
         )
 
     # No email or send failed — fall through to admin notification.
+    # login_link_requested dedupes admin-queue notifications for the waiting request.
+    user.login_link_requested = True
+    user.save(update_fields=["login_link_requested"])
     try:
         create_magic_link_request_notifications(user)
     except Exception:

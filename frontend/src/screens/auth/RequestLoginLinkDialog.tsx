@@ -49,10 +49,15 @@ function RequestLoginLinkForm({
   }
 
   if (delivery !== null) {
-    const message =
-      delivery === 'email'
-        ? "if there's an account for that number, we sent a login link to the email on file — check your inbox, including spam 🌱"
-        : "if there's an account for that number, an admin will follow up with your login link — sit tight 🌱";
+    const messages: Record<RequestLoginLinkDelivery, string> = {
+      email:
+        "if there's an account for that number, we sent a login link to the email on file — check your inbox, including spam 🌱",
+      cooldown:
+        'you recently requested a login link — check your inbox (including spam), or request another in a few minutes 🌱',
+      admin:
+        "if there's an account for that number, an admin will follow up with your login link — sit tight 🌱",
+    };
+    const message = messages[delivery];
     return (
       <Dialog open onClose={onClose} title="request a login link">
         <div className="flex flex-col gap-4">

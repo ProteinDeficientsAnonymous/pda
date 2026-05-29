@@ -65,6 +65,15 @@ class TestRequestLoginLink:
         api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
         assert MagicLoginToken.objects.filter(user=user).exists()
 
+    def test_self_service_token_requires_password_reset(self, api_client):
+        """Self-service login-link tokens must be flagged so consuming forces a reset."""
+        from users.models import MagicLoginToken, User
+
+        user = User.objects.create_user(phone_number=_PHONE, password="pass")
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+        token = MagicLoginToken.objects.filter(user=user).latest("created_at")
+        assert token.requires_password_reset is True
+
     def test_does_not_create_token_for_unknown_phone(self, api_client):
         from users.models import MagicLoginToken
 
@@ -102,7 +111,7 @@ class TestRequestLoginLink:
 
         assert not Notification.objects.filter(recipient=approver).exists()
 
-    def test_rate_limit_prevents_duplicate_tokens_within_5_minutes(self, api_client):
+    def test_rate_limit_prevents_duplicate_tokens_within_cooldown(self, api_client):
         from users.models import MagicLoginToken, User
 
         user = User.objects.create_user(phone_number=_PHONE, password="pass")
@@ -111,25 +120,58 @@ class TestRequestLoginLink:
         count_after_first = MagicLoginToken.objects.filter(user=user).count()
         assert count_after_first == 1
 
-        # Second request within 5 minutes — should NOT create another token
+        # Second request within the cooldown window — should NOT create another token
         api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
         assert MagicLoginToken.objects.filter(user=user).count() == count_after_first
 
-    def test_skips_when_login_link_already_requested(self, api_client):
-        """Spam-tap: subsequent requests are no-ops while a request is pending."""
-        from users.models import User
+    def test_login_link_requested_does_not_block_re_request(self, api_client):
+        """A prior pending request must NOT block a fresh request (no recent token)."""
+        from users.models import MagicLoginToken, User
 
-        approver = User.objects.create_user(phone_number="+12025559001", password="pass")
-        role = Role.objects.create(name="vetter", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
-        approver.roles.add(role)
         user = User.objects.create_user(phone_number=_PHONE, password="pass")
         user.login_link_requested = True
         user.save(update_fields=["login_link_requested"])
 
         api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
 
-        # No new notification should be created — existing pending request is respected.
-        assert not Notification.objects.filter(recipient=approver, related_user=user).exists()
+        # A new token is minted despite login_link_requested already being set.
+        assert MagicLoginToken.objects.filter(user=user).count() == 1
+
+    def test_recent_token_returns_cooldown(self, api_client):
+        """A second request within the cooldown window returns cooldown, mints no token."""
+        from users.models import MagicLoginToken, User
+
+        user = User.objects.create_user(phone_number=_PHONE, password="pass")
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+        assert MagicLoginToken.objects.filter(user=user).count() == 1
+
+        resp = api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+        assert resp.status_code == 200
+        assert resp.json()["delivery"] == "cooldown"
+        # No second token created during the cooldown window.
+        assert MagicLoginToken.objects.filter(user=user).count() == 1
+
+    def test_new_request_invalidates_prior_unused_token(self, api_client):
+        """Outside the cooldown, a fresh request invalidates the previous unused link."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+        from users.models import MagicLoginToken, User
+
+        user = User.objects.create_user(phone_number=_PHONE, password="pass")
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+        old = MagicLoginToken.objects.get(user=user)
+        # Push the old token outside the cooldown window.
+        MagicLoginToken.objects.filter(pk=old.pk).update(
+            created_at=timezone.now() - timedelta(minutes=10)
+        )
+
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+
+        old.refresh_from_db()
+        assert old.used is True  # prior link invalidated
+        # The newest unused token is the only valid one.
+        assert MagicLoginToken.objects.filter(user=user, used=False).count() == 1
 
     def test_sets_login_link_requested_flag(self, api_client):
         from users.models import User
@@ -184,6 +226,41 @@ class TestRequestLoginLinkEmailDelivery:
         fake_email_sender.send.assert_called_once()
         sent = fake_email_sender.send.call_args.kwargs
         assert sent["to"] == "sam@example.com"
+
+    def test_email_path_does_not_set_login_link_requested(self, api_client, fake_email_sender):
+        """Email success must leave login_link_requested False so re-requests stay open."""
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550101",
+            display_name="Sam",
+            email="sam@example.com",
+        )
+        api_client.post(
+            "/api/community/request-login-link/",
+            data={"phone_number": "+12025550101"},
+            content_type="application/json",
+        )
+        user.refresh_from_db()
+        assert user.login_link_requested is False
+
+    def test_admin_fallback_sets_login_link_requested(self, api_client, fake_email_sender):
+        """No-email fallback dedupes admin notifications via login_link_requested."""
+        from users.models import User
+
+        _make_approver()
+        user = User.objects.create_user(
+            phone_number="+12025550102",
+            display_name="NoEmail",
+            email=None,
+        )
+        api_client.post(
+            "/api/community/request-login-link/",
+            data={"phone_number": "+12025550102"},
+            content_type="application/json",
+        )
+        user.refresh_from_db()
+        assert user.login_link_requested is True
 
     def test_user_with_email_send_succeeds_skips_admin_notification(
         self, api_client, fake_email_sender
