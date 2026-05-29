@@ -4,10 +4,10 @@ import logging
 from datetime import datetime
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from django.contrib.auth.models import AnonymousUser
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -59,7 +59,7 @@ def get_page(request, slug: str):
     return Status(200, _page_out(page))
 
 
-@router.patch("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=JWTAuth())
+@router.patch("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=gated_jwt)
 def update_page(request, slug: str, payload: EditablePagePatchIn):
     if not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
         audit_log(

@@ -5,13 +5,13 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.permissions import PermissionKey
@@ -279,7 +279,7 @@ def submit_join_request(request, payload: JoinRequestIn):
     return Status(201, _join_request_out(join_request))
 
 
-@router.get("/join-requests/", response={200: list[JoinRequestOut], 403: ErrorOut}, auth=JWTAuth())
+@router.get("/join-requests/", response={200: list[JoinRequestOut], 403: ErrorOut}, auth=gated_jwt)
 def list_join_requests(request):
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
         audit_log(
@@ -332,7 +332,7 @@ def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
         404: ErrorOut,
         409: ErrorOut,
     },
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     from users.api import _create_user_with_role
@@ -424,7 +424,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
 @router.patch(
     "/join-requests/{id}/unreject/",
     response={200: JoinRequestOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def unreject_join_request(request, id: UUID):
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):

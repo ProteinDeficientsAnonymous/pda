@@ -6,11 +6,11 @@ import re
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from config.audit import audit_log
+from config.auth import gated_jwt
 from django.db import models as dj_models
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 
 from users._helpers import (
     _check_and_set_email,
@@ -44,7 +44,7 @@ router = Router()
 @router.post(
     "/create-user/",
     response={201: UserCreateOut, 400: ErrorOut, 403: ErrorOut, 409: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def create_user(request, payload: UserCreateIn):
     if not request.auth.has_permission(PermissionKey.CREATE_USER):
@@ -88,7 +88,7 @@ def create_user(request, payload: UserCreateIn):
 @router.post(
     "/bulk-create-users/",
     response={200: BulkUserCreateOut, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def bulk_create_users(request, payload: BulkUserCreateIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
@@ -165,7 +165,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
     )
 
 
-@router.get("/users/search/", response={200: list[UserSearchOut]}, auth=JWTAuth())
+@router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
 def search_users(request, q: str = ""):
     qs = User.objects.filter(is_active=True, is_paused=False, archived_at__isnull=True).exclude(
         pk=request.auth.pk
@@ -194,7 +194,7 @@ def search_users(request, q: str = ""):
 @router.get(
     "/users/",
     response={200: list[UserOut], 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def list_users(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
@@ -216,7 +216,7 @@ def list_users(request):
 @router.patch(
     "/users/{user_id}/",
     response={200: UserOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 409: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_user(request, user_id: str, payload: UserPatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
@@ -293,7 +293,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
 @router.delete(
     "/users/{user_id}/",
     response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_user(request, user_id: str):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
@@ -333,7 +333,7 @@ def delete_user(request, user_id: str):
 @router.patch(
     "/users/{user_id}/roles/",
     response={200: UserOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):

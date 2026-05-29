@@ -3,12 +3,12 @@
 from datetime import datetime
 from uuid import UUID
 
+from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -61,7 +61,7 @@ _VALID_REVIEW_STATUSES = {EventFlagStatus.DISMISSED, EventFlagStatus.ACTIONED}
 @router.post(
     "/events/{event_id}/flag/",
     response={201: EventFlagOut, 400: ErrorOut, 404: ErrorOut, 409: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="3/h")
 def flag_event(request, event_id: UUID, data: EventFlagIn):
@@ -87,7 +87,7 @@ def flag_event(request, event_id: UUID, data: EventFlagIn):
 @router.get(
     "/event-flags/",
     response={200: list[EventFlagOut], 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def list_event_flags(request, status: str | None = None):
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
@@ -103,7 +103,7 @@ def list_event_flags(request, status: str | None = None):
 @router.patch(
     "/event-flags/{flag_id}/",
     response={200: EventFlagOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def review_event_flag(request, flag_id: UUID, data: EventFlagStatusIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):

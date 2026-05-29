@@ -10,9 +10,9 @@ import logging
 from datetime import datetime
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -40,7 +40,7 @@ def _out(obj: WelcomeMessageTemplate) -> WelcomeTemplateOut:
     return WelcomeTemplateOut(body=obj.body, updated_at=obj.updated_at)
 
 
-@router.get("/welcome-template/", response={200: WelcomeTemplateOut}, auth=JWTAuth())
+@router.get("/welcome-template/", response={200: WelcomeTemplateOut}, auth=gated_jwt)
 def get_welcome_template(request):
     return Status(200, _out(WelcomeMessageTemplate.get()))
 
@@ -48,7 +48,7 @@ def get_welcome_template(request):
 @router.patch(
     "/welcome-template/",
     response={200: WelcomeTemplateOut, 403: ErrorOut, 422: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_welcome_template(request, payload: WelcomeTemplatePatchIn):
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):

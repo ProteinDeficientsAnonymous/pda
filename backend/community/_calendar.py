@@ -3,12 +3,12 @@
 import secrets
 from datetime import timedelta
 
+from config.auth import gated_jwt
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel
 from users.models import CalendarFeedScope
 from users.models import User as UserModel
@@ -33,7 +33,7 @@ def _rotate_calendar_token(user: UserModel) -> None:
     user.save(update_fields=["calendar_token"])
 
 
-@router.get("/calendar/token/", response={200: CalendarTokenOut}, auth=JWTAuth())
+@router.get("/calendar/token/", response={200: CalendarTokenOut}, auth=gated_jwt)
 def get_calendar_token(request):
     user = request.auth
     if not user.calendar_token:
@@ -47,7 +47,7 @@ def get_calendar_token(request):
     )
 
 
-@router.post("/calendar/token/", response={200: CalendarTokenOut}, auth=JWTAuth())
+@router.post("/calendar/token/", response={200: CalendarTokenOut}, auth=gated_jwt)
 def generate_calendar_token(request):
     user = request.auth
     _rotate_calendar_token(user)

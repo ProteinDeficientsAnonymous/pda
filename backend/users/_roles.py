@@ -4,10 +4,10 @@ import logging
 
 from community._validation import Code, raise_validation
 from config.audit import audit_log
+from config.auth import gated_jwt
 from django.db.models import Count, Q
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 
 from users.permissions import PermissionKey
 from users.roles import PROTECTED_ROLE_NAMES, Role
@@ -16,7 +16,7 @@ from users.schemas import ErrorOut, RoleIn, RoleOut, RolePatchIn
 router = Router()
 
 
-@router.get("/roles/", response={200: list[RoleOut]}, auth=JWTAuth())
+@router.get("/roles/", response={200: list[RoleOut]}, auth=gated_jwt)
 def list_roles(request):
     roles = Role.objects.annotate(
         user_count=Count("users", filter=Q(users__archived_at__isnull=True)),
@@ -39,7 +39,7 @@ def list_roles(request):
 @router.post(
     "/roles/",
     response={201: RoleOut, 400: ErrorOut, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def create_role(request, payload: RoleIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_ROLES):
@@ -75,7 +75,7 @@ def create_role(request, payload: RoleIn):
 @router.patch(
     "/roles/{role_id}/",
     response={200: RoleOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_role(request, role_id: str, payload: RolePatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_ROLES):
@@ -139,7 +139,7 @@ def update_role(request, role_id: str, payload: RolePatchIn):
 @router.delete(
     "/roles/{role_id}/",
     response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_role(request, role_id: str):
     if not request.auth.has_permission(PermissionKey.MANAGE_ROLES):

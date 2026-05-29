@@ -117,3 +117,50 @@ class TestOnboardingEmail:
         assert user.needs_password_reset is False
         assert user.has_usable_password() is True
         assert resp.json()["needs_password_reset"] is False
+
+    def test_complete_onboarding_rejects_reusing_usable_password(self, api_client, db):
+        """A user who still has a usable password can't 'reset' to the same one."""
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550113",
+            password="SamePass123!",
+            display_name="Reuser",
+            email="reuser@example.com",
+        )
+        user.needs_password_reset = True  # has a usable password AND a pending reset
+        user.save(update_fields=["needs_password_reset"])
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={"new_password": "SamePass123!"},
+            content_type="application/json",
+            **headers,
+        )
+        assert resp.status_code == 400
+        assert resp.json()["detail"][0]["code"] == "password.same_as_old"
+
+    def test_complete_onboarding_reset_user_can_set_any_password(self, api_client, db):
+        """A forced-reset user has an unusable password, so the reuse check must NOT
+        false-positive and block them from setting a password."""
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550114",
+            password="x",
+            display_name="Fresh Start",
+            email="fresh@example.com",
+        )
+        user.needs_password_reset = True
+        user.set_unusable_password()
+        user.save(update_fields=["needs_password_reset", "password"])
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={"new_password": "AnyNewPass123!"},
+            content_type="application/json",
+            **headers,
+        )
+        assert resp.status_code == 200, resp.content

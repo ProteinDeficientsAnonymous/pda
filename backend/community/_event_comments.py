@@ -2,13 +2,13 @@
 
 from uuid import UUID
 
+from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._event_comment_schemas import (
@@ -197,7 +197,7 @@ def list_comments(request, event_id: UUID):
 @router.post(
     "/events/{event_id}/comments/",
     response={201: EventCommentOut, 403: ErrorOut, 404: ErrorOut, 422: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def post_comment(request, event_id: UUID, payload: CommentBodyIn):
@@ -229,7 +229,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
         422: ErrorOut,
         429: ErrorOut,
     },
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn):
@@ -265,7 +265,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
 @router.delete(
     "/events/{event_id}/comments/{comment_id}/",
     response={204: None, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def delete_comment(request, event_id: UUID, comment_id: UUID):
@@ -304,7 +304,7 @@ _VALID_EMOJIS = {e.value for e in ReactionEmoji}
         422: ErrorOut,
         429: ErrorOut,
     },
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: ReactionToggleIn):

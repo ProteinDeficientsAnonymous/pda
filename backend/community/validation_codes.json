@@ -360,6 +360,16 @@
         "name": "CURRENT_PASSWORD_INCORRECT",
         "value": "auth.current_password_incorrect",
         "params": []
+      },
+      {
+        "name": "PASSWORD_RESET_REQUIRED",
+        "value": "auth.password_reset_required",
+        "params": []
+      },
+      {
+        "name": "ONBOARDING_REQUIRED",
+        "value": "auth.onboarding_required",
+        "params": []
       }
     ],
     "Password": [
@@ -369,6 +379,11 @@
         "params": [
           "reasons"
         ]
+      },
+      {
+        "name": "SAME_AS_OLD",
+        "value": "password.same_as_old",
+        "params": []
       }
     ],
     "Role": [

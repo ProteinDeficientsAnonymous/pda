@@ -4,9 +4,9 @@ import logging
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
@@ -41,7 +41,7 @@ router = Router()
 @router.get(
     "/surveys/admin/",
     response={200: list[SurveyListOut], 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def list_surveys_admin(request):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -77,7 +77,7 @@ def list_surveys_admin(request):
 @router.post(
     "/surveys/",
     response={201: SurveyOut, 403: ErrorOut, 400: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def create_survey(request, payload: SurveyIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -123,7 +123,7 @@ def create_survey(request, payload: SurveyIn):
 @router.get(
     "/surveys/{survey_id}/admin/",
     response={200: SurveyOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def get_survey_admin(request, survey_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -149,7 +149,7 @@ def get_survey_admin(request, survey_id: UUID):
 @router.patch(
     "/surveys/{survey_id}/",
     response={200: SurveyOut, 403: ErrorOut, 404: ErrorOut, 400: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -192,7 +192,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
 @router.delete(
     "/surveys/{survey_id}/",
     response={204: None, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_survey(request, survey_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -231,7 +231,7 @@ def delete_survey(request, survey_id: UUID):
 @router.post(
     "/surveys/{survey_id}/questions/",
     response={201: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -274,7 +274,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
 @router.patch(
     "/surveys/{survey_id}/questions/{question_id}/",
     response={200: SurveyQuestionOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_survey_question(request, survey_id: UUID, question_id: UUID, payload: SurveyQuestionIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -313,7 +313,7 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
 @router.delete(
     "/surveys/{survey_id}/questions/{question_id}/",
     response={204: None, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_survey_question(request, survey_id: UUID, question_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -348,7 +348,7 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
 @router.put(
     "/surveys/{survey_id}/questions/order/",
     response={200: list[SurveyQuestionOut], 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOrderIn):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):
@@ -387,7 +387,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
 @router.get(
     "/surveys/{survey_id}/responses/",
     response={200: list[SurveyResponseOut], 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def list_survey_responses(request, survey_id: UUID):
     if not request.auth.has_permission(PermissionKey.MANAGE_SURVEYS):

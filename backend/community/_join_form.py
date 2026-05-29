@@ -4,9 +4,9 @@ import logging
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -58,7 +58,7 @@ def get_join_form(request):
 @router.post(
     "/join-form/questions/",
     response={201: JoinFormQuestionOut, 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def create_join_form_question(request, payload: JoinFormQuestionIn):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
@@ -94,7 +94,7 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
 @router.put(
     "/join-form/questions/order/",
     response={200: list[JoinFormQuestionOut], 403: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
@@ -118,7 +118,7 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
 @router.patch(
     "/join-form/questions/{question_id}/",
     response={200: JoinFormQuestionOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def update_join_form_question(request, question_id: UUID, payload: JoinFormQuestionIn):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):
@@ -157,7 +157,7 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
 @router.delete(
     "/join-form/questions/{question_id}/",
     response={204: None, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 def delete_join_form_question(request, question_id: UUID):
     if not request.auth.has_permission(PermissionKey.EDIT_JOIN_QUESTIONS):

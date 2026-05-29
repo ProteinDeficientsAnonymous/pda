@@ -7,12 +7,12 @@ import logging
 from uuid import UUID
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._join_requests import ApproveJoinRequestOut
@@ -26,7 +26,7 @@ router = Router()
 @router.post(
     "/join-requests/{id}/resend-magic-link/",
     response={200: ApproveJoinRequestOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=JWTAuth(),
+    auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def resend_magic_link(request, id: UUID):

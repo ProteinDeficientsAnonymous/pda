@@ -4,9 +4,9 @@ import logging
 from datetime import datetime
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -65,7 +65,7 @@ def _apply_content_update(
     return True
 
 
-@router.patch("/home/", response={200: HomePageOut, 403: ErrorOut}, auth=JWTAuth())
+@router.patch("/home/", response={200: HomePageOut, 403: ErrorOut}, auth=gated_jwt)
 def update_home(request, payload: HomePagePatchIn):
     if not request.auth.has_permission(PermissionKey.EDIT_HOMEPAGE):
         audit_log(
