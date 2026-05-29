@@ -71,10 +71,24 @@ def rate_limit(*, key_func, rate: str):
         def wrapper(request, *args, **kwargs):
             key = key_func(request, **kwargs) if wants_kwargs else key_func(request)
             cache_key = f"rl:{view_func.__name__}:{key}"
-            current = cache.get(cache_key, 0)
-            if current >= count:
+            # NOTE: this counter must share a cache across all workers to be
+            # effective — a per-process LocMemCache lets each worker keep its
+            # own count and multiplies the real limit by the worker count. See
+            # the CACHES config in settings.py.
+            #
+            # `add` only writes (and sets the TTL) when the key is absent, so
+            # the window's expiry is fixed at first hit and never reset by later
+            # increments. `incr` is atomic, avoiding the read-then-write TOCTOU
+            # race that allowed bursts to over-count past the limit.
+            cache.add(cache_key, 0, period)
+            try:
+                current = cache.incr(cache_key)
+            except ValueError:
+                # Key expired between add and incr; treat as a fresh window.
+                cache.add(cache_key, 1, period)
+                current = 1
+            if current > count:
                 raise_validation(Code.Rate.LIMITED, status_code=429)
-            cache.set(cache_key, current + 1, period)
             return view_func(request, *args, **kwargs)
 
         return wrapper

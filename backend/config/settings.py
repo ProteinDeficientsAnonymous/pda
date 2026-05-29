@@ -19,7 +19,11 @@ if not SECRET_KEY:
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "").split(",") if h.strip()]
+if not ALLOWED_HOSTS:
+    if IS_PRODUCTION:
+        raise ValueError("ALLOWED_HOSTS must be set in production")
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -71,6 +75,41 @@ ASGI_APPLICATION = "config.asgi.application"
 AUTH_USER_MODEL = "users.User"
 
 DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
+
+# Cache — backs the cross-worker rate limiter (see config/ratelimit.py).
+# A shared cache is REQUIRED for rate limiting to hold across gunicorn workers:
+# LocMemCache is per-process, so each worker keeps its own counter and the
+# effective limit is multiplied by the worker count.
+#
+#   * REDIS_URL set  -> Redis (shared, atomic incr) — correct for multi-worker.
+#   * else, prod     -> database-backed cache (shared across workers; slower
+#                       than Redis but still correct). Requires the
+#                       `pda_cache_table` table; create it with
+#                       `python manage.py createcachetable`.
+#   * else, dev/test -> LocMemCache (single process, fine locally).
+_REDIS_URL = os.environ.get("REDIS_URL", "")
+if _REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _REDIS_URL,
+        }
+    }
+elif IS_PRODUCTION:
+    # No Redis in production: fall back to a shared DB cache rather than
+    # LocMemCache so the rate limiter still works across workers.
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": "pda_cache_table",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
 
 NINJA_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
@@ -139,9 +178,18 @@ if IS_PRODUCTION:
     CSRF_COOKIE_SECURE = True
 
 # CORS
+# Never allow all origins: CORS_ALLOW_CREDENTIALS=True below means a wildcard
+# would let any site make authenticated cross-origin requests with the user's
+# cookies. Keep this an explicit allowlist.
+CORS_ALLOW_ALL_ORIGINS = False
 if IS_PRODUCTION:
     _cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
-    CORS_ALLOWED_ORIGINS = _cors_env.split(",") if _cors_env else []
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()]
+    if not CORS_ALLOWED_ORIGINS:
+        raise ValueError("CORS_ALLOWED_ORIGINS must be set in production")
+    assert CORS_ALLOW_ALL_ORIGINS is not True, (
+        "CORS_ALLOW_ALL_ORIGINS must stay False in production"
+    )
 else:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://0.0.0.0:3000"]
 

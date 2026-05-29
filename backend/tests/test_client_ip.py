@@ -25,6 +25,11 @@ class TestClientIp:
     def test_no_xff_falls_back_to_remote_addr(self):
         assert client_ip(_request(remote_addr="203.0.113.9")) == "203.0.113.9"
 
+    def test_returns_anon_when_no_xff_and_no_remote_addr(self):
+        request = _request()
+        request.META.pop("REMOTE_ADDR", None)
+        assert client_ip(request) == "anon"
+
     def test_single_trusted_proxy_returns_real_client(self, settings):
         # Railway: one proxy appends the IP it saw (the real client) to XFF.
         settings.TRUSTED_PROXY_COUNT = 1
