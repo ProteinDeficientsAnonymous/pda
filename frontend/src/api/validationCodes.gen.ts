@@ -91,9 +91,12 @@ export const Code = {
     RefreshTokenInvalid: 'auth.refresh_token_invalid',
     RefreshFailed: 'auth.refresh_failed',
     CurrentPasswordIncorrect: 'auth.current_password_incorrect',
+    PasswordResetRequired: 'auth.password_reset_required',
+    OnboardingRequired: 'auth.onboarding_required',
   },
   Password: {
     Invalid: 'password.invalid',
+    SameAsOld: 'password.same_as_old',
   },
   Role: {
     NotFound: 'role.not_found',
@@ -259,7 +262,10 @@ export type ValidationCode =
   | 'auth.refresh_token_invalid'
   | 'auth.refresh_failed'
   | 'auth.current_password_incorrect'
+  | 'auth.password_reset_required'
+  | 'auth.onboarding_required'
   | 'password.invalid'
+  | 'password.same_as_old'
   | 'role.not_found'
   | 'role.name_already_exists'
   | 'role.protected_cannot_edit'
@@ -393,7 +399,10 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'auth.refresh_token_invalid': [],
   'auth.refresh_failed': [],
   'auth.current_password_incorrect': [],
+  'auth.password_reset_required': [],
+  'auth.onboarding_required': [],
   'password.invalid': ['reasons'],
+  'password.same_as_old': [],
   'role.not_found': [],
   'role.name_already_exists': [],
   'role.protected_cannot_edit': [],

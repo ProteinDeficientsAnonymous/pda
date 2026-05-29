@@ -11,9 +11,15 @@ import { extractApiError } from '@/utils/errors';
 import { passwordRule } from './passwordRule';
 import { PasswordChecklist } from './PasswordChecklist';
 
-const schema = z.object({
-  newPassword: passwordRule,
-});
+const schema = z
+  .object({
+    newPassword: passwordRule,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: 'passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -31,7 +37,7 @@ export default function NewPasswordScreen() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { newPassword: '' },
+    defaultValues: { newPassword: '', confirmPassword: '' },
   });
   const passwordValue = useWatch({ control, name: 'newPassword' });
 
@@ -54,6 +60,12 @@ export default function NewPasswordScreen() {
           autoComplete="new-password"
           {...register('newPassword')}
           error={errors.newPassword?.message}
+        />
+        <PasswordField
+          label="confirm new password"
+          autoComplete="new-password"
+          {...register('confirmPassword')}
+          error={errors.confirmPassword?.message}
         />
         {serverError ? (
           <p role="alert" className="text-destructive text-sm">

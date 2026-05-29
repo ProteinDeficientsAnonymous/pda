@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AxiosError } from 'axios';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
+import { passwordSetupRedirect } from '@/models/user';
 import { AuthLayout } from './AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
@@ -30,11 +31,11 @@ export default function MagicLoginScreen() {
         // of leaning on OnboardingGate) avoids a race where /calendar renders
         // before the gate re-evaluates with the new auth state.
         const user = useAuthStore.getState().user;
-        // needsOnboarding (first-time setup) and needsPasswordReset (consumed a
-        // self-service login link) both force a password set; mirror OnboardingGate.
-        if (user && (user.needsOnboarding || user.needsPasswordReset)) {
-          const target = user.displayName.length > 0 ? '/new-password' : '/onboarding';
-          void navigate(target, { replace: true });
+        // Same shared decision as OnboardingGate, so the two can't disagree (a
+        // no-email user must reach /onboarding, not /new-password).
+        const setupTarget = passwordSetupRedirect(user);
+        if (setupTarget) {
+          void navigate(setupTarget, { replace: true });
           return;
         }
         const redirect = params.get('redirect');
