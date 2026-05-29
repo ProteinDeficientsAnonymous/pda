@@ -20,7 +20,6 @@ endpoints required to *resolve* that state, so those paths are allowlisted.
 from community._validation import Code, ValidationException
 from django.http import HttpRequest
 from ninja_jwt.authentication import JWTAuth
-
 from users.models import User
 
 # Full request paths (under the ``/api`` mount) a pending user may still reach:
