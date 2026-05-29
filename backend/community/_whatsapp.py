@@ -17,6 +17,8 @@ from community.models import WhatsAppConfig
 
 router = Router()
 
+logger = logging.getLogger("pda.community")
+
 
 class WhatsAppConfigOut(BaseModel):
     bot_url: str
@@ -143,5 +145,9 @@ def get_whatsapp_status(request):
 
             data = _json.loads(resp.read())
             return Status(200, WhatsAppStatusOut(connected=bool(data.get("connected"))))
-    except Exception:
+    except (OSError, ValueError) as exc:
+        # OSError covers urllib network/timeout failures (URLError is a subclass);
+        # ValueError covers JSON decode errors. Either way the bot is unreachable
+        # so we report disconnected — but log it so genuine outages are visible.
+        logger.warning("whatsapp status check failed: %s", exc)
         return Status(200, WhatsAppStatusOut(connected=False))

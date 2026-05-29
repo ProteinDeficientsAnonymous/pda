@@ -8,7 +8,7 @@ from config.audit import audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -401,7 +401,8 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
     next_order = poll.options.count()
     try:
         PollOption.objects.create(poll=poll, datetime=payload.datetime, display_order=next_order)
-    except Exception:
+    except IntegrityError:
+        # Unique constraint on (poll, datetime) — duplicate option time.
         raise_validation(Code.Poll.OPTION_ALREADY_EXISTS, status_code=400)
     audit_log(
         logging.INFO,
@@ -435,7 +436,8 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
     try:
         option.datetime = payload.datetime
         option.save(update_fields=["datetime"])
-    except Exception:
+    except IntegrityError:
+        # Unique constraint on (poll, datetime) — another option already uses this time.
         raise_validation(Code.Poll.OPTION_ALREADY_EXISTS, status_code=400)
     audit_log(
         logging.INFO,

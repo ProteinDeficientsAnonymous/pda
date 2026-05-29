@@ -2364,6 +2364,53 @@
         "title": "FolderPatchIn",
         "type": "object"
       },
+      "GeocodeOut": {
+        "properties": {
+          "features": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "title": "GeocodeOut",
+        "type": "object"
+      },
+      "GeocodeQuery": {
+        "properties": {
+          "limit": {
+            "default": 5,
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "q": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Q",
+            "type": "string"
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "title": "GeocodeQuery",
+        "type": "object"
+      },
       "GuidelinesOut": {
         "properties": {
           "content": {
@@ -8782,6 +8829,8 @@
             "name": "q",
             "required": true,
             "schema": {
+              "maxLength": 200,
+              "minLength": 1,
               "title": "Q",
               "type": "string"
             }
@@ -8792,6 +8841,8 @@
             "required": false,
             "schema": {
               "default": 5,
+              "maximum": 10,
+              "minimum": 1,
               "title": "Limit",
               "type": "integer"
             }
@@ -8802,9 +8853,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response",
-                  "type": "object"
+                  "$ref": "#/components/schemas/GeocodeOut"
                 }
               }
             },

@@ -72,3 +72,26 @@ class TestSendMagicLoginEmail:
         assert subject == subject.lower()
         # Mentions login / pda
         assert "login" in subject or "log in" in subject
+
+    def test_rejects_recipient_with_newline(self):
+        """Header-injection guard — newlines in the recipient must be rejected."""
+        sender = MagicMock()
+        with pytest.raises(ValueError, match="newline"):
+            send_magic_login_email(
+                sender=sender,
+                to="user@example.com\nbcc: attacker@evil.test",
+                display_name="Sam",
+                magic_link_url="https://pda.test/magic/abc",
+            )
+        sender.send.assert_not_called()
+
+    def test_rejects_malformed_recipient(self):
+        sender = MagicMock()
+        with pytest.raises(ValueError, match="invalid recipient"):
+            send_magic_login_email(
+                sender=sender,
+                to="not-an-email",
+                display_name="Sam",
+                magic_link_url="https://pda.test/magic/abc",
+            )
+        sender.send.assert_not_called()

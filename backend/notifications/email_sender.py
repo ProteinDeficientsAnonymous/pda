@@ -10,6 +10,7 @@ and test use the console sender.
 """
 
 import logging
+import threading
 from typing import Protocol, runtime_checkable
 
 from django.conf import settings
@@ -30,30 +31,38 @@ class EmailSender(Protocol):
 
 
 _cached_sender: EmailSender | None = None
+_cache_lock = threading.Lock()
 
 
 def get_email_sender() -> EmailSender:
-    """Resolve the configured email sender. Cached per process."""
+    """Resolve the configured email sender. Cached per process (thread-safe)."""
     global _cached_sender
     if _cached_sender is not None:
         return _cached_sender
 
-    if settings.RESEND_API_KEY:
-        from notifications._resend_sender import ResendSender
+    with _cache_lock:
+        # Double-checked: another thread may have populated the cache while we
+        # were waiting on the lock.
+        if _cached_sender is not None:
+            return _cached_sender
 
-        _cached_sender = ResendSender()
-        logger.info("email sender resolved: ResendSender")
-    else:
-        if getattr(settings, "IS_PRODUCTION", False):
-            raise RuntimeError("RESEND_API_KEY is required in production but is not set")
-        from notifications._console_sender import ConsoleSender
+        if settings.RESEND_API_KEY:
+            from notifications._resend_sender import ResendSender
 
-        _cached_sender = ConsoleSender()
-        logger.info("email sender resolved: ConsoleSender (no RESEND_API_KEY)")
-    return _cached_sender
+            _cached_sender = ResendSender()
+            logger.info("email sender resolved: ResendSender")
+        else:
+            if getattr(settings, "IS_PRODUCTION", False):
+                raise RuntimeError("RESEND_API_KEY is required in production but is not set")
+            from notifications._console_sender import ConsoleSender
+
+            _cached_sender = ConsoleSender()
+            logger.info("email sender resolved: ConsoleSender (no RESEND_API_KEY)")
+        return _cached_sender
 
 
 def reset_email_sender_cache() -> None:
     """Test-only helper for clearing the cached sender between tests."""
     global _cached_sender
-    _cached_sender = None
+    with _cache_lock:
+        _cached_sender = None
