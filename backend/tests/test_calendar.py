@@ -352,3 +352,98 @@ class TestSingleEventIcs:
 
         resp = api_client.get(f"/api/community/events/{uuid.uuid4()}/ics/")
         assert resp.status_code == 404
+
+    def test_anon_ics_omits_member_only_links(self, api_client, test_user):
+        from community.models import Event
+        from django.utils import timezone
+
+        event = Event.objects.create(
+            title="Linked Picnic",
+            description="Bring hummus!",
+            start_datetime=timezone.now(),
+            whatsapp_link="https://chat.whatsapp.com/secret",
+            partiful_link="https://partiful.com/e/secret",
+            other_link="https://example.com/secret",
+            created_by=test_user,
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.id}/ics/")
+        assert resp.status_code == 200
+        content = resp.content.decode().replace("\r\n ", "")
+        # Public fields stay; member-only links must NOT leak to anon (#445).
+        assert "Bring hummus!" in content
+        assert "whatsapp.com/secret" not in content
+        assert "partiful.com/e/secret" not in content
+        assert "example.com/secret" not in content
+
+    def test_authed_ics_includes_member_only_links(self, api_client, auth_headers, test_user):
+        from community.models import Event
+        from django.utils import timezone
+
+        event = Event.objects.create(
+            title="Linked Picnic",
+            description="Bring hummus!",
+            start_datetime=timezone.now(),
+            whatsapp_link="https://chat.whatsapp.com/secret",
+            partiful_link="https://partiful.com/e/secret",
+            other_link="https://example.com/secret",
+            created_by=test_user,
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.id}/ics/", **auth_headers)
+        assert resp.status_code == 200
+        content = resp.content.decode().replace("\r\n ", "")
+        assert "WhatsApp: https://chat.whatsapp.com/secret" in content
+        assert "Partiful: https://partiful.com/e/secret" in content
+        assert "Link: https://example.com/secret" in content
+
+    def test_invite_only_event_hidden_from_anon(self, api_client, test_user):
+        from community.models import Event, PageVisibility
+        from django.utils import timezone
+        from users.models import User
+
+        creator = User.objects.create_user(
+            phone_number="+12025559999",
+            password="testpass123",
+            display_name="Creator",
+        )
+        event = Event.objects.create(
+            title="Secret Invite Only",
+            start_datetime=timezone.now(),
+            visibility=PageVisibility.INVITE_ONLY,
+            created_by=creator,
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.id}/ics/")
+        assert resp.status_code == 404
+
+    def test_invite_only_event_visible_to_creator(self, api_client, auth_headers, test_user):
+        from community.models import Event, PageVisibility
+        from django.utils import timezone
+
+        event = Event.objects.create(
+            title="Secret Invite Only",
+            start_datetime=timezone.now(),
+            visibility=PageVisibility.INVITE_ONLY,
+            created_by=test_user,
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.id}/ics/", **auth_headers)
+        assert resp.status_code == 200
+        assert "Secret Invite Only" in resp.content.decode()
+
+    def test_filename_is_sanitized_against_header_injection(self, api_client, test_user):
+        from community.models import Event
+        from django.utils import timezone
+
+        event = Event.objects.create(
+            title='evil"\r\nSet-Cookie: x=1',
+            start_datetime=timezone.now(),
+            created_by=test_user,
+        )
+
+        resp = api_client.get(f"/api/community/events/{event.id}/ics/")
+        assert resp.status_code == 200
+        disposition = resp["Content-Disposition"]
+        assert "\r" not in disposition and "\n" not in disposition
+        assert disposition == f'inline; filename="event-{event.id}.ics"'
