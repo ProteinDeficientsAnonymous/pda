@@ -77,16 +77,22 @@ AUTH_USER_MODEL = "users.User"
 DATABASES = {"default": dj_database_url.config(default="sqlite:///db.sqlite3", conn_max_age=600)}
 
 # Cache — backs the cross-worker rate limiter (see config/ratelimit.py).
-# A shared cache is REQUIRED for rate limiting to hold across gunicorn workers:
-# LocMemCache is per-process, so each worker keeps its own counter and the
-# effective limit is multiplied by the worker count.
+# A shared cache is REQUIRED for rate limiting to hold across gunicorn/uvicorn
+# workers: LocMemCache is per-process, so each worker keeps its own counter and
+# the effective limit is multiplied by the worker count.
+#
+# The rate limiter depends on `cache.incr` being atomic and `cache.add` setting
+# the window TTL exactly once at first hit. Only Redis (and LocMemCache, which
+# overrides incr) honor that contract. DatabaseCache inherits BaseCache.incr,
+# which does a non-atomic get-then-set (the TOCTOU race this code aims to
+# eliminate) and resets the row's TTL to DEFAULT_TIMEOUT on every increment —
+# corrupting the window length. So we never use DatabaseCache here.
 #
 #   * REDIS_URL set  -> Redis (shared, atomic incr) — correct for multi-worker.
-#   * else, prod     -> database-backed cache (shared across workers; slower
-#                       than Redis but still correct). Requires the
-#                       `pda_cache_table` table; create it with
-#                       `python manage.py createcachetable`.
-#   * else, dev/test -> LocMemCache (single process, fine locally).
+#   * else, prod     -> hard error. Redis is mandatory in production so the
+#                       rate limiter is both shared and correct.
+#   * else, dev/test -> LocMemCache (single process, fine locally; its incr
+#                       override preserves the TTL).
 _REDIS_URL = os.environ.get("REDIS_URL", "")
 if _REDIS_URL:
     CACHES = {
@@ -96,14 +102,11 @@ if _REDIS_URL:
         }
     }
 elif IS_PRODUCTION:
-    # No Redis in production: fall back to a shared DB cache rather than
-    # LocMemCache so the rate limiter still works across workers.
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-            "LOCATION": "pda_cache_table",
-        }
-    }
+    raise ValueError(
+        "REDIS_URL must be set in production: the rate limiter requires a "
+        "shared cache with atomic incr and a fixed-at-first-hit TTL, which only "
+        "Redis provides across workers."
+    )
 else:
     CACHES = {
         "default": {
