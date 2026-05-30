@@ -316,3 +316,17 @@ class TestSearchUsersRespectsShowPhone:
         match = self._find(response, other_user.pk)
         # Field stays present (callers depend on the key) but is blanked.
         assert match["phone_number"] == ""
+
+    def test_display_name_does_not_leak_phone_when_show_phone_false(
+        self, api_client, manage_users_headers, other_user
+    ):
+        # Member with no display_name (e.g. pre-onboarding) must not leak the
+        # private phone via the display_name fallback.
+        other_user.display_name = ""
+        other_user.show_phone = False
+        other_user.save(update_fields=["display_name", "show_phone"])
+        response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
+        assert response.status_code == 200
+        match = self._find(response, other_user.pk)
+        assert other_user.phone_number not in match["display_name"]
+        assert match["display_name"] == "member"

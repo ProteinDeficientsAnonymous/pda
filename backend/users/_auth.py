@@ -332,7 +332,9 @@ def list_member_directory(request):
         [
             MemberDirectoryOut(
                 id=str(u.id),
-                display_name=u.display_name or u.phone_number,
+                # Don't leak a private phone via the display_name fallback when
+                # show_phone is false (e.g. members with no display_name set).
+                display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
                 phone_number=u.phone_number if u.show_phone else "",
                 email=(u.email or "") if u.show_email else "",
                 profile_photo_url=media_path(u.profile_photo),
