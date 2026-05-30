@@ -5,7 +5,7 @@ A vegan collective liberation community platform.
 ## Stack
 
 - **Backend**: Django 5.2 + Django Ninja (API) + PostgreSQL
-- **Frontend**: Flutter web + Riverpod + GoRouter
+- **Frontend**: Vite + React + TypeScript
 - **Deployment**: Railway
 - **Auth**: JWT (admin-only user creation)
 
@@ -14,11 +14,10 @@ A vegan collective liberation community platform.
 ```bash
 cp .env.example .env
 make install
-make frontend-codegen  # generate Freezed/Riverpod code (required after clone)
 make db-start
 make migrate
 make createsuperuser
-make dev  # runs Django :8000 + Flutter :3000
+make dev  # runs Django :8000 + Vite :3000
 ```
 
 See [docs/local-environment-setup.md](docs/local-environment-setup.md) for prerequisites and first-time setup details.

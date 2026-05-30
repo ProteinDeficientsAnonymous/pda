@@ -58,15 +58,11 @@ class FolderPatchIn(BaseModel):
 class DocumentIn(BaseModel):
     title: str = Field(max_length=FieldLimit.TITLE)
     folder_id: str
-    # Either Delta (Flutter) or ProseMirror (TipTap). Sending both is allowed
-    # but content_pm wins in render_content_payload.
-    content: str = Field(default="", max_length=FieldLimit.CONTENT)
     content_pm: str = Field(default="", max_length=FieldLimit.CONTENT)
 
 
 class DocumentPatchIn(BaseModel):
     title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
-    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     folder_id: str | None = None
 

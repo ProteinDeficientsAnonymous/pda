@@ -8,7 +8,8 @@ Everything you need to install manually before `make` commands will work.
 |------|---------|---------|
 | **Python 3.13+** | Backend runtime | [python.org](https://www.python.org/downloads/) or `brew install python` |
 | **uv** | Python package manager | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
-| **Flutter 3.x** | Frontend SDK | [flutter.dev/docs/get-started/install](https://flutter.dev/docs/get-started/install) |
+| **Node.js 22+** | Frontend runtime | [nodejs.org](https://nodejs.org/) or `brew install node` |
+| **pnpm** | Frontend package manager | `corepack enable` |
 | **Docker** | Runs PostgreSQL locally | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
 | **1Password CLI** (`op`) | Pull dev credentials from 1Password | `brew install 1password-cli` *(optional)* |
 
@@ -17,7 +18,8 @@ Verify everything is on your PATH:
 ```bash
 python3 --version    # 3.13+
 uv --version
-flutter --version
+node --version     # 22+
+pnpm --version
 docker --version
 ```
 
@@ -34,7 +36,7 @@ The defaults work for local dev. `SECRET_KEY` can stay empty — Django falls ba
 ### 2. Install dependencies
 
 ```bash
-make install    # uv sync + flutter pub get
+make install    # uv sync + pnpm install
 ```
 
 ### 3. Start the database
@@ -60,7 +62,7 @@ make createsuperuser
 ### 6. Run the app
 
 ```bash
-make dev    # Django on :8000 + Flutter on :3000 (concurrent)
+make dev    # Django on :8000 + Vite on :3000 (concurrent)
 ```
 
 Visit http://localhost:3000 for the app, http://localhost:8000/admin for Django admin.

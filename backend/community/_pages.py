@@ -30,8 +30,6 @@ class EditablePageOut(BaseModel):
 
 
 class EditablePagePatchIn(BaseModel):
-    # Legacy Quill Delta JSON (Flutter). Either content or content_pm.
-    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
 
@@ -79,8 +77,8 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
     page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
 
     changed = []
-    if payload.content is not None or payload.content_pm is not None:
-        rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
+    if payload.content_pm is not None:
+        rendered = render_content_payload(prosemirror=payload.content_pm)
         page.content = rendered.content
         page.content_pm = rendered.content_pm
         page.content_html = rendered.content_html

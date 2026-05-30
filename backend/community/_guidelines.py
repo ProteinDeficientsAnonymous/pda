@@ -27,9 +27,6 @@ class GuidelinesOut(BaseModel):
 
 
 class GuidelinesPatchIn(BaseModel):
-    # Legacy Quill Delta JSON (Flutter). Optional — TipTap clients send
-    # content_pm instead. At least one of the two must be provided.
-    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
 
 
@@ -43,7 +40,7 @@ def _singleton_out(obj: FAQ | CommunityGuidelines) -> GuidelinesOut:
 
 
 def _apply_update(obj: FAQ | CommunityGuidelines, payload: GuidelinesPatchIn) -> None:
-    rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
+    rendered = render_content_payload(prosemirror=payload.content_pm)
     obj.content = rendered.content
     obj.content_pm = rendered.content_pm
     obj.content_html = rendered.content_html
@@ -75,7 +72,7 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
         "guidelines_updated",
         request,
         target_type="guidelines",
-        details={"format": "prosemirror" if payload.content_pm else "delta"},
+        details={"format": "prosemirror"},
     )
     return Status(200, _singleton_out(g))
 
@@ -102,6 +99,6 @@ def update_faq(request, payload: GuidelinesPatchIn):
         "faq_updated",
         request,
         target_type="faq",
-        details={"format": "prosemirror" if payload.content_pm else "delta"},
+        details={"format": "prosemirror"},
     )
     return Status(200, _singleton_out(f))

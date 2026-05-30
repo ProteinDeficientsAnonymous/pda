@@ -1684,11 +1684,6 @@ export interface components {
         /** DocumentIn */
         DocumentIn: {
             /**
-             * Content
-             * @default
-             */
-            content: string;
-            /**
              * Content Pm
              * @default
              */
@@ -1729,8 +1724,6 @@ export interface components {
         };
         /** DocumentPatchIn */
         DocumentPatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
             /** Folder Id */
@@ -1772,8 +1765,6 @@ export interface components {
         };
         /** EditablePagePatchIn */
         EditablePagePatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
             /** Visibility */
@@ -2602,8 +2593,6 @@ export interface components {
         };
         /** GuidelinesPatchIn */
         GuidelinesPatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
         };
@@ -2623,8 +2612,6 @@ export interface components {
         };
         /** HomePagePatchIn */
         HomePagePatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
         };
@@ -2973,14 +2960,6 @@ export interface components {
             /** Emoji */
             emoji: string;
         };
-        /** RefreshIn */
-        RefreshIn: {
-            /**
-             * Refresh
-             * @default
-             */
-            refresh: string;
-        };
         /** ReorderIn */
         ReorderIn: {
             /** Ids */
@@ -3229,8 +3208,6 @@ export interface components {
         TokenOut: {
             /** Access */
             access: string;
-            /** Refresh */
-            refresh: string;
         };
         /** UnreadCountOut */
         UnreadCountOut: {
@@ -3839,11 +3816,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshIn"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {

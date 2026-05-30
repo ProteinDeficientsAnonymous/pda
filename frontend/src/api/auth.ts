@@ -36,7 +36,6 @@ interface WireUser {
 
 interface TokenOut {
   access: string;
-  refresh: string;
 }
 
 interface AccessOut {

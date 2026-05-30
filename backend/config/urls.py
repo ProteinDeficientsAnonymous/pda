@@ -1,6 +1,5 @@
 from community.api import router as community_router
 from django.urls import path, re_path
-from django.views.generic import TemplateView
 from ninja import NinjaAPI
 from notifications.api import router as notifications_router
 from notifications.sse import notification_stream
@@ -8,16 +7,6 @@ from users.api import router as auth_router
 
 from config.media_proxy import serve_media
 from config.validation_handlers import register_validation_handlers
-
-
-class NoCacheTemplateView(TemplateView):
-    """TemplateView that sets Cache-Control: no-cache so browsers always revalidate."""
-
-    def dispatch(self, request, *args, **kwargs):
-        response = super().dispatch(request, *args, **kwargs)
-        response["Cache-Control"] = "no-cache"
-        return response
-
 
 api = NinjaAPI(title="PDA API", version="1.0.0")
 register_validation_handlers(api)
@@ -31,10 +20,4 @@ urlpatterns = [
     path("api/notifications/stream/", notification_stream),
     # Media proxy — streams files from storage backend (local disk or B2)
     re_path(r"^media/(?P<path>.+)$", serve_media),
-    # Flutter SPA catch-all (MUST BE LAST)
-    # no-cache ensures browsers always check for new builds after deploys
-    re_path(
-        r"^(?!.*\.(js|css|json|wasm|png|jpg|ico|svg|ttf|otf|woff|woff2|map)$).*$",
-        NoCacheTemplateView.as_view(template_name="flutter/index.html"),
-    ),
 ]
