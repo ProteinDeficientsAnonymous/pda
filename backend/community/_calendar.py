@@ -14,7 +14,9 @@ from users.models import CalendarFeedScope
 from users.models import User as UserModel
 
 from community._event_helpers import _can_see_invite_only
+from community._events import _enforce_event_read_visibility
 from community._shared import _authenticated_user, _members_only, _optional_jwt
+from community._validation import ValidationException
 from community.models import Event, EventStatus, PageVisibility, RSVPStatus
 
 router = Router()
@@ -137,13 +139,14 @@ def single_event_ics(request, event_id: str):
     auth_user = _authenticated_user(request.auth)
     is_authed = auth_user is not None
 
-    # Apply the same invite-only visibility gate the feed uses so private
-    # events aren't exposed via ICS.
-    if event.visibility == PageVisibility.INVITE_ONLY:
-        co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-        invited_user_ids = {str(u.id) for u in event.invited_users.all()}
-        if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
-            return HttpResponse("Event not found.", status=404, content_type="text/plain")
+    # Apply the canonical event-read visibility rules so the ICS gate stays in
+    # lockstep with the main get_event endpoint. This covers deleted (404),
+    # draft (403), members-only-non-official-for-anon (404), and invite-only
+    # (403) — not just the invite-only tier.
+    try:
+        _enforce_event_read_visibility(event, auth_user)
+    except ValidationException as exc:
+        return HttpResponse("Event not found.", status=exc.status_code, content_type="text/plain")
 
     import icalendar
 
