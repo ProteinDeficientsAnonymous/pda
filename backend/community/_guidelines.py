@@ -50,7 +50,10 @@ def _apply_update(obj: FAQ | CommunityGuidelines, payload: GuidelinesPatchIn) ->
     obj.save()
 
 
-@router.get("/guidelines/", response={200: GuidelinesOut}, auth=gated_jwt)
+# Public: applicants on the (unauthenticated) join form must be able to read
+# the guidelines they're agreeing to. Mirrors the public FAQ GET below. The
+# PATCH stays gated behind EDIT_GUIDELINES.
+@router.get("/guidelines/", response={200: GuidelinesOut}, auth=None)
 def get_guidelines(request):
     return Status(200, _singleton_out(CommunityGuidelines.get()))
 

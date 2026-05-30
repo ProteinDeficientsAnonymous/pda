@@ -2701,6 +2701,11 @@ export interface components {
              * Format: email
              */
             email: string;
+            /**
+             * Guidelines Consent
+             * @default false
+             */
+            guidelines_consent: boolean;
             /** Phone Number */
             phone_number: string;
             /**

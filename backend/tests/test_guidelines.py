@@ -38,8 +38,13 @@ class TestGetGuidelines:
         assert "updated_at" in data
 
     def test_get_guidelines_unauthenticated(self, api_client):
+        # Public: join-form applicants (unauthenticated) must be able to read
+        # the guidelines they're consenting to. Parallel to the public FAQ GET.
         response = api_client.get("/api/community/guidelines/")
-        assert response.status_code == 401
+        assert response.status_code == 200
+        data = response.json()
+        assert "content" in data
+        assert "updated_at" in data
 
     def test_get_guidelines_returns_existing_content(self, api_client, auth_headers, db):
         g = CommunityGuidelines.get()

@@ -20,6 +20,7 @@ class TestJoinRequestSubmission:
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -28,9 +29,11 @@ class TestJoinRequestSubmission:
         assert data["display_name"] == "Leafy G"
         assert data["phone_number"] == "+12025551234"
         assert len(data["answers"]) >= 1
-        # Consent timestamp recorded — proof for Twilio toll-free verification.
+        # Consent timestamps recorded — sms proof for Twilio toll-free
+        # verification, guidelines proof of agreement.
         jr = JoinRequest.objects.get(phone_number="+12025551234")
         assert jr.sms_consent_at is not None
+        assert jr.guidelines_consent_at is not None
 
     def test_submit_rejected_without_sms_consent(self, api_client, why_join_id):
         response = api_client.post(
@@ -62,6 +65,40 @@ class TestJoinRequestSubmission:
         assert response.status_code == 422
         assert response.json()["detail"][0]["code"] == "join_request.sms_consent_required"
 
+    def test_submit_rejected_without_guidelines_consent(self, api_client, why_join_id):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Leafy G",
+                "phone_number": "+12025551237",
+                "email": "leafy@example.com",
+                "answers": {why_join_id: "I want to connect with other vegans."},
+                "sms_consent": True,
+                # guidelines_consent omitted — defaults to False on the schema.
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"][0]["code"] == "join_request.guidelines_consent_required"
+
+    def test_submit_rejected_when_guidelines_consent_explicitly_false(
+        self, api_client, why_join_id
+    ):
+        response = api_client.post(
+            "/api/community/join-request/",
+            {
+                "display_name": "Leafy G",
+                "phone_number": "+12025551238",
+                "email": "leafy@example.com",
+                "answers": {why_join_id: "I want to connect with other vegans."},
+                "sms_consent": True,
+                "guidelines_consent": False,
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"][0]["code"] == "join_request.guidelines_consent_required"
+
     def test_submit_honeypot_silently_drops_request(self, api_client, why_join_id):
         from community.models import JoinRequest
 
@@ -73,6 +110,7 @@ class TestJoinRequestSubmission:
                 "email": "bot@example.com",
                 "answers": {why_join_id: "spammy text"},
                 "sms_consent": True,
+                "guidelines_consent": True,
                 "website": "http://spam.example.com",
             },
             content_type="application/json",
@@ -91,6 +129,7 @@ class TestJoinRequestSubmission:
                 "email": "real@example.com",
                 "answers": {why_join_id: "I care about animals."},
                 "sms_consent": True,
+                "guidelines_consent": True,
                 "website": "",
             },
             content_type="application/json",
@@ -106,6 +145,7 @@ class TestJoinRequestSubmission:
                 "phone_number": "+12025551234",
                 "answers": {},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -119,6 +159,7 @@ class TestJoinRequestSubmission:
                 "phone_number": "+12025551234",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -132,6 +173,7 @@ class TestJoinRequestSubmission:
                 "phone_number": "not-a-number",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -146,6 +188,7 @@ class TestJoinRequestSubmission:
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -166,6 +209,7 @@ class TestJoinRequestSubmission:
                 "email": "testperson@example.com",
                 "answers": {why_join_id: "Because liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -187,6 +231,7 @@ class TestJoinRequestSubmission:
                 "email": "testperson@example.com",
                 "answers": {why_join_id: "Because liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -201,6 +246,7 @@ class TestJoinRequestSubmission:
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -215,6 +261,7 @@ class TestJoinRequestSubmission:
                 "email": "applicant@example.com",
                 "answers": {},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -229,6 +276,7 @@ class TestJoinRequestSubmission:
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -243,6 +291,7 @@ class TestJoinRequestSubmission:
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -257,6 +306,7 @@ class TestJoinRequestSubmission:
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -271,6 +321,7 @@ class TestJoinRequestSubmission:
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -294,6 +345,7 @@ class TestJoinRequestSubmission:
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -308,6 +360,7 @@ class TestJoinRequestSubmission:
                 "email": "maryjane@example.com",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -322,6 +375,7 @@ class TestJoinRequestSubmission:
                 "email": "newsprout@example.com",
                 "answers": {why_join_id: "Collective liberation matters."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -345,6 +399,7 @@ class TestJoinRequestSubmission:
                 "email": "leafynew@example.com",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -366,6 +421,7 @@ class TestJoinRequestSubmission:
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -384,6 +440,7 @@ class TestJoinRequestSubmission:
                     "email": email,
                     "answers": {why_join_id: "Liberation."},
                     "sms_consent": True,
+                    "guidelines_consent": True,
                 },
                 content_type="application/json",
             )
@@ -396,6 +453,7 @@ class TestJoinRequestSubmission:
                 "email": "onetoomany@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )

@@ -85,6 +85,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   const [email, setEmail] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [smsConsent, setSmsConsent] = useState(false);
+  const [guidelinesConsent, setGuidelinesConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   // Honeypot: real users never touch this. Bots auto-fill every input — when
@@ -99,6 +100,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     if (!email.trim()) next.email = 'email required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';
     if (!smsConsent) next.smsConsent = 'please agree to receive sms about events';
+    if (!guidelinesConsent) next.guidelinesConsent = 'please agree to the community guidelines';
     for (const q of questions) {
       const val = (answers[q.id] ?? '').trim();
       if (q.required && !val) next[q.id] = 'required';
@@ -120,6 +122,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
         email: email.trim(),
         answers: nonEmpty,
         smsConsent,
+        guidelinesConsent,
         website,
       });
       void navigate('/join/success', { replace: true });
@@ -218,6 +221,29 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
         {errors.smsConsent ? (
           <p id="sms-consent-error" role="alert" className="text-destructive -mt-2 text-xs">
             {errors.smsConsent}
+          </p>
+        ) : null}
+
+        <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
+          <input
+            type="checkbox"
+            checked={guidelinesConsent}
+            onChange={(e) => {
+              setGuidelinesConsent(e.target.checked);
+            }}
+            className="mt-1"
+            aria-describedby={errors.guidelinesConsent ? 'guidelines-consent-error' : undefined}
+          />
+          <span>
+            i've read and agree to pda's{' '}
+            <Link to="/guidelines" target="_blank" className="text-brand-700 underline">
+              community guidelines
+            </Link>
+          </span>
+        </label>
+        {errors.guidelinesConsent ? (
+          <p id="guidelines-consent-error" role="alert" className="text-destructive -mt-2 text-xs">
+            {errors.guidelinesConsent}
           </p>
         ) : null}
 

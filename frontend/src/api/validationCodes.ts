@@ -365,6 +365,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "they've already logged in — re-sending a welcome link won't help";
     case Code.JoinRequest.SmsConsentRequired:
       return 'please agree to receive sms about events to submit';
+    case Code.JoinRequest.GuidelinesConsentRequired:
+      return 'please agree to the community guidelines to submit';
 
     // Photo
     case Code.Photo.TypeNotAllowed:
