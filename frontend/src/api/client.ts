@@ -111,12 +111,13 @@ export async function refreshAccessToken(): Promise<string | null> {
   return result.ok ? result.token : null;
 }
 
-// Idempotent methods are safe to blind-replay after a refresh. Mutating
-// requests (POST/PATCH/PUT/DELETE) are NOT — replaying them can double-submit.
-// For those we still refresh (so the session recovers for the next request)
-// but surface the original 401 instead of retrying the mutation.
-const REPLAYABLE_METHODS = new Set(['get', 'head', 'options']);
-
+// A clean 401 means the server rejected the request *before* processing it
+// (the expired access token failed auth), so the request demonstrably never
+// mutated state server-side. Replaying it after a successful refresh is
+// therefore idempotent in effect — even for POST/PATCH/PUT/DELETE — and avoids
+// turning every post-expiry first action (create event, RSVP, mark-read,
+// cancel) into a user-visible failure. The `_retried` guard below caps replay
+// at one attempt, so there's no risk of an infinite loop or double-submit.
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -132,13 +133,8 @@ apiClient.interceptors.response.use(
     // runRefresh already fired onSessionExpired.
     if (!result.ok) throw error;
 
-    const method = (config.method ?? 'get').toLowerCase();
-    if (!REPLAYABLE_METHODS.has(method)) {
-      // Token is refreshed for subsequent requests, but we must not replay a
-      // mutation — surface the 401 and let the caller decide.
-      throw error;
-    }
-
+    // Refresh succeeded and the original 401 proves the request had no side
+    // effect, so replay it once with the new token — regardless of method.
     config.headers.Authorization = `Bearer ${result.token}`;
     const retried = await apiClient.request(config);
     return retried;
