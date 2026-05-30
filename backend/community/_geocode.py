@@ -47,8 +47,10 @@ def geocode(request: HttpRequest, params: Query[GeocodeQuery]):
         )
         resp.raise_for_status()
         return 200, resp.json()
-    except (httpx.TimeoutException, httpx.HTTPError) as e:
-        # Expected upstream failures (timeout, connection error, non-2xx).
+    except (httpx.HTTPError, ValueError) as e:
+        # Expected upstream failures: httpx.HTTPError covers timeout, connection
+        # error, and non-2xx (TimeoutException is a subclass); ValueError covers
+        # JSON-decode failures when a 2xx response carries a non-JSON body.
         # Log with request context but no PII — the query text is user input.
         logger.warning("geocode proxy error: limit=%s error=%s", params.limit, e)
         return 502, {"detail": "geocoding service unavailable — try again"}
