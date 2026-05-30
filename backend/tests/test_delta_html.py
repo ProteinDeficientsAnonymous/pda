@@ -2,6 +2,7 @@
 
 import json
 
+import pytest
 from community._delta_html import delta_to_html
 
 
@@ -228,3 +229,35 @@ class TestDeltaToHtmlUrlSchemes:
         )
         result = delta_to_html(delta)
         assert '<img src="https://example.com/img.png">' in result
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "java\tscript:alert(1)",
+            "java\nscript:alert(1)",
+            "java\rscript:alert(1)",
+            "java\x00script:alert(1)",
+            "  javascript:alert(1)",
+        ],
+    )
+    def test_link_control_char_scheme_bypass_stripped(self, raw):
+        # Browsers strip these chars, resolving "java\tscript:" back to
+        # "javascript:". The renderer must reject them.
+        delta = self._delta([{"insert": "x", "attributes": {"link": raw}}, {"insert": "\n"}])
+        result = delta_to_html(delta)
+        assert "javascript:" not in result
+        assert "<a " not in result
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "data\n:text/html,<script>",
+            "da\tta:image/svg+xml,x",
+            "\x00data:image/png;base64,AAAA",
+        ],
+    )
+    def test_image_control_char_scheme_bypass_stripped(self, raw):
+        delta = self._delta([{"insert": {"image": raw}}, {"insert": "\n"}])
+        result = delta_to_html(delta)
+        assert "data:" not in result
+        assert "<img" not in result

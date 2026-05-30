@@ -12,6 +12,14 @@ import cycle with `_content_render`, which imports the renderers.
 
 from __future__ import annotations
 
+import re
+
+# Characters browsers strip from URL attribute values during parsing: C0
+# controls, space, and DEL. They must be removed *before* scheme detection,
+# otherwise "java\tscript:" reads as a relative URL here but resolves back to
+# "javascript:" in the browser — a working XSS bypass.
+_URL_IGNORED_CHARS = re.compile(r"[\x00-\x20\x7f]")
+
 # Schemes permitted for link hrefs. Relative URLs (no scheme, or starting with
 # "/", "#", "?") are also allowed and handled separately in safe_link_href.
 _SAFE_LINK_SCHEMES = ("http://", "https://", "mailto:")
@@ -46,7 +54,7 @@ def safe_link_href(raw: str | None) -> str:
     vbscript:, and any other scheme. Returns the *unescaped* value — callers are
     responsible for HTML-escaping the result.
     """
-    value = (raw or "").strip()
+    value = _URL_IGNORED_CHARS.sub("", raw or "")
     if not value:
         return ""
     if not _has_scheme(value):
@@ -63,7 +71,7 @@ def safe_image_src(raw: str | None) -> str:
     Allows http/https and relative URLs; rejects data:, javascript:, and any
     other scheme. Returns the *unescaped* value — callers HTML-escape it.
     """
-    value = (raw or "").strip()
+    value = _URL_IGNORED_CHARS.sub("", raw or "")
     if not value:
         return ""
     if not _has_scheme(value):
