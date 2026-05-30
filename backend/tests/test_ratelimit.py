@@ -95,6 +95,13 @@ class TestRateLimitCounter:
     def test_ttl_set_only_on_creation_not_reset_each_increment(self):
         # The window TTL must be fixed at first hit. Increments must not extend
         # it (the old read-then-write set() reset the TTL every call).
+        #
+        # This runs against LocMemCache (the dev/test backend), whose incr
+        # override preserves _expire_info. Production uses Redis, which has the
+        # same fixed-TTL guarantee. DatabaseCache — whose inherited incr WOULD
+        # reset the TTL — is intentionally not a supported backend (settings.py
+        # fails fast in production if REDIS_URL is unset), so there is no DB
+        # path to cover here.
         view, _ = self._make_view("5/m")
         req = _FakeRequest({"REMOTE_ADDR": "203.0.113.9"})
 

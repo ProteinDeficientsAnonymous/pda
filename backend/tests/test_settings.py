@@ -11,6 +11,9 @@ class TestEmailBackendConfig:
         monkeypatch.setenv("SECRET_KEY", "test-secret-key")
         monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
         monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://app.example.com")
+        # Redis is mandatory in production; set it so settings load past the
+        # cache fail-fast and reach the email-backend branch under test.
+        monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
         monkeypatch.delenv("EMAIL_HOST", raising=False)
 
         # Re-import settings to pick up env changes
@@ -39,6 +42,9 @@ class TestProductionFailFast:
         monkeypatch.setenv("SECRET_KEY", "test-secret-key")
         monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
         monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://app.example.com")
+        # Redis is mandatory in production; set it so these tests exercise the
+        # allowed-hosts / CORS branches rather than tripping the cache check.
+        monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
 
     def test_allowed_hosts_empty_in_production_raises(self, monkeypatch):
         self._prod_env(monkeypatch)
@@ -77,16 +83,18 @@ class TestCacheConfig:
         )
         assert settings.CACHES["default"]["LOCATION"] == "redis://localhost:6379/0"
 
-    def test_production_without_redis_uses_db_cache(self, monkeypatch):
+    def test_production_without_redis_raises(self, monkeypatch):
+        # Redis is mandatory in production: the rate limiter needs a shared,
+        # atomic, fixed-TTL cache. DatabaseCache (the old fallback) provides
+        # none of those — its inherited incr is a non-atomic get-then-set that
+        # resets the window TTL on every call — so prod must fail fast instead.
         monkeypatch.setenv("RAILWAY_ENVIRONMENT", "production")
         monkeypatch.setenv("SECRET_KEY", "test-secret-key")
         monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
         monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://app.example.com")
         monkeypatch.delenv("REDIS_URL", raising=False)
-        settings = _reload_settings()
-        assert settings.CACHES["default"]["BACKEND"] == (
-            "django.core.cache.backends.db.DatabaseCache"
-        )
+        with pytest.raises(ValueError, match="REDIS_URL"):
+            _reload_settings()
 
     def test_dev_without_redis_uses_locmem(self, monkeypatch):
         monkeypatch.setenv("SECRET_KEY", "test-secret-key")

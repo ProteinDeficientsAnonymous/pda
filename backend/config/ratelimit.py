@@ -68,6 +68,11 @@ def rate_limit(*, key_func, rate: str):
             # the window's expiry is fixed at first hit and never reset by later
             # increments. `incr` is atomic, avoiding the read-then-write TOCTOU
             # race that allowed bursts to over-count past the limit.
+            #
+            # These guarantees hold for Redis (prod) and LocMemCache (dev/test).
+            # DatabaseCache is deliberately NOT a supported backend: its
+            # inherited incr is a non-atomic get-then-set that also resets the
+            # TTL on every call. settings.py enforces Redis in production.
             cache.add(cache_key, 0, period)
             try:
                 current = cache.incr(cache_key)
