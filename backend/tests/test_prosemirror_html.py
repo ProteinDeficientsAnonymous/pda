@@ -1,5 +1,7 @@
 """Tests for ProseMirror JSON → HTML rendering."""
 
+import json as _json
+
 import pytest
 from community._prosemirror_html import prosemirror_to_html
 from ninja_jwt.tokens import RefreshToken
@@ -309,6 +311,43 @@ class TestUrlSchemeSanitization:
         )
         html = prosemirror_to_html(pm)
         assert "javascript:" not in html
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "java\tscript:alert(1)",
+            "java\nscript:alert(1)",
+            "java\rscript:alert(1)",
+            "java\x00script:alert(1)",
+            "  javascript:alert(1)",
+            "\x01javascript:alert(1)",
+        ],
+    )
+    def test_link_control_char_scheme_bypass_stripped(self, raw):
+        # Browsers strip these chars from href values, so "java\tscript:" would
+        # resolve back to "javascript:". The renderer must reject them.
+        pm = (
+            '{"type":"doc","content":[{"type":"paragraph","content":['
+            '{"type":"text","text":"x","marks":[{"type":"link","attrs":'
+            '{"href":' + _json.dumps(raw) + "}}]}]}]}"
+        )
+        html = prosemirror_to_html(pm)
+        assert "javascript:" not in html
+        assert html == '<p><a href="">x</a></p>'
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "data\n:text/html,<script>alert(1)</script>",
+            "da\tta:text/html,x",
+            "\x00data:image/svg+xml,x",
+        ],
+    )
+    def test_block_image_control_char_scheme_bypass_stripped(self, raw):
+        pm = '{"type":"doc","content":[{"type":"image","attrs":{"src":' + _json.dumps(raw) + "}}]}"
+        html = prosemirror_to_html(pm)
+        assert "data:" not in html
+        assert html == '<img src="">'
 
 
 @pytest.mark.django_db
