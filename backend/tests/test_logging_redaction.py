@@ -268,7 +268,9 @@ class TestSensitiveDataFilter:
             "set-cookie",
             "refresh",
             "otp",
-            "code",
+            "verification_code",
+            "auth_code",
+            "reset_code",
         ],
     )
     def test_redacts_new_sensitive_keywords(self, keyword):
@@ -302,3 +304,82 @@ class TestSensitiveDataFilter:
         assert "user=alice" in record.msg
         assert "abc123" not in record.msg
         assert "999999" not in record.msg
+
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "HTTP code: 500",
+            "error code: 42",
+            "status_code: 200",
+            "geocode: failed",
+            "discount_code=SAVE10",
+        ],
+    )
+    def test_does_not_over_redact_diagnostic_code_lines(self, message):
+        # Benign operational lines containing the word "code" must pass through
+        # untouched — the bare "code" keyword over-redacted these previously.
+        f = SensitiveDataFilter()
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg=message,
+            args=None,
+            exc_info=None,
+        )
+        f.filter(record)
+        assert record.msg == message
+        assert "[REDACTED]" not in record.msg
+
+    def test_keyword_match_respects_word_boundaries(self):
+        # "phone" inside "telephone" / "code" inside "geocode" must not match.
+        f = SensitiveDataFilter()
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="telephone: support line",
+            args=None,
+            exc_info=None,
+        )
+        f.filter(record)
+        assert record.msg == "telephone: support line"
+
+    def test_redacts_secret_in_positionally_logged_dict(self):
+        # logger.info("payload: %s", {"otp": "123456", "password": "hunter2"})
+        # renders the dict via repr, so the keys are quoted ('otp': ...). The
+        # redaction must still strip the values from the rendered string.
+        f = SensitiveDataFilter()
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="payload: %s",
+            args=({"otp": "123456", "password": "hunter2"},),
+            exc_info=None,
+        )
+        f.filter(record)
+        assert record.args == ()
+        rendered = record.getMessage()
+        assert "123456" not in rendered
+        assert "hunter2" not in rendered
+        assert "[REDACTED]" in rendered
+
+    def test_redacts_double_quoted_json_keys(self):
+        # JSON-style serialization quotes keys with double quotes.
+        f = SensitiveDataFilter()
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg='body: {"token": "abc123secret"}',
+            args=None,
+            exc_info=None,
+        )
+        f.filter(record)
+        assert "abc123secret" not in record.msg
+        assert "[REDACTED]" in record.msg

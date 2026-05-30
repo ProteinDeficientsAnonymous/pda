@@ -34,6 +34,11 @@ class JsonFormatter(logging.Formatter):
 # that multiple k=v pairs on one line each get redacted independently rather
 # than the first match swallowing the rest of the line. Quoted values are
 # captured in full (including spaces) up to the closing quote.
+#
+# `code` is intentionally NOT a bare keyword: it over-matches benign diagnostic
+# lines (`HTTP code: 500`, `status_code: 200`, `error code: 42`, `geocode: ...`).
+# Sensitive verification/auth codes are covered by `otp` and the explicit
+# `*_code` variants below.
 _SENSITIVE_KEYWORDS = (
     "password",
     "token",
@@ -47,15 +52,24 @@ _SENSITIVE_KEYWORDS = (
     "set-cookie",
     "refresh",
     "otp",
-    "code",
+    "verification_code",
+    "verification-code",
+    "auth_code",
+    "auth-code",
+    "reset_code",
+    "reset-code",
     "phone_number",
     "phone",
 )
 # Optional auth scheme whose credential follows the scheme word (e.g. "Bearer <token>").
 _AUTH_SCHEME = r"(?:Bearer|Basic|Token|JWT)\s+"
+# Keys may appear bare (`otp=123`) or quoted in serialized dicts/JSON
+# (`'otp': '123'`, `"otp": "123"`), so allow an optional closing quote between
+# the key and the separator. Keywords are anchored with \b so partial-word
+# matches (e.g. `code` inside `geocode`, `phone` inside `telephone`) don't fire.
 _SENSITIVE_KEY_RE = re.compile(
-    r"(?P<key>" + "|".join(_SENSITIVE_KEYWORDS) + r")"
-    r"(?P<sep>\s*[=:]\s*)"
+    r"\b(?P<key>" + "|".join(_SENSITIVE_KEYWORDS) + r")\b"
+    r"(?P<sep>[\"']?\s*[=:]\s*)"
     r"(?P<value>\"[^\"]*\"|'[^']*'|(?:" + _AUTH_SCHEME + r")?\S+)",
     re.IGNORECASE,
 )
