@@ -7495,6 +7495,11 @@
             "description": "OK"
           }
         },
+        "security": [
+          {
+            "OptionalJWTAuth": []
+          }
+        ],
         "summary": "Single Event Ics",
         "tags": [
           "community"
