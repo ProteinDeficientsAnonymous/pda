@@ -72,46 +72,68 @@ export interface EventFormValues {
 type WireBody = Record<string, unknown>;
 
 // Per-field mapping from a form value to its wire key + serialized value.
+// Each encoder receives *only its own field's value*, so the same map drives
+// both the full-body and partial-body builders without ever casting a
+// `Partial<EventFormValues>` to the full type.
 // `visibilityChoice` is virtual on the wire — it expands into `visibility` +
 // `event_type` — so it's handled separately rather than living in this map.
-type WireField = readonly [wireKey: string, encode: (values: EventFormValues) => unknown];
+type WireField<K extends keyof EventFormValues> = readonly [
+  wireKey: string,
+  encode: (value: EventFormValues[K]) => unknown,
+];
 
-const FIELD_TO_WIRE: Partial<Record<keyof EventFormValues, WireField>> = {
-  title: ['title', (v) => v.title],
-  description: ['description', (v) => v.description],
-  location: ['location', (v) => v.location],
-  latitude: ['latitude', (v) => v.latitude],
-  longitude: ['longitude', (v) => v.longitude],
-  startDatetime: ['start_datetime', (v) => v.startDatetime],
-  endDatetime: ['end_datetime', (v) => v.endDatetime],
-  datetimeTbd: ['datetime_tbd', (v) => v.datetimeTbd],
-  invitePermission: ['invite_permission', (v) => v.invitePermission],
-  rsvpEnabled: ['rsvp_enabled', (v) => v.rsvpEnabled],
-  allowPlusOnes: ['allow_plus_ones', (v) => v.allowPlusOnes],
-  maxAttendees: ['max_attendees', (v) => v.maxAttendees],
-  whatsappLink: ['whatsapp_link', (v) => v.whatsappLink],
-  partifulLink: ['partiful_link', (v) => v.partifulLink],
-  otherLink: ['other_link', (v) => v.otherLink],
-  price: ['price', (v) => v.price],
-  venmoLink: ['venmo_link', (v) => toVenmoUrl(v.venmoLink)],
-  cashappLink: ['cashapp_link', (v) => toCashAppUrl(v.cashappLink)],
-  zelleInfo: ['zelle_info', (v) => v.zelleInfo],
-  coHostIds: ['co_host_ids', (v) => v.coHostIds],
-  status: ['status', (v) => v.status],
+type WireFieldMap = { [K in keyof EventFormValues]?: WireField<K> };
+
+const FIELD_TO_WIRE: WireFieldMap = {
+  title: ['title', (v) => v],
+  description: ['description', (v) => v],
+  location: ['location', (v) => v],
+  latitude: ['latitude', (v) => v],
+  longitude: ['longitude', (v) => v],
+  startDatetime: ['start_datetime', (v) => v],
+  endDatetime: ['end_datetime', (v) => v],
+  datetimeTbd: ['datetime_tbd', (v) => v],
+  invitePermission: ['invite_permission', (v) => v],
+  rsvpEnabled: ['rsvp_enabled', (v) => v],
+  allowPlusOnes: ['allow_plus_ones', (v) => v],
+  maxAttendees: ['max_attendees', (v) => v],
+  whatsappLink: ['whatsapp_link', (v) => v],
+  partifulLink: ['partiful_link', (v) => v],
+  otherLink: ['other_link', (v) => v],
+  price: ['price', (v) => v],
+  venmoLink: ['venmo_link', (v) => toVenmoUrl(v)],
+  cashappLink: ['cashapp_link', (v) => toCashAppUrl(v)],
+  zelleInfo: ['zelle_info', (v) => v],
+  coHostIds: ['co_host_ids', (v) => v],
+  status: ['status', (v) => v],
 };
+
+// Encode a single field by key, looking up its wire entry. The generic `K`
+// keeps the field value and its encoder bound to the same key, so TS verifies
+// each encoder only ever receives its own field's value — no cast required.
+function encodeField<K extends keyof EventFormValues>(
+  key: K,
+  value: EventFormValues[K],
+): readonly [string, unknown] | undefined {
+  const field = FIELD_TO_WIRE[key];
+  if (!field) return undefined;
+  const [wireKey, encode] = field;
+  return [wireKey, encode(value)];
+}
 
 function toWireBody(values: EventFormValues): WireBody {
   const { visibility, eventType } = visibilityChoiceToFields(values.visibilityChoice);
   const body: WireBody = { visibility, event_type: eventType };
-  for (const field of Object.values(FIELD_TO_WIRE)) {
-    const [wireKey, encode] = field;
-    body[wireKey] = encode(values);
+  for (const key of Object.keys(FIELD_TO_WIRE) as (keyof EventFormValues)[]) {
+    const encoded = encodeField(key, values[key]);
+    if (!encoded) continue;
+    body[encoded[0]] = encoded[1];
   }
   return body;
 }
 
-// Build a PATCH body from only the keys present in the Partial. Avoids the
-// unsafe Partial→full cast: we never read a field that wasn't provided.
+// Build a PATCH body from only the keys present in the Partial. Each encoder
+// reads only its own field's value, so no `Partial → full` cast is needed.
 // `visibilityChoice` (if present) expands into `visibility` + `event_type`.
 export function toPartialWireBody(values: Partial<EventFormValues>): WireBody {
   const body: WireBody = {};
@@ -125,10 +147,9 @@ export function toPartialWireBody(values: Partial<EventFormValues>): WireBody {
       body.event_type = eventType;
       continue;
     }
-    const field = FIELD_TO_WIRE[key];
-    if (!field) continue;
-    const [wireKey, encode] = field;
-    body[wireKey] = encode(values as EventFormValues);
+    const encoded = encodeField(key, values[key]);
+    if (!encoded) continue;
+    body[encoded[0]] = encoded[1];
   }
   return body;
 }
