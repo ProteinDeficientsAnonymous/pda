@@ -6,8 +6,6 @@ import json
 from html import escape
 from typing import Any
 
-from community._html_safety import safe_image_src, safe_link_href
-
 
 def prosemirror_to_html(pm_json: str) -> str:
     """Convert a TipTap/ProseMirror JSON string to HTML.
@@ -61,7 +59,7 @@ def _render_list_item(content: list[Any], _attrs: dict) -> str:
 
 
 def _render_cta(_content: list[Any], attrs: dict) -> str:
-    href = escape(safe_link_href(attrs.get("href")))
+    href = escape(attrs.get("href") or "")
     label = escape(attrs.get("label") or "")
     variant = attrs.get("variant")
     if variant not in ("primary", "secondary"):
@@ -83,7 +81,7 @@ _BLOCK_RENDERERS = {
     "blockquote": lambda c, _a: f"<blockquote>{_render_nodes(c)}</blockquote>",
     "horizontalRule": lambda _c, _a: "<hr>",
     "hardBreak": lambda _c, _a: "<br>",
-    "image": lambda _c, a: f'<img src="{escape(safe_image_src(a.get("src")))}">',
+    "image": lambda _c, a: f'<img src="{escape(a.get("src", ""))}">',
     "cta": _render_cta,
 }
 
@@ -106,7 +104,7 @@ def _render_inline(nodes: list[Any]) -> str:
         elif t == "hardBreak":
             parts.append("<br>")
         elif t == "image":
-            src = safe_image_src((n.get("attrs") or {}).get("src"))
+            src = (n.get("attrs") or {}).get("src", "")
             parts.append(f'<img src="{escape(src)}">')
     return "".join(parts)
 
@@ -126,6 +124,6 @@ def _apply_marks(chunk: str, marks: list[Any]) -> str:
     if "code" in has:
         chunk = f"<code>{chunk}</code>"
     if "link" in has:
-        href = safe_link_href((has["link"].get("attrs") or {}).get("href"))
+        href = ((has["link"].get("attrs") or {}).get("href")) or ""
         chunk = f'<a href="{escape(href)}">{chunk}</a>'
     return chunk

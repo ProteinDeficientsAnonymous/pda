@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from community._delta_html import delta_to_html
+from community._html_sanitize import sanitize_content_html
 from community._prosemirror_html import prosemirror_to_html
 
 
@@ -45,12 +46,12 @@ def render_content_payload(
         return RenderedContent(
             content="",
             content_pm=prosemirror,
-            content_html=prosemirror_to_html(prosemirror),
+            content_html=sanitize_content_html(prosemirror_to_html(prosemirror)),
         )
     if delta and delta.strip():
         return RenderedContent(
             content=delta,
             content_pm="",
-            content_html=delta_to_html(delta),
+            content_html=sanitize_content_html(delta_to_html(delta)),
         )
     return RenderedContent(content="", content_pm="", content_html="")
