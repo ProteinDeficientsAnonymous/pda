@@ -93,6 +93,7 @@ const AUTHED_USER: User = {
   isStaff: false,
   needsOnboarding: false,
   needsPasswordReset: false,
+  needsGuidelinesConsent: false,
   showPhone: false,
   showEmail: false,
   weekStart: 'sunday',

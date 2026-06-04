@@ -57,6 +57,7 @@ class UserOut(BaseModel):
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False
+    needs_guidelines_consent: bool = False
     profile_photo_url: str = ""
     show_phone: bool = True
     show_email: bool = True
@@ -77,6 +78,7 @@ class UserOut(BaseModel):
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
+            needs_guidelines_consent=user.guidelines_consent_at is None,
             profile_photo_url=media_path(user.profile_photo),
             show_phone=user.show_phone,
             show_email=user.show_email,

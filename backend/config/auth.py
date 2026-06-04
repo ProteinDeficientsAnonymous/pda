@@ -23,15 +23,18 @@ from ninja_jwt.authentication import JWTAuth
 from users.models import User
 
 # Full request paths (under the ``/api`` mount) a pending user may still reach:
-#   - GET /me/                 — frontend reads needs_password_reset/onboarding here
+#   - GET /me/                 — frontend reads needs_password_reset/onboarding/
+#                                guidelines-consent state here
 #   - POST /complete-onboarding/ — the only way to set a password / clear the flags
 #   - POST /change-password/   — alternate password-set path (also clears the flag)
+#   - POST /accept-guidelines/ — the only way to clear needs_guidelines_consent
 # /refresh/ and /logout/ are auth=None, so they bypass this gate already.
 _PENDING_ALLOWLIST = frozenset(
     {
         "/api/auth/me/",
         "/api/auth/complete-onboarding/",
         "/api/auth/change-password/",
+        "/api/auth/accept-guidelines/",
     }
 )
 
@@ -58,12 +61,16 @@ class GatedJWTAuth(JWTAuth):
         if user.is_paused:
             raise ValidationException(Code.Auth.ACCOUNT_PAUSED, status_code=403)
 
-        # Pending password set — allow only the endpoints needed to resolve it.
+        # Pending account state — allow only the endpoints needed to resolve it.
+        # Order mirrors the frontend gate: a brand-new user sets their password
+        # (onboarding / reset) before being asked to consent to the guidelines.
         if request.path not in _PENDING_ALLOWLIST:
             if user.needs_password_reset:
                 raise ValidationException(Code.Auth.PASSWORD_RESET_REQUIRED, status_code=403)
             if user.needs_onboarding:
                 raise ValidationException(Code.Auth.ONBOARDING_REQUIRED, status_code=403)
+            if user.guidelines_consent_at is None:
+                raise ValidationException(Code.Auth.GUIDELINES_CONSENT_REQUIRED, status_code=403)
 
         return user
 

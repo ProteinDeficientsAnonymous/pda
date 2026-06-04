@@ -34,6 +34,7 @@ interface AuthState {
     displayName?: string | undefined;
     email?: string | undefined;
   }) => Promise<void>;
+  acceptGuidelines: () => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
   updateProfile: (patch: authApi.ProfileUpdate) => Promise<void>;
   uploadProfilePhoto: (file: File) => Promise<void>;
@@ -95,6 +96,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async completeOnboarding(payload) {
     const user = await authApi.completeOnboarding(payload);
+    set({ user });
+  },
+
+  async acceptGuidelines() {
+    const user = await authApi.acceptGuidelines();
     set({ user });
   },
 

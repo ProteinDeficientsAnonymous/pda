@@ -370,6 +370,11 @@
         "name": "ONBOARDING_REQUIRED",
         "value": "auth.onboarding_required",
         "params": []
+      },
+      {
+        "name": "GUIDELINES_CONSENT_REQUIRED",
+        "value": "auth.guidelines_consent_required",
+        "params": []
       }
     ],
     "Password": [

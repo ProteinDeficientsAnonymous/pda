@@ -224,6 +224,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'please set a new password to continue';
     case Code.Auth.OnboardingRequired:
       return 'finish setting up your account to continue';
+    case Code.Auth.GuidelinesConsentRequired:
+      return 'please agree to the community guidelines to continue';
 
     // Password
     case Code.Password.Invalid: {

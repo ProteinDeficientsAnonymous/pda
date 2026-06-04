@@ -53,6 +53,12 @@ class User(AbstractUser):
     # and cleared by complete_onboarding. Distinct from needs_onboarding (first-time
     # name+password setup), which routes to /onboarding instead.
     needs_password_reset = models.BooleanField(default=False)
+    # PERSISTENT USER STATE: when this user last accepted the community guidelines
+    # and agreements. Null means they have never consented (or are being asked to
+    # re-consent) — surfaced on /me/ as needs_guidelines_consent and enforced as a
+    # hard gate (see config.auth.GatedJWTAuth). Stamped by POST /accept-guidelines/.
+    # Deliberately NOT backfilled: everyone, admins included, must re-consent.
+    guidelines_consent_at = models.DateTimeField(null=True, blank=True)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
