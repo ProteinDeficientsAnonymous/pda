@@ -10,10 +10,19 @@ import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { useAuthStore } from '@/auth/store';
 import { eventKeys } from './events';
 import { mapEvent, type WireEvent } from './eventMapper';
-import type { Event } from '@/models/event';
+import {
+  EventStatus as EventStatusEnum,
+  EventType as EventTypeEnum,
+  EventVisibility,
+  InvitePermission,
+  type Event,
+} from '@/models/event';
+import { reportError } from '@/utils/errorReporter';
 import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/paymentHandle';
 
-export type EventStatus = 'active' | 'draft' | 'cancelled' | 'deleted';
+const ROUTE = '/events';
+
+export type EventStatus = (typeof EventStatusEnum)[keyof typeof EventStatusEnum];
 
 export type VisibilityChoice = 'official' | 'public' | 'members_only' | 'invite_only';
 
@@ -62,33 +71,87 @@ export interface EventFormValues {
 
 type WireBody = Record<string, unknown>;
 
+// Per-field mapping from a form value to its wire key + serialized value.
+// Each encoder receives *only its own field's value*, so the same map drives
+// both the full-body and partial-body builders without ever casting a
+// `Partial<EventFormValues>` to the full type.
+// `visibilityChoice` is virtual on the wire — it expands into `visibility` +
+// `event_type` — so it's handled separately rather than living in this map.
+type WireField<K extends keyof EventFormValues> = readonly [
+  wireKey: string,
+  encode: (value: EventFormValues[K]) => unknown,
+];
+
+type WireFieldMap = { [K in keyof EventFormValues]?: WireField<K> };
+
+const FIELD_TO_WIRE: WireFieldMap = {
+  title: ['title', (v) => v],
+  description: ['description', (v) => v],
+  location: ['location', (v) => v],
+  latitude: ['latitude', (v) => v],
+  longitude: ['longitude', (v) => v],
+  startDatetime: ['start_datetime', (v) => v],
+  endDatetime: ['end_datetime', (v) => v],
+  datetimeTbd: ['datetime_tbd', (v) => v],
+  invitePermission: ['invite_permission', (v) => v],
+  rsvpEnabled: ['rsvp_enabled', (v) => v],
+  allowPlusOnes: ['allow_plus_ones', (v) => v],
+  maxAttendees: ['max_attendees', (v) => v],
+  whatsappLink: ['whatsapp_link', (v) => v],
+  partifulLink: ['partiful_link', (v) => v],
+  otherLink: ['other_link', (v) => v],
+  price: ['price', (v) => v],
+  venmoLink: ['venmo_link', (v) => toVenmoUrl(v)],
+  cashappLink: ['cashapp_link', (v) => toCashAppUrl(v)],
+  zelleInfo: ['zelle_info', (v) => v],
+  coHostIds: ['co_host_ids', (v) => v],
+  status: ['status', (v) => v],
+};
+
+// Encode a single field by key, looking up its wire entry. The generic `K`
+// keeps the field value and its encoder bound to the same key, so TS verifies
+// each encoder only ever receives its own field's value — no cast required.
+function encodeField<K extends keyof EventFormValues>(
+  key: K,
+  value: EventFormValues[K],
+): readonly [string, unknown] | undefined {
+  const field = FIELD_TO_WIRE[key];
+  if (!field) return undefined;
+  const [wireKey, encode] = field;
+  return [wireKey, encode(value)];
+}
+
 function toWireBody(values: EventFormValues): WireBody {
   const { visibility, eventType } = visibilityChoiceToFields(values.visibilityChoice);
-  return {
-    title: values.title,
-    description: values.description,
-    location: values.location,
-    latitude: values.latitude,
-    longitude: values.longitude,
-    start_datetime: values.startDatetime,
-    end_datetime: values.endDatetime,
-    datetime_tbd: values.datetimeTbd,
-    event_type: eventType,
-    visibility,
-    invite_permission: values.invitePermission,
-    rsvp_enabled: values.rsvpEnabled,
-    allow_plus_ones: values.allowPlusOnes,
-    max_attendees: values.maxAttendees,
-    whatsapp_link: values.whatsappLink,
-    partiful_link: values.partifulLink,
-    other_link: values.otherLink,
-    price: values.price,
-    venmo_link: toVenmoUrl(values.venmoLink),
-    cashapp_link: toCashAppUrl(values.cashappLink),
-    zelle_info: values.zelleInfo,
-    co_host_ids: values.coHostIds,
-    status: values.status,
-  };
+  const body: WireBody = { visibility, event_type: eventType };
+  for (const key of Object.keys(FIELD_TO_WIRE) as (keyof EventFormValues)[]) {
+    const encoded = encodeField(key, values[key]);
+    if (!encoded) continue;
+    body[encoded[0]] = encoded[1];
+  }
+  return body;
+}
+
+// Build a PATCH body from only the keys present in the Partial. Each encoder
+// reads only its own field's value, so no `Partial → full` cast is needed.
+// `visibilityChoice` (if present) expands into `visibility` + `event_type`.
+export function toPartialWireBody(values: Partial<EventFormValues>): WireBody {
+  const body: WireBody = {};
+  for (const key of Object.keys(values) as (keyof EventFormValues)[]) {
+    if (values[key] === undefined) continue;
+    if (key === 'visibilityChoice') {
+      const choice = values.visibilityChoice;
+      if (choice === undefined) continue;
+      const { visibility, eventType } = visibilityChoiceToFields(choice);
+      body.visibility = visibility;
+      body.event_type = eventType;
+      continue;
+    }
+    const encoded = encodeField(key, values[key]);
+    if (!encoded) continue;
+    body[encoded[0]] = encoded[1];
+  }
+  return body;
 }
 
 export function useCreateEvent() {
@@ -105,6 +168,9 @@ export function useCreateEvent() {
     onSuccess: (event) => {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+    },
+    onError: (err) => {
+      void reportError(err, ROUTE, { action: 'create-event' });
     },
   });
 }
@@ -128,6 +194,9 @@ export function useInviteToEvent(eventId: string) {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
+    onError: (err) => {
+      void reportError(err, ROUTE, { action: 'invite-to-event', eventId });
+    },
   });
 }
 
@@ -136,15 +205,9 @@ export function useUpdateEvent(eventId: string) {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
     mutationFn: async (values: Partial<EventFormValues>) => {
-      // Strip undefined: PATCH is partial. Falsy values other than undefined
-      // should still be sent — false/""/null carry meaning.
-      const full = values as EventFormValues;
-      const wire = toWireBody(full);
-      const body = Object.fromEntries(
-        Object.entries(wire).filter(
-          ([k]) => (values as Record<string, unknown>)[kebabToCamel(k)] !== undefined,
-        ),
-      );
+      // PATCH is partial: build the wire body from only the provided keys.
+      // Falsy values other than undefined still carry meaning (false/""/null).
+      const body = toPartialWireBody(values);
       const { data } = await apiClient.patch<WireEvent>(`/api/community/events/${eventId}/`, body);
       return mapEvent(data);
     },
@@ -152,11 +215,10 @@ export function useUpdateEvent(eventId: string) {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
+    onError: (err) => {
+      void reportError(err, ROUTE, { action: 'update-event', eventId });
+    },
   });
-}
-
-function kebabToCamel(s: string): string {
-  return s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 }
 
 // Cancel an event (active → cancelled). Notifies attendees; the backend
@@ -167,7 +229,7 @@ export function useCancelEvent(eventId: string) {
   return useMutation({
     mutationFn: async () => {
       const body: WireBody = {
-        status: 'cancelled' satisfies EventStatus,
+        status: EventStatusEnum.Cancelled,
         notify_attendees: true,
       };
       const { data } = await apiClient.patch<WireEvent>(`/api/community/events/${eventId}/`, body);
@@ -176,6 +238,9 @@ export function useCancelEvent(eventId: string) {
     onSuccess: (event) => {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+    },
+    onError: (err) => {
+      void reportError(err, ROUTE, { action: 'cancel-event', eventId });
     },
   });
 }
@@ -187,13 +252,16 @@ export function useDeleteEvent(eventId: string) {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
     mutationFn: async () => {
-      const body: WireBody = { status: 'deleted' satisfies EventStatus };
+      const body: WireBody = { status: EventStatusEnum.Deleted };
       const { data } = await apiClient.patch<WireEvent>(`/api/community/events/${eventId}/`, body);
       return mapEvent(data);
     },
     onSuccess: (event) => {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+    },
+    onError: (err) => {
+      void reportError(err, ROUTE, { action: 'delete-event', eventId });
     },
   });
 }
@@ -216,6 +284,9 @@ export function useUploadEventPhoto(eventId: string) {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
+    onError: (err) => {
+      void reportError(err, ROUTE, { action: 'upload-event-photo', eventId });
+    },
   });
 }
 
@@ -230,6 +301,9 @@ export function useDeleteEventPhoto(eventId: string) {
     onSuccess: (event) => {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+    },
+    onError: (err) => {
+      void reportError(err, ROUTE, { action: 'delete-event-photo', eventId });
     },
   });
 }
@@ -271,7 +345,33 @@ export function emptyEventFormValues(): EventFormValues {
   };
 }
 
+// Coerce an arbitrary wire string to a known union value, falling back to a
+// safe default on anything unexpected. The server *should* only ever send
+// known values, but a stale client / schema drift shouldn't blow up the form.
+function coerceEnum<T extends string>(value: string, allowed: readonly T[], fallback: T): T {
+  return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
+const FORM_EVENT_TYPES = [EventTypeEnum.Community, EventTypeEnum.Official] as const;
+const FORM_VISIBILITIES = [
+  EventVisibility.Public,
+  EventVisibility.MembersOnly,
+  EventVisibility.InviteOnly,
+] as const;
+const FORM_INVITE_PERMISSIONS = [
+  InvitePermission.AllMembers,
+  InvitePermission.CoHostsOnly,
+] as const;
+const FORM_STATUSES = [
+  EventStatusEnum.Active,
+  EventStatusEnum.Draft,
+  EventStatusEnum.Cancelled,
+  EventStatusEnum.Deleted,
+] as const;
+
 export function eventToFormValues(e: Event): EventFormValues {
+  const eventType = coerceEnum(e.eventType, FORM_EVENT_TYPES, EventTypeEnum.Community);
+  const visibility = coerceEnum(e.visibility, FORM_VISIBILITIES, EventVisibility.Public);
   return {
     title: e.title,
     description: e.description,
@@ -281,13 +381,14 @@ export function eventToFormValues(e: Event): EventFormValues {
     startDatetime: e.startDatetime ? e.startDatetime.toISOString() : null,
     endDatetime: e.endDatetime ? e.endDatetime.toISOString() : null,
     datetimeTbd: e.datetimeTbd,
-    eventType: e.eventType as 'community' | 'official',
-    visibility: e.visibility as 'public' | 'members_only' | 'invite_only',
-    visibilityChoice: fieldsToVisibilityChoice(
-      e.visibility as 'public' | 'members_only' | 'invite_only',
-      e.eventType as 'community' | 'official',
+    eventType,
+    visibility,
+    visibilityChoice: fieldsToVisibilityChoice(visibility, eventType),
+    invitePermission: coerceEnum(
+      e.invitePermission,
+      FORM_INVITE_PERMISSIONS,
+      InvitePermission.AllMembers,
     ),
-    invitePermission: e.invitePermission as 'all_members' | 'co_hosts_only',
     rsvpEnabled: e.rsvpEnabled,
     allowPlusOnes: e.allowPlusOnes,
     maxAttendees: e.maxAttendees,
@@ -299,6 +400,6 @@ export function eventToFormValues(e: Event): EventFormValues {
     cashappLink: fromCashAppUrl(e.cashappLink),
     zelleInfo: e.zelleInfo,
     coHostIds: e.coHostIds,
-    status: e.status as EventStatus,
+    status: coerceEnum(e.status, FORM_STATUSES, EventStatusEnum.Active),
   };
 }
