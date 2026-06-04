@@ -70,3 +70,23 @@ export function guidelinesConsentRedirect(user: User | null): '/consent' | null 
   if (!user) return null;
   return user.needsGuidelinesConsent ? '/consent' : null;
 }
+
+/**
+ * The single gate screen a freshly-authenticated user must be sent to before
+ * the app proper, or null if nothing is pending. Combines the password-setup
+ * and consent gates in the SAME priority order OnboardingGate uses (password
+ * setup first, then consent).
+ *
+ * Auth screens (LoginScreen, MagicLoginScreen) call this and navigate to the
+ * result DIRECTLY rather than navigating to a protected route and leaning on
+ * OnboardingGate to bounce. Leaning on the gate races: the target route (often
+ * lazy-loaded) can render a blank Suspense fallback before the gate re-evaluates
+ * with the new auth state, so a pending user sees a blank screen until refresh.
+ * Navigating to the gate target up-front avoids that race entirely; the gate
+ * remains the backstop for every later navigation.
+ */
+export function postAuthRedirect(
+  user: User | null,
+): '/new-password' | '/onboarding' | '/consent' | null {
+  return passwordSetupRedirect(user) ?? guidelinesConsentRedirect(user);
+}
