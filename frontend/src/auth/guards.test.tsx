@@ -320,6 +320,25 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
+  it('lets a needsGuidelinesConsent user read /guidelines (so consent is possible)', () => {
+    const user = makeUser({ needsGuidelinesConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/guidelines']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/guidelines" element={<div>guidelines page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('guidelines page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
   it('sends a password setup to /onboarding before asking for consent', () => {
     // A brand-new user who owes both password setup and consent resolves the
     // password gate first — consent is only asked once setup is done.
