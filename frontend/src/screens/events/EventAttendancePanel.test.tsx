@@ -14,6 +14,12 @@ import {
 
 const setAttendanceMutate = vi.fn();
 
+// The check-in window opens an hour before start, so BASE_EVENT must start
+// comfortably in the future for "window closed" assertions to hold. Use a
+// relative offset rather than a hardcoded date, which silently rots once the
+// wall clock passes it.
+const FUTURE_START = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
 vi.mock('@/api/eventStats', () => ({
   useEventStats: vi.fn(),
   useSetAttendance: () => ({ mutate: setAttendanceMutate, isPending: false }),
@@ -26,7 +32,7 @@ const BASE_EVENT: Event = {
   id: 'ev1',
   title: 'Test Event',
   description: '',
-  startDatetime: new Date('2026-06-01T18:00:00Z'),
+  startDatetime: FUTURE_START,
   endDatetime: null,
   location: '',
   latitude: null,
