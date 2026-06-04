@@ -366,7 +366,7 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.JoinRequest.SmsConsentRequired:
       return 'please agree to receive sms about events to submit';
     case Code.JoinRequest.GuidelinesConsentRequired:
-      return 'please agree to the community guidelines to submit';
+      return 'please read and confirm you agree to the guidelines and community agreements to submit';
 
     // Photo
     case Code.Photo.TypeNotAllowed:

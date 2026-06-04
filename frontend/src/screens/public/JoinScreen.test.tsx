@@ -153,7 +153,11 @@ describe('JoinScreen', () => {
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/please agree to the community guidelines/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /please read and confirm you agree to the guidelines and community agreements/i,
+        ),
+      ).toBeInTheDocument();
     });
     expect(mutateAsync).not.toHaveBeenCalled();
   });
@@ -258,7 +262,7 @@ describe('email validation', () => {
     await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
     await userEvent.type(screen.getByLabelText(/email/i), 'Tester@Example.com');
     await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
-    await userEvent.click(screen.getByLabelText(/i've read and agree to pda's/i));
+    await userEvent.click(screen.getByLabelText(/i have read and agree to the/i));
     await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ email: 'Tester@Example.com' }));
   });

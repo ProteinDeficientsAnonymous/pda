@@ -100,7 +100,9 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     if (!email.trim()) next.email = 'email required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';
     if (!smsConsent) next.smsConsent = 'please agree to receive sms about events';
-    if (!guidelinesConsent) next.guidelinesConsent = 'please agree to the community guidelines';
+    if (!guidelinesConsent)
+      next.guidelinesConsent =
+        'please read and confirm you agree to the guidelines and community agreements';
     for (const q of questions) {
       const val = (answers[q.id] ?? '').trim();
       if (q.required && !val) next[q.id] = 'required';
@@ -235,10 +237,11 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
             aria-describedby={errors.guidelinesConsent ? 'guidelines-consent-error' : undefined}
           />
           <span>
-            i've read and agree to pda's{' '}
+            i have read and agree to the{' '}
             <Link to="/guidelines" target="_blank" className="text-brand-700 underline">
               community guidelines
-            </Link>
+            </Link>{' '}
+            and community agreements
           </span>
         </label>
         {errors.guidelinesConsent ? (
