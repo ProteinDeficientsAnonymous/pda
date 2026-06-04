@@ -423,6 +423,18 @@
         "params": []
       },
       {
+        "name": "CANNOT_GRANT_ADMIN",
+        "value": "role.cannot_grant_admin",
+        "params": []
+      },
+      {
+        "name": "INVALID_PERMISSION",
+        "value": "role.invalid_permission",
+        "params": [
+          "permission"
+        ]
+      },
+      {
         "name": "MEMBER_ROLE_REQUIRED",
         "value": "role.member_role_required",
         "params": []
