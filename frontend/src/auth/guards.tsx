@@ -77,9 +77,13 @@ export function OnboardingGate() {
       return <Navigate to={setupTarget} replace />;
     }
   } else if (consentTarget) {
-    // Hard guidelines-consent gate — no skip, no dismiss. Pin the user to
-    // /consent until they accept (clears needsGuidelinesConsent on /me/).
-    if (path !== consentTarget) {
+    // Guidelines-consent gate. The consent screen blocks login completion, but
+    // the user can either accept (clears needsGuidelinesConsent on /me/) or pick
+    // "not now" on the screen itself to log out. We pin them to /consent EXCEPT
+    // for /guidelines — they must be able to read what they're agreeing to (the
+    // consent screen links there), so trapping that page would make honest
+    // consent impossible.
+    if (path !== consentTarget && path !== '/guidelines') {
       return <Navigate to={consentTarget} replace />;
     }
   } else if (user) {

@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/auth/store';
 import { extractApiError } from '@/utils/errors';
 
-// Hard guidelines-consent gate. Modeled on OnboardingScreen — same AuthLayout
-// shell, single blocking action, no skip or dismiss. Reached only via
-// OnboardingGate redirecting consent-pending users to /consent; the gate pins
-// them here until acceptGuidelines() clears needsGuidelinesConsent.
+// Guidelines-consent gate. Modeled on OnboardingScreen — same AuthLayout shell.
+// Blocks login completion: the only ways forward are to accept (clears
+// needsGuidelinesConsent) or "not now", which logs out and returns to the
+// landing page. Reached via OnboardingGate redirecting consent-pending users
+// here; that gate pins them to /consent (except /guidelines, so they can read
+// what they're agreeing to) until one of those two happens.
 export default function ConsentScreen() {
   const acceptGuidelines = useAuthStore((s) => s.acceptGuidelines);
+  const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const [consented, setConsented] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -27,6 +30,14 @@ export default function ConsentScreen() {
       setServerError(extractApiError(err, "couldn't save your consent — try again"));
       setSubmitting(false);
     }
+  }
+
+  async function onSkip() {
+    // Decline for now: drop the session and return to the landing page logged
+    // out. No half-authed state — the only way into the app is to accept.
+    setSubmitting(true);
+    await logout();
+    void navigate('/', { replace: true });
   }
 
   return (
@@ -65,6 +76,14 @@ export default function ConsentScreen() {
         >
           {submitting ? 'saving…' : 'continue'}
         </Button>
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={() => void onSkip()}
+          className="text-foreground-tertiary text-center text-sm underline disabled:opacity-50"
+        >
+          not now
+        </button>
       </div>
     </AuthLayout>
   );
