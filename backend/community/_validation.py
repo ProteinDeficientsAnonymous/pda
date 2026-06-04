@@ -110,6 +110,7 @@ class Code:
         CURRENT_PASSWORD_INCORRECT = "auth.current_password_incorrect"
         PASSWORD_RESET_REQUIRED = "auth.password_reset_required"
         ONBOARDING_REQUIRED = "auth.onboarding_required"
+        GUIDELINES_CONSENT_REQUIRED = "auth.guidelines_consent_required"
 
     class Password:
         INVALID = "password.invalid"  # params: { reasons: string[] }

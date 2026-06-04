@@ -15,6 +15,7 @@ import { RootRouteError } from './RootRouteError';
 const Login = lazyWithRetry(() => import('@/screens/auth/LoginScreen'));
 const Onboarding = lazyWithRetry(() => import('@/screens/auth/OnboardingScreen'));
 const NewPassword = lazyWithRetry(() => import('@/screens/auth/NewPasswordScreen'));
+const Consent = lazyWithRetry(() => import('@/screens/auth/ConsentScreen'));
 const MagicLogin = lazyWithRetry(() => import('@/screens/auth/MagicLoginScreen'));
 const Home = lazyWithRetry(() => import('@/screens/public/HomeScreen'));
 const Faq = lazyWithRetry(() => import('@/screens/public/FaqScreen'));
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
           { path: '/magic-login/:token', element: el(<MagicLogin />) },
           { path: '/onboarding', element: el(<Onboarding />) },
           { path: '/new-password', element: el(<NewPassword />) },
+          { path: '/consent', element: el(<Consent />) },
 
           // Everything else uses the shared shell (nav + outlet).
           {

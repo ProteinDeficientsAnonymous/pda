@@ -4022,6 +4022,11 @@
             "title": "Login Link Requested",
             "type": "boolean"
           },
+          "needs_guidelines_consent": {
+            "default": false,
+            "title": "Needs Guidelines Consent",
+            "type": "boolean"
+          },
           "needs_onboarding": {
             "default": false,
             "title": "Needs Onboarding",
@@ -4344,6 +4349,34 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/auth/accept-guidelines/": {
+      "post": {
+        "description": "Stamp the current user's guidelines consent, clearing the hard gate.\n\nIdempotent: re-accepting just re-stamps the timestamp. The gate (see\nconfig.auth.GatedJWTAuth) treats a null guidelines_consent_at as \"must\nconsent\", so any non-null value satisfies it.",
+        "operationId": "users__auth_accept_guidelines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Accept Guidelines",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/bulk-create-users/": {
       "post": {
         "operationId": "users__management_bulk_create_users",

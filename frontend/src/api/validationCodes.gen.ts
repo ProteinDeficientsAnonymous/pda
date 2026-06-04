@@ -93,6 +93,7 @@ export const Code = {
     CurrentPasswordIncorrect: 'auth.current_password_incorrect',
     PasswordResetRequired: 'auth.password_reset_required',
     OnboardingRequired: 'auth.onboarding_required',
+    GuidelinesConsentRequired: 'auth.guidelines_consent_required',
   },
   Password: {
     Invalid: 'password.invalid',
@@ -267,6 +268,7 @@ export type ValidationCode =
   | 'auth.current_password_incorrect'
   | 'auth.password_reset_required'
   | 'auth.onboarding_required'
+  | 'auth.guidelines_consent_required'
   | 'password.invalid'
   | 'password.same_as_old'
   | 'role.not_found'
@@ -407,6 +409,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'auth.current_password_incorrect': [],
   'auth.password_reset_required': [],
   'auth.onboarding_required': [],
+  'auth.guidelines_consent_required': [],
   'password.invalid': ['reasons'],
   'password.same_as_old': [],
   'role.not_found': [],
