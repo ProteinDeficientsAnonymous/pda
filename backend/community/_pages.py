@@ -55,9 +55,8 @@ def get_page(request, slug: str):
     # Any non-public page (members-only OR invite-only) requires authentication.
     # Previously only MEMBERS_ONLY was gated, so an INVITE_ONLY page leaked to
     # anonymous callers.
-    if page.visibility != PageVisibility.PUBLIC:
-        if isinstance(request.auth, AnonymousUser):
-            raise_validation(Code.Page.MEMBERS_ONLY, status_code=403)
+    if page.visibility != PageVisibility.PUBLIC and isinstance(request.auth, AnonymousUser):
+        raise_validation(Code.Page.MEMBERS_ONLY, status_code=403)
 
     return Status(200, _page_out(page))
 

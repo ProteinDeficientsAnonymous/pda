@@ -62,10 +62,10 @@ class TestJoinRequestEmail:
 class TestVettingEmailHeaderInjection:
     """Issue 457 — CR/LF in interpolated values must not forge email headers."""
 
-    def test_strip_header_newlines_collapses_crlf(self):
-        from community._join_requests import _strip_header_newlines
+    def test_flatten_to_single_line_collapses_crlf(self):
+        from community._shared import flatten_to_single_line
 
-        out = _strip_header_newlines("Eve\r\nBcc: victim@example.com")
+        out = flatten_to_single_line("Eve\r\nBcc: victim@example.com")
         assert "\n" not in out
         assert "\r" not in out
         assert out == "Eve Bcc: victim@example.com"

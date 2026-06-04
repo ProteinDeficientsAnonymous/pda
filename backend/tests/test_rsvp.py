@@ -389,3 +389,41 @@ class TestRSVPDraftDeletedGating:
         rsvp_event.save(update_fields=["status"])
         response = api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/", **auth_headers)
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestDeleteRSVPWithdrawal:
+    """An existing RSVP-holder can always withdraw, even if the event later
+    became invite-only and excluded them (Issue 455 regression guard)."""
+
+    def test_excluded_member_can_still_delete_stale_rsvp(
+        self, api_client, other_headers, other_user, rsvp_event
+    ):
+        from community.models import PageVisibility
+
+        # other_user RSVPs while the event is public, then the host flips it to
+        # invite-only without inviting them. They must still be able to withdraw.
+        EventRSVP.objects.create(event=rsvp_event, user=other_user, status=RSVPStatus.ATTENDING)
+        rsvp_event.visibility = PageVisibility.INVITE_ONLY
+        rsvp_event.save(update_fields=["visibility"])
+
+        response = api_client.delete(
+            f"/api/community/events/{rsvp_event.id}/rsvp/", **other_headers
+        )
+        assert response.status_code == 204
+        assert not EventRSVP.objects.filter(event=rsvp_event, user=other_user).exists()
+
+    def test_non_rsvper_cannot_probe_invite_only_via_delete(
+        self, api_client, other_headers, rsvp_event
+    ):
+        from community.models import PageVisibility
+
+        # A member with NO RSVP who can't see the invite-only event gets the
+        # read-visibility 403 — they can't use delete to probe for existence.
+        rsvp_event.visibility = PageVisibility.INVITE_ONLY
+        rsvp_event.save(update_fields=["visibility"])
+
+        response = api_client.delete(
+            f"/api/community/events/{rsvp_event.id}/rsvp/", **other_headers
+        )
+        assert response.status_code == 403

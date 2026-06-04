@@ -5,7 +5,7 @@ from uuid import UUID
 
 from config.audit import audit_log
 from config.auth import gated_jwt
-from config.ratelimit import client_ip, rate_limit
+from config.ratelimit import auth_or_ip_key, rate_limit
 from ninja import Router
 from ninja.responses import Status
 
@@ -36,12 +36,6 @@ from community.models import (
 router = Router()
 
 
-def _survey_submit_key(request) -> str:
-    """Key public survey submissions by authed user when possible, else IP."""
-    pk = getattr(request.auth, "pk", None)
-    return str(pk) if pk is not None else client_ip(request)
-
-
 @router.get(
     "/surveys/view/{slug}/",
     response={200: SurveyOut, 404: ErrorOut},
@@ -69,7 +63,7 @@ def get_survey_public(request, slug: str):
     },
     auth=_optional_jwt,
 )
-@rate_limit(key_func=_survey_submit_key, rate="20/h")
+@rate_limit(key_func=auth_or_ip_key, rate="20/h")
 def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     try:
         survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
@@ -115,8 +109,11 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
 )
 def get_survey_tallies(request, survey_id: UUID):
     try:
+        # select_related linked_event: _has_finalize_permission dereferences the
+        # event object (its created_by_id / co_hosts). created_by is NOT joined —
+        # the permission check only reads survey.created_by_id (the FK column).
         survey = (
-            Survey.objects.select_related("linked_event", "created_by")
+            Survey.objects.select_related("linked_event")
             .prefetch_related("questions")
             .get(id=survey_id)
         )

@@ -75,6 +75,16 @@ def _validate_phone(raw: str, field: str = "phone_number") -> str:
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
+def flatten_to_single_line(value: str) -> str:
+    r"""Collapse every line-break in untrusted text into a single space.
+
+    splitlines() covers \n \r \r\n \v \f \x1c-\x1e \x85    , so this
+    neutralizes any sink where a newline in user input would let the value
+    inject extra structure — an email header line, a GitHub issue title, etc.
+    """
+    return " ".join(value.splitlines()).strip()
+
+
 def _authenticated_user(requesting_user) -> "UserModel | None":
     """Return the user if authenticated, None if anonymous."""
     if requesting_user is None or isinstance(requesting_user, AnonymousUser):

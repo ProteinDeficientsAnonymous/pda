@@ -107,7 +107,14 @@ def _apply_rsvp_in_transaction(event_id, user, status: str, has_plus_one: bool) 
 
     Raises ValidationException on failure.
     """
-    event = Event.objects.select_for_update().get(id=event_id)
+    # Prefetch the relations _validate_rsvp_access → _enforce_event_read_visibility
+    # reads for invite-only events, so they don't fire lazy queries while the row
+    # is locked under select_for_update.
+    event = (
+        Event.objects.select_for_update()
+        .prefetch_related("co_hosts", "invited_users")
+        .get(id=event_id)
+    )
 
     _validate_rsvp_access(user, event)
 
@@ -259,17 +266,28 @@ def delete_rsvp(request, event_id: UUID):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     with transaction.atomic():
-        event = Event.objects.select_for_update().prefetch_related("co_hosts").get(id=event_id)
-        _enforce_event_read_visibility(event, request.auth)
-        if event.is_draft and not _can_edit_event(request.auth, event):
-            raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
+        event = (
+            Event.objects.select_for_update()
+            .prefetch_related("co_hosts", "invited_users")
+            .get(id=event_id)
+        )
+        if event.is_deleted:
+            raise_validation(Code.Event.NOT_FOUND, status_code=404)
+        rsvp = EventRSVP.objects.filter(event=event, user=request.auth).first()
+        if not rsvp:
+            # No standing RSVP: don't let a caller probe an event they can't
+            # read. An existing RSVP-holder skips this gate so they can always
+            # withdraw — even if the event later turned invite-only / draft and
+            # excluded them (their stale RSVP would otherwise be unremovable
+            # while still counting toward the headcount).
+            _enforce_event_read_visibility(event, request.auth)
+            if event.is_draft and not _can_edit_event(request.auth, event):
+                raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
+            raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
         if event.is_cancelled:
             raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
         if event.is_past and not _can_edit_event(request.auth, event):
             raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
-        rsvp = EventRSVP.objects.filter(event=event, user=request.auth).first()
-        if not rsvp:
-            raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:

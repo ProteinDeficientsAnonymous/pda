@@ -17,7 +17,13 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
-from community._shared import ErrorOut, _validate_phone, logger, validate_display_name
+from community._shared import (
+    ErrorOut,
+    _validate_phone,
+    flatten_to_single_line,
+    logger,
+    validate_display_name,
+)
 from community._validation import Code, ValidationException, raise_validation
 from community.models import (
     JoinFormQuestion,
@@ -169,12 +175,6 @@ def _build_custom_answers(
     return result
 
 
-def _strip_header_newlines(value: str) -> str:
-    """Remove CR/LF (and surrounding whitespace) so user input can't inject
-    extra email headers when interpolated into a Subject line."""
-    return " ".join(value.splitlines()).strip()
-
-
 def _send_join_request_email(display_name: str, phone: str, custom_answers: dict) -> None:
     """Send vetting email for a new join request."""
     if not settings.VETTING_EMAIL:
@@ -182,7 +182,7 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
     try:
         # Subject must stay single-line: a newline in display_name would
         # otherwise let an applicant forge additional email headers.
-        safe_subject = _strip_header_newlines(f"New PDA Join Request: {display_name}")
+        safe_subject = flatten_to_single_line(f"New PDA Join Request: {display_name}")
         answer_lines = "\n".join(
             f"{data['label']}: {data['answer']}" for data in custom_answers.values()
         )

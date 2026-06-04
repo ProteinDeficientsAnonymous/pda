@@ -2,18 +2,19 @@
 
 import json as json_module
 import logging
+import re
 import time
 from urllib.request import Request, urlopen
 
 from config.auth import gated_jwt
-from config.ratelimit import client_ip, rate_limit
+from config.ratelimit import auth_or_ip_key, rate_limit
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
-from community._shared import ErrorOut, _optional_jwt
+from community._shared import ErrorOut, _optional_jwt, flatten_to_single_line
 from community._validation import Code, raise_validation
 
 router = Router()
@@ -74,7 +75,7 @@ def report_error(request, payload: ErrorReportIn):
 def _inline_code(value: str) -> str:
     """Render untrusted text as a GitHub inline-code span, escaping any
     backticks so the value can't break out into active markdown."""
-    cleaned = " ".join(value.splitlines()).replace("`", "'")
+    cleaned = flatten_to_single_line(value).replace("`", "'")
     return f"`{cleaned}`"
 
 
@@ -83,14 +84,7 @@ def _fenced_block(value: str) -> str:
     @mentions, and #issue-refs inside it render inert. The fence is sized
     longer than the longest backtick run in the content so the user can't
     close the fence early."""
-    longest_run = 0
-    current = 0
-    for ch in value:
-        if ch == "`":
-            current += 1
-            longest_run = max(longest_run, current)
-        else:
-            current = 0
+    longest_run = max((len(run) for run in re.findall(r"`+", value)), default=0)
     fence = "`" * max(3, longest_run + 1)
     return f"{fence}\n{value}\n{fence}"
 
@@ -167,18 +161,12 @@ def _issue_labels(feedback_types: list[str]) -> list[str]:
     return labels
 
 
-def _feedback_key(request) -> str:
-    """Key feedback submissions by authed user when possible, else client IP."""
-    pk = getattr(request.auth, "pk", None)
-    return str(pk) if pk is not None else client_ip(request)
-
-
 @router.post(
     "/feedback/",
     response={201: FeedbackOut, 429: ErrorOut, 503: ErrorOut},
     auth=_optional_jwt,
 )
-@rate_limit(key_func=_feedback_key, rate="5/h")
+@rate_limit(key_func=auth_or_ip_key, rate="5/h")
 def submit_feedback(request, payload: FeedbackIn):
     from community._shared import logger
 
@@ -205,7 +193,10 @@ def submit_feedback(request, payload: FeedbackIn):
             f"https://api.github.com/repos/{repo}/issues",
             token,
             {
-                "title": payload.title,
+                # Flatten the title to a single line: GitHub doesn't render
+                # markdown in titles, but a newline in user input shouldn't be
+                # able to inject structure into the issue title field.
+                "title": flatten_to_single_line(payload.title),
                 "body": issue_body,
                 "labels": _issue_labels(payload.feedback_types),
             },
