@@ -137,9 +137,10 @@ class TestHomePage:
 
 @pytest.mark.django_db
 class TestGuidelines:
-    def test_get_guidelines_requires_auth(self, api_client):
+    def test_get_guidelines_is_public(self, api_client):
+        # Public so join-form applicants can read what they're consenting to.
         response = api_client.get("/api/community/guidelines/")
-        assert response.status_code == 401
+        assert response.status_code == 200
 
     def test_update_guidelines_empty_content(self, api_client, manage_guidelines_headers):
         response = api_client.patch(

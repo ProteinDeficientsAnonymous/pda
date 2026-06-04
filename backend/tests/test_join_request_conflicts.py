@@ -23,6 +23,7 @@ class TestJoinRequestConflicts:
                 "email": "alreadyhere@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -42,6 +43,7 @@ class TestJoinRequestConflicts:
                 "email": "alreadyhere@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -61,6 +63,7 @@ class TestJoinRequestConflicts:
                 "email": "TAKEN@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -82,6 +85,7 @@ class TestJoinRequestConflicts:
                 "email": "dupe@example.com",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -106,6 +110,7 @@ class TestJoinRequestConflicts:
                 "email": "returning@example.com",
                 "answers": {why_join_id: "i want to return"},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -129,6 +134,7 @@ class TestJoinRequestConflicts:
                 "email": "comingback@example.com",
                 "answers": {why_join_id: "i want to return"},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )

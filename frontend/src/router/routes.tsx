@@ -1,6 +1,6 @@
 // Route tree — mirrors app_router.dart. Grouped by guard shape:
-//   public (no guard)        : landing, login, magic-login, onboarding, new-password, ...
-//   authed (RequireAuth)     : guidelines, settings, profile, ...
+//   public (no guard)        : landing, login, magic-login, onboarding, guidelines, ...
+//   authed (RequireAuth)     : settings, profile, ...
 //   permissioned             : admin/*, members, etc.
 //
 // All screens are lazy-loaded (React.lazy) — 1:1 replacement for DeferredScreen.
@@ -86,12 +86,13 @@ export const router = createBrowserRouter([
               { path: '/install', element: el(<Install />) },
               { path: '/faq', element: el(<Faq />) },
               { path: '/sms-policy', element: el(<SmsPolicy />) },
+              // Public so join-form applicants can read what they agree to.
+              { path: '/guidelines', element: el(<Guidelines />) },
 
               // ---- authed ----
               {
                 element: <RequireAuth />,
                 children: [
-                  { path: '/guidelines', element: el(<Guidelines />) },
                   { path: '/settings', element: el(<Settings />) },
                   { path: '/profile', element: el(<Profile />) },
                   { path: '/volunteer', element: el(<Volunteer />) },

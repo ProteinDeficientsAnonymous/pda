@@ -2633,6 +2633,11 @@
             "title": "Email",
             "type": "string"
           },
+          "guidelines_consent": {
+            "default": false,
+            "title": "Guidelines Consent",
+            "type": "boolean"
+          },
           "phone_number": {
             "maxLength": 20,
             "title": "Phone Number",
@@ -8853,11 +8858,6 @@
             "description": "OK"
           }
         },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
         "summary": "Get Guidelines",
         "tags": [
           "community"

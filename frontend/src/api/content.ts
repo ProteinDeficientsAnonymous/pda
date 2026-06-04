@@ -107,11 +107,11 @@ export function useFaq() {
 }
 
 export function useGuidelines() {
-  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  // Public: the join form (unauthenticated) links here so applicants can read
+  // the guidelines they're consenting to. Backend GET is auth=None.
   return useQuery({
-    queryKey: ['guidelines', { authed: isAuthed }],
+    queryKey: ['guidelines'],
     queryFn: () => fetchSimple('/api/community/guidelines/'),
-    enabled: isAuthed,
   });
 }
 

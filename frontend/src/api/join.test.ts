@@ -113,6 +113,7 @@ const validPayload = {
   email: 'sam@example.com',
   answers: { 'q-1': 'Because community', 'q-2': 'A friend' },
   smsConsent: true,
+  guidelinesConsent: true,
   website: '',
 };
 
