@@ -3,12 +3,7 @@
 Design:
 - Cookie name: `refresh_token`. HttpOnly, Secure (prod only), SameSite=Lax.
 - Lifetime matches NINJA_JWT REFRESH_TOKEN_LIFETIME.
-- Flutter (legacy) still reads `refresh` from the JSON body — we write both
-  the cookie AND the body field until the Flutter client is retired.
-- React reads only from the cookie.
-
-Per .claude/rules/standards-django-flutter-integration.md: the API prefix
-lives on the route, not the base URL, so cookie Path=/ is correct.
+- React reads only from the cookie; the refresh token is never exposed in JSON.
 """
 
 from __future__ import annotations

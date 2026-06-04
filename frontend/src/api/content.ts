@@ -1,7 +1,6 @@
 // Content API: home, faq, guidelines, and the slug-based "editable pages"
-// (donate, volunteer, ...). The backend stores both Quill Delta (Flutter)
-// and ProseMirror JSON (React/TipTap); phase 4 sends ProseMirror on writes.
-// Read path uses `contentHtml` regardless of which editor produced the row.
+// (donate, volunteer, ...). Writes send ProseMirror JSON (TipTap); reads use
+// server-rendered content_html.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';

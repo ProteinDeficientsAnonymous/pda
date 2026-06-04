@@ -42,13 +42,6 @@ class LoginIn(BaseModel):
 
 class TokenOut(BaseModel):
     access: str
-    refresh: str
-
-
-class RefreshIn(BaseModel):
-    # Optional because React clients send the refresh token via httpOnly cookie;
-    # legacy Flutter clients still include it in the body.
-    refresh: str = Field(default="", max_length=500)
 
 
 class AccessOut(BaseModel):

@@ -76,7 +76,7 @@ class TestAuth:
         assert response.status_code == 200
         data = response.json()
         assert "access" in data
-        assert "refresh" in data
+        assert "refresh" not in data
 
     def test_login_invalid(self, api_client):
         response = api_client.post(

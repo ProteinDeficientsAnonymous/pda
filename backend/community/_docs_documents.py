@@ -55,7 +55,7 @@ def create_document(request, payload: DocumentIn):
     except DocFolder.DoesNotExist:
         raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
 
-    rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
+    rendered = render_content_payload(prosemirror=payload.content_pm)
     doc = Document.objects.create(
         title=payload.title,
         content=rendered.content,
@@ -157,13 +157,9 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
         except DocFolder.DoesNotExist:
             raise_validation(Code.Docs.FOLDER_NOT_FOUND, status_code=404)
 
-    # If either content format was sent, re-render HTML from the winner.
-    content_sent = "content" in updates or "content_pm" in updates
+    content_sent = "content_pm" in updates
     if content_sent:
-        rendered = render_content_payload(
-            delta=updates.pop("content", None),
-            prosemirror=updates.pop("content_pm", None),
-        )
+        rendered = render_content_payload(prosemirror=updates.pop("content_pm"))
         doc.content = rendered.content
         doc.content_pm = rendered.content_pm
         doc.content_html = rendered.content_html

@@ -350,12 +350,6 @@
       },
       "DocumentIn": {
         "properties": {
-          "content": {
-            "default": "",
-            "maxLength": 50000,
-            "title": "Content",
-            "type": "string"
-          },
           "content_pm": {
             "default": "",
             "maxLength": 50000,
@@ -448,18 +442,6 @@
       },
       "DocumentPatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -569,18 +551,6 @@
       },
       "EditablePagePatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2395,18 +2365,6 @@
       },
       "GuidelinesPatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2454,18 +2412,6 @@
       },
       "HomePagePatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -3308,18 +3254,6 @@
         "title": "ReactionToggleIn",
         "type": "object"
       },
-      "RefreshIn": {
-        "properties": {
-          "refresh": {
-            "default": "",
-            "maxLength": 500,
-            "title": "Refresh",
-            "type": "string"
-          }
-        },
-        "title": "RefreshIn",
-        "type": "object"
-      },
       "ReorderIn": {
         "properties": {
           "ids": {
@@ -3956,15 +3890,10 @@
           "access": {
             "title": "Access",
             "type": "string"
-          },
-          "refresh": {
-            "title": "Refresh",
-            "type": "string"
           }
         },
         "required": [
-          "access",
-          "refresh"
+          "access"
         ],
         "title": "TokenOut",
         "type": "object"
@@ -4959,16 +4888,6 @@
       "post": {
         "operationId": "users__auth_refresh_token",
         "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "content": {

@@ -34,7 +34,6 @@ from users.schemas import (
     MemberProfileOut,
     MePatchIn,
     OnboardingIn,
-    RefreshIn,
     TokenOut,
     UserOut,
 )
@@ -81,7 +80,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
     refresh_str = str(refresh)
     set_refresh_cookie(response, refresh_str)
     audit_log(logging.INFO, "login_success", request, target_type="user", target_id=str(user.pk))
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
 
 def _current_jwt_user(request) -> User | None:
@@ -182,16 +181,14 @@ def magic_login(request, token: str, response: HttpResponse):
         target_type="user",
         target_id=str(magic.user.pk),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
-def refresh_token(request, payload: RefreshIn, response: HttpResponse):
+def refresh_token(request, response: HttpResponse):
     from ninja_jwt.exceptions import TokenError
 
-    # Prefer httpOnly cookie (React). Fall back to body for Flutter clients
-    # that still send the refresh token in the JSON payload.
-    token = read_refresh_cookie(request) or payload.refresh
+    token = read_refresh_cookie(request)
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
