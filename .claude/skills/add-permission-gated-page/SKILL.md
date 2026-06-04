@@ -141,9 +141,9 @@ that 403s before returning any data:
 import logging
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
@@ -156,7 +156,7 @@ def _has_manage_sponsors(user) -> bool:
     return user.has_permission(PermissionKey.MANAGE_SPONSORS)
 
 
-@router.get("/sponsors/", response={200: list[SponsorOut], 403: ErrorOut}, auth=JWTAuth())
+@router.get("/sponsors/", response={200: list[SponsorOut], 403: ErrorOut}, auth=gated_jwt)
 def list_sponsors(request):
     if not _has_manage_sponsors(request.auth):
         audit_log(
@@ -175,6 +175,12 @@ def list_sponsors(request):
 
 This 403-before-data is the difference from an editable page (where GET is open). Define
 `SponsorOut` and any model the same way the existing `_docs.py` / models do.
+
+> **Use `auth=gated_jwt`, never `auth=JWTAuth()`.** `gated_jwt` (from `config.auth`) is the
+> project's single chokepoint that also rejects tokens for blocked/inactive accounts — every
+> protected community endpoint uses it. Raw `JWTAuth()` authenticates any valid token and
+> skips that account-state check, opening a security gap. This matters most here, where the
+> gated GET *is* the access boundary.
 
 ### Step 6 — Register the router: `backend/community/api.py`
 
@@ -227,6 +233,7 @@ make ci
 | AdminHub tiles | `frontend/src/screens/admin/AdminHubScreen.tsx` |
 | Admin screen example | `frontend/src/screens/admin/JoinRequestsScreen.tsx` |
 | Backend gated read (403) | `backend/community/_docs.py` (`_has_manage_docs` + GET 403) |
+| Auth (`gated_jwt`) | `backend/config/auth.py` (account-state chokepoint — use this, not `JWTAuth()`) |
 | Router registration | `backend/community/api.py` |
 | Backend tests | `backend/tests/test_community.py` |
 

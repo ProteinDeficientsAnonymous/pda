@@ -6,9 +6,11 @@ argument-hint: "<permission_key> [\"Human label\"]"
 
 # Add a New Permission Key
 
-Adds a single permission key to PDA in the two places it must exist: the Django
-`PermissionKey` enum (backend source of truth) and the TypeScript `Permission` object
-(hand-maintained frontend mirror). These two MUST stay in sync — there is no codegen.
+Adds a single permission key to PDA in the **three** places it must exist: the Django
+`PermissionKey` enum (backend source of truth), the TypeScript `Permission` object
+(hand-maintained frontend mirror), and the `PERMISSION_LABELS` map in `RoleFormDialog.tsx`
+(what makes the key grantable in the roles UI). All three are hand-maintained and MUST stay
+in sync — there is no codegen. Skipping the third leaves the key silently ungrantable.
 
 This skill only adds the key. A permission does nothing on its own until:
 - a **role** grants it (managed at runtime via the roles UI / `manage_roles`), and
@@ -56,7 +58,25 @@ export const Permission = {
 
 Do not touch `hasPermission()` — it already works for any key by membership check.
 
-## Step 3 — Verify
+## Step 3 — Roles UI label: `frontend/src/screens/admin/RoleFormDialog.tsx`
+
+Add an entry to the hand-maintained `PERMISSION_LABELS` map. The role editor renders one
+checkbox per entry in this map (`Object.entries(PERMISSION_LABELS).map(...)`), so a key
+that's missing here **never appears in the role form and is silently ungrantable** — even
+though it exists in the enum and the `Permission` mirror.
+
+```ts
+const PERMISSION_LABELS: Record<string, string> = {
+  // ...
+  [Permission.EditResources]: 'edit resources',  // lowercase, like the rest
+  // ...
+};
+```
+
+The label is user-facing, so keep it **lowercase** (frontend text casing rule). Place it
+near its peers, mirroring the order of the `Permission` object.
+
+## Step 4 — Verify
 
 ```bash
 make ci
@@ -68,9 +88,11 @@ the new one.
 
 ## Notes / gotchas
 
-- **Sync is manual.** `backend/users/permissions.py` and `frontend/src/models/permissions.ts`
-  are two independent sources that mirror each other. Changing one without the other is the
-  most common mistake — always edit both.
+- **Sync is manual across THREE files.** `backend/users/permissions.py`,
+  `frontend/src/models/permissions.ts`, and `RoleFormDialog.tsx`'s `PERMISSION_LABELS` are
+  independent hand-maintained sources. Editing only the first two is the most common mistake:
+  the key exists and code can check it, but no role can be granted it in the UI. Always edit
+  all three.
 - The frontend value is the *string*, not the constant name: `EditResources: 'edit_resources'`.
 - A key with no role granting it and no code checking it is dead weight — make sure something
   downstream actually uses it (see `add-permission-gated-page`).
@@ -81,3 +103,4 @@ the new one.
 |------|--------|
 | `backend/users/permissions.py` | Add `PermissionKey` member (in its logical group) |
 | `frontend/src/models/permissions.ts` | Add matching `Permission` entry (same string) |
+| `frontend/src/screens/admin/RoleFormDialog.tsx` | Add `PERMISSION_LABELS` entry (lowercase label) — makes the key grantable in the roles UI |

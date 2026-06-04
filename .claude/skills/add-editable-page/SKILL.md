@@ -90,9 +90,9 @@ import logging
 from datetime import datetime
 
 from config.audit import audit_log
+from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -134,14 +134,16 @@ def _apply_update(obj: Resources, payload: ResourcesPatchIn) -> None:
     obj.save()
 
 
-# GET auth: use `auth=None` for a PUBLIC page (like FAQ), or `auth=JWTAuth()`
-# for an AUTHED page (like Guidelines). Pick per the public|authed argument.
-@router.get("/resources/", response={200: ResourcesOut}, auth=JWTAuth())
+# GET auth: use `auth=None` for a PUBLIC page (like FAQ/Guidelines, which are open so join
+# applicants can read them), or `auth=gated_jwt` for an AUTHED page. Pick per the
+# public|authed argument. Never use raw `JWTAuth()` — `gated_jwt` (from `config.auth`) is the
+# project chokepoint that also rejects blocked/inactive accounts.
+@router.get("/resources/", response={200: ResourcesOut}, auth=None)
 def get_resources(request):
     return Status(200, _singleton_out(Resources.get()))
 
 
-@router.patch("/resources/", response={200: ResourcesOut, 403: ErrorOut}, auth=JWTAuth())
+@router.patch("/resources/", response={200: ResourcesOut, 403: ErrorOut}, auth=gated_jwt)
 def update_resources(request, payload: ResourcesPatchIn):
     if not request.auth.has_permission(PermissionKey.EDIT_RESOURCES):
         audit_log(
@@ -221,7 +223,7 @@ class TestResources:
         assert "content" in r.json() and "updated_at" in r.json()
 
     def test_get_unauthenticated(self, api_client):
-        # 200 if the page is PUBLIC (auth=None), 401 if AUTHED (auth=JWTAuth()).
+        # 200 if the page is PUBLIC (auth=None), 401 if AUTHED (auth=gated_jwt).
         r = api_client.get("/api/community/resources/")
         assert r.status_code == 401  # flip to 200 for a public page
 
@@ -375,6 +377,7 @@ fixed set of `/api/community/*` routes.
 | Permission key (if new — run `add-new-permission`) | `backend/users/permissions.py`, `frontend/src/models/permissions.ts` |
 | Singleton models | `backend/community/models/content.py`, `models/__init__.py` |
 | Endpoint pattern | `backend/community/_guidelines.py` (FAQ + Guidelines) |
+| Auth (`gated_jwt`) | `backend/config/auth.py` (account-state chokepoint — use this, not `JWTAuth()`) |
 | Router registration | `backend/community/api.py` |
 | Backend tests | `backend/tests/test_community.py` |
 | Data hooks | `frontend/src/api/content.ts` |
