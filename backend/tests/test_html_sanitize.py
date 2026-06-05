@@ -57,6 +57,30 @@ class TestSchemeStripping:
         # resolve back to "javascript:". nh3 must reject these.
         result = sanitize_content_html(f'<a href="{raw_href}">x</a>')
         assert "javascript:" not in result.lower()
+        # The whole href must be dropped, not merely mangled — a surviving
+        # href="java\tscript:" still executes in a browser.
+        assert "href=" not in result
+
+    def test_protocol_relative_link_dropped(self):
+        # "//evil.com" carries no scheme, so the url_schemes allowlist never
+        # rejects it; _attribute_filter must, or it resolves to https://evil.com.
+        result = sanitize_content_html('<a href="//evil.com">x</a>')
+        assert "evil.com" not in result
+        assert "href=" not in result
+
+    def test_protocol_relative_image_dropped(self):
+        # A protocol-relative image src is an attacker-controlled remote load
+        # (tracking pixel / IP leak) that bypasses the scheme allowlist.
+        result = sanitize_content_html('<img src="//evil.com/x.png">')
+        assert "evil.com" not in result
+        assert "src=" not in result
+
+    def test_mailto_image_src_dropped(self):
+        # mailto: is valid for links but inert/pointless on an image src; the
+        # image scheme guard is http/https only.
+        result = sanitize_content_html('<img src="mailto:a@b.test">')
+        assert "mailto:" not in result
+        assert "src=" not in result
 
 
 class TestSafeUrlsSurvive:
@@ -108,6 +132,34 @@ class TestStyleAndClassConstraints:
         assert "position" not in result
         assert "text-align:center" in result.replace(" ", "")
 
+    @pytest.mark.parametrize(
+        "bad_value",
+        [
+            "behavior(url(x.htc))",  # legacy-IE behavior() CSS
+            "expression(alert(1))",  # legacy-IE expression() CSS
+            "-webkit-center",  # not in the renderers' vocabulary
+            "justify",  # frontend-only; renderers never emit it
+            "red",  # arbitrary garbage value
+        ],
+    )
+    def test_malicious_text_align_value_dropped(self, bad_value):
+        # nh3's filter_style_properties keeps the *property* but not the *value*,
+        # so _attribute_filter must reject any value outside left/center/right
+        # (mirroring the frontend's ALLOWED_TEXT_ALIGN).
+        result = sanitize_content_html(f'<p style="text-align: {bad_value}">hi</p>')
+        assert "style=" not in result
+        assert bad_value.split("(")[0] not in result
+
+    def test_text_align_preserved_when_mixed_with_malicious_sibling(self):
+        # The security-critical branch: keep the valid alignment while stripping
+        # an adjacent injection, rather than dropping the whole attribute.
+        result = sanitize_content_html(
+            '<p style="text-align: center; position: fixed; top: 0">hi</p>'
+        )
+        assert "text-align:center" in result.replace(" ", "")
+        assert "position" not in result
+        assert "fixed" not in result
+
     def test_cta_classes_survive(self):
         html = '<a class="cta cta--primary" href="https://x.test" role="button">go</a>'
         result = sanitize_content_html(html)
@@ -129,6 +181,92 @@ class TestRelInjection:
         # nh3 applies link_rel to every anchor; harmless and consistent.
         result = sanitize_content_html('<a href="https://x.test">x</a>')
         assert 'rel="noopener noreferrer"' in result
+
+
+class TestRendererRoundTrip:
+    """Guards the module's core invariant: the allowlist exactly covers what the
+    renderers emit. These feed real renderer output through the sanitizer, so if
+    a renderer starts emitting a tag/attr/class the allowlist omits, sanitization
+    silently strips it and one of these fails — catching drift the hand-written
+    literals above cannot.
+    """
+
+    def test_prosemirror_full_document_survives(self):
+        import json
+
+        from community._prosemirror_html import prosemirror_to_html
+
+        pm = json.dumps(
+            {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "heading",
+                        "attrs": {"level": 2, "textAlign": "center"},
+                        "content": [{"type": "text", "text": "Title"}],
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {"type": "text", "text": "bold", "marks": [{"type": "bold"}]},
+                            {
+                                "type": "text",
+                                "text": " link",
+                                "marks": [{"type": "link", "attrs": {"href": "https://x.test"}}],
+                            },
+                        ],
+                    },
+                    {
+                        "type": "bulletList",
+                        "content": [
+                            {
+                                "type": "listItem",
+                                "content": [
+                                    {
+                                        "type": "paragraph",
+                                        "content": [{"type": "text", "text": "item"}],
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    {"type": "image", "attrs": {"src": "/media/p.jpg"}},
+                    {
+                        "type": "cta",
+                        "attrs": {"href": "https://x.test", "label": "Go", "variant": "primary"},
+                    },
+                ],
+            }
+        )
+        result = sanitize_content_html(prosemirror_to_html(pm))
+        # Nothing the renderer emitted is stripped (rel injection / attr reorder
+        # aside, which is why this asserts on fragments rather than equality).
+        assert '<h2 style="text-align: center">Title</h2>' in result
+        assert "<strong>bold</strong>" in result
+        assert '<a href="https://x.test"' in result
+        assert "<ul><li>item</li></ul>" in result
+        assert '<img src="/media/p.jpg">' in result
+        assert 'class="cta cta--primary"' in result
+        assert 'role="button"' in result
+
+    def test_delta_document_survives(self):
+        import json
+
+        from community._delta_html import delta_to_html
+
+        delta = json.dumps(
+            [
+                {"insert": "hi "},
+                {"insert": "bold", "attributes": {"bold": True}},
+                {"insert": " "},
+                {"insert": "lnk", "attributes": {"link": "https://x.test"}},
+                {"insert": "\n"},
+            ]
+        )
+        result = sanitize_content_html(delta_to_html(delta))
+        assert "<strong>bold</strong>" in result
+        assert '<a href="https://x.test"' in result
+        assert "hi " in result
 
 
 class TestEdgeCases:

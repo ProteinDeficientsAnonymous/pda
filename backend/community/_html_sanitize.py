@@ -11,14 +11,19 @@ a single, audited security boundary.
 allowing anything broader would widen the XSS surface; allowing less would
 silently corrupt valid rendered content (alignment, CTA styling). Keep this
 allowlist in sync with `_delta_html.py` / `_prosemirror_html.py` if their output
-vocabulary changes.
+vocabulary changes — `test_html_sanitize.py` round-trips real renderer output
+through here to catch drift.
 
 This mirrors the frontend's DOMPurify pass (`frontend/src/utils/sanitize.ts`):
 the backend is the canonical sanitizer for non-browser consumers (emails, API
 clients), the frontend is defense-in-depth for content that never round-trips.
+The two passes are kept value-for-value equivalent on the URL-scheme and
+`text-align` allowlists (see `_attribute_filter`) so neither boundary is weaker.
 """
 
 from __future__ import annotations
+
+import re
 
 import nh3
 
@@ -44,40 +49,75 @@ _ALLOWED_TAGS = {
 }
 
 # `style` is allowed only on block tags and only carries `text-align` (see
-# _filter_style_properties below) — the renderers' sole inline-style use. `class`
-# is handled separately via _allowed_classes, not listed here.
+# _attribute_filter below, which validates the value) — the renderers' sole
+# inline-style use. `class` is handled separately via _allowed_classes.
 _ALLOWED_ATTRIBUTES = {
     "a": {"href", "target", "role"},
-    "img": {"src", "alt"},
+    "img": {"src"},
     "p": {"style"},
     "h1": {"style"},
     "h2": {"style"},
     "h3": {"style"},
 }
 
-# Link/image schemes. Relative URLs (e.g. uploaded "/media/..." images) carry no
-# scheme and are always allowed by nh3. `data:` is intentionally excluded — the
-# renderers only emit remote/uploaded URLs, so it would add surface with no gain.
+# Schemes allowed on link hrefs. Relative URLs (e.g. uploaded "/media/..."
+# images) carry no scheme and are always allowed by nh3. `data:` is intentionally
+# excluded — the renderers only emit remote/uploaded URLs, so it would add surface
+# with no gain. `mailto:` is link-only; see `_attribute_filter` for why image
+# `src` rejects it (matching the old hand-rolled image-scheme guard).
 _ALLOWED_URL_SCHEMES = {"http", "https", "mailto"}
 
 # CTA anchors are the only class-bearing element the renderers produce.
 _ALLOWED_CLASSES = {"a": {"cta", "cta--primary", "cta--secondary"}}
 
-# The only CSS property the renderers emit; nh3 drops every other declaration and
-# normalises the value, so style="position:absolute;..." collapses to nothing.
-_FILTER_STYLE_PROPERTIES = {"text-align"}
+# The renderers only ever emit `text-align: left|center|right` (the ProseMirror
+# renderer gates on exactly these; the Delta renderer emits no alignment at all).
+# Mirrors the frontend's ALLOWED_TEXT_ALIGN so the two boundaries agree.
+_ALLOWED_TEXT_ALIGN = {"left", "center", "right"}
+_TEXT_ALIGN_RE = re.compile(r"text-align:\s*([a-zA-Z-]+)")
 
 # `rel="noopener noreferrer"` is force-injected on every anchor, blocking
 # reverse-tabnabbing on target="_blank" links regardless of what was emitted.
 _LINK_REL = "noopener noreferrer"
 
 
+def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
+    """Per-attribute scrub run by `nh3.clean` after its scheme allowlist.
+
+    `url_schemes` already drops `javascript:`/`data:`/etc. before this runs, but
+    it does NOT inspect scheme-less URLs or constrain CSS *values*. This closes
+    both gaps at the same audited boundary:
+
+    - Protocol-relative URLs (`//evil.com`) carry no scheme, so nh3 treats them
+      as relative and would keep them — an off-site / remote-load vector. Reject
+      them on `href`/`src` while leaving genuine relative paths (`/media/...`).
+    - `mailto:` is valid for links but inert-and-pointless on an image `src`;
+      reject it there to preserve the old image-scheme guard (http/https only).
+    - `style` may only carry a single `text-align` declaration with an allowlisted
+      value. nh3's `filter_style_properties` keeps the property but NOT the value,
+      so `text-align: behavior(...)` would survive; rebuild the value here instead.
+
+    Returning `None` drops the attribute; returning a string replaces its value.
+    """
+    if attribute in ("href", "src") and value.startswith("//"):
+        return None
+    if attribute == "src" and value.lower().startswith("mailto:"):
+        return None
+    if attribute == "style":
+        match = _TEXT_ALIGN_RE.search(value)
+        alignment = match.group(1).lower() if match else None
+        if alignment in _ALLOWED_TEXT_ALIGN:
+            return f"text-align: {alignment}"
+        return None
+    return value
+
+
 def sanitize_content_html(html: str) -> str:
     """Sanitize rendered rich-text HTML against the renderers' allowlist.
 
-    Strips disallowed tags/attributes, rejects non-http(s)/mailto URL schemes on
-    href/src, constrains inline style to `text-align`, and forces a safe `rel` on
-    links. Returns "" for empty input.
+    Strips disallowed tags/attributes, rejects dangerous and protocol-relative
+    URLs on href/src, constrains inline style to an allowlisted `text-align`
+    value, and forces a safe `rel` on links. Returns "" for empty input.
     """
     if not html:
         return ""
@@ -87,7 +127,7 @@ def sanitize_content_html(html: str) -> str:
         attributes=_ALLOWED_ATTRIBUTES,
         url_schemes=_ALLOWED_URL_SCHEMES,
         allowed_classes=_ALLOWED_CLASSES,
-        filter_style_properties=_FILTER_STYLE_PROPERTIES,
+        attribute_filter=_attribute_filter,
         link_rel=_LINK_REL,
         strip_comments=True,
     )
