@@ -60,14 +60,22 @@ const ALLOWED_TEXT_ALIGN = new Set(['left', 'center', 'right']);
 DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
   // Reject protocol-relative URLs on href/src. DOMPurify keeps "//evil.com" as a
   // valid relative URL, but it resolves to https://evil.com — an off-site /
-  // remote-load vector. Normalise browser-equivalent obfuscations first (leading
-  // whitespace/controls are ignored by the URL parser; backslashes resolve as
-  // forward slashes), matching the backend's _normalize_url, so "/\evil.com" and
-  // "https:/\evil.com" can't slip past a naive `//` check. Genuine relative
-  // paths ("/media/...") stay.
+  // remote-load vector. Normalise browser-equivalent obfuscations first, matching
+  // the backend's _normalize_url, so "/\evil.com", " //evil.com", "/\t/evil.com"
+  // and "https:/\evil.com" can't slip past a naive `//` check:
+  //   - tab/LF/CR are removed from anywhere (browsers strip them before parsing);
+  //   - leading whitespace/controls are ignored;
+  //   - backslashes fold to "/" only in the authority/path (before any ?/#), so a
+  //     legit backslash in a query string isn't corrupted.
+  // Genuine relative paths ("/media/...") stay.
   if (data.attrName === 'href' || data.attrName === 'src') {
     // eslint-disable-next-line no-control-regex
-    const normalized = data.attrValue.replace(/^[\x00-\x20\x7f]+/, '').replace(/\\/g, '/');
+    const stripped = data.attrValue.replace(/[\t\n\r]/g, '').replace(/^[\x00-\x20\x7f]+/, '');
+    const cut = stripped.search(/[?#]/);
+    const normalized =
+      cut === -1
+        ? stripped.replace(/\\/g, '/')
+        : stripped.slice(0, cut).replace(/\\/g, '/') + stripped.slice(cut);
     if (normalized.startsWith('//')) {
       data.attrValue = '';
       data.keepAttr = false;
