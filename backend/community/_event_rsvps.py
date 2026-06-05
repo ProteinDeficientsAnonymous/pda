@@ -276,10 +276,11 @@ def delete_rsvp(request, event_id: UUID):
         rsvp = EventRSVP.objects.filter(event=event, user=request.auth).first()
         if not rsvp:
             # No standing RSVP: don't let a caller probe an event they can't
-            # read. An existing RSVP-holder skips this gate so they can always
-            # withdraw — even if the event later turned invite-only / draft and
-            # excluded them (their stale RSVP would otherwise be unremovable
-            # while still counting toward the headcount).
+            # read. An existing RSVP-holder skips the read-visibility gate so
+            # they can withdraw even if the event later turned invite-only /
+            # draft and excluded them — their stale RSVP would otherwise be
+            # unremovable while still counting toward the headcount. (The
+            # cancelled / past freezes below still apply, matching upsert_rsvp.)
             _enforce_event_read_visibility(event, request.auth)
             if event.is_draft and not _can_edit_event(request.auth, event):
                 raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
