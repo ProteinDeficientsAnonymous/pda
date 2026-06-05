@@ -26,6 +26,7 @@ interface WireUser {
   needs_onboarding: boolean;
   needs_password_reset?: boolean;
   needs_guidelines_consent?: boolean;
+  needs_sms_consent?: boolean;
   show_phone?: boolean;
   show_email?: boolean;
   week_start?: 'sunday' | 'monday';
@@ -66,6 +67,7 @@ function mapUser(u: WireUser): User {
     needsOnboarding: u.needs_onboarding,
     needsPasswordReset: u.needs_password_reset ?? false,
     needsGuidelinesConsent: u.needs_guidelines_consent ?? false,
+    needsSmsConsent: u.needs_sms_consent ?? false,
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
     weekStart: u.week_start ?? 'sunday',

@@ -37,6 +37,7 @@ const baseUser: User = {
   needsOnboarding: false,
   needsPasswordReset: false,
   needsGuidelinesConsent: false,
+  needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
   weekStart: 'monday',

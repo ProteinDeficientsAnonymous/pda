@@ -31,6 +31,10 @@ export interface User {
   // is null server-side). A hard gate — routes to /consent with no skip. Nobody
   // is grandfathered; existing members and admins must re-consent.
   needsGuidelinesConsent: boolean;
+  // True until the user accepts the sms messaging policy (sms_consent_at is null
+  // server-side). Unlike guidelines this is NOT a hard gate — it is collected
+  // inline during onboarding when missing, but never locks an existing user out.
+  needsSmsConsent: boolean;
   showPhone: boolean;
   showEmail: boolean;
   weekStart: 'sunday' | 'monday';
