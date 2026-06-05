@@ -37,9 +37,12 @@ describe('sanitizeHtml', () => {
     '/\t/evil.com', // tab BETWEEN the slashes (browsers strip it -> //)
     '/\t\t/evil.com', // multiple embedded tabs
     '/\n/evil.com', // embedded newline
+    '///evil.com', // 3+ leading slashes — browsers read authority
+    '////evil.com', // 4 leading slashes
   ])('drops obfuscated protocol-relative href %j', (href) => {
-    // Browsers treat "\" as "/" and strip tab/LF/CR from anywhere, so each
-    // resolves to //evil.com; the hook normalises before the "//" check.
+    // Browsers treat "\" as "/", strip tab/LF/CR from anywhere, and read 2+
+    // leading slashes as an authority, so each resolves off-site; the hook
+    // parses the normalised URL (new URL) to decide rather than substring-match.
     const out = sanitizeHtml(`<a href="${href}">x</a>`);
     expect(out).not.toContain('evil.com');
     expect(out).not.toContain('href=');

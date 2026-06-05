@@ -88,6 +88,8 @@ class TestSchemeStripping:
             "/\t\t/evil.com",  # multiple embedded tabs
             "/\n/evil.com",  # embedded newline
             "/\r/evil.com",  # embedded CR (html5ever folds to \n, still stripped)
+            "///evil.com",  # 3+ leading slashes — browsers read authority
+            "////evil.com",  # 4 leading slashes
         ],
     )
     def test_protocol_relative_bypass_variants_dropped(self, raw_href):
