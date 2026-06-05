@@ -4,8 +4,9 @@ import re
 from unittest.mock import MagicMock
 
 import pytest
+from notifications._console_sender import ConsoleSender
 from notifications._email_helpers import send_magic_login_email
-from notifications.email_sender import SendResult
+from notifications.email_sender import SendResult, validate_recipient
 
 
 @pytest.mark.django_db
@@ -74,24 +75,21 @@ class TestSendMagicLoginEmail:
         assert "login" in subject or "log in" in subject
 
     def test_rejects_recipient_with_newline(self):
-        """Header-injection guard — newlines in the recipient must be rejected."""
-        sender = MagicMock()
-        with pytest.raises(ValueError, match="newline"):
-            send_magic_login_email(
-                sender=sender,
+        """Header-injection guard — newlines in the recipient must be rejected.
+
+        Validation lives at the EmailSender boundary, so it applies to every
+        concrete sender; the real ConsoleSender must refuse to send (no log,
+        no provider call) for a header-injection address.
+        """
+        sender = ConsoleSender()
+        with pytest.raises(ValueError, match="invalid recipient"):
+            sender.send(
                 to="user@example.com\nbcc: attacker@evil.test",
-                display_name="Sam",
-                magic_link_url="https://pda.test/magic/abc",
+                subject="s",
+                html="<p>h</p>",
+                text="t",
             )
-        sender.send.assert_not_called()
 
     def test_rejects_malformed_recipient(self):
-        sender = MagicMock()
         with pytest.raises(ValueError, match="invalid recipient"):
-            send_magic_login_email(
-                sender=sender,
-                to="not-an-email",
-                display_name="Sam",
-                magic_link_url="https://pda.test/magic/abc",
-            )
-        sender.send.assert_not_called()
+            validate_recipient("not-an-email")

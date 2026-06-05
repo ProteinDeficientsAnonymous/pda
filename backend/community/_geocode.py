@@ -7,7 +7,7 @@ import httpx
 from config.auth import gated_jwt
 from django.http import HttpRequest
 from ninja import Query, Router
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from community._shared import ErrorOut
 
@@ -24,6 +24,12 @@ class GeocodeQuery(BaseModel):
 
 
 class GeocodeOut(BaseModel):
+    # The endpoint is a transparent proxy: `type` and `features` are documented
+    # for the OpenAPI contract, but Photon's GeoJSON may carry other top-level
+    # keys (e.g. a FeatureCollection `bbox`). `extra="allow"` keeps the proxy
+    # lossless so those keys reach the client instead of being silently dropped.
+    model_config = ConfigDict(extra="allow")
+
     type: str | None = None
     features: list[dict[str, Any]] = Field(default_factory=list)
 

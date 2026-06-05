@@ -48,6 +48,19 @@ class TestGeocodeBounds:
         assert response.status_code == 200
         assert response.json() == {"type": "FeatureCollection", "features": []}
 
+    def test_passes_through_extra_top_level_fields(self, api_client, auth_headers):
+        """The proxy must stay lossless — Photon's top-level bbox must reach the client."""
+        payload = {
+            "type": "FeatureCollection",
+            "features": [],
+            "bbox": [-74.2, 40.4, -73.7, 40.9],
+        }
+        with patch("community._geocode.httpx.get") as mock_get:
+            mock_get.return_value = _FakeResp(payload)
+            response = api_client.get(f"{_URL}?q=brooklyn&limit=5", **auth_headers)
+        assert response.status_code == 200
+        assert response.json() == payload
+
 
 @pytest.mark.django_db
 class TestGeocodeUpstreamErrors:

@@ -2365,6 +2365,7 @@
         "type": "object"
       },
       "GeocodeOut": {
+        "additionalProperties": true,
         "properties": {
           "features": {
             "items": {

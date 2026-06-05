@@ -171,6 +171,21 @@ class TestResendSender:
         # 4xx (other than 429) is not transient → no retry.
         assert mock_send.call_count == 1
 
+    def test_failure_log_reports_true_attempt_count(self, caplog):
+        """A non-retryable error breaks after one try; the log must say attempts=1."""
+        from notifications._resend_sender import ResendSender
+        from resend.exceptions import ValidationError
+
+        err = ValidationError(code="400", error_type="validation_error", message="bad")
+        with patch("resend.Emails.send", side_effect=err):
+            with caplog.at_level(logging.WARNING, logger="notifications.resend_sender"):
+                ResendSender().send(to="user@example.com", subject="hi", html="<p>x</p>", text="x")
+        failure_logs = [
+            r.getMessage() for r in caplog.records if "resend_send_failure" in r.getMessage()
+        ]
+        assert failure_logs
+        assert "attempts=1" in failure_logs[0]
+
     def test_send_gives_up_after_max_attempts(self):
         from notifications import _resend_sender
         from notifications._resend_sender import ResendSender

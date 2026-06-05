@@ -1,6 +1,7 @@
 """EventPoll endpoints — create, vote, finalize, delete."""
 
 import logging
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from uuid import UUID
 
@@ -41,6 +42,20 @@ router = Router()
 # Grace window matches frontend validateEventForm — lets a just-picked minute
 # land even if the server clock is a few seconds ahead of the user's.
 _PAST_GRACE = timedelta(seconds=60)
+
+
+@contextmanager
+def _duplicate_option_time_guard():
+    """Map the unique (poll, datetime) constraint violation to a domain error.
+
+    Both create and update of a poll option can collide on the unique
+    (poll, datetime) constraint; this keeps the IntegrityError → validation-code
+    mapping in one place so the two endpoints can't drift.
+    """
+    try:
+        yield
+    except IntegrityError:
+        raise_validation(Code.Poll.OPTION_ALREADY_EXISTS, status_code=400)
 
 
 def _any_in_past(dts: list[datetime]) -> bool:
@@ -399,11 +414,8 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
     _, poll = _get_active_poll(request.auth, event_id)
     _validate_poll_options([payload.datetime], require_at_least_one=False)
     next_order = poll.options.count()
-    try:
+    with _duplicate_option_time_guard():
         PollOption.objects.create(poll=poll, datetime=payload.datetime, display_order=next_order)
-    except IntegrityError:
-        # Unique constraint on (poll, datetime) — duplicate option time.
-        raise_validation(Code.Poll.OPTION_ALREADY_EXISTS, status_code=400)
     audit_log(
         logging.INFO,
         "poll_option_added",
@@ -433,12 +445,9 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
         option = poll.options.get(id=option_id)
     except PollOption.DoesNotExist:
         raise_validation(Code.Poll.OPTION_NOT_FOUND, status_code=404)
-    try:
+    with _duplicate_option_time_guard():
         option.datetime = payload.datetime
         option.save(update_fields=["datetime"])
-    except IntegrityError:
-        # Unique constraint on (poll, datetime) — another option already uses this time.
-        raise_validation(Code.Poll.OPTION_ALREADY_EXISTS, status_code=400)
     audit_log(
         logging.INFO,
         "poll_option_updated",

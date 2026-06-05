@@ -58,6 +58,28 @@ class TestWhatsAppStatus:
         log_text = "\n".join(r.getMessage() for r in caplog.records)
         assert "whatsapp status check failed" in log_text
 
+    def test_non_object_json_body_returns_disconnected(
+        self, api_client, whatsapp_admin_headers, settings
+    ):
+        """Valid-but-non-object JSON must not 500 (data.get would raise AttributeError)."""
+        settings.WHATSAPP_BOT_URL = "https://bot.example.com"
+
+        class _FakeResp:
+            def read(self):
+                return b"[1, 2, 3]"  # valid JSON, but a list, not an object
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        with patch("urllib.request.urlopen", return_value=_FakeResp()):
+            response = api_client.get("/api/community/whatsapp/status/", **whatsapp_admin_headers)
+
+        assert response.status_code == 200
+        assert response.json() == {"connected": False}
+
     def test_requires_permission(self, api_client, auth_headers):
         response = api_client.get("/api/community/whatsapp/status/", **auth_headers)
         assert response.status_code == 403

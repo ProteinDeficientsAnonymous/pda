@@ -2594,6 +2594,8 @@ export interface components {
             }[];
             /** Type */
             type?: string | null;
+        } & {
+            [key: string]: unknown;
         };
         /** GeocodeQuery */
         GeocodeQuery: {

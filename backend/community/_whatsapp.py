@@ -144,7 +144,12 @@ def get_whatsapp_status(request):
             import json as _json
 
             data = _json.loads(resp.read())
-            return Status(200, WhatsAppStatusOut(connected=bool(data.get("connected"))))
+            # The bot should return a JSON object; valid-but-non-object JSON
+            # (list/number/string) would make data.get() raise AttributeError,
+            # which is not OSError/ValueError and would escape to a 500. Treat
+            # anything that isn't a dict as "not connected".
+            connected = bool(data.get("connected")) if isinstance(data, dict) else False
+            return Status(200, WhatsAppStatusOut(connected=connected))
     except (OSError, ValueError) as exc:
         # OSError covers urllib network/timeout failures (URLError is a subclass);
         # ValueError covers JSON decode errors. Either way the bot is unreachable
