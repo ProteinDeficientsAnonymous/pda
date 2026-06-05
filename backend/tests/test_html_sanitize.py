@@ -84,18 +84,38 @@ class TestSchemeStripping:
             " //evil.com",  # leading space
             "\t//evil.com",  # leading tab
             "\n//evil.com",  # leading newline
+            "/\t/evil.com",  # tab BETWEEN the slashes (browsers strip it -> //)
+            "/\t\t/evil.com",  # multiple embedded tabs
+            "/\n/evil.com",  # embedded newline
+            "/\r/evil.com",  # embedded CR (html5ever folds to \n, still stripped)
         ],
     )
     def test_protocol_relative_bypass_variants_dropped(self, raw_href):
         # The literal-"//" check is not enough: browsers ignore leading
-        # whitespace/controls and treat "\" as "/", so each of these resolves to
-        # //evil.com. _normalize_url must canonicalise before the check.
+        # whitespace/controls, strip tab/LF/CR from ANYWHERE, and treat "\" as
+        # "/", so each of these resolves to //evil.com. _normalize_url must
+        # canonicalise before the check, dropping every variant.
         # (A leading NUL is NOT included: html5ever rewrites it to U+FFFD at
         # parse time, which makes the URL a same-origin relative path, not
         # protocol-relative — so it is already inert.)
         result = sanitize_content_html(f'<a href="{raw_href}">x</a>')
         assert "evil.com" not in result
         assert "href=" not in result
+
+    def test_embedded_control_scheme_url_canonicalised(self):
+        # A tab inside an allowed-scheme URL (`https:/\t/evil.com`) is stripped
+        # by the browser to `https://evil.com`; canonicalise to that rather than
+        # storing the obfuscated form. (Off-site, but a URL an admin could type.)
+        result = sanitize_content_html('<a href="https:/\t/evil.com">x</a>')
+        assert 'href="https://evil.com"' in result
+        assert "\t" not in result
+
+    def test_legit_query_backslash_preserved(self):
+        # Backslash folding must apply only to the authority/path, not the query
+        # — browsers don't fold backslashes in a query string, so rewriting one
+        # here would silently corrupt a legitimate URL.
+        result = sanitize_content_html('<a href="https://good.com/p?x=a\\b">y</a>')
+        assert "x=a\\b" in result
 
     def test_backslash_obfuscated_scheme_url_canonicalised(self):
         # "https:/\evil.com" has an allowed scheme and no literal "//", but a
@@ -158,10 +178,11 @@ class TestStyleAndClassConstraints:
         assert "text-align:center" in result.replace(" ", "")
 
     def test_text_align_case_insensitive(self):
-        # The property name match is case-insensitive (matching the frontend's
-        # /i flag), so an upper/mixed-case property is preserved, not dropped.
-        result = sanitize_content_html('<p style="TEXT-ALIGN: center">hi</p>')
-        assert "text-align:center" in result.replace(" ", "").lower()
+        # Both the property name AND the value match case-insensitively (mirroring
+        # the frontend's /i flag), so upper/mixed case is preserved, not dropped.
+        for raw in ("TEXT-ALIGN: center", "text-align: CENTER", "Text-Align: Center"):
+            result = sanitize_content_html(f'<p style="{raw}">hi</p>')
+            assert "text-align:center" in result.replace(" ", "").lower()
 
     def test_non_alignment_style_dropped(self):
         result = sanitize_content_html('<p style="position: absolute; text-align: center">hi</p>')

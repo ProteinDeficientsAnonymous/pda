@@ -76,15 +76,21 @@ _ALLOWED_CLASSES = {"a": {"cta", "cta--primary", "cta--secondary"}}
 # renderer gates on exactly these; the Delta renderer emits no alignment at all).
 # Mirrors the frontend's ALLOWED_TEXT_ALIGN so the two boundaries agree. The
 # regex is case-insensitive to match the frontend's `/i` flag, and `[a-z]+`
-# (not `[a-z-]+`) so a hyphen-suffixed token like `center-ish` is captured whole
-# and rejected the same way on both sides.
+# (not `[a-z-]+`) so a hyphen-suffixed token like `center-ish` captures just
+# `center` — accepted and rebuilt to `text-align: center` identically on both
+# sides (output is always a fixed allowlisted token, so no value can inject).
 _ALLOWED_TEXT_ALIGN = {"left", "center", "right"}
 _TEXT_ALIGN_RE = re.compile(r"text-align:\s*([a-z]+)", re.IGNORECASE)
 
-# Characters a browser's URL parser ignores at the start of an href/src (ASCII
-# whitespace + C0 controls). Stripping them before the protocol-relative check
-# closes the " //evil.com" / "\t//evil.com" bypass.
+# Characters a browser's URL parser ignores at the START of an href/src (ASCII
+# C0 controls 0x00–0x1F + space 0x20, plus DEL 0x7F). Stripped before the
+# protocol-relative check to close the " //evil.com" / "\t//evil.com" bypass.
 _URL_LEADING_IGNORED = "".join(chr(c) for c in range(0x21)) + "\x7f"
+
+# Tab / LF / CR are removed from ANYWHERE in a URL by browsers before parsing
+# (the WHATWG URL "remove all ASCII tab or newline" step), so an embedded one
+# can't be used to split up a protocol-relative form like `/\t/evil.com`.
+_URL_REMOVED_CONTROLS = re.compile(r"[\t\n\r]")
 
 # `rel="noopener noreferrer"` is force-injected on every anchor, blocking
 # reverse-tabnabbing on target="_blank" links regardless of what was emitted.
@@ -94,14 +100,24 @@ _LINK_REL = "noopener noreferrer"
 def _normalize_url(value: str) -> str:
     """Collapse an href/src to the form a browser actually resolves.
 
-    Browsers ignore leading ASCII whitespace / C0 controls and treat backslashes
-    as forward slashes in special-scheme URLs, so `/\\evil.com` and ` //evil.com`
-    both resolve to `//evil.com`. Canonicalising here means the stored value
-    matches what every consumer (browser, email, API client) sees, removing the
-    parser differential that lets obfuscated protocol-relative URLs slip past a
-    naive `startswith("//")` check.
+    Mirrors the browser URL parser so the stored value matches what every
+    consumer (browser, email, API client) sees, removing the parser differential
+    that lets obfuscated protocol-relative URLs slip past a naive `startswith`:
+
+    - Tab/LF/CR are removed from anywhere in the string (browsers do this before
+      parsing), so `/\\t/evil.com` can't hide a protocol-relative form.
+    - Leading ASCII whitespace / C0 controls are ignored.
+    - Backslashes fold to forward slashes, but ONLY in the authority/path
+      (everything before the first `?` or `#`) — browsers don't fold in the
+      query/fragment, so folding the whole string would corrupt a legitimate
+      backslash in a query string (`?x=a\\b`).
+
+    So `/\\evil.com`, ` //evil.com`, and `https:/\\evil.com` all canonicalise to
+    a leading `//` (rejected by the caller), while legit URLs are untouched.
     """
-    return value.lstrip(_URL_LEADING_IGNORED).replace("\\", "/")
+    value = _URL_REMOVED_CONTROLS.sub("", value).lstrip(_URL_LEADING_IGNORED)
+    cut = next((i for i, ch in enumerate(value) if ch in "?#"), len(value))
+    return value[:cut].replace("\\", "/") + value[cut:]
 
 
 def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
@@ -124,6 +140,14 @@ def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
       so `text-align: behavior(...)` would survive; rebuild the value here instead.
 
     Returning `None` drops the attribute; returning a string replaces its value.
+
+    SAFETY: nh3 does NOT re-validate the value this returns against `url_schemes`
+    — the scheme check runs on the ORIGINAL value before this filter, so a
+    `javascript:`/`data:` URL is already gone by the time we run. That means
+    `_normalize_url` must never *manufacture* a dangerous scheme from a safe
+    input; its transforms (strip whitespace/controls, fold leading backslashes)
+    cannot introduce a `:`, so they are safe. Keep that invariant if you extend
+    it — anything that could synthesise a scheme would become a stored-XSS hole.
     """
     if attribute in ("href", "src"):
         normalized = _normalize_url(value)

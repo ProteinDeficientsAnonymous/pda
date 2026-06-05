@@ -30,16 +30,20 @@ describe('sanitizeHtml', () => {
     expect(out).not.toContain('href=');
   });
 
-  it.each(['/\\evil.com', '\\\\evil.com', '/\\/evil.com'])(
-    'drops backslash-obfuscated protocol-relative href %j',
-    (href) => {
-      // Browsers treat "\" as "/", so each resolves to //evil.com; the hook
-      // normalises backslashes before the "//" check.
-      const out = sanitizeHtml(`<a href="${href}">x</a>`);
-      expect(out).not.toContain('evil.com');
-      expect(out).not.toContain('href=');
-    },
-  );
+  it.each([
+    '/\\evil.com', // backslash — browsers normalise /\ to //
+    '\\\\evil.com', // double backslash
+    '/\\/evil.com', // mixed
+    '/\t/evil.com', // tab BETWEEN the slashes (browsers strip it -> //)
+    '/\t\t/evil.com', // multiple embedded tabs
+    '/\n/evil.com', // embedded newline
+  ])('drops obfuscated protocol-relative href %j', (href) => {
+    // Browsers treat "\" as "/" and strip tab/LF/CR from anywhere, so each
+    // resolves to //evil.com; the hook normalises before the "//" check.
+    const out = sanitizeHtml(`<a href="${href}">x</a>`);
+    expect(out).not.toContain('evil.com');
+    expect(out).not.toContain('href=');
+  });
 
   it('canonicalises a backslash-obfuscated scheme URL', () => {
     // "https:/\evil.com" has an allowed scheme and no literal "//"; normalise it
@@ -47,6 +51,13 @@ describe('sanitizeHtml', () => {
     const out = sanitizeHtml('<a href="https:/\\evil.com">x</a>');
     expect(out).toContain('href="https://evil.com"');
     expect(out).not.toContain('\\');
+  });
+
+  it('preserves a legitimate backslash in a query string', () => {
+    // Backslash folding applies only to the authority/path, not the query —
+    // rewriting it here would silently corrupt a valid URL.
+    const out = sanitizeHtml('<a href="https://good.com/p?x=a\\b">y</a>');
+    expect(out).toContain('x=a\\b');
   });
 
   it('keeps https links', () => {
