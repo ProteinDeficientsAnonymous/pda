@@ -392,12 +392,18 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     if payload.status == JoinRequestStatus.APPROVED:
         existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
         if existing_user is None:
+            from users._helpers import ConsentTimestamps
+
             _, magic_token = _create_user_with_role(
                 join_request.phone_number,
                 join_request.display_name,
                 join_request.email,
                 None,
                 requesting_user=request.auth,
+                consent=ConsentTimestamps(
+                    guidelines_consent_at=join_request.guidelines_consent_at,
+                    sms_consent_at=join_request.sms_consent_at,
+                ),
             )
             user_created = True
         elif existing_user.archived_at is not None:
@@ -406,7 +412,19 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             existing_user.archived_at = None
             existing_user.needs_onboarding = True
             existing_user.display_name = join_request.display_name
-            existing_user.save(update_fields=["archived_at", "needs_onboarding", "display_name"])
+            if join_request.guidelines_consent_at is not None:
+                existing_user.guidelines_consent_at = join_request.guidelines_consent_at
+            if join_request.sms_consent_at is not None:
+                existing_user.sms_consent_at = join_request.sms_consent_at
+            existing_user.save(
+                update_fields=[
+                    "archived_at",
+                    "needs_onboarding",
+                    "display_name",
+                    "guidelines_consent_at",
+                    "sms_consent_at",
+                ]
+            )
             magic_token = _create_magic_token(existing_user)
             user_created = True
 

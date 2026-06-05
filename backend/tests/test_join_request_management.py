@@ -434,3 +434,29 @@ class TestApprovalEmail:
         )
         assert resp.status_code == 409
         assert resp.json()["detail"][0]["code"] == "email.already_exists"
+
+
+@pytest.mark.django_db
+class TestApprovalCarriesConsent:
+    def test_new_user_inherits_join_request_consent(self, api_client, vettor_headers):
+        from community.models import JoinRequest
+        from django.utils import timezone
+        from users.models import User
+
+        jr = JoinRequest.objects.create(
+            display_name="Consenter",
+            phone_number="+12025550701",
+            email="consenter@example.com",
+            sms_consent_at=timezone.now(),
+            guidelines_consent_at=timezone.now(),
+        )
+        resp = api_client.patch(
+            f"/api/community/join-requests/{jr.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert resp.status_code == 200, resp.content
+        user = User.objects.get(phone_number="+12025550701")
+        assert user.guidelines_consent_at is not None
+        assert user.sms_consent_at is not None
