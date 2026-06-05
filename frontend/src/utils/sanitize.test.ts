@@ -30,6 +30,25 @@ describe('sanitizeHtml', () => {
     expect(out).not.toContain('href=');
   });
 
+  it.each(['/\\evil.com', '\\\\evil.com', '/\\/evil.com'])(
+    'drops backslash-obfuscated protocol-relative href %j',
+    (href) => {
+      // Browsers treat "\" as "/", so each resolves to //evil.com; the hook
+      // normalises backslashes before the "//" check.
+      const out = sanitizeHtml(`<a href="${href}">x</a>`);
+      expect(out).not.toContain('evil.com');
+      expect(out).not.toContain('href=');
+    },
+  );
+
+  it('canonicalises a backslash-obfuscated scheme URL', () => {
+    // "https:/\evil.com" has an allowed scheme and no literal "//"; normalise it
+    // to the https://evil.com a browser resolves rather than storing the trap.
+    const out = sanitizeHtml('<a href="https:/\\evil.com">x</a>');
+    expect(out).toContain('href="https://evil.com"');
+    expect(out).not.toContain('\\');
+  });
+
   it('keeps https links', () => {
     const out = sanitizeHtml('<a href="https://x.test/path">x</a>');
     expect(out).toContain('href="https://x.test/path"');
