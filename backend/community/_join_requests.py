@@ -17,7 +17,13 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
-from community._shared import ErrorOut, _validate_phone, logger, validate_display_name
+from community._shared import (
+    ErrorOut,
+    _validate_phone,
+    flatten_to_single_line,
+    logger,
+    validate_display_name,
+)
 from community._validation import Code, ValidationException, raise_validation
 from community.models import (
     JoinFormQuestion,
@@ -42,6 +48,9 @@ class JoinRequestIn(BaseModel):
     # we record consent timestamp on the join request as proof for Twilio's
     # toll-free verification + ongoing TCPA defensibility.
     sms_consent: bool = False
+    # Community-guidelines consent. UI presents a required checkbox tied to
+    # /guidelines; we record the consent timestamp on the join request.
+    guidelines_consent: bool = False
     # Honeypot: hidden field human users never fill in. Bots auto-complete
     # every input, so a non-empty value is a strong spam signal.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
@@ -174,11 +183,14 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
     if not settings.VETTING_EMAIL:
         return
     try:
+        # Subject must stay single-line: a newline in display_name would
+        # otherwise let an applicant forge additional email headers.
+        safe_subject = flatten_to_single_line(f"New PDA Join Request: {display_name}")
         answer_lines = "\n".join(
             f"{data['label']}: {data['answer']}" for data in custom_answers.values()
         )
         send_mail(
-            subject=f"New PDA Join Request: {display_name}",
+            subject=safe_subject,
             message=f"Display Name: {display_name}\nPhone: {phone}\n\n{answer_lines}",
             from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
             recipient_list=[settings.VETTING_EMAIL],
@@ -243,6 +255,9 @@ def submit_join_request(request, payload: JoinRequestIn):
     if not payload.sms_consent:
         raise_validation(Code.JoinRequest.SMS_CONSENT_REQUIRED, field="sms_consent")
 
+    if not payload.guidelines_consent:
+        raise_validation(Code.JoinRequest.GUIDELINES_CONSENT_REQUIRED, field="guidelines_consent")
+
     validate_display_name(display_name)
     validated_phone = _validate_phone(payload.phone_number)
     normalized_email = payload.email.strip().lower()
@@ -259,6 +274,7 @@ def submit_join_request(request, payload: JoinRequestIn):
         email=normalized_email,
         custom_answers=custom_answers,
         sms_consent_at=timezone.now(),
+        guidelines_consent_at=timezone.now(),
     )
 
     logger.info("Join request submitted by %s", display_name)
@@ -381,6 +397,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
                 join_request.display_name,
                 join_request.email,
                 None,
+                requesting_user=request.auth,
             )
             user_created = True
         elif existing_user.archived_at is not None:
@@ -464,7 +481,8 @@ def unreject_join_request(request, id: UUID):
     return Status(200, _join_request_out(join_request))
 
 
-@router.post("/check-phone/", response={200: CheckPhoneOut}, auth=None)
+@router.post("/check-phone/", response={200: CheckPhoneOut, 429: ErrorOut}, auth=None)
+@rate_limit(key_func=client_ip, rate="20/h")
 def check_phone(request, payload: CheckPhoneIn):
     from users.models import User as UserModel
 

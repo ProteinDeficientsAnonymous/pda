@@ -2,7 +2,7 @@
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventStatus, RSVPStatus
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso
@@ -337,3 +337,104 @@ class TestCreateEventWithCohosts:
         guests = response.json()["guests"]
         assert len(guests) == 1
         assert guests[0]["phone"] == test_user.phone_number
+
+
+# ---------------------------------------------------------------------------
+# Draft / deleted RSVP gating (Issue 455)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestRSVPDraftDeletedGating:
+    def test_rsvp_blocked_on_draft_for_non_editor(self, api_client, other_headers, rsvp_event):
+        # rsvp_event is owned by test_user; other_user can't edit it.
+        rsvp_event.status = EventStatus.DRAFT
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **other_headers,
+        )
+        assert response.status_code == 403
+        assert not EventRSVP.objects.filter(event=rsvp_event).exists()
+
+    def test_rsvp_allowed_on_draft_for_creator(self, api_client, auth_headers, rsvp_event):
+        rsvp_event.status = EventStatus.DRAFT
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+
+    def test_rsvp_blocked_on_deleted_event(self, api_client, auth_headers, rsvp_event):
+        rsvp_event.status = EventStatus.DELETED
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 404
+
+    def test_delete_rsvp_blocked_on_deleted_event(self, api_client, auth_headers, rsvp_event):
+        EventRSVP.objects.create(
+            event=rsvp_event, user=rsvp_event.created_by, status=RSVPStatus.ATTENDING
+        )
+        rsvp_event.status = EventStatus.DELETED
+        rsvp_event.save(update_fields=["status"])
+        response = api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/", **auth_headers)
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestDeleteRSVPWithdrawal:
+    """An existing RSVP-holder can withdraw even after the event turned
+    invite-only and excluded them (Issue 455 regression guard). The cancelled/
+    past freezes are unaffected and covered by the existing RSVP suite."""
+
+    def test_excluded_member_can_still_delete_stale_rsvp(
+        self, api_client, other_headers, other_user, test_user, rsvp_event
+    ):
+        from community.models import PageVisibility
+
+        # other_user RSVPs ATTENDING while the event is public and full, with
+        # test_user waitlisted behind them. The host then flips it to invite-only
+        # without inviting other_user — they must still be able to withdraw, AND
+        # withdrawing must free their spot so the waitlisted user is promoted.
+        rsvp_event.max_attendees = 1
+        rsvp_event.save(update_fields=["max_attendees"])
+        EventRSVP.objects.create(event=rsvp_event, user=other_user, status=RSVPStatus.ATTENDING)
+        waitlisted = EventRSVP.objects.create(
+            event=rsvp_event, user=test_user, status=RSVPStatus.WAITLISTED
+        )
+        rsvp_event.visibility = PageVisibility.INVITE_ONLY
+        rsvp_event.save(update_fields=["visibility"])
+
+        response = api_client.delete(
+            f"/api/community/events/{rsvp_event.id}/rsvp/", **other_headers
+        )
+        assert response.status_code == 204
+        assert not EventRSVP.objects.filter(event=rsvp_event, user=other_user).exists()
+        # Withdrawing an ATTENDING RSVP frees a spot → waitlist promotion fires.
+        waitlisted.refresh_from_db()
+        assert waitlisted.status == RSVPStatus.ATTENDING
+
+    def test_non_rsvper_cannot_probe_invite_only_via_delete(
+        self, api_client, other_headers, rsvp_event
+    ):
+        from community.models import PageVisibility
+
+        # A member with NO RSVP who can't see the invite-only event gets the
+        # read-visibility 403 — they can't use delete to probe for existence.
+        rsvp_event.visibility = PageVisibility.INVITE_ONLY
+        rsvp_event.save(update_fields=["visibility"])
+
+        response = api_client.delete(
+            f"/api/community/events/{rsvp_event.id}/rsvp/", **other_headers
+        )
+        assert response.status_code == 403

@@ -17,7 +17,11 @@ def send_magic_login_email(
     display_name: str,
     magic_link_url: str,
 ) -> SendResult:
-    """Render and send the magic-login email."""
+    """Render and send the magic-login email.
+
+    Recipient validation (RFC-validity + header-injection guard) happens at the
+    `EmailSender.send()` boundary, so every email type is protected uniformly.
+    """
     context = {
         "display_name": display_name or "",
         "magic_link_url": magic_link_url,

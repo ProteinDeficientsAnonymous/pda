@@ -30,8 +30,6 @@ class EditablePageOut(BaseModel):
 
 
 class EditablePagePatchIn(BaseModel):
-    # Legacy Quill Delta JSON (Flutter). Either content or content_pm.
-    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
 
@@ -52,14 +50,18 @@ def get_page(request, slug: str):
     default_vis = PageVisibility.MEMBERS_ONLY if slug == "volunteer" else PageVisibility.PUBLIC
     page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
 
-    if page.visibility == PageVisibility.MEMBERS_ONLY:
-        if isinstance(request.auth, AnonymousUser):
-            raise_validation(Code.Page.MEMBERS_ONLY, status_code=403)
+    # Any non-public page (members-only OR invite-only) requires authentication.
+    # Previously only MEMBERS_ONLY was gated, so an INVITE_ONLY page leaked to
+    # anonymous callers.
+    if page.visibility != PageVisibility.PUBLIC and isinstance(request.auth, AnonymousUser):
+        raise_validation(Code.Page.MEMBERS_ONLY, status_code=403)
 
     return Status(200, _page_out(page))
 
 
-@router.patch("/pages/{slug}/", response={200: EditablePageOut, 403: ErrorOut}, auth=gated_jwt)
+@router.patch(
+    "/pages/{slug}/", response={200: EditablePageOut, 400: ErrorOut, 403: ErrorOut}, auth=gated_jwt
+)
 def update_page(request, slug: str, payload: EditablePagePatchIn):
     if not request.auth.has_permission(PermissionKey.EDIT_GUIDELINES):
         audit_log(
@@ -79,13 +81,20 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
     page = EditablePage.get_or_create_page(slug, default_visibility=default_vis)
 
     changed = []
-    if payload.content is not None or payload.content_pm is not None:
-        rendered = render_content_payload(delta=payload.content, prosemirror=payload.content_pm)
+    if payload.content_pm is not None:
+        rendered = render_content_payload(prosemirror=payload.content_pm)
         page.content = rendered.content
         page.content_pm = rendered.content_pm
         page.content_html = rendered.content_html
         changed.append("content")
     if payload.visibility is not None:
+        if payload.visibility not in PageVisibility.values:
+            raise_validation(
+                Code.Page.VISIBILITY_INVALID,
+                field="visibility",
+                status_code=400,
+                allowed=list(PageVisibility.values),
+            )
         page.visibility = payload.visibility
         changed.append("visibility")
     page.save()

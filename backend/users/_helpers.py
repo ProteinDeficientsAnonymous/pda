@@ -92,17 +92,32 @@ def _validate_phone(raw: str, field: str = "phone_number") -> str:
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
+def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
+    """Block assigning the built-in admin role unless the requester is an admin.
+
+    Prevents privilege escalation when a user holds CREATE_USER but is not
+    themselves an admin. No-op for any non-admin role (or no role).
+    """
+    if not role_id:
+        return
+    admin_role = Role.objects.filter(name="admin", is_default=True).first()
+    if admin_role and str(role_id) == str(admin_role.pk) and not _is_admin(requesting_user):
+        raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
+
+
 def _create_user_with_role(
     phone: str,
     display_name: str,
     email: str | None,
     role_id: str | None,
     *,
-    needs_onboarding: bool = True,
+    requesting_user: User,
 ) -> tuple[User, str]:
     """Validate phone, create user, assign role. Returns (user, magic_link_token).
 
     Raises ValidationException on validation failure (bad phone, duplicate, bad role).
+    Assigning the built-in admin role is only permitted when ``requesting_user``
+    is themselves an admin (prevents escalation under CREATE_USER alone).
     """
     validated_phone = _validate_phone(phone)
     if User.objects.filter(phone_number=validated_phone).exists():
@@ -110,11 +125,12 @@ def _create_user_with_role(
     normalized_email = _normalize_email(email)
     if normalized_email and User.objects.filter(email=normalized_email).exists():
         raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+    _guard_admin_role_grant(role_id, requesting_user)
     user = User.objects.create_user(
         phone_number=validated_phone,
         display_name=display_name,
         email=normalized_email,
-        needs_onboarding=needs_onboarding,
+        needs_onboarding=True,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])
@@ -133,15 +149,25 @@ def _create_user_with_role(
     return user, magic_token
 
 
-def _validate_admin_role_change(user: User, requesting_user_pk, new_roles: list[Role]) -> None:
-    """Raise ValidationException if an admin role change is invalid."""
+def _validate_admin_role_change(user: User, requesting_user: User, new_roles: list[Role]) -> None:
+    """Raise ValidationException if an admin role change is invalid.
+
+    Guards both directions:
+    - Removing admin from oneself or the last admin is blocked.
+    - Granting the built-in admin role is blocked unless the requester is
+      themselves an admin (prevents privilege escalation via MANAGE_USERS).
+    """
     admin_role = Role.objects.filter(name="admin", is_default=True).first()
     if not admin_role:
         return
 
-    is_self = str(user.pk) == str(requesting_user_pk)
+    is_self = str(user.pk) == str(requesting_user.pk)
     is_current_admin = user.roles.filter(pk=admin_role.pk).exists()
     removing_admin = admin_role not in new_roles
+    adding_admin = admin_role in new_roles and not is_current_admin
+
+    if adding_admin and not _is_admin(requesting_user):
+        raise_validation(Code.Role.CANNOT_GRANT_ADMIN, status_code=403)
 
     if is_self and is_current_admin and removing_admin:
         raise_validation(Code.Role.CANNOT_REMOVE_OWN_ADMIN, status_code=400)

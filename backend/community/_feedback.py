@@ -2,17 +2,19 @@
 
 import json as json_module
 import logging
+import re
 import time
 from urllib.request import Request, urlopen
 
 from config.auth import gated_jwt
+from config.ratelimit import auth_or_ip_key, rate_limit
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
-from community._shared import ErrorOut, _optional_jwt
+from community._shared import ErrorOut, _optional_jwt, flatten_to_single_line
 from community._validation import Code, raise_validation
 
 router = Router()
@@ -70,14 +72,31 @@ def report_error(request, payload: ErrorReportIn):
     return Status(201, ErrorReportOut(detail="Error report received."))
 
 
+def _inline_code(value: str) -> str:
+    """Render untrusted text as a GitHub inline-code span, escaping any
+    backticks so the value can't break out into active markdown."""
+    cleaned = flatten_to_single_line(value).replace("`", "'")
+    return f"`{cleaned}`"
+
+
+def _fenced_block(value: str) -> str:
+    """Wrap untrusted multi-line text in a fenced code block so markdown,
+    @mentions, and #issue-refs inside it render inert. The fence is sized
+    longer than the longest backtick run in the content so the user can't
+    close the fence early."""
+    longest_run = max((len(run) for run in re.findall(r"`+", value)), default=0)
+    fence = "`" * max(3, longest_run + 1)
+    return f"{fence}\n{value}\n{fence}"
+
+
 def _build_feedback_metadata(meta: FeedbackMetadataIn) -> str:
     lines = ["## Metadata", ""]
     if meta.route:
-        lines.append(f"- **Route:** `{meta.route}`")
+        lines.append(f"- **Route:** {_inline_code(meta.route)}")
     if meta.user_agent:
-        lines.append(f"- **User Agent:** {meta.user_agent}")
+        lines.append(f"- **User Agent:** {_inline_code(meta.user_agent)}")
     if meta.app_version:
-        lines.append(f"- **App Version:** {meta.app_version}")
+        lines.append(f"- **App Version:** {_inline_code(meta.app_version)}")
     return "\n".join(lines) if len(lines) > 2 else ""
 
 
@@ -117,7 +136,9 @@ def _build_issue_body(payload: FeedbackIn, auth_user) -> str:
     parts: list[str] = []
 
     if payload.description:
-        parts.append(payload.description)
+        # User-supplied free text — fence it so markdown, @mentions, and
+        # #issue-refs render inert in the GitHub issue.
+        parts.append(_fenced_block(payload.description))
 
     if payload.metadata:
         metadata_section = _build_feedback_metadata(payload.metadata)
@@ -142,9 +163,10 @@ def _issue_labels(feedback_types: list[str]) -> list[str]:
 
 @router.post(
     "/feedback/",
-    response={201: FeedbackOut, 503: ErrorOut},
+    response={201: FeedbackOut, 429: ErrorOut, 503: ErrorOut},
     auth=_optional_jwt,
 )
+@rate_limit(key_func=auth_or_ip_key, rate="5/h")
 def submit_feedback(request, payload: FeedbackIn):
     from community._shared import logger
 
@@ -171,7 +193,10 @@ def submit_feedback(request, payload: FeedbackIn):
             f"https://api.github.com/repos/{repo}/issues",
             token,
             {
-                "title": payload.title,
+                # Flatten the title to a single line: GitHub doesn't render
+                # markdown in titles, but a newline in user input shouldn't be
+                # able to inject structure into the issue title field.
+                "title": flatten_to_single_line(payload.title),
                 "body": issue_body,
                 "labels": _issue_labels(payload.feedback_types),
             },

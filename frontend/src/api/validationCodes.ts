@@ -224,6 +224,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'please set a new password to continue';
     case Code.Auth.OnboardingRequired:
       return 'finish setting up your account to continue';
+    case Code.Auth.GuidelinesConsentRequired:
+      return 'please agree to the community guidelines to continue';
 
     // Password
     case Code.Password.Invalid: {
@@ -261,6 +263,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you can't remove your own admin role";
     case Code.Role.CannotRemoveLastAdmin:
       return "can't remove admin from the last admin — promote someone else first";
+    case Code.Role.CannotGrantAdmin:
+      return 'only an admin can grant the admin role';
+    case Code.Role.InvalidPermission: {
+      const perm = typeof err.params?.permission === 'string' ? err.params.permission : null;
+      return perm ? `unknown permission: ${perm}` : 'one or more permissions are invalid';
+    }
     case Code.Role.MemberRoleRequired:
       return 'every user must keep the member role';
 
@@ -365,6 +373,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "they've already logged in — re-sending a welcome link won't help";
     case Code.JoinRequest.SmsConsentRequired:
       return 'please agree to receive sms about events to submit';
+    case Code.JoinRequest.GuidelinesConsentRequired:
+      return 'please read and confirm you agree to the guidelines and community agreements to submit';
 
     // Photo
     case Code.Photo.TypeNotAllowed:
@@ -383,6 +393,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     // Page / Docs / JoinForm / Feedback / Notification
     case Code.Page.MembersOnly:
       return 'members only';
+    case Code.Page.VisibilityInvalid:
+      return 'invalid visibility setting';
     case Code.Docs.FolderNotFound:
       return 'folder not found';
     case Code.Docs.ParentFolderNotFound:

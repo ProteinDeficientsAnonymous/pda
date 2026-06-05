@@ -110,6 +110,7 @@ class Code:
         CURRENT_PASSWORD_INCORRECT = "auth.current_password_incorrect"
         PASSWORD_RESET_REQUIRED = "auth.password_reset_required"
         ONBOARDING_REQUIRED = "auth.onboarding_required"
+        GUIDELINES_CONSENT_REQUIRED = "auth.guidelines_consent_required"
 
     class Password:
         INVALID = "password.invalid"  # params: { reasons: string[] }
@@ -123,6 +124,8 @@ class Code:
         PROTECTED_CANNOT_DELETE = "role.protected_cannot_delete"
         CANNOT_REMOVE_OWN_ADMIN = "role.cannot_remove_own_admin"
         CANNOT_REMOVE_LAST_ADMIN = "role.cannot_remove_last_admin"
+        CANNOT_GRANT_ADMIN = "role.cannot_grant_admin"
+        INVALID_PERMISSION = "role.invalid_permission"  # params: { permission: str }
         MEMBER_ROLE_REQUIRED = "role.member_role_required"
 
     class Member:
@@ -170,6 +173,7 @@ class Code:
         NOT_APPROVED = "join_request.not_approved"
         ALREADY_LOGGED_IN = "join_request.already_logged_in"
         SMS_CONSENT_REQUIRED = "join_request.sms_consent_required"
+        GUIDELINES_CONSENT_REQUIRED = "join_request.guidelines_consent_required"
 
     class Photo:
         TYPE_NOT_ALLOWED = "photo.type_not_allowed"  # params: { allowed: string[] }
@@ -183,6 +187,7 @@ class Code:
 
     class Page:
         MEMBERS_ONLY = "page.members_only"
+        VISIBILITY_INVALID = "page.visibility_invalid"  # params: { allowed: list[str] }
 
     class Docs:
         FOLDER_NOT_FOUND = "docs.folder_not_found"

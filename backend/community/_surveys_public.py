@@ -5,6 +5,7 @@ from uuid import UUID
 
 from config.audit import audit_log
 from config.auth import gated_jwt
+from config.ratelimit import auth_or_ip_key, rate_limit
 from ninja import Router
 from ninja.responses import Status
 
@@ -53,9 +54,16 @@ def get_survey_public(request, slug: str):
 
 @router.post(
     "/surveys/view/{slug}/respond/",
-    response={200: SurveyResponseOut, 201: SurveyResponseOut, 400: ErrorOut, 404: ErrorOut},
+    response={
+        200: SurveyResponseOut,
+        201: SurveyResponseOut,
+        400: ErrorOut,
+        404: ErrorOut,
+        429: ErrorOut,
+    },
     auth=_optional_jwt,
 )
+@rate_limit(key_func=auth_or_ip_key, rate="20/h")
 def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     try:
         survey = Survey.objects.prefetch_related("questions").get(slug=slug, is_active=True)
@@ -101,9 +109,31 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
 )
 def get_survey_tallies(request, survey_id: UUID):
     try:
-        survey = Survey.objects.prefetch_related("questions").get(id=survey_id)
+        # select_related linked_event: _has_finalize_permission dereferences the
+        # event object (its created_by_id / co_hosts). created_by is NOT joined —
+        # the permission check only reads survey.created_by_id (the FK column).
+        survey = (
+            Survey.objects.select_related("linked_event")
+            .prefetch_related("questions")
+            .get(id=survey_id)
+        )
     except Survey.DoesNotExist:
         raise_validation(Code.Survey.NOT_FOUND, status_code=404)
+
+    # Tallies expose voter names/photos — gate behind the same authority that
+    # can finalize the poll (MANAGE_SURVEYS / MANAGE_EVENTS / survey owner /
+    # event host). Without this any authed user could enumerate voters by UUID.
+    if not _has_finalize_permission(request, survey, survey.linked_event):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="survey",
+            target_id=str(survey_id),
+            details={"endpoint": "get_survey_tallies"},
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="get_survey_tallies")
+
     poll_questions = [
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]

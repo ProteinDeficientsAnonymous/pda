@@ -4,6 +4,30 @@
  */
 
 export interface paths {
+    "/api/auth/accept-guidelines/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Guidelines
+         * @description Stamp the current user's guidelines consent, clearing the hard gate.
+         *
+         *     Idempotent: re-accepting just re-stamps the timestamp. The gate (see
+         *     config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
+         *     consent", so any non-null value satisfies it.
+         */
+        post: operations["users__auth_accept_guidelines"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/bulk-create-users/": {
         parameters: {
             query?: never;
@@ -1708,11 +1732,6 @@ export interface components {
         /** DocumentIn */
         DocumentIn: {
             /**
-             * Content
-             * @default
-             */
-            content: string;
-            /**
              * Content Pm
              * @default
              */
@@ -1753,8 +1772,6 @@ export interface components {
         };
         /** DocumentPatchIn */
         DocumentPatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
             /** Folder Id */
@@ -1796,8 +1813,6 @@ export interface components {
         };
         /** EditablePagePatchIn */
         EditablePagePatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
             /** Visibility */
@@ -2610,6 +2625,27 @@ export interface components {
             /** Parent Id */
             parent_id?: string | null;
         };
+        /** GeocodeOut */
+        GeocodeOut: {
+            /** Features */
+            features?: {
+                [key: string]: unknown;
+            }[];
+            /** Type */
+            type?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** GeocodeQuery */
+        GeocodeQuery: {
+            /**
+             * Limit
+             * @default 5
+             */
+            limit: number;
+            /** Q */
+            q: string;
+        };
         /** GuidelinesOut */
         GuidelinesOut: {
             /** Content */
@@ -2626,8 +2662,6 @@ export interface components {
         };
         /** GuidelinesPatchIn */
         GuidelinesPatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
         };
@@ -2647,8 +2681,6 @@ export interface components {
         };
         /** HomePagePatchIn */
         HomePagePatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
         };
@@ -2725,6 +2757,11 @@ export interface components {
              * Format: email
              */
             email: string;
+            /**
+             * Guidelines Consent
+             * @default false
+             */
+            guidelines_consent: boolean;
             /** Phone Number */
             phone_number: string;
             /**
@@ -2996,14 +3033,6 @@ export interface components {
         ReactionToggleIn: {
             /** Emoji */
             emoji: string;
-        };
-        /** RefreshIn */
-        RefreshIn: {
-            /**
-             * Refresh
-             * @default
-             */
-            refresh: string;
         };
         /** ReorderIn */
         ReorderIn: {
@@ -3326,6 +3355,11 @@ export interface components {
              */
             login_link_requested: boolean;
             /**
+             * Needs Guidelines Consent
+             * @default false
+             */
+            needs_guidelines_consent: boolean;
+            /**
              * Needs Onboarding
              * @default false
              */
@@ -3450,6 +3484,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    users__auth_accept_guidelines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
     users__management_bulk_create_users: {
         parameters: {
             query?: never;
@@ -3884,11 +3938,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshIn"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -3926,6 +3976,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleOut"][];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };
@@ -4456,6 +4515,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CheckPhoneOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
         };
@@ -5597,6 +5665,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -6288,6 +6365,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Not Found */
             404: {
                 headers: {
@@ -6328,6 +6414,15 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6524,6 +6619,15 @@ export interface operations {
                     "application/json": components["schemas"]["FeedbackOut"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Service Unavailable */
             503: {
                 headers: {
@@ -6553,9 +6657,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["GeocodeOut"];
                 };
             };
             /** @description Bad Gateway */
@@ -7147,6 +7249,15 @@ export interface operations {
                     "application/json": components["schemas"]["EditablePageOut"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -7337,6 +7448,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

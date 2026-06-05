@@ -61,6 +61,10 @@ class JoinRequest(models.Model):
     # remain queryable. Used as proof-of-consent for Twilio toll-free
     # verification + ongoing TCPA defensibility.
     sms_consent_at = models.DateTimeField(null=True, blank=True)
+    # Set when the user checks the community-guidelines box on the join form.
+    # Required at the API level; nullable so historical pre-consent rows remain
+    # queryable. Records that the applicant agreed to the guidelines they read.
+    guidelines_consent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         app_label = "community"

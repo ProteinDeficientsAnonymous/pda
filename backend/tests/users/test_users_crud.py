@@ -28,6 +28,20 @@ class TestCreateUser:
         )
         assert response.status_code == 201
 
+    def test_create_user_non_admin_cannot_assign_admin_role(self, api_client, manage_users_headers):
+        from users.models import User
+
+        admin_role = Role.objects.get(name="admin")
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"phone_number": "+12025550950", "role_id": str(admin_role.id)},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 403
+        assert_error_code(response, Code.Role.CANNOT_GRANT_ADMIN, "role_id")
+        assert not User.objects.filter(phone_number="+12025550950").exists()
+
     def test_create_user_invalid_role_id(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",

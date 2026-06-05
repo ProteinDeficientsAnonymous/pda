@@ -60,7 +60,11 @@ def create_user(request, payload: UserCreateIn):
         validate_display_name(payload.display_name)
 
     user, magic_token = _create_user_with_role(
-        payload.phone_number, payload.display_name, payload.email, payload.role_id
+        payload.phone_number,
+        payload.display_name,
+        payload.email,
+        payload.role_id,
+        requesting_user=request.auth,
     )
 
     audit_log(
@@ -183,8 +187,13 @@ def search_users(request, q: str = ""):
         [
             UserSearchOut(
                 id=str(u.id),
-                display_name=u.display_name or u.phone_number,
-                phone_number=u.phone_number,
+                # Don't leak a private phone via the display_name fallback when
+                # show_phone is false (e.g. members with no display_name set).
+                display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                # Respect each member's privacy flag — blank the phone rather
+                # than dropping the field, so callers (co-host/invite picker)
+                # don't break on a missing key. Mirrors the member directory.
+                phone_number=u.phone_number if u.show_phone else "",
             )
             for u in qs
         ],
@@ -358,7 +367,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
     if len(roles) != len(payload.role_ids):
         raise_validation(Code.User.ROLE_IDS_NOT_FOUND, field="role_ids", status_code=400)
 
-    _validate_admin_role_change(user, request.auth.pk, roles)
+    _validate_admin_role_change(user, request.auth, roles)
     _validate_member_role_required(roles)
 
     old_role_ids = [str(r.id) for r in user.roles.all()]

@@ -39,6 +39,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     isStaff: false,
     needsOnboarding: false,
     needsPasswordReset: false,
+    needsGuidelinesConsent: false,
     showPhone: false,
     showEmail: false,
     weekStart: 'sunday',

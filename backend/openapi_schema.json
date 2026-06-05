@@ -350,12 +350,6 @@
       },
       "DocumentIn": {
         "properties": {
-          "content": {
-            "default": "",
-            "maxLength": 50000,
-            "title": "Content",
-            "type": "string"
-          },
           "content_pm": {
             "default": "",
             "maxLength": 50000,
@@ -448,18 +442,6 @@
       },
       "DocumentPatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -569,18 +551,6 @@
       },
       "EditablePagePatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2364,6 +2334,54 @@
         "title": "FolderPatchIn",
         "type": "object"
       },
+      "GeocodeOut": {
+        "additionalProperties": true,
+        "properties": {
+          "features": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          }
+        },
+        "title": "GeocodeOut",
+        "type": "object"
+      },
+      "GeocodeQuery": {
+        "properties": {
+          "limit": {
+            "default": 5,
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "q": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Q",
+            "type": "string"
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "title": "GeocodeQuery",
+        "type": "object"
+      },
       "GuidelinesOut": {
         "properties": {
           "content": {
@@ -2395,18 +2413,6 @@
       },
       "GuidelinesPatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2454,18 +2460,6 @@
       },
       "HomePagePatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2632,6 +2626,11 @@
             "format": "email",
             "title": "Email",
             "type": "string"
+          },
+          "guidelines_consent": {
+            "default": false,
+            "title": "Guidelines Consent",
+            "type": "boolean"
           },
           "phone_number": {
             "maxLength": 20,
@@ -3301,18 +3300,6 @@
           "emoji"
         ],
         "title": "ReactionToggleIn",
-        "type": "object"
-      },
-      "RefreshIn": {
-        "properties": {
-          "refresh": {
-            "default": "",
-            "maxLength": 500,
-            "title": "Refresh",
-            "type": "string"
-          }
-        },
-        "title": "RefreshIn",
         "type": "object"
       },
       "ReorderIn": {
@@ -4096,6 +4083,11 @@
             "title": "Login Link Requested",
             "type": "boolean"
           },
+          "needs_guidelines_consent": {
+            "default": false,
+            "title": "Needs Guidelines Consent",
+            "type": "boolean"
+          },
           "needs_onboarding": {
             "default": false,
             "title": "Needs Onboarding",
@@ -4418,6 +4410,34 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/auth/accept-guidelines/": {
+      "post": {
+        "description": "Stamp the current user's guidelines consent, clearing the hard gate.\n\nIdempotent: re-accepting just re-stamps the timestamp. The gate (see\nconfig.auth.GatedJWTAuth) treats a null guidelines_consent_at as \"must\nconsent\", so any non-null value satisfies it.",
+        "operationId": "users__auth_accept_guidelines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Accept Guidelines",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/bulk-create-users/": {
       "post": {
         "operationId": "users__management_bulk_create_users",
@@ -4982,16 +5002,6 @@
       "post": {
         "operationId": "users__auth_refresh_token",
         "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "content": {
@@ -5038,6 +5048,16 @@
               }
             },
             "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           }
         },
         "security": [
@@ -5784,6 +5804,16 @@
               }
             },
             "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "summary": "Check Phone",
@@ -7462,6 +7492,16 @@
             },
             "description": "Bad Request"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
           "404": {
             "content": {
               "application/json": {
@@ -7523,6 +7563,11 @@
             "description": "OK"
           }
         },
+        "security": [
+          {
+            "OptionalJWTAuth": []
+          }
+        ],
         "summary": "Single Event Ics",
         "tags": [
           "community"
@@ -8432,6 +8477,16 @@
             },
             "description": "Bad Request"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
           "404": {
             "content": {
               "application/json": {
@@ -8497,6 +8552,16 @@
               }
             },
             "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           },
           "404": {
             "content": {
@@ -8778,6 +8843,16 @@
             },
             "description": "Created"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "503": {
             "content": {
               "application/json": {
@@ -8810,6 +8885,8 @@
             "name": "q",
             "required": true,
             "schema": {
+              "maxLength": 200,
+              "minLength": 1,
               "title": "Q",
               "type": "string"
             }
@@ -8820,6 +8897,8 @@
             "required": false,
             "schema": {
               "default": 5,
+              "maximum": 10,
+              "minimum": 1,
               "title": "Limit",
               "type": "integer"
             }
@@ -8830,9 +8909,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response",
-                  "type": "object"
+                  "$ref": "#/components/schemas/GeocodeOut"
                 }
               }
             },
@@ -8876,11 +8953,6 @@
             "description": "OK"
           }
         },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
         "summary": "Get Guidelines",
         "tags": [
           "community"
@@ -9658,6 +9730,16 @@
             },
             "description": "OK"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
           "403": {
             "content": {
               "application/json": {
@@ -9932,6 +10014,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "security": [

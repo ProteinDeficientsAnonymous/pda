@@ -290,3 +290,82 @@ class TestGenerateMagicLink:
         assert notif.is_read is True
         other_user.refresh_from_db()
         assert other_user.login_link_requested is False
+
+
+@pytest.mark.django_db
+class TestSearchUsersRespectsShowPhone:
+    """Issue 452 — search_users must honor the per-user show_phone flag."""
+
+    def _find(self, response, user_id):
+        return next(u for u in response.json() if u["id"] == str(user_id))
+
+    def test_phone_shown_when_show_phone_true(self, api_client, manage_users_headers, other_user):
+        other_user.show_phone = True
+        other_user.save(update_fields=["show_phone"])
+        response = api_client.get("/api/auth/users/search/?q=Other", **manage_users_headers)
+        assert response.status_code == 200
+        assert self._find(response, other_user.pk)["phone_number"] == other_user.phone_number
+
+    def test_phone_blanked_when_show_phone_false(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.show_phone = False
+        other_user.save(update_fields=["show_phone"])
+        response = api_client.get("/api/auth/users/search/?q=Other", **manage_users_headers)
+        assert response.status_code == 200
+        match = self._find(response, other_user.pk)
+        # Field stays present (callers depend on the key) but is blanked.
+        assert match["phone_number"] == ""
+
+    def test_display_name_does_not_leak_phone_when_show_phone_false(
+        self, api_client, manage_users_headers, other_user
+    ):
+        # Member with no display_name (e.g. pre-onboarding) must not leak the
+        # private phone via the display_name fallback.
+        other_user.display_name = ""
+        other_user.show_phone = False
+        other_user.save(update_fields=["display_name", "show_phone"])
+        response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
+        assert response.status_code == 200
+        match = self._find(response, other_user.pk)
+        assert other_user.phone_number not in match["display_name"]
+        assert match["display_name"] == "member"
+
+
+@pytest.mark.django_db
+class TestUpdateUserRoles:
+    def test_non_admin_cannot_grant_admin_role(self, api_client, manage_users_headers, other_user):
+        from users.roles import Role
+
+        admin_role = Role.objects.get(name="admin")
+        member_role = Role.objects.get(name="member")
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/roles/",
+            {"role_ids": [str(member_role.id), str(admin_role.id)]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 403
+        assert_error_code(response, Code.Role.CANNOT_GRANT_ADMIN)
+        assert not other_user.roles.filter(name="admin").exists()
+
+    def test_admin_can_grant_admin_role(self, api_client, other_user):
+        from ninja_jwt.tokens import RefreshToken
+        from users.models import User
+        from users.roles import Role
+
+        admin_role = Role.objects.get(name="admin")
+        member_role = Role.objects.get(name="member")
+        admin_user = User.objects.create_user(phone_number="+12025550401", password="adminpass123")
+        admin_user.roles.add(admin_role)
+        refresh = RefreshToken.for_user(admin_user)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/roles/",
+            {"role_ids": [str(member_role.id), str(admin_role.id)]},
+            content_type="application/json",
+            **headers,
+        )
+        assert response.status_code == 200
+        assert other_user.roles.filter(name="admin").exists()

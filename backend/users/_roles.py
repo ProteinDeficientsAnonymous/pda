@@ -16,8 +16,22 @@ from users.schemas import ErrorOut, RoleIn, RoleOut, RolePatchIn
 router = Router()
 
 
-@router.get("/roles/", response={200: list[RoleOut]}, auth=gated_jwt)
+@router.get("/roles/", response={200: list[RoleOut], 403: ErrorOut}, auth=gated_jwt)
 def list_roles(request):
+    # The role catalog (name + permission matrix) is admin-tier data. Allow
+    # MANAGE_ROLES (role editor) and MANAGE_USERS (the role-assignment picker
+    # on the members screens need role names), but never plain members.
+    if not (
+        request.auth.has_permission(PermissionKey.MANAGE_ROLES)
+        or request.auth.has_permission(PermissionKey.MANAGE_USERS)
+    ):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            details={"endpoint": "list_roles", "required_permission": PermissionKey.MANAGE_ROLES},
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="list_roles")
     roles = Role.objects.annotate(
         user_count=Count("users", filter=Q(users__archived_at__isnull=True)),
     )

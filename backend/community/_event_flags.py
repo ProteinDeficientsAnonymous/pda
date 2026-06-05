@@ -12,6 +12,7 @@ from ninja.responses import Status
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
+from community._events import _enforce_event_read_visibility
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -60,12 +61,23 @@ _VALID_REVIEW_STATUSES = {EventFlagStatus.DISMISSED, EventFlagStatus.ACTIONED}
 
 @router.post(
     "/events/{event_id}/flag/",
-    response={201: EventFlagOut, 400: ErrorOut, 404: ErrorOut, 409: ErrorOut, 429: ErrorOut},
+    response={
+        201: EventFlagOut,
+        400: ErrorOut,
+        403: ErrorOut,
+        404: ErrorOut,
+        409: ErrorOut,
+        429: ErrorOut,
+    },
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="3/h")
 def flag_event(request, event_id: UUID, data: EventFlagIn):
     event = get_object_or_404(Event, id=event_id)
+
+    # Don't let a caller flag (and thereby probe the existence of) an event
+    # they can't even read — same gating the comment endpoints apply.
+    _enforce_event_read_visibility(event, request.auth)
 
     if EventFlag.objects.filter(event=event, flagged_by=request.auth).exists():
         raise_validation(Code.Event.FLAG_ALREADY_FLAGGED, status_code=409)

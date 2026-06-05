@@ -25,6 +25,7 @@ interface WireUser {
   is_staff?: boolean;
   needs_onboarding: boolean;
   needs_password_reset?: boolean;
+  needs_guidelines_consent?: boolean;
   show_phone?: boolean;
   show_email?: boolean;
   week_start?: 'sunday' | 'monday';
@@ -65,6 +66,7 @@ function mapUser(u: WireUser): User {
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
     needsPasswordReset: u.needs_password_reset ?? false,
+    needsGuidelinesConsent: u.needs_guidelines_consent ?? false,
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
     weekStart: u.week_start ?? 'sunday',
@@ -143,6 +145,13 @@ export async function completeOnboarding(payload: {
     display_name: payload.displayName,
     email: payload.email,
   });
+  return mapUser(data);
+}
+
+export async function acceptGuidelines(): Promise<User> {
+  // Clears the hard guidelines-consent gate. Returns the updated user so the
+  // store can drop needsGuidelinesConsent and let the gate release.
+  const { data } = await apiClient.post<WireUser>('/api/auth/accept-guidelines/');
   return mapUser(data);
 }
 

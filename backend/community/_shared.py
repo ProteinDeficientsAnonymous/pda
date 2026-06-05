@@ -8,6 +8,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from ninja.security import HttpBearer
 from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F401
+from ninja_jwt.exceptions import AuthenticationFailed, TokenError
 from pydantic import BaseModel
 from users.models import User as UserModel
 
@@ -22,7 +23,15 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
     def authenticate(self, request: HttpRequest, token: str):
         try:
             return self.jwt_authenticate(request, token)
+        except (AuthenticationFailed, TokenError):
+            # Genuinely-invalid / expired / unparseable token — treat the
+            # caller as anonymous (public endpoints stay reachable).
+            return AnonymousUser()
         except Exception:
+            # Anything else (DB error, misconfiguration) is unexpected: log it
+            # so it stays observable, but still degrade to anonymous rather
+            # than 500 a public endpoint.
+            logger.warning("optional jwt auth: unexpected error", exc_info=True)
             return AnonymousUser()
 
     def __call__(self, request: HttpRequest):
@@ -73,6 +82,16 @@ def _validate_phone(raw: str, field: str = "phone_number") -> str:
     if not phonenumbers.is_valid_number(parsed):
         raise_validation(Code.Phone.INVALID, field=field)
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+
+
+def flatten_to_single_line(value: str) -> str:
+    r"""Collapse every line-break in untrusted text into a single space.
+
+    splitlines() covers \n \r \r\n \v \f \x1c-\x1e \x85    , so this
+    neutralizes any sink where a newline in user input would let the value
+    inject extra structure — an email header line, a GitHub issue title, etc.
+    """
+    return " ".join(value.splitlines()).strip()
 
 
 def _authenticated_user(requesting_user) -> "UserModel | None":

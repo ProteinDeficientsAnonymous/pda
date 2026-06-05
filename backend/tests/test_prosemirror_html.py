@@ -235,11 +235,7 @@ class TestTextAlign:
 
 
 @pytest.mark.django_db
-class TestDualFormatEndpoint:
-    """End-to-end: posting content_pm produces HTML identical in spirit to
-    posting the equivalent Delta. Dual-format keeps React (TipTap) and Flutter
-    (Quill) writing compatible rows."""
-
+class TestContentPmEndpoint:
     def test_home_accepts_content_pm(self, api_client, edit_homepage_headers):
         response = api_client.patch(
             "/api/community/home/",
@@ -252,38 +248,3 @@ class TestDualFormatEndpoint:
         assert data["content_pm"] != ""
         assert data["content"] == ""
         assert data["content_html"] == "<p>hi</p>"
-
-    def test_home_still_accepts_content_delta(self, api_client, edit_homepage_headers):
-        response = api_client.patch(
-            "/api/community/home/",
-            {"content": '[{"insert":"hi\\n"}]'},
-            content_type="application/json",
-            **edit_homepage_headers,
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["content"] != ""
-        assert data["content_pm"] == ""
-        assert "<p>hi</p>" in data["content_html"]
-
-    def test_home_pm_then_delta_overwrites(self, api_client, edit_homepage_headers):
-        # Write PM, then overwrite with Delta — content_pm should clear so the
-        # row reflects only the latest writer's format (no stale cross-format
-        # leftovers).
-        api_client.patch(
-            "/api/community/home/",
-            {"content_pm": _doc(_para(_text("first")))},
-            content_type="application/json",
-            **edit_homepage_headers,
-        )
-        response = api_client.patch(
-            "/api/community/home/",
-            {"content": '[{"insert":"second\\n"}]'},
-            content_type="application/json",
-            **edit_homepage_headers,
-        )
-        data = response.json()
-        assert data["content_pm"] == ""
-        assert data["content"] != ""
-        assert "second" in data["content_html"]
-        assert "first" not in data["content_html"]

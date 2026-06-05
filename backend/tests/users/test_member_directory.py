@@ -61,3 +61,17 @@ class TestMemberDirectory:
         response = api_client.get("/api/auth/users/directory/", **auth_headers)
         entry = next(u for u in response.json() if u["id"] == str(other_user.pk))
         assert entry["phone_number"] == other_user.phone_number
+
+    def test_display_name_does_not_leak_phone_when_show_phone_false(
+        self, api_client, auth_headers, other_user
+    ):
+        # Member with no display_name must not leak their private phone via the
+        # display_name fallback.
+        other_user.display_name = ""
+        other_user.show_phone = False
+        other_user.save(update_fields=["display_name", "show_phone"])
+        response = api_client.get("/api/auth/users/directory/", **auth_headers)
+        assert response.status_code == 200
+        entry = next(u for u in response.json() if u["id"] == str(other_user.pk))
+        assert other_user.phone_number not in entry["display_name"]
+        assert entry["display_name"] == "member"

@@ -36,7 +36,6 @@ from users.schemas import (
     MemberProfileOut,
     MePatchIn,
     OnboardingIn,
-    RefreshIn,
     TokenOut,
     UserOut,
 )
@@ -228,12 +227,10 @@ def magic_login(request, token: str, response: HttpResponse):
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
-def refresh_token(request, payload: RefreshIn, response: HttpResponse):
+def refresh_token(request, response: HttpResponse):
     from ninja_jwt.exceptions import TokenError
 
-    # Prefer httpOnly cookie (React). Fall back to body for Flutter clients
-    # that still send the refresh token in the JSON payload.
-    token = read_refresh_cookie(request) or payload.refresh
+    token = read_refresh_cookie(request)
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
@@ -374,7 +371,9 @@ def list_member_directory(request):
         [
             MemberDirectoryOut(
                 id=str(u.id),
-                display_name=u.display_name or u.phone_number,
+                # Don't leak a private phone via the display_name fallback when
+                # show_phone is false (e.g. members with no display_name set).
+                display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
                 phone_number=u.phone_number if u.show_phone else "",
                 email=(u.email or "") if u.show_email else "",
                 profile_photo_url=media_path(u.profile_photo),
@@ -444,6 +443,24 @@ def complete_onboarding(request, payload: OnboardingIn):
     user.save()
     audit_log(
         logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)
+    )
+    return Status(200, UserOut.from_user(user))
+
+
+@router.post("/accept-guidelines/", response={200: UserOut}, auth=gated_jwt)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
+def accept_guidelines(request):
+    """Stamp the current user's guidelines consent, clearing the hard gate.
+
+    Idempotent: re-accepting just re-stamps the timestamp. The gate (see
+    config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
+    consent", so any non-null value satisfies it.
+    """
+    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user.guidelines_consent_at = timezone.now()
+    user.save(update_fields=["guidelines_consent_at"])
+    audit_log(
+        logging.INFO, "guidelines_accepted", request, target_type="user", target_id=str(user.pk)
     )
     return Status(200, UserOut.from_user(user))
 

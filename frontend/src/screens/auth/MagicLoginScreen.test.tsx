@@ -23,6 +23,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     isStaff: false,
     needsOnboarding: false,
     needsPasswordReset: false,
+    needsGuidelinesConsent: false,
     showPhone: false,
     showEmail: false,
     weekStart: 'sunday',
@@ -49,6 +50,7 @@ function renderAt(token: string) {
         <Route path="/magic-login/:token" element={<MagicLoginScreen />} />
         <Route path="/new-password" element={<div>new password page</div>} />
         <Route path="/onboarding" element={<div>onboarding page</div>} />
+        <Route path="/consent" element={<div>consent page</div>} />
         <Route path="/calendar" element={<div>calendar page</div>} />
       </Routes>
     </MemoryRouter>,
@@ -72,6 +74,22 @@ describe('MagicLoginScreen', () => {
     // which the gate then bounced to /onboarding. Both must now agree.
     currentUser = makeUser({ needsPasswordReset: true, displayName: 'Alice', email: '' });
     renderAt('tok-noemail');
+    expect(await screen.findByText('onboarding page')).toBeInTheDocument();
+  });
+
+  it('routes a needsGuidelinesConsent user to /consent', async () => {
+    currentUser = makeUser({ needsGuidelinesConsent: true });
+    renderAt('tok-consent');
+    expect(await screen.findByText('consent page')).toBeInTheDocument();
+  });
+
+  it('routes password setup before consent when both are pending', async () => {
+    currentUser = makeUser({
+      needsOnboarding: true,
+      displayName: '',
+      needsGuidelinesConsent: true,
+    });
+    renderAt('tok-both');
     expect(await screen.findByText('onboarding page')).toBeInTheDocument();
   });
 

@@ -93,6 +93,7 @@ export const Code = {
     CurrentPasswordIncorrect: 'auth.current_password_incorrect',
     PasswordResetRequired: 'auth.password_reset_required',
     OnboardingRequired: 'auth.onboarding_required',
+    GuidelinesConsentRequired: 'auth.guidelines_consent_required',
   },
   Password: {
     Invalid: 'password.invalid',
@@ -106,6 +107,8 @@ export const Code = {
     ProtectedCannotDelete: 'role.protected_cannot_delete',
     CannotRemoveOwnAdmin: 'role.cannot_remove_own_admin',
     CannotRemoveLastAdmin: 'role.cannot_remove_last_admin',
+    CannotGrantAdmin: 'role.cannot_grant_admin',
+    InvalidPermission: 'role.invalid_permission',
     MemberRoleRequired: 'role.member_role_required',
   },
   Member: {
@@ -149,6 +152,7 @@ export const Code = {
     NotApproved: 'join_request.not_approved',
     AlreadyLoggedIn: 'join_request.already_logged_in',
     SmsConsentRequired: 'join_request.sms_consent_required',
+    GuidelinesConsentRequired: 'join_request.guidelines_consent_required',
   },
   Photo: {
     TypeNotAllowed: 'photo.type_not_allowed',
@@ -162,6 +166,7 @@ export const Code = {
   },
   Page: {
     MembersOnly: 'page.members_only',
+    VisibilityInvalid: 'page.visibility_invalid',
   },
   Docs: {
     FolderNotFound: 'docs.folder_not_found',
@@ -264,6 +269,7 @@ export type ValidationCode =
   | 'auth.current_password_incorrect'
   | 'auth.password_reset_required'
   | 'auth.onboarding_required'
+  | 'auth.guidelines_consent_required'
   | 'password.invalid'
   | 'password.same_as_old'
   | 'role.not_found'
@@ -273,6 +279,8 @@ export type ValidationCode =
   | 'role.protected_cannot_delete'
   | 'role.cannot_remove_own_admin'
   | 'role.cannot_remove_last_admin'
+  | 'role.cannot_grant_admin'
+  | 'role.invalid_permission'
   | 'role.member_role_required'
   | 'member.not_found'
   | 'user.not_found'
@@ -308,11 +316,13 @@ export type ValidationCode =
   | 'join_request.not_approved'
   | 'join_request.already_logged_in'
   | 'join_request.sms_consent_required'
+  | 'join_request.guidelines_consent_required'
   | 'photo.type_not_allowed'
   | 'photo.too_large'
   | 'perm.denied'
   | 'rate.limited'
   | 'page.members_only'
+  | 'page.visibility_invalid'
   | 'docs.folder_not_found'
   | 'docs.parent_folder_not_found'
   | 'docs.document_not_found'
@@ -401,6 +411,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'auth.current_password_incorrect': [],
   'auth.password_reset_required': [],
   'auth.onboarding_required': [],
+  'auth.guidelines_consent_required': [],
   'password.invalid': ['reasons'],
   'password.same_as_old': [],
   'role.not_found': [],
@@ -410,6 +421,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'role.protected_cannot_delete': [],
   'role.cannot_remove_own_admin': [],
   'role.cannot_remove_last_admin': [],
+  'role.cannot_grant_admin': [],
+  'role.invalid_permission': ['permission'],
   'role.member_role_required': [],
   'member.not_found': [],
   'user.not_found': [],
@@ -445,11 +458,13 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'join_request.not_approved': [],
   'join_request.already_logged_in': [],
   'join_request.sms_consent_required': [],
+  'join_request.guidelines_consent_required': [],
   'photo.type_not_allowed': ['allowed'],
   'photo.too_large': ['max_mb'],
   'perm.denied': ['action'],
   'rate.limited': [],
   'page.members_only': [],
+  'page.visibility_invalid': ['allowed'],
   'docs.folder_not_found': [],
   'docs.parent_folder_not_found': [],
   'docs.document_not_found': [],

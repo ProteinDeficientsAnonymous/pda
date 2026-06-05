@@ -1,8 +1,25 @@
 """Tests for community endpoints: home, guidelines, check-phone, error report, FAQ."""
 
+import json
+
 import pytest
 from users.permissions import PermissionKey
 from users.roles import Role
+
+
+def _pm(text: str) -> str:
+    return json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": text}],
+                }
+            ],
+        }
+    )
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -105,17 +122,17 @@ class TestHomePage:
     def test_update_home_content(self, api_client, edit_homepage_headers):
         response = api_client.patch(
             "/api/community/home/",
-            {"content": "New main content"},
+            {"content_pm": _pm("New main content")},
             content_type="application/json",
             **edit_homepage_headers,
         )
         assert response.status_code == 200
-        assert response.json()["content"] == "New main content"
+        assert "New main content" in response.json()["content_html"]
 
     def test_update_home_requires_permission(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/community/home/",
-            {"content": "Blocked"},
+            {"content_pm": _pm("Blocked")},
             content_type="application/json",
             **auth_headers,
         )
@@ -124,7 +141,7 @@ class TestHomePage:
     def test_update_home_requires_auth(self, api_client):
         response = api_client.patch(
             "/api/community/home/",
-            {"content": "No auth"},
+            {"content_pm": _pm("No auth")},
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -137,14 +154,15 @@ class TestHomePage:
 
 @pytest.mark.django_db
 class TestGuidelines:
-    def test_get_guidelines_requires_auth(self, api_client):
+    def test_get_guidelines_is_public(self, api_client):
+        # Public so join-form applicants can read what they're consenting to.
         response = api_client.get("/api/community/guidelines/")
-        assert response.status_code == 401
+        assert response.status_code == 200
 
     def test_update_guidelines_empty_content(self, api_client, manage_guidelines_headers):
         response = api_client.patch(
             "/api/community/guidelines/",
-            {"content": ""},
+            {"content_pm": ""},
             content_type="application/json",
             **manage_guidelines_headers,
         )
@@ -154,7 +172,7 @@ class TestGuidelines:
     def test_guidelines_has_updated_at(self, api_client, manage_guidelines_headers, auth_headers):
         api_client.patch(
             "/api/community/guidelines/",
-            {"content": "Some content"},
+            {"content_pm": _pm("Some content")},
             content_type="application/json",
             **manage_guidelines_headers,
         )
@@ -195,6 +213,88 @@ class TestCheckPhone:
         )
         assert response.status_code == 200
         assert response.json()["status"] == "unknown"
+
+    def test_check_phone_rate_limited(self, api_client, db):
+        # Membership oracle — must be rate limited (Issue 457).
+        last_status = None
+        for i in range(25):
+            resp = api_client.post(
+                "/api/community/check-phone/",
+                {"phone_number": "+12025559999"},
+                content_type="application/json",
+            )
+            last_status = resp.status_code
+            if last_status == 429:
+                break
+        assert last_status == 429
+
+
+# ---------------------------------------------------------------------------
+# TestEditablePages — visibility gating + visibility validation (Issue 455)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestEditablePages:
+    def _create_page(self, slug, visibility):
+        from community.models import EditablePage
+
+        page = EditablePage.get_or_create_page(slug)
+        page.visibility = visibility
+        page.save(update_fields=["visibility"])
+        return page
+
+    def test_public_page_served_to_anon(self, api_client, db):
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.PUBLIC)
+        response = api_client.get("/api/community/pages/about/")
+        assert response.status_code == 200
+
+    def test_members_only_page_blocked_for_anon(self, api_client, db):
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.MEMBERS_ONLY)
+        response = api_client.get("/api/community/pages/about/")
+        assert response.status_code == 403
+
+    def test_invite_only_page_blocked_for_anon(self, api_client, db):
+        # Previously only MEMBERS_ONLY was gated, so INVITE_ONLY leaked to anon.
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.INVITE_ONLY)
+        response = api_client.get("/api/community/pages/about/")
+        assert response.status_code == 403
+
+    def test_invite_only_page_served_to_authed(self, api_client, auth_headers, db):
+        from community.models import PageVisibility
+
+        self._create_page("about", PageVisibility.INVITE_ONLY)
+        response = api_client.get("/api/community/pages/about/", **auth_headers)
+        assert response.status_code == 200
+
+    def test_update_page_rejects_invalid_visibility(
+        self, api_client, manage_guidelines_headers, db
+    ):
+        response = api_client.patch(
+            "/api/community/pages/about/",
+            {"visibility": "everyone-please"},
+            content_type="application/json",
+            **manage_guidelines_headers,
+        )
+        assert response.status_code == 400
+
+    def test_update_page_accepts_valid_visibility(self, api_client, manage_guidelines_headers, db):
+        from community.models import PageVisibility
+
+        response = api_client.patch(
+            "/api/community/pages/about/",
+            {"visibility": PageVisibility.MEMBERS_ONLY},
+            content_type="application/json",
+            **manage_guidelines_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["visibility"] == PageVisibility.MEMBERS_ONLY
 
 
 # ---------------------------------------------------------------------------
@@ -294,17 +394,17 @@ class TestFAQ:
     def test_update_faq_content(self, api_client, edit_faq_headers):
         response = api_client.patch(
             "/api/community/faq/",
-            {"content": "New FAQ content"},
+            {"content_pm": _pm("New FAQ content")},
             content_type="application/json",
             **edit_faq_headers,
         )
         assert response.status_code == 200
-        assert response.json()["content"] == "New FAQ content"
+        assert "New FAQ content" in response.json()["content_html"]
 
     def test_update_faq_requires_edit_faq_permission(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/community/faq/",
-            {"content": "Should be denied"},
+            {"content_pm": _pm("Should be denied")},
             content_type="application/json",
             **auth_headers,
         )
@@ -313,7 +413,7 @@ class TestFAQ:
     def test_update_faq_requires_auth(self, api_client):
         response = api_client.patch(
             "/api/community/faq/",
-            {"content": "No auth"},
+            {"content_pm": _pm("No auth")},
             content_type="application/json",
         )
         assert response.status_code == 401

@@ -51,6 +51,32 @@ def _clear_rate_limit_cache():
     cache.clear()
 
 
+@pytest.fixture(autouse=True)
+def _default_test_users_consented(monkeypatch):
+    """Make test-created users count as already-consented to the guidelines.
+
+    The hard guidelines-consent gate (config.auth.GatedJWTAuth) 403s any user
+    whose guidelines_consent_at is null, which is the correct production default
+    (nobody is grandfathered — see User.guidelines_consent_at). But the vast
+    majority of tests create a plain member via create_user and then exercise an
+    unrelated gated endpoint; without this they'd all 403. Stamp consent on
+    create so the default test user behaves like a normal, set-up member.
+
+    Tests that specifically exercise the consent gate explicitly set
+    guidelines_consent_at = None on their user to opt back into the gated state.
+    """
+    from django.utils import timezone
+    from users.models import UserManager
+
+    original = UserManager.create_user
+
+    def create_user(self, phone_number, password=None, **extra_fields):
+        extra_fields.setdefault("guidelines_consent_at", timezone.now())
+        return original(self, phone_number, password=password, **extra_fields)
+
+    monkeypatch.setattr(UserManager, "create_user", create_user)
+
+
 @pytest.fixture
 def test_user(db):
     from users.models import User

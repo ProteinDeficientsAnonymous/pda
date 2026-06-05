@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { PhoneField } from '@/components/ui/PhoneField';
 import { useAuthStore } from '@/auth/store';
+import { postAuthRedirect } from '@/models/user';
 import { checkPhone } from '@/api/join';
 import { extractApiError } from '@/utils/errors';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
+import { safeRedirect } from './redirect';
 
 type Step = 'phone' | 'password' | 'pending';
 
@@ -88,8 +90,18 @@ export default function LoginScreen() {
           setStep('phone');
         }}
         onSuccess={() => {
-          const redirect = params.get('redirect');
-          void navigate(redirect ? decodeURIComponent(redirect) : '/calendar', { replace: true });
+          // Route based on the fresh user. Sending a pending user (password
+          // setup / consent) to their gate screen directly — instead of to the
+          // redirect/calendar and leaning on OnboardingGate to bounce — avoids
+          // a race where the lazy target renders a blank Suspense fallback
+          // before the gate re-evaluates with the new auth state.
+          const gateTarget = postAuthRedirect(useAuthStore.getState().user);
+          if (gateTarget) {
+            void navigate(gateTarget, { replace: true });
+            return;
+          }
+          // safeRedirect guards against open-redirect via the redirect param.
+          void navigate(safeRedirect(params.get('redirect')), { replace: true });
         }}
         loginFn={login}
       />

@@ -113,28 +113,17 @@ class TestLogin:
 class TestRefreshToken:
     def test_refresh_valid_returns_new_access(self, api_client, test_user):
         refresh = RefreshToken.for_user(test_user)
+        api_client.cookies["refresh_token"] = str(refresh)
         response = api_client.post(
             "/api/auth/refresh/",
-            {"refresh": str(refresh)},
+            {},
             content_type="application/json",
         )
         assert response.status_code == 200
         assert "access" in response.json()
 
     def test_refresh_invalid_token(self, api_client, db):
-        response = api_client.post(
-            "/api/auth/refresh/",
-            {"refresh": "not.a.valid.token"},
-            content_type="application/json",
-        )
-        assert response.status_code == 401
-        assert_error_code(response, Code.Auth.REFRESH_TOKEN_INVALID)
-
-    def test_refresh_missing_field(self, api_client, db):
-        # With httpOnly cookie support, the body field is optional: the token
-        # may come from the `refresh_token` cookie instead. Missing both surfaces
-        # as a 401, not a 422 — since "no token available" is an auth failure,
-        # not a payload shape failure.
+        api_client.cookies["refresh_token"] = "not.a.valid.token"
         response = api_client.post(
             "/api/auth/refresh/",
             {},
@@ -143,13 +132,24 @@ class TestRefreshToken:
         assert response.status_code == 401
         assert_error_code(response, Code.Auth.REFRESH_TOKEN_INVALID)
 
-    def test_refresh_empty_string(self, api_client, db):
+    def test_refresh_missing_cookie(self, api_client, db):
         response = api_client.post(
             "/api/auth/refresh/",
-            {"refresh": ""},
+            {},
             content_type="application/json",
         )
         assert response.status_code == 401
+        assert_error_code(response, Code.Auth.REFRESH_TOKEN_INVALID)
+
+    def test_refresh_ignores_body_token(self, api_client, test_user):
+        refresh = RefreshToken.for_user(test_user)
+        response = api_client.post(
+            "/api/auth/refresh/",
+            {"refresh": str(refresh)},
+            content_type="application/json",
+        )
+        assert response.status_code == 401
+        assert_error_code(response, Code.Auth.REFRESH_TOKEN_INVALID)
 
 
 # ---------------------------------------------------------------------------
