@@ -18,14 +18,17 @@ This mirrors the frontend's DOMPurify pass (`frontend/src/utils/sanitize.ts`):
 the backend is the canonical sanitizer for non-browser consumers (emails, API
 clients), the frontend is defense-in-depth for content that never round-trips.
 The two passes are kept value-for-value equivalent on URL handling and the
-`text-align` allowlist (see `_attribute_filter` / `_normalize_url` and their
-frontend mirror) so neither boundary is weaker — both normalise the same URL
-obfuscations and accept the same case-insensitive alignment tokens.
+`text-align` allowlist (see `_attribute_filter` / `_normalize_url` /
+`_is_protocol_relative` and their frontend mirror) so neither boundary is
+weaker — both normalise the same URL obfuscations, decide protocol-relative by
+actually parsing the URL (`urlsplit` / `new URL`) rather than substring-matching,
+and accept the same case-insensitive alignment tokens.
 """
 
 from __future__ import annotations
 
 import re
+from urllib.parse import urlsplit
 
 import nh3
 
@@ -82,15 +85,16 @@ _ALLOWED_CLASSES = {"a": {"cta", "cta--primary", "cta--secondary"}}
 _ALLOWED_TEXT_ALIGN = {"left", "center", "right"}
 _TEXT_ALIGN_RE = re.compile(r"text-align:\s*([a-z]+)", re.IGNORECASE)
 
-# Characters a browser's URL parser ignores at the START of an href/src (ASCII
-# C0 controls 0x00–0x1F + space 0x20, plus DEL 0x7F). Stripped before the
-# protocol-relative check to close the " //evil.com" / "\t//evil.com" bypass.
-_URL_LEADING_IGNORED = "".join(chr(c) for c in range(0x21)) + "\x7f"
-
 # Tab / LF / CR are removed from ANYWHERE in a URL by browsers before parsing
 # (the WHATWG URL "remove all ASCII tab or newline" step), so an embedded one
 # can't be used to split up a protocol-relative form like `/\t/evil.com`.
 _URL_REMOVED_CONTROLS = re.compile(r"[\t\n\r]")
+
+# Browsers treat any run of 2+ leading slashes as "authority follows", so
+# `///evil.com` resolves to host evil.com — but `urlsplit` reads `///` as an
+# empty authority. Collapse to exactly `//` so the parser sees what the browser
+# does. (Applied after backslash-folding, so `/\/evil.com` is covered too.)
+_URL_LEADING_SLASHES = re.compile(r"^/{2,}")
 
 # `rel="noopener noreferrer"` is force-injected on every anchor, blocking
 # reverse-tabnabbing on target="_blank" links regardless of what was emitted.
@@ -100,24 +104,38 @@ _LINK_REL = "noopener noreferrer"
 def _normalize_url(value: str) -> str:
     """Collapse an href/src to the form a browser actually resolves.
 
-    Mirrors the browser URL parser so the stored value matches what every
-    consumer (browser, email, API client) sees, removing the parser differential
-    that lets obfuscated protocol-relative URLs slip past a naive `startswith`:
+    Browser URL parsing applies transforms that Python's `urlsplit` does not, and
+    that a naive string check misses — replicate them so a parsed URL matches what
+    every consumer (browser, email, API client) ultimately sees:
 
-    - Tab/LF/CR are removed from anywhere in the string (browsers do this before
-      parsing), so `/\\t/evil.com` can't hide a protocol-relative form.
-    - Leading ASCII whitespace / C0 controls are ignored.
-    - Backslashes fold to forward slashes, but ONLY in the authority/path
-      (everything before the first `?` or `#`) — browsers don't fold in the
-      query/fragment, so folding the whole string would corrupt a legitimate
+    - Remove tab/LF/CR from anywhere in the string (the WHATWG URL "remove all
+      ASCII tab or newline" step), so `/\\t/evil.com` can't hide an authority.
+    - Fold backslashes to forward slashes, but ONLY in the authority/path
+      (before the first `?` or `#`) — browsers treat `\\` as `/` there but NOT in
+      the query/fragment, so folding the whole string would corrupt a legitimate
       backslash in a query string (`?x=a\\b`).
-
-    So `/\\evil.com`, ` //evil.com`, and `https:/\\evil.com` all canonicalise to
-    a leading `//` (rejected by the caller), while legit URLs are untouched.
+    - Collapse a leading run of 2+ slashes to `//`, so `urlsplit` recognises the
+      authority that a browser would (`///evil.com` -> host evil.com).
     """
-    value = _URL_REMOVED_CONTROLS.sub("", value).lstrip(_URL_LEADING_IGNORED)
+    value = _URL_REMOVED_CONTROLS.sub("", value)
     cut = next((i for i, ch in enumerate(value) if ch in "?#"), len(value))
-    return value[:cut].replace("\\", "/") + value[cut:]
+    value = value[:cut].replace("\\", "/") + value[cut:]
+    return _URL_LEADING_SLASHES.sub("//", value)
+
+
+def _is_protocol_relative(value: str) -> bool:
+    """True if `value` resolves to an off-site authority with no explicit scheme.
+
+    Parses the browser-normalised URL with `urlsplit` and reports whether it has
+    a host but no scheme — i.e. a protocol-relative URL (`//evil.com`, `/\\evil`,
+    `/\\t/evil.com`, ...) that a browser would resolve to an external origin.
+    Parsing (rather than substring matching) is what makes this robust against
+    the obfuscation variants; `urlsplit` populates `netloc` only when an authority
+    is actually present, so genuine relative paths (`/media/...`, `#frag`, `?q`)
+    and scheme-bearing absolute URLs (which nh3's allowlist already vetted) pass.
+    """
+    parts = urlsplit(value)
+    return bool(parts.netloc) and not parts.scheme
 
 
 def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
@@ -128,11 +146,12 @@ def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
     both gaps at the same audited boundary:
 
     - Protocol-relative URLs (`//evil.com`) carry no scheme, so nh3 treats them
-      as relative and would keep them — an off-site / remote-load vector. Reject
-      them on `href`/`src` (after normalising browser-equivalent obfuscations),
-      while leaving genuine relative paths (`/media/...`). The normalised value
-      is re-emitted so `https:/\\evil.com` is stored as the `https://evil.com`
-      it resolves to, not the ambiguous original.
+      as relative and would keep them — an off-site / remote-load vector. Parse
+      the browser-normalised URL and reject any with a host but no scheme (see
+      `_is_protocol_relative`), while leaving genuine relative paths
+      (`/media/...`). The normalised value is re-emitted so `https:/\\evil.com`
+      is stored as the `https://evil.com` it resolves to, not the ambiguous
+      original.
     - `mailto:` is valid for links but inert-and-pointless on an image `src`;
       reject it there to preserve the old image-scheme guard (http/https only).
     - `style` may only carry a single `text-align` declaration with an allowlisted
@@ -145,13 +164,13 @@ def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
     — the scheme check runs on the ORIGINAL value before this filter, so a
     `javascript:`/`data:` URL is already gone by the time we run. That means
     `_normalize_url` must never *manufacture* a dangerous scheme from a safe
-    input; its transforms (strip whitespace/controls, fold leading backslashes)
-    cannot introduce a `:`, so they are safe. Keep that invariant if you extend
-    it — anything that could synthesise a scheme would become a stored-XSS hole.
+    input; its transforms (strip tab/LF/CR, fold backslashes) cannot introduce a
+    `:`, so they are safe. Keep that invariant if you extend it — anything that
+    could synthesise a scheme would become a stored-XSS hole.
     """
     if attribute in ("href", "src"):
         normalized = _normalize_url(value)
-        if normalized.startswith("//"):
+        if _is_protocol_relative(normalized):
             return None
         value = normalized
     if attribute == "src" and value.lower().startswith("mailto:"):

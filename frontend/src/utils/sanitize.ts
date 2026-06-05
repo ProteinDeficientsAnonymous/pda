@@ -52,6 +52,38 @@ const ALLOWED_ATTR = [
 // backend's _ALLOWED_TEXT_ALIGN. Anything else is dropped.
 const ALLOWED_TEXT_ALIGN = new Set(['left', 'center', 'right']);
 
+// Mirrors the backend's `_normalize_url`: apply the two browser transforms that
+// a string check (or even URL parsing) misses, so the stored value matches what
+// every consumer resolves. Tab/LF/CR are removed from anywhere (browsers do this
+// before parsing); backslashes fold to "/" but ONLY in the authority/path
+// (before any ?/#), since browsers don't fold them in the query/fragment — so a
+// legit backslash in a query string ("?x=a\b") isn't corrupted.
+function normalizeUrl(value: string): string {
+  const stripped = value.replace(/[\t\n\r]/g, '');
+  const cut = stripped.search(/[?#]/);
+  if (cut === -1) return stripped.replace(/\\/g, '/');
+  return stripped.slice(0, cut).replace(/\\/g, '/') + stripped.slice(cut);
+}
+
+// True if a (normalised) href/src resolves to an off-site authority with no
+// explicit scheme — i.e. a protocol-relative URL ("//evil.com", "/\evil.com",
+// "/\t/evil.com", ...) a browser sends off-site. We parse with `new URL` rather
+// than substring-match: resolving against a fixed base, a protocol-relative URL
+// lands on a foreign origin while a genuine relative path ("/media/...") stays
+// same-origin, and absolute scheme-bearing URLs are excluded up front (DOMPurify
+// already vetted their scheme). Parsing ends the obfuscation arms race.
+const SANITIZE_BASE_ORIGIN = 'https://pda.invalid';
+const URL_SCHEME_RE = /^[a-z][a-z0-9+.-]*:/i;
+
+function isProtocolRelative(normalized: string): boolean {
+  if (URL_SCHEME_RE.test(normalized)) return false;
+  try {
+    return new URL(normalized, `${SANITIZE_BASE_ORIGIN}/`).origin !== SANITIZE_BASE_ORIGIN;
+  } catch {
+    return false; // unparseable — leave it for DOMPurify's own URI policy
+  }
+}
+
 // The hooks are static (no per-call state) and DOMPurify is a module singleton,
 // so register them once at module load rather than re-checking on every call.
 // sanitizeHtml is the only DOMPurify consumer in the app; if that ever changes,
@@ -59,24 +91,12 @@ const ALLOWED_TEXT_ALIGN = new Set(['left', 'center', 'right']);
 
 DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
   // Reject protocol-relative URLs on href/src. DOMPurify keeps "//evil.com" as a
-  // valid relative URL, but it resolves to https://evil.com — an off-site /
-  // remote-load vector. Normalise browser-equivalent obfuscations first, matching
-  // the backend's _normalize_url, so "/\evil.com", " //evil.com", "/\t/evil.com"
-  // and "https:/\evil.com" can't slip past a naive `//` check:
-  //   - tab/LF/CR are removed from anywhere (browsers strip them before parsing);
-  //   - leading whitespace/controls are ignored;
-  //   - backslashes fold to "/" only in the authority/path (before any ?/#), so a
-  //     legit backslash in a query string isn't corrupted.
-  // Genuine relative paths ("/media/...") stay.
+  // valid relative URL, but it resolves off-site — a remote-load / phishing
+  // vector. Normalise browser obfuscations, then parse to decide. Genuine
+  // relative paths ("/media/...") stay.
   if (data.attrName === 'href' || data.attrName === 'src') {
-    // eslint-disable-next-line no-control-regex
-    const stripped = data.attrValue.replace(/[\t\n\r]/g, '').replace(/^[\x00-\x20\x7f]+/, '');
-    const cut = stripped.search(/[?#]/);
-    const normalized =
-      cut === -1
-        ? stripped.replace(/\\/g, '/')
-        : stripped.slice(0, cut).replace(/\\/g, '/') + stripped.slice(cut);
-    if (normalized.startsWith('//')) {
+    const normalized = normalizeUrl(data.attrValue);
+    if (isProtocolRelative(normalized)) {
       data.attrValue = '';
       data.keepAttr = false;
     } else {
