@@ -12,13 +12,8 @@ def _auth_headers(user) -> dict:
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
 
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    from django.core.cache import cache
-
-    cache.clear()
-    yield
-    cache.clear()
+# Rate-limit cache isolation (sse-ticket is 30/m keyed on user pk) is handled by
+# conftest's package-wide autouse `_clear_rate_limit_cache` fixture.
 
 
 @pytest.mark.django_db
@@ -93,3 +88,37 @@ class TestSseStreamAuth:
         response = api_client.get(f"/api/notifications/stream/?ticket={ticket.token}")
         assert response.status_code == 401
         assert response.json()["detail"] == "invalid ticket"
+
+
+@pytest.mark.django_db
+class TestSseTicketCleanup:
+    """cleanup_notifications sweeps used / long-expired tickets but keeps live ones."""
+
+    def test_cleanup_deletes_used_and_expired_keeps_live(self, test_user):
+        from django.core.management import call_command
+        from notifications.models import SseTicket
+
+        live = SseTicket.mint_for_user(test_user)  # unused, expires in ~60s
+        used = SseTicket.mint_for_user(test_user)
+        used.used = True
+        used.save(update_fields=["used"])
+        long_expired = SseTicket.objects.create(
+            token="long-expired",
+            user=test_user,
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+        # Just-expired (within the grace window) must survive to avoid racing a
+        # consume in flight.
+        recently_expired = SseTicket.objects.create(
+            token="recently-expired",
+            user=test_user,
+            expires_at=timezone.now() - timedelta(seconds=30),
+        )
+
+        call_command("cleanup_notifications")
+
+        remaining = set(SseTicket.objects.values_list("token", flat=True))
+        assert live.token in remaining
+        assert recently_expired.token in remaining
+        assert used.token not in remaining
+        assert long_expired.token not in remaining

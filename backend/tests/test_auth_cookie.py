@@ -9,22 +9,10 @@ from ninja_jwt.tokens import RefreshToken
 from users._refresh_cookie import REFRESH_COOKIE_NAME
 
 
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    # login / magic-login are rate-limited (5/m keyed on client IP); isolate counts.
-    from django.core.cache import cache
-
-    cache.clear()
-    yield
-    cache.clear()
-
-
 @pytest.mark.django_db
 class TestLoginRateLimit:
     def test_login_rate_limited_after_five_attempts(self, api_client, test_user):
-        from django.core.cache import cache
-
-        cache.clear()
+        # Rate-limit cache is isolated by conftest's autouse _clear_rate_limit_cache.
         for _ in range(5):
             resp = api_client.post(
                 "/api/auth/login/",

@@ -104,11 +104,15 @@ def _current_jwt_user(request) -> User | None:
     return None
 
 
-def _validate_magic_user(request, magic: MagicLoginToken) -> None:
-    """Run the non-consuming guards for a magic token. Raises on failure."""
-    # Reject cross-user magic links: if the caller is already authenticated as a
-    # different user, a silent session swap would let them complete onboarding /
-    # password-set on behalf of the link's target. Force explicit logout first.
+def _reject_cross_user_magic_link(request, magic: MagicLoginToken) -> None:
+    """Block a magic link aimed at someone other than the current session.
+
+    If the caller is already authenticated as a different user, a silent session
+    swap would let them complete onboarding / password-set on behalf of the
+    link's target. Force explicit logout first. This guard runs before the
+    used/expired check (it doesn't depend on token freshness and a cross-user
+    attempt is the more urgent thing to reject).
+    """
     current_user = _current_jwt_user(request)
     if current_user is not None and current_user.pk != magic.user.pk:
         audit_log(
@@ -120,6 +124,10 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             details={"current_user_id": str(current_user.pk)},
         )
         raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
+
+
+def _validate_magic_account_state(request, magic: MagicLoginToken) -> None:
+    """Reject magic links for archived or paused accounts. Raises on failure."""
     if magic.user.archived_at is not None:
         audit_log(
             logging.WARNING,
@@ -158,7 +166,12 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                 logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
             )
             raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
-        _validate_magic_user(request, magic)
+        # Guard order matches the original (pre-refactor) flow: cross-user, then
+        # used/expired, then account-state. Keeping used/expired ahead of the
+        # archived/paused checks means a spent link always reports ALREADY_USED
+        # regardless of account state — so replaying a burned token can't leak
+        # whether the target account is archived or paused.
+        _reject_cross_user_magic_link(request, magic)
         if magic.used or magic.is_expired:
             audit_log(
                 logging.WARNING,
@@ -169,6 +182,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                 details={"reason": "used_or_expired"},
             )
             raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
+        _validate_magic_account_state(request, magic)
         magic.used = True
         magic.save(update_fields=["used"])
         if magic.requires_password_reset:

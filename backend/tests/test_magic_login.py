@@ -6,15 +6,8 @@ from ninja_jwt.tokens import RefreshToken
 
 from tests._asserts import assert_error_code
 
-
-@pytest.fixture(autouse=True)
-def _clear_rate_limit_cache():
-    # magic-login is rate-limited (5/m keyed on client IP); isolate counts.
-    from django.core.cache import cache
-
-    cache.clear()
-    yield
-    cache.clear()
+# Rate-limit cache isolation is handled by conftest's package-wide autouse
+# `_clear_rate_limit_cache` fixture.
 
 
 @pytest.mark.django_db
@@ -138,10 +131,25 @@ class TestMagicLogin:
         assert second.status_code == 400
         assert_error_code(second, Code.Auth.MAGIC_LINK_ALREADY_USED)
 
-    def test_magic_login_rate_limited(self, api_client, test_user):
-        from django.core.cache import cache
+    def test_used_token_reports_already_used_even_when_account_paused(self, api_client, test_user):
+        """A spent token must report ALREADY_USED regardless of account state.
 
-        cache.clear()
+        Guard-order regression: the used/expired check runs before the
+        archived/paused checks, so replaying a burned link can't leak whether
+        the target account is paused (would otherwise return 403 ACCOUNT_PAUSED).
+        """
+        from users.models import MagicLoginToken
+
+        magic = MagicLoginToken.create_for_user(test_user)
+        magic.used = True
+        magic.save(update_fields=["used"])
+        test_user.is_paused = True
+        test_user.save(update_fields=["is_paused"])
+        response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert response.status_code == 400
+        assert_error_code(response, Code.Auth.MAGIC_LINK_ALREADY_USED)
+
+    def test_magic_login_rate_limited(self, api_client, test_user):
         # First 5 calls pass the limiter (invalid tokens → 400, but not 429).
         for _ in range(5):
             resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")

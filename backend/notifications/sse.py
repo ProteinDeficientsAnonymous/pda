@@ -26,26 +26,25 @@ def _consume_ticket(ticket_str: str) -> AbstractBaseUser | None:
     failures propagate so they surface in logs rather than masquerading as
     "invalid ticket".
     """
-    from django.contrib.auth import get_user_model
     from django.db import transaction
 
     from notifications.models import SseTicket
 
     with transaction.atomic():
         try:
-            ticket = SseTicket.objects.select_for_update().get(token=ticket_str)
+            # select_related the user so the row lock and user load are a single
+            # query (mirrors _consume_magic_token) — avoids a second round-trip
+            # per stream open on the connect/reconnect hot path.
+            ticket = (
+                SseTicket.objects.select_for_update().select_related("user").get(token=ticket_str)
+            )
         except SseTicket.DoesNotExist:
             return None
         if ticket.used or ticket.is_expired:
             return None
         ticket.used = True
         ticket.save(update_fields=["used"])
-        user_id = ticket.user_id
-    User = get_user_model()
-    try:
-        return User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return None
+        return ticket.user
 
 
 def _build_async_dsn() -> str:

@@ -49,9 +49,9 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
     let es: EventSource | null = null;
     let retry = 0;
     let reconnectTimer: number | null = null;
-    // Mutable holder (not a plain `let`) so the value can't be narrowed across
-    // the await/event-callback boundaries the cleanup function mutates it from.
-    const state = { closed: false };
+    // Set by cleanup so in-flight async work (ticket fetch, refresh, backoff
+    // timer) bails instead of reconnecting after unmount or a token change.
+    let closed = false;
 
     function scheduleReconnect() {
       // EventSource can't see the response status, so we can't tell a 401 from
@@ -60,7 +60,7 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
       // dead or backend down) fall back to backoff retry so a transient network
       // error still recovers on its own.
       void refreshAccessToken().then((next) => {
-        if (state.closed) return;
+        if (closed) return;
         if (next && next !== token) return; // outer effect reruns with new token
         retry += 1;
         const delay = Math.min(2 ** (retry - 1) * 1000, MAX_BACKOFF_MS);
@@ -82,7 +82,7 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
         onStatusChangeRef.current?.(false);
         source.close();
         es = null;
-        if (state.closed) return;
+        if (closed) return;
         scheduleReconnect();
       });
     }
@@ -94,10 +94,10 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
         // or the backend is down — back off and retry like any other error.
         ticket = await fetchSseTicket();
       } catch {
-        if (!state.closed) scheduleReconnect();
+        if (!closed) scheduleReconnect();
         return;
       }
-      if (state.closed) return;
+      if (closed) return;
       const fullUrl = `${API_BASE_URL}${url}?ticket=${encodeURIComponent(ticket)}`;
       es = new EventSource(fullUrl);
       attachHandlers(es);
@@ -106,7 +106,7 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
     void connect();
 
     return () => {
-      state.closed = true;
+      closed = true;
       if (reconnectTimer !== null) window.clearTimeout(reconnectTimer);
       es?.close();
       onStatusChangeRef.current?.(false);
