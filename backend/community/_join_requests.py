@@ -17,7 +17,13 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
-from community._shared import ErrorOut, _validate_phone, logger, validate_display_name
+from community._shared import (
+    ErrorOut,
+    _validate_phone,
+    flatten_to_single_line,
+    logger,
+    validate_display_name,
+)
 from community._validation import Code, ValidationException, raise_validation
 from community.models import (
     JoinFormQuestion,
@@ -177,11 +183,14 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
     if not settings.VETTING_EMAIL:
         return
     try:
+        # Subject must stay single-line: a newline in display_name would
+        # otherwise let an applicant forge additional email headers.
+        safe_subject = flatten_to_single_line(f"New PDA Join Request: {display_name}")
         answer_lines = "\n".join(
             f"{data['label']}: {data['answer']}" for data in custom_answers.values()
         )
         send_mail(
-            subject=f"New PDA Join Request: {display_name}",
+            subject=safe_subject,
             message=f"Display Name: {display_name}\nPhone: {phone}\n\n{answer_lines}",
             from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
             recipient_list=[settings.VETTING_EMAIL],
@@ -472,7 +481,8 @@ def unreject_join_request(request, id: UUID):
     return Status(200, _join_request_out(join_request))
 
 
-@router.post("/check-phone/", response={200: CheckPhoneOut}, auth=None)
+@router.post("/check-phone/", response={200: CheckPhoneOut, 429: ErrorOut}, auth=None)
+@rate_limit(key_func=client_ip, rate="20/h")
 def check_phone(request, payload: CheckPhoneIn):
     from users.models import User as UserModel
 

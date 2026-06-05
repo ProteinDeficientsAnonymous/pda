@@ -26,6 +26,14 @@ def client_ip(request) -> str:
     return request.META.get("REMOTE_ADDR", "anon")
 
 
+def auth_or_ip_key(request) -> str:
+    """Rate-limit key for optional-auth endpoints: the authed user's pk when
+    present, else the client IP. Use this for any endpoint that accepts both
+    authenticated and anonymous callers so the two share one keying scheme."""
+    pk = getattr(request.auth, "pk", None)
+    return str(pk) if pk is not None else client_ip(request)
+
+
 def rate_limit(*, key_func, rate: str):
     """Rate-limit decorator for Django Ninja endpoints.
 

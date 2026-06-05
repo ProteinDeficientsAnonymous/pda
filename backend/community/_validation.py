@@ -187,6 +187,7 @@ class Code:
 
     class Page:
         MEMBERS_ONLY = "page.members_only"
+        VISIBILITY_INVALID = "page.visibility_invalid"  # params: { allowed: list[str] }
 
     class Docs:
         FOLDER_NOT_FOUND = "docs.folder_not_found"

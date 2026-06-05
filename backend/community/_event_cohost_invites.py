@@ -55,6 +55,8 @@ def _reload_event_for_response(event_id: UUID) -> Event:
 )
 def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
     invite = _get_invite_or_404(event_id, invite_id)
+    if invite.event.is_deleted:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     expire_stale_cohost_invites(invite.event)
     invite.refresh_from_db()
 
@@ -84,6 +86,8 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
 )
 def decline_cohost_invite(request, event_id: UUID, invite_id: UUID):
     invite = _get_invite_or_404(event_id, invite_id)
+    if invite.event.is_deleted:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
     expire_stale_cohost_invites(invite.event)
     invite.refresh_from_db()
 

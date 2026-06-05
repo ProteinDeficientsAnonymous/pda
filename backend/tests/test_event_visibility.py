@@ -260,7 +260,10 @@ class TestInviteOnlyVisibility:
             content_type="application/json",
             **self._auth_headers(test_user),
         )
-        assert response.status_code == 404
+        # RSVP now reuses the same read-visibility enforcement as get_event, so
+        # an invite-only event a member can't see returns 403 (consistent with
+        # the GET path) rather than the old bespoke 404.
+        assert response.status_code == 403
 
     def test_rsvp_allowed_for_invited_user(self, api_client, test_user):
         creator = self._make_user("+12025550213", "Creator13")

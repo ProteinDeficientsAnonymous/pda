@@ -166,6 +166,7 @@ export const Code = {
   },
   Page: {
     MembersOnly: 'page.members_only',
+    VisibilityInvalid: 'page.visibility_invalid',
   },
   Docs: {
     FolderNotFound: 'docs.folder_not_found',
@@ -321,6 +322,7 @@ export type ValidationCode =
   | 'perm.denied'
   | 'rate.limited'
   | 'page.members_only'
+  | 'page.visibility_invalid'
   | 'docs.folder_not_found'
   | 'docs.parent_folder_not_found'
   | 'docs.document_not_found'
@@ -462,6 +464,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'perm.denied': ['action'],
   'rate.limited': [],
   'page.members_only': [],
+  'page.visibility_invalid': ['allowed'],
   'docs.folder_not_found': [],
   'docs.parent_folder_not_found': [],
   'docs.document_not_found': [],

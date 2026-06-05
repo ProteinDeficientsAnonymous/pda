@@ -691,6 +691,13 @@
         "name": "MEMBERS_ONLY",
         "value": "page.members_only",
         "params": []
+      },
+      {
+        "name": "VISIBILITY_INVALID",
+        "value": "page.visibility_invalid",
+        "params": [
+          "allowed"
+        ]
       }
     ],
     "Docs": [
