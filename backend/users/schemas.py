@@ -70,6 +70,7 @@ class UserOut(BaseModel):
     needs_onboarding: bool = False
     needs_password_reset: bool = False
     needs_guidelines_consent: bool = False
+    needs_sms_consent: bool = False
     profile_photo_url: str = ""
     show_phone: bool = True
     show_email: bool = True
@@ -91,6 +92,7 @@ class UserOut(BaseModel):
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
             needs_guidelines_consent=user.guidelines_consent_at is None,
+            needs_sms_consent=user.sms_consent_at is None,
             profile_photo_url=media_path(user.profile_photo),
             show_phone=user.show_phone,
             show_email=user.show_email,

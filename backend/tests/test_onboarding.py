@@ -164,3 +164,16 @@ class TestOnboardingEmail:
             **headers,
         )
         assert resp.status_code == 200, resp.content
+
+
+@pytest.mark.django_db
+class TestSmsConsentSerialized:
+    def test_me_reports_needs_sms_consent_when_null(self, api_client, needs_onboarding_user):
+        from ninja_jwt.tokens import RefreshToken
+
+        needs_onboarding_user.sms_consent_at = None
+        needs_onboarding_user.save(update_fields=["sms_consent_at"])
+        token = RefreshToken.for_user(needs_onboarding_user).access_token
+        resp = api_client.get("/api/auth/me/", HTTP_AUTHORIZATION=f"Bearer {token}")
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["needs_sms_consent"] is True
