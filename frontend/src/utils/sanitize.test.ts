@@ -13,9 +13,21 @@ describe('sanitizeHtml', () => {
     expect(out).not.toContain('onclick');
   });
 
-  it('drops javascript: hrefs', () => {
+  it('drops javascript: hrefs but keeps the link element', () => {
     const out = sanitizeHtml('<a href="javascript:alert(1)">x</a>');
     expect(out).not.toContain('javascript:');
+    expect(out).not.toContain('href=');
+    // The anchor itself survives (regression guard: a config change that drops
+    // <a> from ALLOWED_TAGS would lose all links and still pass a scheme-only
+    // assertion).
+    expect(out).toContain('<a');
+    expect(out).toContain('x</a>');
+  });
+
+  it('drops protocol-relative hrefs', () => {
+    const out = sanitizeHtml('<a href="//evil.com">x</a>');
+    expect(out).not.toContain('evil.com');
+    expect(out).not.toContain('href=');
   });
 
   it('keeps https links', () => {
@@ -29,18 +41,35 @@ describe('sanitizeHtml', () => {
       expect(out).toContain('text-align: center');
     });
 
-    it('strips non-text-align declarations', () => {
+    it('drops a style with no text-align entirely', () => {
       const out = sanitizeHtml(
         '<p style="position: fixed; background: url(javascript:alert(1))">hi</p>',
       );
       expect(out).not.toContain('position');
       expect(out).not.toContain('javascript');
       expect(out).not.toContain('url(');
+      expect(out).not.toContain('style=');
+    });
+
+    it('keeps valid text-align while stripping a malicious sibling declaration', () => {
+      // The security-critical branch: the hook must rebuild the value to just the
+      // safe text-align, not pass the whole attribute through because it matched.
+      const out = sanitizeHtml('<p style="text-align: center; position: fixed; top: 0">hi</p>');
+      expect(out).toContain('text-align: center');
+      expect(out).not.toContain('position');
+      expect(out).not.toContain('fixed');
     });
 
     it('drops disallowed text-align values', () => {
       const out = sanitizeHtml('<p style="text-align: -webkit-center">hi</p>');
       expect(out).not.toContain('-webkit-center');
+      expect(out).not.toContain('style=');
+    });
+
+    it('drops justify (renderers only emit left/center/right)', () => {
+      const out = sanitizeHtml('<p style="text-align: justify">hi</p>');
+      expect(out).not.toContain('justify');
+      expect(out).not.toContain('style=');
     });
   });
 

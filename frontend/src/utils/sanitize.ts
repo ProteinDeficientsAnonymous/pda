@@ -6,12 +6,12 @@
 
 import DOMPurify from 'dompurify';
 
-// Conservative allowlist: headings, lists, inline emphasis, links, images,
-// blockquote, code. Anything else (script, iframe, on* handlers) is stripped.
+// Allowlist mirrors exactly what the renderers emit (delta_to_html /
+// prosemirror_to_html): headings h1–h3, lists, inline emphasis (strong/em/u/s),
+// inline code, links, images, blockquote, hr. Anything else (script, iframe,
+// on* handlers) is stripped. Kept in sync with the backend _ALLOWED_TAGS.
 const ALLOWED_TAGS = [
   'a',
-  'b',
-  'i',
   'em',
   'strong',
   'u',
@@ -21,14 +21,10 @@ const ALLOWED_TAGS = [
   'h1',
   'h2',
   'h3',
-  'h4',
-  'h5',
-  'h6',
   'ul',
   'ol',
   'li',
   'blockquote',
-  'pre',
   'code',
   'img',
   'hr',
@@ -52,41 +48,51 @@ const ALLOWED_ATTR = [
   'style',
 ];
 
-const ALLOWED_TEXT_ALIGN = new Set(['left', 'center', 'right', 'justify']);
+// Matches the renderers' alignment vocabulary (left/center/right) and the
+// backend's _ALLOWED_TEXT_ALIGN. Anything else is dropped.
+const ALLOWED_TEXT_ALIGN = new Set(['left', 'center', 'right']);
 
-let hooksRegistered = false;
+// The hooks are static (no per-call state) and DOMPurify is a module singleton,
+// so register them once at module load rather than re-checking on every call.
+// sanitizeHtml is the only DOMPurify consumer in the app; if that ever changes,
+// scope these to an isolated DOMPurify instance instead of the global one.
 
-function registerHooks(): void {
-  if (hooksRegistered) return;
-  hooksRegistered = true;
+DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
+  // Reject protocol-relative URLs on href/src. DOMPurify treats "//evil.com" as
+  // a valid relative URL and keeps it, but it resolves to https://evil.com — an
+  // off-site / remote-load vector. Genuine relative paths ("/media/...") stay.
+  if (data.attrName === 'href' || data.attrName === 'src') {
+    if (data.attrValue.startsWith('//')) {
+      data.attrValue = '';
+      data.keepAttr = false;
+    }
+    return;
+  }
 
   // Constrain `style` to a single safe declaration: text-align with a known
   // value. Anything else (positioning, url(), expression(), etc.) is dropped.
-  DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
-    if (data.attrName !== 'style') return;
-    const match = /text-align:\s*([a-z]+)/i.exec(data.attrValue);
-    const value = match?.[1]?.toLowerCase();
-    if (value && ALLOWED_TEXT_ALIGN.has(value)) {
-      data.attrValue = `text-align: ${value}`;
-      return;
-    }
-    data.attrValue = '';
-    data.keepAttr = false;
-  });
+  if (data.attrName !== 'style') return;
+  const match = /text-align:\s*([a-z]+)/i.exec(data.attrValue);
+  const value = match?.[1]?.toLowerCase();
+  if (value && ALLOWED_TEXT_ALIGN.has(value)) {
+    data.attrValue = `text-align: ${value}`;
+    return;
+  }
+  data.attrValue = '';
+  data.keepAttr = false;
+});
 
-  // DOMPurify's ADD_ATTR only allowlists target/rel — it does not *force* a
-  // safe rel. Any anchor opening a new tab must get rel="noopener noreferrer"
-  // to block reverse-tabnabbing, regardless of what (if any) rel was supplied.
-  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.tagName !== 'A') return;
-    if (node.getAttribute('target') === '_blank') {
-      node.setAttribute('rel', 'noopener noreferrer');
-    }
-  });
-}
+// DOMPurify's ADD_ATTR only allowlists target/rel — it does not *force* a
+// safe rel. Any anchor opening a new tab must get rel="noopener noreferrer"
+// to block reverse-tabnabbing, regardless of what (if any) rel was supplied.
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName !== 'A') return;
+  if (node.getAttribute('target') === '_blank') {
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
 
 export function sanitizeHtml(raw: string): string {
-  registerHooks();
   return DOMPurify.sanitize(raw, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
