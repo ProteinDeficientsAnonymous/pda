@@ -460,3 +460,37 @@ class TestApprovalCarriesConsent:
         user = User.objects.get(phone_number="+12025550701")
         assert user.guidelines_consent_at is not None
         assert user.sms_consent_at is not None
+
+    def test_unarchived_user_inherits_join_request_consent(self, api_client, vettor_headers):
+        from community.models import JoinRequest
+        from django.utils import timezone
+        from users.models import User
+
+        archived = User.objects.create_user(
+            phone_number="+12025550702",
+            display_name="Old Member",
+        )
+        archived.archived_at = timezone.now()
+        archived.guidelines_consent_at = None
+        archived.sms_consent_at = None
+        archived.save(update_fields=["archived_at", "guidelines_consent_at", "sms_consent_at"])
+
+        jr = JoinRequest.objects.create(
+            display_name="Old Member",
+            phone_number="+12025550702",
+            email="oldmember@example.com",
+            sms_consent_at=timezone.now(),
+            guidelines_consent_at=timezone.now(),
+        )
+        resp = api_client.patch(
+            f"/api/community/join-requests/{jr.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert resp.status_code == 200, resp.content
+
+        archived.refresh_from_db()
+        assert archived.archived_at is None
+        assert archived.guidelines_consent_at is not None
+        assert archived.sms_consent_at is not None
