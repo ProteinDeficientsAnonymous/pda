@@ -59,6 +59,13 @@ class User(AbstractUser):
     # hard gate (see config.auth.GatedJWTAuth). Stamped by POST /accept-guidelines/.
     # Deliberately NOT backfilled: everyone, admins included, must re-consent.
     guidelines_consent_at = models.DateTimeField(null=True, blank=True)
+    # PERSISTENT USER STATE: when this user last accepted the SMS messaging
+    # policy. Null means they have never consented. Mirrors guidelines_consent_at
+    # and is surfaced on /me/ as needs_sms_consent, but — unlike guidelines — is
+    # NOT a hard gate (see config.auth.GatedJWTAuth): we record SMS consent, we
+    # do not lock legacy users out for lacking it. Carried from JoinRequest on
+    # approval, or stamped by complete_onboarding when collected inline.
+    sms_consent_at = models.DateTimeField(null=True, blank=True)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
