@@ -399,6 +399,10 @@ def complete_onboarding(request, payload: OnboardingIn):
         user.onboarded_at = timezone.now()
     user.needs_onboarding = False
     user.needs_password_reset = False
+    if payload.accept_guidelines and user.guidelines_consent_at is None:
+        user.guidelines_consent_at = timezone.now()
+    if payload.accept_sms and user.sms_consent_at is None:
+        user.sms_consent_at = timezone.now()
     user.save()
     audit_log(
         logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)

@@ -226,6 +226,12 @@ class OnboardingIn(BaseModel):
     # OptionalEmail (like the other schemas) so an empty-string email from the
     # client coerces to None instead of failing EmailStr validation.
     email: OptionalEmail = None
+    # Inline consent collected during onboarding for users with no prior consent
+    # (admin-created accounts have no JoinRequest). Each flag stamps the matching
+    # *_consent_at only when True AND the user hasn't already consented — so an
+    # existing timestamp is never overwritten. Omitted/False = leave as-is.
+    accept_guidelines: bool = False
+    accept_sms: bool = False
 
 
 class UserSearchOut(BaseModel):
