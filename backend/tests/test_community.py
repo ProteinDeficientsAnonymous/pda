@@ -1,8 +1,25 @@
 """Tests for community endpoints: home, guidelines, check-phone, error report, FAQ."""
 
+import json
+
 import pytest
 from users.permissions import PermissionKey
 from users.roles import Role
+
+
+def _pm(text: str) -> str:
+    return json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": text}],
+                }
+            ],
+        }
+    )
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -105,17 +122,17 @@ class TestHomePage:
     def test_update_home_content(self, api_client, edit_homepage_headers):
         response = api_client.patch(
             "/api/community/home/",
-            {"content": "New main content"},
+            {"content_pm": _pm("New main content")},
             content_type="application/json",
             **edit_homepage_headers,
         )
         assert response.status_code == 200
-        assert response.json()["content"] == "New main content"
+        assert "New main content" in response.json()["content_html"]
 
     def test_update_home_requires_permission(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/community/home/",
-            {"content": "Blocked"},
+            {"content_pm": _pm("Blocked")},
             content_type="application/json",
             **auth_headers,
         )
@@ -124,7 +141,7 @@ class TestHomePage:
     def test_update_home_requires_auth(self, api_client):
         response = api_client.patch(
             "/api/community/home/",
-            {"content": "No auth"},
+            {"content_pm": _pm("No auth")},
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -137,14 +154,15 @@ class TestHomePage:
 
 @pytest.mark.django_db
 class TestGuidelines:
-    def test_get_guidelines_requires_auth(self, api_client):
+    def test_get_guidelines_is_public(self, api_client):
+        # Public so join-form applicants can read what they're consenting to.
         response = api_client.get("/api/community/guidelines/")
-        assert response.status_code == 401
+        assert response.status_code == 200
 
     def test_update_guidelines_empty_content(self, api_client, manage_guidelines_headers):
         response = api_client.patch(
             "/api/community/guidelines/",
-            {"content": ""},
+            {"content_pm": ""},
             content_type="application/json",
             **manage_guidelines_headers,
         )
@@ -154,7 +172,7 @@ class TestGuidelines:
     def test_guidelines_has_updated_at(self, api_client, manage_guidelines_headers, auth_headers):
         api_client.patch(
             "/api/community/guidelines/",
-            {"content": "Some content"},
+            {"content_pm": _pm("Some content")},
             content_type="application/json",
             **manage_guidelines_headers,
         )
@@ -376,17 +394,17 @@ class TestFAQ:
     def test_update_faq_content(self, api_client, edit_faq_headers):
         response = api_client.patch(
             "/api/community/faq/",
-            {"content": "New FAQ content"},
+            {"content_pm": _pm("New FAQ content")},
             content_type="application/json",
             **edit_faq_headers,
         )
         assert response.status_code == 200
-        assert response.json()["content"] == "New FAQ content"
+        assert "New FAQ content" in response.json()["content_html"]
 
     def test_update_faq_requires_edit_faq_permission(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/community/faq/",
-            {"content": "Should be denied"},
+            {"content_pm": _pm("Should be denied")},
             content_type="application/json",
             **auth_headers,
         )
@@ -395,7 +413,7 @@ class TestFAQ:
     def test_update_faq_requires_auth(self, api_client):
         response = api_client.patch(
             "/api/community/faq/",
-            {"content": "No auth"},
+            {"content_pm": _pm("No auth")},
             content_type="application/json",
         )
         assert response.status_code == 401

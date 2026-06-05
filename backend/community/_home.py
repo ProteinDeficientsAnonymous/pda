@@ -27,10 +27,6 @@ class HomePageOut(BaseModel):
 
 
 class HomePagePatchIn(BaseModel):
-    # Legacy (Flutter) field — Quill Delta JSON.
-    content: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
-    # React/TipTap field — ProseMirror JSON. Either content or content_pm
-    # (but not both) should be set.
     content_pm: str | None = Field(default=None, max_length=FieldLimit.CONTENT)
 
 
@@ -51,14 +47,13 @@ def get_home(request):
 def _apply_content_update(
     h: HomePage,
     *,
-    delta: str | None,
     pm: str | None,
     field_prefix: str,
 ) -> bool:
     """Update one (content, content_pm, content_html) triple. Returns True if changed."""
-    if delta is None and pm is None:
+    if pm is None:
         return False
-    rendered = render_content_payload(delta=delta, prosemirror=pm)
+    rendered = render_content_payload(prosemirror=pm)
     setattr(h, field_prefix, rendered.content)
     setattr(h, f"{field_prefix}_pm", rendered.content_pm)
     setattr(h, f"{field_prefix}_html", rendered.content_html)
@@ -77,9 +72,7 @@ def update_home(request, payload: HomePagePatchIn):
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_home")
     h = HomePage.get()
     changed: list[str] = []
-    if _apply_content_update(
-        h, delta=payload.content, pm=payload.content_pm, field_prefix="content"
-    ):
+    if _apply_content_update(h, pm=payload.content_pm, field_prefix="content"):
         changed.append("content")
     h.save()
     audit_log(

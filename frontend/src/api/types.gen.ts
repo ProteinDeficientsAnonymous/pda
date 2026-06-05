@@ -4,6 +4,30 @@
  */
 
 export interface paths {
+    "/api/auth/accept-guidelines/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Guidelines
+         * @description Stamp the current user's guidelines consent, clearing the hard gate.
+         *
+         *     Idempotent: re-accepting just re-stamps the timestamp. The gate (see
+         *     config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
+         *     consent", so any non-null value satisfies it.
+         */
+        post: operations["users__auth_accept_guidelines"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/bulk-create-users/": {
         parameters: {
             query?: never;
@@ -1684,11 +1708,6 @@ export interface components {
         /** DocumentIn */
         DocumentIn: {
             /**
-             * Content
-             * @default
-             */
-            content: string;
-            /**
              * Content Pm
              * @default
              */
@@ -1729,8 +1748,6 @@ export interface components {
         };
         /** DocumentPatchIn */
         DocumentPatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
             /** Folder Id */
@@ -1772,8 +1789,6 @@ export interface components {
         };
         /** EditablePagePatchIn */
         EditablePagePatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
             /** Visibility */
@@ -2602,8 +2617,6 @@ export interface components {
         };
         /** GuidelinesPatchIn */
         GuidelinesPatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
         };
@@ -2623,8 +2636,6 @@ export interface components {
         };
         /** HomePagePatchIn */
         HomePagePatchIn: {
-            /** Content */
-            content?: string | null;
             /** Content Pm */
             content_pm?: string | null;
         };
@@ -2701,6 +2712,11 @@ export interface components {
              * Format: email
              */
             email: string;
+            /**
+             * Guidelines Consent
+             * @default false
+             */
+            guidelines_consent: boolean;
             /** Phone Number */
             phone_number: string;
             /**
@@ -2973,14 +2989,6 @@ export interface components {
             /** Emoji */
             emoji: string;
         };
-        /** RefreshIn */
-        RefreshIn: {
-            /**
-             * Refresh
-             * @default
-             */
-            refresh: string;
-        };
         /** ReorderIn */
         ReorderIn: {
             /** Ids */
@@ -3229,8 +3237,6 @@ export interface components {
         TokenOut: {
             /** Access */
             access: string;
-            /** Refresh */
-            refresh: string;
         };
         /** UnreadCountOut */
         UnreadCountOut: {
@@ -3298,6 +3304,11 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /**
+             * Needs Guidelines Consent
+             * @default false
+             */
+            needs_guidelines_consent: boolean;
             /**
              * Needs Onboarding
              * @default false
@@ -3423,6 +3434,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    users__auth_accept_guidelines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
     users__management_bulk_create_users: {
         parameters: {
             query?: never;
@@ -3839,11 +3870,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshIn"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {

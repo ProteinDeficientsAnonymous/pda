@@ -83,7 +83,6 @@ describe('useCreateDocument', () => {
     expect(mockedPost).toHaveBeenCalledWith('/api/community/docs/', {
       title: 'welcome',
       folder_id: 'f1',
-      content: '',
       content_pm: '',
     });
     await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: ['docs', 'folders'] }));

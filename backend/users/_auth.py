@@ -7,6 +7,7 @@ from community._validation import Code, raise_validation
 from config.audit import audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
+from config.ratelimit import rate_limit
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import File, Router
@@ -34,7 +35,6 @@ from users.schemas import (
     MemberProfileOut,
     MePatchIn,
     OnboardingIn,
-    RefreshIn,
     TokenOut,
     UserOut,
 )
@@ -81,7 +81,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
     refresh_str = str(refresh)
     set_refresh_cookie(response, refresh_str)
     audit_log(logging.INFO, "login_success", request, target_type="user", target_id=str(user.pk))
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
 
 def _current_jwt_user(request) -> User | None:
@@ -182,16 +182,14 @@ def magic_login(request, token: str, response: HttpResponse):
         target_type="user",
         target_id=str(magic.user.pk),
     )
-    return Status(200, TokenOut(access=str(refresh.access_token), refresh=refresh_str))  # type: ignore
+    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
-def refresh_token(request, payload: RefreshIn, response: HttpResponse):
+def refresh_token(request, response: HttpResponse):
     from ninja_jwt.exceptions import TokenError
 
-    # Prefer httpOnly cookie (React). Fall back to body for Flutter clients
-    # that still send the refresh token in the JSON payload.
-    token = read_refresh_cookie(request) or payload.refresh
+    token = read_refresh_cookie(request)
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
     try:
@@ -404,6 +402,24 @@ def complete_onboarding(request, payload: OnboardingIn):
     user.save()
     audit_log(
         logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)
+    )
+    return Status(200, UserOut.from_user(user))
+
+
+@router.post("/accept-guidelines/", response={200: UserOut}, auth=gated_jwt)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
+def accept_guidelines(request):
+    """Stamp the current user's guidelines consent, clearing the hard gate.
+
+    Idempotent: re-accepting just re-stamps the timestamp. The gate (see
+    config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
+    consent", so any non-null value satisfies it.
+    """
+    user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
+    user.guidelines_consent_at = timezone.now()
+    user.save(update_fields=["guidelines_consent_at"])
+    audit_log(
+        logging.INFO, "guidelines_accepted", request, target_type="user", target_id=str(user.pk)
     )
     return Status(200, UserOut.from_user(user))
 

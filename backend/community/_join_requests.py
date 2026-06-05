@@ -48,6 +48,9 @@ class JoinRequestIn(BaseModel):
     # we record consent timestamp on the join request as proof for Twilio's
     # toll-free verification + ongoing TCPA defensibility.
     sms_consent: bool = False
+    # Community-guidelines consent. UI presents a required checkbox tied to
+    # /guidelines; we record the consent timestamp on the join request.
+    guidelines_consent: bool = False
     # Honeypot: hidden field human users never fill in. Bots auto-complete
     # every input, so a non-empty value is a strong spam signal.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
@@ -252,6 +255,9 @@ def submit_join_request(request, payload: JoinRequestIn):
     if not payload.sms_consent:
         raise_validation(Code.JoinRequest.SMS_CONSENT_REQUIRED, field="sms_consent")
 
+    if not payload.guidelines_consent:
+        raise_validation(Code.JoinRequest.GUIDELINES_CONSENT_REQUIRED, field="guidelines_consent")
+
     validate_display_name(display_name)
     validated_phone = _validate_phone(payload.phone_number)
     normalized_email = payload.email.strip().lower()
@@ -268,6 +274,7 @@ def submit_join_request(request, payload: JoinRequestIn):
         email=normalized_email,
         custom_answers=custom_answers,
         sms_consent_at=timezone.now(),
+        guidelines_consent_at=timezone.now(),
     )
 
     logger.info("Join request submitted by %s", display_name)
@@ -390,6 +397,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
                 join_request.display_name,
                 join_request.email,
                 None,
+                requesting_user=request.auth,
             )
             user_created = True
         elif existing_user.archived_at is not None:

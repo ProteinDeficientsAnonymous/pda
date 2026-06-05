@@ -370,6 +370,11 @@
         "name": "ONBOARDING_REQUIRED",
         "value": "auth.onboarding_required",
         "params": []
+      },
+      {
+        "name": "GUIDELINES_CONSENT_REQUIRED",
+        "value": "auth.guidelines_consent_required",
+        "params": []
       }
     ],
     "Password": [
@@ -421,6 +426,18 @@
         "name": "CANNOT_REMOVE_LAST_ADMIN",
         "value": "role.cannot_remove_last_admin",
         "params": []
+      },
+      {
+        "name": "CANNOT_GRANT_ADMIN",
+        "value": "role.cannot_grant_admin",
+        "params": []
+      },
+      {
+        "name": "INVALID_PERMISSION",
+        "value": "role.invalid_permission",
+        "params": [
+          "permission"
+        ]
       },
       {
         "name": "MEMBER_ROLE_REQUIRED",
@@ -629,6 +646,11 @@
       {
         "name": "SMS_CONSENT_REQUIRED",
         "value": "join_request.sms_consent_required",
+        "params": []
+      },
+      {
+        "name": "GUIDELINES_CONSENT_REQUIRED",
+        "value": "join_request.guidelines_consent_required",
         "params": []
       }
     ],

@@ -17,7 +17,7 @@ class TestMagicLogin:
         assert response.status_code == 200
         data = response.json()
         assert "access" in data
-        assert "refresh" in data
+        assert "refresh" not in data
 
     def test_magic_login_invalid_token(self, api_client, db):
         response = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")

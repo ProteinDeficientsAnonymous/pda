@@ -85,6 +85,85 @@ describe('apiClient refresh interceptor', () => {
     authMock.restore();
   });
 
+  it('replays a mutating request once after a clean 401 + successful refresh', async () => {
+    // A clean 401 means the server rejected the request before processing it
+    // (expired access token), so it never mutated state — replaying it with the
+    // refreshed token is safe and recovers the action instead of failing it.
+    const apiMock = new MockAdapter(apiClient);
+    const authMock = new MockAdapter(authClient);
+    authMock.onPost('/api/auth/refresh/').reply(200, { access: 'access-v2' });
+
+    let postAttempts = 0;
+    apiMock.onPost('/api/community/events/').reply((config) => {
+      postAttempts += 1;
+      const auth = (config.headers as Record<string, string> | undefined)?.Authorization;
+      if (auth === 'Bearer access-v1') {
+        return [401, { detail: 'expired' }];
+      }
+      return [201, { id: 'evt-1' }];
+    });
+
+    const res = await apiClient.post('/api/community/events/', { title: 'x' });
+    // Succeeded on the replay with the refreshed token.
+    expect(res.status).toBe(201);
+    // Sent exactly twice: original (401) + one replay. Never more.
+    expect(postAttempts).toBe(2);
+    // Session was always valid, so we must NOT force logout.
+    expect(onSessionExpired).not.toHaveBeenCalled();
+    expect(accessToken).toBe('access-v2');
+
+    apiMock.restore();
+    authMock.restore();
+  });
+
+  it('does not replay a mutation more than once if it still 401s after refresh', async () => {
+    const apiMock = new MockAdapter(apiClient);
+    const authMock = new MockAdapter(authClient);
+    authMock.onPost('/api/auth/refresh/').reply(200, { access: 'access-v2' });
+
+    let postAttempts = 0;
+    apiMock.onPost('/api/community/events/').reply(() => {
+      postAttempts += 1;
+      return [401, { detail: 'still expired' }];
+    });
+
+    await expect(apiClient.post('/api/community/events/', { title: 'x' })).rejects.toThrow();
+    // Exactly two sends: original + one replay. No infinite loop, no triple-submit.
+    expect(postAttempts).toBe(2);
+    expect(onSessionExpired).not.toHaveBeenCalled();
+
+    apiMock.restore();
+    authMock.restore();
+  });
+
+  it('does not force logout when refresh fails transiently (5xx)', async () => {
+    const apiMock = new MockAdapter(apiClient);
+    const authMock = new MockAdapter(authClient);
+    apiMock.onGet('/api/events').reply(401, { detail: 'expired' });
+    // Refresh endpoint is briefly down — NOT a real 401.
+    authMock.onPost('/api/auth/refresh/').reply(503, { detail: 'unavailable' });
+
+    await expect(apiClient.get('/api/events')).rejects.toThrow();
+    // Transient failure: session is NOT nuked.
+    expect(onSessionExpired).not.toHaveBeenCalled();
+
+    apiMock.restore();
+    authMock.restore();
+  });
+
+  it('does not force logout when refresh fails with a network error', async () => {
+    const apiMock = new MockAdapter(apiClient);
+    const authMock = new MockAdapter(authClient);
+    apiMock.onGet('/api/events').reply(401, { detail: 'expired' });
+    authMock.onPost('/api/auth/refresh/').networkError();
+
+    await expect(apiClient.get('/api/events')).rejects.toThrow();
+    expect(onSessionExpired).not.toHaveBeenCalled();
+
+    apiMock.restore();
+    authMock.restore();
+  });
+
   it('does not retry a second time after a successful refresh still fails', async () => {
     const apiMock = new MockAdapter(apiClient);
     const authMock = new MockAdapter(authClient);

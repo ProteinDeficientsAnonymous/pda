@@ -108,7 +108,7 @@ describe('JoinScreen', () => {
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 
-  it('passes smsConsent: true to the API when the box is checked', async () => {
+  it('passes smsConsent + guidelinesConsent: true to the API when both boxes are checked', async () => {
     const mutateAsync = vi.fn().mockResolvedValueOnce(undefined);
     mockUseSubmitJoinRequest.mockReturnValue({
       ...defaultSubmitResult,
@@ -122,13 +122,44 @@ describe('JoinScreen', () => {
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalled();
     });
-    const arg = mutateAsync.mock.calls[0]?.[0] as { smsConsent: boolean };
+    const arg = mutateAsync.mock.calls[0]?.[0] as {
+      smsConsent: boolean;
+      guidelinesConsent: boolean;
+    };
     expect(arg.smsConsent).toBe(true);
+    expect(arg.guidelinesConsent).toBe(true);
+  });
+
+  it('blocks submit when sms consent is checked but guidelines consent is not', async () => {
+    const mutateAsync = vi.fn();
+    mockUseSubmitJoinRequest.mockReturnValue({
+      ...defaultSubmitResult,
+      mutateAsync,
+    } as unknown as ReturnType<typeof useSubmitJoinRequest>);
+
+    const user = userEvent.setup();
+    renderWith(<JoinScreen />);
+
+    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
+    await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('button', { name: /submit request/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          /please read and confirm you agree to the guidelines and community agreements/i,
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 
   it('shows error message on API submission failure', async () => {
@@ -150,6 +181,7 @@ describe('JoinScreen', () => {
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
@@ -171,6 +203,7 @@ describe('JoinScreen', () => {
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
@@ -193,6 +226,7 @@ describe('JoinScreen', () => {
     await user.type(screen.getByLabelText(/phone number/i), '+15559876543');
     await user.type(screen.getByLabelText(/email/i), 'alex@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
 
     // Submit
     await user.click(screen.getByRole('button', { name: /submit request/i }));
@@ -228,6 +262,7 @@ describe('email validation', () => {
     await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
     await userEvent.type(screen.getByLabelText(/email/i), 'Tester@Example.com');
     await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
+    await userEvent.click(screen.getByLabelText(/i have read and agree to the/i));
     await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ email: 'Tester@Example.com' }));
   });

@@ -15,7 +15,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { RequireEmail } from '@/components/RequireEmail';
 import { useAuthStore } from './store';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
-import { passwordSetupRedirect } from '@/models/user';
+import { guidelinesConsentRedirect, passwordSetupRedirect } from '@/models/user';
 
 // ----------------------------------------------------------------------------
 // AuthBoot — kick off session restore exactly once on mount.
@@ -66,17 +66,31 @@ export function OnboardingGate() {
   const path = location.pathname.toLowerCase();
 
   // passwordSetupRedirect is the shared source of truth (also used by
-  // MagicLoginScreen) for where a setup-pending user must go.
+  // MagicLoginScreen) for where a setup-pending user must go. Password setup
+  // takes priority over the consent gate — a brand-new user sets their name +
+  // password before being asked to consent.
   const setupTarget = passwordSetupRedirect(user);
+  const consentTarget = guidelinesConsentRedirect(user);
 
   if (setupTarget) {
     if (path !== setupTarget) {
       return <Navigate to={setupTarget} replace />;
     }
+  } else if (consentTarget) {
+    // Guidelines-consent gate. The consent screen blocks login completion, but
+    // the user can either accept (clears needsGuidelinesConsent on /me/) or pick
+    // "not now" on the screen itself to log out. We pin them to /consent EXCEPT
+    // for /guidelines — they must be able to read what they're agreeing to (the
+    // consent screen links there), so trapping that page would make honest
+    // consent impossible.
+    if (path !== consentTarget && path !== '/guidelines') {
+      return <Navigate to={consentTarget} replace />;
+    }
   } else if (user) {
-    // Authed user with nothing pending shouldn't sit on onboarding screens.
+    // Authed user with nothing pending shouldn't sit on onboarding/consent screens.
     if (path === '/onboarding') return <Navigate to="/guidelines" replace />;
     if (path === '/new-password') return <Navigate to="/calendar" replace />;
+    if (path === '/consent') return <Navigate to="/calendar" replace />;
     if (path === '/login') return <Navigate to="/calendar" replace />;
   }
 

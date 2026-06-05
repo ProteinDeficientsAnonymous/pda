@@ -229,6 +229,9 @@ class TestMediaProxy:
         assert response.status_code == 200
         assert "image/" in response["Content-Type"]
         assert "public" in response["Cache-Control"]
+        # Images may render inline but must not be MIME-sniffed (#446).
+        assert response["X-Content-Type-Options"] == "nosniff"
+        assert response["Content-Disposition"] == "inline"
 
     def test_404_for_missing_file(self, api_client):
         response = api_client.get("/media/profile_photos/nonexistent.jpg")
@@ -237,3 +240,33 @@ class TestMediaProxy:
     def test_path_traversal_blocked(self, api_client):
         response = api_client.get("/media/../config/settings.py")
         assert response.status_code in (400, 404)
+
+    def test_serve_media_rejects_dot_dot_traversal(self):
+        from config.media_proxy import serve_media
+        from django.http import Http404
+
+        for bad in ["../config/settings.py", "a/../../secret.py", "..%2fsettings.py"]:
+            with pytest.raises(Http404):
+                serve_media(None, bad)
+
+    def test_serve_media_rejects_absolute_and_null_and_backslash(self):
+        from config.media_proxy import serve_media
+        from django.http import Http404
+
+        for bad in ["/etc/passwd", "foo\\bar", "foo\x00.jpg"]:
+            with pytest.raises(Http404):
+                serve_media(None, bad)
+
+    def test_non_inline_type_forced_to_attachment(self, api_client, member):
+        # An uploaded .html/.svg must download (attachment) so it can't run JS
+        # on the app origin, and must carry nosniff (#446).
+        from django.core.files.storage import default_storage
+
+        name = default_storage.save("uploads/evil.html", io.BytesIO(b"<script>alert(1)</script>"))
+        try:
+            response = api_client.get(f"/media/{name}")
+            assert response.status_code == 200
+            assert response["X-Content-Type-Options"] == "nosniff"
+            assert response["Content-Disposition"] == "attachment"
+        finally:
+            default_storage.delete(name)

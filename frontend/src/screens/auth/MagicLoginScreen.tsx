@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AxiosError } from 'axios';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
-import { passwordSetupRedirect } from '@/models/user';
+import { postAuthRedirect } from '@/models/user';
 import { AuthLayout } from './AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
@@ -28,14 +28,15 @@ export default function MagicLoginScreen() {
     void magicLogin(token)
       .then(() => {
         // Route based on the fresh user in the store. Doing this here (instead
-        // of leaning on OnboardingGate) avoids a race where /calendar renders
-        // before the gate re-evaluates with the new auth state.
+        // of leaning on OnboardingGate) avoids a race where the target route
+        // renders before the gate re-evaluates with the new auth state.
         const user = useAuthStore.getState().user;
-        // Same shared decision as OnboardingGate, so the two can't disagree (a
-        // no-email user must reach /onboarding, not /new-password).
-        const setupTarget = passwordSetupRedirect(user);
-        if (setupTarget) {
-          void navigate(setupTarget, { replace: true });
+        // Same shared decision as OnboardingGate, so the two can't disagree —
+        // covers password setup (/onboarding, /new-password) AND consent
+        // (/consent) in the same priority order.
+        const gateTarget = postAuthRedirect(user);
+        if (gateTarget) {
+          void navigate(gateTarget, { replace: true });
           return;
         }
         const redirect = params.get('redirect');

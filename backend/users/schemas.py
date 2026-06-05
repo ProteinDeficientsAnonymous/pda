@@ -1,10 +1,29 @@
 from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
+from community._validation import Code, raise_validation
 from config.media_proxy import media_path
-from pydantic import BaseModel, BeforeValidator, EmailStr, Field
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator
 
 from users.models import User
+from users.permissions import PermissionKey
+
+
+def _validate_permission_keys(permissions: list[str]) -> list[str]:
+    """Reject any permission key not defined in PermissionKey.
+
+    Roles persist permissions to a JSONField with no DB-level enforcement,
+    so unknown/typo'd keys would silently become dead grants. Validate here.
+    """
+    valid = set(PermissionKey.values)
+    for perm in permissions:
+        if perm not in valid:
+            raise_validation(
+                Code.Role.INVALID_PERMISSION,
+                field="permissions",
+                permission=perm,
+            )
+    return permissions
 
 
 def _empty_str_to_none(v: str | None) -> str | None:
@@ -23,13 +42,6 @@ class LoginIn(BaseModel):
 
 class TokenOut(BaseModel):
     access: str
-    refresh: str
-
-
-class RefreshIn(BaseModel):
-    # Optional because React clients send the refresh token via httpOnly cookie;
-    # legacy Flutter clients still include it in the body.
-    refresh: str = Field(default="", max_length=500)
 
 
 class AccessOut(BaseModel):
@@ -57,6 +69,7 @@ class UserOut(BaseModel):
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False
+    needs_guidelines_consent: bool = False
     profile_photo_url: str = ""
     show_phone: bool = True
     show_email: bool = True
@@ -77,6 +90,7 @@ class UserOut(BaseModel):
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
+            needs_guidelines_consent=user.guidelines_consent_at is None,
             profile_photo_url=media_path(user.profile_photo),
             show_phone=user.show_phone,
             show_email=user.show_email,
@@ -182,10 +196,22 @@ class RoleIn(BaseModel):
     name: str = Field(max_length=FieldLimit.ROLE_NAME)
     permissions: list[str] = []
 
+    @field_validator("permissions")
+    @classmethod
+    def validate_permissions(cls, v: list[str]) -> list[str]:
+        return _validate_permission_keys(v)
+
 
 class RolePatchIn(BaseModel):
     name: str | None = Field(default=None, max_length=FieldLimit.ROLE_NAME)
     permissions: list[str] | None = None
+
+    @field_validator("permissions")
+    @classmethod
+    def validate_permissions(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        return _validate_permission_keys(v)
 
 
 class ErrorOut(BaseModel):

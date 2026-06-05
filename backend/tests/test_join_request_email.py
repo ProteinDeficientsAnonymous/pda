@@ -21,6 +21,7 @@ class TestJoinRequestEmail:
                 "phone_number": "+12025550101",
                 "answers": {},
                 "sms_consent": True,
+                "guidelines_consent": True,
             },
             content_type="application/json",
         )
@@ -34,6 +35,7 @@ class TestJoinRequestEmail:
                 "phone_number": "+12025550101",
                 "answers": {},
                 "sms_consent": True,
+                "guidelines_consent": True,
                 "email": "not-an-email",
             },
             content_type="application/json",
@@ -50,6 +52,7 @@ class TestJoinRequestEmail:
                 "phone_number": "+12025550101",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
+                "guidelines_consent": True,
                 "email": "Foo@Example.com",
             },
             content_type="application/json",

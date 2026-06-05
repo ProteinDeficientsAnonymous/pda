@@ -56,6 +56,7 @@ export interface SubmitJoinRequestPayload {
   email: string;
   answers: Record<string, string>;
   smsConsent: boolean;
+  guidelinesConsent: boolean;
   website: string;
 }
 
@@ -76,6 +77,7 @@ export function useSubmitJoinRequest() {
           email: payload.email,
           answers: payload.answers,
           sms_consent: payload.smsConsent,
+          guidelines_consent: payload.guidelinesConsent,
           website: payload.website,
         });
       } catch (err) {

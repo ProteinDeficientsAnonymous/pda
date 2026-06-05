@@ -350,12 +350,6 @@
       },
       "DocumentIn": {
         "properties": {
-          "content": {
-            "default": "",
-            "maxLength": 50000,
-            "title": "Content",
-            "type": "string"
-          },
           "content_pm": {
             "default": "",
             "maxLength": 50000,
@@ -448,18 +442,6 @@
       },
       "DocumentPatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -569,18 +551,6 @@
       },
       "EditablePagePatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2395,18 +2365,6 @@
       },
       "GuidelinesPatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2454,18 +2412,6 @@
       },
       "HomePagePatchIn": {
         "properties": {
-          "content": {
-            "anyOf": [
-              {
-                "maxLength": 50000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Content"
-          },
           "content_pm": {
             "anyOf": [
               {
@@ -2632,6 +2578,11 @@
             "format": "email",
             "title": "Email",
             "type": "string"
+          },
+          "guidelines_consent": {
+            "default": false,
+            "title": "Guidelines Consent",
+            "type": "boolean"
           },
           "phone_number": {
             "maxLength": 20,
@@ -3303,18 +3254,6 @@
         "title": "ReactionToggleIn",
         "type": "object"
       },
-      "RefreshIn": {
-        "properties": {
-          "refresh": {
-            "default": "",
-            "maxLength": 500,
-            "title": "Refresh",
-            "type": "string"
-          }
-        },
-        "title": "RefreshIn",
-        "type": "object"
-      },
       "ReorderIn": {
         "properties": {
           "ids": {
@@ -3951,15 +3890,10 @@
           "access": {
             "title": "Access",
             "type": "string"
-          },
-          "refresh": {
-            "title": "Refresh",
-            "type": "string"
           }
         },
         "required": [
-          "access",
-          "refresh"
+          "access"
         ],
         "title": "TokenOut",
         "type": "object"
@@ -4086,6 +4020,11 @@
           "login_link_requested": {
             "default": false,
             "title": "Login Link Requested",
+            "type": "boolean"
+          },
+          "needs_guidelines_consent": {
+            "default": false,
+            "title": "Needs Guidelines Consent",
             "type": "boolean"
           },
           "needs_onboarding": {
@@ -4410,6 +4349,34 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/auth/accept-guidelines/": {
+      "post": {
+        "description": "Stamp the current user's guidelines consent, clearing the hard gate.\n\nIdempotent: re-accepting just re-stamps the timestamp. The gate (see\nconfig.auth.GatedJWTAuth) treats a null guidelines_consent_at as \"must\nconsent\", so any non-null value satisfies it.",
+        "operationId": "users__auth_accept_guidelines",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Accept Guidelines",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/bulk-create-users/": {
       "post": {
         "operationId": "users__management_bulk_create_users",
@@ -4954,16 +4921,6 @@
       "post": {
         "operationId": "users__auth_refresh_token",
         "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshIn"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "content": {
@@ -7525,6 +7482,11 @@
             "description": "OK"
           }
         },
+        "security": [
+          {
+            "OptionalJWTAuth": []
+          }
+        ],
         "summary": "Single Event Ics",
         "tags": [
           "community"
@@ -8908,11 +8870,6 @@
             "description": "OK"
           }
         },
-        "security": [
-          {
-            "GatedJWTAuth": []
-          }
-        ],
         "summary": "Get Guidelines",
         "tags": [
           "community"

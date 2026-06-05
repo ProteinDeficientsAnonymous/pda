@@ -26,7 +26,11 @@ const BASE_EVENT: Event = {
   id: 'ev1',
   title: 'Test Event',
   description: '',
-  startDatetime: new Date('2026-06-01T18:00:00Z'),
+  // Anchored well into the future relative to "now" so the check-in window
+  // (opens an hour before start) stays closed regardless of when the suite runs.
+  // A hardcoded calendar date rots — once it passes, the "hides check-in until
+  // an hour before" test starts seeing the buttons.
+  startDatetime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   endDatetime: null,
   location: '',
   latitude: null,

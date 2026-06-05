@@ -22,8 +22,6 @@ export interface DocFolder {
 export interface Document {
   id: string;
   title: string;
-  /** Legacy Quill Delta JSON (Flutter). */
-  content: string;
   /** ProseMirror JSON (TipTap). */
   contentPm: string;
   contentHtml: string;
@@ -87,7 +85,6 @@ function mapDocument(d: WireDocument): Document {
   return {
     id: d.id,
     title: d.title,
-    content: d.content,
     contentPm: d.content_pm ?? '',
     contentHtml: d.content_html,
     folderId: d.folder_id,
@@ -219,7 +216,6 @@ export function useReorderDocFolders() {
 export interface CreateDocumentInput {
   title: string;
   folderId: string;
-  content?: string;
   contentPm?: string;
 }
 
@@ -230,7 +226,6 @@ export function useCreateDocument() {
       const { data } = await apiClient.post<WireDocument>('/api/community/docs/', {
         title: input.title,
         folder_id: input.folderId,
-        content: input.content ?? '',
         content_pm: input.contentPm ?? '',
       });
       return mapDocument(data);

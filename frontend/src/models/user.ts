@@ -27,6 +27,10 @@ export interface User {
   // Set after consuming a self-service magic login link: the user authenticated
   // without a password and must set a new one (routes to /new-password).
   needsPasswordReset: boolean;
+  // True until the user accepts the community guidelines (guidelines_consent_at
+  // is null server-side). A hard gate — routes to /consent with no skip. Nobody
+  // is grandfathered; existing members and admins must re-consent.
+  needsGuidelinesConsent: boolean;
   showPhone: boolean;
   showEmail: boolean;
   weekStart: 'sunday' | 'monday';
@@ -53,4 +57,36 @@ export function passwordSetupRedirect(user: User | null): '/new-password' | '/on
   if (!user.needsOnboarding && !user.needsPasswordReset) return null;
   const hasNameAndEmail = user.displayName.length > 0 && !!user.email;
   return hasNameAndEmail ? '/new-password' : '/onboarding';
+}
+
+/**
+ * Where a user must go to accept the community guidelines before using the app,
+ * or null if they've already consented. The consent gate is HARD — no skip, no
+ * dismiss — and applies to everyone (admins included). It runs only after any
+ * password setup (passwordSetupRedirect) is resolved, so a brand-new user sets
+ * their name + password first, then consents.
+ */
+export function guidelinesConsentRedirect(user: User | null): '/consent' | null {
+  if (!user) return null;
+  return user.needsGuidelinesConsent ? '/consent' : null;
+}
+
+/**
+ * The single gate screen a freshly-authenticated user must be sent to before
+ * the app proper, or null if nothing is pending. Combines the password-setup
+ * and consent gates in the SAME priority order OnboardingGate uses (password
+ * setup first, then consent).
+ *
+ * Auth screens (LoginScreen, MagicLoginScreen) call this and navigate to the
+ * result DIRECTLY rather than navigating to a protected route and leaning on
+ * OnboardingGate to bounce. Leaning on the gate races: the target route (often
+ * lazy-loaded) can render a blank Suspense fallback before the gate re-evaluates
+ * with the new auth state, so a pending user sees a blank screen until refresh.
+ * Navigating to the gate target up-front avoids that race entirely; the gate
+ * remains the backstop for every later navigation.
+ */
+export function postAuthRedirect(
+  user: User | null,
+): '/new-password' | '/onboarding' | '/consent' | null {
+  return passwordSetupRedirect(user) ?? guidelinesConsentRedirect(user);
 }

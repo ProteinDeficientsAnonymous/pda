@@ -1,7 +1,23 @@
+import json
+
 import pytest
 from community.models import CommunityGuidelines
 from users.permissions import PermissionKey
 from users.roles import Role
+
+
+def _pm(text: str) -> str:
+    return json.dumps(
+        {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "paragraph",
+                    "content": [{"type": "text", "text": text}],
+                }
+            ],
+        }
+    )
 
 
 @pytest.fixture
@@ -38,8 +54,13 @@ class TestGetGuidelines:
         assert "updated_at" in data
 
     def test_get_guidelines_unauthenticated(self, api_client):
+        # Public: join-form applicants (unauthenticated) must be able to read
+        # the guidelines they're consenting to. Parallel to the public FAQ GET.
         response = api_client.get("/api/community/guidelines/")
-        assert response.status_code == 401
+        assert response.status_code == 200
+        data = response.json()
+        assert "content" in data
+        assert "updated_at" in data
 
     def test_get_guidelines_returns_existing_content(self, api_client, auth_headers, db):
         g = CommunityGuidelines.get()
@@ -54,7 +75,7 @@ class TestGetGuidelines:
 @pytest.mark.django_db
 class TestUpdateGuidelines:
     def test_update_guidelines_with_permission(self, api_client, manage_guidelines_headers):
-        payload = {"content": "# Community Guidelines\n\nBe excellent to each other."}
+        payload = {"content_pm": _pm("Community Guidelines")}
         response = api_client.patch(
             "/api/community/guidelines/",
             data=payload,
@@ -62,13 +83,13 @@ class TestUpdateGuidelines:
             **manage_guidelines_headers,
         )
         assert response.status_code == 200
-        assert "# Community Guidelines" in response.json()["content"]
-        assert CommunityGuidelines.get().content == payload["content"]
+        assert "Community Guidelines" in response.json()["content_html"]
+        assert CommunityGuidelines.get().content_pm == payload["content_pm"]
 
     def test_update_guidelines_without_permission(self, api_client, auth_headers):
         response = api_client.patch(
             "/api/community/guidelines/",
-            data={"content": "sneaky edit"},
+            data={"content_pm": _pm("sneaky edit")},
             content_type="application/json",
             **auth_headers,
         )
@@ -77,7 +98,7 @@ class TestUpdateGuidelines:
     def test_update_guidelines_unauthenticated(self, api_client):
         response = api_client.patch(
             "/api/community/guidelines/",
-            data={"content": "sneaky edit"},
+            data={"content_pm": _pm("sneaky edit")},
             content_type="application/json",
         )
         assert response.status_code == 401
