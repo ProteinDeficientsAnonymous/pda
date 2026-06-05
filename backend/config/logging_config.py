@@ -45,9 +45,12 @@ _SENSITIVE_KEYWORDS = (
     "secret",
     "authorization",
     "api_key",
+    "api-key",
     "apikey",
     "jwt",
     "session",
+    "sessionid",
+    "csrftoken",
     "cookie",
     "set-cookie",
     "refresh",
@@ -63,12 +66,20 @@ _SENSITIVE_KEYWORDS = (
 )
 # Optional auth scheme whose credential follows the scheme word (e.g. "Bearer <token>").
 _AUTH_SCHEME = r"(?:Bearer|Basic|Token|JWT)\s+"
-# Keys may appear bare (`otp=123`) or quoted in serialized dicts/JSON
-# (`'otp': '123'`, `"otp": "123"`), so allow an optional closing quote between
-# the key and the separator. Keywords are anchored with \b so partial-word
-# matches (e.g. `code` inside `geocode`, `phone` inside `telephone`) don't fire.
+# A keyword may carry `_`/`-`-separated prefix AND suffix segments — `access_token`,
+# `refresh_token`, `client_secret`, `x-api-key`, `session_id`, `password_hash` — which
+# is the most common shape for real credentials. The optional `(?:\w+[-_])*` prefix and
+# `(?:[-_]\w+)*` suffix are captured into `key` so they're preserved in the output. The
+# `(?<![A-Za-z0-9])` left boundary and trailing `\b` only allow a separator or non-word
+# char on either side, so letter-glued words (`telephone`, `geocode`, `megaphone`, and
+# `code` inside `geocode`) still don't fire. Keys may also appear quoted in serialized
+# dicts/JSON (`'otp': '123'`, `"otp": "123"`), so allow an optional closing quote before
+# the separator.
 _SENSITIVE_KEY_RE = re.compile(
-    r"\b(?P<key>" + "|".join(_SENSITIVE_KEYWORDS) + r")\b"
+    r"(?<![A-Za-z0-9])"
+    r"(?P<key>(?:[A-Za-z0-9]+[-_])*(?:"
+    + "|".join(_SENSITIVE_KEYWORDS)
+    + r")(?:[-_][A-Za-z0-9]+)*)\b"
     r"(?P<sep>[\"']?\s*[=:]\s*)"
     r"(?P<value>\"[^\"]*\"|'[^']*'|(?:" + _AUTH_SCHEME + r")?\S+)",
     re.IGNORECASE,
@@ -77,10 +88,13 @@ _SENSITIVE_KEY_RE = re.compile(
 # E.164 phone number pattern: + followed by 10-15 digits.
 _E164_RE = re.compile(r"\+\d{10,15}")
 
-# Matches a dict key (in structured extras) that is itself sensitive, so the
-# whole value is redacted regardless of its content (e.g. {"authorization": "Bearer x"}).
+# Matches a dict key (in structured extras) that is itself sensitive, so the whole
+# value is redacted regardless of its content (e.g. {"authorization": "Bearer x"}).
+# Mirrors the text regex's boundary handling: a keyword may carry `_`/`-`-separated
+# prefix/suffix segments (`access_token`, `csrf_token`, `session_id`, `x-api-key`),
+# but `^...$` anchoring keeps letter-glued names (`telephone`, `geocode`) out.
 _SENSITIVE_KEY_NAME_RE = re.compile(
-    r"^(?:" + "|".join(_SENSITIVE_KEYWORDS) + r")$",
+    r"^(?:[A-Za-z0-9]+[-_])*(?:" + "|".join(_SENSITIVE_KEYWORDS) + r")(?:[-_][A-Za-z0-9]+)*$",
     re.IGNORECASE,
 )
 
@@ -102,14 +116,27 @@ def _redact_dict_entry(key: object, value: object) -> object:
 
 
 def _redact_value(value: object) -> object:
-    """Recursively redact sensitive data in extras, preserving non-string types."""
+    """Recursively redact sensitive data in extras.
+
+    Plain numbers/bools/None pass through untouched. Strings, bytes, and arbitrary
+    objects are redacted on their text form, because `JsonFormatter` serializes
+    extras with ``json.dumps(default=str)`` — so any secret in a ``bytes`` payload or
+    in a custom object's ``str()`` would otherwise reach the output *after* this
+    filter ran. Redacting here closes that gap.
+    """
     if isinstance(value, str):
         return _redact_text(value)
     if isinstance(value, dict):
         return {k: _redact_dict_entry(k, v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
         return type(value)(_redact_value(v) for v in value)
-    return value
+    if isinstance(value, (int, float, bool)) or value is None:
+        return value
+    if isinstance(value, bytes):
+        return _redact_text(value.decode("utf-8", errors="replace"))
+    # Arbitrary object: redact its string form, matching how the formatter will
+    # ultimately serialize it (json.dumps(default=str)).
+    return _redact_text(str(value))
 
 
 class SensitiveDataFilter(logging.Filter):
