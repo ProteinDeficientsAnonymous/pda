@@ -32,6 +32,14 @@ function mapNotification(n: WireNotification): AppNotification {
   };
 }
 
+// EventSource can't send an Authorization header, so the SSE stream is opened
+// with a short-lived single-use ticket instead of the JWT. Fetch one here (the
+// access token rides the apiClient interceptor), then open the stream with it.
+export async function fetchSseTicket(): Promise<string> {
+  const { data } = await apiClient.post<{ ticket: string }>('/api/notifications/sse-ticket/');
+  return data.ticket;
+}
+
 export const notificationKeys = {
   all: ['notifications'] as const,
   list: ['notifications', 'list'] as const,

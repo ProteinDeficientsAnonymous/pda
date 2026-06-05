@@ -6,6 +6,9 @@ from ninja_jwt.tokens import RefreshToken
 
 from tests._asserts import assert_error_code
 
+# Rate-limit cache isolation is handled by conftest's package-wide autouse
+# `_clear_rate_limit_cache` fixture.
+
 
 @pytest.mark.django_db
 class TestMagicLogin:
@@ -17,6 +20,7 @@ class TestMagicLogin:
         assert response.status_code == 200
         data = response.json()
         assert "access" in data
+        # Refresh token rides the httpOnly cookie, not the JSON body.
         assert "refresh" not in data
 
     def test_magic_login_invalid_token(self, api_client, db):
@@ -114,3 +118,42 @@ class TestMagicLogin:
         test_user.refresh_from_db()
         assert test_user.needs_password_reset is False
         assert test_user.has_usable_password() is True
+
+    def test_replay_after_consume_is_rejected(self, api_client, test_user):
+        """A second consume of an already-consumed token must fail (TOCTOU replay
+        guard: fetch + used-check + mark-used run atomically under a row lock)."""
+        from users.models import MagicLoginToken
+
+        magic = MagicLoginToken.create_for_user(test_user)
+        first = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert first.status_code == 200
+        second = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert second.status_code == 400
+        assert_error_code(second, Code.Auth.MAGIC_LINK_ALREADY_USED)
+
+    def test_used_token_reports_already_used_even_when_account_paused(self, api_client, test_user):
+        """A spent token must report ALREADY_USED regardless of account state.
+
+        Guard-order regression: the used/expired check runs before the
+        archived/paused checks, so replaying a burned link can't leak whether
+        the target account is paused (would otherwise return 403 ACCOUNT_PAUSED).
+        """
+        from users.models import MagicLoginToken
+
+        magic = MagicLoginToken.create_for_user(test_user)
+        magic.used = True
+        magic.save(update_fields=["used"])
+        test_user.is_paused = True
+        test_user.save(update_fields=["is_paused"])
+        response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert response.status_code == 400
+        assert_error_code(response, Code.Auth.MAGIC_LINK_ALREADY_USED)
+
+    def test_magic_login_rate_limited(self, api_client, test_user):
+        # First 5 calls pass the limiter (invalid tokens → 400, but not 429).
+        for _ in range(5):
+            resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
+            assert resp.status_code == 400
+        resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
+        assert resp.status_code == 429
+        assert resp.json()["detail"][0]["code"] == "rate.limited"

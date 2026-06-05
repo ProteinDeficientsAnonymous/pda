@@ -9,6 +9,8 @@ from tests._asserts import assert_error_code
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+# Rate-limit cache isolation is handled by the package-wide autouse
+# `_clear_rate_limit_cache` fixture in conftest.py.
 
 
 @pytest.fixture
@@ -45,6 +47,8 @@ class TestLogin:
         assert response.status_code == 200
         data = response.json()
         assert "access" in data
+        # The refresh token is delivered via the httpOnly cookie only — never
+        # in the JSON body (would expose it to JS / XSS theft for no benefit).
         assert "refresh" not in data
 
     def test_login_wrong_password(self, api_client, test_user):

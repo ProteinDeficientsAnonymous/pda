@@ -7,7 +7,8 @@ from community._validation import Code, raise_validation
 from config.audit import audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
-from config.ratelimit import rate_limit
+from config.ratelimit import client_ip, rate_limit
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import File, Router
@@ -54,7 +55,10 @@ _ALLOWED_IMAGE_TYPES = {
 }
 
 
-@router.post("/login/", response={200: TokenOut, 401: ErrorOut, 403: ErrorOut}, auth=None)
+@router.post(
+    "/login/", response={200: TokenOut, 401: ErrorOut, 403: ErrorOut, 429: ErrorOut}, auth=None
+)
+@rate_limit(key_func=client_ip, rate="5/m")
 def login(request, payload: LoginIn, response: HttpResponse):
     from django.contrib.auth import authenticate
 
@@ -78,8 +82,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     refresh = RefreshToken.for_user(user)
     request.auth = user
-    refresh_str = str(refresh)
-    set_refresh_cookie(response, refresh_str)
+    set_refresh_cookie(response, str(refresh))
     audit_log(logging.INFO, "login_success", request, target_type="user", target_id=str(user.pk))
     return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
@@ -100,20 +103,15 @@ def _current_jwt_user(request) -> User | None:
     return None
 
 
-@router.get(
-    "/magic-login/{token}/", response={200: TokenOut, 400: ErrorOut, 403: ErrorOut}, auth=None
-)
-def magic_login(request, token: str, response: HttpResponse):
-    try:
-        magic = MagicLoginToken.objects.select_related("user").get(token=token)
-    except MagicLoginToken.DoesNotExist:
-        audit_log(
-            logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
-        )
-        raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
-    # Reject cross-user magic links: if the caller is already authenticated as a
-    # different user, a silent session swap would let them complete onboarding /
-    # password-set on behalf of the link's target. Force explicit logout first.
+def _reject_cross_user_magic_link(request, magic: MagicLoginToken) -> None:
+    """Block a magic link aimed at someone other than the current session.
+
+    If the caller is already authenticated as a different user, a silent session
+    swap would let them complete onboarding / password-set on behalf of the
+    link's target. Force explicit logout first. This guard runs before the
+    used/expired check (it doesn't depend on token freshness and a cross-user
+    attempt is the more urgent thing to reject).
+    """
     current_user = _current_jwt_user(request)
     if current_user is not None and current_user.pk != magic.user.pk:
         audit_log(
@@ -125,16 +123,10 @@ def magic_login(request, token: str, response: HttpResponse):
             details={"current_user_id": str(current_user.pk)},
         )
         raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
-    if magic.used or magic.is_expired:
-        audit_log(
-            logging.WARNING,
-            "magic_login_failed",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-            details={"reason": "used_or_expired"},
-        )
-        raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
+
+
+def _validate_magic_account_state(request, magic: MagicLoginToken) -> None:
+    """Reject magic links for archived or paused accounts. Raises on failure."""
     if magic.user.archived_at is not None:
         audit_log(
             logging.WARNING,
@@ -153,28 +145,77 @@ def magic_login(request, token: str, response: HttpResponse):
             target_id=str(magic.user.pk),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
-    magic.used = True
-    magic.save(update_fields=["used"])
-    if magic.requires_password_reset:
-        # Self-service login link: the user got in without a password, so force a
-        # reset before normal use. set_unusable_password() ensures the old password
-        # can't be used until they pick a new one (cleared by complete_onboarding).
-        # Also clear login_link_requested so future link requests aren't skipped.
-        magic.user.needs_password_reset = True
-        magic.user.login_link_requested = False
-        magic.user.set_unusable_password()
-        magic.user.save(update_fields=["needs_password_reset", "login_link_requested", "password"])
-        audit_log(
-            logging.INFO,
-            "magic_login_requires_password_reset",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-        )
+
+
+def _consume_magic_token(request, token: str) -> MagicLoginToken:
+    """Atomically fetch, validate, and mark a magic token used.
+
+    Wraps the fetch + used-check + mark-used in a single transaction with a
+    row lock (select_for_update) so two concurrent requests for the same token
+    can't both pass the used-check and replay the link (TOCTOU). Returns the
+    consumed token; raises ValidationException on any guard failure.
+    """
+    with transaction.atomic():
+        try:
+            magic = (
+                MagicLoginToken.objects.select_for_update().select_related("user").get(token=token)
+            )
+        except MagicLoginToken.DoesNotExist:
+            audit_log(
+                logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
+            )
+            raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
+        # Guard order matches the original (pre-refactor) flow: cross-user, then
+        # used/expired, then account-state. Keeping used/expired ahead of the
+        # archived/paused checks means a spent link always reports ALREADY_USED
+        # regardless of account state — so replaying a burned token can't leak
+        # whether the target account is archived or paused.
+        _reject_cross_user_magic_link(request, magic)
+        if magic.used or magic.is_expired:
+            audit_log(
+                logging.WARNING,
+                "magic_login_failed",
+                request,
+                target_type="user",
+                target_id=str(magic.user.pk),
+                details={"reason": "used_or_expired"},
+            )
+            raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
+        _validate_magic_account_state(request, magic)
+        magic.used = True
+        magic.save(update_fields=["used"])
+        if magic.requires_password_reset:
+            # Self-service login link: the user got in without a password, so force a
+            # reset before normal use. set_unusable_password() ensures the old password
+            # can't be used until they pick a new one (cleared by complete_onboarding).
+            # Also clear login_link_requested so future link requests aren't skipped.
+            magic.user.needs_password_reset = True
+            magic.user.login_link_requested = False
+            magic.user.set_unusable_password()
+            magic.user.save(
+                update_fields=["needs_password_reset", "login_link_requested", "password"]
+            )
+            audit_log(
+                logging.INFO,
+                "magic_login_requires_password_reset",
+                request,
+                target_type="user",
+                target_id=str(magic.user.pk),
+            )
+    return magic
+
+
+@router.get(
+    "/magic-login/{token}/",
+    response={200: TokenOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="5/m")
+def magic_login(request, token: str, response: HttpResponse):
+    magic = _consume_magic_token(request, token)
     refresh = RefreshToken.for_user(magic.user)
     request.auth = magic.user
-    refresh_str = str(refresh)
-    set_refresh_cookie(response, refresh_str)
+    set_refresh_cookie(response, str(refresh))
     audit_log(
         logging.INFO,
         "magic_login_success",
