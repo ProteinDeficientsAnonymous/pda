@@ -33,6 +33,8 @@ interface AuthState {
     newPassword: string;
     displayName?: string | undefined;
     email?: string | undefined;
+    acceptGuidelines?: boolean | undefined;
+    acceptSms?: boolean | undefined;
   }) => Promise<void>;
   acceptGuidelines: () => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;

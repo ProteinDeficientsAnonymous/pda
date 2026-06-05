@@ -140,11 +140,15 @@ export async function completeOnboarding(payload: {
   newPassword: string;
   displayName?: string | undefined;
   email?: string | undefined;
+  acceptGuidelines?: boolean | undefined;
+  acceptSms?: boolean | undefined;
 }): Promise<User> {
   const { data } = await apiClient.post<WireUser>('/api/auth/complete-onboarding/', {
     new_password: payload.newPassword,
     display_name: payload.displayName,
     email: payload.email,
+    accept_guidelines: payload.acceptGuidelines ?? false,
+    accept_sms: payload.acceptSms ?? false,
   });
   return mapUser(data);
 }
