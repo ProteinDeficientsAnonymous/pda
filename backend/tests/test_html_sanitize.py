@@ -75,6 +75,36 @@ class TestSchemeStripping:
         assert "evil.com" not in result
         assert "src=" not in result
 
+    @pytest.mark.parametrize(
+        "raw_href",
+        [
+            "/\\evil.com",  # backslash — browsers normalise /\ to //
+            "\\\\evil.com",  # double backslash
+            "/\\/evil.com",  # mixed
+            " //evil.com",  # leading space
+            "\t//evil.com",  # leading tab
+            "\n//evil.com",  # leading newline
+        ],
+    )
+    def test_protocol_relative_bypass_variants_dropped(self, raw_href):
+        # The literal-"//" check is not enough: browsers ignore leading
+        # whitespace/controls and treat "\" as "/", so each of these resolves to
+        # //evil.com. _normalize_url must canonicalise before the check.
+        # (A leading NUL is NOT included: html5ever rewrites it to U+FFFD at
+        # parse time, which makes the URL a same-origin relative path, not
+        # protocol-relative — so it is already inert.)
+        result = sanitize_content_html(f'<a href="{raw_href}">x</a>')
+        assert "evil.com" not in result
+        assert "href=" not in result
+
+    def test_backslash_obfuscated_scheme_url_canonicalised(self):
+        # "https:/\evil.com" has an allowed scheme and no literal "//", but a
+        # browser resolves it to https://evil.com. Canonicalise it so the stored
+        # value is unambiguous rather than a parser-differential trap.
+        result = sanitize_content_html('<a href="https:/\\evil.com">x</a>')
+        assert 'href="https://evil.com"' in result
+        assert "\\" not in result
+
     def test_mailto_image_src_dropped(self):
         # mailto: is valid for links but inert/pointless on an image src; the
         # image scheme guard is http/https only.
@@ -126,6 +156,12 @@ class TestStyleAndClassConstraints:
     def test_text_align_survives(self):
         result = sanitize_content_html('<p style="text-align: center">hi</p>')
         assert "text-align:center" in result.replace(" ", "")
+
+    def test_text_align_case_insensitive(self):
+        # The property name match is case-insensitive (matching the frontend's
+        # /i flag), so an upper/mixed-case property is preserved, not dropped.
+        result = sanitize_content_html('<p style="TEXT-ALIGN: center">hi</p>')
+        assert "text-align:center" in result.replace(" ", "").lower()
 
     def test_non_alignment_style_dropped(self):
         result = sanitize_content_html('<p style="position: absolute; text-align: center">hi</p>')
@@ -248,6 +284,9 @@ class TestRendererRoundTrip:
         assert '<img src="/media/p.jpg">' in result
         assert 'class="cta cta--primary"' in result
         assert 'role="button"' in result
+        # The CTA opens in a new tab; pin target so an allowlist edit dropping
+        # it (which would also moot the rel-injection guard) fails this test.
+        assert 'target="_blank"' in result
 
     def test_delta_document_survives(self):
         import json

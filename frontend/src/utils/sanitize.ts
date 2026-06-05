@@ -58,13 +58,21 @@ const ALLOWED_TEXT_ALIGN = new Set(['left', 'center', 'right']);
 // scope these to an isolated DOMPurify instance instead of the global one.
 
 DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
-  // Reject protocol-relative URLs on href/src. DOMPurify treats "//evil.com" as
-  // a valid relative URL and keeps it, but it resolves to https://evil.com — an
-  // off-site / remote-load vector. Genuine relative paths ("/media/...") stay.
+  // Reject protocol-relative URLs on href/src. DOMPurify keeps "//evil.com" as a
+  // valid relative URL, but it resolves to https://evil.com — an off-site /
+  // remote-load vector. Normalise browser-equivalent obfuscations first (leading
+  // whitespace/controls are ignored by the URL parser; backslashes resolve as
+  // forward slashes), matching the backend's _normalize_url, so "/\evil.com" and
+  // "https:/\evil.com" can't slip past a naive `//` check. Genuine relative
+  // paths ("/media/...") stay.
   if (data.attrName === 'href' || data.attrName === 'src') {
-    if (data.attrValue.startsWith('//')) {
+    // eslint-disable-next-line no-control-regex
+    const normalized = data.attrValue.replace(/^[\x00-\x20\x7f]+/, '').replace(/\\/g, '/');
+    if (normalized.startsWith('//')) {
       data.attrValue = '';
       data.keepAttr = false;
+    } else {
+      data.attrValue = normalized;
     }
     return;
   }

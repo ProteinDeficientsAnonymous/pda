@@ -10,8 +10,10 @@ sanitizer so the security boundary is retroactive.
 
 from django.db import migrations
 
-# Models carrying a rendered `content_html` column. Keep in sync with the
-# content models in community/models/.
+# Models carrying a rendered `content_html` column, as of this migration. This
+# is a frozen point-in-time snapshot — a one-shot backfill, NOT a living
+# registry. Do not edit it when new content models are added later; their rows
+# are sanitized on write by `render_content_payload`.
 _CONTENT_MODELS = (
     "CommunityGuidelines",
     "FAQ",

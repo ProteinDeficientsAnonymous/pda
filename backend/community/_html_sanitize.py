@@ -17,8 +17,10 @@ through here to catch drift.
 This mirrors the frontend's DOMPurify pass (`frontend/src/utils/sanitize.ts`):
 the backend is the canonical sanitizer for non-browser consumers (emails, API
 clients), the frontend is defense-in-depth for content that never round-trips.
-The two passes are kept value-for-value equivalent on the URL-scheme and
-`text-align` allowlists (see `_attribute_filter`) so neither boundary is weaker.
+The two passes are kept value-for-value equivalent on URL handling and the
+`text-align` allowlist (see `_attribute_filter` / `_normalize_url` and their
+frontend mirror) so neither boundary is weaker — both normalise the same URL
+obfuscations and accept the same case-insensitive alignment tokens.
 """
 
 from __future__ import annotations
@@ -72,13 +74,34 @@ _ALLOWED_CLASSES = {"a": {"cta", "cta--primary", "cta--secondary"}}
 
 # The renderers only ever emit `text-align: left|center|right` (the ProseMirror
 # renderer gates on exactly these; the Delta renderer emits no alignment at all).
-# Mirrors the frontend's ALLOWED_TEXT_ALIGN so the two boundaries agree.
+# Mirrors the frontend's ALLOWED_TEXT_ALIGN so the two boundaries agree. The
+# regex is case-insensitive to match the frontend's `/i` flag, and `[a-z]+`
+# (not `[a-z-]+`) so a hyphen-suffixed token like `center-ish` is captured whole
+# and rejected the same way on both sides.
 _ALLOWED_TEXT_ALIGN = {"left", "center", "right"}
-_TEXT_ALIGN_RE = re.compile(r"text-align:\s*([a-zA-Z-]+)")
+_TEXT_ALIGN_RE = re.compile(r"text-align:\s*([a-z]+)", re.IGNORECASE)
+
+# Characters a browser's URL parser ignores at the start of an href/src (ASCII
+# whitespace + C0 controls). Stripping them before the protocol-relative check
+# closes the " //evil.com" / "\t//evil.com" bypass.
+_URL_LEADING_IGNORED = "".join(chr(c) for c in range(0x21)) + "\x7f"
 
 # `rel="noopener noreferrer"` is force-injected on every anchor, blocking
 # reverse-tabnabbing on target="_blank" links regardless of what was emitted.
 _LINK_REL = "noopener noreferrer"
+
+
+def _normalize_url(value: str) -> str:
+    """Collapse an href/src to the form a browser actually resolves.
+
+    Browsers ignore leading ASCII whitespace / C0 controls and treat backslashes
+    as forward slashes in special-scheme URLs, so `/\\evil.com` and ` //evil.com`
+    both resolve to `//evil.com`. Canonicalising here means the stored value
+    matches what every consumer (browser, email, API client) sees, removing the
+    parser differential that lets obfuscated protocol-relative URLs slip past a
+    naive `startswith("//")` check.
+    """
+    return value.lstrip(_URL_LEADING_IGNORED).replace("\\", "/")
 
 
 def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
@@ -90,7 +113,10 @@ def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
 
     - Protocol-relative URLs (`//evil.com`) carry no scheme, so nh3 treats them
       as relative and would keep them — an off-site / remote-load vector. Reject
-      them on `href`/`src` while leaving genuine relative paths (`/media/...`).
+      them on `href`/`src` (after normalising browser-equivalent obfuscations),
+      while leaving genuine relative paths (`/media/...`). The normalised value
+      is re-emitted so `https:/\\evil.com` is stored as the `https://evil.com`
+      it resolves to, not the ambiguous original.
     - `mailto:` is valid for links but inert-and-pointless on an image `src`;
       reject it there to preserve the old image-scheme guard (http/https only).
     - `style` may only carry a single `text-align` declaration with an allowlisted
@@ -99,8 +125,11 @@ def _attribute_filter(tag: str, attribute: str, value: str) -> str | None:
 
     Returning `None` drops the attribute; returning a string replaces its value.
     """
-    if attribute in ("href", "src") and value.startswith("//"):
-        return None
+    if attribute in ("href", "src"):
+        normalized = _normalize_url(value)
+        if normalized.startswith("//"):
+            return None
+        value = normalized
     if attribute == "src" and value.lower().startswith("mailto:"):
         return None
     if attribute == "style":
