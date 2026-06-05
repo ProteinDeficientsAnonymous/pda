@@ -8,6 +8,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from ninja.security import HttpBearer
 from ninja_jwt.authentication import JWTAuth, JWTBaseAuthentication  # noqa: F401
+from ninja_jwt.exceptions import AuthenticationFailed, TokenError
 from pydantic import BaseModel
 from users.models import User as UserModel
 
@@ -22,7 +23,15 @@ class OptionalJWTAuth(JWTBaseAuthentication, HttpBearer):
     def authenticate(self, request: HttpRequest, token: str):
         try:
             return self.jwt_authenticate(request, token)
+        except (AuthenticationFailed, TokenError):
+            # Genuinely-invalid / expired / unparseable token — treat the
+            # caller as anonymous (public endpoints stay reachable).
+            return AnonymousUser()
         except Exception:
+            # Anything else (DB error, misconfiguration) is unexpected: log it
+            # so it stays observable, but still degrade to anonymous rather
+            # than 500 a public endpoint.
+            logger.warning("optional jwt auth: unexpected error", exc_info=True)
             return AnonymousUser()
 
     def __call__(self, request: HttpRequest):

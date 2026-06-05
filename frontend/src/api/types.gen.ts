@@ -2601,6 +2601,27 @@ export interface components {
             /** Parent Id */
             parent_id?: string | null;
         };
+        /** GeocodeOut */
+        GeocodeOut: {
+            /** Features */
+            features?: {
+                [key: string]: unknown;
+            }[];
+            /** Type */
+            type?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** GeocodeQuery */
+        GeocodeQuery: {
+            /**
+             * Limit
+             * @default 5
+             */
+            limit: number;
+            /** Q */
+            q: string;
+        };
         /** GuidelinesOut */
         GuidelinesOut: {
             /** Content */
@@ -6589,9 +6610,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["GeocodeOut"];
                 };
             };
             /** @description Bad Gateway */
