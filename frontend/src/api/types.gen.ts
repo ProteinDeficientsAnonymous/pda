@@ -2898,6 +2898,16 @@ export interface components {
         };
         /** OnboardingIn */
         OnboardingIn: {
+            /**
+             * Accept Guidelines
+             * @default false
+             */
+            accept_guidelines: boolean;
+            /**
+             * Accept Sms
+             * @default false
+             */
+            accept_sms: boolean;
             /** Display Name */
             display_name?: string | null;
             /** Email */
@@ -3340,6 +3350,11 @@ export interface components {
              * @default false
              */
             needs_password_reset: boolean;
+            /**
+             * Needs Sms Consent
+             * @default false
+             */
+            needs_sms_consent: boolean;
             /** Phone Number */
             phone_number: string;
             /**
