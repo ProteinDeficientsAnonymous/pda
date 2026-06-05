@@ -149,3 +149,87 @@ class TestFilterIdempotency:
         f.filter(record)
         assert record.msg == first_msg
         assert record.header == first_header  # type: ignore[attr-defined]
+
+
+class TestFullValueRedaction:
+    """A sensitive value is redacted in full — including spaces and arbitrary auth
+    schemes — but redaction stops at pair delimiters so each k=v on a cookie/query
+    line is scrubbed independently rather than swallowing the rest of the line."""
+
+    @pytest.mark.parametrize(
+        "message,leaked",
+        [
+            ("password: my secret pass phrase", "pass phrase"),
+            ("secret=p@ss w0rd here", "w0rd here"),
+            ("token: abc def ghi", "def ghi"),
+            # Non-Bearer/Basic schemes must not leave the credential after the scheme word.
+            ("Authorization: Negotiate longBase64CredentialXYZ", "longBase64CredentialXYZ"),
+            ("Authorization: Digest opaqueDigestSecret", "opaqueDigestSecret"),
+        ],
+    )
+    def test_redacts_space_containing_values_in_full(self, message, leaked):
+        f = SensitiveDataFilter()
+        record = _record(message)
+        f.filter(record)
+        assert leaked not in record.msg
+        assert "[REDACTED]" in record.msg
+
+    @pytest.mark.parametrize(
+        "message,leaked,kept",
+        [
+            (
+                "Cookie: sessionid=SECRET1; csrftoken=SECRET2; foo=bar",
+                ["SECRET1", "SECRET2"],
+                "foo=bar",
+            ),
+            ("a=1&token=SECRET3&b=2", ["SECRET3"], "b=2"),
+            ("password=p1, user=bob", ["p1"], "user=bob"),
+        ],
+    )
+    def test_redacts_each_pair_but_keeps_non_secret_tail(self, message, leaked, kept):
+        f = SensitiveDataFilter()
+        record = _record(message)
+        f.filter(record)
+        for secret in leaked:
+            assert secret not in record.msg
+        assert kept in record.msg
+
+
+class TestRedactionFailsSafe:
+    """Redaction must never raise out of the logging call. An extra whose __str__
+    explodes is suppressed, not propagated, and no partial content leaks."""
+
+    def test_raising_str_does_not_crash_and_suppresses_content(self):
+        class Boom:
+            def __str__(self) -> str:
+                raise RuntimeError("str exploded")
+
+        f = SensitiveDataFilter()
+        record = _record("processing payload", payload=Boom())
+        # Must not raise.
+        result = f.filter(record)
+        assert result is True
+        output = JsonFormatter().format(record)
+        assert "REDACT" in output  # content was replaced with a redaction marker
+        # The exploding object is gone (replaced before json.dumps stringifies it).
+        assert record.payload == "[REDACTED]"  # type: ignore[attr-defined]
+
+    def test_raising_str_in_message_args_is_suppressed(self):
+        class Boom:
+            def __str__(self) -> str:
+                raise RuntimeError("str exploded")
+
+        f = SensitiveDataFilter()
+        # %-arg whose rendering raises inside getMessage().
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="value=%s",
+            args=(Boom(),),
+            exc_info=None,
+        )
+        assert f.filter(record) is True
+        assert record.args == ()
+        assert "exploded" not in str(record.msg)
