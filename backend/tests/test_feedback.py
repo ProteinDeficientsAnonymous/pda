@@ -237,6 +237,64 @@ class TestFeedback:
 
 
 @pytest.mark.django_db
+class TestFeedbackLabels:
+    """feedback_types map to GitHub issue labels."""
+
+    def _labels_for(self, api_client, settings, monkeypatch, feedback_types):
+        import json
+
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr(
+            "community._feedback._get_github_app_token", lambda *_: "ghs_inst_token"
+        )
+        captured = _mock_urlopen(monkeypatch)
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {
+                "title": "t",
+                "description": "d",
+                "feedback_types": feedback_types,
+            },
+            content_type="application/json",
+        )
+        assert response.status_code == 201
+        return json.loads(captured["calls"][-1].data.decode())["labels"]
+
+    def test_no_types_only_feedback_label(self, api_client, settings, monkeypatch):
+        assert self._labels_for(api_client, settings, monkeypatch, []) == ["feedback"]
+
+    def test_bug_adds_bug_label(self, api_client, settings, monkeypatch):
+        assert self._labels_for(api_client, settings, monkeypatch, ["bug"]) == [
+            "feedback",
+            "bug",
+        ]
+
+    def test_feature_request_adds_feature_label(self, api_client, settings, monkeypatch):
+        # Issue: feature requests must be tagged "feature", not "enhancement".
+        labels = self._labels_for(api_client, settings, monkeypatch, ["feature request"])
+        assert labels == ["feedback", "feature"]
+        assert "enhancement" not in labels
+
+    def test_both_types_add_both_labels(self, api_client, settings, monkeypatch):
+        labels = self._labels_for(api_client, settings, monkeypatch, ["bug", "feature request"])
+        assert labels == ["feedback", "bug", "feature"]
+
+    def test_unknown_type_is_rejected(self, api_client, settings, monkeypatch):
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        _mock_urlopen(monkeypatch)
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {"title": "t", "description": "d", "feedback_types": ["enhancement"]},
+            content_type="application/json",
+        )
+        assert response.status_code == 422
+
+
+@pytest.mark.django_db
 class TestFeedbackSanitization:
     """Issue 457 — neutralize markdown/@mentions and escape metadata."""
 

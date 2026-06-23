@@ -2189,7 +2189,7 @@
           },
           "feedback_types": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/FeedbackType"
             },
             "title": "Feedback Types",
             "type": "array"
@@ -2254,6 +2254,15 @@
         ],
         "title": "FeedbackOut",
         "type": "object"
+      },
+      "FeedbackType": {
+        "description": "Categories a user can tag feedback with. Not DB-backed \u2014 these are the\naccepted values on the feedback API payload, mapped to GitHub issue labels\nin ``community._feedback``.",
+        "enum": [
+          "bug",
+          "feature request"
+        ],
+        "title": "FeedbackType",
+        "type": "string"
       },
       "FinalizePollIn": {
         "properties": {
