@@ -32,7 +32,13 @@ class Role(models.Model):
         """Admin role implicitly grants every permission (see User.has_permission).
         Return the current PermissionKey set so the UI reflects reality even if
         the DB row was seeded before newer keys were added.
+
+        Coerces the JSONField to a clean list[str] (corrupt/out-of-band rows may
+        hold non-list/non-string values) so RoleOut.permissions holds for every consumer.
         """
         if self.name == "admin" and self.is_default:
             return list(PermissionKey.values)
-        return list(self.permissions)
+        raw = self.permissions
+        if not isinstance(raw, list):
+            return []
+        return [p for p in raw if isinstance(p, str)]

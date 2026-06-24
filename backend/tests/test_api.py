@@ -140,6 +140,31 @@ class TestRolesAndPermissions:
         user = User.objects.prefetch_related("roles").get(pk=test_user.pk)
         assert not user.has_permission(PermissionKey.MANAGE_USERS)
 
+    @pytest.mark.parametrize("bad_value", ["manage_events", {"manage_events": True}, 42])
+    def test_corrupt_permissions_shape_grants_no_permissions(self, test_user, bad_value):
+        """A JSONField row holding a non-list value (edited out-of-band) must
+        not crash or accidentally match — it degrades to 'no perms'.
+
+        `None` is not tested: the column is NOT NULL, so a null is unreachable
+        even via raw .update(). The reachable corrupt shapes are non-null JSON.
+        """
+        role = Role.objects.get(name="member")
+        Role.objects.filter(pk=role.pk).update(permissions=bad_value)
+        role.refresh_from_db()
+        test_user.roles.add(role)
+        assert role.effective_permissions == []
+        assert not test_user.has_permission(PermissionKey.MANAGE_EVENTS)
+
+    def test_corrupt_permissions_filters_non_string_entries(self, test_user):
+        role = Role.objects.get(name="member")
+        Role.objects.filter(pk=role.pk).update(
+            permissions=[PermissionKey.MANAGE_EVENTS, None, 7, {"x": 1}]
+        )
+        role.refresh_from_db()
+        test_user.roles.add(role)
+        assert role.effective_permissions == [PermissionKey.MANAGE_EVENTS]
+        assert test_user.has_permission(PermissionKey.MANAGE_EVENTS)
+
 
 # ---------------------------------------------------------------------------
 # User management API (#3)
