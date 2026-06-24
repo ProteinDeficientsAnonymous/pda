@@ -39,6 +39,7 @@ from community.models.survey import (
     SurveyQuestion,
     SurveyResponse,
 )
+from community.models.tag import EventTag
 
 __all__ = [
     # choices
@@ -72,6 +73,7 @@ __all__ = [
     "Event",
     "EventFlag",
     "EventRSVP",
+    "EventTag",
     # join form
     "JoinFormQuestion",
     "JoinRequest",

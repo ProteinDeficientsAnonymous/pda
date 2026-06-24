@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from community.models import CommunityGuidelines, EditablePage, Event, JoinRequest, WhatsAppConfig
+from community.models import (
+    CommunityGuidelines,
+    EditablePage,
+    Event,
+    EventTag,
+    JoinRequest,
+    WhatsAppConfig,
+)
 
 
 @admin.register(CommunityGuidelines)
@@ -45,7 +52,16 @@ class WhatsAppConfigAdmin(admin.ModelAdmin):
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ("title", "start_datetime", "end_datetime", "location")
-    list_filter = ("start_datetime",)
+    list_filter = ("start_datetime", "tags")
     search_fields = ("title", "description", "location")
     ordering = ("start_datetime",)
     readonly_fields = ("id", "created_at")
+    filter_horizontal = ("tags",)
+
+
+@admin.register(EventTag)
+class EventTagAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "created_at")
+    search_fields = ("name", "slug")
+    ordering = ("name",)
+    readonly_fields = ("id", "slug", "created_at")

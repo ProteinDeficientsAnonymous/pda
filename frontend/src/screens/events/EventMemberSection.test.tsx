@@ -70,6 +70,7 @@ const BASE_EVENT: Event = {
   eventType: EventType.Community,
   visibility: EventVisibility.Public,
   photoUrl: '',
+  tags: [],
   isPast: false,
   status: EventStatus.Active,
 };

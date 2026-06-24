@@ -1038,6 +1038,14 @@
             "title": "Status",
             "type": "string"
           },
+          "tag_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tag Ids",
+            "type": "array"
+          },
           "title": {
             "maxLength": 200,
             "title": "Title",
@@ -1265,6 +1273,14 @@
             "default": "active",
             "title": "Status",
             "type": "string"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "title": {
             "title": "Title",
@@ -1603,6 +1619,14 @@
             "title": "Survey Slugs",
             "type": "array"
           },
+          "tags": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -1866,6 +1890,20 @@
               }
             ],
             "title": "Status"
+          },
+          "tag_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag Ids"
           },
           "title": {
             "anyOf": [
@@ -3950,6 +3988,29 @@
           "submitted_at"
         ],
         "title": "SurveyResponseOut",
+        "type": "object"
+      },
+      "TagOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "title": "TagOut",
         "type": "object"
       },
       "TokenOut": {
@@ -6535,6 +6596,32 @@
           }
         ],
         "summary": "Review Event Flag",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-tags/": {
+      "get": {
+        "operationId": "community__event_tags_list_event_tags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List Event Tags",
         "tags": [
           "community"
         ]

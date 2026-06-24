@@ -66,6 +66,7 @@ export interface EventFormValues {
   cashappLink: string;
   zelleInfo: string;
   coHostIds: string[];
+  tagIds: string[];
   status: EventStatus;
 }
 
@@ -105,6 +106,7 @@ const FIELD_TO_WIRE: WireFieldMap = {
   cashappLink: ['cashapp_link', (v) => toCashAppUrl(v)],
   zelleInfo: ['zelle_info', (v) => v],
   coHostIds: ['co_host_ids', (v) => v],
+  tagIds: ['tag_ids', (v) => v],
   status: ['status', (v) => v],
 };
 
@@ -341,6 +343,7 @@ export function emptyEventFormValues(): EventFormValues {
     cashappLink: '',
     zelleInfo: '',
     coHostIds: [],
+    tagIds: [],
     status: 'active',
   };
 }
@@ -400,6 +403,7 @@ export function eventToFormValues(e: Event): EventFormValues {
     cashappLink: fromCashAppUrl(e.cashappLink),
     zelleInfo: e.zelleInfo,
     coHostIds: e.coHostIds,
+    tagIds: e.tags.map((t) => t.id),
     status: coerceEnum(e.status, FORM_STATUSES, EventStatusEnum.Active),
   };
 }

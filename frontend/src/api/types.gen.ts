@@ -571,6 +571,23 @@ export interface paths {
         patch: operations["community__event_flags_review_event_flag"];
         trace?: never;
     };
+    "/api/community/event-tags/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Event Tags */
+        get: operations["community__event_tags_list_event_tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/": {
         parameters: {
             query?: never;
@@ -2009,6 +2026,11 @@ export interface components {
              * @default active
              */
             status: string;
+            /**
+             * Tag Ids
+             * @default []
+             */
+            tag_ids: string[];
             /** Title */
             title: string;
             /**
@@ -2144,6 +2166,11 @@ export interface components {
              * @default active
              */
             status: string;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: components["schemas"]["TagOut"][];
             /** Title */
             title: string;
             /**
@@ -2335,6 +2362,11 @@ export interface components {
              * @default []
              */
             survey_slugs: string[];
+            /**
+             * Tags
+             * @default []
+             */
+            tags: components["schemas"]["TagOut"][];
             /** Title */
             title: string;
             /**
@@ -2403,6 +2435,8 @@ export interface components {
             start_datetime?: string | null;
             /** Status */
             status?: string | null;
+            /** Tag Ids */
+            tag_ids?: string[] | null;
             /** Title */
             title?: string | null;
             /** Venmo Link */
@@ -3271,6 +3305,15 @@ export interface components {
             user_id?: string | null;
             /** User Name */
             user_name?: string | null;
+        };
+        /** TagOut */
+        TagOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
         };
         /** TokenOut */
         TokenOut: {
@@ -5003,6 +5046,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_tags_list_event_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
                 };
             };
         };
