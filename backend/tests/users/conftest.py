@@ -37,3 +37,31 @@ def other_user(db):
         password="otherpass123",
         display_name="Other User",
     )
+
+
+@pytest.fixture
+def member(db):
+    """A member User (is_member=True). Reusable across user test files."""
+    from users.models import User
+
+    return User.objects.create_user(
+        phone_number="+12025550401",
+        password="memberpass123",
+        display_name="Member User",
+    )
+
+
+@pytest.fixture
+def non_member(db):
+    """A non-member User (is_member=False) — e.g. a public-RSVP account.
+
+    Passes is_member=False explicitly to override the conftest create_user
+    monkeypatch, which otherwise forces is_member=True for the test population.
+    """
+    from users.models import User
+
+    return User.objects.create_user(
+        phone_number="+12025550402",
+        display_name="Non-member User",
+        is_member=False,
+    )

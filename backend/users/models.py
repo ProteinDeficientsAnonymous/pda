@@ -52,9 +52,7 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
     display_name = models.CharField(max_length=64, blank=True)
-    # Defaults False so untrusted public-RSVP accounts are non-members unless
-    # explicitly promoted; admin/join-approval paths set it True. Excluded from
-    # member-facing surfaces via objects.members().
+    # Defaults False; non-members are excluded via objects.members().
     is_member = models.BooleanField(default=False, db_index=True)
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
     # members can share a null/blank email.

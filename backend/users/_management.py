@@ -174,7 +174,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 def search_users(request, q: str = ""):
     qs = (
         User.objects.members()
-        .filter(is_active=True, is_paused=False, archived_at__isnull=True)
+        .filter(is_paused=False, archived_at__isnull=True)
         .exclude(pk=request.auth.pk)
     )
     q = q.strip()
