@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Event, EventStats } from '@/models/event';
 import {
   AttendanceStatus,
@@ -123,9 +123,19 @@ function mockStats(stats: EventStats | null, state: 'loading' | 'error' | 'succe
   } as unknown as ReturnType<typeof useEventStats>);
 }
 
+// Freeze "now" a week before BASE_EVENT so the check-in window (open 1h before start,
+// vs real Date.now()) is deterministic instead of rotting with wall-clock time (Issue 516).
+const FROZEN_NOW = new Date('2026-05-25T12:00:00Z');
+
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(FROZEN_NOW);
   setAttendanceMutate.mockClear();
   vi.mocked(useEventStats).mockReset();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('EventAttendancePanel', () => {
