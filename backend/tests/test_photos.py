@@ -102,6 +102,12 @@ class TestProfilePhoto:
         response = api_client.post("/api/auth/me/photo/", {"photo": big}, **_auth(member))
         assert response.status_code == 400
 
+    def test_upload_rejects_heic(self, api_client, member):
+        # heic can't be cropped client-side, so we don't accept it (issue 505).
+        heic = SimpleUploadedFile("photo.heic", b"fake heic bytes", content_type="image/heic")
+        response = api_client.post("/api/auth/me/photo/", {"photo": heic}, **_auth(member))
+        assert response.status_code == 400
+
     def test_delete_photo(self, api_client, member):
         photo = _make_test_image()
         api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
@@ -175,6 +181,16 @@ class TestEventPhoto:
         response = api_client.post(
             f"/api/community/events/{event.id}/photo/",
             {"photo": big},
+            **_auth(member),
+        )
+        assert response.status_code == 400
+
+    def test_upload_rejects_heic(self, api_client, member, event):
+        # heic can't be cropped client-side, so we don't accept it (issue 505).
+        heic = SimpleUploadedFile("photo.heic", b"fake heic bytes", content_type="image/heic")
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": heic},
             **_auth(member),
         )
         assert response.status_code == 400
