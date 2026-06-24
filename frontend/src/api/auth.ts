@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 
 import type { ConsentTypeValue } from '@/models/consent';
+import { normalizePermissions } from '@/models/permissions';
 import type { Role, User } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 
@@ -52,7 +53,7 @@ function mapRole(r: WireRole): Role {
     id: r.id,
     name: r.name,
     isDefault: r.is_default,
-    permissions: r.permissions,
+    permissions: normalizePermissions(r.permissions),
   };
 }
 
