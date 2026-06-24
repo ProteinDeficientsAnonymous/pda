@@ -72,6 +72,7 @@ def _default_test_users_consented(monkeypatch):
 
     def create_user(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("guidelines_consent_at", timezone.now())
+        extra_fields.setdefault("is_member", True)
         return original(self, phone_number, password=password, **extra_fields)
 
     monkeypatch.setattr(UserManager, "create_user", create_user)

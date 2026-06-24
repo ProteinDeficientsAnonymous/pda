@@ -283,6 +283,7 @@ class Command(BaseCommand):
             "display_name": data.display_name,
             "email": data.email,
             "bio": data.bio,
+            "is_member": True,
         }
         if data.is_superuser:
             defaults["is_superuser"] = True

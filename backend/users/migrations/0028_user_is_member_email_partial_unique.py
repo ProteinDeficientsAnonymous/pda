@@ -14,10 +14,18 @@ class Migration(migrations.Migration):
             name="user",
             options={},
         ),
+        # Add with default=True so every existing row backfills to member, then
+        # flip the field default to False so new (public-RSVP) accounts are
+        # non-members unless a creation path explicitly opts them in.
         migrations.AddField(
             model_name="user",
             name="is_member",
             field=models.BooleanField(db_index=True, default=True),
+        ),
+        migrations.AlterField(
+            model_name="user",
+            name="is_member",
+            field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AlterField(
             model_name="user",

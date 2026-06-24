@@ -44,6 +44,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_member", True)
         return self.create_user(phone_number, password, **extra_fields)
 
 
@@ -51,8 +52,10 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
     display_name = models.CharField(max_length=64, blank=True)
-    # False for non-members created by public RSVP; excluded via objects.members().
-    is_member = models.BooleanField(default=True, db_index=True)
+    # Defaults False so untrusted public-RSVP accounts are non-members unless
+    # explicitly promoted; admin/join-approval paths set it True. Excluded from
+    # member-facing surfaces via objects.members().
+    is_member = models.BooleanField(default=False, db_index=True)
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
     # members can share a null/blank email.
     email = models.EmailField(null=True, blank=True)

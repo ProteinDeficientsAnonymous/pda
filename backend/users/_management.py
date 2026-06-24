@@ -139,6 +139,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 
         user = User.objects.create_user(
             phone_number=validated_phone,
+            is_member=True,
             needs_onboarding=True,
         )
         user.set_unusable_password()
