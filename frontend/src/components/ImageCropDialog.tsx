@@ -1,27 +1,14 @@
-// Crop dialog for avatar uploads (circular) and event covers (rectangular).
-// The user drags/resizes a crop box over a stationary image — the common
-// Instagram/Facebook/macOS-style UX. Built on react-image-crop. Round shape
-// is locked to a 1:1 square (circular mask); rect shape is free-form so the
-// box can be reshaped to any ratio by dragging its handles. Returns a PNG
-// blob via onCrop.
+// Crop dialog for avatar uploads (round, 1:1 circular mask) and event covers
+// (rect, free-form). Built on react-image-crop; returns a PNG blob via onCrop.
 
 import { useRef, useState } from 'react';
-import ReactCrop, {
-  centerCrop,
-  makeAspectCrop,
-  type Crop,
-  type PercentCrop,
-  type PixelCrop,
-} from 'react-image-crop';
+import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { cropImage } from '@/utils/cropImage';
+import { initialCrop, MAX_PREVIEW_PX } from './initialCrop';
 import { Button } from './ui/Button';
 
 export type CropShape = 'round' | 'rect';
-
-// Tailwind `max-h-80` → 20rem → 320px. Kept in sync with the wrapper + img
-// classes below so the initial crop math matches what the user sees.
-const MAX_PREVIEW_PX = 320;
 
 interface Props {
   file: File;
@@ -47,23 +34,7 @@ export function ImageCropDialog({
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    if (lockedAspect !== undefined) {
-      setCrop(
-        centerCrop(
-          makeAspectCrop({ unit: '%', width: 80 }, lockedAspect, width, height),
-          width,
-          height,
-        ),
-      );
-      return;
-    }
-    // Rect (free-form) mode: the image is constrained to MAX_PREVIEW_PX in CSS,
-    // so a flat 80%-of-natural crop can overshoot the visible image when the
-    // photo is portrait or otherwise taller than the container. Cap the
-    // initial crop height at the rendered preview height instead.
-    const previewHeight = Math.min(height, MAX_PREVIEW_PX);
-    const heightPct = Math.min(80, (previewHeight / height) * 80);
-    setCrop(centerCrop({ unit: '%', x: 0, y: 0, width: 80, height: heightPct }, width, height));
+    setCrop(initialCrop(width, height, shape));
   }
 
   function handleCancel() {
@@ -114,9 +85,13 @@ export function ImageCropDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
     >
       <div className="bg-surface flex w-full max-w-md flex-col gap-4 rounded-lg p-4 shadow-xl">
-        <div className="flex max-h-80 items-center justify-center overflow-hidden rounded-md bg-neutral-900">
-          <ReactCrop {...reactCropProps}>
-            <img ref={imgRef} src={src} alt="" onLoad={onImageLoad} className="max-h-80 w-auto" />
+        <div className="flex items-center justify-center rounded-md bg-neutral-900">
+          {/* Cap height on .ReactCrop itself, not a wrapper. react-image-crop sets
+              `child-wrapper > img { max-height: inherit }`, so only a cap here scales
+              a tall image down — a wrapper cap would just clip it and let the crop be
+              dragged into the off-screen remainder. See issue 428. */}
+          <ReactCrop {...reactCropProps} style={{ maxHeight: MAX_PREVIEW_PX }}>
+            <img ref={imgRef} src={src} alt="" onLoad={onImageLoad} className="w-auto" />
           </ReactCrop>
         </div>
         <div className="flex justify-end gap-2">
