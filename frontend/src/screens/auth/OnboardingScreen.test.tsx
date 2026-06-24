@@ -47,10 +47,9 @@ describe('OnboardingScreen', () => {
     const storeState = { completeOnboarding, user };
     // Cast via `as never` so partial state satisfies the full AuthState type.
     vi.mocked(useAuthStore).mockImplementation(
-      Object.assign(
-        (selector: (s: typeof storeState) => unknown) => selector(storeState),
-        { getState: () => ({ user }) },
-      ) as never,
+      Object.assign((selector: (s: typeof storeState) => unknown) => selector(storeState), {
+        getState: () => ({ user }),
+      }) as never,
     );
   }
 
@@ -114,10 +113,7 @@ describe('OnboardingScreen', () => {
     );
 
     // Both checkboxes must be present
-    const [guidelinesBox, smsBox] = screen.getAllByRole('checkbox') as [
-      HTMLElement,
-      HTMLElement,
-    ];
+    const [guidelinesBox, smsBox] = screen.getAllByRole('checkbox') as [HTMLElement, HTMLElement];
 
     // Fill in the text fields
     await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
