@@ -234,6 +234,13 @@ class OnboardingIn(BaseModel):
     accept_sms: bool = False
 
 
+class AcceptConsentIn(BaseModel):
+    # Re-consent payload for the standalone /consent screen. Guidelines is always
+    # stamped by the endpoint; accept_sms additionally stamps sms_consent_at when
+    # the user still lacks it (the screen shows the sms checkbox only then).
+    accept_sms: bool = False
+
+
 class UserSearchOut(BaseModel):
     id: str
     display_name: str

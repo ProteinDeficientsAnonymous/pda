@@ -61,6 +61,69 @@ class TestAcceptGuidelines:
         assert user.guidelines_consent_at is not None
         assert user.guidelines_consent_at >= first
 
+    def test_accept_sms_stamps_sms_consent(self, api_client):
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550405", password="pass", display_name="SmsConsenter"
+        )
+        user.guidelines_consent_at = None
+        user.sms_consent_at = None
+        user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
+
+        resp = api_client.post(
+            "/api/auth/accept-guidelines/",
+            data={"accept_sms": True},
+            content_type="application/json",
+            **_headers(user),
+        )
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["needs_sms_consent"] is False
+
+        user.refresh_from_db()
+        assert user.guidelines_consent_at is not None
+        assert user.sms_consent_at is not None
+
+    def test_without_accept_sms_leaves_sms_consent_null(self, api_client):
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550406", password="pass", display_name="GuidelinesOnly"
+        )
+        user.guidelines_consent_at = None
+        user.sms_consent_at = None
+        user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
+
+        resp = api_client.post("/api/auth/accept-guidelines/", **_headers(user))
+        assert resp.status_code == 200, resp.content
+
+        user.refresh_from_db()
+        assert user.guidelines_consent_at is not None
+        assert user.sms_consent_at is None
+
+    def test_accept_sms_never_overwrites_existing(self, api_client):
+        from django.utils import timezone
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550407", password="pass", display_name="AlreadySms"
+        )
+        original = timezone.now() - timezone.timedelta(days=10)
+        user.guidelines_consent_at = None
+        user.sms_consent_at = original
+        user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
+
+        resp = api_client.post(
+            "/api/auth/accept-guidelines/",
+            data={"accept_sms": True},
+            content_type="application/json",
+            **_headers(user),
+        )
+        assert resp.status_code == 200, resp.content
+
+        user.refresh_from_db()
+        assert user.sms_consent_at == original
+
     def test_requires_auth(self, api_client):
         resp = api_client.post("/api/auth/accept-guidelines/")
         assert resp.status_code == 401

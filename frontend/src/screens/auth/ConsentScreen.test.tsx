@@ -26,13 +26,17 @@ describe('ConsentScreen', () => {
   const acceptGuidelines = vi.fn();
   const logout = vi.fn();
 
+  function mockStore({ needsSmsConsent = false }: { needsSmsConsent?: boolean } = {}) {
+    vi.mocked(useAuthStore).mockImplementation((selector) =>
+      selector({ acceptGuidelines, logout, user: { needsSmsConsent } } as never),
+    );
+  }
+
   beforeEach(() => {
     acceptGuidelines.mockReset();
     logout.mockReset();
     navigate.mockReset();
-    vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ acceptGuidelines, logout } as never),
-    );
+    mockStore();
   });
 
   it('disables continue until the checkbox is ticked', () => {
@@ -65,7 +69,47 @@ describe('ConsentScreen', () => {
     );
     await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
-    expect(acceptGuidelines).toHaveBeenCalledOnce();
+    expect(acceptGuidelines).toHaveBeenCalledExactlyOnceWith(false);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/calendar', { replace: true }));
+  });
+
+  it('hides the sms checkbox when sms consent is not needed', () => {
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('link', { name: /sms policy/i })).not.toBeInTheDocument();
+  });
+
+  it('requires both checkboxes when sms consent is also needed', async () => {
+    mockStore({ needsSmsConsent: true });
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    const continueBtn = screen.getByRole('button', { name: /continue/i });
+    expect(continueBtn).toBeDisabled();
+    // Ticking only guidelines is not enough — sms is still required.
+    await userEvent.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    expect(continueBtn).toBeDisabled();
+    await userEvent.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    expect(continueBtn).toBeEnabled();
+  });
+
+  it('passes sms consent through when both are accepted', async () => {
+    acceptGuidelines.mockResolvedValue(undefined);
+    mockStore({ needsSmsConsent: true });
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(acceptGuidelines).toHaveBeenCalledExactlyOnceWith(true);
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/calendar', { replace: true }));
   });
 
