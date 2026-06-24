@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from community._shared import ErrorOut, _optional_jwt, flatten_to_single_line
 from community._validation import Code, raise_validation
+from community.models import FeedbackType
 
 router = Router()
 
@@ -45,7 +46,7 @@ class FeedbackMetadataIn(BaseModel):
 class FeedbackIn(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(min_length=1, max_length=10000)
-    feedback_types: list[str] = Field(default_factory=list)  # "bug", "feature request"
+    feedback_types: list[FeedbackType] = Field(default_factory=list)
     metadata: FeedbackMetadataIn | None = None
 
 
@@ -151,13 +152,20 @@ def _build_issue_body(payload: FeedbackIn, auth_user) -> str:
     return "\n\n".join(parts)
 
 
-def _issue_labels(feedback_types: list[str]) -> list[str]:
+# Maps a feedback category to the GitHub issue label it should add. A category
+# without an entry here contributes no extra label.
+_FEEDBACK_TYPE_LABELS: dict[FeedbackType, str] = {
+    FeedbackType.BUG: "bug",
+    FeedbackType.FEATURE_REQUEST: "feature",
+}
+
+
+def _issue_labels(feedback_types: list[FeedbackType]) -> list[str]:
     labels = ["feedback"]
     for t in feedback_types:
-        if t == "bug":
-            labels.append("bug")
-        elif t == "feature request":
-            labels.append("enhancement")
+        label = _FEEDBACK_TYPE_LABELS.get(t)
+        if label:
+            labels.append(label)
     return labels
 
 

@@ -87,3 +87,12 @@ class PollAvailability:
     MAYBE = "maybe"
     NO = "no"
     VALID = {YES, MAYBE, NO}
+
+
+class FeedbackType(models.TextChoices):
+    """Categories a user can tag feedback with. Not DB-backed — these are the
+    accepted values on the feedback API payload, mapped to GitHub issue labels
+    in ``community._feedback``."""
+
+    BUG = "bug", "Bug"
+    FEATURE_REQUEST = "feature request", "Feature request"

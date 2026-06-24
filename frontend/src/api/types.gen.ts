@@ -2549,7 +2549,7 @@ export interface components {
             /** Description */
             description: string;
             /** Feedback Types */
-            feedback_types?: string[];
+            feedback_types?: components["schemas"]["FeedbackType"][];
             metadata?: components["schemas"]["FeedbackMetadataIn"] | null;
             /** Title */
             title: string;
@@ -2577,6 +2577,14 @@ export interface components {
             /** Html Url */
             html_url: string;
         };
+        /**
+         * FeedbackType
+         * @description Categories a user can tag feedback with. Not DB-backed — these are the
+         *     accepted values on the feedback API payload, mapped to GitHub issue labels
+         *     in ``community._feedback``.
+         * @enum {string}
+         */
+        FeedbackType: "bug" | "feature request";
         /** FinalizePollIn */
         FinalizePollIn: {
             /**
