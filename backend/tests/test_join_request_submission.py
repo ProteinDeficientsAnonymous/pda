@@ -30,7 +30,8 @@ class TestJoinRequestSubmission:
         assert data["phone_number"] == "+12025551234"
         assert len(data["answers"]) >= 1
         # Consent timestamps recorded — sms proof for Twilio toll-free
-        # verification, guidelines proof of agreement.
+        # verification (automated send deferred, see #501), guidelines proof of
+        # agreement.
         jr = JoinRequest.objects.get(phone_number="+12025551234")
         assert jr.sms_consent_at is not None
         assert jr.guidelines_consent_at is not None
