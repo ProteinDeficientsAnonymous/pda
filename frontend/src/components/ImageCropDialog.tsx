@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { cropImage } from '@/utils/cropImage';
-import { initialCrop, MAX_PREVIEW_PX } from './initialCrop';
+import { initialCrop, percentToPixelCrop, MAX_PREVIEW_PX } from './initialCrop';
 import { Button } from './ui/Button';
 
 export type CropShape = 'round' | 'rect';
@@ -34,7 +34,13 @@ export function ImageCropDialog({
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    setCrop(initialCrop(width, height, shape));
+    const pct = initialCrop(width, height, shape);
+    setCrop(pct);
+    // react-image-crop only fires onComplete on user interaction, so seed the
+    // pixel crop from the initial selection. Without this, hitting save before
+    // dragging the box is a no-op (handleSave bails on a null completed crop)
+    // and no upload request ever fires. See issue 523.
+    setCompleted(percentToPixelCrop(pct, width, height));
   }
 
   function handleCancel() {
