@@ -5,6 +5,10 @@ import { initialCrop } from './initialCrop';
 // *width*, so for any non-portrait image the square was taller than the image and
 // react-image-crop clamped it into an unmovable band ("you can only move the crop
 // circle on the visible portion"). The crop must always fit inside the image.
+//
+// `width`/`height` here are the *rendered* preview dimensions. ImageCropDialog caps
+// the rendered height at MAX_PREVIEW_PX (320) by constraining the .ReactCrop element,
+// so the image is scaled — not clipped — and these inputs never exceed 320 tall.
 
 function fits(crop: { x: number; y: number; width: number; height: number }) {
   expect(crop.x).toBeGreaterThanOrEqual(0);
@@ -55,16 +59,18 @@ describe('initialCrop — round (1:1)', () => {
 });
 
 describe('initialCrop — rect (free-form)', () => {
-  it('caps initial height at the visible preview, never overflowing', () => {
-    // very tall image: rendered preview is capped at 320px, natural is 3000px tall
-    const crop = initialCrop(2000, 3000, 'rect');
-    fits(crop);
-    expect(crop.width).toBe(80);
-  });
+  // The rendered preview is height-capped by the dialog, so rect is always a plain
+  // centered 80% box that fits regardless of orientation.
+  const cases: [string, number, number][] = [
+    ['landscape', 800, 200],
+    ['square', 320, 320],
+    ['portrait (capped)', 213, 320],
+  ];
 
-  it('uses a plain 80% box when the image is not taller than the preview', () => {
-    const crop = initialCrop(800, 200, 'rect');
+  it.each(cases)('is a centered 80%% box that fits: %s', (_label, w, h) => {
+    const crop = initialCrop(w, h, 'rect');
     fits(crop);
+    isCentered(crop);
     expect(crop.width).toBe(80);
     expect(crop.height).toBe(80);
   });

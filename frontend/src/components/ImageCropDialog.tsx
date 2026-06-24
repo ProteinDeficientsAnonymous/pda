@@ -9,7 +9,7 @@ import { useRef, useState } from 'react';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { cropImage } from '@/utils/cropImage';
-import { initialCrop } from './initialCrop';
+import { initialCrop, MAX_PREVIEW_PX } from './initialCrop';
 import { Button } from './ui/Button';
 
 export type CropShape = 'round' | 'rect';
@@ -89,9 +89,15 @@ export function ImageCropDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
     >
       <div className="bg-surface flex w-full max-w-md flex-col gap-4 rounded-lg p-4 shadow-xl">
-        <div className="flex max-h-80 items-center justify-center overflow-hidden rounded-md bg-neutral-900">
-          <ReactCrop {...reactCropProps}>
-            <img ref={imgRef} src={src} alt="" onLoad={onImageLoad} className="max-h-80 w-auto" />
+        <div className="flex items-center justify-center rounded-md bg-neutral-900">
+          {/* Cap height on ReactCrop itself, not the wrapper. react-image-crop sets
+              `child-wrapper > img { max-height: inherit }`, so the constraint has to
+              live on the .ReactCrop element to actually *scale* a tall image down to
+              the preview height — a cap on the <img> or an `overflow-hidden` wrapper
+              would only clip it, leaving react-image-crop to render (and let the user
+              drag the crop into) the off-screen remainder. See issue 428. */}
+          <ReactCrop {...reactCropProps} style={{ maxHeight: MAX_PREVIEW_PX }}>
+            <img ref={imgRef} src={src} alt="" onLoad={onImageLoad} className="w-auto" />
           </ReactCrop>
         </div>
         <div className="flex justify-end gap-2">
