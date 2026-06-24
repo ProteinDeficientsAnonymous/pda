@@ -1,9 +1,5 @@
-// Host-only "group text" action. Gated upstream (creator/co-host only) so it
-// only renders for viewers the backend already trusts with guest phone numbers.
-//
-// Tap → open the host's Messages app with all eligible attendee numbers as a
-// group thread. On desktop (no `sms:` handler) fall back to copying the list.
-// See issue #500.
+// Host-only "group text" action (creator/co-host) — see issue #500. Mobile opens
+// the host's Messages app as a group thread; desktop copies the list instead.
 
 import { toast } from 'sonner';
 import type { Event } from '@/models/event';
@@ -13,17 +9,13 @@ interface Props {
   event: Event;
 }
 
-// "N attendees have no number and won't be included" — surfaced whether we open
-// the sms thread or fall back to copying, so the host knows who was dropped.
 function skippedNote(count: number): string {
   const subject = count === 1 ? 'attendee has' : 'attendees have';
   return `${String(count)} ${subject} no number and weren't included`;
 }
 
 export function GroupTextButton({ event }: Props) {
-  // Default audience: everyone who RSVP'd (going / maybe / can't go / waitlist).
-  // The backend only populates `phone` for hosts, so non-host guest lists yield
-  // no numbers and the button stays disabled.
+  // Audience is everyone who RSVP'd; the backend only sends `phone` to hosts.
   const { phones, skippedCount } = collectRecipients(event.guests);
   const smsSupported = isSmsSupported();
 
@@ -36,8 +28,7 @@ export function GroupTextButton({ event }: Props) {
     if (smsSupported) {
       const uri = buildSmsUri(phones);
       if (uri) window.location.href = uri;
-      // The Messages app doesn't surface who was left out, so we still flag the
-      // skipped no-number attendees here (acceptance criterion for #500).
+      // Messages won't show who was dropped, so flag skipped attendees here.
       if (skippedCount > 0) toast.info(skippedNote(skippedCount));
       return;
     }
