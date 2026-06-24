@@ -123,11 +123,8 @@ function mockStats(stats: EventStats | null, state: 'loading' | 'error' | 'succe
   } as unknown as ReturnType<typeof useEventStats>);
 }
 
-// The check-in window opens 1h before start by comparing startDatetime against the
-// real Date.now(), so these tests freeze the clock to a fixed instant. "Now" sits a
-// week before BASE_EVENT (2026-06-01) — check-in closed — while soonEvent (now + 30m)
-// lands inside the window. Without this the suite rots as wall-clock time advances
-// past the hardcoded fixture dates (Issue 516).
+// Freeze "now" a week before BASE_EVENT so the check-in window (open 1h before start,
+// vs real Date.now()) is deterministic instead of rotting with wall-clock time (Issue 516).
 const FROZEN_NOW = new Date('2026-05-25T12:00:00Z');
 
 beforeEach(() => {
