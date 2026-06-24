@@ -39,10 +39,22 @@ export interface UserLike {
   }[];
 }
 
+// `permissions` rides the wire from a backend JSONField with no DB-level shape
+// guarantee — a legacy/corrupt row could deliver null, undefined, or an object.
+// Normalize at every API boundary so the `permissions: string[]` invariant holds
+// and downstream `.includes`/`.length`/`.map` calls can't throw during render.
+export function normalizePermissions(value: unknown): string[] {
+  return Array.isArray(value) ? (value as string[]) : [];
+}
+
 export function hasPermission(user: UserLike | null, key: PermissionKey): boolean {
   if (!user) return false;
+  // Re-normalize per role: a UserLike can be built in tests or from a source
+  // that skipped the API-boundary mapping, so don't assume the invariant holds.
   return user.roles.some(
-    (r) => (r.name === ADMIN_ROLE_NAME && r.isDefault) || r.permissions.includes(key),
+    (r) =>
+      (r.name === ADMIN_ROLE_NAME && r.isDefault) ||
+      normalizePermissions(r.permissions).includes(key),
   );
 }
 

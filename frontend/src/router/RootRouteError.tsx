@@ -40,11 +40,12 @@ export function RootRouteError() {
     void reportError(err, location.pathname, context);
   }, [error, location.pathname]);
 
+  // Unexpected JS exceptions get a friendly fallback instead of a leaked raw
+  // error string (e.g. "cannot read properties of undefined"); the technical
+  // detail still goes to reportError. Route-error responses keep their status.
   const message = isRouteErrorResponse(error)
     ? `${String(error.status)} ${error.statusText}`.toLowerCase()
-    : error instanceof Error
-      ? error.message.toLowerCase()
-      : 'something went wrong';
+    : 'something went wrong — try again or head back home';
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">

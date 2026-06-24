@@ -6,6 +6,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
+import { normalizePermissions } from '@/models/permissions';
 
 export interface Role {
   id: string;
@@ -28,7 +29,7 @@ function fromWire(w: WireRole): Role {
     id: w.id,
     name: w.name,
     isDefault: w.is_default,
-    permissions: w.permissions,
+    permissions: normalizePermissions(w.permissions),
     userCount: w.user_count ?? 0,
   };
 }
