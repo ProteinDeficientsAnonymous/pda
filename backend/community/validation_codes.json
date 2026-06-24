@@ -137,6 +137,16 @@
         "params": [
           "action?"
         ]
+      },
+      {
+        "name": "BLAST_INVALID_AUDIENCE",
+        "value": "event.blast_invalid_audience",
+        "params": []
+      },
+      {
+        "name": "BLAST_NO_RECIPIENTS",
+        "value": "event.blast_no_recipients",
+        "params": []
       }
     ],
     "Poll": [

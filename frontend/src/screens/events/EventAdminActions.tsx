@@ -8,6 +8,7 @@ import { useCancelEvent, useDeleteEvent, useUpdateEvent } from '@/api/eventWrite
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { EmailBlastDialog } from './EmailBlastDialog';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
 import { Permission, hasPermission } from '@/models/permissions';
@@ -43,6 +44,7 @@ function AdminActionRow({
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [blastOpen, setBlastOpen] = useState(false);
 
   const update = useUpdateEvent(event.id);
   const cancelMut = useCancelEvent(event.id);
@@ -52,6 +54,10 @@ function AdminActionRow({
   const isCancelled = event.status === EventStatus.Cancelled;
   const isDraft = event.status === EventStatus.Draft;
   const hasNoAttendees = event.attendingCount === 0;
+  // Email-blast targets everyone who RSVP'd (any status), so gate on the full
+  // guest list rather than just the attending count. Hidden for drafts (no one
+  // can RSVP yet).
+  const canEmailAttendees = !isDraft && event.guests.length > 0;
   const canDelete = (isCreator || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees;
   // Drafts are always editable — the edit-window cutoff protects the
@@ -103,6 +109,16 @@ function AdminActionRow({
             disabled={update.isPending}
           >
             {update.isPending ? 'publishing…' : 'publish'}
+          </Button>
+        ) : null}
+        {canEmailAttendees ? (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setBlastOpen(true);
+            }}
+          >
+            email attendees
           </Button>
         ) : null}
         {showCancel ? (
@@ -170,6 +186,14 @@ function AdminActionRow({
           </Button>
         </div>
       </Dialog>
+
+      <EmailBlastDialog
+        event={event}
+        open={blastOpen}
+        onClose={() => {
+          setBlastOpen(false);
+        }}
+      />
 
       <Dialog
         open={deleteOpen}
