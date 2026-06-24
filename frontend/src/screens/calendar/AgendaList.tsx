@@ -2,10 +2,11 @@
 // event type. No rbc date/time columns; title sits on top, date + time line
 // sits underneath. Mirrors the "cleaner" list layout the user asked for.
 
-import { useMemo, useState } from 'react';
 import { format, isSameDay } from 'date-fns';
-import { EventType, eventClass, type Event as PdaEvent } from '@/models/event';
+import { useMemo, useState } from 'react';
+
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 type TypeFilter = 'all' | typeof EventType.Official | typeof EventType.Community;

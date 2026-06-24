@@ -2,12 +2,13 @@
 // same welcome-credentials view used after approving a join request so the
 // admin can copy the magic-login link before leaving the dialog.
 
-import { useState, type SyntheticEvent } from 'react';
+import { type SyntheticEvent, useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { type CreateUserResult, useCreateUser } from '@/api/users';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
-import { useCreateUser, type CreateUserResult } from '@/api/users';
 import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 

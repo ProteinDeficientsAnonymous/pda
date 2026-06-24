@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -8,6 +8,7 @@ vi.mock('@/api/client', () => ({
 
 import { apiClient } from '@/api/client';
 import { useAuthStore } from '@/auth/store';
+
 import { reportError } from './errorReporter';
 
 const mockedPost = vi.mocked(apiClient.post);

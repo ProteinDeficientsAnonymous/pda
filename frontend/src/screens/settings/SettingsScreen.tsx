@@ -1,18 +1,20 @@
 import { useState } from 'react';
+
+import { type TextScale, type ThemeMode, useAccessibilityStore } from '@/accessibility/store';
+import { extractApiErrorOr } from '@/api/apiErrors';
+import { useVersion } from '@/api/version';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
-import { useAuthStore } from '@/auth/store';
-import { useAccessibilityStore, type ThemeMode, type TextScale } from '@/accessibility/store';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
-import { useVersion } from '@/api/version';
-import { extractApiErrorOr } from '@/api/apiErrors';
 import { ContentContainer } from '@/screens/public/ContentContainer';
+import { cn } from '@/utils/cn';
+import { formatPhone } from '@/utils/formatPhone';
+
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
-import { cn } from '@/utils/cn';
-import { formatPhone } from '@/utils/formatPhone';
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);

@@ -8,8 +8,9 @@
 //   409 email.already_exists  — email matches another user → surfaced inline on the form
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
+
 import { hasErrorCode } from './apiErrors';
+import { apiClient } from './client';
 import { Code } from './validationCodes.gen';
 
 export type JoinQuestionType = 'text' | 'select';

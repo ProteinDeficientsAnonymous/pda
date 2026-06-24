@@ -1,8 +1,9 @@
 import { useState } from 'react';
+
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Textarea } from '@/components/ui/Textarea';
-import { useAuthStore } from '@/auth/store';
 
 const MAX_BIO = 500;
 

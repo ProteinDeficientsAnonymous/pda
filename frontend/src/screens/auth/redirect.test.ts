@@ -1,5 +1,6 @@
 // Open-redirect guard for the post-login `redirect` query param.
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { safeRedirect } from './redirect';
 
 const DEFAULT = '/calendar';

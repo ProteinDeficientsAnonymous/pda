@@ -6,9 +6,11 @@
 // is handled by TanStack Query's refetchIntervalInBackground: false.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
+
 import { useAuthStore } from '@/auth/store';
 import type { AppNotification } from '@/models/notification';
+
+import { apiClient } from './client';
 
 interface WireNotification {
   id: string;

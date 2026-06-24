@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 
-import { useEventComments, usePostComment } from '@/api/eventComments';
 import { extractApiError } from '@/api/apiErrors';
+import { useEventComments, usePostComment } from '@/api/eventComments';
 import type { CannotPostReason } from '@/models/eventComment';
 
 import { CommentComposer } from './CommentComposer';

@@ -1,17 +1,19 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { AuthLayout } from './AuthLayout';
+
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
-import { useAuthStore } from '@/auth/store';
-import { extractApiError } from '@/utils/errors';
 import { postAuthRedirect } from '@/models/user';
-import { passwordRule } from './passwordRule';
+import { extractApiError } from '@/utils/errors';
+
+import { AuthLayout } from './AuthLayout';
 import { PasswordChecklist } from './PasswordChecklist';
+import { passwordRule } from './passwordRule';
 
 const schema = z.object({
   displayName: z.string().min(1, 'name required').max(64),

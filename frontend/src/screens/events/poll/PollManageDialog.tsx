@@ -3,9 +3,10 @@
 // mutation fires on a per-row "save" so the host can leave mid-edit
 // without losing other changes.
 
-import { useState } from 'react';
 import { format } from 'date-fns';
+import { useState } from 'react';
 import { toast } from 'sonner';
+
 import {
   extractPollError,
   useAddPollOption,
@@ -14,9 +15,10 @@ import {
   useUpdatePollOption,
 } from '@/api/eventPolls';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
+import { Dialog } from '@/components/ui/Dialog';
 import type { EventPoll, EventPollOption } from '@/models/eventPoll';
+
 import { sortOptionsChrono } from './pollHelpers';
 
 interface Props {

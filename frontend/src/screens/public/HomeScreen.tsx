@@ -1,7 +1,8 @@
 import { useHome, useUpdateHome } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
-import { Permission, hasPermission } from '@/models/permissions';
+import { hasPermission, Permission } from '@/models/permissions';
+
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
 
 export default function HomeScreen() {

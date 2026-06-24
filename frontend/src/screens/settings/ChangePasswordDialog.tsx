@@ -1,11 +1,12 @@
 import { useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
-import { useAuthStore } from '@/auth/store';
-import { passwordRule } from '@/screens/auth/passwordRule';
 import { PasswordChecklist } from '@/screens/auth/PasswordChecklist';
+import { passwordRule } from '@/screens/auth/passwordRule';
 
 interface Props {
   open: boolean;

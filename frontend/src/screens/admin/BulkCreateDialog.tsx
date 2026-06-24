@@ -4,12 +4,13 @@
 // view lists one-time magic-login links for each newly created row and
 // any per-row errors so the admin can retry the failed entries.
 
-import { useState, type SyntheticEvent } from 'react';
+import { type SyntheticEvent, useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { type BulkCreateResponse, type BulkCreateResult, useBulkCreateUsers } from '@/api/users';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Textarea } from '@/components/ui/Textarea';
-import { useBulkCreateUsers, type BulkCreateResponse, type BulkCreateResult } from '@/api/users';
 import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 

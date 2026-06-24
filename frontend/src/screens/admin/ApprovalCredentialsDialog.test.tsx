@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 
 vi.mock('@/api/client', () => ({

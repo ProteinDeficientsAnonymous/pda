@@ -2,10 +2,12 @@
 // role management. Mirrors the Flutter TabController(length:2) layout.
 
 import { useState } from 'react';
+
 import { useAuthStore } from '@/auth/store';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { Permission, hasPermission } from '@/models/permissions';
+import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer } from '@/screens/public/ContentContainer';
+
 import { MembersTab } from './MembersTab';
 import { RolesTab } from './RolesTab';
 

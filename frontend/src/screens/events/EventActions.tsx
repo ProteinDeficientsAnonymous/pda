@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
 import type { Event } from '@/models/event';
 import { appleCalendarUrl, googleCalendarUrl, icsUrl, shareEventUrl } from '@/utils/eventCalendar';
 

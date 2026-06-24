@@ -7,14 +7,16 @@
 // over capacity.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
+
 import { useAuthStore } from '@/auth/store';
-import { eventCommentKeys } from './eventComments';
-import { eventKeys } from './events';
-import { eventStatsKeys } from './eventStats';
-import { mapEvent, type WireEvent } from './eventMapper';
 import type { Event } from '@/models/event';
 import type { RsvpStatus } from '@/models/event';
+
+import { apiClient } from './client';
+import { eventCommentKeys } from './eventComments';
+import { mapEvent, type WireEvent } from './eventMapper';
+import { eventKeys } from './events';
+import { eventStatsKeys } from './eventStats';
 
 type RsvpInput = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 

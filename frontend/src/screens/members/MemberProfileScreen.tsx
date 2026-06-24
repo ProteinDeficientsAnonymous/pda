@@ -3,7 +3,8 @@
 // show_phone / show_email settings, so we just check truthiness here.
 
 import { useParams } from 'react-router-dom';
-import { useMemberProfile, type MemberProfile } from '@/api/users';
+
+import { type MemberProfile, useMemberProfile } from '@/api/users';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 

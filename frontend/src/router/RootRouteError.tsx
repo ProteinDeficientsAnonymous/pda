@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { isRouteErrorResponse, useLocation, useNavigate, useRouteError } from 'react-router-dom';
-import { reportError } from '@/utils/errorReporter';
+
 import { Button } from '@/components/ui/Button';
+import { reportError } from '@/utils/errorReporter';
+
 import { isChunkLoadError } from './lazyRoute';
 
 const CHUNK_RELOAD_FLAG = 'chunk-error-reload-attempted';

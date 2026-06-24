@@ -4,8 +4,9 @@
 // new link from the members screen.
 
 import { useState } from 'react';
-import { useAuthStore } from '@/auth/store';
+
 import { useWelcomeTemplate } from '@/api/content';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { hasPermission, Permission } from '@/models/permissions';
@@ -13,10 +14,11 @@ import { formatPhone } from '@/utils/formatPhone';
 import {
   buildMagicLinkUrl,
   buildSmsHref,
-  buildWhatsAppHref,
   buildWelcomeMessage,
+  buildWhatsAppHref,
   renderWelcomeMessage,
 } from '@/utils/welcomeMessage';
+
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 
 interface Props {

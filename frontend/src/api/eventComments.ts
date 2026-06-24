@@ -3,9 +3,7 @@
 // require auth + an EventRSVP on the event.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
-import { eventKeys } from './events';
-import { mapComment, mapCommentList, mapReply, type WireCommentList } from './eventCommentMapper';
+
 import { useAuthStore } from '@/auth/store';
 import type {
   EventComment,
@@ -13,6 +11,10 @@ import type {
   EventCommentReply,
   ReactionEmojiValue,
 } from '@/models/eventComment';
+
+import { apiClient } from './client';
+import { mapComment, mapCommentList, mapReply, type WireCommentList } from './eventCommentMapper';
+import { eventKeys } from './events';
 
 // ---------------------------------------------------------------------------
 // Wire types for write responses (not exported by the mapper)

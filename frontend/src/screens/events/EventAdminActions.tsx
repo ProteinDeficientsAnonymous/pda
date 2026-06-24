@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { useCancelEvent, useDeleteEvent, useUpdateEvent } from '@/api/eventWrites';
 import { useAuthStore } from '@/auth/store';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
-import { Permission, hasPermission } from '@/models/permissions';
+import { hasPermission, Permission } from '@/models/permissions';
 
 interface Props {
   event: Event;

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { parseIsoDate, formatEventDateTime, formatDayHeader } from './datetime';
+import { describe, expect, it } from 'vitest';
+
+import { formatDayHeader, formatEventDateTime, parseIsoDate } from './datetime';
 
 describe('parseIsoDate', () => {
   it('parses ISO 8601 string', () => {

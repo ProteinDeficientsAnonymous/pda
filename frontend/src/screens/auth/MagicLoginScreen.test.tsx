@@ -1,7 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { User } from '@/models/user';
+
 import MagicLoginScreen from './MagicLoginScreen';
 
 // MagicLoginScreen calls the store's magicLogin action, then reads

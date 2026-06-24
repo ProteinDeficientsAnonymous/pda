@@ -1,8 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
+
 import { useDocument, useUpdateDocument } from '@/api/docs';
 import { useAuthStore } from '@/auth/store';
 import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
-import { Permission, hasPermission } from '@/models/permissions';
+import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 export default function DocDetailScreen() {

@@ -6,6 +6,7 @@
 // survives the color-blind-friendly rule (not color-only).
 
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+
 import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
 

@@ -2,10 +2,12 @@
 // form's co-host and invited-user pickers.
 
 import { useState } from 'react';
-import { useUserSearch, type MemberSearchResult } from '@/api/userSearch';
-import { TextField } from './ui/TextField';
+
+import { type MemberSearchResult, useUserSearch } from '@/api/userSearch';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
+
+import { TextField } from './ui/TextField';
 
 interface Props {
   label: string;

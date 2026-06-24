@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { mapEvent, type WireEvent } from './eventMapper';
 
 function wireEvent(overrides: Partial<WireEvent> = {}): WireEvent {

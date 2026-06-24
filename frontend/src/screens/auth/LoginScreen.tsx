@@ -1,20 +1,22 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { isValidPhoneNumber } from 'react-phone-number-input';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { isValidPhoneNumber } from 'react-phone-number-input';
-import { AuthLayout } from './AuthLayout';
+
+import { checkPhone } from '@/api/join';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { PhoneField } from '@/components/ui/PhoneField';
-import { useAuthStore } from '@/auth/store';
 import { postAuthRedirect } from '@/models/user';
-import { checkPhone } from '@/api/join';
 import { extractApiError } from '@/utils/errors';
-import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
+
+import { AuthLayout } from './AuthLayout';
 import { safeRedirect } from './redirect';
+import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
 type Step = 'phone' | 'password' | 'pending';
 

@@ -1,10 +1,10 @@
 // Renders one survey question by type. Returns the answer as the exact
 // shape the backend expects (strings for most, dict for datetime_poll).
 
-import type { SurveyQuestion, AnswerValue } from '@/api/surveys';
+import type { AnswerValue, SurveyQuestion } from '@/api/surveys';
 import { Select } from '@/components/ui/Select';
-import { TextField } from '@/components/ui/TextField';
 import { Textarea } from '@/components/ui/Textarea';
+import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/utils/cn';
 
 interface Props {

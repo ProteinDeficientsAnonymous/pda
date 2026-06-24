@@ -2,11 +2,13 @@
 // JSObjects) to match the backend wire format — the content_pm column is a
 // TextField, not a JSONField.
 
-import { useEditor, EditorContent, type JSONContent } from '@tiptap/react';
+import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import { useEffect } from 'react';
-import { pdaExtensions } from './tiptapConfig';
-import { RichEditorToolbar } from './RichEditorToolbar';
+
 import { cn } from '@/utils/cn';
+
+import { RichEditorToolbar } from './RichEditorToolbar';
+import { pdaExtensions } from './tiptapConfig';
 
 interface Props {
   /** ProseMirror JSON as a string. Empty string → start blank. */

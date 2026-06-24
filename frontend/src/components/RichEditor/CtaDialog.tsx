@@ -1,11 +1,13 @@
 // Dialog for inserting or editing a CTA button node in the editor.
 
-import { useState, type SyntheticEvent } from 'react';
+import { type SyntheticEvent, useState } from 'react';
+
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { ensureHttps } from '@/utils/url';
+
 import type { CtaAttrs, CtaVariant } from './CtaExtension';
 
 interface Props {
