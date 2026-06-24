@@ -9,6 +9,7 @@ import { extractApiError } from '@/api/apiErrors';
 import { useRescindCohostInvite } from '@/api/cohostInvites';
 import { RsvpSection } from './RsvpSection';
 import { InvitedList } from './RsvpGuestList';
+import { GroupTextButton } from './GroupTextButton';
 import { EventAdminActions } from './EventAdminActions';
 import { EventCommentsCard } from './comments/EventCommentsCard';
 import { EventAttendancePanel } from './EventAttendancePanel';
@@ -57,6 +58,11 @@ export function EventMemberSection({ event }: Props) {
       {showRsvp ? (
         <Card label="rsvp">
           <RsvpSection event={event} canSeeInvited={canSeeInvited} />
+          {isCoHost ? (
+            <div className="mt-4 flex justify-end">
+              <GroupTextButton event={event} />
+            </div>
+          ) : null}
         </Card>
       ) : null}
       {showStandaloneInvited ? (
