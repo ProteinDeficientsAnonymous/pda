@@ -4,7 +4,7 @@
 // inputs always match the visible preview. Returns percent units so the crop scales
 // with the displayed image. See issue 428.
 
-import { centerCrop, type PercentCrop } from 'react-image-crop';
+import { centerCrop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 import type { CropShape } from './ImageCropDialog';
 
 // Max rendered preview height (20rem). The single source of truth for the cap;
@@ -35,4 +35,18 @@ export function initialCrop(width: number, height: number, shape: CropShape): Pe
     width,
     height,
   );
+}
+
+// Convert a percent crop to a pixel crop against the rendered image size. x/width
+// are percentages of width; y/height of height. ImageCropDialog uses this to seed
+// the completed pixel crop on image load, since react-image-crop only fires
+// onComplete on user interaction. See issue 523.
+export function percentToPixelCrop(pct: PercentCrop, width: number, height: number): PixelCrop {
+  return {
+    unit: 'px',
+    x: (pct.x / 100) * width,
+    y: (pct.y / 100) * height,
+    width: (pct.width / 100) * width,
+    height: (pct.height / 100) * height,
+  };
 }
