@@ -100,12 +100,39 @@ class TestUpdateUser:
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) in ids
 
+    def test_admin_list_excludes_non_members(self, api_client, manage_users_headers, other_user):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert str(other_user.pk) not in ids
+
+    def test_admin_update_non_member_returns_404(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/",
+            {"display_name": "Renamed"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 404
+
 
 @pytest.mark.django_db
 class TestMemberProfile:
     def test_member_profile_returns_404_for_paused_user(self, api_client, auth_headers, other_user):
         other_user.is_paused = True
         other_user.save(update_fields=["is_paused"])
+        response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
+        assert response.status_code == 404
+
+    def test_member_profile_returns_404_for_non_member(self, api_client, auth_headers, other_user):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 

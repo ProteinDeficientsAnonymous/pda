@@ -130,10 +130,14 @@ def create_join_request_notifications(display_name: str) -> None:
 
     from notifications.models import Notification, NotificationType
 
-    recipients = User.objects.filter(
-        Q(roles__name="admin", roles__is_default=True)
-        | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
-    ).distinct()
+    recipients = (
+        User.objects.members()
+        .filter(
+            Q(roles__name="admin", roles__is_default=True)
+            | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
+        )
+        .distinct()
+    )
 
     Notification.objects.bulk_create(
         [
@@ -156,10 +160,14 @@ def create_event_flag_notifications(event: Event, flagger: User) -> None:
     from notifications.models import Notification, NotificationType
 
     flagger_name = flagger.display_name or flagger.phone_number
-    recipients = UserModel.objects.filter(
-        Q(roles__name="admin", roles__is_default=True)
-        | Q(roles__permissions__contains=PermissionKey.MANAGE_EVENTS)
-    ).distinct()
+    recipients = (
+        UserModel.objects.members()
+        .filter(
+            Q(roles__name="admin", roles__is_default=True)
+            | Q(roles__permissions__contains=PermissionKey.MANAGE_EVENTS)
+        )
+        .distinct()
+    )
 
     Notification.objects.bulk_create(
         [
@@ -183,10 +191,14 @@ def create_magic_link_request_notifications(user: User) -> None:
     from notifications.models import Notification, NotificationType
 
     display = user.display_name or user.phone_number
-    recipients = UserModel.objects.filter(
-        Q(roles__name="admin", roles__is_default=True)
-        | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
-    ).distinct()
+    recipients = (
+        UserModel.objects.members()
+        .filter(
+            Q(roles__name="admin", roles__is_default=True)
+            | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
+        )
+        .distinct()
+    )
 
     Notification.objects.bulk_create(
         [

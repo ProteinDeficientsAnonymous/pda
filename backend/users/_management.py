@@ -171,8 +171,10 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 
 @router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
 def search_users(request, q: str = ""):
-    qs = User.objects.filter(is_active=True, is_paused=False, archived_at__isnull=True).exclude(
-        pk=request.auth.pk
+    qs = (
+        User.objects.members()
+        .filter(is_active=True, is_paused=False, archived_at__isnull=True)
+        .exclude(pk=request.auth.pk)
     )
     q = q.strip()
     if q:
@@ -215,7 +217,8 @@ def list_users(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
     users = (
-        User.objects.filter(archived_at__isnull=True)
+        User.objects.members()
+        .filter(archived_at__isnull=True)
         .prefetch_related("roles")
         .order_by("phone_number")
     )
@@ -239,7 +242,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user")
     try:
-        user = User.objects.prefetch_related("roles").get(pk=user_id)
+        user = User.objects.members().prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
@@ -316,7 +319,7 @@ def delete_user(request, user_id: str):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="delete_user")
     try:
-        user = User.objects.get(pk=user_id)
+        user = User.objects.members().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
     if str(user.pk) == str(request.auth.pk):
@@ -359,7 +362,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user_roles")
     try:
-        user = User.objects.prefetch_related("roles").get(pk=user_id)
+        user = User.objects.members().prefetch_related("roles").get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.User.NOT_FOUND, status_code=404)
 
@@ -381,5 +384,5 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
         target_id=user_id,
         details={"old_role_ids": old_role_ids, "new_role_ids": new_role_ids},
     )
-    user = User.objects.prefetch_related("roles").get(pk=user.pk)
+    user = User.objects.members().prefetch_related("roles").get(pk=user.pk)
     return Status(200, UserOut.from_user(user))
