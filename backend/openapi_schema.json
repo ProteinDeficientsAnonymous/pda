@@ -4434,21 +4434,21 @@
   "paths": {
     "/api/auth/accept-guidelines/": {
       "post": {
-        "description": "Stamp the current user's guidelines consent, clearing the hard gate.\n\nIdempotent: re-accepting just re-stamps the guidelines timestamp. The gate\n(see config.auth.GatedJWTAuth) treats a null guidelines_consent_at as \"must\nconsent\", so any non-null value satisfies it.\n\nThe standalone /consent screen also collects sms consent here: when\npayload.accept_sms is set and the user still lacks sms_consent_at, it is\nstamped too. An existing sms timestamp is never overwritten.",
+        "description": "Stamp the current user's guidelines consent, clearing the hard gate.\n\nIdempotent: re-accepting just re-stamps the guidelines timestamp. The gate\n(see config.auth.GatedJWTAuth) treats a null guidelines_consent_at as \"must\nconsent\", so any non-null value satisfies it.\n\nThe body is optional \u2014 a bodyless POST stamps guidelines only (the original\nbehavior). The standalone /consent screen sends accept_sms: when set and the\nuser still lacks sms_consent_at, it is stamped too. An existing sms timestamp\nis never overwritten.",
         "operationId": "users__auth_accept_guidelines",
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "allOf": [
+                "anyOf": [
                   {
                     "$ref": "#/components/schemas/AcceptConsentIn"
+                  },
+                  {
+                    "type": "null"
                   }
-                ],
-                "default": {
-                  "accept_sms": false
-                }
+                ]
               }
             }
           },
