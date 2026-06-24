@@ -26,7 +26,6 @@ from users._refresh_cookie import (
 from users.models import MagicLoginToken, User
 from users.permissions import PermissionKey
 from users.schemas import (
-    AcceptConsentIn,
     AccessOut,
     ChangePasswordIn,
     ErrorOut,
@@ -418,19 +417,18 @@ def complete_onboarding(request, payload: OnboardingIn):
 
 @router.post("/accept-guidelines/", response={200: UserOut}, auth=gated_jwt)
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
-def accept_guidelines(request, payload: AcceptConsentIn | None = None):
+def accept_guidelines(request, accept_sms: bool = False):
     """Stamp the current user's guidelines consent, clearing the hard gate.
 
     Idempotent: re-accepting just re-stamps the guidelines timestamp. The gate
     (see config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
     consent", so any non-null value satisfies it.
 
-    The body is optional — a bodyless POST stamps guidelines only (the original
-    behavior). The standalone /consent screen sends accept_sms: when set and the
-    user still lacks sms_consent_at, it is stamped too. An existing sms timestamp
-    is never overwritten.
+    ``accept_sms`` is an optional query param (no request body, so a plain POST
+    keeps working). The standalone /consent screen passes accept_sms=true: when
+    set and the user still lacks sms_consent_at, it is stamped too. An existing
+    sms timestamp is never overwritten.
     """
-    accept_sms = payload is not None and payload.accept_sms
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     now = timezone.now()
     update_fields = ["guidelines_consent_at"]

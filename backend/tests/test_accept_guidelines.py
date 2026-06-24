@@ -71,12 +71,7 @@ class TestAcceptGuidelines:
         user.sms_consent_at = None
         user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
 
-        resp = api_client.post(
-            "/api/auth/accept-guidelines/",
-            data={"accept_sms": True},
-            content_type="application/json",
-            **_headers(user),
-        )
+        resp = api_client.post("/api/auth/accept-guidelines/?accept_sms=true", **_headers(user))
         assert resp.status_code == 200, resp.content
         assert resp.json()["needs_sms_consent"] is False
 
@@ -113,12 +108,7 @@ class TestAcceptGuidelines:
         user.sms_consent_at = original
         user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
 
-        resp = api_client.post(
-            "/api/auth/accept-guidelines/",
-            data={"accept_sms": True},
-            content_type="application/json",
-            **_headers(user),
-        )
+        resp = api_client.post("/api/auth/accept-guidelines/?accept_sms=true", **_headers(user))
         assert resp.status_code == 200, resp.content
 
         user.refresh_from_db()

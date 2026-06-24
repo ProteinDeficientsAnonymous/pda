@@ -21,10 +21,10 @@ export interface paths {
          *     (see config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
          *     consent", so any non-null value satisfies it.
          *
-         *     The body is optional — a bodyless POST stamps guidelines only (the original
-         *     behavior). The standalone /consent screen sends accept_sms: when set and the
-         *     user still lacks sms_consent_at, it is stamped too. An existing sms timestamp
-         *     is never overwritten.
+         *     ``accept_sms`` is an optional query param (no request body, so a plain POST
+         *     keeps working). The standalone /consent screen passes accept_sms=true: when
+         *     set and the user still lacks sms_consent_at, it is stamped too. An existing
+         *     sms timestamp is never overwritten.
          */
         post: operations["users__auth_accept_guidelines"];
         delete?: never;
@@ -1591,14 +1591,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AcceptConsentIn */
-        AcceptConsentIn: {
-            /**
-             * Accept Sms
-             * @default false
-             */
-            accept_sms: boolean;
-        };
         /** AccessOut */
         AccessOut: {
             /** Access */
@@ -3493,16 +3485,14 @@ export type $defs = Record<string, never>;
 export interface operations {
     users__auth_accept_guidelines: {
         parameters: {
-            query?: never;
+            query?: {
+                accept_sms?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["AcceptConsentIn"] | null;
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
