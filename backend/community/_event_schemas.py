@@ -404,11 +404,12 @@ class EventPatchIn(BaseModel):
 
 
 _MAX_EVENT_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB
+# heic/heif are intentionally excluded: the frontend crops via a browser canvas
+# that can't decode them, so such uploads can only arrive via a hand-crafted
+# request and would never round-trip through the real UI (issue 505).
 _ALLOWED_IMAGE_TYPES = {
     "image/jpeg",
     "image/png",
     "image/webp",
     "image/gif",
-    "image/heic",
-    "image/heif",
 }

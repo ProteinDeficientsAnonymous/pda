@@ -18,6 +18,13 @@ interface Props {
   onCrop: (blob: Blob) => Promise<void> | void;
 }
 
+// Some formats the OS hands us (notably heic/heif from apple photos) can't be
+// decoded by the browser's <img>/canvas pipeline, so the crop preview never
+// loads. Surface that as a clear error instead of leaving "save" silently
+// disabled forever (issue 505).
+const DECODE_ERROR =
+  "couldn't read that image — try a jpeg, png, webp, or gif (heic isn't supported here)";
+
 export function ImageCropDialog({
   file,
   shape = 'round',
@@ -30,11 +37,16 @@ export function ImageCropDialog({
   const [crop, setCrop] = useState<Crop | undefined>(undefined);
   const [completed, setCompleted] = useState<PixelCrop | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
     setCrop(initialCrop(width, height, shape));
+  }
+
+  function onImageError() {
+    setError(DECODE_ERROR);
   }
 
   function handleCancel() {
@@ -91,9 +103,21 @@ export function ImageCropDialog({
               a tall image down — a wrapper cap would just clip it and let the crop be
               dragged into the off-screen remainder. See issue 428. */}
           <ReactCrop {...reactCropProps} style={{ maxHeight: MAX_PREVIEW_PX }}>
-            <img ref={imgRef} src={src} alt="" onLoad={onImageLoad} className="w-auto" />
+            <img
+              ref={imgRef}
+              src={src}
+              alt=""
+              onLoad={onImageLoad}
+              onError={onImageError}
+              className="w-auto"
+            />
           </ReactCrop>
         </div>
+        {error ? (
+          <p role="alert" className="text-destructive text-xs">
+            {error}
+          </p>
+        ) : null}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={handleCancel} disabled={saving}>
             cancel

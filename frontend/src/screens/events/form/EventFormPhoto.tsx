@@ -10,17 +10,13 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { cn } from '@/utils/cn';
 
-const ALLOWED_MIME = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/heic',
-  'image/heif',
-];
+// Only formats the browser can decode into a canvas for cropping. heic/heif
+// (apple photos default) can't be decoded client-side, so we don't offer them
+// — the crop step would silently fail otherwise (issue 505).
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
-const TYPE_ERROR = 'pick a jpeg, png, webp, gif, or heic image';
+const TYPE_ERROR = 'pick a jpeg, png, webp, or gif image';
 const SIZE_ERROR = 'photo must be under 10 MB';
 
 function validateFile(f: File): string | null {

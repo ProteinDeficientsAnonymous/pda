@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -93,6 +93,23 @@ describe('ImageCropDialog', () => {
     await user.click(screen.getByRole('button', { name: /^cancel$/i }));
 
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('surfaces an error when the image fails to decode (e.g. heic) instead of failing silently', () => {
+    // The crop preview img can't decode some formats the OS hands us (heic).
+    // Without an onError handler the "save" button stays disabled with no
+    // explanation — a silent failure (issue 505).
+    const { container } = renderDialog();
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    const img = container.querySelector('img');
+    expect(img).not.toBeNull();
+    fireEvent.error(img!);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/couldn't read that image/i);
+    // save stays disabled because the image never produced a crop area
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled();
   });
 
   it('dialog container has role="dialog" and is accessible', () => {
