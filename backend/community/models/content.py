@@ -1,4 +1,4 @@
-"""Content models: EditablePage, HomePage, CommunityGuidelines, FAQ, WhatsAppConfig."""
+"""Content models: EditablePage, HomePage, CommunityGuidelines, FAQ, WelcomeMessageTemplate."""
 
 from django.db import models
 
@@ -127,31 +127,5 @@ class WelcomeMessageTemplate(models.Model):
 
     @classmethod
     def get(cls) -> "WelcomeMessageTemplate":
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
-
-
-class WhatsAppConfig(models.Model):
-    """Singleton model — only one row ever exists (pk=1).
-
-    Stores WhatsApp bot configuration so admins can update it without redeployment.
-    Falls back to Django settings if the DB row has empty values.
-    """
-
-    bot_url = models.URLField(blank=True, default="")
-    bot_secret = models.CharField(max_length=256, blank=True, default="")
-    group_id = models.CharField(max_length=256, blank=True, default="")
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        app_label = "community"
-        verbose_name = "WhatsApp Configuration"
-        verbose_name_plural = "WhatsApp Configuration"
-
-    def __str__(self) -> str:
-        return "WhatsApp Configuration"
-
-    @classmethod
-    def get(cls) -> "WhatsAppConfig":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj

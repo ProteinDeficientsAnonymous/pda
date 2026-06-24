@@ -25,7 +25,6 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.ApproveJoinRequests]: 'approve join requests',
   [Permission.ManageEvents]: 'manage events',
   [Permission.EditGuidelines]: 'edit guidelines',
-  [Permission.ManageWhatsapp]: 'manage whatsapp',
   [Permission.EditFaq]: 'edit faq',
   [Permission.EditHomepage]: 'edit homepage',
   [Permission.EditJoinQuestions]: 'edit join questions',

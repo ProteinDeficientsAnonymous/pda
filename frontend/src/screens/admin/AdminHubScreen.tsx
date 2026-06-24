@@ -52,12 +52,6 @@ const TILES: Tile[] = [
     perm: Permission.EditJoinQuestions,
   },
   {
-    to: '/admin/whatsapp',
-    label: 'whatsapp bot',
-    description: 'bot connection + group config',
-    perm: Permission.ManageWhatsapp,
-  },
-  {
     to: '/docs',
     label: 'docs',
     description: 'manage the shared document library',

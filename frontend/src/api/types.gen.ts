@@ -1479,41 +1479,6 @@ export interface paths {
         patch: operations["community__welcome_template_update_welcome_template"];
         trace?: never;
     };
-    "/api/community/whatsapp/config/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Whatsapp Config */
-        get: operations["community__whatsapp_get_whatsapp_config"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Whatsapp Config */
-        patch: operations["community__whatsapp_update_whatsapp_config"];
-        trace?: never;
-    };
-    "/api/community/whatsapp/status/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Whatsapp Status */
-        get: operations["community__whatsapp_get_whatsapp_status"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/notifications/": {
         parameters: {
             query?: never;
@@ -3445,29 +3410,6 @@ export interface components {
         WelcomeTemplatePatchIn: {
             /** Body */
             body?: string | null;
-        };
-        /** WhatsAppConfigOut */
-        WhatsAppConfigOut: {
-            /** Bot Url */
-            bot_url: string;
-            /** Group Id */
-            group_id: string;
-            /** Has Secret */
-            has_secret: boolean;
-        };
-        /** WhatsAppConfigPatchIn */
-        WhatsAppConfigPatchIn: {
-            /** Bot Secret */
-            bot_secret?: string | null;
-            /** Bot Url */
-            bot_url?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** WhatsAppStatusOut */
-        WhatsAppStatusOut: {
-            /** Connected */
-            connected: boolean;
         };
     };
     responses: never;
@@ -7951,97 +7893,6 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__whatsapp_get_whatsapp_config: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WhatsAppConfigOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__whatsapp_update_whatsapp_config: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WhatsAppConfigPatchIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WhatsAppConfigOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__whatsapp_get_whatsapp_status: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WhatsAppStatusOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };

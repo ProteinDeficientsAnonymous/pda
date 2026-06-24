@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from community.models import CommunityGuidelines, EditablePage, Event, JoinRequest, WhatsAppConfig
+from community.models import CommunityGuidelines, EditablePage, Event, JoinRequest
 
 
 @admin.register(CommunityGuidelines)
@@ -29,17 +29,6 @@ class JoinRequestAdmin(admin.ModelAdmin):
     search_fields = ("display_name", "phone_number", "email")
     ordering = ("-submitted_at",)
     readonly_fields = ("id", "submitted_at")
-
-
-@admin.register(WhatsAppConfig)
-class WhatsAppConfigAdmin(admin.ModelAdmin):
-    readonly_fields = ("updated_at",)
-
-    def has_add_permission(self, request):
-        return not WhatsAppConfig.objects.exists()
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(Event)
