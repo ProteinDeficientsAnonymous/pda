@@ -26,14 +26,10 @@ class CalendarFeedScope:
 
 class UserManager(BaseUserManager):
     def members(self):
-        """Queryset of community members only (is_member=True).
+        """Members only — excludes non-members created by public RSVP.
 
-        Non-members are real User rows created by public RSVP (see the
-        public-RSVP spec). Member-facing surfaces — the members screen, the
-        member directory, role assignment, member recipient lists — must use
-        this instead of the default manager so non-members never appear. The
-        default manager still returns both, for auth/login/join lookups that
-        legitimately resolve non-members by phone or email.
+        Use on member-facing surfaces (directory, roles, recipient lists). The
+        default manager returns both, for auth/login/join lookups by phone/email.
         """
         return self.get_queryset().filter(is_member=True)
 
@@ -55,13 +51,10 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
     display_name = models.CharField(max_length=64, blank=True)
-    # False for non-members created by public RSVP. They are excluded from
-    # member-facing surfaces via User.objects.members(); login is prevented
-    # only by their lack of usable credentials (no password, no magic token),
-    # not by an is_member gate on the auth endpoints.
+    # False for non-members created by public RSVP; excluded via objects.members().
     is_member = models.BooleanField(default=True, db_index=True)
-    # Partial unique constraint (see Meta) instead of unique=True: lets members
-    # share a null/blank email, still rejects two non-members sharing a real one.
+    # Uniqueness enforced by a partial constraint (see Meta) so multiple
+    # members can share a null/blank email.
     email = models.EmailField(null=True, blank=True)
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     needs_onboarding = models.BooleanField(default=False)
@@ -114,9 +107,7 @@ class User(AbstractUser):
 
     class Meta:
         constraints = [
-            # Allow many members with null/blank email; forbid two non-members
-            # (or anyone) sharing a real email. Replaces the old unique=True,
-            # which rejected multiple blank emails on some databases.
+            # Unique email only when set — allows many users with null/blank email.
             models.UniqueConstraint(
                 fields=["email"],
                 condition=models.Q(email__isnull=False) & ~models.Q(email=""),
