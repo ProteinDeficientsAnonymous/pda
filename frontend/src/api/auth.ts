@@ -26,6 +26,7 @@ interface WireUser {
   needs_onboarding: boolean;
   needs_password_reset?: boolean;
   needs_guidelines_consent?: boolean;
+  needs_sms_consent?: boolean;
   show_phone?: boolean;
   show_email?: boolean;
   week_start?: 'sunday' | 'monday';
@@ -66,6 +67,7 @@ function mapUser(u: WireUser): User {
     needsOnboarding: u.needs_onboarding,
     needsPasswordReset: u.needs_password_reset ?? false,
     needsGuidelinesConsent: u.needs_guidelines_consent ?? false,
+    needsSmsConsent: u.needs_sms_consent ?? false,
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
     weekStart: u.week_start ?? 'sunday',
@@ -138,11 +140,15 @@ export async function completeOnboarding(payload: {
   newPassword: string;
   displayName?: string | undefined;
   email?: string | undefined;
+  acceptGuidelines?: boolean | undefined;
+  acceptSms?: boolean | undefined;
 }): Promise<User> {
   const { data } = await apiClient.post<WireUser>('/api/auth/complete-onboarding/', {
     new_password: payload.newPassword,
     display_name: payload.displayName,
     email: payload.email,
+    accept_guidelines: payload.acceptGuidelines ?? false,
+    accept_sms: payload.acceptSms ?? false,
   });
   return mapUser(data);
 }

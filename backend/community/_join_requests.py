@@ -17,6 +17,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
+from community._join_request_approval import _provision_approved_user
 from community._shared import (
     ErrorOut,
     _validate_phone,
@@ -351,7 +352,6 @@ def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
     auth=gated_jwt,
 )
 def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
-    from users.api import _create_user_with_role
     from users.models import User
 
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
@@ -390,25 +390,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     magic_token = None
     user_created = False
     if payload.status == JoinRequestStatus.APPROVED:
-        existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
-        if existing_user is None:
-            _, magic_token = _create_user_with_role(
-                join_request.phone_number,
-                join_request.display_name,
-                join_request.email,
-                None,
-                requesting_user=request.auth,
-            )
-            user_created = True
-        elif existing_user.archived_at is not None:
-            from users._helpers import _create_magic_token
-
-            existing_user.archived_at = None
-            existing_user.needs_onboarding = True
-            existing_user.display_name = join_request.display_name
-            existing_user.save(update_fields=["archived_at", "needs_onboarding", "display_name"])
-            magic_token = _create_magic_token(existing_user)
-            user_created = True
+        magic_token, user_created = _provision_approved_user(join_request, request.auth)
 
     action = (
         "join_request_approved"

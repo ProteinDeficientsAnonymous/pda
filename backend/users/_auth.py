@@ -370,6 +370,14 @@ def get_member_profile(request, user_id: str):
     )
 
 
+def _stamp_onboarding_consents(user, payload):
+    """Record any newly-given consents during onboarding, never overwriting existing ones."""
+    if payload.accept_guidelines and user.guidelines_consent_at is None:
+        user.guidelines_consent_at = timezone.now()
+    if payload.accept_sms and user.sms_consent_at is None:
+        user.sms_consent_at = timezone.now()
+
+
 @router.post(
     "/complete-onboarding/",
     response={200: UserOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut},
@@ -399,6 +407,7 @@ def complete_onboarding(request, payload: OnboardingIn):
         user.onboarded_at = timezone.now()
     user.needs_onboarding = False
     user.needs_password_reset = False
+    _stamp_onboarding_consents(user, payload)
     user.save()
     audit_log(
         logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)

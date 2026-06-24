@@ -70,6 +70,7 @@ class UserOut(BaseModel):
     needs_onboarding: bool = False
     needs_password_reset: bool = False
     needs_guidelines_consent: bool = False
+    needs_sms_consent: bool = False
     profile_photo_url: str = ""
     show_phone: bool = True
     show_email: bool = True
@@ -91,6 +92,7 @@ class UserOut(BaseModel):
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
             needs_guidelines_consent=user.guidelines_consent_at is None,
+            needs_sms_consent=user.sms_consent_at is None,
             profile_photo_url=media_path(user.profile_photo),
             show_phone=user.show_phone,
             show_email=user.show_email,
@@ -224,6 +226,12 @@ class OnboardingIn(BaseModel):
     # OptionalEmail (like the other schemas) so an empty-string email from the
     # client coerces to None instead of failing EmailStr validation.
     email: OptionalEmail = None
+    # Inline consent collected during onboarding for users with no prior consent
+    # (admin-created accounts have no JoinRequest). Each flag stamps the matching
+    # *_consent_at only when True AND the user hasn't already consented — so an
+    # existing timestamp is never overwritten. Omitted/False = leave as-is.
+    accept_guidelines: bool = False
+    accept_sms: bool = False
 
 
 class UserSearchOut(BaseModel):

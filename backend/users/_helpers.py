@@ -3,12 +3,22 @@
 import secrets
 import string
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
 
 import phonenumbers
 from community._validation import Code, raise_validation
 
 from users.models import MagicLoginToken, User
 from users.roles import Role
+
+
+@dataclass
+class ConsentTimestamps:
+    """Consent timestamps captured on a JoinRequest before user creation."""
+
+    guidelines_consent_at: datetime | None = None
+    sms_consent_at: datetime | None = None
 
 
 def _generate_temp_password(length: int = 16) -> str:
@@ -105,19 +115,24 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
         raise_validation(Code.Role.CANNOT_GRANT_ADMIN, field="role_id", status_code=403)
 
 
-def _create_user_with_role(
+def _create_user_with_role(  # noqa: PLR0913
     phone: str,
     display_name: str,
     email: str | None,
     role_id: str | None,
     *,
     requesting_user: User,
+    consent: ConsentTimestamps | None = None,
 ) -> tuple[User, str]:
     """Validate phone, create user, assign role. Returns (user, magic_link_token).
 
     Raises ValidationException on validation failure (bad phone, duplicate, bad role).
     Assigning the built-in admin role is only permitted when ``requesting_user``
     is themselves an admin (prevents escalation under CREATE_USER alone).
+
+    Pass ``consent`` when the user was created from a join request that already
+    captured consent — otherwise it defaults to None (e.g. admin-created users
+    who have no prior consent record).
     """
     validated_phone = _validate_phone(phone)
     if User.objects.filter(phone_number=validated_phone).exists():
@@ -131,6 +146,8 @@ def _create_user_with_role(
         display_name=display_name,
         email=normalized_email,
         needs_onboarding=True,
+        guidelines_consent_at=consent.guidelines_consent_at if consent else None,
+        sms_consent_at=consent.sms_consent_at if consent else None,
     )
     user.set_unusable_password()
     user.save(update_fields=["password"])

@@ -164,3 +164,91 @@ class TestOnboardingEmail:
             **headers,
         )
         assert resp.status_code == 200, resp.content
+
+
+@pytest.mark.django_db
+class TestSmsConsentSerialized:
+    def test_me_reports_needs_sms_consent_when_null(self, api_client, needs_onboarding_user):
+        from ninja_jwt.tokens import RefreshToken
+
+        needs_onboarding_user.sms_consent_at = None
+        needs_onboarding_user.save(update_fields=["sms_consent_at"])
+        token = RefreshToken.for_user(needs_onboarding_user).access_token
+        resp = api_client.get("/api/auth/me/", HTTP_AUTHORIZATION=f"Bearer {token}")
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["needs_sms_consent"] is True
+
+
+@pytest.mark.django_db
+class TestOnboardingConsent:
+    def test_accept_flags_stamp_both_consents(
+        self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
+    ):
+        needs_onboarding_user.guidelines_consent_at = None
+        needs_onboarding_user.sms_consent_at = None
+        needs_onboarding_user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={
+                "new_password": "abcd1234ABCD!",
+                "display_name": "Newby",
+                "email": "newby@example.com",
+                "accept_guidelines": True,
+                "accept_sms": True,
+            },
+            content_type="application/json",
+            **needs_onboarding_auth_headers,
+        )
+        assert resp.status_code == 200, resp.content
+        body = resp.json()
+        assert body["needs_guidelines_consent"] is False
+        assert body["needs_sms_consent"] is False
+        needs_onboarding_user.refresh_from_db()
+        assert needs_onboarding_user.guidelines_consent_at is not None
+        assert needs_onboarding_user.sms_consent_at is not None
+
+    def test_omitted_flags_leave_consents_untouched(
+        self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
+    ):
+        needs_onboarding_user.guidelines_consent_at = None
+        needs_onboarding_user.sms_consent_at = None
+        needs_onboarding_user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={
+                "new_password": "abcd1234ABCD!",
+                "display_name": "Newby",
+                "email": "newby@example.com",
+            },
+            content_type="application/json",
+            **needs_onboarding_auth_headers,
+        )
+        assert resp.status_code == 200, resp.content
+        needs_onboarding_user.refresh_from_db()
+        assert needs_onboarding_user.guidelines_consent_at is None
+        assert needs_onboarding_user.sms_consent_at is None
+
+    def test_accept_does_not_overwrite_existing_consent(
+        self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
+    ):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        earlier = timezone.now() - timedelta(days=30)
+        needs_onboarding_user.guidelines_consent_at = earlier
+        needs_onboarding_user.save(update_fields=["guidelines_consent_at"])
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={
+                "new_password": "abcd1234ABCD!",
+                "display_name": "Newby",
+                "email": "newby@example.com",
+                "accept_guidelines": True,
+            },
+            content_type="application/json",
+            **needs_onboarding_auth_headers,
+        )
+        assert resp.status_code == 200, resp.content
+        needs_onboarding_user.refresh_from_db()
+        assert needs_onboarding_user.guidelines_consent_at == earlier

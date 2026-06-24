@@ -3070,6 +3070,16 @@
       },
       "OnboardingIn": {
         "properties": {
+          "accept_guidelines": {
+            "default": false,
+            "title": "Accept Guidelines",
+            "type": "boolean"
+          },
+          "accept_sms": {
+            "default": false,
+            "title": "Accept Sms",
+            "type": "boolean"
+          },
           "display_name": {
             "anyOf": [
               {
@@ -4092,6 +4102,11 @@
           "needs_password_reset": {
             "default": false,
             "title": "Needs Password Reset",
+            "type": "boolean"
+          },
+          "needs_sms_consent": {
+            "default": false,
+            "title": "Needs Sms Consent",
             "type": "boolean"
           },
           "phone_number": {
