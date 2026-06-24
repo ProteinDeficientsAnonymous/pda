@@ -45,8 +45,7 @@ describe('hasPermission', () => {
   });
 
   it('does not crash on a non-array permissions value (corrupt role data)', () => {
-    // permissions comes from a backend JSONField with no shape guarantee — a
-    // legacy/corrupt row could send null/undefined/object. Treat as "no perms".
+    // Defense-in-depth: if the backend invariant regresses, treat non-array as "no perms".
     const corrupt = (permissions: unknown) =>
       user({ roles: [{ name: 'custom', isDefault: false, permissions } as never] });
     expect(hasPermission(corrupt(null), Permission.TagOfficialEvent)).toBe(false);

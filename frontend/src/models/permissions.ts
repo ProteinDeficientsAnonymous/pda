@@ -39,10 +39,8 @@ export interface UserLike {
   }[];
 }
 
-// `permissions` rides the wire from a backend JSONField with no DB-level shape
-// guarantee — a legacy/corrupt row could deliver null, undefined, or an object.
-// Normalize at every API boundary so the `permissions: string[]` invariant holds
-// and downstream `.includes`/`.length`/`.map` calls can't throw during render.
+// Backend guarantees permissions: string[] (Role.effective_permissions coerces
+// the JSONField). Kept as defense-in-depth so render can't throw if that regresses.
 export function normalizePermissions(value: unknown): string[] {
   return Array.isArray(value) ? (value as string[]) : [];
 }
