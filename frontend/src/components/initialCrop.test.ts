@@ -55,18 +55,21 @@ describe('initialCrop — round (1:1)', () => {
 });
 
 describe('initialCrop — rect (free-form)', () => {
-  // Rendered preview is height-capped, so rect is a plain centered 80% box in any orientation.
+  // Issue 514: rect defaults to the whole image so the full photo is the initial
+  // crop, matching its own aspect ratio rather than an inset square-ish frame.
   const cases: [string, number, number][] = [
     ['landscape', 800, 200],
     ['square', 320, 320],
     ['portrait (capped)', 213, 320],
   ];
 
-  it.each(cases)('is a centered 80%% box that fits: %s', (_label, w, h) => {
+  it.each(cases)('covers the whole image and fits: %s', (_label, w, h) => {
     const crop = initialCrop(w, h, 'rect');
     fits(crop);
     isCentered(crop);
-    expect(crop.width).toBe(80);
-    expect(crop.height).toBe(80);
+    expect(crop.width).toBe(100);
+    expect(crop.height).toBe(100);
+    expect(crop.x).toBe(0);
+    expect(crop.y).toBe(0);
   });
 });
