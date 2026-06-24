@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Event, EventStats } from '@/models/event';
 import {
   AttendanceStatus,
@@ -123,9 +123,22 @@ function mockStats(stats: EventStats | null, state: 'loading' | 'error' | 'succe
   } as unknown as ReturnType<typeof useEventStats>);
 }
 
+// The check-in window opens 1h before start by comparing startDatetime against the
+// real Date.now(), so these tests freeze the clock to a fixed instant. "Now" sits a
+// week before BASE_EVENT (2026-06-01) — check-in closed — while soonEvent (now + 30m)
+// lands inside the window. Without this the suite rots as wall-clock time advances
+// past the hardcoded fixture dates (Issue 516).
+const FROZEN_NOW = new Date('2026-05-25T12:00:00Z');
+
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(FROZEN_NOW);
   setAttendanceMutate.mockClear();
   vi.mocked(useEventStats).mockReset();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('EventAttendancePanel', () => {
