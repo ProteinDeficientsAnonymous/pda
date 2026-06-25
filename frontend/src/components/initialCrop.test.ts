@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { initialCrop } from './initialCrop';
 
 // Regression for issue 428: the round crop was sized off image *width*, so for any

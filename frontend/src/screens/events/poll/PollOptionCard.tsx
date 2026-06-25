@@ -2,10 +2,12 @@
 // numeric counts below. No fill bar, no progress indicator. Click to toggle
 // the voter popover for that option.
 
-import { useState } from 'react';
 import { format } from 'date-fns';
-import { cn } from '@/utils/cn';
+import { useState } from 'react';
+
 import type { EventPollOption } from '@/models/eventPoll';
+import { cn } from '@/utils/cn';
+
 import { PollVoterPopover } from './PollVoterPopover';
 
 interface Props {

@@ -3,7 +3,7 @@
 // we only need this for a handful of small forms in phase 3, so keeping it
 // inline avoids another dep.
 
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 interface Props {
   open: boolean;

@@ -3,8 +3,9 @@
 // DOMPurify + a consistent prose stylesheet.
 
 import { useMemo } from 'react';
-import { sanitizeHtml } from '@/utils/sanitize';
+
 import { cn } from '@/utils/cn';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 interface Props {
   html: string;

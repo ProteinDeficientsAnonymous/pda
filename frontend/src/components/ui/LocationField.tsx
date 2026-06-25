@@ -4,7 +4,8 @@
 // still works — coords stay null if no result is picked.
 
 import { useEffect, useRef, useState } from 'react';
-import { searchLocations, type PhotonResult } from '@/api/geocode';
+
+import { type PhotonResult, searchLocations } from '@/api/geocode';
 
 interface Props {
   label: string;

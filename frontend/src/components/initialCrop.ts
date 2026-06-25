@@ -5,6 +5,7 @@
 // with the displayed image. See issue 428.
 
 import { centerCrop, type PercentCrop } from 'react-image-crop';
+
 import type { CropShape } from './ImageCropDialog';
 
 // Max rendered preview height (20rem). The single source of truth for the cap;

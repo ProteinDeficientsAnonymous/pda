@@ -3,8 +3,10 @@
 // server-rendered content_html.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
+
 import { useAuthStore } from '@/auth/store';
+
+import { apiClient } from './client';
 
 export interface HomePage {
   content: string;

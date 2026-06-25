@@ -1,8 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useRequestLoginLink } from '@/api/auth';
+
+import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
 vi.mock('@/api/auth', () => ({
   useRequestLoginLink: vi.fn(),

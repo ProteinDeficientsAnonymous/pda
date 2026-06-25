@@ -8,7 +8,8 @@
 // for users who flipped statuses (see docs/event-attendance-stats-plan.md).
 
 import { useState } from 'react';
-import { useSetAttendance, useEventStats } from '@/api/eventStats';
+
+import { useEventStats, useSetAttendance } from '@/api/eventStats';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import type {
   AttendanceStatusValue,

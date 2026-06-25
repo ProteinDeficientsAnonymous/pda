@@ -1,9 +1,10 @@
-import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 import { NotificationType } from '@/models/notification';
 
@@ -32,11 +33,12 @@ vi.mock('@/utils/errorReporter', () => ({
 }));
 
 import {
-  useUnreadCount,
-  useNotifications,
-  useMarkNotificationRead,
   useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+  useUnreadCount,
 } from '@/api/notifications';
+
 import { NotificationBell } from './NotificationBell';
 
 const mockUseUnreadCount = vi.mocked(useUnreadCount);

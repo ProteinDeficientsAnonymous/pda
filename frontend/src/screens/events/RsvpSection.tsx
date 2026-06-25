@@ -5,13 +5,15 @@
 //   - +1 is a second POST with the same status + hasPlusOne: true
 //   - waitlisted state shows only "leave waitlist" (no maybe/can't pills)
 
-import { extractApiErrorOr } from '@/api/apiErrors';
 import { useState } from 'react';
-import { RsvpStatus, RsvpServerStatus, type Event } from '@/models/event';
+
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
+
 import { RsvpGuestList } from './RsvpGuestList';
 
 interface Props {

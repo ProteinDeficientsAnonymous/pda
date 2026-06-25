@@ -3,10 +3,10 @@
 // count refetch. Polling is a fallback (30s when SSE is disconnected, 5 min
 // when connected).
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/auth/store';
+
 import {
   notificationKeys,
   useMarkAllNotificationsRead,
@@ -14,8 +14,9 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/api/notifications';
+import { useAuthStore } from '@/auth/store';
 import { useEventSource } from '@/hooks/useEventSource';
-import { NotificationType, type AppNotification } from '@/models/notification';
+import { type AppNotification, NotificationType } from '@/models/notification';
 import { cn } from '@/utils/cn';
 import { reportError } from '@/utils/errorReporter';
 

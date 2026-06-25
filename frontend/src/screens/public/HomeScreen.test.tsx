@@ -1,8 +1,9 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 
@@ -17,8 +18,9 @@ vi.mock('@/components/RichEditor/RichEditor', () => ({
   RichEditor: () => <div data-testid="rich-editor" />,
 }));
 
-import HomeScreen from './HomeScreen';
 import { useHome } from '@/api/content';
+
+import HomeScreen from './HomeScreen';
 
 const mockUseHome = vi.mocked(useHome);
 

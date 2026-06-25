@@ -28,6 +28,7 @@ vi.mock('@/auth/store', () => {
 
 // Import after mocks
 import { apiClient } from '@/api/client';
+
 import { EventCommentsCard } from './EventCommentsCard';
 
 const eventId = '11111111-1111-1111-1111-111111111111';

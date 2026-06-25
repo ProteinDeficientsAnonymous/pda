@@ -4,6 +4,7 @@
 // clears via lazy expiration once the event ends.
 
 import { toast } from 'sonner';
+
 import { hasErrorCode } from '@/api/apiErrors';
 import { useAcceptCohostInvite, useDeclineCohostInvite } from '@/api/cohostInvites';
 import { Code } from '@/api/validationCodes';

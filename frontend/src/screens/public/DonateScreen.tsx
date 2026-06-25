@@ -4,7 +4,8 @@ import { useAuthStore } from '@/auth/store';
 import { EditableHtmlBlock } from '@/components/EditableHtmlBlock';
 // Editing EditablePage (including donate/volunteer) is gated by the same
 // permission as guidelines per _pages.py.
-import { Permission, hasPermission } from '@/models/permissions';
+import { hasPermission, Permission } from '@/models/permissions';
+
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
 
 export default function DonateScreen() {

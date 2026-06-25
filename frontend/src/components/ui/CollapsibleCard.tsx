@@ -9,7 +9,8 @@
 //
 // Reusable anywhere we want a "cute, friendly" expandable block.
 
-import { useId, useState, type ReactNode } from 'react';
+import { type ReactNode, useId, useState } from 'react';
+
 import { cn } from '@/utils/cn';
 
 interface Props {

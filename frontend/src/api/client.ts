@@ -11,11 +11,12 @@
 // reaches the server on cross-origin dev (React :3000 → Django :8000).
 
 import axios, {
-  isAxiosError,
   type AxiosError,
   type AxiosInstance,
   type InternalAxiosRequestConfig,
+  isAxiosError,
 } from 'axios';
+
 import { API_BASE_URL } from '@/config/env';
 
 interface RetryableConfig extends InternalAxiosRequestConfig {

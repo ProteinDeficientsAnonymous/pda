@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useAuthStore } from './store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { User } from '@/models/user';
+
+import { useAuthStore } from './store';
 
 // Mock the api/auth module so no real HTTP calls are made.
 vi.mock('@/api/auth', () => ({

@@ -1,10 +1,12 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi } from 'vitest';
 import { AxiosError, type AxiosResponse } from 'axios';
-import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { WelcomeTemplate } from '@/api/content';
+
+import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 
 const mutateAsyncMock = vi.fn();
 

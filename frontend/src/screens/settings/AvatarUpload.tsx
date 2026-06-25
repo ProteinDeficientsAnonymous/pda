@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { useAuthStore } from '@/auth/store';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { cn } from '@/utils/cn';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;

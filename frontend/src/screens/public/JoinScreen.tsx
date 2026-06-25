@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
 import type { JoinQuestion } from '@/api/join';
+import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { PhoneField } from '@/components/ui/PhoneField';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
+
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
 
 // Mirrors backend FieldLimit constants.

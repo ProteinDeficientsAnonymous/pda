@@ -5,24 +5,26 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+
 import { extractApiError } from '@/api/apiErrors';
 import { useRescindCohostInvite } from '@/api/cohostInvites';
-import { RsvpSection } from './RsvpSection';
-import { InvitedList } from './RsvpGuestList';
-import { EventAdminActions } from './EventAdminActions';
-import { EventCommentsCard } from './comments/EventCommentsCard';
-import { EventAttendancePanel } from './EventAttendancePanel';
-import { EventFlagDialog } from './EventFlagDialog';
-import { InviteDialog } from './InviteDialog';
-import { AddCoHostDialog } from './AddCoHostDialog';
-import { hasPermission } from '@/models/permissions';
-import { Permission } from '@/models/permissions';
-import type { Event, PendingCohostInvite } from '@/models/event';
-import { EventStatus, InvitePermission } from '@/models/event';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
+import type { Event, PendingCohostInvite } from '@/models/event';
+import { EventStatus, InvitePermission } from '@/models/event';
+import { hasPermission } from '@/models/permissions';
+import { Permission } from '@/models/permissions';
 import { ensureHttps } from '@/utils/url';
+
+import { AddCoHostDialog } from './AddCoHostDialog';
+import { EventCommentsCard } from './comments/EventCommentsCard';
+import { EventAdminActions } from './EventAdminActions';
+import { EventAttendancePanel } from './EventAttendancePanel';
+import { EventFlagDialog } from './EventFlagDialog';
+import { InviteDialog } from './InviteDialog';
+import { InvitedList } from './RsvpGuestList';
+import { RsvpSection } from './RsvpSection';
 
 interface Props {
   event: Event;

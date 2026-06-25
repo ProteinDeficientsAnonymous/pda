@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Code, messageForCode, messagesFromFieldErrors, type FieldError } from './validationCodes';
+
+import { Code, type FieldError, messageForCode, messagesFromFieldErrors } from './validationCodes';
 
 describe('messageForCode', () => {
   it('returns friendly copy for known event-form codes', () => {

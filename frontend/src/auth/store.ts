@@ -11,6 +11,7 @@
 // calls /api/auth/refresh/ (cookie is sent automatically) and rehydrates.
 
 import { create } from 'zustand';
+
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
 import { queryClient } from '@/api/queryClient';

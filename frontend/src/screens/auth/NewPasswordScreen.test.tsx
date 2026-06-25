@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import NewPasswordScreen from './NewPasswordScreen';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
+
+import NewPasswordScreen from './NewPasswordScreen';
 
 vi.mock('@/auth/store', () => ({
   useAuthStore: vi.fn(),

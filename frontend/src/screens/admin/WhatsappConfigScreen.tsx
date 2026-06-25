@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   useUpdateWhatsappConfig,
@@ -9,6 +10,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+
 import { WhatsappSetupInstructions } from './WhatsappSetupInstructions';
 
 export default function WhatsappConfigScreen() {

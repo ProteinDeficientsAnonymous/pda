@@ -5,6 +5,7 @@
 // the user's perspective both failure modes surface the same toast.
 
 import { useMutation } from '@tanstack/react-query';
+
 import { apiClient } from './client';
 
 export type FeedbackType = 'bug' | 'feature request';

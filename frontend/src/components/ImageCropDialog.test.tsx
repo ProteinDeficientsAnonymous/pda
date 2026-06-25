@@ -1,7 +1,7 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // react-image-crop uses pointer events + ResizeObserver that jsdom doesn't
 // fully support. Stub it so it renders a simple sentinel element that

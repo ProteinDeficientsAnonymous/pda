@@ -1,15 +1,17 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { AuthLayout } from './AuthLayout';
+
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
-import { useAuthStore } from '@/auth/store';
 import { extractApiError } from '@/utils/errors';
-import { passwordRule } from './passwordRule';
+
+import { AuthLayout } from './AuthLayout';
 import { PasswordChecklist } from './PasswordChecklist';
+import { passwordRule } from './passwordRule';
 
 const schema = z
   .object({

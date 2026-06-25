@@ -4,13 +4,15 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
+
 import { useAuthStore } from '@/auth/store';
 import { useHasAnyAdminPermission } from '@/auth/useAuth';
+import { Button } from '@/components/ui/Button';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { AvatarUpload } from '@/screens/settings/AvatarUpload';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
+
 import { BioEditDialog } from './BioEditDialog';
 
 export default function ProfileScreen() {

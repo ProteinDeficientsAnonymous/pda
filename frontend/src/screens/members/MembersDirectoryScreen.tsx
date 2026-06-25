@@ -4,7 +4,8 @@
 
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMembersDirectory, type DirectoryMember } from '@/api/users';
+
+import { type DirectoryMember, useMembersDirectory } from '@/api/users';
 import { TextField } from '@/components/ui/TextField';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';

@@ -1,7 +1,9 @@
+import 'react-phone-number-input/style.css';
+
 import type { InputHTMLAttributes } from 'react';
 import PhoneInput, { type Country, type Value } from 'react-phone-number-input';
 import flags from 'react-phone-number-input/flags';
-import 'react-phone-number-input/style.css';
+
 import { cn } from '@/utils/cn';
 
 interface Props {

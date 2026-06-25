@@ -5,12 +5,14 @@
 // disappears but the host row hasn't refetched yet.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
+
 import { useAuthStore } from '@/auth/store';
-import { mapEvent } from './eventMapper';
-import type { WireEvent } from './eventMapper';
-import { eventKeys } from './events';
 import type { Event } from '@/models/event';
+
+import { apiClient } from './client';
+import type { WireEvent } from './eventMapper';
+import { mapEvent } from './eventMapper';
+import { eventKeys } from './events';
 
 interface CohostInviteArgs {
   eventId: string;

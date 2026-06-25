@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
+import { type ComponentType, lazy, type ReactNode, Suspense } from 'react';
 
 function FallbackSpinner() {
   return (

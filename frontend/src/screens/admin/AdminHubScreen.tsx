@@ -2,8 +2,9 @@
 // permissions. Mirrors the flutter admin_screen.dart tile layout.
 
 import { Link } from 'react-router-dom';
+
 import { useAuthStore } from '@/auth/store';
-import { Permission, hasPermission, type PermissionKey } from '@/models/permissions';
+import { hasPermission, Permission, type PermissionKey } from '@/models/permissions';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 
 interface Tile {

@@ -10,10 +10,11 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useCreatePoll, extractPollError } from '@/api/eventPolls';
+
+import { extractPollError, useCreatePoll } from '@/api/eventPolls';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
+import { Dialog } from '@/components/ui/Dialog';
 
 interface Props {
   open: boolean;

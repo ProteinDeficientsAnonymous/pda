@@ -1,10 +1,12 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { useAuthStore } from './store';
-import { RequireAuth, RequirePermission, OnboardingGate, EmailGate } from './guards';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
+
+import { EmailGate, OnboardingGate, RequireAuth, RequirePermission } from './guards';
+import { useAuthStore } from './store';
 
 // Prevent the store from wiring up real axios interceptors.
 vi.mock('@/api/client', () => ({

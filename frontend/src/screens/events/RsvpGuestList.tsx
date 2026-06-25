@@ -3,9 +3,10 @@
 
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { cn } from '@/utils/cn';
+
 import type { Event, EventGuest } from '@/models/event';
 import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
+import { cn } from '@/utils/cn';
 
 type Tab = 'going' | 'maybe' | 'cant' | 'waitlist' | 'invited';
 

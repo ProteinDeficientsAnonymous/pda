@@ -2,10 +2,11 @@
 // co-hosts can open this from the hosts section.
 
 import { useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { useUpdateEvent } from '@/api/eventWrites';
-import { MemberPicker } from '@/components/MemberPicker';
 import type { MemberSearchResult } from '@/api/userSearch';
+import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import type { Event } from '@/models/event';

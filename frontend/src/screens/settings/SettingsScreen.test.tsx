@@ -22,14 +22,15 @@ const storageMock = vi.hoisted(() => {
   return mock;
 });
 
-import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useAuthStore } from '@/auth/store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAccessibilityStore } from '@/accessibility/store';
+import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 
 // Stub heavy sub-components that have their own API/DOM dependencies

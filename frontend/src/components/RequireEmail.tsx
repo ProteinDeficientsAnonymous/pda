@@ -2,9 +2,10 @@
 // There is intentionally no close button — the user must supply an email
 // before the guard layer allows them to proceed.
 
-import { useState, type SyntheticEvent } from 'react';
-import { updateProfile } from '@/api/auth';
+import { type SyntheticEvent, useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { updateProfile } from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';

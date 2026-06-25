@@ -1,17 +1,18 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 import {
   AttendanceStatus,
+  type Event,
+  type EventGuest,
   EventStatus,
   EventType,
   EventVisibility,
   InvitePermission,
   RsvpServerStatus,
-  type Event,
-  type EventGuest,
 } from '@/models/event';
 import type { User } from '@/models/user';
 

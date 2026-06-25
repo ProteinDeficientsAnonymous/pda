@@ -6,9 +6,11 @@
 // All screens are lazy-loaded (React.lazy) — 1:1 replacement for DeferredScreen.
 
 import { createBrowserRouter } from 'react-router-dom';
+
 import { AuthBoot, EmailGate, OnboardingGate, RequireAuth, RequirePermission } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
 import { Permission } from '@/models/permissions';
+
 import { lazyEl as el, lazyWithRetry } from './lazyRoute';
 import { RootRouteError } from './RootRouteError';
 

@@ -1,10 +1,13 @@
 // Crop dialog for avatar uploads (round, 1:1 circular mask) and event covers
 // (rect, free-form). Built on react-image-crop; returns a PNG blob via onCrop.
 
+import 'react-image-crop/dist/ReactCrop.css';
+
 import { useRef, useState } from 'react';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+
 import { cropImage } from '@/utils/cropImage';
+
 import { initialCrop, MAX_PREVIEW_PX } from './initialCrop';
 import { Button } from './ui/Button';
 
