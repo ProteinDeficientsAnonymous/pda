@@ -19,6 +19,8 @@ from community._event_helpers import (
     _can_see_invite_only,
     _event_out,
     _get_creator_name,
+    _set_event_tags,
+    _tags_out,
     _update_co_hosts,
     _waitlisted_count,
 )
@@ -120,7 +122,7 @@ def _build_events_queryset(status: str, auth_user, is_authed):
     if status in (EventStatus.CANCELLED, EventStatus.DRAFT):
         return (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps", "poll")
+            .prefetch_related("co_hosts", "invited_users", "rsvps", "poll", "tags")
             .annotate(
                 comment_count=Count(
                     "comments",
@@ -134,7 +136,7 @@ def _build_events_queryset(status: str, auth_user, is_authed):
         )
     qs = (
         Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps", "poll")
+        .prefetch_related("co_hosts", "invited_users", "rsvps", "poll", "tags")
         .annotate(
             comment_count=Count(
                 "comments",
@@ -215,6 +217,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
                 is_past=e.is_past,
                 status=e.status,
+                tags=_tags_out(e),
             )
             for e in events
         ],
@@ -258,7 +261,7 @@ def get_event(request, event_id: UUID):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
             .annotate(
                 comment_count=Count(
                     "comments",
@@ -341,6 +344,7 @@ def create_event(request, payload: EventIn):
         created_by=request.auth,
     )
     _set_event_participants(request, event, payload.co_host_ids)
+    _set_event_tags(event, payload.tag_ids)
     audit_log(
         logging.INFO,
         "event_created_draft" if event.is_draft else "event_created",
@@ -363,10 +367,18 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         return
     _validate_update_payload(request, event, event_id, updates)
     co_host_ids = updates.pop("co_host_ids", None)
+    tag_ids = updates.pop("tag_ids", None)
+    changed_fields = list(updates.keys())
+    if co_host_ids is not None:
+        changed_fields.append("co_host_ids")
+    if tag_ids is not None:
+        changed_fields.append("tag_ids")
     for field, value in updates.items():
         setattr(event, field, value)
     if co_host_ids is not None:
         _update_co_hosts(event, co_host_ids, request.auth)
+    if tag_ids is not None:
+        _set_event_tags(event, tag_ids)
     event.save()
     audit_log(
         logging.INFO,
@@ -374,7 +386,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         request,
         target_type="event",
         target_id=str(event_id),
-        details={"fields_changed": list(updates.keys())},
+        details={"fields_changed": changed_fields},
     )
 
 
@@ -387,7 +399,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
             .get(id=event_id)
         )
     except Event.DoesNotExist:
