@@ -1,7 +1,9 @@
+import secrets
 import uuid
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -161,6 +163,84 @@ class MagicLoginToken(models.Model):
             expires_at=timezone.now() + timedelta(days=7),
             requires_password_reset=requires_password_reset,
         )
+
+
+# Number of days a non-member RSVP-management link stays valid from issuance.
+NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
+
+
+class NonMemberRsvpToken(models.Model):
+    """Scoped magic link for a non-member to manage their own RSVPs at /my-rsvps.
+
+    This token NEVER logs the user in — it is entirely separate from
+    MagicLoginToken (different table, different validation path, narrower scope).
+    It grants scoped read/write to one non-member's RSVPs only. Issued (fresh)
+    on every successful non-member RSVP and delivered by email; old tokens stay
+    valid until they expire. Revoked when the user converts to a member.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="rsvp_tokens")
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    # Distinct from expiry: a non-null revoked_at permanently kills the token
+    # even before expires_at (set on member conversion or by an admin tool).
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"rsvp token for {self.user_id}"
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_revoked(self) -> bool:
+        return self.revoked_at is not None
+
+    @property
+    def is_valid(self) -> bool:
+        return not self.is_expired and not self.is_revoked
+
+    def revoke(self) -> None:
+        """Mark this token revoked. No-op if already revoked."""
+        if self.revoked_at is None:
+            self.revoked_at = timezone.now()
+            self.save(update_fields=["revoked_at"])
+
+    @classmethod
+    def issue(cls, user: "User") -> "NonMemberRsvpToken":
+        """Create a fresh token for a non-member, valid for 90 days.
+
+        Rejects members — a converted/existing member must use the member flow,
+        not the scoped non-member RSVP link.
+        """
+        if user.is_member:
+            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+        return cls.objects.create(
+            user=user,
+            token=secrets.token_urlsafe(32),
+            expires_at=timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS),
+        )
+
+    @classmethod
+    def resolve_user(cls, token: str) -> "User | None":
+        """Resolve a token string to its User, or None if the token is unusable.
+
+        Returns None when the token is unknown, expired (expires_at < now), or
+        revoked (revoked_at set). Endpoints in stages 3/4 reuse this and map a
+        None result to their own 404. Never logs the user in.
+        """
+        if not token:
+            return None
+        row = cls.objects.select_related("user").filter(token=token).first()
+        if row is None or not row.is_valid:
+            return None
+        return row.user
 
 
 @receiver(post_save, sender=User)
