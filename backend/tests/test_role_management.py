@@ -164,3 +164,88 @@ class TestRoleManagementAPI:
         assert response.status_code == 200
         popular = next(r for r in response.json() if r["name"] == "popular")
         assert popular["user_count"] == 1
+
+
+@pytest.mark.django_db
+class TestNonMemberCannotHoldRole:
+    """Issue 525: a non-member (is_member=False) must never hold a role, and the
+    role member-counts must reflect members only."""
+
+    def _make_non_member(self):
+        from users.models import User
+
+        # is_member=False overrides the conftest autouse default (is_member=True).
+        return User.objects.create_user(
+            phone_number="+12025559001",
+            display_name="Non Member",
+            is_member=False,
+        )
+
+    # The guard raises inside the m2m operation's atomic block, which marks the
+    # surrounding transaction as broken — so we cannot query the DB after the
+    # raise in the same test. pytest.raises is sufficient proof the write aborted.
+    def test_roles_add_rejects_non_member(self):
+        non_member = self._make_non_member()
+        role = Role.objects.create(name="contributor", permissions=[])
+        with pytest.raises(ValueError, match="non-member"):
+            non_member.roles.add(role)
+
+    def test_roles_set_rejects_non_member(self):
+        non_member = self._make_non_member()
+        role = Role.objects.create(name="contributor", permissions=[])
+        with pytest.raises(ValueError, match="non-member"):
+            non_member.roles.set([role])
+
+    def test_reverse_users_add_rejects_non_member(self):
+        non_member = self._make_non_member()
+        role = Role.objects.create(name="contributor", permissions=[])
+        with pytest.raises(ValueError, match="non-member"):
+            role.users.add(non_member)
+
+    def test_reverse_users_set_rejects_non_member(self):
+        non_member = self._make_non_member()
+        role = Role.objects.create(name="contributor", permissions=[])
+        with pytest.raises(ValueError, match="non-member"):
+            role.users.set([non_member])
+
+    def test_member_can_still_hold_role(self, test_user):
+        # The guard must not block legitimate member assignment.
+        role = Role.objects.create(name="contributor", permissions=[])
+        test_user.roles.add(role)
+        assert test_user.roles.filter(name="contributor").exists()
+
+    def test_member_can_swap_roles_via_set(self, test_user):
+        # Regression guard: set() emits pre_remove alongside pre_add, so a member
+        # replacing one role set with another must not trip the membership check.
+        first = Role.objects.create(name="first", permissions=[])
+        second = Role.objects.create(name="second", permissions=[])
+        test_user.roles.set([first])
+        test_user.roles.set([second])
+        names = set(test_user.roles.values_list("name", flat=True))
+        assert names == {"second"}
+
+    def test_update_user_roles_404s_for_non_member(self, api_client, manage_users_headers):
+        non_member = self._make_non_member()
+        member_role = Role.objects.get(name="member")
+        response = api_client.patch(
+            f"/api/auth/users/{non_member.id}/roles/",
+            {"role_ids": [str(member_role.id)]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 404
+        assert_error_code(response, Code.User.NOT_FOUND)
+
+    def test_list_roles_count_excludes_non_member(
+        self, api_client, manage_users_headers, test_user
+    ):
+        # Force a non-member onto a role at the DB level (bypassing the guard)
+        # to prove the read-side count defends itself anyway.
+        role = Role.objects.create(name="counted", permissions=[])
+        test_user.roles.add(role)
+        non_member = self._make_non_member()
+        role.users.through.objects.create(user=non_member, role=role)
+        response = api_client.get("/api/auth/roles/", **manage_users_headers)
+        assert response.status_code == 200
+        counted = next(r for r in response.json() if r["name"] == "counted")
+        assert counted["user_count"] == 1
