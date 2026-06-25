@@ -172,11 +172,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 
 @router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
 def search_users(request, q: str = ""):
-    qs = (
-        User.objects.members()
-        .filter(is_paused=False, archived_at__isnull=True)
-        .exclude(pk=request.auth.pk)
-    )
+    qs = User.objects.active_members().exclude(pk=request.auth.pk)
     q = q.strip()
     if q:
         digits = re.sub(r"\D", "", q)

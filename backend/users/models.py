@@ -33,6 +33,28 @@ class UserManager(BaseUserManager):
         """
         return self.get_queryset().filter(is_member=True)
 
+    def active_members(self):
+        """Members who should appear on member-facing surfaces.
+
+        Bundles the full visibility predicate so call sites can't forget part of
+        it (a bare ``members()`` would still leak paused/archived users). Use this
+        for member-facing directory, profile, and search lookups.
+
+        ``needs_onboarding`` is deliberately NOT filtered here — it's only excluded
+        by the directory, which adds ``needs_onboarding=False`` itself. The profile
+        and search surfaces intentionally include onboarding-pending members.
+
+        On ``is_active``: this is Django's built-in ``AbstractUser`` flag, which the
+        app never sets to False (``is_paused`` is the product's live suspension flag,
+        enforced at the auth gate). It's kept here as cheap defense-in-depth guarding
+        the only path that can deactivate a user — the Django admin.
+        """
+        return self.members().filter(
+            is_active=True,
+            is_paused=False,
+            archived_at__isnull=True,
+        )
+
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("Phone number is required")

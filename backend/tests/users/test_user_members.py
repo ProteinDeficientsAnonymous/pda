@@ -5,6 +5,7 @@ from importlib import import_module
 import pytest
 from django.db import IntegrityError, transaction
 from django.db.migrations import AddField, AlterField
+from django.utils import timezone
 from users.models import User
 
 
@@ -31,6 +32,50 @@ class TestMembersManager:
     def test_members_is_chainable(self, member, non_member):
         qs = User.objects.members().filter(phone_number=member.phone_number)
         assert list(qs.values_list("pk", flat=True)) == [member.pk]
+
+
+@pytest.mark.django_db
+class TestActiveMembersManager:
+    """active_members() bundles the full member-visibility predicate."""
+
+    def _active_member_ids(self):
+        return set(User.objects.active_members().values_list("pk", flat=True))
+
+    def test_includes_plain_member(self, member):
+        assert member.pk in self._active_member_ids()
+
+    def test_excludes_non_member(self, non_member):
+        assert non_member.pk not in self._active_member_ids()
+
+    def test_excludes_paused_member(self, member):
+        member.is_paused = True
+        member.save(update_fields=["is_paused"])
+        assert member.pk not in self._active_member_ids()
+
+    def test_excludes_archived_member(self, member):
+        member.archived_at = timezone.now()
+        member.save(update_fields=["archived_at"])
+        assert member.pk not in self._active_member_ids()
+
+    def test_excludes_inactive_member(self, member):
+        """is_active is Django's built-in flag, kept as defense-in-depth."""
+        member.is_active = False
+        member.save(update_fields=["is_active"])
+        assert member.pk not in self._active_member_ids()
+
+    def test_includes_onboarding_pending_member(self, member):
+        """needs_onboarding is NOT part of the base predicate — only the directory
+        excludes it. profile/search surfaces still see onboarding-pending members.
+        """
+        member.needs_onboarding = True
+        member.save(update_fields=["needs_onboarding"])
+        assert member.pk in self._active_member_ids()
+
+    def test_is_chainable(self, member):
+        member.needs_onboarding = True
+        member.save(update_fields=["needs_onboarding"])
+        qs = User.objects.active_members().filter(needs_onboarding=False)
+        assert member.pk not in set(qs.values_list("pk", flat=True))
 
 
 class TestMembersBackfillMigration:
