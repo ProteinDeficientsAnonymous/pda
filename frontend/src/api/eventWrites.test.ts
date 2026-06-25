@@ -1,16 +1,14 @@
 // Pure-helper tests for the event write layer: enum-coercion on the inbound
 // side (eventToFormValues) and per-field PATCH body building (toPartialWireBody).
-import { describe, expect, it } from 'vitest';
-
+import { describe, it, expect } from 'vitest';
+import { eventToFormValues, toPartialWireBody } from './eventWrites';
 import {
-  type Event,
   EventStatus,
   EventType,
   EventVisibility,
   InvitePermission,
+  type Event,
 } from '@/models/event';
-
-import { eventToFormValues, toPartialWireBody } from './eventWrites';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -57,6 +55,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    tags: [],
     isPast: false,
     status: EventStatus.Active,
     ...overrides,
@@ -99,6 +98,18 @@ describe('eventToFormValues enum validation', () => {
     // community + public → 'public'
     expect(form.visibilityChoice).toBe('public');
   });
+
+  it('maps tags to tagIds', () => {
+    const form = eventToFormValues(
+      makeEvent({
+        tags: [
+          { id: 't1', name: 'walk', slug: 'walk' },
+          { id: 't2', name: 'restaurant meetup', slug: 'restaurant-meetup' },
+        ],
+      }),
+    );
+    expect(form.tagIds).toEqual(['t1', 't2']);
+  });
 });
 
 describe('toPartialWireBody', () => {
@@ -134,5 +145,10 @@ describe('toPartialWireBody', () => {
     // venmoLink is run through toVenmoUrl — the bare handle becomes a full url.
     expect(typeof body.venmo_link).toBe('string');
     expect(body.venmo_link).toContain('leah');
+  });
+
+  it('maps tagIds to tag_ids, including an empty list (clears tags)', () => {
+    expect(toPartialWireBody({ tagIds: ['t1', 't2'] })).toEqual({ tag_ids: ['t1', 't2'] });
+    expect(toPartialWireBody({ tagIds: [] })).toEqual({ tag_ids: [] });
   });
 });

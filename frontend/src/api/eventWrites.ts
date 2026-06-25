@@ -5,22 +5,20 @@
 // dedicated error so the UI can show a sane message.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
+import { apiClient } from './client';
+import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { useAuthStore } from '@/auth/store';
+import { eventKeys } from './events';
+import { mapEvent, type WireEvent } from './eventMapper';
 import {
-  type Event,
   EventStatus as EventStatusEnum,
   EventType as EventTypeEnum,
   EventVisibility,
   InvitePermission,
+  type Event,
 } from '@/models/event';
 import { reportError } from '@/utils/errorReporter';
 import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/paymentHandle';
-
-import { extractApiErrorOr, getApiStatus } from './apiErrors';
-import { apiClient } from './client';
-import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys } from './events';
 
 const ROUTE = '/events';
 
@@ -68,6 +66,7 @@ export interface EventFormValues {
   cashappLink: string;
   zelleInfo: string;
   coHostIds: string[];
+  tagIds: string[];
   status: EventStatus;
 }
 
@@ -107,6 +106,7 @@ const FIELD_TO_WIRE: WireFieldMap = {
   cashappLink: ['cashapp_link', (v) => toCashAppUrl(v)],
   zelleInfo: ['zelle_info', (v) => v],
   coHostIds: ['co_host_ids', (v) => v],
+  tagIds: ['tag_ids', (v) => v],
   status: ['status', (v) => v],
 };
 
@@ -343,6 +343,7 @@ export function emptyEventFormValues(): EventFormValues {
     cashappLink: '',
     zelleInfo: '',
     coHostIds: [],
+    tagIds: [],
     status: 'active',
   };
 }
@@ -402,6 +403,7 @@ export function eventToFormValues(e: Event): EventFormValues {
     cashappLink: fromCashAppUrl(e.cashappLink),
     zelleInfo: e.zelleInfo,
     coHostIds: e.coHostIds,
+    tagIds: e.tags.map((t) => t.id),
     status: coerceEnum(e.status, FORM_STATUSES, EventStatusEnum.Active),
   };
 }
