@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-
-import { type Event, eventClass, EventStatus, EventType, EventVisibility } from './event';
+import { describe, it, expect } from 'vitest';
+import { eventClass, EventStatus, EventType, EventVisibility, type Event } from './event';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -47,6 +46,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    tags: [],
     isPast: false,
     status: EventStatus.Active,
     ...overrides,
