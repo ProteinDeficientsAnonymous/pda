@@ -7,7 +7,6 @@ export const Permission = {
   ApproveJoinRequests: 'approve_join_requests',
   ManageEvents: 'manage_events',
   EditGuidelines: 'edit_guidelines',
-  ManageWhatsapp: 'manage_whatsapp',
   EditFaq: 'edit_faq',
   EditHomepage: 'edit_homepage',
   EditJoinQuestions: 'edit_join_questions',
@@ -28,7 +27,6 @@ const ADMIN_PERMISSIONS: readonly PermissionKey[] = [
   Permission.ManageEvents,
   Permission.ManageUsers,
   Permission.ApproveJoinRequests,
-  Permission.ManageWhatsapp,
   Permission.EditJoinQuestions,
   Permission.ManageDocuments,
 ];

@@ -34,7 +34,6 @@ from community._surveys import router as surveys_router
 from community._surveys_public import router as surveys_public_router
 from community._version import router as version_router
 from community._welcome_template import router as welcome_template_router
-from community._whatsapp import router as whatsapp_router
 
 router = Router()
 router.add_router("", guidelines_router)
@@ -53,7 +52,6 @@ router.add_router("", event_invitations_router)
 router.add_router("", event_flags_router)
 router.add_router("", calendar_router)
 router.add_router("", welcome_template_router)
-router.add_router("", whatsapp_router)
 router.add_router("", polls_router)
 router.add_router("", event_comments_router)
 router.add_router("", surveys_router)

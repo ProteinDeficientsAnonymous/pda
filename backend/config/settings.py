@@ -146,11 +146,6 @@ CORS_ALLOW_CREDENTIALS = True
 # Email
 VETTING_EMAIL = os.environ.get("VETTING_EMAIL", "")
 
-# WhatsApp bot
-WHATSAPP_BOT_URL = os.environ.get("WHATSAPP_BOT_URL", "http://localhost:3001")
-WHATSAPP_BOT_SECRET = os.environ.get("WHATSAPP_BOT_SECRET", "")
-WHATSAPP_GROUP_ID = os.environ.get("WHATSAPP_GROUP_ID", "")
-
 # Logging
 LOGGING = {
     "version": 1,
