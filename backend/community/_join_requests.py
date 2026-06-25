@@ -47,7 +47,9 @@ class JoinRequestIn(BaseModel):
     answers: dict[str, str] = {}
     # SMS consent. UI presents a required checkbox tied to /sms-policy;
     # we record consent timestamp on the join request as proof for Twilio's
-    # toll-free verification + ongoing TCPA defensibility.
+    # toll-free verification + ongoing TCPA defensibility. The automated SMS
+    # send path is deferred (see #501); consent is retained for manual
+    # group-texting and possible future automation.
     sms_consent: bool = False
     # Community-guidelines consent. UI presents a required checkbox tied to
     # /guidelines; we record the consent timestamp on the join request.
