@@ -36,3 +36,4 @@ frontend/.vite/
 .claude/worktrees
 .claude/task.md
 .claude/settings.local.json
+.worktrees/
