@@ -319,12 +319,15 @@ def delete_photo(request):
 )
 def list_member_directory(request):
     """Authed-only member directory. Respects each user's show_phone/show_email flags."""
-    users = User.objects.filter(
-        is_active=True,
-        is_paused=False,
-        archived_at__isnull=True,
-        needs_onboarding=False,
-    ).order_by("display_name", "phone_number")
+    users = (
+        User.objects.members()
+        .filter(
+            is_paused=False,
+            archived_at__isnull=True,
+            needs_onboarding=False,
+        )
+        .order_by("display_name", "phone_number")
+    )
     return Status(
         200,
         [
@@ -349,9 +352,7 @@ def list_member_directory(request):
 )
 def get_member_profile(request, user_id: str):
     try:
-        user = User.objects.get(
-            pk=user_id, is_active=True, is_paused=False, archived_at__isnull=True
-        )
+        user = User.objects.members().get(pk=user_id, is_paused=False, archived_at__isnull=True)
     except User.DoesNotExist:
         raise_validation(Code.Member.NOT_FOUND, status_code=404)
     is_own_profile = str(request.auth.pk) == user_id

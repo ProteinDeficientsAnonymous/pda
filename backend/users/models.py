@@ -25,6 +25,14 @@ class CalendarFeedScope:
 
 
 class UserManager(BaseUserManager):
+    def members(self):
+        """Members only — excludes non-members created by public RSVP.
+
+        Use on member-facing surfaces (directory, roles, recipient lists). The
+        default manager returns both, for auth/login/join lookups by phone/email.
+        """
+        return self.get_queryset().filter(is_member=True)
+
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("Phone number is required")
@@ -36,6 +44,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_member", True)
         return self.create_user(phone_number, password, **extra_fields)
 
 
@@ -43,7 +52,11 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
     display_name = models.CharField(max_length=64, blank=True)
-    email = models.EmailField(unique=True, null=True, blank=True)
+    # Defaults False; non-members are excluded via objects.members().
+    is_member = models.BooleanField(default=False, db_index=True)
+    # Uniqueness enforced by a partial constraint (see Meta) so multiple
+    # members can share a null/blank email.
+    email = models.EmailField(null=True, blank=True)
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     needs_onboarding = models.BooleanField(default=False)
     onboarded_at = models.DateTimeField(null=True, blank=True)
@@ -92,6 +105,16 @@ class User(AbstractUser):
     USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = ["display_name"]
     objects = UserManager()
+
+    class Meta:
+        constraints = [
+            # Unique email only when set — allows many users with null/blank email.
+            models.UniqueConstraint(
+                fields=["email"],
+                condition=models.Q(email__isnull=False) & ~models.Q(email=""),
+                name="unique_non_blank_email",
+            ),
+        ]
 
     def __str__(self):
         return self.display_name or self.phone_number
