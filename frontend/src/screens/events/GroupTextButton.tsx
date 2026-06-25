@@ -1,5 +1,5 @@
-// Host-only "group text" action (creator/co-host) — see issue #500. Mobile opens
-// the host's Messages app as a group thread; desktop copies the list instead.
+// Host-only "group text" action (see #500): mobile opens a group thread, desktop
+// copies the list.
 
 import { toast } from 'sonner';
 import type { Event } from '@/models/event';
@@ -15,7 +15,6 @@ function skippedNote(count: number): string {
 }
 
 export function GroupTextButton({ event }: Props) {
-  // Audience is everyone who RSVP'd; the backend only sends `phone` to hosts.
   const { phones, skippedCount } = collectRecipients(event.guests);
   const smsSupported = isSmsSupported();
 
@@ -28,7 +27,6 @@ export function GroupTextButton({ event }: Props) {
     if (smsSupported) {
       const uri = buildSmsUri(phones);
       if (uri) window.location.href = uri;
-      // Messages won't show who was dropped, so flag skipped attendees here.
       if (skippedCount > 0) toast.info(skippedNote(skippedCount));
       return;
     }
