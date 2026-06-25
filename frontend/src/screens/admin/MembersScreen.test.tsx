@@ -75,6 +75,7 @@ function makeMember(overrides: Partial<Member> = {}): Member {
     isPaused: false,
     needsOnboarding: false,
     loginLinkRequested: false,
+    lastAttendedAt: null,
     roles: [],
     ...overrides,
   };
@@ -235,5 +236,59 @@ describe('MembersScreen', () => {
     renderScreen();
 
     expect(screen.queryByRole('radiogroup', { name: /members or roles/i })).not.toBeInTheDocument();
+  });
+
+  it('shows last-attended date for a member who has attended', () => {
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          displayName: 'Ada Lovelace',
+          lastAttendedAt: new Date('2026-03-15T18:00:00Z'),
+        }),
+      ],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText(/last attended mar 15, 2026/i)).toBeInTheDocument();
+  });
+
+  it('shows "never attended" for a member with no attendance', () => {
+    mockUsersResult({
+      data: [makeMember({ id: 'm1', displayName: 'Ada Lovelace', lastAttendedAt: null })],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText(/never attended/i)).toBeInTheDocument();
+  });
+
+  it('sorts members by last attended (most recent first, never-attended last)', async () => {
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          displayName: 'Older Attendee',
+          lastAttendedAt: new Date('2026-01-01T00:00:00Z'),
+        }),
+        makeMember({ id: 'm2', displayName: 'Never Attendee', lastAttendedAt: null }),
+        makeMember({
+          id: 'm3',
+          displayName: 'Recent Attendee',
+          lastAttendedAt: new Date('2026-06-01T00:00:00Z'),
+        }),
+      ],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText(/^sort by$/i), 'lastAttended');
+
+    // Member rows are links; their order in the DOM reflects the sort.
+    const rowNames = screen
+      .getAllByRole('link')
+      .map((link) => link.querySelector('p')?.textContent ?? '');
+    expect(rowNames).toEqual(['Recent Attendee', 'Older Attendee', 'Never Attendee']);
   });
 });

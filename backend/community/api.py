@@ -2,6 +2,7 @@
 
 from ninja import Router
 
+from community._attendance_report import router as attendance_report_router
 from community._calendar import router as calendar_router
 from community._docs import router as docs_router
 from community._docs_documents import router as docs_documents_router
@@ -45,6 +46,9 @@ router.add_router("", join_requests_router)
 router.add_router("", join_request_resend_router)
 router.add_router("", login_link_router)
 router.add_router("", feedback_router)
+# Mount before events_router so the literal `/events/attendance-report/` route
+# resolves before that router's `/events/{event_id}/` parameterized route.
+router.add_router("", attendance_report_router)
 router.add_router("", events_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", event_actions_router)
