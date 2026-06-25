@@ -37,7 +37,7 @@ interface AuthState {
     acceptGuidelines?: boolean | undefined;
     acceptSms?: boolean | undefined;
   }) => Promise<void>;
-  acceptGuidelines: () => Promise<void>;
+  acceptGuidelines: (acceptSms?: boolean) => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
   updateProfile: (patch: authApi.ProfileUpdate) => Promise<void>;
   uploadProfilePhoto: (file: File) => Promise<void>;
@@ -102,8 +102,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user });
   },
 
-  async acceptGuidelines() {
-    const user = await authApi.acceptGuidelines();
+  async acceptGuidelines(acceptSms = false) {
+    const user = await authApi.acceptGuidelines(acceptSms);
     set({ user });
   },
 

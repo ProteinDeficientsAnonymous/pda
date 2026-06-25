@@ -13,20 +13,29 @@ import { AuthLayout } from './AuthLayout';
 // landing page. Reached via OnboardingGate redirecting consent-pending users
 // here; that gate pins them to /consent (except /guidelines, so they can read
 // what they're agreeing to) until one of those two happens.
+//
+// When the user also still lacks sms consent (needsSmsConsent) a second
+// checkbox is shown and "continue" requires both — the legacy re-consent path
+// collects sms here too, since onboarding (the only other collection point) has
+// already passed for these users.
 export default function ConsentScreen() {
   const acceptGuidelines = useAuthStore((s) => s.acceptGuidelines);
+  const needsSms = useAuthStore((s) => s.user?.needsSmsConsent ?? false);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const [consented, setConsented] = useState(false);
+  const [smsConsented, setSmsConsented] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const blocked = !consented || (needsSms && !smsConsented);
+
   async function onAccept() {
-    if (!consented) return;
+    if (blocked) return;
     setServerError(null);
     setSubmitting(true);
     try {
-      await acceptGuidelines();
+      await acceptGuidelines(needsSms ? smsConsented : false);
       void navigate('/calendar', { replace: true });
     } catch (err) {
       setServerError(extractApiError(err, "couldn't save your consent — try again"));
@@ -65,6 +74,24 @@ export default function ConsentScreen() {
             and community agreements
           </span>
         </label>
+        {needsSms ? (
+          <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
+            <input
+              type="checkbox"
+              checked={smsConsented}
+              onChange={(e) => {
+                setSmsConsented(e.target.checked);
+              }}
+              className="mt-1"
+            />
+            <span>
+              i agree to the{' '}
+              <Link to="/sms-policy" target="_blank" className="text-brand-700 underline">
+                sms policy
+              </Link>
+            </span>
+          </label>
+        ) : null}
         {serverError ? (
           <p role="alert" className="text-destructive text-sm">
             {serverError}
@@ -73,7 +100,7 @@ export default function ConsentScreen() {
         <Button
           type="button"
           fullWidth
-          disabled={!consented || submitting}
+          disabled={blocked || submitting}
           onClick={() => void onAccept()}
         >
           {submitting ? 'saving…' : 'continue'}

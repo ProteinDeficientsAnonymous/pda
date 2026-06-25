@@ -417,16 +417,26 @@ def complete_onboarding(request, payload: OnboardingIn):
 
 @router.post("/accept-guidelines/", response={200: UserOut}, auth=gated_jwt)
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
-def accept_guidelines(request):
+def accept_guidelines(request, accept_sms: bool = False):
     """Stamp the current user's guidelines consent, clearing the hard gate.
 
-    Idempotent: re-accepting just re-stamps the timestamp. The gate (see
-    config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
+    Idempotent: re-accepting just re-stamps the guidelines timestamp. The gate
+    (see config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
     consent", so any non-null value satisfies it.
+
+    ``accept_sms`` is an optional query param (no request body, so a plain POST
+    keeps working). The standalone /consent screen passes accept_sms=true: when
+    set and the user still lacks sms_consent_at, it is stamped too. An existing
+    sms timestamp is never overwritten.
     """
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    user.guidelines_consent_at = timezone.now()
-    user.save(update_fields=["guidelines_consent_at"])
+    now = timezone.now()
+    update_fields = ["guidelines_consent_at"]
+    user.guidelines_consent_at = now
+    if accept_sms and user.sms_consent_at is None:
+        user.sms_consent_at = now
+        update_fields.append("sms_consent_at")
+    user.save(update_fields=update_fields)
     audit_log(
         logging.INFO, "guidelines_accepted", request, target_type="user", target_id=str(user.pk)
     )

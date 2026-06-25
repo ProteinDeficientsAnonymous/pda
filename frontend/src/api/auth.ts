@@ -155,10 +155,14 @@ export async function completeOnboarding(payload: {
   return mapUser(data);
 }
 
-export async function acceptGuidelines(): Promise<User> {
+export async function acceptGuidelines(acceptSms = false): Promise<User> {
   // Clears the hard guidelines-consent gate. Returns the updated user so the
-  // store can drop needsGuidelinesConsent and let the gate release.
-  const { data } = await apiClient.post<WireUser>('/api/auth/accept-guidelines/');
+  // store can drop needsGuidelinesConsent and let the gate release. When
+  // acceptSms is true the consent screen also collected sms consent — the
+  // backend stamps sms_consent_at (query param) when the user still lacks it.
+  const { data } = await apiClient.post<WireUser>('/api/auth/accept-guidelines/', null, {
+    params: { accept_sms: acceptSms },
+  });
   return mapUser(data);
 }
 

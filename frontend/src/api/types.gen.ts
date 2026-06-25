@@ -17,9 +17,14 @@ export interface paths {
          * Accept Guidelines
          * @description Stamp the current user's guidelines consent, clearing the hard gate.
          *
-         *     Idempotent: re-accepting just re-stamps the timestamp. The gate (see
-         *     config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
+         *     Idempotent: re-accepting just re-stamps the guidelines timestamp. The gate
+         *     (see config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
          *     consent", so any non-null value satisfies it.
+         *
+         *     ``accept_sms`` is an optional query param (no request body, so a plain POST
+         *     keeps working). The standalone /consent screen passes accept_sms=true: when
+         *     set and the user still lacks sms_consent_at, it is stamped too. An existing
+         *     sms timestamp is never overwritten.
          */
         post: operations["users__auth_accept_guidelines"];
         delete?: never;
@@ -3480,7 +3485,9 @@ export type $defs = Record<string, never>;
 export interface operations {
     users__auth_accept_guidelines: {
         parameters: {
-            query?: never;
+            query?: {
+                accept_sms?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
