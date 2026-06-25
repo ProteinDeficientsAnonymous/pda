@@ -5,6 +5,7 @@ import re
 
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
+from community.models import AttendanceStatus, EventStatus
 from config.audit import audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -229,10 +230,21 @@ def list_users(request):
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
+    # Annotate each member's most recent ATTENDED check-in (by event start) so
+    # the admin member list can sort/filter on "last attended" without N+1.
     users = (
         User.objects.members()
         .filter(archived_at__isnull=True)
         .prefetch_related("roles")
+        .annotate(
+            last_attended=dj_models.Max(
+                "event_rsvps__event__start_datetime",
+                # Exclude deleted events so this matches the attendance report,
+                # which also drops them.
+                filter=dj_models.Q(event_rsvps__attendance=AttendanceStatus.ATTENDED)
+                & ~dj_models.Q(event_rsvps__event__status=EventStatus.DELETED),
+            )
+        )
         .order_by("phone_number")
     )
     return Status(200, [UserOut.from_user(u) for u in users])

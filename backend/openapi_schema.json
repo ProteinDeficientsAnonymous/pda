@@ -89,6 +89,20 @@
         "title": "AttendanceIn",
         "type": "object"
       },
+      "AttendanceReportOut": {
+        "properties": {
+          "events": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventAttendanceRowOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "title": "AttendanceReportOut",
+        "type": "object"
+      },
       "AttendanceStatus": {
         "enum": [
           "unknown",
@@ -748,6 +762,52 @@
           "detail"
         ],
         "title": "ErrorReportOut",
+        "type": "object"
+      },
+      "EventAttendanceRowOut": {
+        "description": "One event's attendance summary for the admin attendance report.",
+        "properties": {
+          "attended_count": {
+            "default": 0,
+            "title": "Attended Count",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "going_count": {
+            "default": 0,
+            "title": "Going Count",
+            "type": "integer"
+          },
+          "no_show_count": {
+            "default": 0,
+            "title": "No Show Count",
+            "type": "integer"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title"
+        ],
+        "title": "EventAttendanceRowOut",
         "type": "object"
       },
       "EventCommentListOut": {
@@ -4664,6 +4724,18 @@
             "title": "Is Superuser",
             "type": "boolean"
           },
+          "last_attended": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attended"
+          },
           "last_name": {
             "default": "",
             "title": "Last Name",
@@ -7270,6 +7342,44 @@
           }
         ],
         "summary": "Create Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-report/": {
+      "get": {
+        "description": "Per-event attendance summary for every event with at least one mark.\n\nOnly events with an attended or no-show mark are included \u2014 events nobody\nchecked in for would just be noise in an attendance report. Newest first.",
+        "operationId": "community__attendance_report_attendance_report",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceReportOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Attendance Report",
         "tags": [
           "community"
         ]
