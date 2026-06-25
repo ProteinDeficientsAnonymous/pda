@@ -39,16 +39,17 @@ export interface UserLike {
   }[];
 }
 
-// Backend guarantees permissions: string[] (Role.effective_permissions coerces
-// the JSONField). Kept as defense-in-depth so render can't throw if that regresses.
-export function normalizePermissions(value: unknown): string[] {
-  return Array.isArray(value) ? (value as string[]) : [];
+// Backend sends permissions: string[] (Role.effective_permissions coerces the
+// JSONField). Defense-in-depth so a regression can't make render throw; the
+// null/undefined cases cover a field the API dropped entirely.
+export function normalizePermissions(
+  value: readonly string[] | null | undefined,
+): string[] {
+  return Array.isArray(value) ? [...value] : [];
 }
 
 export function hasPermission(user: UserLike | null, key: PermissionKey): boolean {
   if (!user) return false;
-  // Re-normalize per role: a UserLike can be built in tests or from a source
-  // that skipped the API-boundary mapping, so don't assume the invariant holds.
   return user.roles.some(
     (r) =>
       (r.name === ADMIN_ROLE_NAME && r.isDefault) ||

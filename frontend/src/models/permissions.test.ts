@@ -63,7 +63,8 @@ describe('normalizePermissions', () => {
   it('coerces non-array values (null, undefined, object) to an empty array', () => {
     expect(normalizePermissions(null)).toEqual([]);
     expect(normalizePermissions(undefined)).toEqual([]);
-    expect(normalizePermissions({})).toEqual([]);
+    // {} violates the declared type — cast to exercise the runtime guard.
+    expect(normalizePermissions({} as never)).toEqual([]);
   });
 });
 
