@@ -1,8 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
@@ -71,6 +70,7 @@ const BASE_EVENT: Event = {
   eventType: EventType.Community,
   visibility: EventVisibility.Public,
   photoUrl: '',
+  tags: [],
   isPast: false,
   status: EventStatus.Active,
 };

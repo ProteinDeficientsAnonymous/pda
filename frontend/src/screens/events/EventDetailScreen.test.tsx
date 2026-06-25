@@ -1,9 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
@@ -32,7 +31,6 @@ vi.mock('@/utils/datetime', () => ({
 }));
 
 import { useEvent } from '@/api/events';
-
 import EventDetailScreen from './EventDetailScreen';
 
 const mockUseEvent = vi.mocked(useEvent);
@@ -81,6 +79,7 @@ const BASE_EVENT: Event = {
   eventType: EventType.Community,
   visibility: EventVisibility.Public,
   photoUrl: '',
+  tags: [],
   isPast: false,
   status: EventStatus.Active,
 };

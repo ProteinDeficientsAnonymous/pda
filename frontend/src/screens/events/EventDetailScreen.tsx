@@ -1,17 +1,16 @@
 import { Link, useParams } from 'react-router-dom';
-
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility } from '@/models/event';
-import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
-
+import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
 import { EventMemberSection } from './EventMemberSection';
+import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
 
 export default function EventDetailScreen() {
@@ -45,6 +44,7 @@ export default function EventDetailScreen() {
       </div>
 
       <WhenLine event={event} />
+      <EventTagChips tags={event.tags} className="mt-2" />
       <EventActions event={event} />
       {isAuthed ? <CohostInviteBanner event={event} /> : null}
       <EventPollCard event={event} />
