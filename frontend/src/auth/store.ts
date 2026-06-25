@@ -118,7 +118,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async uploadProfilePhoto(file) {
     const user = await authApi.uploadProfilePhoto(file);
-    set({ user });
+    // Backend omits photo_updated_at, so without this stamp the cache-buster
+    // ?v= param never changes and the browser serves the stale cached image.
+    set({ user: { ...user, photoUpdatedAt: new Date().toISOString() } });
   },
 
   async deleteProfilePhoto() {
