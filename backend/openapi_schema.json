@@ -1038,6 +1038,14 @@
             "title": "Status",
             "type": "string"
           },
+          "tag_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tag Ids",
+            "type": "array"
+          },
           "title": {
             "maxLength": 200,
             "title": "Title",
@@ -1265,6 +1273,14 @@
             "default": "active",
             "title": "Status",
             "type": "string"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "title": {
             "title": "Title",
@@ -1603,6 +1619,14 @@
             "title": "Survey Slugs",
             "type": "array"
           },
+          "tags": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TagOut"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -1866,6 +1890,20 @@
               }
             ],
             "title": "Status"
+          },
+          "tag_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag Ids"
           },
           "title": {
             "anyOf": [
@@ -3952,6 +3990,29 @@
         "title": "SurveyResponseOut",
         "type": "object"
       },
+      "TagOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "title": "TagOut",
+        "type": "object"
+      },
       "TokenOut": {
         "properties": {
           "access": {
@@ -4322,6 +4383,84 @@
           }
         },
         "title": "WelcomeTemplatePatchIn",
+        "type": "object"
+      },
+      "WhatsAppConfigOut": {
+        "properties": {
+          "bot_url": {
+            "title": "Bot Url",
+            "type": "string"
+          },
+          "group_id": {
+            "title": "Group Id",
+            "type": "string"
+          },
+          "has_secret": {
+            "title": "Has Secret",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bot_url",
+          "group_id",
+          "has_secret"
+        ],
+        "title": "WhatsAppConfigOut",
+        "type": "object"
+      },
+      "WhatsAppConfigPatchIn": {
+        "properties": {
+          "bot_secret": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bot Secret"
+          },
+          "bot_url": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bot Url"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          }
+        },
+        "title": "WhatsAppConfigPatchIn",
+        "type": "object"
+      },
+      "WhatsAppStatusOut": {
+        "properties": {
+          "connected": {
+            "title": "Connected",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "connected"
+        ],
+        "title": "WhatsAppStatusOut",
         "type": "object"
       }
     },
@@ -6457,6 +6596,32 @@
           }
         ],
         "summary": "Review Event Flag",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-tags/": {
+      "get": {
+        "operationId": "community__event_tags_list_event_tags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List Event Tags",
         "tags": [
           "community"
         ]
@@ -10713,6 +10878,125 @@
           }
         ],
         "summary": "Update Welcome Template",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/whatsapp/config/": {
+      "get": {
+        "operationId": "community__whatsapp_get_whatsapp_config",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppConfigOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Whatsapp Config",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__whatsapp_update_whatsapp_config",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhatsAppConfigPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppConfigOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Whatsapp Config",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/whatsapp/status/": {
+      "get": {
+        "operationId": "community__whatsapp_get_whatsapp_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsAppStatusOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Whatsapp Status",
         "tags": [
           "community"
         ]

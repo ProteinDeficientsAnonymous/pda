@@ -92,6 +92,11 @@ class Event(models.Model):
         blank=True,
         related_name="invited_events",
     )
+    tags = models.ManyToManyField(
+        "community.EventTag",
+        blank=True,
+        related_name="events",
+    )
 
     class Meta:
         app_label = "community"

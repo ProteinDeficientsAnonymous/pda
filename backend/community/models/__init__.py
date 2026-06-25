@@ -30,6 +30,7 @@ from community.models.content import (
 )
 from community.models.document import DocFolder, Document
 from community.models.event import Event, EventFlag, EventRSVP
+from community.models.tag import EventTag
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.survey import (
@@ -70,6 +71,7 @@ __all__ = [
     "Event",
     "EventFlag",
     "EventRSVP",
+    "EventTag",
     # join form
     "JoinFormQuestion",
     "JoinRequest",
