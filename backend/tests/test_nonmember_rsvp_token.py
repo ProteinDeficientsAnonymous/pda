@@ -1,0 +1,113 @@
+from datetime import timedelta
+
+import pytest
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+
+@pytest.fixture
+def non_member(db):
+    from users.models import User
+
+    user = User.objects.create_user(
+        phone_number="+12025559001",
+        display_name="Non Member",
+        email="nonmember@example.com",
+        is_member=False,
+    )
+    user.set_unusable_password()
+    user.save(update_fields=["password"])
+    return user
+
+
+@pytest.mark.django_db
+class TestIssue:
+    def test_issue_produces_unique_urlsafe_token_with_90_day_expiry(self, non_member):
+        from users.models import NON_MEMBER_RSVP_TOKEN_TTL_DAYS, NonMemberRsvpToken
+
+        before = timezone.now()
+        token = NonMemberRsvpToken.issue(non_member)
+
+        assert token.user_id == non_member.id
+        assert token.token
+        # URL-safe: secrets.token_urlsafe yields only these characters.
+        assert all(c.isalnum() or c in "-_" for c in token.token)
+        assert token.revoked_at is None
+
+        expected = before + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+        # Expiry is ~90 days out; allow a small window for clock drift in the test.
+        assert abs((token.expires_at - expected).total_seconds()) < 60
+
+    def test_issue_tokens_are_unique(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        first = NonMemberRsvpToken.issue(non_member)
+        second = NonMemberRsvpToken.issue(non_member)
+        assert first.token != second.token
+
+    def test_issue_rejects_member(self, db):
+        from users.models import NonMemberRsvpToken, User
+
+        member = User.objects.create_user(
+            phone_number="+12025559002",
+            display_name="Member",
+            is_member=True,
+        )
+        with pytest.raises(ValidationError):
+            NonMemberRsvpToken.issue(member)
+
+
+@pytest.mark.django_db
+class TestResolveUser:
+    def test_valid_token_resolves_to_user(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        token = NonMemberRsvpToken.issue(non_member)
+        assert NonMemberRsvpToken.resolve_user(token.token) == non_member
+
+    def test_unknown_token_returns_none(self, db):
+        from users.models import NonMemberRsvpToken
+
+        assert NonMemberRsvpToken.resolve_user("does-not-exist") is None
+
+    def test_blank_token_returns_none(self, db):
+        from users.models import NonMemberRsvpToken
+
+        assert NonMemberRsvpToken.resolve_user("") is None
+
+    def test_expired_token_returns_none(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        token = NonMemberRsvpToken.issue(non_member)
+        token.expires_at = timezone.now() - timedelta(seconds=1)
+        token.save(update_fields=["expires_at"])
+        assert NonMemberRsvpToken.resolve_user(token.token) is None
+
+    def test_revoked_token_returns_none(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        token = NonMemberRsvpToken.issue(non_member)
+        token.revoke()
+        assert NonMemberRsvpToken.resolve_user(token.token) is None
+
+
+@pytest.mark.django_db
+class TestRevoke:
+    def test_revoke_stamps_revoked_at(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        token = NonMemberRsvpToken.issue(non_member)
+        assert token.is_valid
+        token.revoke()
+        assert token.revoked_at is not None
+        assert token.is_revoked
+        assert not token.is_valid
+
+    def test_revoke_is_idempotent(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        token = NonMemberRsvpToken.issue(non_member)
+        token.revoke()
+        first = token.revoked_at
+        token.revoke()
+        assert token.revoked_at == first
