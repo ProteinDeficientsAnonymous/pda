@@ -30,6 +30,7 @@ from community._join_requests import router as join_requests_router
 from community._login_link import router as login_link_router
 from community._pages import router as pages_router
 from community._polls import router as polls_router
+from community._public_rsvp import router as public_rsvp_router
 from community._surveys import router as surveys_router
 from community._surveys_public import router as surveys_public_router
 from community._version import router as version_router
@@ -46,6 +47,7 @@ router.add_router("", login_link_router)
 router.add_router("", feedback_router)
 router.add_router("", events_router)
 router.add_router("", event_rsvps_router)
+router.add_router("", public_rsvp_router)
 router.add_router("", event_actions_router)
 router.add_router("", event_cohost_invites_router)
 router.add_router("", event_invitations_router)
