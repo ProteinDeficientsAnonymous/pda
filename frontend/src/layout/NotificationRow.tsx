@@ -3,8 +3,10 @@
 // full notifications page.
 
 import { useNavigate } from 'react-router-dom';
+
 import { type AppNotification } from '@/models/notification';
 import { cn } from '@/utils/cn';
+
 import { notificationTarget } from './notificationTarget';
 
 export function NotificationRow({

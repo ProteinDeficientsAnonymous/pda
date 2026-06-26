@@ -2,7 +2,7 @@
 // Pages through the complete list with "load more"; the bell only shows the 10
 // most recent.
 
-import { useNotificationHistory, useMarkNotificationRead } from '@/api/notifications';
+import { useMarkNotificationRead, useNotificationHistory } from '@/api/notifications';
 import { Button } from '@/components/ui/Button';
 import { NotificationRow } from '@/layout/NotificationRow';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
