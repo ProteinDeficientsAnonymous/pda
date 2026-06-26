@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';
+import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
 
 type TypeFilter = 'all' | typeof EventType.Official | typeof EventType.Community;
@@ -139,6 +140,7 @@ function AgendaCard({ event, onSelect }: CardProps) {
           <span className="truncate">{event.location}</span>
         </div>
       ) : null}
+      <EventCardBadges event={event} variant="card" className="mt-1.5" />
     </button>
   );
 }
