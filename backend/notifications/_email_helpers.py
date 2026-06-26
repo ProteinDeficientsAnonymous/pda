@@ -5,9 +5,75 @@ Each helper renders its templates and dispatches via the injected
 paths or context shapes — they just say "send a magic-login email."
 """
 
+from dataclasses import dataclass
+
 from django.template.loader import render_to_string
 
 from notifications.email_sender import EmailSender, SendResult
+
+
+@dataclass(frozen=True)
+class RsvpEmailDetails:
+    """Event + recipient details shared by the non-member RSVP emails.
+
+    Bundling these keeps the send helpers to a handful of arguments and gives
+    callers one place to assemble the per-event context.
+    """
+
+    to: str
+    display_name: str
+    event_title: str
+    event_when: str
+    event_location: str
+    event_links: list[str]
+    manage_url: str
+
+    def template_context(self) -> dict:
+        return {
+            "display_name": self.display_name or "",
+            "event_title": self.event_title,
+            "event_when": self.event_when,
+            "event_location": self.event_location,
+            "event_links": self.event_links,
+            "manage_url": self.manage_url,
+        }
+
+
+def send_rsvp_confirmation_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+    waitlisted: bool,
+) -> SendResult:
+    """Render and send the non-member RSVP confirmation email (Email 1).
+
+    `details.manage_url` is the scoped /my-rsvps?token=... magic link. When
+    `waitlisted` the subject and body reflect that the RSVP landed on the waitlist.
+    """
+    context = {**details.template_context(), "waitlisted": waitlisted}
+    html = render_to_string("emails/rsvp_confirmation.html", context)
+    text = render_to_string("emails/rsvp_confirmation.txt", context)
+    title = details.event_title.lower()
+    subject = f"you're on the waitlist for {title}" if waitlisted else f"you're in for {title}"
+    return sender.send(to=details.to, subject=subject, html=html, text=text)
+
+
+def send_rsvp_waitlist_promoted_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+) -> SendResult:
+    """Render and send the "you're off the waitlist" email (Email 3) to a
+    non-member promoted off an event's waitlist."""
+    context = details.template_context()
+    html = render_to_string("emails/rsvp_waitlist_promoted.html", context)
+    text = render_to_string("emails/rsvp_waitlist_promoted.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you're off the waitlist for {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
 
 
 def send_magic_login_email(
