@@ -6,6 +6,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "vite",
+    "dev:mocked": "vite --mode mock",
     "build": "tsc -b && vite build",
     "build:docker": "tsc -b tsconfig.app.json tsconfig.node.json && vite build",
     "preview": "vite preview",
@@ -71,6 +72,7 @@
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "globals": "^17.5.0",
     "jsdom": "^29.0.2",
+    "msw": "^2.14.6",
     "openapi-typescript": "^7.13.0",
     "postcss": "^8.5.10",
     "prettier": "^3.8.3",
@@ -81,5 +83,10 @@
     "vite": "^8.0.8",
     "vitest": "^4.1.4",
     "vitest-axe": "^0.1.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
