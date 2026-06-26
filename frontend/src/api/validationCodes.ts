@@ -115,6 +115,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no spots available for a +1';
     case Code.Event.RsvpNotFound:
       return 'rsvp not found';
+    case Code.Event.MemberContactMustSignIn:
+      return 'looks like you already have an account — sign in to rsvp';
     case Code.Event.AttendanceOpensLater:
       return 'check-in opens an hour before the event starts';
     case Code.Event.AttendanceOnlyForGoingRsvps:
