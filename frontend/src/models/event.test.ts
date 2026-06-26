@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Event, eventClass, EventStatus, EventType, EventVisibility } from './event';
+import {
+  type Event,
+  eventClass,
+  EventStatus,
+  EventType,
+  EventVisibility,
+  myRsvpLabel,
+  RsvpServerStatus,
+  spotsLeft,
+} from './event';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -107,5 +116,40 @@ describe('eventClass', () => {
     });
     expect(eventClass(event)).not.toBe('pda-evt pda-evt-members');
     expect(eventClass(event)).toBe('pda-evt pda-evt-invite');
+  });
+});
+
+describe('spotsLeft', () => {
+  it('returns null for unlimited-capacity events', () => {
+    expect(spotsLeft(makeEvent({ maxAttendees: null, attendingCount: 5 }))).toBeNull();
+  });
+
+  it('returns remaining spots for capacity-limited events', () => {
+    expect(spotsLeft(makeEvent({ maxAttendees: 10, attendingCount: 3 }))).toBe(7);
+  });
+
+  it('returns 0 when full', () => {
+    expect(spotsLeft(makeEvent({ maxAttendees: 10, attendingCount: 10 }))).toBe(0);
+  });
+
+  it('clamps to 0 when over capacity (waitlist overflow)', () => {
+    expect(spotsLeft(makeEvent({ maxAttendees: 10, attendingCount: 13 }))).toBe(0);
+  });
+});
+
+describe('myRsvpLabel', () => {
+  it('returns null when the viewer has not responded', () => {
+    expect(myRsvpLabel(makeEvent({ myRsvp: null }))).toBeNull();
+  });
+
+  it('maps each rsvp status to a lowercase label', () => {
+    expect(myRsvpLabel(makeEvent({ myRsvp: RsvpServerStatus.Attending }))).toBe('going');
+    expect(myRsvpLabel(makeEvent({ myRsvp: RsvpServerStatus.Maybe }))).toBe('maybe');
+    expect(myRsvpLabel(makeEvent({ myRsvp: RsvpServerStatus.CantGo }))).toBe("can't go");
+    expect(myRsvpLabel(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }))).toBe('waitlisted');
+  });
+
+  it('returns null for an unrecognized status', () => {
+    expect(myRsvpLabel(makeEvent({ myRsvp: 'bogus' }))).toBeNull();
   });
 });

@@ -11,7 +11,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
+import { type Event, RsvpServerStatus, RsvpStatus, spotsLeft } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 import { RsvpGuestList } from './RsvpGuestList';
@@ -42,7 +42,9 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   // toggle reflects the wrong user (issue #368).
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
-  const atCapacity = event.maxAttendees !== null && event.attendingCount >= event.maxAttendees;
+  // spotsLeft is null for unlimited capacity, 0 once full — so "no spots left"
+  // is exactly spotsLeft === 0 (single source of truth with the SpotsLeft pill).
+  const atCapacity = spotsLeft(event) === 0;
 
   async function apply(next: InputStatus) {
     setError(null);
@@ -102,7 +104,9 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
             <p className="text-warning text-center text-xs">
               event is full — tapping "i'm going" adds you to the waitlist
             </p>
-          ) : null}
+          ) : (
+            <SpotsLeft event={event} />
+          )}
           {event.allowPlusOnes &&
           (myRsvp === RsvpServerStatus.Attending || myRsvp === RsvpServerStatus.Maybe) ? (
             <div className="flex justify-center">
@@ -166,6 +170,19 @@ function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean })
         leave waitlist
       </Button>
     </div>
+  );
+}
+
+// "x spots left" countdown for capacity-limited events. Renders nothing for
+// unlimited-capacity events (spotsLeft === null) or once full (0 left — the
+// "event is full" warning covers that case).
+function SpotsLeft({ event }: { event: Event }) {
+  const left = spotsLeft(event);
+  if (left === null || left === 0) return null;
+  return (
+    <p className="text-warning text-center text-xs">
+      {left === 1 ? '1 spot left' : `${String(left)} spots left`}
+    </p>
   );
 }
 

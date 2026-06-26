@@ -213,3 +213,26 @@ describe('RsvpSection — +1 toggle', () => {
     expect(screen.queryByRole('button', { name: /\+1/ })).not.toBeInTheDocument();
   });
 });
+
+describe('RsvpSection — spots left', () => {
+  it('shows "x spots left" for a capacity-limited event with room', () => {
+    renderSection(makeEvent({ maxAttendees: 10, attendingCount: 7, myRsvp: null }));
+    expect(screen.getByText('3 spots left')).toBeInTheDocument();
+  });
+
+  it('singularizes "1 spot left"', () => {
+    renderSection(makeEvent({ maxAttendees: 10, attendingCount: 9, myRsvp: null }));
+    expect(screen.getByText('1 spot left')).toBeInTheDocument();
+  });
+
+  it('shows no spots-left text for unlimited-capacity events', () => {
+    renderSection(makeEvent({ maxAttendees: null, attendingCount: 7, myRsvp: null }));
+    expect(screen.queryByText(/spots? left/)).not.toBeInTheDocument();
+  });
+
+  it('shows the full warning (not "0 spots left") at capacity', () => {
+    renderSection(makeEvent({ maxAttendees: 10, attendingCount: 10, myRsvp: null }));
+    expect(screen.queryByText(/spots? left/)).not.toBeInTheDocument();
+    expect(screen.getByText(/event is full/)).toBeInTheDocument();
+  });
+});

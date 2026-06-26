@@ -2082,6 +2082,8 @@ export interface components {
             longitude?: number | null;
             /** Max Attendees */
             max_attendees?: number | null;
+            /** My Rsvp */
+            my_rsvp?: string | null;
             /**
              * Other Link
              * @default
