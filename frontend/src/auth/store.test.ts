@@ -175,6 +175,25 @@ describe('useAuthStore', () => {
     });
   });
 
+  describe('uploadProfilePhoto', () => {
+    it('stores the server-stamped photoUpdatedAt so the cache-buster changes', async () => {
+      // The backend now returns a fresh photo_updated_at on upload, which the
+      // store persists verbatim. The cache-buster ?v= param keys off it, so the
+      // avatar refreshes without a reload — no client-side stamping needed.
+      useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
+      const serverStamp = '2026-06-25T12:00:00+00:00';
+      vi.mocked(authApi.uploadProfilePhoto).mockResolvedValueOnce({
+        ...mockUser,
+        profilePhotoUrl: 'https://cdn.example/photo.png',
+        photoUpdatedAt: serverStamp,
+      });
+
+      await useAuthStore.getState().uploadProfilePhoto(new File(['x'], 'avatar.png'));
+
+      expect(useAuthStore.getState().user?.photoUpdatedAt).toBe(serverStamp);
+    });
+  });
+
   describe('forceLogout', () => {
     it('synchronously sets status to unauthed and clears user and accessToken', () => {
       useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });

@@ -292,7 +292,9 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
         user.profile_photo.delete(save=False)
     name = photo.name or ""
     ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=True)
+    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=False)
+    user.photo_updated_at = timezone.now()
+    user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(
         logging.INFO, "profile_photo_uploaded", request, target_type="user", target_id=str(user.pk)
     )
@@ -305,7 +307,8 @@ def delete_photo(request):
     if user.profile_photo:
         user.profile_photo.delete(save=False)
         user.profile_photo = ""
-        user.save(update_fields=["profile_photo"])
+        user.photo_updated_at = None
+        user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(
         logging.INFO, "profile_photo_deleted", request, target_type="user", target_id=str(user.pk)
     )

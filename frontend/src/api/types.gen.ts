@@ -3330,6 +3330,8 @@ export interface components {
             needs_sms_consent: boolean;
             /** Phone Number */
             phone_number: string;
+            /** Photo Updated At */
+            photo_updated_at?: string | null;
             /**
              * Profile Photo Url
              * @default
