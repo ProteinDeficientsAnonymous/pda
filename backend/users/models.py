@@ -291,26 +291,17 @@ class NonMemberRsvpToken(models.Model):
 
 @receiver(m2m_changed, sender=User.roles.through)
 def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwargs):
-    """Enforce the invariant: a non-member (is_member=False) can never hold a role.
+    """Enforce the Issue 525 invariant: a non-member can never hold a role.
 
-    This is the call-site-independent guard for Issue 525 — it fires on
-    ``user.roles.add/set/create`` and the reverse ``role.users.add/set`` from
-    every path (API endpoints, seed, the superuser post_save above, and any
-    future code), so the read-side role counts in list_roles/delete_role can
-    stay simple and trustworthy. Raising in ``pre_add`` aborts the write before
-    the through-row is created.
-
-    Callers are expected to gate on membership first (e.g. update_user_roles
-    fetches via ``User.objects.members()`` and 404s a non-member). Reaching this
-    guard means a caller skipped that gate: the ``ValueError`` propagates out of
-    the m2m operation as an uncaught 500 — a deliberate loud failure, not a
-    clean 4xx. Fix the caller, don't catch this.
+    Fires on every role-assignment path (``user.roles.add``, ``role.users.add``,
+    etc.). Callers should gate on membership first; reaching this guard means one
+    didn't, so the ``ValueError`` surfaces as a loud 500 — fix the caller, don't
+    catch it.
     """
     if action != "pre_add" or not pk_set:
         return
-    # reverse=True means role.users.add(user...) — instance is the Role and
-    # pk_set holds User PKs. reverse=False means user.roles.add(...) — instance
-    # is the User and pk_set holds Role PKs.
+    # reverse=True: instance is the Role, pk_set holds User PKs.
+    # reverse=False: instance is the User, pk_set holds Role PKs.
     if reverse:
         if User.objects.filter(pk__in=pk_set, is_member=False).exists():
             raise ValueError("cannot assign a role to a non-member user")
