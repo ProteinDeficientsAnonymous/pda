@@ -102,8 +102,14 @@ def _validate_rsvp_status(status: str) -> None:
         )
 
 
-def _apply_rsvp_in_transaction(event_id, user, status: str, has_plus_one: bool) -> str:
-    """Execute RSVP upsert inside a locked transaction. Returns final_status.
+def _apply_rsvp_in_transaction(
+    event_id, user, status: str, has_plus_one: bool
+) -> tuple[str, list[str]]:
+    """Execute RSVP upsert inside a locked transaction.
+
+    Returns (final_status, promoted_user_ids). promoted_user_ids is the list of
+    users promoted off the waitlist by this change (empty unless a spot freed),
+    surfaced so callers can follow up per promoted user after commit.
 
     Raises ValidationException on failure.
     """
@@ -133,10 +139,9 @@ def _apply_rsvp_in_transaction(event_id, user, status: str, has_plus_one: bool) 
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
         was_attending and had_plus_one and not final_plus_one
     )
-    if spot_freed:
-        promote_from_waitlist(event)
+    promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
-    return final_status
+    return final_status, promoted_user_ids
 
 
 @router.post(
@@ -154,7 +159,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status = _apply_rsvp_in_transaction(
+        final_status, _promoted_user_ids = _apply_rsvp_in_transaction(
             event_id, request.auth, payload.status, payload.has_plus_one
         )
 
