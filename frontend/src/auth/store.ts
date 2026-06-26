@@ -117,10 +117,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async uploadProfilePhoto(file) {
+    // The upload response carries a fresh server-stamped photoUpdatedAt, which
+    // drives the cache-buster ?v= param so the avatar refreshes without a reload.
     const user = await authApi.uploadProfilePhoto(file);
-    // Backend omits photo_updated_at, so without this stamp the cache-buster
-    // ?v= param never changes and the browser serves the stale cached image.
-    set({ user: { ...user, photoUpdatedAt: new Date().toISOString() } });
+    set({ user });
   },
 
   async deleteProfilePhoto() {

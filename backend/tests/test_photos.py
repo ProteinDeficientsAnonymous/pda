@@ -77,8 +77,12 @@ class TestProfilePhoto:
         assert response.status_code == 200
         data = response.json()
         assert data["profile_photo_url"] != ""
+        # The response carries a fresh server timestamp the frontend uses to
+        # cache-bust the avatar URL (?v=) so it refreshes without a reload.
+        assert data["photo_updated_at"] is not None
         member.refresh_from_db()
         assert member.profile_photo
+        assert member.photo_updated_at is not None
 
     def test_upload_replaces_existing(self, api_client, member):
         photo1 = _make_test_image()
@@ -105,9 +109,12 @@ class TestProfilePhoto:
         api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
         response = api_client.delete("/api/auth/me/photo/", **_auth(member))
         assert response.status_code == 200
-        assert response.json()["profile_photo_url"] == ""
+        body = response.json()
+        assert body["profile_photo_url"] == ""
+        assert body["photo_updated_at"] is None
         member.refresh_from_db()
         assert not member.profile_photo
+        assert member.photo_updated_at is None
 
     def test_upload_requires_auth(self, api_client):
         photo = _make_test_image()

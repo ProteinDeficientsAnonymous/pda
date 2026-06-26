@@ -4113,6 +4113,17 @@
             "title": "Phone Number",
             "type": "string"
           },
+          "photo_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Updated At"
+          },
           "profile_photo_url": {
             "default": "",
             "title": "Profile Photo Url",
