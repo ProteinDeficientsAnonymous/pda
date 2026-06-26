@@ -153,15 +153,17 @@ def _cancellations(event: Event) -> list[CancellationOut]:
     return rows
 
 
-def promote_from_waitlist(event: Event) -> None:
+def promote_from_waitlist(event: Event) -> list[str]:
     """Promote oldest waitlisted users to attending (FIFO by created_at).
 
     Must be called inside a transaction.atomic() block with the event row locked.
+    Returns the list of promoted user ids so callers that need to follow up per
+    promoted user (e.g. emailing promoted non-members) can do so after commit.
     """
     from notifications.service import create_waitlist_promoted_notifications
 
     if event.max_attendees is None:
-        return
+        return []
     promoted_user_ids: list[str] = []
     while True:
         headcount = _attending_headcount_db(event)
@@ -179,6 +181,7 @@ def promote_from_waitlist(event: Event) -> None:
         promoted_user_ids.append(str(oldest.user_id))
     if promoted_user_ids:
         create_waitlist_promoted_notifications(event, promoted_user_ids)
+    return promoted_user_ids
 
 
 def _has_attendees(event: Event) -> bool:
