@@ -84,9 +84,6 @@ class User(AbstractUser):
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
-    # Stamped whenever profile_photo is uploaded; surfaced on /me/ as
-    # photo_updated_at so the frontend can cache-bust the avatar URL (?v=) and
-    # refresh it without a page reload. Null when no photo has ever been set.
     photo_updated_at = models.DateTimeField(null=True, blank=True)
     show_phone = models.BooleanField(default=True)
     show_email = models.BooleanField(default=True)

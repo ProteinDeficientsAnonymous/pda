@@ -77,8 +77,6 @@ class TestProfilePhoto:
         assert response.status_code == 200
         data = response.json()
         assert data["profile_photo_url"] != ""
-        # The response carries a fresh server timestamp the frontend uses to
-        # cache-bust the avatar URL (?v=) so it refreshes without a reload.
         assert data["photo_updated_at"] is not None
         member.refresh_from_db()
         assert member.profile_photo
