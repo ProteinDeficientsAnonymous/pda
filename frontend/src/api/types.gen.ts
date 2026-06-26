@@ -1573,9 +1573,13 @@ export interface components {
         };
         /** AttendanceIn */
         AttendanceIn: {
-            /** Attendance */
-            attendance: string;
+            attendance: components["schemas"]["AttendanceStatus"];
         };
+        /**
+         * AttendanceStatus
+         * @enum {string}
+         */
+        AttendanceStatus: "unknown" | "attended" | "no_show";
         /** BulkUserCreateIn */
         BulkUserCreateIn: {
             /** Phone Numbers */
@@ -2985,9 +2989,13 @@ export interface components {
              * @default false
              */
             has_plus_one: boolean;
-            /** Status */
-            status: string;
+            status: components["schemas"]["RSVPStatus"];
         };
+        /**
+         * RSVPStatus
+         * @enum {string}
+         */
+        RSVPStatus: "attending" | "maybe" | "cant_go" | "waitlisted";
         /** ReactionToggleIn */
         ReactionToggleIn: {
             /** Emoji */

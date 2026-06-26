@@ -75,8 +75,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'start date must be in the future';
     case Code.Event.EndBeforeStart:
       return 'end time must be after the start time';
-    case Code.Event.AttendanceInvalidChoice:
-      return 'pick a valid attendance option';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
     case Code.Event.InvalidCreateStatus:

@@ -29,7 +29,6 @@ class Code:
         MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE = "event.max_attendees_must_be_at_least_one"
         START_DATETIME_MUST_BE_FUTURE = "event.start_datetime_must_be_future"
         END_BEFORE_START = "event.end_before_start"
-        ATTENDANCE_INVALID_CHOICE = "event.attendance_invalid_choice"
         OFFICIAL_MUST_BE_PUBLIC = "event.official_must_be_public"
         INVALID_CREATE_STATUS = "event.invalid_create_status"
         DATE_LOCKED_BY_POLL = "event.date_locked_by_poll"
