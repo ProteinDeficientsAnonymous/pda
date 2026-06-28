@@ -300,9 +300,8 @@ def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwar
     """
     if action != "pre_add" or not pk_set:
         return
-    # reverse=True: instance is the Role, pk_set holds User PKs.
-    # reverse=False: instance is the User, pk_set holds Role PKs.
-    if reverse:
+    instance_is_role = reverse
+    if instance_is_role:
         if User.objects.filter(pk__in=pk_set, is_member=False).exists():
             raise ValueError("cannot assign a role to a non-member user")
     elif not instance.is_member:

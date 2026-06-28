@@ -179,8 +179,7 @@ def delete_role(request, role_id: str):
     if role.name in PROTECTED_ROLE_NAMES:
         raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
-    # Members only — see the matching note in list_roles. Keeps the audited
-    # affected-user count trustworthy even if a non-member ever slipped a role.
+    # Members only — keeps the audited affected-user count trustworthy.
     affected_user_count = role.users.filter(archived_at__isnull=True, is_member=True).count()
     role.delete()
     audit_log(

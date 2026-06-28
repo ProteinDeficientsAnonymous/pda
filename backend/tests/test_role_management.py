@@ -181,9 +181,7 @@ class TestNonMemberCannotHoldRole:
             is_member=False,
         )
 
-    # The guard raises inside the m2m operation's atomic block, which marks the
-    # surrounding transaction as broken — so we cannot query the DB after the
-    # raise in the same test. pytest.raises is sufficient proof the write aborted.
+    # The guard raises inside the m2m atomic block, so we can't query the DB after; pytest.raises proves the abort.
     def test_roles_add_rejects_non_member(self):
         non_member = self._make_non_member()
         role = Role.objects.create(name="contributor", permissions=[])
