@@ -15,6 +15,8 @@ import type { Event } from '@/models/event';
 import { EventStatus, EventType, RsvpStatus } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
+import { EventCardBadges } from './EventCardBadges';
+
 type Filter = 'upcoming' | 'past' | 'drafts' | 'cancelled';
 type Scope = 'all' | 'hosting';
 
@@ -159,6 +161,7 @@ function EventRow({ event }: { event: Event }) {
             : format(event.startDatetime, 'EEE MMM d, h:mm a').toLowerCase()}
           {event.location ? ` · ${event.location}` : ''}
         </p>
+        <EventCardBadges event={event} variant="row" className="mt-1.5" />
       </div>
       <div className="flex items-center gap-2 text-xs">
         {event.status === EventStatus.Cancelled ? (

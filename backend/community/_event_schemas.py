@@ -182,6 +182,7 @@ class EventListOut(BaseModel):
     waitlisted_count: int = 0
     invited_count: int = 0
     comment_count: int = 0
+    my_rsvp: str | None = None
     is_past: bool = False
     status: str = "active"
 

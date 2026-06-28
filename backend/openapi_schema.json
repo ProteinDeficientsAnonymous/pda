@@ -1229,6 +1229,17 @@
             ],
             "title": "Max Attendees"
           },
+          "my_rsvp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Rsvp"
+          },
           "other_link": {
             "default": "",
             "title": "Other Link",

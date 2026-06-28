@@ -163,3 +163,28 @@ export function eventClass(e: Event): string {
   if (e.visibility === EventVisibility.MembersOnly) return 'pda-evt pda-evt-members';
   return 'pda-evt pda-evt-community';
 }
+
+// Remaining capacity for a capacity-limited event, or null when capacity is
+// unlimited (maxAttendees === null) so callers can render gracefully. Never
+// negative — an over-capacity event (waitlist overflow) reports 0 spots left.
+export function spotsLeft(e: Event): number | null {
+  if (e.maxAttendees === null) return null;
+  return Math.max(0, e.maxAttendees - e.attendingCount);
+}
+
+// Short lowercase label for the viewer's own RSVP state, or null when they
+// haven't responded. Drives the badge on calendar / my-events cards.
+export function myRsvpLabel(e: Event): string | null {
+  switch (e.myRsvp) {
+    case RsvpServerStatus.Attending:
+      return 'going';
+    case RsvpServerStatus.Maybe:
+      return 'maybe';
+    case RsvpServerStatus.CantGo:
+      return "can't go";
+    case RsvpServerStatus.Waitlisted:
+      return 'waitlisted';
+    default:
+      return null;
+  }
+}
