@@ -1,19 +1,18 @@
-# Task — issue #555
-**Goal:** public-rsvp: recognize returning non-members and extend existing token on new RSVP
+# Task — issue #525
+**Goal:** feat(public-rsvp): enforce non-members never hold a role + trustworthy role counts
 **Source:** label
-**Labels:** backend,feature,auto,database,p1
-**Acceptance criteria:** see issue #555 body.
+**Labels:** backend,RSVP & Attendance,auto
+**Acceptance criteria:** see issue #525 body.
 
 ## Pipeline stage
-pickup
-triage
-work
-review
-ci
+done
 
 ## Restart count
-0
+1
 
 ## Progress log
 - dispatched
-- triage: model-layer change only; public RSVP submission endpoints (stages 3/4) not built yet. Implementing issue_or_extend() on NonMemberRsvpToken to handle extend-vs-create. User get-or-create-by-phone (AC#1) belongs to the unbuilt endpoint; noted as out of scope here.
+- work: added m2m_changed pre_add guard (reject_role_for_non_member) on User.roles.through; added is_member=True to list_roles/delete_role counts; added TestNonMemberCannotHoldRole
+- review: code-reviewer clean (no high); applied medium fixes (docstring note + member-swap/reverse-set tests). 23 tests pass.
+- ci: backend make agent-ci passed (1026 tests, typecheck, complexity, schema); frontend lint/format/typecheck/types-check clean after pnpm install
+- PR: https://github.com/ProteinDeficientsAnonymous/pda/pull/557 (draft)
