@@ -39,10 +39,21 @@ export interface UserLike {
   }[];
 }
 
+// Backend sends permissions: string[] (Role.effective_permissions coerces the
+// JSONField). Defense-in-depth so a regression can't make render throw; the
+// null/undefined cases cover a field the API dropped entirely.
+export function normalizePermissions(
+  value: readonly string[] | null | undefined,
+): string[] {
+  return Array.isArray(value) ? [...value] : [];
+}
+
 export function hasPermission(user: UserLike | null, key: PermissionKey): boolean {
   if (!user) return false;
   return user.roles.some(
-    (r) => (r.name === ADMIN_ROLE_NAME && r.isDefault) || r.permissions.includes(key),
+    (r) =>
+      (r.name === ADMIN_ROLE_NAME && r.isDefault) ||
+      normalizePermissions(r.permissions).includes(key),
   );
 }
 

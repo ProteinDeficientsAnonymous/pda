@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { hasAnyAdminPermission, hasPermission, Permission, type UserLike } from './permissions';
+import {
+  hasAnyAdminPermission,
+  hasPermission,
+  normalizePermissions,
+  Permission,
+  type UserLike,
+} from './permissions';
 
 function user(opts: Partial<UserLike> = {}): UserLike {
   return {
@@ -36,6 +42,29 @@ describe('hasPermission', () => {
   it('isDefault without name=admin does not grant blanket access', () => {
     const u = user({ roles: [{ name: 'member', isDefault: true, permissions: [] }] });
     expect(hasPermission(u, Permission.ManageUsers)).toBe(false);
+  });
+
+  it('does not crash on a non-array permissions value (corrupt role data)', () => {
+    // Defense-in-depth: if the backend invariant regresses, treat non-array as "no perms".
+    const corrupt = (permissions: unknown) =>
+      user({ roles: [{ name: 'custom', isDefault: false, permissions } as never] });
+    expect(hasPermission(corrupt(null), Permission.TagOfficialEvent)).toBe(false);
+    expect(hasPermission(corrupt(undefined), Permission.TagOfficialEvent)).toBe(false);
+    expect(hasPermission(corrupt({}), Permission.TagOfficialEvent)).toBe(false);
+  });
+});
+
+describe('normalizePermissions', () => {
+  it('passes through a string array unchanged', () => {
+    const perms = [Permission.ManageEvents, Permission.EditFaq];
+    expect(normalizePermissions(perms)).toEqual(perms);
+  });
+
+  it('coerces non-array values (null, undefined, object) to an empty array', () => {
+    expect(normalizePermissions(null)).toEqual([]);
+    expect(normalizePermissions(undefined)).toEqual([]);
+    // {} violates the declared type — cast to exercise the runtime guard.
+    expect(normalizePermissions({} as never)).toEqual([]);
   });
 });
 

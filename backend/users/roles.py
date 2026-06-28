@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 
 from django.db import models
 
+from users.permissions import PermissionKey
+
 if TYPE_CHECKING:
     from django.db.models import Manager
 
@@ -27,12 +29,15 @@ class Role(models.Model):
 
     @property
     def effective_permissions(self) -> list[str]:
-        """Admin role implicitly grants every permission (see User.has_permission).
-        Return the current PermissionKey set so the UI reflects reality even if
-        the DB row was seeded before newer keys were added.
+        """The permission keys this role grants (see User.has_permission).
+
+        The default admin role implicitly grants every current key. Other roles
+        return their stored keys, coerced to a clean list[str] — the JSONField
+        defaults to a list, but legacy/corrupt rows may hold other values.
         """
         if self.name == "admin" and self.is_default:
-            from users.permissions import PermissionKey
-
             return list(PermissionKey.values)
-        return list(self.permissions)
+        stored = self.permissions
+        if not isinstance(stored, list):
+            return []
+        return [p for p in stored if isinstance(p, str)]
