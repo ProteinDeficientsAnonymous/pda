@@ -347,6 +347,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'this request has already been decided';
     case Code.JoinRequest.OnlyRejectedCanBeUnRejected:
       return 'only rejected requests can be un-rejected';
+    case Code.JoinRequest.AlreadyMember:
+      return "you're already a member — try logging in instead";
     case Code.JoinRequest.PhoneAlreadyInvited:
       return 'that number is already in the community — try logging in instead';
     case Code.JoinRequest.PhoneAlreadyPending:

@@ -33,6 +33,14 @@ class JoinRequest(models.Model):
     display_name = models.CharField(max_length=64)
     phone_number = models.CharField(max_length=20)
     email = models.EmailField(blank=True, default="")
+    # Links a public-RSVP non-member so approval promotes that row in place; SET_NULL keeps the request if the user is deleted.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="join_requests",
+    )
     custom_answers = models.JSONField(default=dict, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
