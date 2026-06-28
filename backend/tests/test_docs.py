@@ -1,13 +1,13 @@
 import pytest
 from community.models import DocFolder, Document
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 
 @pytest.fixture
 def manage_docs_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+15550003001",
         password="docspass123",
@@ -20,8 +20,6 @@ def manage_docs_user(db):
 
 @pytest.fixture
 def manage_docs_headers(manage_docs_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(manage_docs_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 

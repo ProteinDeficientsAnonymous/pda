@@ -12,6 +12,8 @@ from community._event_helpers import (
 from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from users.models import Role, User
+from users.permissions import PermissionKey
 
 
 def _auth(user):
@@ -21,8 +23,6 @@ def _auth(user):
 
 @pytest.fixture
 def members(db):
-    from users.models import User
-
     return [
         User.objects.create_user(
             phone_number=f"+1202555090{i}",
@@ -35,8 +35,6 @@ def members(db):
 
 @pytest.fixture
 def host_user(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+12025558000",
         password="x",
@@ -46,8 +44,6 @@ def host_user(db):
 
 @pytest.fixture
 def cohost_user(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+12025558001",
         password="x",
@@ -57,9 +53,6 @@ def cohost_user(db):
 
 @pytest.fixture
 def admin_user(db):
-    from users.models import Role, User
-    from users.permissions import PermissionKey
-
     admin = User.objects.create_user(
         phone_number="+12025558002",
         password="x",

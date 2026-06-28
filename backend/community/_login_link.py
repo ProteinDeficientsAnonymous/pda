@@ -11,7 +11,10 @@ from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_magic_login_email
 from notifications.email_sender import get_email_sender
+from notifications.service import create_magic_link_request_notifications
 from pydantic import BaseModel, Field
+from users._helpers import _create_magic_token
+from users.models import MagicLoginToken, User
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _validate_phone, logger  # noqa: F401
@@ -66,10 +69,6 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     Always returns 200 to prevent phone number enumeration.
     If a User exists, generates a magic link token and notifies admins.
     """
-    from notifications.service import create_magic_link_request_notifications
-    from users._helpers import _create_magic_token
-    from users.models import MagicLoginToken, User
-
     try:
         normalized = _validate_phone(payload.phone_number)
     except ValidationException:

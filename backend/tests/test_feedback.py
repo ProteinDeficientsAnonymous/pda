@@ -1,13 +1,16 @@
 """Tests for feedback (GitHub issue creation) endpoint."""
 
+import io
+import json
+from urllib.error import URLError
+
 import pytest
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 
 
 def _mock_urlopen(monkeypatch, issue_url="https://github.com/leahpeker/pda/issues/1"):
     """Patch community.api.urlopen to return a fake GitHub issue creation response."""
-    import io
-    import json
-
     captured: dict = {"calls": []}
 
     def fake_urlopen(request):
@@ -145,8 +148,6 @@ class TestFeedback:
         self, api_client, settings, monkeypatch
     ):
         """Submitter identity in issue body should be the user's UUID, not name or phone."""
-        import json
-
         for k, v in _APP_SETTINGS.items():
             setattr(settings, k, v)
         monkeypatch.setattr(
@@ -154,15 +155,11 @@ class TestFeedback:
         )
         captured = _mock_urlopen(monkeypatch)
 
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+15551239999",
             password="pw12345678",
             display_name="alice smith",
         )
-        from ninja_jwt.tokens import RefreshToken
-
         refresh = RefreshToken.for_user(user)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -212,8 +209,6 @@ class TestFeedback:
         assert response.status_code == 201
 
     def test_feedback_returns_503_on_github_api_failure(self, api_client, settings, monkeypatch):
-        from urllib.error import URLError
-
         for k, v in _APP_SETTINGS.items():
             setattr(settings, k, v)
         monkeypatch.setattr(
@@ -241,8 +236,6 @@ class TestFeedbackLabels:
     """feedback_types map to GitHub issue labels."""
 
     def _labels_for(self, api_client, settings, monkeypatch, feedback_types):
-        import json
-
         for k, v in _APP_SETTINGS.items():
             setattr(settings, k, v)
         monkeypatch.setattr(
@@ -314,8 +307,6 @@ class TestFeedbackSanitization:
         return captured["calls"][-1]
 
     def test_description_is_fenced_to_neutralize_mentions(self, api_client, settings, monkeypatch):
-        import json
-
         req = self._submit(
             api_client,
             monkeypatch,
@@ -333,8 +324,6 @@ class TestFeedbackSanitization:
         assert "@leahpeker" in fenced  # still present, but inside the fence
 
     def test_description_cannot_break_out_of_fence(self, api_client, settings, monkeypatch):
-        import json
-
         # User tries to close the fence and inject active markdown afterwards.
         malicious = "```\n@everyone escaped"
         req = self._submit(
@@ -350,8 +339,6 @@ class TestFeedbackSanitization:
         assert first_fence.count("`") >= 4
 
     def test_metadata_user_agent_is_inline_code_escaped(self, api_client, settings, monkeypatch):
-        import json
-
         req = self._submit(
             api_client,
             monkeypatch,

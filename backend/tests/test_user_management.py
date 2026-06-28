@@ -1,11 +1,10 @@
 import pytest
+from users.models import User
 
 
 @pytest.mark.django_db
 class TestCreateUserDuplicateEmail:
     def test_create_user_duplicate_email_rejected(self, api_client, manage_users_headers, db):
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025550199", display_name="a", email="taken@example.com"
         )
@@ -23,8 +22,6 @@ class TestCreateUserDuplicateEmail:
         assert resp.json()["detail"][0]["code"] == "email.already_exists"
 
     def test_create_user_lowercases_email(self, api_client, manage_users_headers, db):
-        from users.models import User
-
         resp = api_client.post(
             "/api/auth/create-user/",
             data={
@@ -43,8 +40,6 @@ class TestCreateUserDuplicateEmail:
 @pytest.mark.django_db
 class TestAdminPatchEmail:
     def test_admin_patch_email_rejects_duplicate(self, api_client, manage_users_headers, db):
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025550199", display_name="other", email="taken@example.com"
         )
@@ -59,8 +54,6 @@ class TestAdminPatchEmail:
         assert resp.json()["detail"][0]["code"] == "email.already_exists"
 
     def test_admin_patch_email_lowercases(self, api_client, manage_users_headers, db):
-        from users.models import User
-
         target = User.objects.create_user(phone_number="+12025550101", display_name="b")
         resp = api_client.patch(
             f"/api/auth/users/{target.id}/",

@@ -2,7 +2,9 @@
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from community.models import Event, EventRSVP, EventStatus, PageVisibility, RSVPStatus
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso
@@ -37,8 +39,6 @@ def no_rsvp_event(db):
 
 @pytest.fixture
 def other_user(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+12025550302",
         password="otherpass",
@@ -48,8 +48,6 @@ def other_user(db):
 
 @pytest.fixture
 def other_headers(other_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(other_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -174,8 +172,6 @@ class TestRSVP:
         assert response.status_code == 200
         assert response.json()["my_rsvp"] == RSVPStatus.CANT_GO
         # Still only one RSVP record
-        from users.models import User
-
         user = User.objects.get(phone_number="+12025550101")
         assert EventRSVP.objects.filter(event=rsvp_event, user=user).count() == 1
 
@@ -400,8 +396,6 @@ class TestDeleteRSVPWithdrawal:
     def test_excluded_member_can_still_delete_stale_rsvp(
         self, api_client, other_headers, other_user, test_user, rsvp_event
     ):
-        from community.models import PageVisibility
-
         # other_user RSVPs ATTENDING while the event is public and full, with
         # test_user waitlisted behind them. The host then flips it to invite-only
         # without inviting other_user — they must still be able to withdraw, AND
@@ -427,8 +421,6 @@ class TestDeleteRSVPWithdrawal:
     def test_non_rsvper_cannot_probe_invite_only_via_delete(
         self, api_client, other_headers, rsvp_event
     ):
-        from community.models import PageVisibility
-
         # A member with NO RSVP who can't see the invite-only event gets the
         # read-visibility 403 — they can't use delete to probe for existence.
         rsvp_event.visibility = PageVisibility.INVITE_ONLY

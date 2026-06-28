@@ -1,8 +1,14 @@
 """Tests for RSVP capacity limits and waitlist behaviour."""
 
+import json
+from datetime import timedelta
+
 import pytest
 from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
+from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification, NotificationType
 from users.models import User
 
 from tests.conftest import future_iso
@@ -21,8 +27,6 @@ def _make_user(phone, name):
 
 
 def _jwt_headers(user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -259,8 +263,6 @@ class TestWaitlistPromotionNotification:
         headers3,
     ):
         """Promoted user receives a WAITLIST_PROMOTED notification."""
-        from notifications.models import Notification, NotificationType
-
         _rsvp(api_client, capped_event, headers1)
         _rsvp(api_client, capped_event, headers2)
         _rsvp(api_client, capped_event, headers3)  # waitlisted
@@ -276,8 +278,6 @@ class TestWaitlistPromotionNotification:
 
     def test_no_notification_when_no_waitlisted(self, api_client, capped_event, headers1, headers2):
         """No notification created when a spot frees but nobody is waitlisted."""
-        from notifications.models import Notification, NotificationType
-
         _rsvp(api_client, capped_event, headers1)
         _rsvp(api_client, capped_event, headers2)
 
@@ -331,15 +331,9 @@ class TestCapacityCounts:
 class TestMaxAttendeesValidation:
     @staticmethod
     def _future_iso(days: int = 30) -> str:
-        from datetime import timedelta
-
-        from django.utils import timezone
-
         return (timezone.now() + timedelta(days=days)).isoformat()
 
     def test_create_rejects_zero_max_attendees(self, api_client, auth_headers):
-        import json
-
         resp = api_client.post(
             "/api/community/events/",
             data=json.dumps(
@@ -360,8 +354,6 @@ class TestMaxAttendeesValidation:
         )
 
     def test_create_accepts_null_max_attendees(self, api_client, auth_headers):
-        import json
-
         resp = api_client.post(
             "/api/community/events/",
             data=json.dumps(
@@ -378,8 +370,6 @@ class TestMaxAttendeesValidation:
         assert resp.status_code == 201
 
     def test_patch_rejects_zero_max_attendees(self, api_client, capped_event, auth_headers):
-        import json
-
         resp = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             data=json.dumps({"max_attendees": 0}),
@@ -393,8 +383,6 @@ class TestMaxAttendeesValidation:
         )
 
     def test_patch_accepts_null_max_attendees(self, api_client, capped_event, auth_headers):
-        import json
-
         resp = api_client.patch(
             f"/api/community/events/{capped_event.id}/",
             data=json.dumps({"max_attendees": None}),

@@ -1,7 +1,15 @@
 """Tests for event flag submission and admin review endpoints."""
 
+import uuid
+
 import pytest
-from community.models import Event, EventFlag, EventFlagStatus
+from community.models import (
+    Event,
+    EventFlag,
+    EventFlagStatus,
+    EventStatus,
+    PageVisibility,
+)
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
@@ -84,8 +92,6 @@ class TestFlagSubmission:
         assert response.status_code == 409
 
     def test_flag_event_not_found_returns_404(self, api_client, member):
-        import uuid
-
         fake_id = uuid.uuid4()
         response = api_client.post(
             f"/api/community/events/{fake_id}/flag/",
@@ -222,8 +228,6 @@ class TestFlagReview:
 @pytest.mark.django_db
 class TestFlagVisibilityGating:
     def test_cannot_flag_invite_only_event_not_invited(self, api_client, member, other_member):
-        from community.models import PageVisibility
-
         event = Event.objects.create(
             title="Private gathering",
             start_datetime=future_iso(days=30),
@@ -240,8 +244,6 @@ class TestFlagVisibilityGating:
         assert not EventFlag.objects.filter(event=event).exists()
 
     def test_cannot_flag_deleted_event(self, api_client, member):
-        from community.models import EventStatus
-
         event = Event.objects.create(
             title="Removed event",
             start_datetime=future_iso(days=30),

@@ -3,6 +3,9 @@
 import json
 
 import pytest
+from community.models import EditablePage, PageVisibility
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -28,8 +31,6 @@ def _pm(text: str) -> str:
 
 @pytest.fixture
 def manage_guidelines_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+12025550401",
         password="guidelinespass",
@@ -45,16 +46,12 @@ def manage_guidelines_user(db):
 
 @pytest.fixture
 def manage_guidelines_headers(manage_guidelines_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(manage_guidelines_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def edit_homepage_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+12025550402",
         password="homepagepass",
@@ -70,16 +67,12 @@ def edit_homepage_user(db):
 
 @pytest.fixture
 def edit_homepage_headers(edit_homepage_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(edit_homepage_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def edit_faq_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+12025550403",
         password="faqpass",
@@ -95,8 +88,6 @@ def edit_faq_user(db):
 
 @pytest.fixture
 def edit_faq_headers(edit_faq_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(edit_faq_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -237,38 +228,28 @@ class TestCheckPhone:
 @pytest.mark.django_db
 class TestEditablePages:
     def _create_page(self, slug, visibility):
-        from community.models import EditablePage
-
         page = EditablePage.get_or_create_page(slug)
         page.visibility = visibility
         page.save(update_fields=["visibility"])
         return page
 
     def test_public_page_served_to_anon(self, api_client, db):
-        from community.models import PageVisibility
-
         self._create_page("about", PageVisibility.PUBLIC)
         response = api_client.get("/api/community/pages/about/")
         assert response.status_code == 200
 
     def test_members_only_page_blocked_for_anon(self, api_client, db):
-        from community.models import PageVisibility
-
         self._create_page("about", PageVisibility.MEMBERS_ONLY)
         response = api_client.get("/api/community/pages/about/")
         assert response.status_code == 403
 
     def test_invite_only_page_blocked_for_anon(self, api_client, db):
         # Previously only MEMBERS_ONLY was gated, so INVITE_ONLY leaked to anon.
-        from community.models import PageVisibility
-
         self._create_page("about", PageVisibility.INVITE_ONLY)
         response = api_client.get("/api/community/pages/about/")
         assert response.status_code == 403
 
     def test_invite_only_page_served_to_authed(self, api_client, auth_headers, db):
-        from community.models import PageVisibility
-
         self._create_page("about", PageVisibility.INVITE_ONLY)
         response = api_client.get("/api/community/pages/about/", **auth_headers)
         assert response.status_code == 200
@@ -285,8 +266,6 @@ class TestEditablePages:
         assert response.status_code == 400
 
     def test_update_page_accepts_valid_visibility(self, api_client, manage_guidelines_headers, db):
-        from community.models import PageVisibility
-
         response = api_client.patch(
             "/api/community/pages/about/",
             {"visibility": PageVisibility.MEMBERS_ONLY},

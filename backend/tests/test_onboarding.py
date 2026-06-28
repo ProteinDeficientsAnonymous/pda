@@ -1,6 +1,11 @@
 """Tests for complete-onboarding email requirement (Task 4.1)."""
 
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 
 
 @pytest.mark.django_db
@@ -48,8 +53,6 @@ class TestOnboardingEmail:
     def test_duplicate_email_rejected(
         self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
     ):
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025550199", display_name="other", email="taken@example.com"
         )
@@ -67,9 +70,6 @@ class TestOnboardingEmail:
         assert resp.json()["detail"][0]["code"] == "email.already_exists"
 
     def test_existing_email_user_can_skip(self, api_client, db):
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550111",
             password="x",
@@ -91,9 +91,6 @@ class TestOnboardingEmail:
 
     def test_complete_onboarding_clears_needs_password_reset(self, api_client, db):
         """A user forced into a reset (via self-service magic link) is cleared on submit."""
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550112",
             password="x",
@@ -120,9 +117,6 @@ class TestOnboardingEmail:
 
     def test_complete_onboarding_rejects_reusing_usable_password(self, api_client, db):
         """A user who still has a usable password can't 'reset' to the same one."""
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550113",
             password="SamePass123!",
@@ -144,9 +138,6 @@ class TestOnboardingEmail:
     def test_complete_onboarding_reset_user_can_set_any_password(self, api_client, db):
         """A forced-reset user has an unusable password, so the reuse check must NOT
         false-positive and block them from setting a password."""
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550114",
             password="x",
@@ -169,8 +160,6 @@ class TestOnboardingEmail:
 @pytest.mark.django_db
 class TestSmsConsentSerialized:
     def test_me_reports_needs_sms_consent_when_null(self, api_client, needs_onboarding_user):
-        from ninja_jwt.tokens import RefreshToken
-
         needs_onboarding_user.sms_consent_at = None
         needs_onboarding_user.save(update_fields=["sms_consent_at"])
         token = RefreshToken.for_user(needs_onboarding_user).access_token
@@ -231,10 +220,6 @@ class TestOnboardingConsent:
     def test_accept_does_not_overwrite_existing_consent(
         self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
     ):
-        from datetime import timedelta
-
-        from django.utils import timezone
-
         earlier = timezone.now() - timedelta(days=30)
         needs_onboarding_user.guidelines_consent_at = earlier
         needs_onboarding_user.save(update_fields=["guidelines_consent_at"])

@@ -3,6 +3,7 @@
 import pytest
 from community._validation import Code
 from tests._asserts import assert_error_code
+from users.models import User
 from users.roles import Role
 
 
@@ -29,8 +30,6 @@ class TestCreateUser:
         assert response.status_code == 201
 
     def test_create_user_non_admin_cannot_assign_admin_role(self, api_client, manage_users_headers):
-        from users.models import User
-
         admin_role = Role.objects.get(name="admin")
         response = api_client.post(
             "/api/auth/create-user/",
@@ -56,8 +55,6 @@ class TestCreateUser:
         assert_error_code(response, Code.Role.NOT_FOUND, "role_id")
 
     def test_create_user_sets_needs_onboarding(self, api_client, manage_users_headers):
-        from users.models import User
-
         response = api_client.post(
             "/api/auth/create-user/",
             {"phone_number": "+12025550903"},
@@ -194,8 +191,6 @@ class TestSearchUsers:
         assert response.status_code == 401
 
     def test_search_limits_to_ten_results(self, api_client, auth_headers, db):
-        from users.models import User
-
         for i in range(15):
             User.objects.create_user(
                 phone_number=f"+1555001{i:04d}",

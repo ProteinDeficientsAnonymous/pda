@@ -6,6 +6,7 @@ import re
 import time
 from urllib.request import Request, urlopen
 
+import jwt as pyjwt
 from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
 from django.conf import settings
@@ -14,7 +15,7 @@ from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
 
-from community._shared import ErrorOut, _optional_jwt, flatten_to_single_line
+from community._shared import ErrorOut, _optional_jwt, flatten_to_single_line, logger
 from community._validation import Code, raise_validation
 from community.models import FeedbackType
 
@@ -102,8 +103,6 @@ def _build_feedback_metadata(meta: FeedbackMetadataIn) -> str:
 
 
 def _get_github_app_token(app_id: str, private_key_pem: str, installation_id: str) -> str:
-    import jwt as pyjwt
-
     now = int(time.time())
     app_jwt: str = pyjwt.encode(
         {"iat": now - 60, "exp": now + 540, "iss": app_id},
@@ -176,8 +175,6 @@ def _issue_labels(feedback_types: list[FeedbackType]) -> list[str]:
 )
 @rate_limit(key_func=auth_or_ip_key, rate="5/h")
 def submit_feedback(request, payload: FeedbackIn):
-    from community._shared import logger
-
     app_id = settings.GITHUB_APP_ID
     private_key = settings.GITHUB_APP_PRIVATE_KEY
     installation_id = settings.GITHUB_APP_INSTALLATION_ID

@@ -1,9 +1,11 @@
 """Tests for EventPoll endpoints: create, get, vote, finalize, delete."""
 
 import json
+import uuid
 
 import pytest
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
+from ninja_jwt.tokens import RefreshToken
 from users.models import User  # noqa: F401 (imported for create_user side effect)
 
 from tests.conftest import future_iso
@@ -33,8 +35,6 @@ def other_user(db):
 
 @pytest.fixture
 def other_headers(other_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(other_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -124,8 +124,6 @@ class TestCreatePoll:
         assert response.status_code == 401
 
     def test_create_poll_event_not_found(self, api_client, auth_headers):
-        import uuid
-
         payload = {"options": [future_iso(days=120), future_iso(days=121)]}
         response = api_client.post(
             f"/api/community/events/{uuid.uuid4()}/poll/",
@@ -243,8 +241,6 @@ class TestVoteOnPoll:
         assert response.status_code == 400
 
     def test_vote_invalid_option_id(self, api_client, auth_headers, poll_with_options, poll_event):
-        import uuid
-
         payload = {"votes": {str(uuid.uuid4()): PollAvailability.YES}}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/vote/",
@@ -336,8 +332,6 @@ class TestFinalizePoll:
         assert response.status_code == 400
 
     def test_finalize_invalid_option(self, api_client, auth_headers, poll_with_options, poll_event):
-        import uuid
-
         payload = {"winning_option_id": str(uuid.uuid4())}
         response = api_client.post(
             f"/api/community/events/{poll_event.id}/poll/finalize/",
