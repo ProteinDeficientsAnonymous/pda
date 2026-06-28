@@ -213,3 +213,39 @@ describe('RsvpSection — +1 toggle', () => {
     expect(screen.queryByRole('button', { name: /\+1/ })).not.toBeInTheDocument();
   });
 });
+
+describe('RsvpSection — waitlist label at capacity (issue #584)', () => {
+  it('shows "join the waitlist" instead of "i\'m going" when the event is full and I am not attending', () => {
+    renderSection(makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: null }));
+
+    expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+  });
+
+  it('keeps the "i\'m going" label when the event has spots left', () => {
+    renderSection(makeEvent({ maxAttendees: 4, attendingCount: 2, myRsvp: null }));
+
+    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'join the waitlist' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the "i\'m going" label when I am already attending, even at capacity', () => {
+    renderSection(
+      makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: RsvpServerStatus.Attending }),
+    );
+
+    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'join the waitlist' })).not.toBeInTheDocument();
+  });
+
+  it('tapping "join the waitlist" still sends status: attending (server auto-waitlists)', () => {
+    renderSection(makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: null }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'join the waitlist' }));
+
+    expect(setRsvpMutate).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      status: RsvpServerStatus.Attending,
+    });
+  });
+});
