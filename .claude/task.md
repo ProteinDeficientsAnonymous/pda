@@ -5,7 +5,7 @@
 **Acceptance criteria:** see issue #588 body.
 
 ## Pipeline stage
-review
+done
 
 ## Restart count
 0
@@ -17,3 +17,4 @@ review
 - work: added comments rule (no verbose/redundant comments; comment only non-obvious why; no what-restating; no multi-line blocks)
 - review: code-reviewer subagent round 1 -> no high/medium findings; clean
 - ci: backend green (1032 passed, ty, complexity, schemas); frontend green in isolation (JoinScreen timeouts were machine-contention flakes, pass 10/10 alone); change is doc-only
+- pr: opened draft PR #591 (https://github.com/ProteinDeficientsAnonymous/pda/pull/591)
