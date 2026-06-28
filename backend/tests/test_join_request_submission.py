@@ -403,7 +403,9 @@ class TestJoinRequestSubmission:
         def _fail(*args, **kwargs):
             raise RuntimeError("notification service down")
 
-        monkeypatch.setattr("community._join_requests.create_join_request_notifications", _fail)
+        monkeypatch.setattr(
+            "community._join_request_submit.create_join_request_notifications", _fail
+        )
         response = api_client.post(
             "/api/community/join-request/",
             {

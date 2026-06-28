@@ -1,4 +1,7 @@
-"""Join request submission, management, and check-phone endpoints."""
+"""Admin-side join request management: list, approve/reject, unreject.
+
+Public submission + phone-check endpoints live in ``_join_request_submit.py``.
+"""
 
 import logging
 from datetime import datetime, timedelta
@@ -6,30 +9,22 @@ from uuid import UUID
 
 from config.audit import audit_log
 from config.auth import gated_jwt
-from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
-from django.core.mail import send_mail
+from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from notifications.service import create_join_request_notifications
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, Field
 from users.models import User
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
 from community._join_request_approval import _provision_approved_user
-from community._shared import (
-    ErrorOut,
-    _validate_phone,
-    flatten_to_single_line,
-    logger,
-    validate_display_name,
-)
-from community._validation import Code, ValidationException, raise_validation
+from community._shared import ErrorOut
+from community._validation import Code, raise_validation
 from community.models import (
-    JoinFormQuestion,
-    JoinFormQuestionType,
+    EventRSVP,
+    EventType,
     JoinRequest,
     JoinRequestStatus,
 )
@@ -39,38 +34,6 @@ router = Router()
 # Approved members stay visible in the join requests list for this many days
 # after they complete onboarding, so admins can confirm someone logged in.
 APPROVED_GRACE_DAYS = 3
-
-
-class JoinRequestIn(BaseModel):
-    display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
-    phone_number: str = Field(max_length=FieldLimit.PHONE)
-    email: EmailStr
-    answers: dict[str, str] = {}
-    # SMS consent. UI presents a required checkbox tied to /sms-policy;
-    # we record consent timestamp on the join request as proof for Twilio's
-    # toll-free verification + ongoing TCPA defensibility. The automated SMS
-    # send path is deferred (see #501); consent is retained for manual
-    # group-texting and possible future automation.
-    sms_consent: bool = False
-    # Community-guidelines consent. UI presents a required checkbox tied to
-    # /guidelines; we record the consent timestamp on the join request.
-    guidelines_consent: bool = False
-    # Honeypot: hidden field human users never fill in. Bots auto-complete
-    # every input, so a non-empty value is a strong spam signal.
-    website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
-
-    @field_validator("answers")
-    @classmethod
-    def validate_answer_lengths(cls, v: dict[str, str]) -> dict[str, str]:
-        for key, answer in v.items():
-            if len(answer) > FieldLimit.DESCRIPTION:
-                raise_validation(
-                    Code.JoinRequest.ANSWER_TOO_LONG,
-                    field=f"answers.{key}",
-                    label=key,
-                    max=FieldLimit.DESCRIPTION,
-                )
-        return v
 
 
 class JoinRequestAnswerOut(BaseModel):
@@ -93,6 +56,9 @@ class JoinRequestOut(BaseModel):
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
     onboarded_at: datetime | None = None
+    # RSVPs the linked (non-member) user holds on official events. Lets admins
+    # see prior engagement before approving; 0 when no user is attached.
+    attached_user_official_rsvp_count: int = 0
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -108,23 +74,29 @@ class ApproveJoinRequestOut(BaseModel):
     user_id: str | None = None
 
 
-class CheckPhoneOut(BaseModel):
-    status: str  # "member" | "pending" | "unknown"
-
-
-class CheckPhoneIn(BaseModel):
-    phone_number: str = Field(max_length=FieldLimit.PHONE)
-
-
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
     ]
-    user = User.objects.filter(phone_number=jr.phone_number).first()
+    # Prefer the FK so user_id/onboarded_at stay consistent with the RSVP count
+    # for email-matched links (where the linked user's phone differs from the
+    # request's); fall back to the phone match for unlinked create/reactivate rows.
+    user = jr.user or User.objects.filter(phone_number=jr.phone_number).first()
     previously_archived = bool(
         User.objects.filter(phone_number=jr.phone_number, archived_at__isnull=False).exists()
     )
+    # The list endpoint annotates this to avoid an N+1 count; single-row callers
+    # have no annotation, so fall back to a direct count.
+    annotated = getattr(jr, "official_rsvp_count", None)
+    if annotated is not None:
+        official_rsvp_count = annotated
+    elif jr.user_id:
+        official_rsvp_count = EventRSVP.objects.filter(
+            user_id=jr.user_id, event__event_type=EventType.OFFICIAL
+        ).count()
+    else:
+        official_rsvp_count = 0
     return JoinRequestOut(
         id=str(jr.id),
         display_name=jr.display_name,
@@ -139,160 +111,8 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.display_name if jr.rejected_by else None,
         onboarded_at=user.onboarded_at if user else None,
+        attached_user_official_rsvp_count=official_rsvp_count,
     )
-
-
-def _validate_answers(
-    answers: dict[str, str],
-    questions: dict[str, JoinFormQuestion],
-) -> None:
-    """Validate answers against questions. Raises ValidationException on failure."""
-    for q_id, q in questions.items():
-        answer = answers.get(q_id, "").strip()
-        if q.required and not answer:
-            raise_validation(
-                Code.JoinRequest.ANSWER_REQUIRED,
-                field=f"answers.{q_id}",
-                label=q.label,
-            )
-        if (
-            q.field_type == JoinFormQuestionType.SELECT
-            and answer
-            and answer not in (q.options or [])
-        ):
-            raise_validation(
-                Code.JoinRequest.ANSWER_INVALID_OPTION,
-                field=f"answers.{q_id}",
-                label=q.label,
-            )
-
-
-def _build_custom_answers(
-    answers: dict[str, str],
-    questions: dict[str, JoinFormQuestion],
-) -> dict:
-    """Snapshot answers with their labels."""
-    result = {}
-    for q_id, q in questions.items():
-        answer = answers.get(q_id, "").strip()
-        if answer:
-            result[q_id] = {"label": q.label, "answer": answer}
-    return result
-
-
-def _send_join_request_email(display_name: str, phone: str, custom_answers: dict) -> None:
-    """Send vetting email for a new join request."""
-    if not settings.VETTING_EMAIL:
-        return
-    try:
-        # Subject must stay single-line: a newline in display_name would
-        # otherwise let an applicant forge additional email headers.
-        safe_subject = flatten_to_single_line(f"New PDA Join Request: {display_name}")
-        answer_lines = "\n".join(
-            f"{data['label']}: {data['answer']}" for data in custom_answers.values()
-        )
-        send_mail(
-            subject=safe_subject,
-            message=f"Display Name: {display_name}\nPhone: {phone}\n\n{answer_lines}",
-            from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
-            recipient_list=[settings.VETTING_EMAIL],
-        )
-    except Exception:
-        logger.exception("Failed to send vetting email for join request")
-
-
-def _honeypot_decoy_response(display_name: str, phone_number: str) -> JoinRequestOut:
-    """Mimic a real submission's shape so bots register success and stop retrying."""
-    return JoinRequestOut(
-        id="",
-        display_name=display_name,
-        phone_number=phone_number,
-        submitted_at=timezone.now(),
-        status=JoinRequestStatus.PENDING,
-    )
-
-
-def _check_submission_conflicts(validated_phone: str, normalized_email: str) -> None:
-    """Raise ValidationException if phone or email is already taken.
-
-    Archived accounts are ignored so a former member can re-join with the
-    same phone/email. Catching the email collision here (parallel to the
-    phone check) means an applicant sees the error on the form rather than
-    the admin hitting it at approval time.
-    """
-    if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
-        raise_validation(Code.JoinRequest.PHONE_ALREADY_INVITED, status_code=409)
-    if (
-        normalized_email
-        and User.objects.filter(email=normalized_email, archived_at__isnull=True).exists()
-    ):
-        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
-    if JoinRequest.objects.filter(
-        phone_number=validated_phone, status=JoinRequestStatus.PENDING
-    ).exists():
-        raise_validation(Code.JoinRequest.PHONE_ALREADY_PENDING, status_code=400)
-
-
-@router.post(
-    "/join-request/",
-    response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut, 429: ErrorOut},
-    auth=None,
-)
-@rate_limit(key_func=client_ip, rate="3/h")
-def submit_join_request(request, payload: JoinRequestIn):
-    display_name = payload.display_name.strip()
-
-    # Honeypot trip — silently 201 without persisting so bots don't retry.
-    if payload.website.strip():
-        audit_log(
-            logging.WARNING,
-            "join_request_honeypot_tripped",
-            request,
-            details={"display_name": display_name},
-        )
-        return Status(201, _honeypot_decoy_response(display_name, payload.phone_number))
-
-    if not payload.sms_consent:
-        raise_validation(Code.JoinRequest.SMS_CONSENT_REQUIRED, field="sms_consent")
-
-    if not payload.guidelines_consent:
-        raise_validation(Code.JoinRequest.GUIDELINES_CONSENT_REQUIRED, field="guidelines_consent")
-
-    validate_display_name(display_name)
-    validated_phone = _validate_phone(payload.phone_number)
-    normalized_email = payload.email.strip().lower()
-    _check_submission_conflicts(validated_phone, normalized_email)
-
-    questions = {str(q.id): q for q in JoinFormQuestion.objects.all()}
-    _validate_answers(payload.answers, questions)
-
-    custom_answers = _build_custom_answers(payload.answers, questions)
-
-    join_request = JoinRequest.objects.create(
-        display_name=display_name,
-        phone_number=validated_phone,
-        email=normalized_email,
-        custom_answers=custom_answers,
-        sms_consent_at=timezone.now(),
-        guidelines_consent_at=timezone.now(),
-    )
-
-    logger.info("Join request submitted by %s", display_name)
-    audit_log(
-        logging.INFO,
-        "join_request_submitted",
-        request,
-        target_type="join_request",
-        target_id=str(join_request.id),
-        details={"display_name": display_name},
-    )
-    _send_join_request_email(display_name, validated_phone, custom_answers)
-    try:
-        create_join_request_notifications(display_name)
-    except Exception:
-        logger.exception("Failed to create join request notifications")
-
-    return Status(201, _join_request_out(join_request))
 
 
 @router.get("/join-requests/", response={200: list[JoinRequestOut], 403: ErrorOut}, auth=gated_jwt)
@@ -318,9 +138,18 @@ def list_join_requests(request):
     legacy_onboarded_phones = User.objects.filter(
         needs_onboarding=False, onboarded_at__isnull=True
     ).values_list("phone_number", flat=True)
-    join_requests = JoinRequest.objects.exclude(
-        status=JoinRequestStatus.APPROVED,
-        phone_number__in=list(expired_phones) + list(legacy_onboarded_phones),
+    join_requests = (
+        JoinRequest.objects.exclude(
+            status=JoinRequestStatus.APPROVED,
+            phone_number__in=list(expired_phones) + list(legacy_onboarded_phones),
+        )
+        .select_related("user", "approved_by", "rejected_by")
+        .annotate(
+            official_rsvp_count=Count(
+                "user__event_rsvps",
+                filter=Q(user__event_rsvps__event__event_type=EventType.OFFICIAL),
+            )
+        )
     )
     return Status(200, [_join_request_out(jr) for jr in join_requests])
 
@@ -380,12 +209,15 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
         raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
 
-    _stamp_decision(join_request, payload.status, request.auth)
-
+    # Stamp + provision together so a mid-provision failure never leaves the
+    # request APPROVED with a half-promoted user (member flag set but no role,
+    # or no magic link issued).
     magic_token = None
     user_created = False
-    if payload.status == JoinRequestStatus.APPROVED:
-        magic_token, user_created = _provision_approved_user(join_request, request.auth)
+    with transaction.atomic():
+        _stamp_decision(join_request, payload.status, request.auth)
+        if payload.status == JoinRequestStatus.APPROVED:
+            magic_token, user_created = _provision_approved_user(join_request, request.auth)
 
     action = (
         "join_request_approved"
@@ -401,7 +233,12 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         details={"display_name": join_request.display_name, "user_created": user_created},
     )
 
-    approved_user = User.objects.filter(phone_number=join_request.phone_number).first()
+    # A promoted non-member is the linked User itself (which may have been
+    # matched by email, so its phone can differ from the request's). Fall back
+    # to the phone lookup for the create/reactivate paths.
+    approved_user = (
+        join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
+    )
     return Status(
         200,
         ApproveJoinRequestOut(
@@ -456,19 +293,3 @@ def unreject_join_request(request, id: UUID):
     )
 
     return Status(200, _join_request_out(join_request))
-
-
-@router.post("/check-phone/", response={200: CheckPhoneOut, 429: ErrorOut}, auth=None)
-@rate_limit(key_func=client_ip, rate="20/h")
-def check_phone(request, payload: CheckPhoneIn):
-    try:
-        normalized = _validate_phone(payload.phone_number)
-    except ValidationException:
-        return Status(200, CheckPhoneOut(status="unknown"))
-    if User.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
-        return Status(200, CheckPhoneOut(status="member"))
-    if JoinRequest.objects.filter(
-        phone_number=normalized, status=JoinRequestStatus.PENDING
-    ).exists():
-        return Status(200, CheckPhoneOut(status="pending"))
-    return Status(200, CheckPhoneOut(status="unknown"))

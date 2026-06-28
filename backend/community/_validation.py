@@ -164,6 +164,10 @@ class Code:
         NOT_FOUND = "join_request.not_found"
         ALREADY_DECIDED = "join_request.already_decided"
         ONLY_REJECTED_CAN_BE_UN_REJECTED = "join_request.only_rejected_can_be_un_rejected"
+        # Phone or email matches an active member — sign in, don't re-apply.
+        # Supersedes PHONE_ALREADY_INVITED (kept below for wire stability, no
+        # longer raised on submit) as the single "already a member" signal.
+        ALREADY_MEMBER = "join_request.already_member"
         PHONE_ALREADY_INVITED = "join_request.phone_already_invited"
         PHONE_ALREADY_PENDING = "join_request.phone_already_pending"
         ANSWER_REQUIRED = "join_request.answer_required"  # params: { label: str }
