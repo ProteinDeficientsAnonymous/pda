@@ -1,0 +1,15 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{% if waitlisted %}you're on the waitlist for {{ event_title|lower }}. we'll email you if a spot opens up.{% else %}you're in for {{ event_title|lower }} 🌱{% endif %}
+{% if event_when %}
+when: {{ event_when|lower }}{% endif %}{% if event_location %}
+where: {{ event_location|lower }}{% endif %}
+{% for link in event_links %}{{ link }}
+{% endfor %}
+manage or change your rsvp anytime:
+
+{{ manage_url }}
+
+rsvping doesn't make you a pda member. want to join? reply to a host or visit the site to request to join.
+
+— pda
