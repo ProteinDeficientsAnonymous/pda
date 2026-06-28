@@ -9330,7 +9330,7 @@
     },
     "/api/community/join-request/": {
       "post": {
-        "operationId": "community__join_request_submit_submit_join_request",
+        "operationId": "submit_join_request",
         "parameters": [],
         "requestBody": {
           "content": {

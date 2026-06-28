@@ -1,9 +1,4 @@
-"""Public join-request submission and phone-check endpoints (unauthenticated).
-
-Admin-side management (list / approve / reject / unreject) lives in
-``_join_requests.py``; the shared ``JoinRequestOut`` schema and its builder are
-imported from there.
-"""
+"""Public join-request submission and phone-check endpoints (unauthenticated)."""
 
 import logging
 
@@ -17,6 +12,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from users.models import User
 
 from community._field_limits import FieldLimit
 from community._join_requests import JoinRequestOut, _join_request_out
@@ -43,17 +39,10 @@ class JoinRequestIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     email: EmailStr
     answers: dict[str, str] = {}
-    # SMS consent. UI presents a required checkbox tied to /sms-policy;
-    # we record consent timestamp on the join request as proof for Twilio's
-    # toll-free verification + ongoing TCPA defensibility. The automated SMS
-    # send path is deferred (see #501); consent is retained for manual
-    # group-texting and possible future automation.
+    # Consent timestamps are recorded on the join request for TCPA/Twilio proof (see #501).
     sms_consent: bool = False
-    # Community-guidelines consent. UI presents a required checkbox tied to
-    # /guidelines; we record the consent timestamp on the join request.
     guidelines_consent: bool = False
-    # Honeypot: hidden field human users never fill in. Bots auto-complete
-    # every input, so a non-empty value is a strong spam signal.
+    # Honeypot: a non-empty value (bots auto-fill it) flags spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
 
     @field_validator("answers")
@@ -121,8 +110,7 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
     if not settings.VETTING_EMAIL:
         return
     try:
-        # Subject must stay single-line: a newline in display_name would
-        # otherwise let an applicant forge additional email headers.
+        # Flatten to single-line so a newline in display_name can't forge email headers.
         safe_subject = flatten_to_single_line(f"New PDA Join Request: {display_name}")
         answer_lines = "\n".join(
             f"{data['label']}: {data['answer']}" for data in custom_answers.values()
@@ -165,8 +153,6 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
     row under the unique-email constraint. The caller uses ``email_claimed`` to
     avoid backfilling an email that would violate it.
     """
-    from users.models import User
-
     phone_user = User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).first()
     email_user = (
         User.objects.filter(email=normalized_email, archived_at__isnull=True).first()
@@ -202,6 +188,7 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
     "/join-request/",
     response={201: JoinRequestOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut, 429: ErrorOut},
     auth=None,
+    operation_id="submit_join_request",
 )
 @rate_limit(key_func=client_ip, rate="3/h")
 def submit_join_request(request, payload: JoinRequestIn):
@@ -274,13 +261,11 @@ def submit_join_request(request, payload: JoinRequestIn):
 @router.post("/check-phone/", response={200: CheckPhoneOut, 429: ErrorOut}, auth=None)
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_phone(request, payload: CheckPhoneIn):
-    from users.models import User as UserModel
-
     try:
         normalized = _validate_phone(payload.phone_number)
     except ValidationException:
         return Status(200, CheckPhoneOut(status="unknown"))
-    if UserModel.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
+    if User.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
         return Status(200, CheckPhoneOut(status="member"))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING
