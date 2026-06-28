@@ -1,9 +1,3 @@
-// Email-blast compose dialog for event hosts/co-hosts.
-//
-// Two steps: compose (subject + message + audience + recipient preview) then a
-// confirm step (blasts are irreversible). On success, a toast shows how many
-// were emailed and how many were skipped for having no email on file.
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useEmailBlast } from '@/api/eventBlast';
@@ -23,26 +17,25 @@ interface Props {
 const SUBJECT_MAX = 150;
 const MESSAGE_MAX = 5000;
 
-// Audience presets map to backend RSVPStatus lists. `everyone` omits the
-// audience so the backend defaults to all RSVP statuses (including can't-go).
 const AUDIENCE_EVERYONE = 'everyone';
 const AUDIENCE_GOING = 'going';
-const AUDIENCE_GOING_MAYBE = 'going_maybe';
+const AUDIENCE_WAITLISTED = 'waitlisted';
+const AUDIENCE_MAYBE = 'maybe';
+const AUDIENCE_CANT_GO = 'cant_go';
 
 const AUDIENCE_OPTIONS = [
-  { value: AUDIENCE_EVERYONE, label: "everyone who rsvp'd (incl. can't go)" },
-  { value: AUDIENCE_GOING, label: 'going + waitlist' },
-  { value: AUDIENCE_GOING_MAYBE, label: 'going + waitlist + maybe' },
+  { value: AUDIENCE_EVERYONE, label: "everyone who rsvp'd" },
+  { value: AUDIENCE_GOING, label: 'going' },
+  { value: AUDIENCE_WAITLISTED, label: 'waitlisted' },
+  { value: AUDIENCE_MAYBE, label: 'maybe' },
+  { value: AUDIENCE_CANT_GO, label: "can't go" },
 ];
 
 function statusesForAudience(audience: string): string[] | null {
-  if (audience === AUDIENCE_GOING) {
-    return [RsvpServerStatus.Attending, RsvpServerStatus.Waitlisted];
-  }
-  if (audience === AUDIENCE_GOING_MAYBE) {
-    return [RsvpServerStatus.Attending, RsvpServerStatus.Waitlisted, RsvpServerStatus.Maybe];
-  }
-  // everyone → let the backend apply its default (all statuses)
+  if (audience === AUDIENCE_GOING) return [RsvpServerStatus.Attending];
+  if (audience === AUDIENCE_WAITLISTED) return [RsvpServerStatus.Waitlisted];
+  if (audience === AUDIENCE_MAYBE) return [RsvpServerStatus.Maybe];
+  if (audience === AUDIENCE_CANT_GO) return [RsvpServerStatus.CantGo];
   return null;
 }
 

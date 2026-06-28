@@ -172,7 +172,50 @@ describe('EmailBlastDialog', () => {
       expect(mutateAsyncMock).toHaveBeenCalledWith({
         subject: 'hi',
         message: 'going folks only',
-        audience: ['attending', 'waitlisted'],
+        audience: ['attending'],
+      });
+    });
+  });
+
+  it('treats waitlisted as its own audience separate from going', async () => {
+    mutateAsyncMock.mockResolvedValue({
+      sent_count: 1,
+      skipped_no_email_count: 0,
+      failed_count: 0,
+    });
+    renderDialog(makeEvent([...THREE_GUESTS, guest('waitlisted', 4)]));
+    await userEvent.type(screen.getByLabelText('subject'), 'hi');
+    await userEvent.type(screen.getByLabelText('message'), 'waitlist only');
+    await userEvent.selectOptions(screen.getByLabelText('send to'), 'waitlisted');
+    expect(screen.getByText(/emailing 1 attendee\b/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /next/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^send$/i }));
+    await waitFor(() => {
+      expect(mutateAsyncMock).toHaveBeenCalledWith({
+        subject: 'hi',
+        message: 'waitlist only',
+        audience: ['waitlisted'],
+      });
+    });
+  });
+
+  it("targets the can't-go audience", async () => {
+    mutateAsyncMock.mockResolvedValue({
+      sent_count: 1,
+      skipped_no_email_count: 0,
+      failed_count: 0,
+    });
+    renderDialog(makeEvent(THREE_GUESTS));
+    await userEvent.type(screen.getByLabelText('subject'), 'hi');
+    await userEvent.type(screen.getByLabelText('message'), 'sorry you missed it');
+    await userEvent.selectOptions(screen.getByLabelText('send to'), 'cant_go');
+    await userEvent.click(screen.getByRole('button', { name: /next/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^send$/i }));
+    await waitFor(() => {
+      expect(mutateAsyncMock).toHaveBeenCalledWith({
+        subject: 'hi',
+        message: 'sorry you missed it',
+        audience: ['cant_go'],
       });
     });
   });

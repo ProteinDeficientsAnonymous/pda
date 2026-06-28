@@ -54,9 +54,6 @@ function AdminActionRow({
   const isCancelled = event.status === EventStatus.Cancelled;
   const isDraft = event.status === EventStatus.Draft;
   const hasNoAttendees = event.attendingCount === 0;
-  // Email-blast targets everyone who RSVP'd (any status), so gate on the full
-  // guest list rather than just the attending count. Hidden for drafts (no one
-  // can RSVP yet).
   const canEmailAttendees = !isDraft && event.guests.length > 0;
   const canDelete = (isCreator || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees;
