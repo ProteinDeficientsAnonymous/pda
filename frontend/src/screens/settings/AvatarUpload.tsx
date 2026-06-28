@@ -6,14 +6,10 @@ import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { cn } from '@/utils/cn';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/heic',
-  'image/heif',
-];
+// Only formats the browser can decode into a canvas for cropping. heic/heif
+// (apple photos default) can't be decoded client-side, so we don't offer them
+// — the crop step would silently fail otherwise (issue 505).
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 interface Props {
   size?: 'md' | 'lg';
@@ -45,7 +41,7 @@ export function AvatarUpload({ size = 'md' }: Props) {
     e.target.value = '';
     if (!f) return;
     if (!ALLOWED_MIME.includes(f.type)) {
-      setError('please pick a jpeg, png, webp, gif, or heic image');
+      setError('please pick a jpeg, png, webp, or gif image');
       return;
     }
     if (f.size > MAX_FILE_BYTES) {
