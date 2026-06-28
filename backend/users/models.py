@@ -175,9 +175,11 @@ class NonMemberRsvpToken(models.Model):
 
     This token NEVER logs the user in — it is entirely separate from
     MagicLoginToken (different table, different validation path, narrower scope).
-    It grants scoped read/write to one non-member's RSVPs only. Issued (fresh)
-    on every successful non-member RSVP and delivered by email; old tokens stay
-    valid until they expire. Revoked when the user converts to a member.
+    It grants scoped read/write to one non-member's RSVPs only. On a non-member's
+    RSVP we EXTEND their existing valid token (see issue_or_extend) rather than
+    minting a new one, so a link saved from a previous email keeps working; a
+    fresh token is only issued when there is no valid one. Revoked when the user
+    converts to a member.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -227,6 +229,27 @@ class NonMemberRsvpToken(models.Model):
             token=secrets.token_urlsafe(32),
             expires_at=timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS),
         )
+
+    @classmethod
+    def issue_or_extend(cls, user: "User") -> "NonMemberRsvpToken":
+        """Return a usable non-member RSVP token, reusing one when possible.
+
+        Called on each non-member RSVP. If the user already has a valid (not
+        expired, not revoked) token, its expiry is pushed out to 90 days from
+        now and the SAME token string is kept — so a link saved from a previous
+        email keeps resolving. Otherwise a fresh token is issued. Newest token
+        wins when several exist (Meta.ordering is -created_at).
+
+        Rejects members, like issue(): a member must use the member flow.
+        """
+        if user.is_member:
+            raise ValidationError("Cannot issue a non-member RSVP token for a member.")
+        existing = user.rsvp_tokens.first()
+        if existing is not None and existing.is_valid:
+            existing.expires_at = timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+            existing.save(update_fields=["expires_at"])
+            return existing
+        return cls.issue(user)
 
     @classmethod
     def resolve_user(cls, token: str) -> "User | None":

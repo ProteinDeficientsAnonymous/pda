@@ -58,6 +58,75 @@ class TestIssue:
 
 
 @pytest.mark.django_db
+class TestIssueOrExtend:
+    def test_first_call_issues_a_fresh_token(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        token = NonMemberRsvpToken.issue_or_extend(non_member)
+        assert token.user_id == non_member.id
+        assert token.is_valid
+        assert NonMemberRsvpToken.objects.filter(user=non_member).count() == 1
+
+    def test_extends_existing_valid_token_without_replacing_it(self, non_member):
+        from users.models import NON_MEMBER_RSVP_TOKEN_TTL_DAYS, NonMemberRsvpToken
+
+        first = NonMemberRsvpToken.issue(non_member)
+        # Pull expiry back so the extension is observable.
+        first.expires_at = timezone.now() + timedelta(days=1)
+        first.save(update_fields=["expires_at"])
+
+        before = timezone.now()
+        extended = NonMemberRsvpToken.issue_or_extend(non_member)
+
+        # Same row, same token string — a previously emailed link still resolves.
+        assert extended.pk == first.pk
+        assert extended.token == first.token
+        assert NonMemberRsvpToken.objects.filter(user=non_member).count() == 1
+
+        expected = before + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
+        assert abs((extended.expires_at - expected).total_seconds()) < 60
+        # The old URL still resolves after extension.
+        assert NonMemberRsvpToken.resolve_user(first.token) == non_member
+
+    def test_issues_fresh_token_when_existing_is_expired(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        stale = NonMemberRsvpToken.issue(non_member)
+        stale.expires_at = timezone.now() - timedelta(seconds=1)
+        stale.save(update_fields=["expires_at"])
+
+        fresh = NonMemberRsvpToken.issue_or_extend(non_member)
+        assert fresh.pk != stale.pk
+        assert fresh.token != stale.token
+        assert fresh.is_valid
+        assert NonMemberRsvpToken.objects.filter(user=non_member).count() == 2
+
+    def test_issues_fresh_token_when_existing_is_revoked(self, non_member):
+        from users.models import NonMemberRsvpToken
+
+        revoked = NonMemberRsvpToken.issue(non_member)
+        revoked.revoke()
+
+        fresh = NonMemberRsvpToken.issue_or_extend(non_member)
+        assert fresh.pk != revoked.pk
+        assert fresh.is_valid
+        # The revoked token stays revoked.
+        revoked.refresh_from_db()
+        assert revoked.is_revoked
+
+    def test_rejects_member(self, db):
+        from users.models import NonMemberRsvpToken, User
+
+        member = User.objects.create_user(
+            phone_number="+12025559003",
+            display_name="Member",
+            is_member=True,
+        )
+        with pytest.raises(ValidationError):
+            NonMemberRsvpToken.issue_or_extend(member)
+
+
+@pytest.mark.django_db
 class TestResolveUser:
     def test_valid_token_resolves_to_user(self, non_member):
         from users.models import NonMemberRsvpToken
