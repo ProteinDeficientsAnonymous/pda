@@ -12,7 +12,7 @@ import type { CropShape } from './ImageCropDialog';
 // ImageCropDialog applies it as maxHeight on the .ReactCrop element.
 export const MAX_PREVIEW_PX = 320;
 
-// Fraction of the shorter edge the initial crop covers.
+// Fraction of the shorter edge the initial round crop covers (rect fills the image).
 const INITIAL_FILL = 0.8;
 
 export function initialCrop(width: number, height: number, shape: CropShape): PercentCrop {
@@ -29,11 +29,8 @@ export function initialCrop(width: number, height: number, shape: CropShape): Pe
     );
   }
 
-  // Rect (free-form): a flat 80% box. Rendered height is already capped by the
-  // dialog, so 80% always lands inside the visible preview.
-  return centerCrop(
-    { unit: '%', x: 0, y: 0, width: INITIAL_FILL * 100, height: INITIAL_FILL * 100 },
-    width,
-    height,
-  );
+  // Rect (free-form): default to the whole image so the full photo is the initial
+  // crop, matching the photo's own shape instead of an inset frame the user must
+  // drag out to. Users can still drag the edges in to crop tighter. (Issue 514.)
+  return centerCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 }, width, height);
 }
