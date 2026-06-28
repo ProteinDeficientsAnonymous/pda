@@ -42,8 +42,6 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   // toggle reflects the wrong user (issue #368).
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
-  // spotsLeft is null for unlimited capacity, 0 once full — so "no spots left"
-  // is exactly spotsLeft === 0 (single source of truth with the SpotsLeft pill).
   const atCapacity = spotsLeft(event) === 0;
 
   async function apply(next: InputStatus) {

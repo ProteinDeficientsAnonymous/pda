@@ -214,7 +214,6 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 waitlisted_count=_waitlisted_count(e),
                 invited_count=e.invited_users.count(),
                 comment_count=e.comment_count,
-                # Reuses the prefetched rsvps — no extra query per event.
                 my_rsvp=_find_my_rsvp(e.rsvps.all(), auth_user),
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
                 co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
