@@ -1115,7 +1115,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Join Request */
-        post: operations["community__join_request_submit_submit_join_request"];
+        post: operations["submit_join_request"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6870,7 +6870,7 @@ export interface operations {
             };
         };
     };
-    community__join_request_submit_submit_join_request: {
+    submit_join_request: {
         parameters: {
             query?: never;
             header?: never;

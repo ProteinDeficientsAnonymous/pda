@@ -1,10 +1,14 @@
 """User provisioning for approved join requests (create / reactivate / promote)."""
 
+from django.utils import timezone
+from users._helpers import ConsentTimestamps, _create_magic_token
+from users.api import _create_user_with_role
+from users.models import NonMemberRsvpToken, User
+from users.roles import Role
+
 
 def _reactivate_archived_user(existing_user, join_request):
     """Un-archive an existing user on re-approval, carrying any new consents."""
-    from users._helpers import _create_magic_token
-
     existing_user.archived_at = None
     existing_user.needs_onboarding = True
     existing_user.display_name = join_request.display_name
@@ -31,11 +35,6 @@ def _promote_non_member(user, join_request):
     full history instead of orphaning it under a fresh account. Outstanding
     scoped RSVP tokens are revoked — the member flow replaces them.
     """
-    from django.utils import timezone
-    from users._helpers import _create_magic_token
-    from users.models import NonMemberRsvpToken
-    from users.roles import Role
-
     user.is_member = True
     user.needs_onboarding = True
     user.display_name = join_request.display_name
@@ -69,18 +68,12 @@ def _provision_approved_user(join_request, requesting_user):
     Returns (magic_token, user_created). When the phone number already maps to an
     active member, nothing is provisioned and (None, False) is returned.
     """
-    from users.api import _create_user_with_role
-    from users.models import User
-
-    # A linked non-member is promoted in place. The FK is SET_NULL, so a deleted
-    # User leaves join_request.user None and we fall through to creation.
+    # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
     if join_request.user is not None and not join_request.user.is_member:
         return _promote_non_member(join_request.user, join_request), False
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:
-        from users._helpers import ConsentTimestamps
-
         _, magic_token = _create_user_with_role(
             join_request.phone_number,
             join_request.display_name,

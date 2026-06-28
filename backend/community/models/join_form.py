@@ -33,10 +33,7 @@ class JoinRequest(models.Model):
     display_name = models.CharField(max_length=64)
     phone_number = models.CharField(max_length=20)
     email = models.EmailField(blank=True, default="")
-    # Links to an existing non-member User (from public RSVP) so approval can
-    # promote that row in place, keeping its prior RSVPs, instead of minting a
-    # duplicate. SET_NULL — not CASCADE — so a User deleted before approval
-    # leaves the request intact and we fall back to creating a fresh User.
+    # Links a public-RSVP non-member so approval promotes that row in place; SET_NULL keeps the request if the user is deleted.
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
