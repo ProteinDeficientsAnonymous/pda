@@ -180,3 +180,34 @@ class EventFlag(models.Model):
 
     def __str__(self):
         return f"Flag on '{self.event.title}' by {self.flagged_by}"
+
+
+class EventEmailBlast(models.Model):
+    """A record of an email blast a host sent to an event's attendees.
+
+    Persisted so hosts have a history ("last sent") and for auditability. The
+    body is stored verbatim; recipient addresses are never stored here.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="email_blasts")
+    sender = models.ForeignKey(
+        "users.User", null=True, on_delete=models.SET_NULL, related_name="event_email_blasts"
+    )
+    subject = models.CharField(max_length=150)
+    body = models.TextField(max_length=5000)
+    audience = models.CharField(max_length=120, blank=True)
+    # Recipients the blast successfully reached (sends minus failures). The total
+    # attempted is recipient_count + failed_count; skipped (no-email) members are
+    # excluded from both, counted separately in skipped_no_email_count.
+    recipient_count = models.PositiveIntegerField(default=0)
+    skipped_no_email_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = "community"
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        return f"Blast '{self.subject}' to '{self.event.title}'"

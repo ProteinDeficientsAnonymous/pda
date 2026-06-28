@@ -736,6 +736,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/email-blast/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Email Blast
+         * @description Email everyone who RSVP'd to this event in the chosen audience.
+         *
+         *     Host/co-host only. Sends individually (addresses never shared). Records a
+         *     blast history row and writes an audit log.
+         */
+        post: operations["community__event_blasts_send_email_blast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/flag/": {
         parameters: {
             query?: never;
@@ -1758,6 +1781,24 @@ export interface components {
             content_pm?: string | null;
             /** Visibility */
             visibility?: string | null;
+        };
+        /** EmailBlastIn */
+        EmailBlastIn: {
+            /** Audience */
+            audience?: string[] | null;
+            /** Message */
+            message: string;
+            /** Subject */
+            subject: string;
+        };
+        /** EmailBlastOut */
+        EmailBlastOut: {
+            /** Failed Count */
+            failed_count: number;
+            /** Sent Count */
+            sent_count: number;
+            /** Skipped No Email Count */
+            skipped_no_email_count: number;
         };
         /** ErrorOut */
         ErrorOut: {
@@ -5534,6 +5575,68 @@ export interface operations {
             };
             /** @description Unprocessable Content */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_blasts_send_email_blast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailBlastIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailBlastOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

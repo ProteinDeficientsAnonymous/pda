@@ -51,6 +51,8 @@ class Code:
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
+        BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
+        BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
 
     class Poll:
         NOT_FOUND = "poll.not_found"

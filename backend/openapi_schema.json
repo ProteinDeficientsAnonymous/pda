@@ -579,6 +579,65 @@
         "title": "EditablePagePatchIn",
         "type": "object"
       },
+      "EmailBlastIn": {
+        "properties": {
+          "audience": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audience"
+          },
+          "message": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "subject": {
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "message"
+        ],
+        "title": "EmailBlastIn",
+        "type": "object"
+      },
+      "EmailBlastOut": {
+        "properties": {
+          "failed_count": {
+            "title": "Failed Count",
+            "type": "integer"
+          },
+          "sent_count": {
+            "title": "Sent Count",
+            "type": "integer"
+          },
+          "skipped_no_email_count": {
+            "title": "Skipped No Email Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sent_count",
+          "skipped_no_email_count",
+          "failed_count"
+        ],
+        "title": "EmailBlastOut",
+        "type": "object"
+      },
       "ErrorOut": {
         "properties": {
           "detail": {
@@ -7365,6 +7424,95 @@
           }
         ],
         "summary": "Post Reply",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/email-blast/": {
+      "post": {
+        "description": "Email everyone who RSVP'd to this event in the chosen audience.\n\nHost/co-host only. Sends individually (addresses never shared). Records a\nblast history row and writes an audit log.",
+        "operationId": "community__event_blasts_send_email_blast",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailBlastIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailBlastOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Send Email Blast",
         "tags": [
           "community"
         ]
