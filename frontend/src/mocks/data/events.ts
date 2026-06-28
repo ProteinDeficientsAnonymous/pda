@@ -1,8 +1,3 @@
-// Canned events for mock mode. Typed off the generated OpenAPI schema so the
-// fixtures stay in lockstep with the real wire shape (EventListOut for the
-// list, EventOut for detail). All user-facing strings are lowercase per the
-// project copy convention.
-
 import type { components } from '@/api/types.gen';
 
 import { mockUser } from './user';
@@ -10,8 +5,6 @@ import { mockUser } from './user';
 type EventListOut = components['schemas']['EventListOut'];
 type EventOut = components['schemas']['EventOut'];
 
-// Dates are relative to load time so the calendar always has something
-// upcoming to render regardless of when the mock server boots.
 const DAY = 24 * 60 * 60 * 1000;
 const now = Date.now();
 const inDays = (n: number, hour: number) => {
@@ -20,8 +13,6 @@ const inDays = (n: number, hour: number) => {
   return d.toISOString();
 };
 
-// Shared fields common to the list and detail shapes — keeps the two fixtures
-// from drifting apart and avoids restating two dozen defaults per event.
 const baseEvent = {
   allow_plus_ones: false,
   attending_count: 8,

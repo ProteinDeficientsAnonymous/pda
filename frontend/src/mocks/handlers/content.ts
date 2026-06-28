@@ -1,6 +1,3 @@
-// Content-page, version and calendar-token handlers — the data the home/faq/
-// guidelines screens and the app shell need to render.
-
 import { http, HttpResponse } from 'msw';
 
 import {

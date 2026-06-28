@@ -1,8 +1,3 @@
-// Canned current-user + roles for mock mode. Typed off the generated OpenAPI
-// schema so TypeScript flags drift between these fixtures and the real wire
-// shape. The mocked session boots as this member (a superuser so every screen
-// and admin tile is reachable for verification).
-
 import type { components } from '@/api/types.gen';
 
 type UserOut = components['schemas']['UserOut'];
@@ -38,6 +33,4 @@ export const mockUser: UserOut = {
   week_start: 'sunday',
 };
 
-// Static access token handed back by the mocked /refresh/ and /login/ endpoints.
-// The value is never validated server-side in mock mode.
 export const MOCK_ACCESS_TOKEN = 'mock-access-token';
