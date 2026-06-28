@@ -5,6 +5,9 @@ import json
 import pytest
 from community._validation import Code
 from community.models import Event, EventStatus
+from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification
+from users.models import User
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso, past_iso
@@ -12,8 +15,6 @@ from tests.conftest import future_iso, past_iso
 
 @pytest.fixture
 def creator(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+14155550201",
         password="creatorpass123",
@@ -23,16 +24,12 @@ def creator(db):
 
 @pytest.fixture
 def creator_headers(creator):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(creator)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def other_member(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+14155550202",
         password="otherpass123",
@@ -42,16 +39,12 @@ def other_member(db):
 
 @pytest.fixture
 def other_headers(other_member):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(other_member)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def cohost(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+14155550203",
         password="cohostpass123",
@@ -61,16 +54,12 @@ def cohost(db):
 
 @pytest.fixture
 def cohost_headers(cohost):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(cohost)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def invitee(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+14155550204",
         password="inviteepass123",
@@ -159,8 +148,6 @@ class TestCreateDraft:
     def test_invite_to_draft_skips_invitee_notifications(
         self, api_client, creator_headers, invitee, sample_draft
     ):
-        from notifications.models import Notification
-
         response = api_client.post(
             f"/api/community/events/{sample_draft.id}/invitations/",
             data=json.dumps({"user_ids": [str(invitee.pk)]}),
@@ -172,8 +159,6 @@ class TestCreateDraft:
         assert not Notification.objects.filter(recipient=invitee).exists()
 
     def test_create_draft_fires_cohost_notifications(self, api_client, creator_headers, cohost):
-        from notifications.models import Notification
-
         response = api_client.post(
             "/api/community/events/",
             data=json.dumps(
@@ -325,8 +310,6 @@ class TestPatchDraft:
     def test_patch_draft_cohost_adds_fires_notification(
         self, api_client, sample_draft, creator_headers, cohost
     ):
-        from notifications.models import Notification
-
         response = api_client.patch(
             f"/api/community/events/{sample_draft.id}/",
             data=json.dumps({"co_host_ids": [str(cohost.pk)]}),
@@ -354,8 +337,6 @@ class TestPublishDraft:
     def test_publish_draft_fires_invitee_notifications(
         self, api_client, sample_draft, creator_headers, invitee
     ):
-        from notifications.models import Notification
-
         sample_draft.invited_users.add(invitee)
         response = api_client.patch(
             f"/api/community/events/{sample_draft.id}/",

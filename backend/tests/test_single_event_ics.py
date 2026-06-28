@@ -1,12 +1,14 @@
+import uuid
+
 import pytest
+from community.models import Event, EventStatus, EventType, PageVisibility
+from django.utils import timezone
+from users.models import User
 
 
 @pytest.mark.django_db
 class TestSingleEventIcs:
     def test_returns_ics_for_existing_event(self, api_client, test_user):
-        from community.models import Event
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Picnic in the Park",
             description="Bring hummus!",
@@ -24,15 +26,10 @@ class TestSingleEventIcs:
         assert "Prospect Park" in content
 
     def test_returns_404_for_nonexistent_event(self, api_client):
-        import uuid
-
         resp = api_client.get(f"/api/community/events/{uuid.uuid4()}/ics/")
         assert resp.status_code == 404
 
     def test_anon_ics_omits_member_only_links(self, api_client, test_user):
-        from community.models import Event
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Linked Picnic",
             description="Bring hummus!",
@@ -53,9 +50,6 @@ class TestSingleEventIcs:
         assert "example.com/secret" not in content
 
     def test_authed_ics_includes_member_only_links(self, api_client, auth_headers, test_user):
-        from community.models import Event
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Linked Picnic",
             description="Bring hummus!",
@@ -74,10 +68,6 @@ class TestSingleEventIcs:
         assert "Link: https://example.com/secret" in content
 
     def test_invite_only_event_hidden_from_anon(self, api_client, test_user):
-        from community.models import Event, PageVisibility
-        from django.utils import timezone
-        from users.models import User
-
         creator = User.objects.create_user(
             phone_number="+12025559999",
             password="testpass123",
@@ -96,10 +86,6 @@ class TestSingleEventIcs:
         assert resp.status_code == 403
 
     def test_members_only_non_official_event_hidden_from_anon(self, api_client, test_user):
-        from community.models import Event, EventType, PageVisibility
-        from django.utils import timezone
-        from users.models import User
-
         creator = User.objects.create_user(
             phone_number="+12025558888",
             password="testpass123",
@@ -127,9 +113,6 @@ class TestSingleEventIcs:
     def test_members_only_non_official_event_visible_to_member(
         self, api_client, auth_headers, test_user
     ):
-        from community.models import Event, EventType, PageVisibility
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Members Only Potluck",
             start_datetime=timezone.now(),
@@ -143,10 +126,6 @@ class TestSingleEventIcs:
         assert "Members Only Potluck" in resp.content.decode()
 
     def test_draft_event_hidden_from_anon(self, api_client, test_user):
-        from community.models import Event, EventStatus
-        from django.utils import timezone
-        from users.models import User
-
         creator = User.objects.create_user(
             phone_number="+12025557777",
             password="testpass123",
@@ -165,9 +144,6 @@ class TestSingleEventIcs:
         assert "Unpublished Draft" not in resp.content.decode()
 
     def test_deleted_event_hidden(self, api_client, auth_headers, test_user):
-        from community.models import Event, EventStatus
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Deleted Event",
             start_datetime=timezone.now(),
@@ -181,9 +157,6 @@ class TestSingleEventIcs:
         assert "Deleted Event" not in resp.content.decode()
 
     def test_invite_only_event_visible_to_creator(self, api_client, auth_headers, test_user):
-        from community.models import Event, PageVisibility
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Secret Invite Only",
             start_datetime=timezone.now(),
@@ -196,9 +169,6 @@ class TestSingleEventIcs:
         assert "Secret Invite Only" in resp.content.decode()
 
     def test_filename_is_sanitized_against_header_injection(self, api_client, test_user):
-        from community.models import Event
-        from django.utils import timezone
-
         event = Event.objects.create(
             title='evil"\r\nSet-Cookie: x=1',
             start_datetime=timezone.now(),

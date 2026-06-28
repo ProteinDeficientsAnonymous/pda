@@ -4,7 +4,17 @@ import logging
 from unittest.mock import patch
 
 import pytest
-from notifications.email_sender import EmailSender, SendResult
+from django.conf import settings as django_settings
+from notifications import _resend_sender
+from notifications._console_sender import ConsoleSender
+from notifications._resend_sender import ResendSender
+from notifications.email_sender import (
+    EmailSender,
+    SendResult,
+    get_email_sender,
+    reset_email_sender_cache,
+)
+from resend.exceptions import RateLimitError, ResendError, ValidationError
 
 
 class TestSendResult:
@@ -37,8 +47,6 @@ class TestEmailSenderProtocol:
 
 class TestConsoleSender:
     def test_send_returns_success(self):
-        from notifications._console_sender import ConsoleSender
-
         sender = ConsoleSender()
         result = sender.send(
             to="user@example.com",
@@ -50,10 +58,6 @@ class TestConsoleSender:
         assert result.error is None
 
     def test_send_logs_email(self, caplog):
-        import logging
-
-        from notifications._console_sender import ConsoleSender
-
         with caplog.at_level(logging.INFO, logger="notifications.console_sender"):
             ConsoleSender().send(
                 to="user@example.com",
@@ -69,8 +73,6 @@ class TestConsoleSender:
 
 class TestResendSender:
     def test_send_success_returns_message_id(self):
-        from notifications._resend_sender import ResendSender
-
         with patch("resend.Emails.send") as mock_send:
             mock_send.return_value = {"id": "msg_abc123"}
             result = ResendSender().send(
@@ -84,8 +86,6 @@ class TestResendSender:
         assert result.error is None
 
     def test_send_exception_returns_failure(self):
-        from notifications._resend_sender import ResendSender
-
         with patch("resend.Emails.send", side_effect=RuntimeError("boom")):
             result = ResendSender().send(
                 to="user@example.com",
@@ -98,8 +98,6 @@ class TestResendSender:
         assert "boom" in (result.error or "")
 
     def test_send_does_not_log_raw_recipient(self, caplog):
-        from notifications._resend_sender import ResendSender
-
         with patch("resend.Emails.send") as mock_send:
             mock_send.return_value = {"id": "msg_abc123"}
             with caplog.at_level(logging.INFO, logger="notifications.resend_sender"):
@@ -117,9 +115,6 @@ class TestResendSender:
         assert "msg_abc123" in log_text
 
     def test_send_failure_does_not_log_raw_recipient(self, caplog):
-        from notifications._resend_sender import ResendSender
-        from resend.exceptions import ResendError
-
         err = ResendError(
             code="400",
             error_type="validation_error",
@@ -139,10 +134,6 @@ class TestResendSender:
         assert "secret.person@example.com" not in log_text
 
     def test_send_retries_transient_error_then_succeeds(self):
-        from notifications import _resend_sender
-        from notifications._resend_sender import ResendSender
-        from resend.exceptions import RateLimitError
-
         transient = RateLimitError(
             code="429", error_type="rate_limit_exceeded", message="slow down"
         )
@@ -159,9 +150,6 @@ class TestResendSender:
         assert mock_send.call_count == 2
 
     def test_send_does_not_retry_client_error(self):
-        from notifications._resend_sender import ResendSender
-        from resend.exceptions import ValidationError
-
         err = ValidationError(code="400", error_type="validation_error", message="bad")
         with patch("resend.Emails.send", side_effect=err) as mock_send:
             result = ResendSender().send(
@@ -173,9 +161,6 @@ class TestResendSender:
 
     def test_failure_log_reports_true_attempt_count(self, caplog):
         """A non-retryable error breaks after one try; the log must say attempts=1."""
-        from notifications._resend_sender import ResendSender
-        from resend.exceptions import ValidationError
-
         err = ValidationError(code="400", error_type="validation_error", message="bad")
         with patch("resend.Emails.send", side_effect=err):
             with caplog.at_level(logging.WARNING, logger="notifications.resend_sender"):
@@ -187,10 +172,6 @@ class TestResendSender:
         assert "attempts=1" in failure_logs[0]
 
     def test_send_gives_up_after_max_attempts(self):
-        from notifications import _resend_sender
-        from notifications._resend_sender import ResendSender
-        from resend.exceptions import RateLimitError
-
         transient = RateLimitError(
             code="429", error_type="rate_limit_exceeded", message="slow down"
         )
@@ -203,8 +184,6 @@ class TestResendSender:
         assert mock_send.call_count == _resend_sender._MAX_ATTEMPTS
 
     def test_send_uses_from_email_from_settings(self, settings):
-        from notifications._resend_sender import ResendSender
-
         settings.RESEND_FROM_EMAIL = "noreply@example.com"
         settings.RESEND_API_KEY = "test_key"
         with patch("resend.Emails.send") as mock_send:
@@ -229,9 +208,6 @@ class TestResendSender:
 
 class TestGetEmailSender:
     def test_returns_resend_sender_when_key_set(self, settings):
-        from notifications._resend_sender import ResendSender
-        from notifications.email_sender import get_email_sender, reset_email_sender_cache
-
         reset_email_sender_cache()
         settings.RESEND_API_KEY = "test_key"
         settings.RESEND_FROM_EMAIL = "noreply@example.com"
@@ -242,9 +218,6 @@ class TestGetEmailSender:
             reset_email_sender_cache()
 
     def test_returns_console_sender_when_no_key_in_dev(self, settings):
-        from notifications._console_sender import ConsoleSender
-        from notifications.email_sender import get_email_sender, reset_email_sender_cache
-
         reset_email_sender_cache()
         settings.RESEND_API_KEY = ""
         try:
@@ -254,8 +227,6 @@ class TestGetEmailSender:
             reset_email_sender_cache()
 
     def test_caches_sender_across_calls(self, settings):
-        from notifications.email_sender import get_email_sender, reset_email_sender_cache
-
         reset_email_sender_cache()
         settings.RESEND_API_KEY = ""
         try:
@@ -266,12 +237,9 @@ class TestGetEmailSender:
             reset_email_sender_cache()
 
     def test_raises_in_production_with_no_key(self, monkeypatch):
-        from django.conf import settings
-        from notifications.email_sender import get_email_sender, reset_email_sender_cache
-
         reset_email_sender_cache()
-        monkeypatch.setattr(settings, "RESEND_API_KEY", "")
-        monkeypatch.setattr(settings, "IS_PRODUCTION", True)
+        monkeypatch.setattr(django_settings, "RESEND_API_KEY", "")
+        monkeypatch.setattr(django_settings, "IS_PRODUCTION", True)
         try:
             with pytest.raises(RuntimeError, match="RESEND_API_KEY"):
                 get_email_sender()

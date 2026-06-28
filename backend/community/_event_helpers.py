@@ -5,10 +5,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from config.media_proxy import media_path
+from django.db.models import Case, IntegerField, Sum, Value, When
+from notifications.service import (
+    broadcast_cohost_change,
+    create_cohost_invite_notifications,
+    create_event_invite_notifications,
+    create_waitlist_promoted_notifications,
+)
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import (
+    diff_cohost_invites,
     get_my_pending_invite,
     get_pending_invites_for_event,
 )
@@ -19,7 +27,15 @@ from community._event_schemas import (
     RSVPGuestOut,
 )
 from community._shared import _authenticated_user, _members_only
-from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus, SurveyQuestionType
+from community.models import (
+    AttendanceStatus,
+    CoHostInviteStatus,
+    Event,
+    EventCoHostInvite,
+    EventRSVP,
+    RSVPStatus,
+    SurveyQuestionType,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -71,8 +87,6 @@ def _attending_headcount(event: Event) -> int:
 
 def _attending_headcount_db(event: Event, exclude_user=None) -> int:
     """Count attending spots via DB query (use inside select_for_update transactions)."""
-    from django.db.models import Case, IntegerField, Sum, Value, When
-
     qs = EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
     if exclude_user is not None:
         qs = qs.exclude(user=exclude_user)
@@ -160,8 +174,6 @@ def promote_from_waitlist(event: Event) -> list[str]:
     Returns the list of promoted user ids so callers that need to follow up per
     promoted user (e.g. emailing promoted non-members) can do so after commit.
     """
-    from notifications.service import create_waitlist_promoted_notifications
-
     if event.max_attendees is None:
         return []
     promoted_user_ids: list[str] = []
@@ -284,8 +296,6 @@ def _accepted_invite_ids_for_co_hosts(event: Event, co_hosts: list) -> list[str 
     happen post-#363 data migration; kept to preserve the parallel-array
     invariant if a future migration ever leaves the data in an odd shape).
     """
-    from community.models import CoHostInviteStatus, EventCoHostInvite
-
     invite_id_by_user = dict(
         EventCoHostInvite.objects.filter(
             event=event, status=CoHostInviteStatus.ACCEPTED
@@ -381,10 +391,6 @@ def _update_co_hosts(
     take effect immediately (the rescind helper drops them from
     ``event.co_hosts`` if they had been accepted).
     """
-    from notifications.service import broadcast_cohost_change, create_cohost_invite_notifications
-
-    from community._cohost_invite_helpers import diff_cohost_invites
-
     next_ids = {str(uid) for uid in co_host_ids}
     newly_invited, removed_accepted_ids = diff_cohost_invites(event, next_ids, updater)
     if newly_invited:
@@ -404,8 +410,6 @@ def _update_invited_users(
     inviter: UserModel,
 ) -> None:
     """Update event.invited_users and notify newly added users."""
-    from notifications.service import create_event_invite_notifications
-
     id_list = list(invited_user_ids)
     old_ids = set(event.invited_users.values_list("pk", flat=True))
     invited = UserModel.objects.filter(pk__in=id_list)

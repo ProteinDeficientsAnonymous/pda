@@ -14,6 +14,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from users.models import User
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
@@ -116,8 +117,6 @@ class CheckPhoneIn(BaseModel):
 
 
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
-    from users.models import User
-
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
@@ -221,8 +220,6 @@ def _check_submission_conflicts(validated_phone: str, normalized_email: str) -> 
     phone check) means an applicant sees the error on the form rather than
     the admin hitting it at approval time.
     """
-    from users.models import User
-
     if User.objects.filter(phone_number=validated_phone, archived_at__isnull=True).exists():
         raise_validation(Code.JoinRequest.PHONE_ALREADY_INVITED, status_code=409)
     if (
@@ -312,8 +309,6 @@ def list_join_requests(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
-    from users.models import User
-
     cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
     expired_phones = User.objects.filter(
         needs_onboarding=False, onboarded_at__lt=cutoff
@@ -354,8 +349,6 @@ def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
     auth=gated_jwt,
 )
 def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
-    from users.models import User
-
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
         audit_log(
             logging.WARNING,
@@ -468,13 +461,11 @@ def unreject_join_request(request, id: UUID):
 @router.post("/check-phone/", response={200: CheckPhoneOut, 429: ErrorOut}, auth=None)
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_phone(request, payload: CheckPhoneIn):
-    from users.models import User as UserModel
-
     try:
         normalized = _validate_phone(payload.phone_number)
     except ValidationException:
         return Status(200, CheckPhoneOut(status="unknown"))
-    if UserModel.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
+    if User.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
         return Status(200, CheckPhoneOut(status="member"))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING

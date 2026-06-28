@@ -6,8 +6,10 @@ import logging
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.http import JsonResponse, StreamingHttpResponse
+from ninja_jwt.tokens import AccessToken
 
 logger = logging.getLogger("pda")
 
@@ -19,9 +21,6 @@ _HEARTBEAT_INTERVAL = 30  # seconds
 @sync_to_async
 def _get_user_from_token(token_str: str) -> AbstractBaseUser | None:
     """Validate a JWT access token and return the user, or None."""
-    from django.contrib.auth import get_user_model
-    from ninja_jwt.tokens import AccessToken
-
     try:
         validated = AccessToken(token_str)
         User = get_user_model()
@@ -55,6 +54,7 @@ def _format_notify_for_user(channel: str, payload: str, user_id: str) -> str | N
 
 async def _sse_generator(user_id: str):
     """Async generator that yields SSE events for a single user."""
+    # lazy import: psycopg only needed for the postgres LISTEN path
     import psycopg
 
     dsn = _build_async_dsn()

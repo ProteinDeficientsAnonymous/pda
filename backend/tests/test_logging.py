@@ -1,8 +1,11 @@
 import logging
 
 import pytest
+from community.models import JoinFormQuestion
 from config.middleware import RequestLoggingMiddleware
+from django.http import JsonResponse
 from django.test import Client, RequestFactory
+from users.models import User
 
 
 class TestRequestLoggingMiddleware:
@@ -20,8 +23,6 @@ class TestRequestLoggingMiddleware:
         request = factory.get("/api/test/")
 
         def get_response(request):
-            from django.http import JsonResponse
-
             return JsonResponse({"ok": True})
 
         middleware = RequestLoggingMiddleware(get_response)
@@ -47,8 +48,6 @@ class TestRequestLoggingMiddleware:
         request = factory.get("/api/auth/me/")
 
         def get_response(request):
-            from django.http import JsonResponse
-
             return JsonResponse({"ok": True})
 
         middleware = RequestLoggingMiddleware(get_response)
@@ -75,8 +74,6 @@ class TestApplicationEventLogging:
 
     @pytest.mark.django_db
     def test_join_request_submission_logs_at_info(self, caplog):
-        from community.models import JoinFormQuestion
-
         q = JoinFormQuestion.objects.filter(required=True).first()
         answers = {str(q.id): "I love veganism"} if q else {}
         client = Client()
@@ -104,8 +101,6 @@ class TestApplicationEventLogging:
 
     @pytest.mark.django_db
     def test_auth_failure_logs_at_warning(self, caplog):
-        from users.models import User
-
         User.objects.create_user(phone_number="+14155551234", password="testpass")
         client = Client()
         with caplog.at_level(logging.WARNING, logger="pda.auth"):
@@ -119,8 +114,6 @@ class TestApplicationEventLogging:
 
     @pytest.mark.django_db
     def test_email_failure_logs_at_error(self, caplog, settings):
-        from community.models import JoinFormQuestion
-
         settings.VETTING_EMAIL = "test@example.com"
         settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         q = JoinFormQuestion.objects.filter(required=True).first()

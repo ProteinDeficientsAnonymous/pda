@@ -2,17 +2,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from community.models import RSVPStatus
+from django.db import connection
+from django.db.models import Q
+from users.models import User
+from users.permissions import PermissionKey
+
+from notifications.models import Notification, NotificationType
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from community.models import Event
-    from users.models import User
 
 
 def _notify_users(user_ids: Iterable[str]) -> None:
     """Fire pg_notify on the notifications channel (for new notification rows)."""
-    from django.db import connection
-
     if connection.vendor != "postgresql":
         return
 
@@ -31,8 +36,6 @@ def _ping_event_update(user_ids: Iterable[str], event_id: str) -> None:
     `notification`) so the frontend only invalidates event caches — no bell,
     no unread-count refetch, no notification row.
     """
-    from django.db import connection
-
     if connection.vendor != "postgresql":
         return
 
@@ -76,8 +79,6 @@ def broadcast_event_update(
     co-hosts + invited + attending/maybe RSVPs. Pass `extra_user_ids` to
     include users who just lost their stake (e.g. a co-host who was removed).
     """
-    from community.models import RSVPStatus
-
     recipients: set[str] = set()
     if event.created_by_id:
         recipients.add(str(event.created_by_id))
@@ -95,12 +96,6 @@ def broadcast_event_update(
 
 
 def create_join_request_notifications(display_name: str) -> None:
-    from django.db.models import Q
-    from users.models import User
-    from users.permissions import PermissionKey
-
-    from notifications.models import Notification, NotificationType
-
     recipients = (
         User.objects.members()
         .filter(
@@ -124,15 +119,9 @@ def create_join_request_notifications(display_name: str) -> None:
 
 
 def create_event_flag_notifications(event: Event, flagger: User) -> None:
-    from django.db.models import Q
-    from users.models import User as UserModel
-    from users.permissions import PermissionKey
-
-    from notifications.models import Notification, NotificationType
-
     flagger_name = flagger.display_name or flagger.phone_number
     recipients = (
-        UserModel.objects.members()
+        User.objects.members()
         .filter(
             Q(roles__name="admin", roles__is_default=True)
             | Q(roles__permissions__contains=PermissionKey.MANAGE_EVENTS)
@@ -155,15 +144,9 @@ def create_event_flag_notifications(event: Event, flagger: User) -> None:
 
 
 def create_magic_link_request_notifications(user: User) -> None:
-    from django.db.models import Q
-    from users.models import User as UserModel
-    from users.permissions import PermissionKey
-
-    from notifications.models import Notification, NotificationType
-
     display = user.display_name or user.phone_number
     recipients = (
-        UserModel.objects.members()
+        User.objects.members()
         .filter(
             Q(roles__name="admin", roles__is_default=True)
             | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
@@ -191,8 +174,6 @@ def create_cohost_invite_notifications(
     invited_by: User,
 ) -> None:
     """Notify users who just received a co-host invite for this event."""
-    from notifications.models import Notification, NotificationType
-
     invited_by_id = str(invited_by.pk)
     invited_by_name = invited_by.display_name or invited_by.phone_number
     notified_ids = [str(uid) for uid in new_user_ids if str(uid) != invited_by_id]
@@ -221,8 +202,6 @@ def create_cohost_invite_accepted_notification(
     inviter_id: str | None,
 ) -> None:
     """Notify the inviter that an invitee accepted their co-host invite."""
-    from notifications.models import Notification, NotificationType
-
     if inviter_id is None or str(inviter_id) == str(invitee.pk):
         return
     invitee_name = invitee.display_name or invitee.phone_number
@@ -242,8 +221,6 @@ def create_cohost_invite_declined_notification(
     inviter_id: str | None,
 ) -> None:
     """Notify the inviter that an invitee declined their co-host invite."""
-    from notifications.models import Notification, NotificationType
-
     if inviter_id is None or str(inviter_id) == str(invitee.pk):
         return
     invitee_name = invitee.display_name or invitee.phone_number
@@ -263,8 +240,6 @@ def create_cohost_removed_notification(event: Event, removed_user: User, remover
     Caller is responsible for skipping self-removal — no need to notify
     yourself that you stepped down.
     """
-    from notifications.models import Notification, NotificationType
-
     if str(remover.pk) == str(removed_user.pk):
         return
     remover_name = remover.display_name or remover.phone_number
@@ -279,10 +254,6 @@ def create_cohost_removed_notification(event: Event, removed_user: User, remover
 
 
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
-    from community.models import RSVPStatus
-
-    from notifications.models import Notification, NotificationType
-
     canceller_id = str(canceller.pk)
     invited_ids = {str(u.pk) for u in event.invited_users.all()}
     rsvp_ids = {
@@ -312,8 +283,6 @@ def create_event_invite_notifications(
     new_user_ids: Iterable[str],
     inviter: User,
 ) -> None:
-    from notifications.models import Notification, NotificationType
-
     inviter_id = str(inviter.pk)
     inviter_name = inviter.display_name or inviter.phone_number
     notified_ids = [uid for uid in new_user_ids if str(uid) != inviter_id]
@@ -335,8 +304,6 @@ def create_waitlist_promoted_notifications(
     event: Event,
     promoted_user_ids: Iterable[str],
 ) -> None:
-    from notifications.models import Notification, NotificationType
-
     user_ids = list(promoted_user_ids)
     if not user_ids:
         return
@@ -360,8 +327,6 @@ def notify_comment_reply(reply) -> None:
     No-op if `reply` is a top-level comment or if the replier is the
     parent's author.
     """
-    from notifications.models import Notification, NotificationType
-
     if reply.parent_id is None:
         return
     parent_author_id = reply.parent.author_id
@@ -386,8 +351,6 @@ def notify_event_comment(comment) -> None:
     excluded from the recipient list — a host commenting on their own event
     doesn't notify themselves.
     """
-    from notifications.models import Notification, NotificationType
-
     if comment.parent_id is not None:
         return
     event = comment.event

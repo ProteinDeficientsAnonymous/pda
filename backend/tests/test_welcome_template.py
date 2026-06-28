@@ -1,5 +1,7 @@
 import pytest
 from community.models import WelcomeMessageTemplate
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -8,8 +10,6 @@ from tests._asserts import assert_error_code
 
 @pytest.fixture
 def edit_welcome_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+15550003001",
         password="vetterpass123",
@@ -24,8 +24,6 @@ def edit_welcome_user(db):
 
 @pytest.fixture
 def edit_welcome_headers(edit_welcome_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(edit_welcome_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 

@@ -1,5 +1,7 @@
 import pytest
 from community._validation import Code
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -9,8 +11,6 @@ from tests._asserts import assert_error_code
 @pytest.fixture
 def manage_users_user(db):
     """Non-superuser with manage_users + manage_roles permissions."""
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+12025550002",
         password="managerpass123",
@@ -25,8 +25,6 @@ def manage_users_user(db):
 
 @pytest.fixture
 def manage_users_headers(manage_users_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(manage_users_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 

@@ -7,13 +7,14 @@ cache reset come from conftest.
 """
 
 import pytest
+from community.models import JoinRequest
+from django.utils import timezone
+from users.models import User
 
 
 @pytest.mark.django_db
 class TestJoinRequestConflicts:
     def test_submit_existing_user_returns_409(self, api_client, why_join_id):
-        from users.models import User
-
         User.objects.create_user(phone_number="+12025551299", password="pass")
         response = api_client.post(
             "/api/community/join-request/",
@@ -31,9 +32,6 @@ class TestJoinRequestConflicts:
         assert response.json()["detail"][0]["code"] == "join_request.phone_already_invited"
 
     def test_submit_existing_user_creates_no_join_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
-        from users.models import User
-
         User.objects.create_user(phone_number="+12025551298", password="pass")
         api_client.post(
             "/api/community/join-request/",
@@ -50,8 +48,6 @@ class TestJoinRequestConflicts:
         assert not JoinRequest.objects.filter(phone_number="+12025551298").exists()
 
     def test_submit_existing_email_returns_409(self, api_client, why_join_id):
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025551300", password="pass", email="taken@example.com"
         )
@@ -71,9 +67,6 @@ class TestJoinRequestConflicts:
         assert response.json()["detail"][0]["code"] == "email.already_exists"
 
     def test_submit_existing_email_creates_no_join_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025551302", password="pass", email="dupe@example.com"
         )
@@ -92,10 +85,6 @@ class TestJoinRequestConflicts:
         assert not JoinRequest.objects.filter(phone_number="+12025551303").exists()
 
     def test_archived_user_email_can_be_reused(self, api_client, why_join_id):
-        from community.models import JoinRequest
-        from django.utils import timezone
-        from users.models import User
-
         archived = User.objects.create_user(
             phone_number="+12025551304", password="pass", email="returning@example.com"
         )
@@ -118,10 +107,6 @@ class TestJoinRequestConflicts:
         assert JoinRequest.objects.filter(phone_number="+12025551305").exists()
 
     def test_archived_user_can_resubmit_join_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
-        from django.utils import timezone
-        from users.models import User
-
         archived = User.objects.create_user(phone_number="+12025551297", password="pass")
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])

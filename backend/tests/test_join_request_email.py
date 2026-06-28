@@ -1,12 +1,14 @@
 """Tests for email validation on join request submission."""
 
 import pytest
+from community._join_requests import _send_join_request_email
+from community._shared import flatten_to_single_line
+from community.models import JoinFormQuestion, JoinRequest
+from django.core import mail
 
 
 @pytest.fixture
 def why_join_id(db):
-    from community.models import JoinFormQuestion
-
     q = JoinFormQuestion.objects.filter(required=True).first()
     return str(q.id) if q else ""
 
@@ -43,8 +45,6 @@ class TestJoinRequestEmail:
         assert resp.status_code == 422
 
     def test_valid_email_persisted_lowercased(self, api_client, why_join_id):
-        from community.models import JoinRequest
-
         resp = api_client.post(
             "/api/community/join-request/",
             data={
@@ -66,8 +66,6 @@ class TestVettingEmailHeaderInjection:
     """Issue 457 — CR/LF in interpolated values must not forge email headers."""
 
     def test_flatten_to_single_line_collapses_crlf(self):
-        from community._shared import flatten_to_single_line
-
         out = flatten_to_single_line("Eve\r\nBcc: victim@example.com")
         assert "\n" not in out
         assert "\r" not in out
@@ -75,9 +73,6 @@ class TestVettingEmailHeaderInjection:
 
     @pytest.mark.django_db
     def test_vetting_email_subject_is_single_line(self, settings):
-        from community._join_requests import _send_join_request_email
-        from django.core import mail
-
         settings.VETTING_EMAIL = "vetting@example.com"
         settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         mail.outbox = []

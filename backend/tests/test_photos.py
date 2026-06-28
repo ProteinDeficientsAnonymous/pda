@@ -4,7 +4,11 @@ import io
 
 import pytest
 from community.models import Event
+from config.media_proxy import serve_media
+from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http import Http404
+from ninja_jwt.tokens import RefreshToken
 from PIL import Image
 from users.models import User
 from users.permissions import PermissionKey
@@ -24,8 +28,6 @@ def _make_test_image(fmt="JPEG", size=(20, 20)):
 
 
 def _auth(user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
@@ -247,17 +249,11 @@ class TestMediaProxy:
         assert response.status_code in (400, 404)
 
     def test_serve_media_rejects_dot_dot_traversal(self):
-        from config.media_proxy import serve_media
-        from django.http import Http404
-
         for bad in ["../config/settings.py", "a/../../secret.py", "..%2fsettings.py"]:
             with pytest.raises(Http404):
                 serve_media(None, bad)
 
     def test_serve_media_rejects_absolute_and_null_and_backslash(self):
-        from config.media_proxy import serve_media
-        from django.http import Http404
-
         for bad in ["/etc/passwd", "foo\\bar", "foo\x00.jpg"]:
             with pytest.raises(Http404):
                 serve_media(None, bad)
@@ -265,8 +261,6 @@ class TestMediaProxy:
     def test_non_inline_type_forced_to_attachment(self, api_client, member):
         # An uploaded .html/.svg must download (attachment) so it can't run JS
         # on the app origin, and must carry nosniff (#446).
-        from django.core.files.storage import default_storage
-
         name = default_storage.save("uploads/evil.html", io.BytesIO(b"<script>alert(1)</script>"))
         try:
             response = api_client.get(f"/media/{name}")
