@@ -1,19 +1,20 @@
-# Task — issue #555
-**Goal:** public-rsvp: recognize returning non-members and extend existing token on new RSVP
+# Task — issue #588
+**Goal:** Add CLAUDE.md rule: avoid verbose comments, only comment when code doesn't explain itself
 **Source:** label
-**Labels:** backend,feature,auto,database,p1
-**Acceptance criteria:** see issue #555 body.
+**Labels:** auto,chore,p2
+**Acceptance criteria:** see issue #588 body.
 
 ## Pipeline stage
-pickup
-triage
-work
-review
-ci
+done
 
 ## Restart count
 0
 
 ## Progress log
 - dispatched
-- triage: model-layer change only; public RSVP submission endpoints (stages 3/4) not built yet. Implementing issue_or_extend() on NonMemberRsvpToken to handle extend-vs-create. User get-or-create-by-phone (AC#1) belongs to the unbuilt endpoint; noted as out of scope here.
+- pickup: read task + issue #588; no `explore` label -> implement pipeline
+- triage: actionable as scoped; add `### comments` rule under `## Standards` in CLAUDE.md
+- work: added comments rule (no verbose/redundant comments; comment only non-obvious why; no what-restating; no multi-line blocks)
+- review: code-reviewer subagent round 1 -> no high/medium findings; clean
+- ci: backend green (1032 passed, ty, complexity, schemas); frontend green in isolation (JoinScreen timeouts were machine-contention flakes, pass 10/10 alone); change is doc-only
+- pr: opened draft PR #591 (https://github.com/ProteinDeficientsAnonymous/pda/pull/591)
