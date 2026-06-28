@@ -182,8 +182,6 @@ class EventListOut(BaseModel):
     waitlisted_count: int = 0
     invited_count: int = 0
     comment_count: int = 0
-    # Viewer's own RSVP status (None for unauthed or no-response). Lets calendar
-    # / my-events cards show RSVP state without a detail fetch per card.
     my_rsvp: str | None = None
     is_past: bool = False
     status: str = "active"
