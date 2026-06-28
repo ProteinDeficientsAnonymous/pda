@@ -3,13 +3,19 @@ from uuid import UUID
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from config.auth import gated_jwt
-from ninja import Router
+from ninja import Query, Router
 from ninja.responses import Status
 
 from notifications.models import Notification
 from notifications.schemas import NotificationOut, UnreadCountOut
 
 router = Router()
+
+# Upper bound on a single list page. The bell asks for the 10 most recent; the
+# full notifications page pages through with limit/offset. Capped so a caller
+# can't ask for an unbounded slab in one request.
+MAX_LIST_LIMIT = 50
+DEFAULT_LIST_LIMIT = 30
 
 
 def _notification_out(n: Notification) -> NotificationOut:
@@ -25,8 +31,14 @@ def _notification_out(n: Notification) -> NotificationOut:
 
 
 @router.get("/", response={200: list[NotificationOut]}, auth=gated_jwt)
-def list_notifications(request):
-    notifications = Notification.objects.filter(recipient=request.auth).order_by("-created_at")[:30]
+def list_notifications(
+    request,
+    limit: int = Query(DEFAULT_LIST_LIMIT, ge=1, le=MAX_LIST_LIMIT),
+    offset: int = Query(0, ge=0),
+):
+    notifications = Notification.objects.filter(recipient=request.auth).order_by("-created_at")[
+        offset : offset + limit
+    ]
     return Status(200, [_notification_out(n) for n in notifications])
 
 

@@ -33,6 +33,7 @@ const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScre
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
+const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
 const Profile = lazyWithRetry(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen'));
 const Docs = lazyWithRetry(() => import('@/screens/docs/DocsScreen'));
@@ -97,6 +98,7 @@ export const router = createBrowserRouter([
                 element: <RequireAuth />,
                 children: [
                   { path: '/settings', element: el(<Settings />) },
+                  { path: '/notifications', element: el(<Notifications />) },
                   { path: '/profile', element: el(<Profile />) },
                   { path: '/volunteer', element: el(<Volunteer />) },
                   { path: '/events/mine', element: el(<MyEvents />) },

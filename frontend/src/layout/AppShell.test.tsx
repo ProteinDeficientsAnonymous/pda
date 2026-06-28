@@ -10,7 +10,7 @@ import { useAuthStore } from '@/auth/store';
 // Stub modules that reach out to the network or browser APIs the AppShell
 // pulls in transitively.
 vi.mock('@/api/notifications', () => ({
-  notificationKeys: { all: ['notifications'], list: [], unread: [] },
+  notificationKeys: { all: ['notifications'], bell: [], page: [], unread: [] },
   useUnreadCount: vi.fn().mockReturnValue({ data: 0 }),
   useNotifications: vi.fn().mockReturnValue({ isPending: false, data: [] }),
   useMarkNotificationRead: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
