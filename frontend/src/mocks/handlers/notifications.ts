@@ -1,5 +1,4 @@
-// Notification handlers. The app shell's bell polls the unread count and opens
-// the list on demand; mark-read calls just acknowledge.
+// Notification handlers — the bell's unread count, list, and mark-read calls.
 
 import { http, HttpResponse } from 'msw';
 
