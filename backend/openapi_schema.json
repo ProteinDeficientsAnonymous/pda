@@ -2699,6 +2699,11 @@
             ],
             "title": "Approved By Name"
           },
+          "attached_user_official_rsvp_count": {
+            "default": 0,
+            "title": "Attached User Official Rsvp Count",
+            "type": "integer"
+          },
           "display_name": {
             "title": "Display Name",
             "type": "string"
@@ -5706,7 +5711,7 @@
     },
     "/api/community/check-phone/": {
       "post": {
-        "operationId": "community__join_requests_check_phone",
+        "operationId": "community__join_request_submit_check_phone",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -9238,7 +9243,7 @@
     },
     "/api/community/join-request/": {
       "post": {
-        "operationId": "community__join_requests_submit_join_request",
+        "operationId": "community__join_request_submit_submit_join_request",
         "parameters": [],
         "requestBody": {
           "content": {

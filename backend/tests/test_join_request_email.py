@@ -75,7 +75,7 @@ class TestVettingEmailHeaderInjection:
 
     @pytest.mark.django_db
     def test_vetting_email_subject_is_single_line(self, settings):
-        from community._join_requests import _send_join_request_email
+        from community._join_request_submit import _send_join_request_email
         from django.core import mail
 
         settings.VETTING_EMAIL = "vetting@example.com"
