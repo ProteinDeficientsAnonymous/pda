@@ -27,11 +27,6 @@
         "params": []
       },
       {
-        "name": "ATTENDANCE_INVALID_CHOICE",
-        "value": "event.attendance_invalid_choice",
-        "params": []
-      },
-      {
         "name": "OFFICIAL_MUST_BE_PUBLIC",
         "value": "event.official_must_be_public",
         "params": []

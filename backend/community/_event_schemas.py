@@ -15,6 +15,7 @@ from community.models import (
     EventType,
     InvitePermission,
     PageVisibility,
+    RSVPStatus,
 )
 
 # Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
@@ -240,7 +241,11 @@ class EventOut(BaseModel):
 
 
 class RSVPIn(BaseModel):
-    status: str = Field(max_length=FieldLimit.CHOICE)
+    # Typed by the enum so Pydantic rejects unknown values up front. Note this
+    # accepts ``waitlisted`` (a valid enum member) — the upsert endpoint's
+    # ``_validate_rsvp_status`` guard still rejects member-supplied waitlisting,
+    # which is system-assigned only.
+    status: RSVPStatus
     has_plus_one: bool = False
 
 
@@ -264,19 +269,9 @@ class EventStatsOut(BaseModel):
 
 
 class AttendanceIn(BaseModel):
-    attendance: str = Field(max_length=FieldLimit.CHOICE)
-
-    @field_validator("attendance")
-    @classmethod
-    def validate_attendance(cls, v: str) -> str:
-        valid = {AttendanceStatus.UNKNOWN, AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW}
-        if v not in valid:
-            raise_validation(
-                Code.Event.ATTENDANCE_INVALID_CHOICE,
-                field="attendance",
-                allowed=sorted(valid),
-            )
-        return v
+    # The enum's three members are exactly the previously hand-validated set,
+    # so typing the field replaces the manual choice check entirely.
+    attendance: AttendanceStatus
 
 
 class EventIn(BaseModel):
