@@ -56,7 +56,7 @@ class User(AbstractUser):
     # PERSISTENT USER STATE: when this user last accepted the community guidelines
     # and agreements. Null means they have never consented (or are being asked to
     # re-consent) — surfaced on /me/ as needs_guidelines_consent and enforced as a
-    # hard gate (see config.auth.GatedJWTAuth). Stamped by POST /accept-guidelines/.
+    # hard gate (see config.auth.GatedJWTAuth). Stamped by POST /accept-consents/.
     # Deliberately NOT backfilled: everyone, admins included, must re-consent.
     guidelines_consent_at = models.DateTimeField(null=True, blank=True)
     # PERSISTENT USER STATE: when this user last accepted the SMS messaging

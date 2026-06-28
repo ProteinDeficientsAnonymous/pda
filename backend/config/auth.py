@@ -27,14 +27,14 @@ from users.models import User
 #                                guidelines-consent state here
 #   - POST /complete-onboarding/ — the only way to set a password / clear the flags
 #   - POST /change-password/   — alternate password-set path (also clears the flag)
-#   - POST /accept-guidelines/ — the only way to clear needs_guidelines_consent
+#   - POST /accept-consents/   — the only way to clear needs_guidelines_consent
 # /refresh/ and /logout/ are auth=None, so they bypass this gate already.
 _PENDING_ALLOWLIST = frozenset(
     {
         "/api/auth/me/",
         "/api/auth/complete-onboarding/",
         "/api/auth/change-password/",
-        "/api/auth/accept-guidelines/",
+        "/api/auth/accept-consents/",
     }
 )
 

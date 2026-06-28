@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/auth/accept-guidelines/": {
+    "/api/auth/accept-consents/": {
         parameters: {
             query?: never;
             header?: never;
@@ -14,19 +14,16 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Accept Guidelines
-         * @description Stamp the current user's guidelines consent, clearing the hard gate.
+         * Accept Consents
+         * @description Record the consents the caller is accepting, clearing the relevant gates.
          *
-         *     Idempotent: re-accepting just re-stamps the guidelines timestamp. The gate
-         *     (see config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
-         *     consent", so any non-null value satisfies it.
-         *
-         *     ``accept_sms`` is an optional query param (no request body, so a plain POST
-         *     keeps working). The standalone /consent screen passes accept_sms=true: when
-         *     set and the user still lacks sms_consent_at, it is stamped too. An existing
-         *     sms timestamp is never overwritten.
+         *     Registry-driven (see users._consents): each ConsentType in the payload stamps
+         *     its matching *_consent_at, but only when null — an existing timestamp is never
+         *     overwritten. Accepting GUIDELINES clears the hard login gate (see
+         *     config.auth.GatedJWTAuth). New consent types slot into the registry without
+         *     touching this endpoint.
          */
-        post: operations["users__auth_accept_guidelines"];
+        post: operations["users__auth_accept_consents"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1591,6 +1588,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptConsentsIn */
+        AcceptConsentsIn: {
+            /** Consent Types */
+            consent_types?: components["schemas"]["ConsentType"][];
+        };
         /** AccessOut */
         AccessOut: {
             /** Access */
@@ -1695,6 +1697,11 @@ export interface components {
             /** Reacted By Me */
             reacted_by_me: boolean;
         };
+        /**
+         * ConsentType
+         * @enum {string}
+         */
+        ConsentType: "guidelines" | "sms";
         /** DocFolderOut */
         DocFolderOut: {
             /** Children */
@@ -2911,16 +2918,8 @@ export interface components {
         };
         /** OnboardingIn */
         OnboardingIn: {
-            /**
-             * Accept Guidelines
-             * @default false
-             */
-            accept_guidelines: boolean;
-            /**
-             * Accept Sms
-             * @default false
-             */
-            accept_sms: boolean;
+            /** Consent Types */
+            consent_types?: components["schemas"]["ConsentType"][];
             /** Display Name */
             display_name?: string | null;
             /** Email */
@@ -3483,16 +3482,18 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    users__auth_accept_guidelines: {
+    users__auth_accept_consents: {
         parameters: {
-            query?: {
-                accept_sms?: boolean;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptConsentsIn"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

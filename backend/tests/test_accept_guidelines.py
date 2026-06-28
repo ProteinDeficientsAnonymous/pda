@@ -1,7 +1,8 @@
-"""Tests for POST /api/auth/accept-guidelines/ — the consent-gate escape hatch.
+"""Tests for POST /api/auth/accept-consents/ — the consent-gate escape hatch.
 
-Stamps guidelines_consent_at on the current user, which clears the hard gate
-enforced by config.auth.GatedJWTAuth.
+Records the consent types in the payload on the current user. Accepting
+"guidelines" stamps guidelines_consent_at, clearing the hard gate enforced by
+config.auth.GatedJWTAuth.
 """
 
 import pytest
@@ -12,8 +13,17 @@ def _headers(user):
     return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}  # type: ignore
 
 
+def _accept(api_client, user, consent_types):
+    return api_client.post(
+        "/api/auth/accept-consents/",
+        data={"consent_types": consent_types},
+        content_type="application/json",
+        **_headers(user),
+    )
+
+
 @pytest.mark.django_db
-class TestAcceptGuidelines:
+class TestAcceptConsents:
     def test_stamps_consent_and_clears_flag(self, api_client):
         from users.models import User
 
@@ -23,7 +33,7 @@ class TestAcceptGuidelines:
         user.guidelines_consent_at = None
         user.save(update_fields=["guidelines_consent_at"])
 
-        resp = api_client.post("/api/auth/accept-guidelines/", **_headers(user))
+        resp = _accept(api_client, user, ["guidelines"])
         assert resp.status_code == 200, resp.content
         assert resp.json()["needs_guidelines_consent"] is False
 
@@ -43,25 +53,26 @@ class TestAcceptGuidelines:
         # Blocked before consent.
         assert api_client.get("/api/notifications/", **headers).status_code == 403
         # Consent.
-        assert api_client.post("/api/auth/accept-guidelines/", **headers).status_code == 200
+        assert _accept(api_client, user, ["guidelines"]).status_code == 200
         # Unblocked after.
         assert api_client.get("/api/notifications/", **headers).status_code == 200
 
-    def test_idempotent_restamps(self, api_client):
+    def test_already_consented_is_noop_and_preserves_timestamp(self, api_client):
         from users.models import User
 
         user = User.objects.create_user(
             phone_number="+12025550403", password="pass", display_name="Consenter"
         )
         first = user.guidelines_consent_at  # stamped by conftest default
+        assert first is not None
 
-        resp = api_client.post("/api/auth/accept-guidelines/", **_headers(user))
+        resp = _accept(api_client, user, ["guidelines"])
         assert resp.status_code == 200
         user.refresh_from_db()
-        assert user.guidelines_consent_at is not None
-        assert user.guidelines_consent_at >= first
+        # Existing consent is never overwritten — the timestamp doesn't move.
+        assert user.guidelines_consent_at == first
 
-    def test_accept_sms_stamps_sms_consent(self, api_client):
+    def test_accepts_multiple_consent_types_together(self, api_client):
         from users.models import User
 
         user = User.objects.create_user(
@@ -71,15 +82,17 @@ class TestAcceptGuidelines:
         user.sms_consent_at = None
         user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
 
-        resp = api_client.post("/api/auth/accept-guidelines/?accept_sms=true", **_headers(user))
+        resp = _accept(api_client, user, ["guidelines", "sms"])
         assert resp.status_code == 200, resp.content
-        assert resp.json()["needs_sms_consent"] is False
+        body = resp.json()
+        assert body["needs_guidelines_consent"] is False
+        assert body["needs_sms_consent"] is False
 
         user.refresh_from_db()
         assert user.guidelines_consent_at is not None
         assert user.sms_consent_at is not None
 
-    def test_without_accept_sms_leaves_sms_consent_null(self, api_client):
+    def test_unlisted_consent_type_is_left_null(self, api_client):
         from users.models import User
 
         user = User.objects.create_user(
@@ -89,14 +102,14 @@ class TestAcceptGuidelines:
         user.sms_consent_at = None
         user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
 
-        resp = api_client.post("/api/auth/accept-guidelines/", **_headers(user))
+        resp = _accept(api_client, user, ["guidelines"])
         assert resp.status_code == 200, resp.content
 
         user.refresh_from_db()
         assert user.guidelines_consent_at is not None
         assert user.sms_consent_at is None
 
-    def test_accept_sms_never_overwrites_existing(self, api_client):
+    def test_never_overwrites_existing_consent(self, api_client):
         from django.utils import timezone
         from users.models import User
 
@@ -108,14 +121,28 @@ class TestAcceptGuidelines:
         user.sms_consent_at = original
         user.save(update_fields=["guidelines_consent_at", "sms_consent_at"])
 
-        resp = api_client.post("/api/auth/accept-guidelines/?accept_sms=true", **_headers(user))
+        resp = _accept(api_client, user, ["guidelines", "sms"])
         assert resp.status_code == 200, resp.content
 
         user.refresh_from_db()
         assert user.sms_consent_at == original
 
+    def test_unknown_consent_type_is_rejected(self, api_client):
+        from users.models import User
+
+        user = User.objects.create_user(
+            phone_number="+12025550408", password="pass", display_name="BadType"
+        )
+
+        resp = _accept(api_client, user, ["nonsense"])
+        assert resp.status_code == 422, resp.content
+
     def test_requires_auth(self, api_client):
-        resp = api_client.post("/api/auth/accept-guidelines/")
+        resp = api_client.post(
+            "/api/auth/accept-consents/",
+            data={"consent_types": ["guidelines"]},
+            content_type="application/json",
+        )
         assert resp.status_code == 401
 
     def test_admin_is_not_grandfathered(self, api_client):
@@ -132,4 +159,4 @@ class TestAcceptGuidelines:
         admin.save(update_fields=["guidelines_consent_at"])
 
         assert api_client.get("/api/notifications/", **_headers(admin)).status_code == 403
-        assert api_client.post("/api/auth/accept-guidelines/", **_headers(admin)).status_code == 200
+        assert _accept(api_client, admin, ["guidelines"]).status_code == 200

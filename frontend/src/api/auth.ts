@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { apiClient, authClient, getCurrentAccessToken } from './client';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import type { User, Role } from '@/models/user';
+import type { ConsentTypeValue } from '@/models/consent';
 
 // --- Wire types (snake_case, server-shaped). ----------------------------------
 
@@ -140,26 +141,23 @@ export async function completeOnboarding(payload: {
   newPassword: string;
   displayName?: string | undefined;
   email?: string | undefined;
-  acceptGuidelines?: boolean | undefined;
-  acceptSms?: boolean | undefined;
+  consentTypes?: ConsentTypeValue[] | undefined;
 }): Promise<User> {
   const { data } = await apiClient.post<WireUser>('/api/auth/complete-onboarding/', {
     new_password: payload.newPassword,
     display_name: payload.displayName,
     email: payload.email,
-    accept_guidelines: payload.acceptGuidelines ?? false,
-    accept_sms: payload.acceptSms ?? false,
+    consent_types: payload.consentTypes ?? [],
   });
   return mapUser(data);
 }
 
-export async function acceptGuidelines(acceptSms = false): Promise<User> {
-  // Clears the hard guidelines-consent gate. Returns the updated user so the
-  // store can drop needsGuidelinesConsent and let the gate release. When
-  // acceptSms is true the consent screen also collected sms consent — the
-  // backend stamps sms_consent_at (query param) when the user still lacks it.
-  const { data } = await apiClient.post<WireUser>('/api/auth/accept-guidelines/', null, {
-    params: { accept_sms: acceptSms },
+export async function acceptConsents(consentTypes: ConsentTypeValue[]): Promise<User> {
+  // Records the given consents and returns the updated user so the store can
+  // drop the matching needs*Consent flags. Accepting "guidelines" clears the
+  // hard login gate. Registry-driven on both ends (see models/consent.ts).
+  const { data } = await apiClient.post<WireUser>('/api/auth/accept-consents/', {
+    consent_types: consentTypes,
   });
   return mapUser(data);
 }

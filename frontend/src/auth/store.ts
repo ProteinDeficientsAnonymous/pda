@@ -15,6 +15,7 @@ import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
 import { queryClient } from '@/api/queryClient';
 import type { User } from '@/models/user';
+import type { ConsentTypeValue } from '@/models/consent';
 
 export type AuthStatus = 'idle' | 'loading' | 'authed' | 'unauthed';
 
@@ -33,10 +34,9 @@ interface AuthState {
     newPassword: string;
     displayName?: string | undefined;
     email?: string | undefined;
-    acceptGuidelines?: boolean | undefined;
-    acceptSms?: boolean | undefined;
+    consentTypes?: ConsentTypeValue[] | undefined;
   }) => Promise<void>;
-  acceptGuidelines: (acceptSms?: boolean) => Promise<void>;
+  acceptConsents: (consentTypes: ConsentTypeValue[]) => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
   updateProfile: (patch: authApi.ProfileUpdate) => Promise<void>;
   uploadProfilePhoto: (file: File) => Promise<void>;
@@ -101,8 +101,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user });
   },
 
-  async acceptGuidelines(acceptSms = false) {
-    const user = await authApi.acceptGuidelines(acceptSms);
+  async acceptConsents(consentTypes) {
+    const user = await authApi.acceptConsents(consentTypes);
     set({ user });
   },
 
