@@ -14,7 +14,10 @@
       "Bash(mkdir -p ~/.claude/hooks)",
       "Read(//Users/leahpeker/.claude/**)",
       "Skill(superpowers:using-superpowers)",
-      "Skill(superpowers:brainstorming)"
+      "Skill(superpowers:brainstorming)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate"
     ]
   },
   "enableAllProjectMcpServers": true,
