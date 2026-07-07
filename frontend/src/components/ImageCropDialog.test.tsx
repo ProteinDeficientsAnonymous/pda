@@ -72,7 +72,7 @@ describe('ImageCropDialog', () => {
     expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
   });
 
-  it('renders in rectangle (rect) mode as free-form (no aspect lock)', () => {
+  it('renders in rectangle (rect) mode locked to square by default, not circular', () => {
     renderDialog({ shape: 'rect' });
 
     const dialog = screen.getByRole('dialog', { name: /crop photo/i });
@@ -80,9 +80,33 @@ describe('ImageCropDialog', () => {
 
     const cropper = screen.getByTestId('cropper');
     expect(cropper).toHaveAttribute('data-circular', 'false');
-    expect(cropper).toHaveAttribute('data-aspect', '');
+    expect(cropper).toHaveAttribute('data-aspect', '1');
     expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
+  });
+
+  it('offers a square / 4:5 shape toggle in rect mode and locks the chosen aspect', async () => {
+    const user = userEvent.setup();
+    renderDialog({ shape: 'rect' });
+
+    const group = screen.getByRole('group', { name: /crop shape/i });
+    expect(group).toBeInTheDocument();
+
+    const square = screen.getByRole('button', { name: /^square$/i });
+    const portrait = screen.getByRole('button', { name: /^4:5$/i });
+    expect(square).toHaveAttribute('aria-pressed', 'true');
+    expect(portrait).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(portrait);
+
+    expect(portrait).toHaveAttribute('aria-pressed', 'true');
+    expect(square).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('cropper')).toHaveAttribute('data-aspect', '0.8');
+  });
+
+  it('does not show the shape toggle in round mode', () => {
+    renderDialog({ shape: 'round' });
+    expect(screen.queryByRole('group', { name: /crop shape/i })).not.toBeInTheDocument();
   });
 
   it('cancel button calls onCancel callback', async () => {
