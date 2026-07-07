@@ -89,8 +89,6 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
         <>
           <div className="flex flex-wrap justify-center gap-2">
             {PILLS.map((p) => {
-              // At capacity, tapping "i'm going" actually waitlists you — so
-              // the label should say what the action does (issue #584).
               const waitlistAttending =
                 p.status === RsvpStatus.Attending &&
                 atCapacity &&
