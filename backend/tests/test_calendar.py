@@ -1,4 +1,16 @@
+import datetime as dt
+import json
+
 import pytest
+from community.models import (
+    Event,
+    EventRSVP,
+    EventStatus,
+    PageVisibility,
+    RSVPStatus,
+)
+from django.utils import timezone
+from users.models import CalendarFeedScope, User
 
 
 @pytest.mark.django_db
@@ -43,15 +55,11 @@ class TestCalendarToken:
 @pytest.mark.django_db
 class TestCalendarFeed:
     def test_feed_returns_ics(self, api_client, auth_headers, test_user):
-        from community.models import Event
-
         # Generate token
         resp = api_client.post("/api/community/calendar/token/", **auth_headers)
         token = resp.json()["token"]
 
         # Create an event
-        from django.utils import timezone
-
         Event.objects.create(
             title="Test Potluck",
             description="Bring snacks!",
@@ -70,10 +78,6 @@ class TestCalendarFeed:
         assert "The park" in content
 
     def test_feed_defaults_end_to_start_plus_2h(self, api_client, auth_headers, test_user):
-        import datetime as dt
-
-        from community.models import Event
-
         resp = api_client.post("/api/community/calendar/token/", **auth_headers)
         token = resp.json()["token"]
 
@@ -91,9 +95,6 @@ class TestCalendarFeed:
         assert "20260701T200000" in content
 
     def test_feed_includes_links_in_description(self, api_client, auth_headers, test_user):
-        from community.models import Event
-        from django.utils import timezone
-
         resp = api_client.post("/api/community/calendar/token/", **auth_headers)
         token = resp.json()["token"]
 
@@ -135,8 +136,6 @@ class TestCalendarFeedScope:
         return resp.json()["token"]
 
     def _make_other_user(self, suffix="0102"):
-        from users.models import User
-
         return User.objects.create_user(
             phone_number=f"+1202555{suffix}",
             password="testpass123",
@@ -144,9 +143,6 @@ class TestCalendarFeedScope:
         )
 
     def test_all_mode_excludes_drafts(self, api_client, auth_headers, test_user):
-        from community.models import Event, EventStatus
-        from django.utils import timezone
-
         token = self._token_for(api_client, auth_headers)
         other = self._make_other_user("0201")
 
@@ -169,9 +165,6 @@ class TestCalendarFeedScope:
         assert "Draft Event" not in content
 
     def test_all_mode_excludes_deleted_and_cancelled(self, api_client, auth_headers, test_user):
-        from community.models import Event, EventStatus
-        from django.utils import timezone
-
         token = self._token_for(api_client, auth_headers)
         other = self._make_other_user("0202")
 
@@ -196,10 +189,6 @@ class TestCalendarFeedScope:
     def test_mine_mode_includes_creator_cohost_invited_and_rsvps(
         self, api_client, auth_headers, test_user
     ):
-        from community.models import Event, EventRSVP, RSVPStatus
-        from django.utils import timezone
-        from users.models import CalendarFeedScope
-
         test_user.calendar_feed_scope = CalendarFeedScope.MINE
         test_user.save(update_fields=["calendar_feed_scope"])
         token = self._token_for(api_client, auth_headers)
@@ -251,10 +240,6 @@ class TestCalendarFeedScope:
     def test_mine_mode_excludes_cant_go_waitlisted_and_unrelated(
         self, api_client, auth_headers, test_user
     ):
-        from community.models import Event, EventRSVP, RSVPStatus
-        from django.utils import timezone
-        from users.models import CalendarFeedScope
-
         test_user.calendar_feed_scope = CalendarFeedScope.MINE
         test_user.save(update_fields=["calendar_feed_scope"])
         token = self._token_for(api_client, auth_headers)
@@ -289,10 +274,6 @@ class TestCalendarFeedScope:
     def test_mine_mode_still_hides_invite_only_when_not_participant(
         self, api_client, auth_headers, test_user
     ):
-        from community.models import Event, PageVisibility
-        from django.utils import timezone
-        from users.models import CalendarFeedScope
-
         test_user.calendar_feed_scope = CalendarFeedScope.MINE
         test_user.save(update_fields=["calendar_feed_scope"])
         token = self._token_for(api_client, auth_headers)
@@ -311,8 +292,6 @@ class TestCalendarFeedScope:
         assert "Secret Event" not in content
 
     def test_patch_me_persists_scope(self, api_client, auth_headers, test_user):
-        import json
-
         resp = api_client.patch(
             "/api/auth/me/",
             data=json.dumps({"calendar_feed_scope": "mine"}),

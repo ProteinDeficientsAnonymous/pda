@@ -3,6 +3,7 @@
 import pytest
 from community._validation import Code
 from ninja_jwt.tokens import RefreshToken
+from users.models import User
 
 from tests._asserts import assert_error_code
 
@@ -13,8 +14,6 @@ from tests._asserts import assert_error_code
 
 @pytest.fixture
 def onboarding_user(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+12025550901",
         password="temppass123",
@@ -179,8 +178,6 @@ class TestMe:
         assert response.json()["needs_onboarding"] is True
 
     def test_me_paused_user_returns_403(self, api_client, test_user):
-        from ninja_jwt.tokens import RefreshToken
-
         test_user.is_paused = True
         test_user.save(update_fields=["is_paused"])
         headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(test_user).access_token}"}  # type: ignore
@@ -220,9 +217,6 @@ class TestChangePassword:
 
     def test_change_password_rejects_reuse(self, api_client, db):
         """New password must differ from the current one."""
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550401", password="ReusedPass123!", display_name="Reuse"
         )
@@ -238,9 +232,6 @@ class TestChangePassword:
 
     def test_change_password_clears_needs_password_reset(self, api_client, db):
         """Setting a password via change-password satisfies a pending forced reset."""
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550402", password="OldPass123!", display_name="Pending"
         )

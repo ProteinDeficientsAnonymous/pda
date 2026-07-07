@@ -1,5 +1,7 @@
 """Tests for the un-reject join request flow."""
 
+import uuid
+
 import pytest
 from community.models import JoinRequestStatus
 
@@ -67,8 +69,6 @@ class TestUnrejectJoinRequest:
         assert response.status_code == 401
 
     def test_unreject_not_found(self, api_client, vettor_headers):
-        import uuid
-
         response = api_client.patch(
             f"/api/community/join-requests/{uuid.uuid4()}/unreject/",
             content_type="application/json",

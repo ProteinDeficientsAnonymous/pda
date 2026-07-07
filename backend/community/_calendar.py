@@ -3,6 +3,7 @@
 import secrets
 from datetime import timedelta
 
+import icalendar
 from config.auth import gated_jwt
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
@@ -77,8 +78,6 @@ def calendar_feed(request, token: str = ""):
     if not user.calendar_token:
         return HttpResponse("Invalid token.", status=403, content_type="text/plain")
 
-    import icalendar
-
     cal = icalendar.Calendar()
     cal.add("prodid", "-//PDA//PDA Calendar//EN")
     cal.add("version", "2.0")
@@ -148,8 +147,6 @@ def single_event_ics(request, event_id: str):
     except ValidationException as exc:
         return HttpResponse("Event not found.", status=exc.status_code, content_type="text/plain")
 
-    import icalendar
-
     cal = icalendar.Calendar()
     cal.add("prodid", "-//PDA//PDA Calendar//EN")
     cal.add("version", "2.0")
@@ -170,8 +167,6 @@ def _ics_filename(event) -> str:
 
 
 def _build_vevent(event, request: HttpRequest, is_authed: bool):
-    import icalendar
-
     vevent = icalendar.Event()
     vevent.add("uid", f"{event.id}@pda")
     vevent.add("dtstamp", timezone.now())

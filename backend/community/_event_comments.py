@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications.service import notify_comment_reply, notify_event_comment
 from users.permissions import PermissionKey
 
 from community._event_comment_schemas import (
@@ -212,8 +213,6 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
     user = request.auth
     _enforce_event_read_visibility(event, user)
     _require_rsvp_for_post(event, user)
-    from notifications.service import notify_event_comment
-
     with transaction.atomic():
         comment = EventComment.objects.create(event=event, author=user, body=payload.body)
         notify_event_comment(comment)
@@ -252,8 +251,6 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
         raise_validation(Code.Comment.NOT_FOUND, status_code=404)
     if parent.parent_id is not None:
         raise_validation(Code.Comment.REPLY_DEPTH_EXCEEDED, status_code=422)
-    from notifications.service import notify_comment_reply
-
     with transaction.atomic():
         reply = EventComment.objects.create(
             event=event, author=user, body=payload.body, parent=parent

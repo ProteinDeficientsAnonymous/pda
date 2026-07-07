@@ -2,14 +2,13 @@
 
 import pytest
 from community._prosemirror_html import prosemirror_to_html
+from ninja_jwt.tokens import RefreshToken
+from users.models import Role, User
+from users.permissions import PermissionKey
 
 
 @pytest.fixture
 def edit_homepage_headers(db):
-    from ninja_jwt.tokens import RefreshToken
-    from users.models import Role, User
-    from users.permissions import PermissionKey
-
     user = User.objects.create_user(
         phone_number="+12025550999",
         password="testpass",

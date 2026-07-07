@@ -8,12 +8,14 @@ from config.audit import audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
+from django.contrib.auth import authenticate
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
+from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._helpers import _check_and_set_email
@@ -56,8 +58,6 @@ _ALLOWED_IMAGE_TYPES = {
 
 @router.post("/login/", response={200: TokenOut, 401: ErrorOut, 403: ErrorOut}, auth=None)
 def login(request, payload: LoginIn, response: HttpResponse):
-    from django.contrib.auth import authenticate
-
     auth_user = authenticate(request, username=payload.phone_number, password=payload.password)
     if auth_user is None:
         logger.warning("Authentication failure: invalid credentials")
@@ -187,8 +187,6 @@ def magic_login(request, token: str, response: HttpResponse):
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
 def refresh_token(request, response: HttpResponse):
-    from ninja_jwt.exceptions import TokenError
-
     token = read_refresh_cookie(request)
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)

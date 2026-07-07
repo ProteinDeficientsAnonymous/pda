@@ -1,8 +1,14 @@
 """Tests for join request management (list, approve, reject)."""
 
+import uuid
+from datetime import timedelta
+
 import pytest
 from community._validation import Code
-from community.models import JoinRequestStatus
+from community.models import JoinRequest, JoinRequestStatus
+from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 
 from tests._asserts import assert_error_code
 
@@ -27,15 +33,11 @@ class TestJoinRequestManagement:
         assert data[0]["status"] == JoinRequestStatus.PENDING
 
     def test_admin_can_access_list(self, api_client, db):
-        from users.models import User
-
         admin = User.objects.create_superuser(
             phone_number="+12025550001",
             password="adminpass123",
             display_name="Admin User",
         )
-        from ninja_jwt.tokens import RefreshToken
-
         admin_headers = {
             "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
         }
@@ -55,8 +57,6 @@ class TestJoinRequestManagement:
         assert data["id"] == str(sample_join_request.id)
 
     def test_approve_creates_user(self, api_client, vettor_headers, sample_join_request):
-        from users.models import User
-
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": JoinRequestStatus.APPROVED},
@@ -119,8 +119,6 @@ class TestJoinRequestManagement:
         assert response.status_code == 401
 
     def test_not_found(self, api_client, vettor_headers):
-        import uuid
-
         response = api_client.patch(
             f"/api/community/join-requests/{uuid.uuid4()}/",
             {"status": JoinRequestStatus.APPROVED},
@@ -196,8 +194,6 @@ class TestJoinRequestManagement:
     def test_approve_creates_user_with_member_role(
         self, api_client, vettor_headers, sample_join_request, db
     ):
-        from users.models import User
-
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": "approved"},
@@ -226,11 +222,6 @@ class TestJoinRequestManagement:
     def test_list_excludes_approved_onboarded_user_after_grace(
         self, api_client, vettor_headers, sample_join_request
     ):
-        from datetime import timedelta
-
-        from django.utils import timezone
-        from users.models import User
-
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": JoinRequestStatus.APPROVED},
@@ -250,11 +241,6 @@ class TestJoinRequestManagement:
     def test_list_includes_approved_onboarded_within_grace(
         self, api_client, vettor_headers, sample_join_request
     ):
-        from datetime import timedelta
-
-        from django.utils import timezone
-        from users.models import User
-
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": JoinRequestStatus.APPROVED},
@@ -275,8 +261,6 @@ class TestJoinRequestManagement:
     def test_list_excludes_legacy_onboarded_user_with_null_timestamp(
         self, api_client, vettor_headers, sample_join_request
     ):
-        from users.models import User
-
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
             {"status": JoinRequestStatus.APPROVED},
@@ -309,10 +293,6 @@ class TestJoinRequestManagement:
         assert items[str(sample_join_request.id)]["onboarded_at"] is None
 
     def test_list_flags_previously_archived(self, api_client, vettor_headers, db):
-        from community.models import JoinRequest
-        from django.utils import timezone
-        from users.models import User
-
         archived = User.objects.create_user(
             phone_number="+12025550150", display_name="Comeback Kid"
         )
@@ -332,10 +312,6 @@ class TestJoinRequestManagement:
     def test_approve_archived_user_unarchives_and_issues_magic_link(
         self, api_client, vettor_headers, db
     ):
-        from community.models import JoinRequest
-        from django.utils import timezone
-        from users.models import User
-
         archived = User.objects.create_user(phone_number="+12025550151", display_name="Phoenix")
         archived.archived_at = timezone.now()
         archived.needs_onboarding = False
@@ -359,9 +335,6 @@ class TestJoinRequestManagement:
         assert archived.needs_onboarding is True
 
     def test_list_keeps_pending_and_rejected_unaffected(self, api_client, vettor_headers, db):
-        from community.models import JoinRequest
-        from users.models import User
-
         pending = JoinRequest.objects.create(
             display_name="Pending Person",
             phone_number="+12025550101",
@@ -394,9 +367,6 @@ class TestJoinRequestManagement:
 @pytest.mark.django_db
 class TestApprovalEmail:
     def test_approval_copies_email_to_new_user(self, api_client, vettor_headers):
-        from community.models import JoinRequest, JoinRequestStatus
-        from users.models import User
-
         jr = JoinRequest.objects.create(
             display_name="Applicant",
             phone_number="+12025550101",
@@ -414,9 +384,6 @@ class TestApprovalEmail:
         assert user.email == "applicant@example.com"
 
     def test_approval_conflict_when_email_taken(self, api_client, vettor_headers):
-        from community.models import JoinRequest, JoinRequestStatus
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025550199", display_name="other", email="taken@example.com"
         )
@@ -439,10 +406,6 @@ class TestApprovalEmail:
 @pytest.mark.django_db
 class TestApprovalCarriesConsent:
     def test_new_user_inherits_join_request_consent(self, api_client, vettor_headers):
-        from community.models import JoinRequest
-        from django.utils import timezone
-        from users.models import User
-
         jr = JoinRequest.objects.create(
             display_name="Consenter",
             phone_number="+12025550701",
@@ -462,10 +425,6 @@ class TestApprovalCarriesConsent:
         assert user.sms_consent_at is not None
 
     def test_unarchived_user_inherits_join_request_consent(self, api_client, vettor_headers):
-        from community.models import JoinRequest
-        from django.utils import timezone
-        from users.models import User
-
         archived = User.objects.create_user(
             phone_number="+12025550702",
             display_name="Old Member",

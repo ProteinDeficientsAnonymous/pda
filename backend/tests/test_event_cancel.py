@@ -2,7 +2,10 @@
 
 import pytest
 from community._validation import Code
-from community.models import Event, EventStatus
+from community.models import Event, EventRSVP, EventStatus, RSVPStatus
+from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification, NotificationType
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -12,8 +15,6 @@ from tests.conftest import future_iso, past_iso
 
 @pytest.fixture
 def manage_events_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+14155551235",
         password="eventmanagerpass123",
@@ -28,8 +29,6 @@ def manage_events_user(db):
 
 @pytest.fixture
 def manage_events_headers(manage_events_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(manage_events_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -37,8 +36,6 @@ def manage_events_headers(manage_events_user):
 @pytest.fixture
 def upcoming_event_with_rsvp(db, manage_events_user, test_user):
     """An upcoming event with an attending RSVP — can be cancelled."""
-    from community.models import EventRSVP, RSVPStatus
-
     event = Event.objects.create(
         title="Cancellable Event",
         description="Has attendees",
@@ -126,8 +123,6 @@ class TestCancelEvent:
     def test_cancel_with_notify_creates_notifications(
         self, api_client, manage_events_headers, upcoming_event_with_rsvp, test_user
     ):
-        from notifications.models import Notification, NotificationType
-
         response = _patch_status(
             api_client,
             manage_events_headers,
@@ -148,10 +143,6 @@ class TestCancelEvent:
         Every attending RSVPer and every invited user should receive a cancellation
         notification. The canceller themselves must be excluded even if they'd RSVP'd.
         """
-        from community.models import EventRSVP, RSVPStatus
-        from notifications.models import Notification, NotificationType
-        from users.models import User
-
         attendee_two = User.objects.create_user(
             phone_number="+12025550102", password="pass123", display_name="Attendee Two"
         )
@@ -205,8 +196,6 @@ class TestCancelEvent:
     def test_cancel_without_notify_no_notifications(
         self, api_client, manage_events_headers, upcoming_event_with_rsvp, test_user
     ):
-        from notifications.models import Notification, NotificationType
-
         _patch_status(
             api_client,
             manage_events_headers,
@@ -234,8 +223,6 @@ class TestCancelEvent:
     def test_cancel_preserves_rsvps(
         self, api_client, manage_events_headers, upcoming_event_with_rsvp
     ):
-        from community.models import EventRSVP
-
         _patch_status(api_client, manage_events_headers, upcoming_event_with_rsvp.id, "cancelled")
         assert EventRSVP.objects.filter(event=upcoming_event_with_rsvp).exists()
 

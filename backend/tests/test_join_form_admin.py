@@ -4,14 +4,14 @@ import json
 
 import pytest
 from community.models import JoinFormQuestion, JoinFormQuestionType
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
 
 @pytest.fixture
 def form_admin_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+12025550555",
         password="adminpass123",
@@ -27,8 +27,6 @@ def form_admin_user(db):
 
 @pytest.fixture
 def form_admin_headers(form_admin_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(form_admin_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 

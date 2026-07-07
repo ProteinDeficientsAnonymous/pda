@@ -1,10 +1,12 @@
 """User provisioning for approved join requests (create / reactivate + consent carry)."""
 
+from users._helpers import ConsentTimestamps, _create_magic_token
+from users.api import _create_user_with_role
+from users.models import User
+
 
 def _reactivate_archived_user(existing_user, join_request):
     """Un-archive an existing user on re-approval, carrying any new consents."""
-    from users._helpers import _create_magic_token
-
     existing_user.archived_at = None
     existing_user.needs_onboarding = True
     existing_user.display_name = join_request.display_name
@@ -30,13 +32,8 @@ def _provision_approved_user(join_request, requesting_user):
     Returns (magic_token, user_created). When the phone number already maps to an
     active user, nothing is provisioned and (None, False) is returned.
     """
-    from users.api import _create_user_with_role
-    from users.models import User
-
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:
-        from users._helpers import ConsentTimestamps
-
         _, magic_token = _create_user_with_role(
             join_request.phone_number,
             join_request.display_name,
