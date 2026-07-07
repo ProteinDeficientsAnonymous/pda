@@ -291,17 +291,21 @@ class NonMemberRsvpToken(models.Model):
 
 @receiver(m2m_changed, sender=User.roles.through)
 def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwargs):
-    """Enforce the Issue 525 invariant: a non-member can never hold a role.
+    """Reject any role assignment where the user is not a member.
 
     Fires on every role-assignment path (``user.roles.add``, ``role.users.add``,
     etc.). Callers should gate on membership first; reaching this guard means one
     didn't, so the ``ValueError`` surfaces as a loud 500 — fix the caller, don't
     catch it.
+
+    ``reverse`` is part of Django's ``m2m_changed`` signature: it is ``True`` when
+    the signal fires from the role side (``role.users.add``) and ``False`` from
+    the user side (``user.roles.add``).
     """
     if action != "pre_add" or not pk_set:
         return
-    instance_is_role = reverse
-    if instance_is_role:
+    signal_from_role_side = reverse
+    if signal_from_role_side:
         if User.objects.filter(pk__in=pk_set, is_member=False).exists():
             raise ValueError("cannot assign a role to a non-member user")
     elif not instance.is_member:
