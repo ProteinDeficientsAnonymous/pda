@@ -32,9 +32,6 @@ def list_roles(request):
             details={"endpoint": "list_roles", "required_permission": PermissionKey.MANAGE_ROLES},
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_roles")
-    # Count members only. The m2m_changed guard (reject_role_for_non_member)
-    # makes a non-member holding a role impossible, but filter on is_member here
-    # too so a bug elsewhere can never silently inflate the per-role count.
     roles = Role.objects.annotate(
         user_count=Count(
             "users",
@@ -179,7 +176,6 @@ def delete_role(request, role_id: str):
     if role.name in PROTECTED_ROLE_NAMES:
         raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
-    # Members only — keeps the audited affected-user count trustworthy.
     affected_user_count = role.users.filter(archived_at__isnull=True, is_member=True).count()
     role.delete()
     audit_log(
