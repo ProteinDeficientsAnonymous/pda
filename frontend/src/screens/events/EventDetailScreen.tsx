@@ -34,7 +34,7 @@ export default function EventDetailScreen() {
         <img
           src={event.photoUrl}
           alt=""
-          className="mb-4 h-auto max-h-[70vh] w-full rounded-lg"
+          className="mx-auto mb-4 block max-h-[70vh] w-auto max-w-full rounded-lg"
           loading="lazy"
         />
       ) : null}

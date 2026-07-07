@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { initialCrop } from './initialCrop';
+import {
+  coverCrop,
+  defaultCoverAspect,
+  initialCrop,
+  PORTRAIT_ASPECT,
+  SQUARE_ASPECT,
+} from './initialCrop';
 
 // Regression for issue 428: the round crop was sized off image *width*, so for any
 // non-portrait image the square was taller than the image and react-image-crop
@@ -55,19 +61,56 @@ describe('initialCrop — round (1:1)', () => {
   });
 });
 
-describe('initialCrop — rect (free-form)', () => {
-  // Rendered preview is height-capped, so rect is a plain centered 80% box in any orientation.
-  const cases: [string, number, number][] = [
+function pixelAspect(crop: { width: number; height: number }, w: number, h: number): number {
+  return ((crop.width / 100) * w) / ((crop.height / 100) * h);
+}
+
+describe('defaultCoverAspect', () => {
+  it('picks square for landscape and square-ish images', () => {
+    expect(defaultCoverAspect(800, 200)).toBe(SQUARE_ASPECT);
+    expect(defaultCoverAspect(320, 320)).toBe(SQUARE_ASPECT);
+    expect(defaultCoverAspect(320, 300)).toBe(SQUARE_ASPECT);
+  });
+
+  it('picks 4:5 for clearly portrait images', () => {
+    expect(defaultCoverAspect(213, 320)).toBe(PORTRAIT_ASPECT);
+    expect(defaultCoverAspect(400, 600)).toBe(PORTRAIT_ASPECT);
+  });
+});
+
+describe('coverCrop', () => {
+  const dims: [string, number, number][] = [
     ['landscape', 800, 200],
     ['square', 320, 320],
-    ['portrait (capped)', 213, 320],
+    ['portrait', 213, 320],
   ];
 
-  it.each(cases)('is a centered 80%% box that fits: %s', (_label, w, h) => {
+  it.each(dims)('produces a fitted, centered crop of the given aspect: %s', (_l, w, h) => {
+    for (const aspect of [SQUARE_ASPECT, PORTRAIT_ASPECT]) {
+      const crop = coverCrop(w, h, aspect);
+      fits(crop);
+      isCentered(crop);
+      expect(pixelAspect(crop, w, h)).toBeCloseTo(aspect, 3);
+    }
+  });
+});
+
+describe('initialCrop — rect (event cover)', () => {
+  it('defaults landscape photos to a square crop', () => {
+    const w = 800;
+    const h = 200;
     const crop = initialCrop(w, h, 'rect');
     fits(crop);
     isCentered(crop);
-    expect(crop.width).toBe(80);
-    expect(crop.height).toBe(80);
+    expect(pixelAspect(crop, w, h)).toBeCloseTo(SQUARE_ASPECT, 3);
+  });
+
+  it('defaults tall photos to a 4:5 crop', () => {
+    const w = 213;
+    const h = 320;
+    const crop = initialCrop(w, h, 'rect');
+    fits(crop);
+    isCentered(crop);
+    expect(pixelAspect(crop, w, h)).toBeCloseTo(PORTRAIT_ASPECT, 3);
   });
 });
