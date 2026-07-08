@@ -1,11 +1,4 @@
-"""Public (no-auth) non-member RSVP submission.
-
-Anonymous visitors RSVP to OFFICIAL, PUBLIC, active, rsvp-enabled events without
-an account. A non-member ``User`` row backs each RSVP so the entire existing
-RSVP machinery (capacity, plus-ones, waitlist, promotion) is reused unchanged.
-A scoped ``NonMemberRsvpToken`` is emailed (never returned in the response) so
-the visitor can manage their RSVP at ``/my-rsvps?token=...``.
-"""
+"""Public (no-auth) non-member RSVP submission."""
 
 import logging
 
@@ -57,11 +50,7 @@ class PublicRsvpOut(BaseModel):
 
 
 def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicRsvpOut:
-    """Mimic a real submission's shape so bots register success and stop retrying.
-
-    No User/RSVP/token row is created and no email is sent. The event payload is
-    the anonymous (un-RSVP'd) view, so gated details stay hidden.
-    """
+    """Mimic a real submission's shape (no rows created, no email) so bots register success."""
     return PublicRsvpOut(
         event=_event_out(event, None),
         rsvp=PublicRsvpStateOut(status=status, has_plus_one=has_plus_one),
@@ -69,11 +58,7 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
 
 
 def _load_public_rsvp_event(event_id) -> Event:
-    """Fetch an event eligible for public RSVP, else 404.
-
-    Every ineligible state collapses to Code.Event.NOT_FOUND so the endpoint
-    never leaks the existence of non-public events.
-    """
+    """Fetch a public-RSVP-eligible event, else 404 (every ineligible state hides as NOT_FOUND)."""
     event = Event.objects.prefetch_related("co_hosts", "invited_users").filter(id=event_id).first()
     if (
         event is None
@@ -88,8 +73,7 @@ def _load_public_rsvp_event(event_id) -> Event:
 
 
 def _reuse_phone_match(phone_match: User, email: str) -> User:
-    # Save the submitted email only if blank — never overwrite an existing email
-    # (avoids identity churn for a returning non-member).
+    # Backfill the email only if blank — never overwrite an existing one.
     if email and not phone_match.email:
         phone_match.email = email
         phone_match.save(update_fields=["email"])
@@ -105,11 +89,11 @@ def _reuse_email_match(email_match: User, phone: str) -> User:
 
 
 def _create_non_member(name: str, email: str, phone: str) -> User:
-    # Relies on the unique phone constraint for race safety — a concurrent
-    # IntegrityError loser is re-fetched by get_or_create's own SELECT. The
-    # email is dropped on a unique-email collision (e.g. an archived row holds
-    # it) inside a savepoint so the outer transaction survives; the RSVP still
-    # succeeds, just without an email saved on the new row.
+    """Get-or-create the non-member User keyed on the unique phone number.
+
+    On a unique-email collision the email is dropped inside a savepoint so the
+    outer transaction and the RSVP survive; the row is just saved without it.
+    """
     defaults = {"display_name": name, "is_member": False}
     try:
         with transaction.atomic():
@@ -126,9 +110,9 @@ def _create_non_member(name: str, email: str, phone: str) -> User:
 
 def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
     if phone_match.pk == email_match.pk:
-        return phone_match  # Same non-member row — reuse, no change.
-    # Phone and email point at different non-member rows. Phone is the canonical
-    # identifier in this app — reuse it, leave its email as-is, flag for admins.
+        return phone_match
+    # Phone and email point at different rows. Phone is canonical here — reuse it
+    # and flag the ambiguity for admins.
     audit_log(
         logging.WARNING,
         "public_rsvp_contact_ambiguous",
@@ -141,22 +125,18 @@ def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
 
 
 def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
-    """Resolve (or create) the non-member User backing this RSVP.
+    """Resolve (or create) the non-member User backing this RSVP; member contact → 409.
 
-    Implements the spec's phone/email collision table. Members → 409. Returns a
-    non-member User. Must run inside the surrounding transaction.
+    Must run inside the surrounding transaction.
     """
     phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
-    # iexact, not exact: stored emails aren't guaranteed lowercased (the admin
-    # members screen stores them verbatim), so an exact match on the normalized
-    # input could miss a member and bypass the MEMBER_CONTACT_MUST_SIGN_IN gate.
+    # iexact: stored emails aren't guaranteed lowercased, so exact could miss a member.
     email_match = (
         User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
         if email
         else None
     )
 
-    # Either contact belongs to a member → redirect to the authenticated flow.
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
@@ -189,6 +169,7 @@ def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails
         event_location=event.location,
         event_links=_event_links(event),
         manage_url=f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token_str}",
+        join_url=f"{settings.FRONTEND_BASE_URL}/join",
     )
 
 
@@ -251,8 +232,7 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
 def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     event = _load_public_rsvp_event(event_id)
 
-    # Honeypot trip — decoy 200 without persisting. Checked before field
-    # validation so a bot gets no validation feedback to iterate against.
+    # Honeypot trip — decoy 200 before validation, so bots get no feedback.
     if payload.website.strip():
         audit_log(
             logging.WARNING,

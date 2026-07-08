@@ -1,9 +1,4 @@
-"""Helpers for sending specific transactional emails.
-
-Each helper renders its templates and dispatches via the injected
-`EmailSender`. The helpers exist so callers don't have to know template
-paths or context shapes — they just say "send a magic-login email."
-"""
+"""Helpers for sending specific transactional emails."""
 
 from dataclasses import dataclass
 
@@ -14,11 +9,7 @@ from notifications.email_sender import EmailSender, SendResult
 
 @dataclass(frozen=True)
 class RsvpEmailDetails:
-    """Event + recipient details shared by the non-member RSVP emails.
-
-    Bundling these keeps the send helpers to a handful of arguments and gives
-    callers one place to assemble the per-event context.
-    """
+    """Event + recipient details shared by the non-member RSVP emails."""
 
     to: str
     display_name: str
@@ -27,6 +18,7 @@ class RsvpEmailDetails:
     event_location: str
     event_links: list[str]
     manage_url: str
+    join_url: str
 
     def template_context(self) -> dict:
         return {
@@ -36,6 +28,7 @@ class RsvpEmailDetails:
             "event_location": self.event_location,
             "event_links": self.event_links,
             "manage_url": self.manage_url,
+            "join_url": self.join_url,
         }
 
 
@@ -45,11 +38,7 @@ def send_rsvp_confirmation_email(
     details: RsvpEmailDetails,
     waitlisted: bool,
 ) -> SendResult:
-    """Render and send the non-member RSVP confirmation email (Email 1).
-
-    `details.manage_url` is the scoped /my-rsvps?token=... magic link. When
-    `waitlisted` the subject and body reflect that the RSVP landed on the waitlist.
-    """
+    """Render and send the non-member RSVP confirmation email."""
     context = {**details.template_context(), "waitlisted": waitlisted}
     html = render_to_string("emails/rsvp_confirmation.html", context)
     text = render_to_string("emails/rsvp_confirmation.txt", context)
@@ -63,8 +52,7 @@ def send_rsvp_waitlist_promoted_email(
     sender: EmailSender,
     details: RsvpEmailDetails,
 ) -> SendResult:
-    """Render and send the "you're off the waitlist" email (Email 3) to a
-    non-member promoted off an event's waitlist."""
+    """Render and send the non-member "you're off the waitlist" email."""
     context = details.template_context()
     html = render_to_string("emails/rsvp_waitlist_promoted.html", context)
     text = render_to_string("emails/rsvp_waitlist_promoted.txt", context)

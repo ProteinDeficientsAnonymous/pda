@@ -48,9 +48,6 @@ class Code:
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
-        # Raised by the public (non-member) RSVP endpoint when the submitted
-        # phone or email already belongs to a member — they must use the
-        # authenticated flow rather than the scoped non-member path.
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"

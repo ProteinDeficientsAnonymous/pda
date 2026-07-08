@@ -10,6 +10,6 @@ manage or change your rsvp anytime:
 
 {{ manage_url }}
 
-rsvping doesn't make you a pda member. want to join? reply to a host or visit the site to request to join.
+when you join pda you get access to club events and our whatsapp community. click here to join: {{ join_url }}
 
 — pda
