@@ -1,5 +1,3 @@
-// Host "group text" helpers — the host's device sends (see #403).
-
 import type { EventGuest } from '@/models/event';
 
 export interface GroupTextRecipients {
@@ -24,13 +22,11 @@ export function collectRecipients(guests: EventGuest[]): GroupTextRecipients {
   return { phones, skippedCount };
 }
 
-// Comma-joined recipients open as one group thread on iOS and Android.
 export function buildSmsUri(phones: string[]): string | null {
   if (phones.length === 0) return null;
   return `sms:${phones.join(',')}`;
 }
 
-// No feature detection for `sms:` handlers exists, so approximate via mobile UA.
 export function isSmsSupported(): boolean {
   if (typeof navigator === 'undefined') return false;
   return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
