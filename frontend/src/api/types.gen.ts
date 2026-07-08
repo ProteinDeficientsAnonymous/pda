@@ -969,12 +969,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Text Recipients
-         * @description Host/co-host only: phone numbers for the group-text action, grouped by
-         *     rsvp status. The permission gate here is the ONLY thing exposing phones —
-         *     they are not on the shared event payload.
-         */
+        /** Get Text Recipients */
         get: operations["community__event_rsvps_get_text_recipients"];
         put?: never;
         post?: never;
@@ -3311,13 +3306,7 @@ export interface components {
             /** Slug */
             slug: string;
         };
-        /**
-         * TextRecipientsOut
-         * @description Phone numbers grouped by rsvp status for the host group-text action.
-         *
-         *     Host/co-host only (see the /text-recipients/ endpoint gate). Members with
-         *     no number are simply absent from their group's list.
-         */
+        /** TextRecipientsOut */
         TextRecipientsOut: {
             /**
              * Attending

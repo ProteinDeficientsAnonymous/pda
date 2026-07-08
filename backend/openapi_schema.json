@@ -4027,7 +4027,6 @@
         "type": "object"
       },
       "TextRecipientsOut": {
-        "description": "Phone numbers grouped by rsvp status for the host group-text action.\n\nHost/co-host only (see the /text-recipients/ endpoint gate). Members with\nno number are simply absent from their group's list.",
         "properties": {
           "attending": {
             "default": [],
@@ -8824,7 +8823,6 @@
     },
     "/api/community/events/{event_id}/text-recipients/": {
       "get": {
-        "description": "Host/co-host only: phone numbers for the group-text action, grouped by\nrsvp status. The permission gate here is the ONLY thing exposing phones \u2014\nthey are not on the shared event payload.",
         "operationId": "community__event_rsvps_get_text_recipients",
         "parameters": [
           {
