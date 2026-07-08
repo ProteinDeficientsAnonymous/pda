@@ -5,7 +5,7 @@ from django.utils import timezone
 from users.models import User
 from users.roles import Role
 
-from community.models import Event, EventRSVP, JoinRequest, JoinRequestStatus
+from community.models import Event, EventRSVP, EventTag, JoinRequest, JoinRequestStatus
 from community.models.content import FAQ, CommunityGuidelines, HomePage
 from community.models.join_form import JoinFormQuestion
 
@@ -41,6 +41,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         admin_user = self._seed_users()
         questions = self._seed_join_form_questions()
+        self._seed_event_tags()
         events = self._seed_events(admin_user)
         self._seed_rsvps(events)
         self._seed_join_requests(questions, admin_user)
@@ -116,6 +117,12 @@ class Command(BaseCommand):
             self.stdout.write(f"  {label} question: {q.label}")
             questions[q.label] = q
         return questions
+
+    def _seed_event_tags(self) -> None:
+        for name in ["walk", "restaurant meetup"]:
+            _, created = EventTag.objects.get_or_create(name=name)
+            label = "Created" if created else "Already exists"
+            self.stdout.write(f"  EventTag '{name}': {label}")
 
     def _seed_events(self, created_by: User) -> dict[str, Event]:
         """Seed events. Returns a title→Event mapping for RSVP seeding."""

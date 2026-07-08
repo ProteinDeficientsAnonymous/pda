@@ -25,6 +25,7 @@ from community._event_schemas import (
     EventOut,
     PendingCoHostInviteOut,
     RSVPGuestOut,
+    TagOut,
 )
 from community._shared import _authenticated_user, _members_only
 from community.models import (
@@ -33,6 +34,7 @@ from community.models import (
     Event,
     EventCoHostInvite,
     EventRSVP,
+    EventTag,
     RSVPStatus,
     SurveyQuestionType,
 )
@@ -260,6 +262,22 @@ def _get_creator_name(creator) -> str | None:
     return creator.display_name or creator.phone_number
 
 
+def _tags_out(event: Event) -> list[TagOut]:
+    """Serialize an event's tags (uses the prefetched `tags` relation)."""
+    return [TagOut(id=str(t.id), name=t.name, slug=t.slug) for t in event.tags.all()]
+
+
+def _set_event_tags(event: Event, tag_ids: Iterable[str]) -> None:
+    """Replace an event's tags with the curated tags matching `tag_ids`.
+
+    Unknown ids are silently dropped — the tag set is admin-curated, so a stale
+    or invalid id from a client just means "no such tag", not an error worth
+    failing the whole save over.
+    """
+    tags = EventTag.objects.filter(pk__in=list(tag_ids))
+    event.tags.set(tags)
+
+
 def _get_datetime_poll_slug(event: Event) -> str | None:
     poll_survey = (
         event.surveys.filter(
@@ -375,6 +393,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         status=event.status,
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
+        tags=_tags_out(event),
     )
 
 

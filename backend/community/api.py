@@ -19,6 +19,7 @@ from community._event_helpers import (  # noqa: F401
 from community._event_invitations import router as event_invitations_router
 from community._event_rsvps import router as event_rsvps_router
 from community._event_schemas import EventPatchIn  # noqa: F401
+from community._event_tags import router as event_tags_router
 from community._events import router as events_router
 from community._feedback import router as feedback_router
 from community._geocode import router as geocode_router
@@ -45,6 +46,7 @@ router.add_router("", join_request_resend_router)
 router.add_router("", login_link_router)
 router.add_router("", feedback_router)
 router.add_router("", events_router)
+router.add_router("", event_tags_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", event_actions_router)
 router.add_router("", event_cohost_invites_router)
