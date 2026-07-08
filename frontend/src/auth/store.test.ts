@@ -177,9 +177,6 @@ describe('useAuthStore', () => {
 
   describe('uploadProfilePhoto', () => {
     it('stores the server-stamped photoUpdatedAt so the cache-buster changes', async () => {
-      // The backend now returns a fresh photo_updated_at on upload, which the
-      // store persists verbatim. The cache-buster ?v= param keys off it, so the
-      // avatar refreshes without a reload — no client-side stamping needed.
       useAuthStore.setState({ status: 'authed', user: mockUser, accessToken: 'tok-abc' });
       const serverStamp = '2026-06-25T12:00:00+00:00';
       vi.mocked(authApi.uploadProfilePhoto).mockResolvedValueOnce({
