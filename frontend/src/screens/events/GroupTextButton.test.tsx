@@ -3,8 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { makeEvent } from '@/test/fixtures';
 
-// Stub the dialog so this test focuses on the trigger; the dialog has its own
-// suite and pulls in the data hook.
 vi.mock('./GroupTextDialog', () => ({
   GroupTextDialog: ({ open }: { open: boolean }) =>
     open ? <div role="dialog" aria-label="group text" /> : null,

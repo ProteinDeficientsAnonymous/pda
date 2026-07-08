@@ -1,8 +1,3 @@
-// Group-text picker (see #500). Hosts choose which rsvp groups to message,
-// then open an sms: group draft (primary) or copy the numbers (fallback for
-// platforms with no SMS app). Phone numbers are fetched from a host-only
-// endpoint when the dialog opens — they are not on the shared event payload.
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 

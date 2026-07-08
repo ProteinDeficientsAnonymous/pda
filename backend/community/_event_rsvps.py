@@ -222,12 +222,6 @@ def get_event_stats(request, event_id: UUID):
 
 
 def _build_text_recipients(event: Event) -> TextRecipientsOut:
-    """Group attendee + invited phone numbers by rsvp status for the host.
-
-    Only numbers actually present are included; members with no number are
-    silently skipped. Invited users who also have an rsvp row still appear in
-    the invited list — the frontend dedupes across selected groups.
-    """
     by_status: dict[str, list[str]] = {
         RSVPStatus.ATTENDING: [],
         RSVPStatus.MAYBE: [],
@@ -254,9 +248,6 @@ def _build_text_recipients(event: Event) -> TextRecipientsOut:
     auth=gated_jwt,
 )
 def get_text_recipients(request, event_id: UUID):
-    """Host/co-host only: phone numbers for the group-text action, grouped by
-    rsvp status. The permission gate here is the ONLY thing exposing phones —
-    they are not on the shared event payload."""
     event = _load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)

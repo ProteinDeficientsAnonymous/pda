@@ -59,7 +59,6 @@ describe('collectPhones', () => {
   });
 
   it('dedupes a number that appears in more than one selected group', () => {
-    // An invited member who also RSVP'd going shows up in both lists.
     const r = recipients({ attending: ['+15551112222'], invited: ['+15551112222'] });
     expect(collectPhones(r, [RecipientGroup.Going, RecipientGroup.Invited])).toEqual([
       '+15551112222',

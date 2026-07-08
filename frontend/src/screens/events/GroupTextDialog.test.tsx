@@ -50,7 +50,6 @@ beforeEach(() => {
   toastSuccess.mockClear();
   toastError.mockClear();
   useTextRecipients.mockReset();
-  // Pin an Apple UA so buildSmsUri emits the /open?addresses= form.
   Object.defineProperty(navigator, 'userAgent', {
     value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
     configurable: true,

@@ -1,7 +1,3 @@
-// Host-only "group text" trigger (see #500). Opens a dialog that fetches the
-// recipient phone numbers (host-only endpoint) and lets the host pick which
-// rsvp groups to message. Rendered only for co-hosts by the parent section.
-
 import { useState } from 'react';
 
 import type { Event } from '@/models/event';

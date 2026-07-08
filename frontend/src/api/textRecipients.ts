@@ -1,9 +1,3 @@
-// Host-only group-text recipients (see #500).
-//
-// GET /text-recipients/ returns 403 for non-hosts, so callers must gate the
-// `enabled` flag on host status to avoid noisy error toasts. Phones live only
-// on this endpoint — they are not on the shared event payload.
-
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from './client';

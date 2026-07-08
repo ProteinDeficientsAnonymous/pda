@@ -253,12 +253,6 @@ class RSVPIn(BaseModel):
 
 
 class TextRecipientsOut(BaseModel):
-    """Phone numbers grouped by rsvp status for the host group-text action.
-
-    Host/co-host only (see the /text-recipients/ endpoint gate). Members with
-    no number are simply absent from their group's list.
-    """
-
     attending: list[str] = []
     maybe: list[str] = []
     cant_go: list[str] = []
