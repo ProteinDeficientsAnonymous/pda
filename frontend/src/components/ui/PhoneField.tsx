@@ -1,5 +1,6 @@
 import 'react-phone-number-input/style.css';
 
+import type { CSSProperties } from 'react';
 import type { InputHTMLAttributes } from 'react';
 import PhoneInput, { type Country, type Value } from 'react-phone-number-input';
 import flags from 'react-phone-number-input/flags';
@@ -67,7 +68,7 @@ export function PhoneField({
         style={
           {
             '--PhoneInput-color--focus': 'var(--color-brand-600)',
-          } as React.CSSProperties
+          } as CSSProperties
         }
         className={cn(
           'PhoneInput flex items-center gap-2',

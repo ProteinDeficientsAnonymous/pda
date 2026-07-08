@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { SyntheticEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { isValidPhoneNumber } from 'react-phone-number-input';
@@ -36,7 +37,7 @@ export default function LoginScreen() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
 
-  async function onPhoneSubmit(e: React.SyntheticEvent) {
+  async function onPhoneSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setPhoneError(null);
     if (!phone || !isValidPhoneNumber(phone)) {

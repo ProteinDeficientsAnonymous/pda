@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosError } from 'axios';
-import React from 'react';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/client', () => ({
@@ -75,8 +76,8 @@ function wirePoll(overrides: Partial<WireEventPoll> = {}): WireEventPoll {
 
 function buildWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const Wrapper = ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: qc }, children);
+  const Wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: qc }, children);
   return { qc, Wrapper };
 }
 

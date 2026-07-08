@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 import { type TextScale, type ThemeMode, useAccessibilityStore } from '@/accessibility/store';
@@ -112,7 +113,7 @@ function BuildInfo() {
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="border-border bg-surface mb-6 rounded-lg border p-4">
       <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">{label}</h2>

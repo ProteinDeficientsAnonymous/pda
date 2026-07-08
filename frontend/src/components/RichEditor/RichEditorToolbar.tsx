@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/react';
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/utils/cn';
@@ -204,9 +205,9 @@ function Menu({
   children,
 }: {
   label: string;
-  trigger: React.ReactNode;
+  trigger: ReactNode;
   active: boolean;
-  children: (close: () => void) => React.ReactNode;
+  children: (close: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -277,7 +278,7 @@ function MenuItem({
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
@@ -310,7 +311,7 @@ function ToolButton({
   label: string;
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
@@ -344,7 +345,7 @@ function promptLink(editor: Editor) {
 
 // --- icons ---
 
-function Icon({ children }: { children: React.ReactNode }) {
+function Icon({ children }: { children: ReactNode }) {
   return (
     <svg
       aria-hidden="true"

@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 
@@ -33,7 +34,7 @@ function RequestLoginLinkForm({
   const [delivery, setDelivery] = useState<RequestLoginLinkDelivery | null>(null);
   const requestLink = useRequestLoginLink();
 
-  async function onSubmit(e: React.SyntheticEvent) {
+  async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
     if (!phone || !isValidPhoneNumber(phone)) {

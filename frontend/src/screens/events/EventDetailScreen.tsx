@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
@@ -98,7 +99,7 @@ function Badge({
   children,
 }: {
   tone: 'neutral' | 'blue' | 'amber' | 'lavender';
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const tones = {
     neutral: 'bg-surface-dim text-foreground-secondary',
