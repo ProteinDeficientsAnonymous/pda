@@ -12,7 +12,7 @@ import logging
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -118,6 +118,11 @@ def _create_non_member(name: str, email: str, phone: str) -> User:
             )
     except IntegrityError:
         user, created = User.objects.get_or_create(phone_number=phone, defaults=defaults)
+    # Defense-in-depth against a row that turned member between the gate check
+    # and now (e.g. concurrent conversion). A public RSVP/token must never attach
+    # to a member — NonMemberRsvpToken.issue would raise — so 409 as the gate does.
+    if not created and user.is_member:
+        raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
     if created:
         user.set_unusable_password()
         user.save(update_fields=["password"])
@@ -140,25 +145,36 @@ def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
     return phone_match
 
 
+def _member_owns_contact(email: str, phone: str) -> bool:
+    # Membership gate ignores archived_at: phone_number/email are globally
+    # unique, so a member's contact stays theirs even after archival and must
+    # still route to sign-in. Reuse below stays active-only — an archived
+    # non-member row is not resurrected for a live RSVP.
+    #
+    # iexact, not exact: stored emails aren't guaranteed lowercased (the admin
+    # members screen stores them verbatim), so an exact match on the normalized
+    # input could miss a member and bypass the gate.
+    q = models.Q(phone_number=phone)
+    if email:
+        q |= models.Q(email__iexact=email)
+    return User.objects.filter(q, is_member=True).exists()
+
+
 def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
     """Resolve (or create) the non-member User backing this RSVP.
 
     Implements the spec's phone/email collision table. Members → 409. Returns a
     non-member User. Must run inside the surrounding transaction.
     """
+    if _member_owns_contact(email, phone):
+        raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
+
     phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
-    # iexact, not exact: stored emails aren't guaranteed lowercased (the admin
-    # members screen stores them verbatim), so an exact match on the normalized
-    # input could miss a member and bypass the MEMBER_CONTACT_MUST_SIGN_IN gate.
     email_match = (
         User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
         if email
         else None
     )
-
-    # Either contact belongs to a member → redirect to the authenticated flow.
-    if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
-        raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if phone_match and email_match:
         return _resolve_both_match(request, phone_match, email_match)

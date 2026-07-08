@@ -219,6 +219,49 @@ class TestPublicRsvpMemberCollision:
         assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
         assert not EventRSVP.objects.exists()
 
+    def test_archived_member_phone_redirects_to_member_flow(
+        self, api_client, official_event, fake_email_sender
+    ):
+        # phone_number is globally unique, so an archived member's phone escapes
+        # the active-only gate; the create path must still 409, not 500 or attach
+        # a public RSVP to the member row.
+        from django.utils import timezone
+
+        member = User.objects.create_user(
+            phone_number="+14155550123", display_name="Archived Member", is_member=True
+        )
+        member.archived_at = timezone.now()
+        member.save(update_fields=["archived_at"])
+
+        response = post(api_client, official_event)
+
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert not EventRSVP.objects.exists()
+        fake_email_sender.send.assert_not_called()
+
+    def test_archived_member_email_redirects_to_member_flow(
+        self, api_client, official_event, fake_email_sender
+    ):
+        # An archived member's email likewise escapes the active-only gate and
+        # reaches the create path via a new phone; it must still 409.
+        from django.utils import timezone
+
+        member = User.objects.create_user(
+            phone_number="+14155550555",
+            display_name="Archived Member",
+            email="sam@example.com",
+            is_member=True,
+        )
+        member.archived_at = timezone.now()
+        member.save(update_fields=["archived_at"])
+
+        response = post(api_client, official_event)
+
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert not EventRSVP.objects.exists()
+
 
 @pytest.mark.django_db
 class TestPublicRsvpEventGating:
