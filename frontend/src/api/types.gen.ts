@@ -407,7 +407,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Check Phone */
-        post: operations["community__join_requests_check_phone"];
+        post: operations["community__join_request_submit_check_phone"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1132,7 +1132,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Join Request */
-        post: operations["community__join_requests_submit_join_request"];
+        post: operations["submit_join_request"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1655,9 +1655,13 @@ export interface components {
         };
         /** CheckPhoneOut */
         CheckPhoneOut: {
-            /** Status */
-            status: string;
+            status: components["schemas"]["CheckPhoneStatus"];
         };
+        /**
+         * CheckPhoneStatus
+         * @enum {string}
+         */
+        CheckPhoneStatus: "member" | "pending" | "unknown";
         /** CommentBodyIn */
         CommentBodyIn: {
             /** Body */
@@ -2769,6 +2773,11 @@ export interface components {
             approved_at?: string | null;
             /** Approved By Name */
             approved_by_name?: string | null;
+            /**
+             * Attached User Official Rsvp Count
+             * @default 0
+             */
+            attached_user_official_rsvp_count: number;
             /** Display Name */
             display_name: string;
             /** Id */
@@ -4458,7 +4467,7 @@ export interface operations {
             };
         };
     };
-    community__join_requests_check_phone: {
+    community__join_request_submit_check_phone: {
         parameters: {
             query?: never;
             header?: never;
@@ -6928,7 +6937,7 @@ export interface operations {
             };
         };
     };
-    community__join_requests_submit_join_request: {
+    submit_join_request: {
         parameters: {
             query?: never;
             header?: never;

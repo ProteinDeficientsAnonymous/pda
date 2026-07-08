@@ -1,7 +1,7 @@
 """Tests for email validation on join request submission."""
 
 import pytest
-from community._join_requests import _send_join_request_email
+from community._join_request_submit import _send_join_request_email
 from community._shared import flatten_to_single_line
 from community.models import JoinFormQuestion, JoinRequest
 from django.core import mail
