@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import type { EventFormValues } from '@/api/eventWrites';
+
 import { validateEventForm } from './validateEventForm';
 
 function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues {
@@ -28,6 +30,7 @@ function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues 
     cashappLink: '',
     zelleInfo: '',
     coHostIds: [],
+    tagIds: [],
     status: 'active',
     ...overrides,
   };

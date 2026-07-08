@@ -10,12 +10,14 @@
 // The onboarding gate wraps the WHOLE app so it applies on every navigation,
 // matching the Flutter behavior.
 
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+
 import { RequireEmail } from '@/components/RequireEmail';
-import { useAuthStore } from './store';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { guidelinesConsentRedirect, passwordSetupRedirect } from '@/models/user';
+
+import { useAuthStore } from './store';
 
 // ----------------------------------------------------------------------------
 // AuthBoot — kick off session restore exactly once on mount.

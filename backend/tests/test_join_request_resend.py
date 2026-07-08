@@ -1,8 +1,12 @@
 """Tests for the resend-magic-link endpoint on approved join requests."""
 
+import uuid
+
 import pytest
 from community._validation import Code
 from community.models import JoinRequestStatus
+from django.utils import timezone
+from users.models import MagicLoginToken, User
 
 from tests._asserts import assert_error_code
 
@@ -38,8 +42,6 @@ class TestResendMagicLink:
     def test_resend_invalidates_previous_unused_tokens(
         self, api_client, vettor_headers, sample_join_request
     ):
-        from users.models import MagicLoginToken, User
-
         approve_response = _approve(api_client, vettor_headers, sample_join_request)
         original_token = approve_response.json()["magic_link_token"]
 
@@ -69,8 +71,6 @@ class TestResendMagicLink:
         assert_error_code(response, Code.JoinRequest.NOT_APPROVED)
 
     def test_already_logged_in_user_rejected(self, api_client, vettor_headers, sample_join_request):
-        from users.models import User
-
         _approve(api_client, vettor_headers, sample_join_request)
         user = User.objects.get(phone_number=sample_join_request.phone_number)
         user.needs_onboarding = False
@@ -85,9 +85,6 @@ class TestResendMagicLink:
         assert_error_code(response, Code.JoinRequest.ALREADY_LOGGED_IN)
 
     def test_archived_user_rejected(self, api_client, vettor_headers, sample_join_request):
-        from django.utils import timezone
-        from users.models import User
-
         _approve(api_client, vettor_headers, sample_join_request)
         user = User.objects.get(phone_number=sample_join_request.phone_number)
         user.archived_at = timezone.now()
@@ -102,8 +99,6 @@ class TestResendMagicLink:
         assert_error_code(response, Code.Auth.ACCOUNT_ARCHIVED)
 
     def test_paused_user_rejected(self, api_client, vettor_headers, sample_join_request):
-        from users.models import User
-
         _approve(api_client, vettor_headers, sample_join_request)
         user = User.objects.get(phone_number=sample_join_request.phone_number)
         user.is_paused = True
@@ -118,8 +113,6 @@ class TestResendMagicLink:
         assert_error_code(response, Code.Auth.ACCOUNT_PAUSED)
 
     def test_not_found(self, api_client, vettor_headers):
-        import uuid
-
         response = api_client.post(
             f"/api/community/join-requests/{uuid.uuid4()}/resend-magic-link/",
             content_type="application/json",

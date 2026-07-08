@@ -2,6 +2,7 @@
 // the web and Flutter apps stay consistent while both are in production.
 
 import { useMemo, useState } from 'react';
+
 import { ContentContainer } from './ContentContainer';
 
 interface Step {

@@ -5,11 +5,13 @@
 
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+
 import { extractPollError, useVotePoll } from '@/api/eventPolls';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
+import { ALL_VOTE_CHOICES, type EventPoll, VoteChoice } from '@/models/eventPoll';
 import { cn } from '@/utils/cn';
-import { ALL_VOTE_CHOICES, VoteChoice, type EventPoll } from '@/models/eventPoll';
+
 import { sortOptionsChrono } from './pollHelpers';
 
 interface Props {

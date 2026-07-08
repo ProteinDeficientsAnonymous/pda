@@ -1,5 +1,5 @@
-import { cn } from '@/utils/cn';
 import type { AutosaveStatus as Status } from '@/hooks/useAutosave';
+import { cn } from '@/utils/cn';
 
 interface Props {
   status: Status;

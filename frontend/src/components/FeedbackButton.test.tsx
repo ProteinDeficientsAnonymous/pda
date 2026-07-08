@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 
@@ -25,6 +26,7 @@ vi.mock('sonner', () => ({
 }));
 
 import { useSubmitFeedback } from '@/api/feedback';
+
 import { FeedbackButton } from './FeedbackButton';
 
 const mockedUseSubmitFeedback = vi.mocked(useSubmitFeedback);

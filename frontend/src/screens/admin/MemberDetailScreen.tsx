@@ -2,26 +2,27 @@
 // list (no dedicated detail endpoint exists on the backend) and lets admins
 // edit display name / email / phone + pause/unpause the account.
 
-import { useState, type SyntheticEvent } from 'react';
+import { type SyntheticEvent, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { Button } from '@/components/ui/Button';
-import { useConfirm } from '@/components/ui/useConfirm';
-import { TextField } from '@/components/ui/TextField';
-import { Toggle } from '@/components/ui/Toggle';
-import { formatPhone } from '@/utils/formatPhone';
+import { useRoles } from '@/api/roles';
 import {
+  type Member,
   useArchiveUser,
   useSendMemberMagicLink,
   useUpdateMemberRoles,
   useUpdateUser,
   useUsers,
-  type Member,
 } from '@/api/users';
-import { useRoles } from '@/api/roles';
+import { Button } from '@/components/ui/Button';
+import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { ADMIN_ROLE_NAME } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
 
 export default function MemberDetailScreen() {

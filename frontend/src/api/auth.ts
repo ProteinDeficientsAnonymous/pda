@@ -2,9 +2,11 @@
 // responses — centralizes the mapping from backend snake_case to frontend camelCase.
 
 import { useMutation } from '@tanstack/react-query';
-import { apiClient, authClient, getCurrentAccessToken } from './client';
+
+import type { Role, User } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
-import type { User, Role } from '@/models/user';
+
+import { apiClient, authClient, getCurrentAccessToken } from './client';
 
 // --- Wire types (snake_case, server-shaped). ----------------------------------
 

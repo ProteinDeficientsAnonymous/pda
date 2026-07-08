@@ -1,7 +1,10 @@
-// Wire (snake_case, ISO strings) → Event (camelCase, Date objects) mapper.
-// Kept separate from events.ts so the caller module stays ≤150 lines.
-
-import type { AttendanceStatusValue, Event, EventGuest, PendingCohostInvite } from '@/models/event';
+import type {
+  AttendanceStatusValue,
+  Event,
+  EventGuest,
+  EventTag,
+  PendingCohostInvite,
+} from '@/models/event';
 import { AttendanceStatus } from '@/models/event';
 
 interface WireGuest {
@@ -68,8 +71,16 @@ export interface WireEvent {
   visibility?: string;
   photo_url?: string;
 
+  tags?: WireTag[];
+
   is_past?: boolean;
   status?: string;
+}
+
+interface WireTag {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 interface WirePendingCohostInvite {
@@ -96,6 +107,10 @@ function mapGuest(g: WireGuest): EventGuest {
     hasPlusOne: g.has_plus_one ?? false,
     attendance: mapAttendance(g.attendance),
   };
+}
+
+function mapTag(t: WireTag): EventTag {
+  return { id: t.id, name: t.name, slug: t.slug };
 }
 
 function mapPendingCohostInvite(w: WirePendingCohostInvite): PendingCohostInvite {
@@ -162,6 +177,8 @@ export function mapEvent(e: WireEvent): Event {
     eventType: e.event_type ?? 'community',
     visibility: e.visibility ?? 'public',
     photoUrl: e.photo_url ?? '',
+
+    tags: (e.tags ?? []).map(mapTag),
 
     isPast: e.is_past ?? false,
     status: e.status ?? 'active',

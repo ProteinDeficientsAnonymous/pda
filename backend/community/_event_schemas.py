@@ -131,6 +131,12 @@ def _validate_generic_url(url: str, field: str) -> str:
     return normalized
 
 
+class TagOut(BaseModel):
+    id: str
+    name: str
+    slug: str
+
+
 class RSVPGuestOut(BaseModel):
     user_id: str
     name: str
@@ -184,6 +190,7 @@ class EventListOut(BaseModel):
     comment_count: int = 0
     is_past: bool = False
     status: str = "active"
+    tags: list[TagOut] = []
 
 
 class EventOut(BaseModel):
@@ -241,6 +248,7 @@ class EventOut(BaseModel):
     status: str = "active"
     pending_cohost_invites: list[PendingCoHostInviteOut] = []
     my_pending_cohost_invite_id: str | None = None
+    tags: list[TagOut] = []
 
 
 class RSVPIn(BaseModel):
@@ -308,6 +316,7 @@ class EventIn(BaseModel):
         default=InvitePermission.ALL_MEMBERS, max_length=FieldLimit.CHOICE
     )
     co_host_ids: list[str] = []
+    tag_ids: list[str] = []
     status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
 
     @model_validator(mode="after")
@@ -372,6 +381,7 @@ class EventPatchIn(BaseModel):
     visibility: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     invite_permission: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     co_host_ids: list[str] | None = None
+    tag_ids: list[str] | None = None
     status: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     notify_attendees: bool | None = None
 

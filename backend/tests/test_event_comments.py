@@ -11,7 +11,11 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
+from django.core.cache import cache
 from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
+from users.roles import Role
 
 from tests.conftest import future_iso
 
@@ -38,8 +42,6 @@ class TestGetComments:
 
 @pytest.fixture
 def rsvp_user(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+12025550303",
         password="rsvppass123",
@@ -49,8 +51,6 @@ def rsvp_user(db):
 
 @pytest.fixture
 def rsvp_headers(rsvp_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(rsvp_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -74,9 +74,6 @@ class TestPostComment:
     def test_post_requires_rsvp(self, api_client, event):
         # A logged-in user who is NOT the creator, not a co-host, not an admin,
         # and has no RSVP. Hosts/admins bypass the RSVP gate; bystanders don't.
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         bystander = User.objects.create_user(
             phone_number="+12025550909",
             password="bystanderpass",
@@ -185,9 +182,6 @@ class TestPostReply:
 
 @pytest.fixture
 def admin_user(db):
-    from users.models import User
-    from users.roles import Role
-
     user = User.objects.create_user(
         phone_number="+12025550404",
         password="adminpass123",
@@ -203,8 +197,6 @@ def admin_user(db):
 
 @pytest.fixture
 def admin_headers(admin_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(admin_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -222,9 +214,6 @@ class TestDeleteComment:
         assert comment.deleted_at is not None
 
     def test_other_rsvper_cannot_delete(self, api_client, event_with_rsvp):
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         # A plain RSVP'd member who is not the event creator or admin
         bystander = User.objects.create_user(
             phone_number="+12025550606",
@@ -350,9 +339,6 @@ class TestReactionToggle:
 
     def test_reaction_requires_rsvp(self, api_client, event):
         # A bystander (not creator, not co-host, not admin, no RSVP).
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         bystander = User.objects.create_user(
             phone_number="+12025551010",
             password="bystanderpass",
@@ -372,8 +358,6 @@ class TestReactionToggle:
     def test_rate_limit_kicks_in(self, api_client, rsvp_headers, event_with_rsvp, rsvp_user):
         """11th write in 60s should 429. Toggles back-and-forth to avoid the
         unique-constraint blocking the second create — toggle on, off, on, off..."""
-        from django.core.cache import cache
-
         cache.clear()
         comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="hi")
         url = f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/reactions/"
@@ -400,9 +384,6 @@ class TestReactionToggle:
 class TestCommentVisibility:
     def test_invite_only_non_invitee_cannot_list(self, api_client, db, rsvp_user, rsvp_headers):
         creator = rsvp_user  # using rsvp_user as the event creator
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         stranger = User.objects.create_user(
             phone_number="+12025550606",
             password="strangerpass",

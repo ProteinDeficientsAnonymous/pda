@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
@@ -6,237 +5,22 @@ from django.utils import timezone
 from users.models import User
 from users.roles import Role
 
-from community.models import Event, JoinRequest, JoinRequestStatus
-from community.models.choices import EventType, JoinFormQuestionType
+from community.models import Event, EventRSVP, EventTag, JoinRequest, JoinRequestStatus
 from community.models.content import FAQ, CommunityGuidelines, HomePage
 from community.models.join_form import JoinFormQuestion
 
-PASSWORD = "testpass123"
-
-
-@dataclass
-class SeedUser:
-    phone_number: str
-    display_name: str
-    is_superuser: bool
-    email: str = ""
-    bio: str = ""
-
-
-@dataclass
-class SeedEvent:
-    title: str
-    description: str
-    delta_days: int
-    duration_hours: float
-    location: str
-    event_type: str = EventType.COMMUNITY
-
-
-@dataclass
-class SeedJoinRequest:
-    display_name: str
-    phone_number: str
-    answers: dict[str, str]
-    status: str
-    decided_days_ago: int | None = None
-
-
-@dataclass
-class SeedJoinFormQuestion:
-    label: str
-    field_type: str = JoinFormQuestionType.TEXT
-    required: bool = True
-    options: list[str] = field(default_factory=list)
-    display_order: int = 0
-
-
-SEED_USERS = [
-    SeedUser(
-        phone_number="+17025550001",
-        display_name="Seed Admin",
-        is_superuser=True,
-        email="admin@pda.test",
-        bio="org admin — ping me if anything's broken 🌿",
-    ),
-    SeedUser(
-        phone_number="+17025550002",
-        display_name="Seed Member",
-        is_superuser=False,
-        email="member@pda.test",
-        bio="vegan six years, big into potlucks and mutual aid.",
-    ),
-    SeedUser(
-        phone_number="+17025550003",
-        display_name="Jamie Okafor",
-        is_superuser=False,
-        email="jamie@pda.test",
-        bio="food not bombs volunteer. cook, eat, organize.",
-    ),
-    SeedUser(
-        phone_number="+17025550004",
-        display_name="Rin Takahashi",
-        is_superuser=False,
-        email="rin@pda.test",
-    ),
-    SeedUser(
-        phone_number="+17025550005",
-        display_name="Ash Morales",
-        is_superuser=False,
-        email="ash@pda.test",
-        bio="plant-based chef, always down to swap recipes.",
-    ),
-]
-
-SEED_JOIN_FORM_QUESTIONS = [
-    SeedJoinFormQuestion(
-        label="Why do you want to join?",
-        field_type=JoinFormQuestionType.TEXT,
-        required=True,
-        display_order=0,
-    ),
-    SeedJoinFormQuestion(
-        label="How did you hear about us?",
-        field_type=JoinFormQuestionType.TEXT,
-        required=False,
-        display_order=1,
-    ),
-    SeedJoinFormQuestion(
-        label="What are your pronouns?",
-        field_type=JoinFormQuestionType.TEXT,
-        required=False,
-        display_order=2,
-    ),
-]
-
-SEED_EVENTS = [
-    SeedEvent(
-        title="Vegan Potluck",
-        description="Bring your favourite dish to share!",
-        delta_days=7,
-        duration_hours=3,
-        location="Community Center",
-        event_type=EventType.COMMUNITY,
-    ),
-    SeedEvent(
-        title="Plant-Based Cooking Workshop",
-        description="Learn to make tofu scramble, cashew cheese, and more.",
-        delta_days=14,
-        duration_hours=2,
-        location="Kitchen Lab",
-        event_type=EventType.OFFICIAL,
-    ),
-    SeedEvent(
-        title="Movie Night",
-        description="Documentary screening followed by group discussion.",
-        delta_days=21,
-        duration_hours=2.5,
-        location="Living Room",
-        event_type=EventType.COMMUNITY,
-    ),
-    SeedEvent(
-        title="Past Potluck (seed)",
-        description="Last month's potluck — great turnout!",
-        delta_days=-30,
-        duration_hours=3,
-        location="Community Center",
-        event_type=EventType.COMMUNITY,
-    ),
-]
-
-SEED_HOME_PAGE = {
-    "content_html": "<p>This is seed text for the home page.</p>",
-}
-
-SEED_GUIDELINES = {
-    "content_html": "<p>This is seed text for the guidelines page.</p>",
-}
-
-SEED_FAQ = {
-    "content_html": "<p>This is seed text for the FAQ page.</p>",
-}
-
-SEED_JOIN_REQUESTS = [
-    SeedJoinRequest(
-        display_name="Alex Rivera",
-        phone_number="+17025550010",
-        answers={
-            "Why do you want to join?": "I've been vegan for two years and want to connect with community.",
-            "How did you hear about us?": "A friend told me about PDA.",
-        },
-        status=JoinRequestStatus.PENDING,
-    ),
-    SeedJoinRequest(
-        display_name="Jordan Chen",
-        phone_number="+17025550011",
-        answers={
-            "Why do you want to join?": "Looking for local vegan friends and events.",
-            "What are your pronouns?": "they/them",
-        },
-        status=JoinRequestStatus.APPROVED,
-        decided_days_ago=5,
-    ),
-    SeedJoinRequest(
-        display_name="Sam Taylor",
-        phone_number="+17025550012",
-        answers={
-            "Why do you want to join?": "Curious about veganism.",
-        },
-        status=JoinRequestStatus.REJECTED,
-        decided_days_ago=3,
-    ),
-    SeedJoinRequest(
-        display_name="Priya Raghavendra-Nakamura",
-        phone_number="+17025550013",
-        answers={
-            "Why do you want to join?": (
-                "i've been plant-based for about six months and am finally ready to find my people. "
-                "looking for folks to cook with, share resources, and organize around animal liberation "
-                "and broader collective liberation work."
-            ),
-            "How did you hear about us?": "saw a flyer at the co-op on grand ave.",
-            "What are your pronouns?": "she/they",
-        },
-        status=JoinRequestStatus.PENDING,
-    ),
-    SeedJoinRequest(
-        display_name="Mo",
-        phone_number="+442079460958",
-        answers={
-            "Why do you want to join?": "moving to the area next month and want to plug in before i arrive.",
-            "What are your pronouns?": "he/him",
-        },
-        status=JoinRequestStatus.PENDING,
-    ),
-    SeedJoinRequest(
-        display_name="Riley Okonkwo-Vasquez",
-        phone_number="+17025550015",
-        answers={
-            "Why do you want to join?": "food not bombs volunteer, interested in mutual aid + vegan outreach.",
-            "How did you hear about us?": "instagram — pda showed up in a story reshare.",
-        },
-        status=JoinRequestStatus.PENDING,
-    ),
-    SeedJoinRequest(
-        display_name="Taylor Kim",
-        phone_number="+17025550016",
-        answers={
-            "Why do you want to join?": "just curious — not vegan yet but open to learning.",
-        },
-        status=JoinRequestStatus.PENDING,
-    ),
-    SeedJoinRequest(
-        display_name="Devon Alvarez",
-        phone_number="+17025550017",
-        answers={
-            "Why do you want to join?": "longtime abolitionist looking for aligned community.",
-            "How did you hear about us?": "word of mouth at a local protest.",
-            "What are your pronouns?": "they/them",
-        },
-        status=JoinRequestStatus.APPROVED,
-        decided_days_ago=1,
-    ),
-]
+from ._seed_data import (
+    PASSWORD,
+    SEED_EVENTS,
+    SEED_FAQ,
+    SEED_GUIDELINES,
+    SEED_HOME_PAGE,
+    SEED_JOIN_FORM_QUESTIONS,
+    SEED_JOIN_REQUESTS,
+    SEED_RSVPS,
+    SEED_USERS,
+    SeedUser,
+)
 
 
 def _seed_singleton(model_cls, seed_data: dict, fields: tuple[str, ...], cmd: "Command") -> None:
@@ -257,7 +41,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         admin_user = self._seed_users()
         questions = self._seed_join_form_questions()
-        self._seed_events(admin_user)
+        self._seed_event_tags()
+        events = self._seed_events(admin_user)
+        self._seed_rsvps(events)
         self._seed_join_requests(questions, admin_user)
         self._seed_content()
         self._print_summary()
@@ -283,6 +69,7 @@ class Command(BaseCommand):
             "display_name": data.display_name,
             "email": data.email,
             "bio": data.bio,
+            "is_member": True,
         }
         if data.is_superuser:
             defaults["is_superuser"] = True
@@ -331,12 +118,20 @@ class Command(BaseCommand):
             questions[q.label] = q
         return questions
 
-    def _seed_events(self, created_by: User) -> None:
+    def _seed_event_tags(self) -> None:
+        for name in ["walk", "restaurant meetup"]:
+            _, created = EventTag.objects.get_or_create(name=name)
+            label = "Created" if created else "Already exists"
+            self.stdout.write(f"  EventTag '{name}': {label}")
+
+    def _seed_events(self, created_by: User) -> dict[str, Event]:
+        """Seed events. Returns a title→Event mapping for RSVP seeding."""
         now = timezone.now()
+        events: dict[str, Event] = {}
         for data in SEED_EVENTS:
             start = now + timedelta(days=data.delta_days)
             end = start + timedelta(hours=data.duration_hours)
-            _, created = Event.objects.get_or_create(
+            event, created = Event.objects.get_or_create(
                 title=data.title,
                 defaults={
                     "description": data.description,
@@ -344,11 +139,46 @@ class Command(BaseCommand):
                     "end_datetime": end,
                     "location": data.location,
                     "event_type": data.event_type,
+                    "rsvp_enabled": data.rsvp_enabled,
+                    "allow_plus_ones": data.allow_plus_ones,
+                    "max_attendees": data.max_attendees,
                     "created_by": created_by,
                 },
             )
+            events[data.title] = event
             label = "Created" if created else "Already exists"
             self.stdout.write(f"  {label} event: {data.title}")
+        return events
+
+    def _seed_rsvps(self, events: dict[str, Event]) -> None:
+        """Seed RSVPs so the roster, waitlist, and stats panel are QA-able.
+
+        RSVP rows are written directly (not via the upsert endpoint) so the
+        seeded statuses — including waitlisted entries and marked attendance —
+        land verbatim rather than being re-derived from capacity rules.
+        """
+        users = {
+            u.phone_number: u for u in User.objects.filter(phone_number__startswith="+1702555")
+        }
+        for data in SEED_RSVPS:
+            event = events.get(data.event_title)
+            user = users.get(data.phone_number)
+            if event is None or user is None:
+                self.stdout.write(
+                    f"  Skipped RSVP (missing event/user): {data.event_title} / {data.phone_number}"
+                )
+                continue
+            _, created = EventRSVP.objects.get_or_create(
+                event=event,
+                user=user,
+                defaults={
+                    "status": data.status,
+                    "has_plus_one": data.has_plus_one,
+                    "attendance": data.attendance,
+                },
+            )
+            label = "Created" if created else "Already exists"
+            self.stdout.write(f"  {label} RSVP: {user.display_name} → {data.event_title}")
 
     def _seed_join_requests(self, questions: dict[str, JoinFormQuestion], admin_user: User) -> None:
         now = timezone.now()
@@ -390,6 +220,7 @@ class Command(BaseCommand):
             f"  Users: {User.objects.filter(phone_number__startswith='+1702555').count()}"
         )
         self.stdout.write(f"  Events: {Event.objects.count()}")
+        self.stdout.write(f"  RSVPs: {EventRSVP.objects.count()}")
         self.stdout.write(f"  Join requests: {JoinRequest.objects.count()}")
         self.stdout.write(f"  Join form questions: {JoinFormQuestion.objects.count()}")
         self.stdout.write("")

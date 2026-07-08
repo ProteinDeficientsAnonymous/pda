@@ -6,10 +6,12 @@
 // the query key to the accessToken presence, not the user id.
 
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from './client';
+
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import type { EventStatus } from '@/models/event';
+
+import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
 
 type EventListStatus = typeof EventStatus.Draft | typeof EventStatus.Cancelled;

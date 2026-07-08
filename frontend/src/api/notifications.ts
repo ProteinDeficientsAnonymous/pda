@@ -5,10 +5,18 @@
 // 5 min as a safety net; when disconnected we poll every 30 s. Tab visibility
 // is handled by TanStack Query's refetchIntervalInBackground: false.
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+
 import { useAuthStore } from '@/auth/store';
 import type { AppNotification } from '@/models/notification';
+
+import { apiClient } from './client';
 
 interface WireNotification {
   id: string;
@@ -32,9 +40,18 @@ function mapNotification(n: WireNotification): AppNotification {
   };
 }
 
+// How many notifications the bell dropdown shows before "see more" takes over.
+export const BELL_NOTIFICATION_LIMIT = 10;
+// Page size the full notifications screen requests per "load more".
+export const NOTIFICATIONS_PAGE_SIZE = 30;
+
 export const notificationKeys = {
   all: ['notifications'] as const,
-  list: ['notifications', 'list'] as const,
+  // The bell dropdown's capped list and the full-history page are kept under
+  // distinct keys so the two caches don't clobber each other. Both still sit
+  // under `all`, so mark-read / SSE invalidations cover them in one sweep.
+  bell: ['notifications', 'list', 'bell'] as const,
+  page: ['notifications', 'list', 'page'] as const,
   unread: ['notifications', 'unread-count'] as const,
 };
 
@@ -43,8 +60,13 @@ async function fetchUnreadCount(): Promise<number> {
   return data.count;
 }
 
-async function fetchNotifications(): Promise<AppNotification[]> {
-  const { data } = await apiClient.get<WireNotification[]>('/api/notifications/');
+async function fetchNotifications(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AppNotification[]> {
+  const { data } = await apiClient.get<WireNotification[]>('/api/notifications/', {
+    params: { limit: params?.limit, offset: params?.offset },
+  });
   return data.map(mapNotification);
 }
 
@@ -59,12 +81,31 @@ export function useUnreadCount(sseConnected: boolean) {
   });
 }
 
+// Bell dropdown: the most recent `BELL_NOTIFICATION_LIMIT`. Fetched lazily when
+// the sheet opens. Older history lives on the full notifications page.
 export function useNotifications(enabled: boolean) {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useQuery({
-    queryKey: notificationKeys.list,
-    queryFn: fetchNotifications,
+    queryKey: notificationKeys.bell,
+    queryFn: () => fetchNotifications({ limit: BELL_NOTIFICATION_LIMIT }),
     enabled: isAuthed && enabled,
+  });
+}
+
+// Full notifications page: the complete history, paged in via "load more".
+export function useNotificationHistory() {
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useInfiniteQuery({
+    queryKey: notificationKeys.page,
+    queryFn: ({ pageParam }) =>
+      fetchNotifications({ limit: NOTIFICATIONS_PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    // A short page means we've reached the end — stop offering "load more".
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length < NOTIFICATIONS_PAGE_SIZE
+        ? undefined
+        : allPages.length * NOTIFICATIONS_PAGE_SIZE,
+    enabled: isAuthed,
   });
 }
 
@@ -88,8 +129,16 @@ export function useMarkAllNotificationsRead() {
     },
     onMutate: () => {
       qc.setQueryData<number>(notificationKeys.unread, 0);
-      qc.setQueryData<AppNotification[]>(notificationKeys.list, (prev) =>
+      qc.setQueryData<AppNotification[]>(notificationKeys.bell, (prev) =>
         prev ? prev.map((n) => ({ ...n, isRead: true })) : prev,
+      );
+      qc.setQueryData<InfiniteData<AppNotification[]>>(notificationKeys.page, (prev) =>
+        prev
+          ? {
+              ...prev,
+              pages: prev.pages.map((page) => page.map((n) => ({ ...n, isRead: true }))),
+            }
+          : prev,
       );
     },
     onSuccess: () => {

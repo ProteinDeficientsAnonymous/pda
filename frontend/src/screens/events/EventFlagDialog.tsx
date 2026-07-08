@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+
 import { FlagEventError, useFlagEvent } from '@/api/eventFlags';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';

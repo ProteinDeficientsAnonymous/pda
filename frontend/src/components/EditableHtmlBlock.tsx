@@ -5,11 +5,13 @@
 // can all reuse it.
 
 import { useState } from 'react';
-import { RichEditor } from './RichEditor/RichEditor';
-import { HtmlContent } from './HtmlContent';
-import { AutosaveStatus } from './AutosaveStatus';
-import { Button } from './ui/Button';
+
 import { useAutosave } from '@/hooks/useAutosave';
+
+import { AutosaveStatus } from './AutosaveStatus';
+import { HtmlContent } from './HtmlContent';
+import { RichEditor } from './RichEditor/RichEditor';
+import { Button } from './ui/Button';
 
 interface Props {
   canEdit: boolean;

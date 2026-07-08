@@ -1,13 +1,14 @@
-import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { Member } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import type { Member } from '@/api/users';
 
 // Mock the users API module so we can drive loading / error / data states
 // without hitting the network. useCreateUser is only pulled in transitively
@@ -21,8 +22,9 @@ vi.mock('@/api/users', () => ({
   })),
 }));
 
-import MembersScreen from './MembersScreen';
 import { useUsers } from '@/api/users';
+
+import MembersScreen from './MembersScreen';
 
 const mockUseUsers = vi.mocked(useUsers);
 

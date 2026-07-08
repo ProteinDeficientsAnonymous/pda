@@ -1,8 +1,14 @@
 """Tests for event public/auth visibility and invite-only access control."""
 
+import secrets
+from datetime import timedelta
+
 import pytest
 from community._validation import Code
-from community.models import Event
+from community.models import Event, EventType, PageVisibility
+from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -12,8 +18,6 @@ from tests._asserts import assert_error_code
 @pytest.fixture
 def official_event_user(db):
     """A user with tag_official_event permission."""
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+14155559999",
         password="officialpass123",
@@ -28,8 +32,6 @@ def official_event_user(db):
 
 @pytest.fixture
 def official_event_headers(official_event_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(official_event_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -37,8 +39,6 @@ def official_event_headers(official_event_user):
 @pytest.fixture
 def manage_events_user(db):
     """A non-superuser with only manage_events permission."""
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+14155551234",
         password="eventmanagerpass123",
@@ -51,8 +51,6 @@ def manage_events_user(db):
 
 @pytest.fixture
 def manage_events_headers(manage_events_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(manage_events_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -70,9 +68,6 @@ class TestEventVisibility:
         assert isinstance(response.json(), list)
 
     def test_events_strips_private_fields_for_anonymous(self, api_client, auth_headers, test_user):
-        from community.models import Event
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Test",
             start_datetime=timezone.now(),
@@ -100,11 +95,6 @@ class TestInviteOnlyVisibility:
     """Tests for invite_only PageVisibility — events hidden from non-invited members."""
 
     def _make_invite_only_event(self, creator, co_host=None, invited_user=None):
-        from datetime import timedelta
-
-        from community.models import PageVisibility
-        from django.utils import timezone
-
         future = timezone.now() + timedelta(days=7)
         event = Event.objects.create(
             title="Secret Gathering",
@@ -120,13 +110,9 @@ class TestInviteOnlyVisibility:
         return event
 
     def _make_user(self, phone, name):
-        from users.models import User
-
         return User.objects.create_user(phone_number=phone, password="pass123", display_name=name)
 
     def _auth_headers(self, user):
-        from ninja_jwt.tokens import RefreshToken
-
         refresh = RefreshToken.for_user(user)
         return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
 
@@ -231,9 +217,6 @@ class TestInviteOnlyVisibility:
         assert response.json()["invited_user_ids"] == []
 
     def test_invited_list_hidden_for_regular_public_event(self, api_client, test_user):
-        from community.models import PageVisibility
-        from django.utils import timezone
-
         creator = self._make_user("+12025550211", "Creator11")
         event = Event.objects.create(
             title="Public Event",
@@ -279,12 +262,6 @@ class TestInviteOnlyVisibility:
         assert response.status_code == 200
 
     def test_calendar_feed_excludes_invite_only_for_non_invited(self, api_client):
-        import secrets
-
-        from community.models import PageVisibility
-        from django.utils import timezone
-        from users.models import User
-
         owner = User.objects.create_user(
             phone_number="+12025550214", password="pass123", display_name="Feed Owner"
         )
@@ -305,12 +282,6 @@ class TestInviteOnlyVisibility:
         assert b"Private Party" not in response.content
 
     def test_calendar_feed_includes_invite_only_for_invited(self, api_client):
-        import secrets
-
-        from community.models import PageVisibility
-        from django.utils import timezone
-        from users.models import User
-
         owner = User.objects.create_user(
             phone_number="+12025550216", password="pass123", display_name="Invited Owner"
         )
@@ -381,9 +352,6 @@ class TestOfficialEventVisibility:
     """Official events are public — visible to anonymous users."""
 
     def _make_official_event(self, creator):
-        from community.models import EventType
-        from django.utils import timezone
-
         return Event.objects.create(
             title="Official Meetup",
             start_datetime=timezone.now(),
@@ -408,8 +376,6 @@ class TestOfficialEventVisibility:
     def test_create_official_event_rejects_non_public_visibility(
         self, api_client, official_event_headers
     ):
-        from django.utils import timezone
-
         payload = {
             "title": "Official Event",
             "description": "",
@@ -428,9 +394,6 @@ class TestOfficialEventVisibility:
     def test_update_to_official_rejects_non_public_visibility(
         self, api_client, official_event_user, official_event_headers
     ):
-        from community.models import PageVisibility
-        from django.utils import timezone
-
         event = Event.objects.create(
             title="Community Event",
             start_datetime=timezone.now(),

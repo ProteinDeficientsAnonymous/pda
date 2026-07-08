@@ -6,9 +6,11 @@
 // All screens are lazy-loaded (React.lazy) — 1:1 replacement for DeferredScreen.
 
 import { createBrowserRouter } from 'react-router-dom';
+
 import { AuthBoot, EmailGate, OnboardingGate, RequireAuth, RequirePermission } from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
 import { Permission } from '@/models/permissions';
+
 import { lazyEl as el, lazyWithRetry } from './lazyRoute';
 import { RootRouteError } from './RootRouteError';
 
@@ -31,6 +33,7 @@ const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScre
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
+const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
 const Profile = lazyWithRetry(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen'));
 const Docs = lazyWithRetry(() => import('@/screens/docs/DocsScreen'));
@@ -42,7 +45,6 @@ const AdminHub = lazyWithRetry(() => import('@/screens/admin/AdminHubScreen'));
 const JoinRequestsAdmin = lazyWithRetry(() => import('@/screens/admin/JoinRequestsScreen'));
 const EventManagement = lazyWithRetry(() => import('@/screens/admin/EventManagementScreen'));
 const FlaggedEvents = lazyWithRetry(() => import('@/screens/admin/FlaggedEventsScreen'));
-const WhatsappConfig = lazyWithRetry(() => import('@/screens/admin/WhatsappConfigScreen'));
 const JoinFormAdmin = lazyWithRetry(() => import('@/screens/admin/JoinFormAdminScreen'));
 const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
@@ -96,6 +98,7 @@ export const router = createBrowserRouter([
                 element: <RequireAuth />,
                 children: [
                   { path: '/settings', element: el(<Settings />) },
+                  { path: '/notifications', element: el(<Notifications />) },
                   { path: '/profile', element: el(<Profile />) },
                   { path: '/volunteer', element: el(<Volunteer />) },
                   { path: '/events/mine', element: el(<MyEvents />) },
@@ -131,10 +134,6 @@ export const router = createBrowserRouter([
                   { path: '/events/manage', element: el(<EventManagement />) },
                   { path: '/admin/flagged-events', element: el(<FlaggedEvents />) },
                 ],
-              },
-              {
-                element: <RequirePermission perm={Permission.ManageWhatsapp} />,
-                children: [{ path: '/admin/whatsapp', element: el(<WhatsappConfig />) }],
               },
               {
                 element: <RequirePermission perm={Permission.ManageDocuments} />,

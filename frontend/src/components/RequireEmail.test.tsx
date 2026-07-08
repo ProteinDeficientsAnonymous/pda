@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RequireEmail } from './RequireEmail';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { updateProfile } from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
+
+import { RequireEmail } from './RequireEmail';
 
 vi.mock('@/api/auth', () => ({
   updateProfile: vi.fn(),

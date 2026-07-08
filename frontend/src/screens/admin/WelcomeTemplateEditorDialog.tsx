@@ -3,8 +3,9 @@
 // placeholders ${NAME}, ${SENDER_NAME}, ${MAGIC_LINK} are substituted at
 // render time by renderWelcomeMessage().
 
-import { useState, type SyntheticEvent } from 'react';
+import { type SyntheticEvent, useState } from 'react';
 import { toast } from 'sonner';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { useUpdateWelcomeTemplate, type WelcomeTemplate } from '@/api/content';
 import { Button } from '@/components/ui/Button';

@@ -15,8 +15,9 @@
 //   });
 
 import { useEffect, useRef } from 'react';
-import { API_BASE_URL } from '@/config/env';
+
 import { refreshAccessToken } from '@/api/client';
+import { API_BASE_URL } from '@/config/env';
 
 type Handler = (event: MessageEvent<string>) => void;
 

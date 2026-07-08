@@ -3,15 +3,16 @@
 // `sort` query param — it's a flat fetch and the Flutter app works the
 // same way.
 
-import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+
 import { useEvents } from '@/api/events';
-import type { Event } from '@/models/event';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
+import type { Event } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 type Bucket = 'upcoming' | 'past' | 'drafts' | 'cancelled';

@@ -1,9 +1,8 @@
 import { useState } from 'react';
-
 import { toast } from 'sonner';
 
-import { useDeleteComment, usePostReply, useToggleReaction } from '@/api/eventComments';
 import { extractApiError } from '@/api/apiErrors';
+import { useDeleteComment, usePostReply, useToggleReaction } from '@/api/eventComments';
 import type { EventComment, ReactionEmojiValue } from '@/models/eventComment';
 
 import { CommentComposer } from './CommentComposer';

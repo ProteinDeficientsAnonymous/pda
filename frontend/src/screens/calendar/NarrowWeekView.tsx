@@ -4,7 +4,8 @@
 // colored chips on the right. Multi-day events only show on their start day.
 
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
-import { eventClass, type Event as PdaEvent } from '@/models/event';
+
+import { type Event as PdaEvent, eventClass } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 interface Props {

@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
@@ -20,6 +21,9 @@ export default defineConfig([
       jsxA11y.flatConfigs.recommended,
       prettier,
     ],
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+    },
     languageOptions: {
       ecmaVersion: 2023,
       globals: globals.browser,
@@ -29,6 +33,24 @@ export default defineConfig([
       },
     },
     rules: {
+      // Enforce a consistent import order: side-effect imports, then external
+      // packages, then path-alias (`@/...`) imports, then relative imports.
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [
+            // Side-effect imports (e.g. `import './styles.css'`).
+            ['^\\u0000'],
+            // External packages (node builtins + anything not `@/` or relative).
+            ['^node:', '^@?\\w'],
+            // Path-alias imports.
+            ['^@/'],
+            // Relative imports.
+            ['^\\.'],
+          ],
+        },
+      ],
+      'simple-import-sort/exports': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },

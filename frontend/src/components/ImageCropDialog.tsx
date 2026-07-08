@@ -1,14 +1,30 @@
-// Crop dialog for avatar uploads (round, 1:1 circular mask) and event covers
-// (rect, free-form). Built on react-image-crop; returns a PNG blob via onCrop.
+// Crop dialog for avatars (round, 1:1) and event covers (rect — square or 4:5).
+// Built on react-image-crop; returns a PNG blob via onCrop.
+
+import 'react-image-crop/dist/ReactCrop.css';
 
 import { useRef, useState } from 'react';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
+
+import { cn } from '@/utils/cn';
 import { cropImage } from '@/utils/cropImage';
-import { initialCrop, MAX_PREVIEW_PX } from './initialCrop';
+
+import {
+  coverCrop,
+  defaultCoverAspect,
+  initialCrop,
+  MAX_PREVIEW_PX,
+  PORTRAIT_ASPECT,
+  SQUARE_ASPECT,
+} from './initialCrop';
 import { Button } from './ui/Button';
 
 export type CropShape = 'round' | 'rect';
+
+const COVER_OPTIONS: { label: string; aspect: number }[] = [
+  { label: 'square', aspect: SQUARE_ASPECT },
+  { label: '4:5', aspect: PORTRAIT_ASPECT },
+];
 
 interface Props {
   file: File;
@@ -25,9 +41,9 @@ export function ImageCropDialog({
   onCancel,
   onCrop,
 }: Props) {
-  const lockedAspect = shape === 'round' ? 1 : undefined;
   const [src] = useState(() => URL.createObjectURL(file));
   const [crop, setCrop] = useState<Crop | undefined>(undefined);
+  const [aspect, setAspect] = useState(shape === 'round' ? 1 : SQUARE_ASPECT);
   const [completed, setCompleted] = useState<PixelCrop | null>(null);
   const [saving, setSaving] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -35,6 +51,13 @@ export function ImageCropDialog({
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
     setCrop(initialCrop(width, height, shape));
+    if (shape === 'rect') setAspect(defaultCoverAspect(width, height));
+  }
+
+  function selectAspect(next: number) {
+    const img = imgRef.current;
+    setAspect(next);
+    if (img) setCrop(coverCrop(img.width, img.height, next));
   }
 
   function handleCancel() {
@@ -66,6 +89,7 @@ export function ImageCropDialog({
   const reactCropProps = {
     circularCrop: shape === 'round',
     keepSelection: true,
+    aspect,
     minWidth: 24,
     onChange: (_: PixelCrop, pct: PercentCrop) => {
       setCrop(pct);
@@ -74,7 +98,6 @@ export function ImageCropDialog({
       setCompleted(pixels);
     },
     ...(crop !== undefined ? { crop } : {}),
-    ...(lockedAspect !== undefined ? { aspect: lockedAspect } : {}),
   };
 
   return (
@@ -86,14 +109,34 @@ export function ImageCropDialog({
     >
       <div className="bg-surface flex w-full max-w-md flex-col gap-4 rounded-lg p-4 shadow-xl">
         <div className="flex items-center justify-center rounded-md bg-neutral-900">
-          {/* Cap height on .ReactCrop itself, not a wrapper. react-image-crop sets
-              `child-wrapper > img { max-height: inherit }`, so only a cap here scales
-              a tall image down — a wrapper cap would just clip it and let the crop be
-              dragged into the off-screen remainder. See issue 428. */}
+          {/* Cap height on .ReactCrop itself — a wrapper cap would clip a tall image
+              instead of scaling it, letting the crop drag off-screen (issue 428). */}
           <ReactCrop {...reactCropProps} style={{ maxHeight: MAX_PREVIEW_PX }}>
             <img ref={imgRef} src={src} alt="" onLoad={onImageLoad} className="w-auto" />
           </ReactCrop>
         </div>
+        {shape === 'rect' ? (
+          <div className="flex justify-center gap-2" role="group" aria-label="crop shape">
+            {COVER_OPTIONS.map((opt) => (
+              <button
+                key={opt.label}
+                type="button"
+                aria-pressed={aspect === opt.aspect}
+                onClick={() => {
+                  selectAspect(opt.aspect);
+                }}
+                className={cn(
+                  'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                  aspect === opt.aspect
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-surface-raised text-foreground-secondary hover:bg-brand-50',
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={handleCancel} disabled={saving}>
             cancel

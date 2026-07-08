@@ -7,6 +7,7 @@ Covers: cookie set on login/magic-login, refresh via cookie, logout clears cooki
 import pytest
 from ninja_jwt.tokens import RefreshToken
 from users._refresh_cookie import REFRESH_COOKIE_NAME
+from users.models import MagicLoginToken
 
 
 @pytest.mark.django_db
@@ -39,8 +40,6 @@ class TestLoginSetsRefreshCookie:
 @pytest.mark.django_db
 class TestMagicLoginSetsRefreshCookie:
     def test_magic_login_sets_httponly_refresh_cookie(self, api_client, test_user):
-        from users.models import MagicLoginToken
-
         magic = MagicLoginToken.create_for_user(test_user)
         response = api_client.get(f"/api/auth/magic-login/{magic.token}/")
         assert response.status_code == 200

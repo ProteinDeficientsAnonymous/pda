@@ -1,7 +1,8 @@
 import { toast } from 'sonner';
+
+import { useCalendarToken, useRegenerateCalendarToken } from '@/api/calendar';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { useCalendarToken, useRegenerateCalendarToken } from '@/api/calendar';
 
 export function CalendarFeedSubscription() {
   const tokenQ = useCalendarToken();

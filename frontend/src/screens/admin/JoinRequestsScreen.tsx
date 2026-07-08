@@ -1,20 +1,22 @@
-import { useMemo, useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useMemo, useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   JoinRequestStatus,
+  type JoinRequestSummary,
   useDecideJoinRequest,
   useJoinRequests,
   useResendMagicLink,
   useUnrejectJoinRequest,
-  type JoinRequestSummary,
 } from '@/api/join';
 import { Button } from '@/components/ui/Button';
-import { useConfirm } from '@/components/ui/useConfirm';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { useConfirm } from '@/components/ui/useConfirm';
+import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
-import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 
 const Filter = {

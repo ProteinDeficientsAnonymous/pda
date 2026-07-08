@@ -1,7 +1,7 @@
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -17,7 +17,13 @@ vi.mock('@/auth/store', () => ({
 }));
 
 import { apiClient } from '@/api/client';
-import { useNotifications, useUnreadCount, useMarkAllNotificationsRead } from './notifications';
+
+import {
+  useMarkAllNotificationsRead,
+  useNotificationHistory,
+  useNotifications,
+  useUnreadCount,
+} from './notifications';
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
@@ -71,7 +77,10 @@ describe('useNotifications', () => {
       },
     ]);
 
-    expect(mockedGet).toHaveBeenCalledWith('/api/notifications/');
+    // The bell only asks for the 10 most recent.
+    expect(mockedGet).toHaveBeenCalledWith('/api/notifications/', {
+      params: { limit: 10, offset: undefined },
+    });
   });
 
   it('does not fetch when user is not authenticated', async () => {
@@ -97,6 +106,46 @@ describe('useNotifications', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toBe(apiError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useNotificationHistory
+// ---------------------------------------------------------------------------
+
+describe('useNotificationHistory', () => {
+  function makeRow(id: string) {
+    return {
+      id,
+      notification_type: 'event_invite',
+      event_id: 'evt-1',
+      related_user_id: null,
+      message: `msg ${id}`,
+      is_read: false,
+      created_at: '2024-05-01T10:00:00Z',
+    };
+  }
+
+  it('requests the first page with offset 0 and the page size', async () => {
+    mockedGet.mockResolvedValueOnce({ data: [makeRow('1')] });
+
+    const { result } = renderHook(() => useNotificationHistory(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/notifications/', {
+      params: { limit: 30, offset: 0 },
+    });
+  });
+
+  it('stops offering more pages once a short page comes back', async () => {
+    // A page shorter than the page size means we've hit the end.
+    mockedGet.mockResolvedValueOnce({ data: [makeRow('1'), makeRow('2')] });
+
+    const { result } = renderHook(() => useNotificationHistory(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.hasNextPage).toBe(false);
   });
 });
 

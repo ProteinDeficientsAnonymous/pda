@@ -3,14 +3,16 @@
 // viewer is and what state the poll is in. Dialog bodies live in sibling
 // files (Phase 3); this file stays focused on branching + layout.
 
+import { format } from 'date-fns';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+
 import { useEventPoll } from '@/api/eventPolls';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
 import { hasPermission, Permission, type UserLike } from '@/models/permissions';
+
 import { PollFinalizeDialog } from './PollFinalizeDialog';
 import { PollManageDialog } from './PollManageDialog';
 import { PollOptionStrip } from './PollOptionStrip';

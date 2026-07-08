@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 
 import pytest
 from config.logging_config import JsonFormatter, SensitiveDataFilter
@@ -47,8 +48,6 @@ class TestJsonFormatter:
         try:
             raise ValueError("test error")
         except ValueError:
-            import sys
-
             exc_info = sys.exc_info()
 
         record = logging.LogRecord(

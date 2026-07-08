@@ -1,5 +1,6 @@
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { View } from 'react-big-calendar';
+
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 interface Props {
   value: View;

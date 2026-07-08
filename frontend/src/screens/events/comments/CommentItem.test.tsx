@@ -16,6 +16,7 @@ vi.mock('@/auth/store', () => ({
 }));
 
 import type { EventComment } from '@/models/eventComment';
+
 import { CommentItem } from './CommentItem';
 
 function wrap(ui: React.ReactNode) {

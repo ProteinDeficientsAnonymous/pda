@@ -2,14 +2,16 @@
 // pre-selected. Warns if event.endDatetime is set (backend finalize won't
 // update end-time; host has to fix it after).
 
-import { useState } from 'react';
 import { format } from 'date-fns';
+import { useState } from 'react';
 import { toast } from 'sonner';
+
 import { extractPollError, useFinalizePoll } from '@/api/eventPolls';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import type { Event } from '@/models/event';
 import type { EventPoll } from '@/models/eventPoll';
+
 import { pickFinalizeDefault, sortOptionsChrono } from './pollHelpers';
 
 interface Props {

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from community.models import CommunityGuidelines, EditablePage, Event, JoinRequest, WhatsAppConfig
+from community.models import CommunityGuidelines, EditablePage, Event, EventTag, JoinRequest
 
 
 @admin.register(CommunityGuidelines)
@@ -31,21 +31,19 @@ class JoinRequestAdmin(admin.ModelAdmin):
     readonly_fields = ("id", "submitted_at")
 
 
-@admin.register(WhatsAppConfig)
-class WhatsAppConfigAdmin(admin.ModelAdmin):
-    readonly_fields = ("updated_at",)
-
-    def has_add_permission(self, request):
-        return not WhatsAppConfig.objects.exists()
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ("title", "start_datetime", "end_datetime", "location")
-    list_filter = ("start_datetime",)
+    list_filter = ("start_datetime", "tags")
     search_fields = ("title", "description", "location")
     ordering = ("start_datetime",)
     readonly_fields = ("id", "created_at")
+    filter_horizontal = ("tags",)
+
+
+@admin.register(EventTag)
+class EventTagAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "created_at")
+    search_fields = ("name", "slug")
+    ordering = ("name",)
+    readonly_fields = ("id", "slug", "created_at")

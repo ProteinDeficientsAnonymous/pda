@@ -4,14 +4,15 @@
 // cancelled events come from dedicated `?status=` queries; backend already
 // scopes those to events the user created or co-hosts.
 
-import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, RsvpStatus } from '@/models/event';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 type Filter = 'upcoming' | 'past' | 'drafts' | 'cancelled';

@@ -3,11 +3,13 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useDeleteRole, useRoles, type Role } from '@/api/roles';
+import { type Role, useDeleteRole, useRoles } from '@/api/roles';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+
 import { RoleFormDialog } from './RoleFormDialog';
 
 const PROTECTED_ROLE_NAMES = new Set(['admin', 'member']);

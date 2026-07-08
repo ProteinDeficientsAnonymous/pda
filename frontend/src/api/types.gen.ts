@@ -407,7 +407,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Check Phone */
-        post: operations["community__join_requests_check_phone"];
+        post: operations["community__join_request_submit_check_phone"];
         delete?: never;
         options?: never;
         head?: never;
@@ -569,6 +569,23 @@ export interface paths {
         head?: never;
         /** Review Event Flag */
         patch: operations["community__event_flags_review_event_flag"];
+        trace?: never;
+    };
+    "/api/community/event-tags/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Event Tags */
+        get: operations["community__event_tags_list_event_tags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/community/events/": {
@@ -1115,7 +1132,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Join Request */
-        post: operations["community__join_requests_submit_join_request"];
+        post: operations["submit_join_request"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1479,41 +1496,6 @@ export interface paths {
         patch: operations["community__welcome_template_update_welcome_template"];
         trace?: never;
     };
-    "/api/community/whatsapp/config/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Whatsapp Config */
-        get: operations["community__whatsapp_get_whatsapp_config"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Whatsapp Config */
-        patch: operations["community__whatsapp_update_whatsapp_config"];
-        trace?: never;
-    };
-    "/api/community/whatsapp/status/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Whatsapp Status */
-        get: operations["community__whatsapp_get_whatsapp_status"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/notifications/": {
         parameters: {
             query?: never;
@@ -1673,9 +1655,13 @@ export interface components {
         };
         /** CheckPhoneOut */
         CheckPhoneOut: {
-            /** Status */
-            status: string;
+            status: components["schemas"]["CheckPhoneStatus"];
         };
+        /**
+         * CheckPhoneStatus
+         * @enum {string}
+         */
+        CheckPhoneStatus: "member" | "pending" | "unknown";
         /** CommentBodyIn */
         CommentBodyIn: {
             /** Body */
@@ -2009,6 +1995,11 @@ export interface components {
              * @default active
              */
             status: string;
+            /**
+             * Tag Ids
+             * @default []
+             */
+            tag_ids: string[];
             /** Title */
             title: string;
             /**
@@ -2144,6 +2135,11 @@ export interface components {
              * @default active
              */
             status: string;
+            /**
+             * Tags
+             * @default []
+             */
+            tags: components["schemas"]["TagOut"][];
             /** Title */
             title: string;
             /**
@@ -2340,6 +2336,11 @@ export interface components {
              * @default []
              */
             survey_slugs: string[];
+            /**
+             * Tags
+             * @default []
+             */
+            tags: components["schemas"]["TagOut"][];
             /** Title */
             title: string;
             /**
@@ -2408,6 +2409,8 @@ export interface components {
             start_datetime?: string | null;
             /** Status */
             status?: string | null;
+            /** Tag Ids */
+            tag_ids?: string[] | null;
             /** Title */
             title?: string | null;
             /** Venmo Link */
@@ -2775,6 +2778,11 @@ export interface components {
             approved_at?: string | null;
             /** Approved By Name */
             approved_by_name?: string | null;
+            /**
+             * Attached User Official Rsvp Count
+             * @default 0
+             */
+            attached_user_official_rsvp_count: number;
             /** Display Name */
             display_name: string;
             /** Id */
@@ -3277,6 +3285,15 @@ export interface components {
             /** User Name */
             user_name?: string | null;
         };
+        /** TagOut */
+        TagOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
         /** TokenOut */
         TokenOut: {
             /** Access */
@@ -3370,6 +3387,8 @@ export interface components {
             needs_sms_consent: boolean;
             /** Phone Number */
             phone_number: string;
+            /** Photo Updated At */
+            photo_updated_at?: string | null;
             /**
              * Profile Photo Url
              * @default
@@ -3450,29 +3469,6 @@ export interface components {
         WelcomeTemplatePatchIn: {
             /** Body */
             body?: string | null;
-        };
-        /** WhatsAppConfigOut */
-        WhatsAppConfigOut: {
-            /** Bot Url */
-            bot_url: string;
-            /** Group Id */
-            group_id: string;
-            /** Has Secret */
-            has_secret: boolean;
-        };
-        /** WhatsAppConfigPatchIn */
-        WhatsAppConfigPatchIn: {
-            /** Bot Secret */
-            bot_secret?: string | null;
-            /** Bot Url */
-            bot_url?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /** WhatsAppStatusOut */
-        WhatsAppStatusOut: {
-            /** Connected */
-            connected: boolean;
         };
     };
     responses: never;
@@ -4476,7 +4472,7 @@ export interface operations {
             };
         };
     };
-    community__join_requests_check_phone: {
+    community__join_request_submit_check_phone: {
         parameters: {
             query?: never;
             header?: never;
@@ -5008,6 +5004,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_tags_list_event_tags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"][];
                 };
             };
         };
@@ -6926,7 +6942,7 @@ export interface operations {
             };
         };
     };
-    community__join_requests_submit_join_request: {
+    submit_join_request: {
         parameters: {
             query?: never;
             header?: never;
@@ -7965,100 +7981,12 @@ export interface operations {
             };
         };
     };
-    community__whatsapp_get_whatsapp_config: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WhatsAppConfigOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__whatsapp_update_whatsapp_config: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WhatsAppConfigPatchIn"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WhatsAppConfigOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__whatsapp_get_whatsapp_status: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WhatsAppStatusOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
     notifications_api_list_notifications: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;

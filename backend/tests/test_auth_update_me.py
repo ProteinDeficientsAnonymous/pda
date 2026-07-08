@@ -1,6 +1,7 @@
 """Tests for PATCH /api/auth/me/ (update profile)."""
 
 import pytest
+from users.models import User
 
 
 @pytest.mark.django_db
@@ -67,8 +68,6 @@ class TestPatchMeEmail:
         assert test_user.email == "foo@example.com"
 
     def test_duplicate_email_rejected(self, api_client, auth_headers, db):
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025550199", display_name="other", email="taken@example.com"
         )
@@ -83,8 +82,6 @@ class TestPatchMeEmail:
         assert body["detail"][0]["code"] == "email.already_exists"
 
     def test_duplicate_email_case_insensitive(self, api_client, auth_headers, db):
-        from users.models import User
-
         User.objects.create_user(
             phone_number="+12025550199", display_name="other", email="taken@example.com"
         )

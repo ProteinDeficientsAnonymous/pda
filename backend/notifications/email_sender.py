@@ -75,6 +75,7 @@ def get_email_sender() -> EmailSender:
             return _cached_sender
 
         if settings.RESEND_API_KEY:
+            # lazy import avoids circular dependency with email_sender
             from notifications._resend_sender import ResendSender
 
             _cached_sender = ResendSender()
@@ -82,6 +83,7 @@ def get_email_sender() -> EmailSender:
         else:
             if getattr(settings, "IS_PRODUCTION", False):
                 raise RuntimeError("RESEND_API_KEY is required in production but is not set")
+            # lazy import avoids circular dependency with email_sender
             from notifications._console_sender import ConsoleSender
 
             _cached_sender = ConsoleSender()

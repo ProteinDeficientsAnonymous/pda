@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
+
+import { type RequestLoginLinkDelivery, useRequestLoginLink } from '@/api/auth';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { PhoneField } from '@/components/ui/PhoneField';
-import { useRequestLoginLink, type RequestLoginLinkDelivery } from '@/api/auth';
 import { extractApiError } from '@/utils/errors';
 
 interface Props {

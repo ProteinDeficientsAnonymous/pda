@@ -1,12 +1,7 @@
-// Bell + unread-count badge + dropdown sheet of notifications. Subscribes to
-// SSE when authed — server pushes `notification` events that trigger a
-// count refetch. Polling is a fallback (30s when SSE is disconnected, 5 min
-// when connected).
-
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/auth/store';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+
 import {
   notificationKeys,
   useMarkAllNotificationsRead,
@@ -14,10 +9,11 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/api/notifications';
+import { useAuthStore } from '@/auth/store';
 import { useEventSource } from '@/hooks/useEventSource';
-import { NotificationType, type AppNotification } from '@/models/notification';
-import { cn } from '@/utils/cn';
 import { reportError } from '@/utils/errorReporter';
+
+import { NotificationRow } from './NotificationRow';
 
 const ROUTE = '/notifications';
 
@@ -150,7 +146,7 @@ export function NotificationBell() {
                             });
                           }
                         }}
-                        onClose={() => {
+                        onActivate={() => {
                           setOpen(false);
                         }}
                       />
@@ -161,70 +157,22 @@ export function NotificationBell() {
                 <p className="text-muted p-4 text-sm">nothing new 🌿</p>
               )}
             </div>
+            <div className="border-border border-t">
+              <Link
+                to={ROUTE}
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="text-info hover:bg-background block px-3 py-2 text-center text-sm font-medium"
+              >
+                see more
+              </Link>
+            </div>
           </div>
         </>
       ) : null}
     </div>
   );
-}
-
-function NotificationRow({
-  n,
-  onMarkRead,
-  onClose,
-}: {
-  n: AppNotification;
-  onMarkRead: () => void;
-  onClose: () => void;
-}) {
-  const navigate = useNavigate();
-  function onClick() {
-    onMarkRead();
-    onClose();
-    const target = notificationTarget(n);
-    if (target) void navigate(target);
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'hover:bg-background flex w-full items-start gap-2 px-3 py-2 text-start',
-        !n.isRead && 'bg-info-subtle',
-      )}
-    >
-      {!n.isRead ? (
-        <span aria-hidden="true" className="bg-info mt-1.5 h-2 w-2 shrink-0 rounded-full" />
-      ) : (
-        <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0" />
-      )}
-      <span className="text-foreground text-sm">{n.message}</span>
-    </button>
-  );
-}
-
-function notificationTarget(n: AppNotification): string | null {
-  switch (n.notificationType) {
-    case NotificationType.EventInvite:
-    case NotificationType.CohostAdded:
-    case NotificationType.CohostInvite:
-    case NotificationType.CohostInviteAccepted:
-    case NotificationType.CohostInviteDeclined:
-    case NotificationType.CohostRemoved:
-    case NotificationType.WaitlistPromoted:
-    case NotificationType.EventCancelled:
-    case NotificationType.CommentReply:
-    case NotificationType.EventComment:
-      return n.eventId ? `/events/${n.eventId}` : null;
-    case NotificationType.EventFlagged:
-      return '/admin/flagged-events';
-    case NotificationType.JoinRequest:
-      return '/join-requests';
-    case NotificationType.MagicLinkRequest:
-      return n.relatedUserId ? `/admin/members/${n.relatedUserId}` : '/admin/members';
-    default:
-      return null;
-  }
 }
 
 function BellIcon() {

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthLayout } from './AuthLayout';
-import { Button } from '@/components/ui/Button';
+
 import { useAuthStore } from '@/auth/store';
+import { Button } from '@/components/ui/Button';
 import { extractApiError } from '@/utils/errors';
+
+import { AuthLayout } from './AuthLayout';
 
 // Guidelines-consent gate. Modeled on OnboardingScreen — same AuthLayout shell.
 // Blocks login completion: the only ways forward are to accept (clears

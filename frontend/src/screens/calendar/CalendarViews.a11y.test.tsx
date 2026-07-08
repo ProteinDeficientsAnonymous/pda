@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
+
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+
 import { AgendaList } from './AgendaList';
 import { DayEventList } from './DayEventList';
 
@@ -54,6 +56,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    tags: [],
     isPast: false,
     status: EventStatus.Active,
     ...overrides,

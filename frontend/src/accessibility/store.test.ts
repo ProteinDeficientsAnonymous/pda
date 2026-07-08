@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 // Provide a proper localStorage stub before the module loads — Zustand persist
 // calls setItem on every setState, which fails with jsdom's default Storage.

@@ -27,7 +27,6 @@ from community.models.content import (
     EditablePage,
     HomePage,
     WelcomeMessageTemplate,
-    WhatsAppConfig,
 )
 from community.models.document import DocFolder, Document
 from community.models.event import Event, EventFlag, EventRSVP
@@ -39,6 +38,7 @@ from community.models.survey import (
     SurveyQuestion,
     SurveyResponse,
 )
+from community.models.tag import EventTag
 
 __all__ = [
     # choices
@@ -64,7 +64,6 @@ __all__ = [
     "FAQ",
     "HomePage",
     "WelcomeMessageTemplate",
-    "WhatsAppConfig",
     # document
     "DocFolder",
     "Document",
@@ -72,6 +71,7 @@ __all__ = [
     "Event",
     "EventFlag",
     "EventRSVP",
+    "EventTag",
     # join form
     "JoinFormQuestion",
     "JoinRequest",

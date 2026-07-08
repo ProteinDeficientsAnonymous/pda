@@ -1,4 +1,5 @@
-import { forwardRef, useState, type InputHTMLAttributes } from 'react';
+import { forwardRef, type InputHTMLAttributes, useState } from 'react';
+
 import { TextField } from './TextField';
 
 type BaseProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>;

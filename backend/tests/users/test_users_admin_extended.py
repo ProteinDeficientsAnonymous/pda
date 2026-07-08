@@ -2,7 +2,12 @@
 
 import pytest
 from community._validation import Code
+from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code
+from users.models import MagicLoginToken, User
+from users.roles import Role
 
 
 @pytest.mark.django_db
@@ -77,8 +82,6 @@ class TestUpdateUser:
         assert response.status_code == 400
 
     def test_cannot_pause_admin(self, api_client, manage_users_headers, other_user):
-        from users.roles import Role
-
         admin_role = Role.objects.get(name="admin", is_default=True)
         other_user.roles.add(admin_role)
         response = api_client.patch(
@@ -100,12 +103,39 @@ class TestUpdateUser:
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) in ids
 
+    def test_admin_list_excludes_non_members(self, api_client, manage_users_headers, other_user):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert str(other_user.pk) not in ids
+
+    def test_admin_update_non_member_returns_404(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/",
+            {"display_name": "Renamed"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 404
+
 
 @pytest.mark.django_db
 class TestMemberProfile:
     def test_member_profile_returns_404_for_paused_user(self, api_client, auth_headers, other_user):
         other_user.is_paused = True
         other_user.save(update_fields=["is_paused"])
+        response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
+        assert response.status_code == 404
+
+    def test_member_profile_returns_404_for_non_member(self, api_client, auth_headers, other_user):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 
@@ -132,8 +162,6 @@ class TestDeleteUser:
         assert response.status_code == 403
 
     def test_delete_user_soft_archives(self, api_client, manage_users_headers, other_user):
-        from users.models import User
-
         response = api_client.delete(
             f"/api/auth/users/{other_user.pk}/",
             **manage_users_headers,
@@ -145,8 +173,6 @@ class TestDeleteUser:
     def test_delete_user_already_archived_returns_400(
         self, api_client, manage_users_headers, other_user
     ):
-        from django.utils import timezone
-
         other_user.archived_at = timezone.now()
         other_user.save(update_fields=["archived_at"])
 
@@ -158,8 +184,6 @@ class TestDeleteUser:
         assert_error_code(response, Code.User.ALREADY_ARCHIVED)
 
     def test_archived_user_excluded_from_list(self, api_client, manage_users_headers, other_user):
-        from django.utils import timezone
-
         other_user.archived_at = timezone.now()
         other_user.save(update_fields=["archived_at"])
 
@@ -169,8 +193,6 @@ class TestDeleteUser:
         assert str(other_user.pk) not in ids
 
     def test_archived_user_excluded_from_search(self, api_client, manage_users_headers, other_user):
-        from django.utils import timezone
-
         other_user.archived_at = timezone.now()
         other_user.save(update_fields=["archived_at"])
 
@@ -180,8 +202,6 @@ class TestDeleteUser:
         assert str(other_user.pk) not in ids
 
     def test_archived_user_cannot_login(self, api_client, other_user):
-        from django.utils import timezone
-
         other_user.archived_at = timezone.now()
         other_user.save(update_fields=["archived_at"])
 
@@ -194,9 +214,6 @@ class TestDeleteUser:
         assert_error_code(response, Code.Auth.ACCOUNT_ARCHIVED)
 
     def test_archived_user_cannot_magic_login(self, api_client, other_user):
-        from django.utils import timezone
-        from users.models import MagicLoginToken
-
         magic = MagicLoginToken.create_for_user(other_user)
         other_user.archived_at = timezone.now()
         other_user.save(update_fields=["archived_at"])
@@ -268,9 +285,6 @@ class TestGenerateMagicLink:
         self, api_client, manage_users_headers, other_user
     ):
         """When admin generates the link, MAGIC_LINK_REQUEST notifications are marked read."""
-        from notifications.models import Notification, NotificationType
-        from users.models import User
-
         approver = User.objects.create_user(phone_number="+12025557788", password="pass")
         Notification.objects.create(
             recipient=approver,
@@ -335,8 +349,6 @@ class TestSearchUsersRespectsShowPhone:
 @pytest.mark.django_db
 class TestUpdateUserRoles:
     def test_non_admin_cannot_grant_admin_role(self, api_client, manage_users_headers, other_user):
-        from users.roles import Role
-
         admin_role = Role.objects.get(name="admin")
         member_role = Role.objects.get(name="member")
         response = api_client.patch(
@@ -350,10 +362,6 @@ class TestUpdateUserRoles:
         assert not other_user.roles.filter(name="admin").exists()
 
     def test_admin_can_grant_admin_role(self, api_client, other_user):
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-        from users.roles import Role
-
         admin_role = Role.objects.get(name="admin")
         member_role = Role.objects.get(name="member")
         admin_user = User.objects.create_user(phone_number="+12025550401", password="adminpass123")

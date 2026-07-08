@@ -88,6 +88,12 @@ Routes: see `.claude/docs/routes.md`
 
 References: `~/.claude/rules/standards-django-ninja.md`
 
+### comments
+- Avoid verbose or redundant comments. Code should be self-explanatory; comments are the exception, not the default.
+- Only add a comment when the code does **not** explain itself — i.e. the *why* is non-obvious: a hidden constraint, a subtle invariant, a workaround for a specific bug, or surprising behavior.
+- Never write comments that restate what the code does (the "what"). `# increment counter` above `counter += 1` is noise.
+- No multi-line comment blocks or multi-paragraph docstrings. Keep any comment to a single short line. The exception is a structured function docstring that documents params and return in a fixed format (e.g. `param(type): description` / `return(type): description`).
+
 ### frontend text casing
 - All user-facing text in the frontend app must be **lowercase only** — labels, headings, buttons, placeholders, toasts, error messages, date formatting, etc.
 - Use `.toLowerCase()` on any dynamic/format-driven strings (e.g. `date-fns` output).
