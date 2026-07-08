@@ -32,11 +32,18 @@ _EVENT_UPDATES_CHANNEL = "event_updates"
 
 
 def _ping_event_update(user_ids: Iterable[str], event_id: str) -> None:
-    """Fire pg_notify on the event_updates channel — a silent live-update ping.
+    """
+    Fire pg_notify on the event_updates channel — a silent live-update ping.
 
     The SSE layer delivers this as an `event_updated` event (distinct from
     `notification`) so the frontend only invalidates event caches — no bell,
     no unread-count refetch, no notification row.
+
+    user_ids - Iterable[str]: the users to ping
+    event_id - str: the event whose caches should be invalidated
+
+    Return:
+        None
     """
     if connection.vendor != "postgresql":
         return
@@ -58,11 +65,19 @@ def broadcast_cohost_change(
     exclude_user_ids: Iterable[str] = (),
     extra_user_ids: Iterable[str] = (),
 ) -> None:
-    """Live-update ping scoped to creator + accepted co-hosts.
+    """
+    Live-update ping scoped to creator + accepted co-hosts.
 
     Used when the cohost roster changes (accept / decline / rescind) so
     the host-management UI refreshes for the people who care, without
     pinging every member who's RSVP'd or been invited to the event.
+
+    event - Event: the event whose cohost roster changed
+    exclude_user_ids - Iterable[str]: users to omit from the ping
+    extra_user_ids - Iterable[str]: users to include beyond creator + co-hosts
+
+    Return:
+        None
     """
     recipients: set[str] = set()
     if event.created_by_id:
@@ -80,11 +95,19 @@ def broadcast_event_update(
     exclude_user_ids: Iterable[str] = (),
     extra_user_ids: Iterable[str] = (),
 ) -> None:
-    """Live-update ping for everyone currently able to see this event.
+    """
+    Live-update ping for everyone currently able to see this event.
 
     Creates no notification rows. Stakeholders are the creator + current
-    co-hosts + invited + attending/maybe RSVPs. Pass `extra_user_ids` to
-    include users who just lost their stake (e.g. a co-host who was removed).
+    co-hosts + invited + attending/maybe RSVPs.
+
+    event - Event: the event that changed
+    exclude_user_ids - Iterable[str]: users to omit from the ping
+    extra_user_ids - Iterable[str]: users to include beyond current stakeholders
+        (e.g. a co-host who just lost their stake)
+
+    Return:
+        None
     """
     recipients: set[str] = set()
     if event.created_by_id:

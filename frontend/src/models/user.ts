@@ -57,6 +57,10 @@ export interface User {
  *     collects neither). Anyone missing either goes to /onboarding, which
  *     collects whatever's missing (legacy accounts approved before email was
  *     required land here).
+ *
+ * @param {User | null} user - the authenticated user, or null when signed out
+ * @returns {'/new-password' | '/onboarding' | null} the setup route, or null
+ *   when nothing is pending
  */
 export function passwordSetupRedirect(user: User | null): '/new-password' | '/onboarding' | null {
   if (!user) return null;
@@ -65,6 +69,16 @@ export function passwordSetupRedirect(user: User | null): '/new-password' | '/on
   return hasNameAndEmail ? '/new-password' : '/onboarding';
 }
 
+/**
+ * Where a user must go to accept the community guidelines before using the app,
+ * or null if they've already consented. The consent gate is HARD — no skip, no
+ * dismiss — and applies to everyone (admins included). It runs only after any
+ * password setup (passwordSetupRedirect) is resolved, so a brand-new user sets
+ * their name + password first, then consents.
+ *
+ * @param {User | null} user - the authenticated user, or null when signed out
+ * @returns {'/consent' | null} the consent route, or null when already consented
+ */
 export function consentRedirect(user: User | null): '/consent' | null {
   if (!user) return null;
   return user.needsGuidelinesConsent || user.needsSmsConsent ? '/consent' : null;
@@ -83,6 +97,10 @@ export function consentRedirect(user: User | null): '/consent' | null {
  * with the new auth state, so a pending user sees a blank screen until refresh.
  * Navigating to the gate target up-front avoids that race entirely; the gate
  * remains the backstop for every later navigation.
+ *
+ * @param {User | null} user - the freshly-authenticated user, or null
+ * @returns {'/new-password' | '/onboarding' | '/consent' | null} the gate route
+ *   to navigate to, or null when the user may enter the app
  */
 export function postAuthRedirect(
   user: User | null,

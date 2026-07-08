@@ -15,7 +15,13 @@ import { AlreadyInvitedError, useJoinRequests, useSubmitJoinRequest } from './jo
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
 
-/** Create an axios-style error with a given HTTP status. */
+/**
+ * Create an axios-style error with a given HTTP status.
+ *
+ * @param {number} status - the HTTP status to attach to the error response
+ * @param {Record<string, unknown>} data - the response body payload
+ * @returns {Error} an error shaped like an axios error
+ */
 function makeAxiosError(status: number, data: Record<string, unknown> = {}): Error {
   return Object.assign(new Error(`HTTP ${status}`), {
     isAxiosError: true,

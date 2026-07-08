@@ -8,7 +8,15 @@ from users.roles import Role
 
 
 def _reactivate_archived_user(existing_user, join_request):
-    """Un-archive an existing user on re-approval, carrying any new consents."""
+    """
+    Un-archive an existing user on re-approval, carrying any new consents.
+
+    existing_user - User: the archived user row to reactivate
+    join_request - JoinRequest: the approved request supplying the fresh consents
+
+    Return:
+        str: a one-time magic login token for the reactivated user
+    """
     existing_user.archived_at = None
     existing_user.needs_onboarding = True
     existing_user.first_name = join_request.first_name
@@ -32,11 +40,18 @@ def _reactivate_archived_user(existing_user, join_request):
 
 
 def _promote_non_member(user, join_request):
-    """Promote a linked non-member User to a member in place.
+    """
+    Promote a linked non-member User to a member in place.
 
     Their prior RSVPs already point at this row, so flipping is_member keeps the
     full history instead of orphaning it under a fresh account. Outstanding
     scoped RSVP tokens are revoked — the member flow replaces them.
+
+    user - User: the non-member row to promote in place
+    join_request - JoinRequest: the approved request supplying display name and consents
+
+    Return:
+        str: a one-time magic login token for the promoted member
     """
     user.is_member = True
     user.needs_onboarding = True
@@ -69,13 +84,21 @@ def _promote_non_member(user, join_request):
 
 
 def _provision_approved_user(join_request, requesting_user) -> tuple[str | None, bool]:
-    """Create, reactivate, or promote the user for an approved join request.
+    """
+    Create, reactivate, or promote the user for an approved join request.
 
-    Returns ``(magic_token, user_created)``: the one-time login token and whether
-    a brand-new User row was created. A promoted non-member or reactivated
-    archived user returns a token with ``user_created`` reflecting whether the
-    row is new. When the phone already maps to an active member, nothing is
-    provisioned and ``(None, False)`` is returned.
+    A promoted non-member or reactivated archived user returns a token with
+    ``user_created`` reflecting whether the row is new. When the phone already
+    maps to an active member, nothing is provisioned and ``(None, False)`` is
+    returned.
+
+    join_request - JoinRequest: the approved request to provision a user for
+    requesting_user - User: the admin performing the approval (for the audit trail)
+
+    Return:
+        tuple[str | None, bool]: ``(magic_token, user_created)`` — the one-time
+        login token (or None when no user was provisioned) and whether a
+        brand-new User row was created
     """
     # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
     if join_request.user is not None and not join_request.user.is_member:

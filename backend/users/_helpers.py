@@ -58,10 +58,16 @@ def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
 
 
 def _create_magic_token(user: User, *, requires_password_reset: bool = False) -> str:
-    """Create a one-time magic login token. Returns the token UUID string.
+    """
+    Create a one-time magic login token.
 
-    Pass requires_password_reset=True for self-service login links so consuming
-    the token forces a password reset (admin onboarding links leave it False).
+    user - User: the user the token logs in
+    requires_password_reset - bool: pass True for self-service login links so
+        consuming the token forces a password reset (admin onboarding links
+        leave it False)
+
+    Return:
+        str: the token UUID as a string
     """
     magic = MagicLoginToken.create_for_user(user, requires_password_reset=requires_password_reset)
     return str(magic.token)
@@ -134,13 +140,20 @@ def _check_and_set_email(
     *,
     exclude_pk: uuid.UUID | str | None = None,
 ) -> None:
-    """Normalize email, enforce uniqueness, and assign to user.email.
+    """
+    Normalize email, enforce uniqueness, and assign to user.email.
 
     Raises ValidationException(409, "email.already_exists") on collision.
     Passes the normalized value (possibly None) through to ``user.email``.
 
-    Pass ``exclude_pk`` for the self-update case so users can re-submit
-    their own current email without a false collision.
+    user - User: the user whose ``email`` is set to the normalized value
+    raw - str | None: the raw email to normalize (blank/None clears the field)
+    exclude_pk - uuid.UUID | str | None: for the self-update case, the pk to
+        exclude from the uniqueness check so users can re-submit their own
+        current email without a false collision
+
+    Return:
+        None
     """
     normalized = _normalize_email(raw)
     if normalized:
@@ -153,10 +166,18 @@ def _check_and_set_email(
 
 
 def _validate_phone(raw: str, field: str = "phone_number") -> str:
-    """Parse, validate, and return E.164. Raises ValidationException on invalid.
+    """
+    Parse and validate a phone number, returning it in E.164 form.
 
-    Defaults to US region so bare 10-digit numbers are accepted.
-    Numbers with an explicit country code (e.g. +44...) are unaffected.
+    Raises ValidationException on an invalid number. Defaults to US region so
+    bare 10-digit numbers are accepted; numbers with an explicit country code
+    (e.g. +44...) are unaffected.
+
+    raw - str: the phone number to parse
+    field - str: the field name to attach to a validation error
+
+    Return:
+        str: the number formatted as E.164 (e.g. ``+15551234567``)
     """
     try:
         parsed = phonenumbers.parse(raw, "US")

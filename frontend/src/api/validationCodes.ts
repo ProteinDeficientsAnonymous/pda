@@ -32,7 +32,12 @@ export interface FieldError {
   params?: Record<string, unknown>;
 }
 
-/** Return user-facing copy for a single field error. */
+/**
+ * Return user-facing copy for a single field error.
+ *
+ * @param {FieldError} err - the structured field error from the API
+ * @returns {string} the message to display for that error
+ */
 export function messageForCode(err: FieldError): string {
   if (isKnownCode(err.code)) {
     return messageForKnownCode(err.code, err);
@@ -41,9 +46,15 @@ export function messageForCode(err: FieldError): string {
 }
 
 /**
+ * Return user-facing copy for a known field-error code.
+ *
  * Exhaustive over `KnownCode`. Adding a new code to the backend will fail the
  * build here until a `case` is added, eliminating silent fallbacks for
  * codes the FE forgot to ship copy for.
+ *
+ * @param {KnownCode} code - the recognized error code
+ * @param {FieldError} err - the full field error (for interpolating params)
+ * @returns {string} the message to display for that code
  */
 function messageForKnownCode(code: KnownCode, err: FieldError): string {
   switch (code) {
@@ -439,7 +450,12 @@ function assertNever(code: never): never {
   throw new Error(`unhandled validation code: ${String(code)}`);
 }
 
-/** Join multiple field errors into a single human-readable sentence. */
+/**
+ * Join multiple field errors into a single human-readable sentence.
+ *
+ * @param {FieldError[]} errors - the structured field errors from the API
+ * @returns {string} the deduped messages joined with ` · `
+ */
 export function messagesFromFieldErrors(errors: FieldError[]): string {
   const msgs = errors.map(messageForCode);
   // Dedup while preserving order — backend sometimes emits two errors for

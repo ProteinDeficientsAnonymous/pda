@@ -14,8 +14,11 @@ import { type FieldError, messagesFromFieldErrors } from './validationCodes';
 
 /**
  * Extract a user-facing message from any API error.
- * Returns null when the error isn't an axios error we can interpret — callers
- * fall back to their own default ("couldn't save — try again", etc.).
+ *
+ * @param {unknown} err - the thrown error (typically from an axios request)
+ * @returns {string | null} the message, or null when the error isn't an axios
+ *   error we can interpret — callers fall back to their own default
+ *   ("couldn't save — try again", etc.).
  */
 export function extractApiError(err: unknown): string | null {
   if (!isAxiosError(err)) return null;
@@ -40,15 +43,22 @@ export function extractApiError(err: unknown): string | null {
 /**
  * Like extractApiError but returns a fallback string when no message is
  * recoverable. Convenience for call sites that always want a display string.
+ *
+ * @param {unknown} err - the thrown error (typically from an axios request)
+ * @param {string} fallback - message to return when nothing is recoverable
+ * @returns {string} the extracted message, or `fallback`
  */
 export function extractApiErrorOr(err: unknown, fallback: string): string {
   return extractApiError(err) ?? fallback;
 }
 
 /**
- * HTTP status from any API error, or null if the error isn't an axios error
- * with a response. Use this instead of importing `isAxiosError` directly so
- * call sites don't reach into `error.response?.status` on their own.
+ * HTTP status from any API error. Use this instead of importing `isAxiosError`
+ * directly so call sites don't reach into `error.response?.status` on their own.
+ *
+ * @param {unknown} err - the thrown error (typically from an axios request)
+ * @returns {number | null} the HTTP status, or null if the error isn't an axios
+ *   error with a response
  */
 export function getApiStatus(err: unknown): number | null {
   if (!isAxiosError(err)) return null;
@@ -56,9 +66,13 @@ export function getApiStatus(err: unknown): number | null {
 }
 
 /**
- * True if the error carries a structured-detail entry with the given code.
+ * Whether the error carries a structured-detail entry with the given code.
  * Prefer this over status-based branching when the code is more specific than
  * the status (e.g. distinguishing flag_already_flagged from any 409).
+ *
+ * @param {unknown} err - the thrown error (typically from an axios request)
+ * @param {string} code - the structured error code to look for
+ * @returns {boolean} true if any detail entry carries `code`
  */
 export function hasErrorCode(err: unknown, code: string): boolean {
   if (!isAxiosError(err)) return false;

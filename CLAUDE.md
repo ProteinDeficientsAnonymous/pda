@@ -108,6 +108,39 @@ References: `~/.claude/rules/standards-django-ninja.md`
 - All user-facing text in the frontend app must be **lowercase only** — labels, headings, buttons, placeholders, toasts, error messages, date formatting, etc.
 - Use `.toLowerCase()` on any dynamic/format-driven strings (e.g. `date-fns` output).
 
+### docstring format
+
+When a function/method warrants a doc comment, describe each parameter (name, type, description) and the return value in the standard shape below. This applies to **non-trivial functions** — anything with multiple parameters, non-obvious behavior, side effects, or a public/reused surface. Simple one-line helpers (e.g. a getter or a thin wrapper) may keep a single-line summary; do not pad trivial functions with boilerplate param/return sections.
+
+**Backend (Python):** a summary line, a blank line, one line per parameter (`name - type: description`), then a `Return:` block. Omit the `param`/`Return:` sections when there are no parameters / no meaningful return.
+
+```python
+def approve_join_request(request_id: str, approver: User) -> JoinRequest:
+    """
+    Approve a pending join request and promote the applicant.
+
+    request_id - str: id of the JoinRequest to approve
+    approver - User: the member performing the approval (for the audit log)
+
+    Return:
+        JoinRequest: the updated request in the APPROVED state
+    """
+```
+
+Google-style `Args:` / `Returns:` docstrings already present in the tree (e.g. `config/audit.py`) are an accepted equivalent and need not be rewritten; use the `param - type: description` + `Return:` form above for new/edited docstrings.
+
+**Frontend (TS/JS):** standard JSDoc — `@param {type} name - description` and `@returns {type} description`.
+
+```ts
+/**
+ * Resolve where to send a user after authentication.
+ *
+ * @param {User} user - the authenticated user
+ * @param {boolean} consented - whether guidelines consent is recorded
+ * @returns {string} the path to redirect to
+ */
+```
+
 ## Agent Directives
 
 1. **STEP 0 RULE**: Before ANY structural refactor on a file >300 LOC, first remove all dead props, unused exports, unused imports, and debug logs. Commit this cleanup separately.
