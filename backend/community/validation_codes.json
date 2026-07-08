@@ -122,6 +122,11 @@
         "params": []
       },
       {
+        "name": "MEMBER_CONTACT_MUST_SIGN_IN",
+        "value": "event.member_contact_must_sign_in",
+        "params": []
+      },
+      {
         "name": "ATTENDANCE_OPENS_LATER",
         "value": "event.attendance_opens_later",
         "params": []

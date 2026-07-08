@@ -48,6 +48,7 @@ class Code:
         RSVP_INVALID_STATUS = "event.rsvp_invalid_status"
         NO_PLUS_ONE_SPOTS = "event.no_plus_one_spots"
         RSVP_NOT_FOUND = "event.rsvp_not_found"
+        MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }

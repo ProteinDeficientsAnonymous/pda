@@ -1232,6 +1232,23 @@ export interface paths {
         patch: operations["community__pages_update_page"];
         trace?: never;
     };
+    "/api/community/public/events/{event_id}/rsvp/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Public Rsvp */
+        post: operations["community__public_rsvp_submit_public_rsvp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/request-login-link/": {
         parameters: {
             query?: never;
@@ -2994,6 +3011,42 @@ export interface components {
             voters: {
                 [key: string]: components["schemas"]["VoterOut"][];
             };
+        };
+        /** PublicRsvpIn */
+        PublicRsvpIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /**
+             * Has Plus One
+             * @default false
+             */
+            has_plus_one: boolean;
+            /** Name */
+            name: string;
+            /** Phone Number */
+            phone_number: string;
+            /** Status */
+            status: string;
+            /**
+             * Website
+             * @default
+             */
+            website: string;
+        };
+        /** PublicRsvpOut */
+        PublicRsvpOut: {
+            event: components["schemas"]["EventOut"];
+            rsvp: components["schemas"]["PublicRsvpStateOut"];
+        };
+        /** PublicRsvpStateOut */
+        PublicRsvpStateOut: {
+            /** Has Plus One */
+            has_plus_one: boolean;
+            /** Status */
+            status: string;
         };
         /** RSVPGuestOut */
         RSVPGuestOut: {
@@ -7252,6 +7305,68 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__public_rsvp_submit_public_rsvp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicRsvpIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRsvpOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

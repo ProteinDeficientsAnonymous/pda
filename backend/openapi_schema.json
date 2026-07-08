@@ -3291,6 +3291,83 @@
         "title": "PollResultsOut",
         "type": "object"
       },
+      "PublicRsvpIn": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "has_plus_one": {
+            "default": false,
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 64,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone_number": {
+            "maxLength": 20,
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "status": {
+            "maxLength": 20,
+            "title": "Status",
+            "type": "string"
+          },
+          "website": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Website",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "phone_number",
+          "status"
+        ],
+        "title": "PublicRsvpIn",
+        "type": "object"
+      },
+      "PublicRsvpOut": {
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/EventOut"
+          },
+          "rsvp": {
+            "$ref": "#/components/schemas/PublicRsvpStateOut"
+          }
+        },
+        "required": [
+          "event",
+          "rsvp"
+        ],
+        "title": "PublicRsvpOut",
+        "type": "object"
+      },
+      "PublicRsvpStateOut": {
+        "properties": {
+          "has_plus_one": {
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "has_plus_one"
+        ],
+        "title": "PublicRsvpStateOut",
+        "type": "object"
+      },
       "RSVPGuestOut": {
         "properties": {
           "attendance": {
@@ -9781,6 +9858,88 @@
           }
         ],
         "summary": "Update Page",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/events/{event_id}/rsvp/": {
+      "post": {
+        "operationId": "community__public_rsvp_submit_public_rsvp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicRsvpIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRsvpOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Submit Public Rsvp",
         "tags": [
           "community"
         ]
