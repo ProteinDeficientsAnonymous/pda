@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -146,7 +147,7 @@ function CreateSurveyDialog({ open, onClose }: { open: boolean; onClose: () => v
   });
   const [error, setError] = useState<string | null>(null);
 
-  async function submit(e: React.SyntheticEvent) {
+  async function submit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
     if (!values.title.trim() || !values.slug.trim()) {

@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -114,7 +115,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     return Object.keys(next).length === 0;
   }
 
-  async function onSubmit(e: React.SyntheticEvent) {
+  async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setServerError(null);
     if (!validate()) return;

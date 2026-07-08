@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // react-image-crop uses pointer events + ResizeObserver that jsdom doesn't
@@ -14,7 +14,7 @@ vi.mock('react-image-crop', () => ({
   }: {
     circularCrop?: boolean;
     aspect?: number;
-    children?: React.ReactNode;
+    children?: ReactNode;
   }) => (
     <div
       data-testid="cropper"

@@ -1,6 +1,7 @@
 // Create / edit a single survey question. Covers all 9 field types; options
 // textarea appears only for types that use them.
 
+import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -58,7 +59,7 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
   const wantsOptions = TYPES.find((t) => t.value === fieldType)?.wantsOptions ?? false;
   const busy = create.isPending || update.isPending;
 
-  async function submit(e: React.SyntheticEvent) {
+  async function submit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
     if (!label.trim()) {

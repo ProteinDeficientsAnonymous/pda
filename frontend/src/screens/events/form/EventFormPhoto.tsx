@@ -3,6 +3,7 @@
 // On create the cropped blob is staged and uploaded after the event POST returns
 // an id; on edit it uploads immediately.
 
+import type { ChangeEvent, DragEvent,MouseEvent } from 'react';
 import { useRef, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -66,7 +67,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
     setFile(f);
   }
 
-  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+  function onPick(e: ChangeEvent<HTMLInputElement>) {
     setError(null);
     const f = e.target.files?.[0];
     e.target.value = '';
@@ -75,30 +76,30 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
   }
 
   // Only treat drags carrying files as drop targets — ignore text/HTML drags.
-  function isFileDrag(e: React.DragEvent): boolean {
+  function isFileDrag(e: DragEvent): boolean {
     return Array.from(e.dataTransfer.types).includes('Files');
   }
 
-  function onDragEnter(e: React.DragEvent) {
+  function onDragEnter(e: DragEvent) {
     if (locked || !isFileDrag(e)) return;
     e.preventDefault();
     dragDepthRef.current += 1;
     setDragOver(true);
   }
 
-  function onDragOver(e: React.DragEvent) {
+  function onDragOver(e: DragEvent) {
     if (locked || !isFileDrag(e)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   }
 
-  function onDragLeave(e: React.DragEvent) {
+  function onDragLeave(e: DragEvent) {
     if (locked || !isFileDrag(e)) return;
     dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
     if (dragDepthRef.current === 0) setDragOver(false);
   }
 
-  function onDrop(e: React.DragEvent) {
+  function onDrop(e: DragEvent) {
     if (locked || !isFileDrag(e)) return;
     e.preventDefault();
     dragDepthRef.current = 0;
@@ -122,7 +123,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
     }
   }
 
-  async function handleDelete(e: React.MouseEvent) {
+  async function handleDelete(e: MouseEvent) {
     e.stopPropagation();
     if (!onDelete || locked) return;
     setBusy(true);

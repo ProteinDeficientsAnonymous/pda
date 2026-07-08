@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -54,7 +55,7 @@ function SurveyForm({ survey }: { survey: Survey }) {
     return Object.keys(next).length === 0;
   }
 
-  async function onSubmit(e: React.SyntheticEvent) {
+  async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setServerError(null);
     if (!validate()) return;

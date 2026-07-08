@@ -1,3 +1,4 @@
+import type { ChangeEvent } from 'react';
 import { useRef, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -39,7 +40,7 @@ export function AvatarUpload({ size = 'md' }: Props) {
   const cameraSize = size === 'lg' ? 'h-9 w-9' : 'h-8 w-8';
   const cameraIconSize = size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
 
-  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+  function onPick(e: ChangeEvent<HTMLInputElement>) {
     setError(null);
     const f = e.target.files?.[0];
     e.target.value = '';

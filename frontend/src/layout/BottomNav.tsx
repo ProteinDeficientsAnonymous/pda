@@ -5,6 +5,7 @@
 // announce them. Active state uses a filled icon + dot so the distinction
 // survives the color-blind-friendly rule (not color-only).
 
+import type { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuthStore } from '@/auth/store';
@@ -72,7 +73,7 @@ export function BottomNav() {
 interface NavItemProps {
   to: string;
   label: string;
-  children: (state: { active: boolean }) => React.ReactNode;
+  children: (state: { active: boolean }) => ReactNode;
 }
 
 function NavItem({ to, label, children }: NavItemProps) {

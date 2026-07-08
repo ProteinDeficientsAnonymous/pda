@@ -1,0 +1,331 @@
+[1mdiff --git a/frontend/src/api/calendar.test.ts b/frontend/src/api/calendar.test.ts[m
+[1mindex 516268a..f1eafd6 100644[m
+[1m--- a/frontend/src/api/calendar.test.ts[m
+[1m+++ b/frontend/src/api/calendar.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -21,8 +22,8 @@[m [mfunction makeQc() {[m
+ }[m
+ [m
+ function makeWrapper(qc: QueryClient) {[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/content.test.ts b/frontend/src/api/content.test.ts[m
+[1mindex 913e213..62f0cb2 100644[m
+[1m--- a/frontend/src/api/content.test.ts[m
+[1m+++ b/frontend/src/api/content.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -23,8 +24,8 @@[m [mconst mockedPatch = vi.mocked(apiClient.patch);[m
+ [m
+ function wrapper() {[m
+   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/docs.mutations.test.ts b/frontend/src/api/docs.mutations.test.ts[m
+[1mindex 73c6f82..fe77850 100644[m
+[1m--- a/frontend/src/api/docs.mutations.test.ts[m
+[1m+++ b/frontend/src/api/docs.mutations.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -29,8 +30,8 @@[m [mfunction makeQc() {[m
+ }[m
+ [m
+ function makeWrapper(qc: QueryClient) {[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/eventComments.test.ts b/frontend/src/api/eventComments.test.ts[m
+[1mindex 7edfc4a..7b47ab5 100644[m
+[1m--- a/frontend/src/api/eventComments.test.ts[m
+[1m+++ b/frontend/src/api/eventComments.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -42,8 +43,8 @@[m [mfunction wireCommentList(overrides: Partial<WireCommentList> = {}): WireCommentL[m
+ [m
+ function buildWrapper() {[m
+   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });[m
+[31m-  const Wrapper = ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  const Wrapper = ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+   return { qc, Wrapper };[m
+ }[m
+ [m
+[1mdiff --git a/frontend/src/api/eventPolls.test.ts b/frontend/src/api/eventPolls.test.ts[m
+[1mindex e81cf22..b6f1317 100644[m
+[1m--- a/frontend/src/api/eventPolls.test.ts[m
+[1m+++ b/frontend/src/api/eventPolls.test.ts[m
+[36m@@ -1,7 +1,8 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+ import type { AxiosError } from 'axios';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -75,8 +76,8 @@[m [mfunction wirePoll(overrides: Partial<WireEventPoll> = {}): WireEventPoll {[m
+ [m
+ function buildWrapper() {[m
+   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });[m
+[31m-  const Wrapper = ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  const Wrapper = ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+   return { qc, Wrapper };[m
+ }[m
+ [m
+[1mdiff --git a/frontend/src/api/feedback.test.ts b/frontend/src/api/feedback.test.ts[m
+[1mindex c0915dc..2230557 100644[m
+[1m--- a/frontend/src/api/feedback.test.ts[m
+[1m+++ b/frontend/src/api/feedback.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -15,8 +16,8 @@[m [mconst mockedPost = vi.mocked(apiClient.post);[m
+ [m
+ function wrapper() {[m
+   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/join.test.ts b/frontend/src/api/join.test.ts[m
+[1mindex 8ec3225..e7b54a1 100644[m
+[1m--- a/frontend/src/api/join.test.ts[m
+[1m+++ b/frontend/src/api/join.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -24,8 +25,8 @@[m [mfunction makeAxiosError(status: number, data: Record<string, unknown> = {}): Err[m
+ [m
+ function wrapper() {[m
+   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/notifications.test.ts b/frontend/src/api/notifications.test.ts[m
+[1mindex 9f5df0b..14b66c1 100644[m
+[1m--- a/frontend/src/api/notifications.test.ts[m
+[1m+++ b/frontend/src/api/notifications.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -30,8 +31,8 @@[m [mconst mockedPost = vi.mocked(apiClient.post);[m
+ [m
+ function wrapper() {[m
+   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/roles.test.ts b/frontend/src/api/roles.test.ts[m
+[1mindex a3fef5c..e8c38df 100644[m
+[1m--- a/frontend/src/api/roles.test.ts[m
+[1m+++ b/frontend/src/api/roles.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -23,8 +24,8 @@[m [mfunction makeQc() {[m
+ }[m
+ [m
+ function makeWrapper(qc: QueryClient) {[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/surveyAdmin.tallies.test.ts b/frontend/src/api/surveyAdmin.tallies.test.ts[m
+[1mindex 98a5f91..8bcc305 100644[m
+[1m--- a/frontend/src/api/surveyAdmin.tallies.test.ts[m
+[1m+++ b/frontend/src/api/surveyAdmin.tallies.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -21,8 +22,8 @@[m [mfunction makeQc() {[m
+ }[m
+ [m
+ function makeWrapper(qc: QueryClient) {[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/api/users.test.ts b/frontend/src/api/users.test.ts[m
+[1mindex 04e4c7e..0e8db17 100644[m
+[1m--- a/frontend/src/api/users.test.ts[m
+[1m+++ b/frontend/src/api/users.test.ts[m
+[36m@@ -1,6 +1,7 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { renderHook, waitFor } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+[32m+[m[32mimport { createElement } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ vi.mock('@/api/client', () => ({[m
+[36m@@ -32,8 +33,8 @@[m [mfunction makeQc() {[m
+ [m
+ // Each hook gets a fresh QueryClient so invalidations are observable in isolation.[m
+ function makeWrapper(qc: QueryClient) {[m
+[31m-  return ({ children }: { children: React.ReactNode }) =>[m
+[31m-    React.createElement(QueryClientProvider, { client: qc }, children);[m
+[32m+[m[32m  return ({ children }: { children: ReactNode }) =>[m
+[32m+[m[32m    createElement(QueryClientProvider, { client: qc }, children);[m
+ }[m
+ [m
+ beforeEach(() => {[m
+[1mdiff --git a/frontend/src/components/FeedbackButton.a11y.test.tsx b/frontend/src/components/FeedbackButton.a11y.test.tsx[m
+[1mindex 25a584f..814d45d 100644[m
+[1m--- a/frontend/src/components/FeedbackButton.a11y.test.tsx[m
+[1m+++ b/frontend/src/components/FeedbackButton.a11y.test.tsx[m
+[36m@@ -1,7 +1,6 @@[m
+ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';[m
+ import { render, screen } from '@testing-library/react';[m
+ import userEvent from '@testing-library/user-event';[m
+[31m-import React from 'react';[m
+ import { MemoryRouter } from 'react-router-dom';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ import { axe } from 'vitest-axe';[m
+[1mdiff --git a/frontend/src/components/FeedbackButton.tsx b/frontend/src/components/FeedbackButton.tsx[m
+[1mindex 88ddce4..9bb937b 100644[m
+[1m--- a/frontend/src/components/FeedbackButton.tsx[m
+[1m+++ b/frontend/src/components/FeedbackButton.tsx[m
+[36m@@ -5,7 +5,7 @@[m
+ // per .claude/rules/ui-copy-tone.md. maxLength caps match the frontend[m
+ // input-validation guidance (title 150, description 2000) and stay under[m
+ // the backend FieldLimit on FeedbackIn (200 / 10000).[m
+[31m-[m
+[32m+[m[32mimport type { SyntheticEvent } from 'react';[m
+ import { useEffect, useState } from 'react';[m
+ import { useLocation } from 'react-router-dom';[m
+ import { toast } from 'sonner';[m
+[36m@@ -55,7 +55,7 @@[m [mexport function FeedbackButton() {[m
+     setDescriptionError(undefined);[m
+   }[m
+ [m
+[31m-  async function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {[m
+[32m+[m[32m  async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {[m
+     e.preventDefault();[m
+     const trimmedTitle = title.trim();[m
+     const trimmedDescription = description.trim();[m
+[1mdiff --git a/frontend/src/components/ImageCropDialog.a11y.test.tsx b/frontend/src/components/ImageCropDialog.a11y.test.tsx[m
+[1mindex e3279b3..8b18ba7 100644[m
+[1m--- a/frontend/src/components/ImageCropDialog.a11y.test.tsx[m
+[1m+++ b/frontend/src/components/ImageCropDialog.a11y.test.tsx[m
+[36m@@ -1,10 +1,10 @@[m
+ import { render } from '@testing-library/react';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ import { axe } from 'vitest-axe';[m
+ [m
+ vi.mock('react-image-crop', () => ({[m
+[31m-  default: ({ circularCrop, children }: { circularCrop?: boolean; children?: React.ReactNode }) => ([m
+[32m+[m[32m  default: ({ circularCrop, children }: { circularCrop?: boolean; children?: ReactNode }) => ([m
+     <div data-testid="cropper" data-circular={String(Boolean(circularCrop))}>[m
+       {children}[m
+     </div>[m
+[1mdiff --git a/frontend/src/components/ImageCropDialog.test.tsx b/frontend/src/components/ImageCropDialog.test.tsx[m
+[1mindex 59140e0..f8176ef 100644[m
+[1m--- a/frontend/src/components/ImageCropDialog.test.tsx[m
+[1m+++ b/frontend/src/components/ImageCropDialog.test.tsx[m
+[36m@@ -1,6 +1,6 @@[m
+ import { render, screen } from '@testing-library/react';[m
+ import userEvent from '@testing-library/user-event';[m
+[31m-import React from 'react';[m
+[32m+[m[32mimport type { ReactNode } from 'react';[m
+ import { beforeEach, describe, expect, it, vi } from 'vitest';[m
+ [m
+ // react-image-crop uses pointer events + ResizeObserver that jsdom doesn't[m
+[36m@@ -14,7 +14,7 @@[m [mvi.mock('react-image-crop', () => ({[m
+   }: {[m
+     cir

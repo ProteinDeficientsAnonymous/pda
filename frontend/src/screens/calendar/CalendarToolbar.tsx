@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ToolbarProps } from 'react-big-calendar';
 
 import { cn } from '@/utils/cn';
@@ -47,7 +48,7 @@ function ChevronButton({
 }: {
   label: string;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button

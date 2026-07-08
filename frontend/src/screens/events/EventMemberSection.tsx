@@ -2,6 +2,7 @@
 // backend gates behind auth: hosts, location, links, cost, invite, rsvp,
 // plus the admin actions card for the event's creator / co-hosts / managers.
 
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -99,7 +100,7 @@ function ReportEventButton({ eventId }: { eventId: string }) {
   );
 }
 
-function Card({ label, children }: { label: string; children: React.ReactNode }) {
+function Card({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="border-border bg-surface rounded-lg border p-4">
       <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">{label}</h2>

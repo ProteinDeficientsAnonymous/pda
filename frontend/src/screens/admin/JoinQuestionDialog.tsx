@@ -1,6 +1,7 @@
 // Create / edit a single JoinFormQuestion. Kept in its own file so the
 // parent screen stays focused on list semantics + reorder.
 
+import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -36,7 +37,7 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
 
   const busy = create.isPending || update.isPending;
 
-  async function onSubmit(e: React.SyntheticEvent) {
+  async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
     if (!label.trim()) {
