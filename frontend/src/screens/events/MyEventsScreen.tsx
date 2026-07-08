@@ -1,9 +1,3 @@
-// Member-facing "my events" list — events the current user created or
-// co-hosts. Active events come from the same flat `useEvents()` feed as the
-// calendar (client-split by start time into upcoming/past). Drafts and
-// cancelled events come from dedicated `?status=` queries; backend already
-// scopes those to events the user created or co-hosts.
-
 import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';

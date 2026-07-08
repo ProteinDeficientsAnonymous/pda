@@ -171,9 +171,6 @@ function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean })
   );
 }
 
-// "x spots left" countdown for capacity-limited events. Renders nothing for
-// unlimited-capacity events (spotsLeft === null) or once full (0 left — the
-// "event is full" warning covers that case).
 function SpotsLeft({ event }: { event: Event }) {
   const left = spotsLeft(event);
   if (left === null || left === 0) return null;

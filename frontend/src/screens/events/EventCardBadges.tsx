@@ -1,11 +1,3 @@
-// Compact badges for event cards / rows: the viewer's own rsvp state and a
-// going/{max} headcount. Used on calendar cards (colored backgrounds → the
-// "card" variant uses translucent currentColor pills) and on the my-events
-// list (neutral surface → the "row" variant uses muted surface pills).
-//
-// Renders nothing when there's nothing to show (no rsvp + unlimited capacity),
-// so callers can drop it in unconditionally.
-
 import { type Event, myRsvpLabel } from '@/models/event';
 import { cn } from '@/utils/cn';
 

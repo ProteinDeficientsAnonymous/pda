@@ -1,7 +1,3 @@
-// Event domain model. The backend blanks out member-only fields for unauthed
-// users (empty strings, false bools, empty lists) — we render exactly what the
-// server gives us and don't attempt to gate again client-side.
-
 export const EventType = {
   Community: 'community',
   Official: 'official',
@@ -25,16 +21,12 @@ export const InvitePermission = {
   CoHostsOnly: 'co_hosts_only',
 } as const;
 
-// Accepted input statuses for POST /rsvp/.
-// `waitlisted` is server-assigned only (when an `attending` request comes in
-// over capacity). See backend _event_rsvps.py _coerce_status.
 export const RsvpStatus = {
   Attending: 'attending',
   Maybe: 'maybe',
   CantGo: 'cant_go',
 } as const;
 
-// Statuses the server may return on a guest's `status` field.
 export const RsvpServerStatus = {
   ...RsvpStatus,
   Waitlisted: 'waitlisted',
@@ -83,8 +75,6 @@ export interface EventStats {
   cancellations: EventCancellation[];
 }
 
-// List endpoint returns a subset; detail endpoint returns everything.
-// We model them as one interface with the detail-only fields optional.
 export interface Event {
   id: string;
   title: string;
@@ -96,7 +86,6 @@ export interface Event {
   latitude: number | null;
   longitude: number | null;
 
-  // Member-only (blanked '' for unauthed).
   whatsappLink: string;
   partifulLink: string;
   otherLink: string;
@@ -122,12 +111,8 @@ export interface Event {
   coHostIds: string[];
   coHostNames: string[];
   coHostPhotoUrls: string[];
-  // Parallel to coHostIds: accepted co-host's invite id, used by the × on
-  // host chips. null for legacy rows missing an invite (defensive — shouldn't
-  // happen post-#363 data migration). Detail-only.
   coHostInviteIds: (string | null)[];
 
-  // Detail-only.
   guests: EventGuest[];
   myRsvp: string | null;
   surveySlugs: string[];
@@ -136,9 +121,6 @@ export interface Event {
   invitedUserPhotoUrls: string[];
   invitePermission: string;
 
-  // Co-host invite approval flow (#363). Pending list visible to creator +
-  // accepted co-hosts only; myPendingCohostInviteId set when the requesting
-  // user has a pending invite for this event (drives the accept/decline banner).
   pendingCohostInvites: PendingCohostInvite[];
   myPendingCohostInviteId: string | null;
 
@@ -161,11 +143,6 @@ export interface PendingCohostInvite {
   invitedAt: Date;
 }
 
-// Maps an event to its chip/calendar css classes. Colocated with the model so
-// any list/detail/badge view can reuse the same color mapping. Returns two
-// classes: the shared .pda-evt base + one of the type/visibility variants.
-// Precedence matches the Flutter frontend: cancelled > official > invite-only
-// > members-only > community.
 export function eventClass(e: Event): string {
   if (e.status === EventStatus.Cancelled) return 'pda-evt pda-evt-cancelled';
   if (e.eventType === EventType.Official) return 'pda-evt pda-evt-official';
@@ -174,16 +151,11 @@ export function eventClass(e: Event): string {
   return 'pda-evt pda-evt-community';
 }
 
-// Remaining capacity for a capacity-limited event, or null when capacity is
-// unlimited (maxAttendees === null) so callers can render gracefully. Never
-// negative — an over-capacity event (waitlist overflow) reports 0 spots left.
 export function spotsLeft(e: Event): number | null {
   if (e.maxAttendees === null) return null;
   return Math.max(0, e.maxAttendees - e.attendingCount);
 }
 
-// Short lowercase label for the viewer's own RSVP state, or null when they
-// haven't responded. Drives the badge on calendar / my-events cards.
 export function myRsvpLabel(e: Event): string | null {
   switch (e.myRsvp) {
     case RsvpServerStatus.Attending:
