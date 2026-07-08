@@ -1,7 +1,7 @@
 // Initial crop geometry for ImageCropDialog. `width`/`height` are the rendered
 // (height-capped at MAX_PREVIEW_PX) image dimensions; returns percent units.
 
-import { centerCrop, makeAspectCrop, type PercentCrop } from 'react-image-crop';
+import { centerCrop, makeAspectCrop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 
 import type { CropShape } from './ImageCropDialog';
 
@@ -42,4 +42,14 @@ export function coverCrop(width: number, height: number, aspect: number): Percen
     width,
     height,
   );
+}
+
+export function percentToPixelCrop(pct: PercentCrop, width: number, height: number): PixelCrop {
+  return {
+    unit: 'px',
+    x: (pct.x / 100) * width,
+    y: (pct.y / 100) * height,
+    width: (pct.width / 100) * width,
+    height: (pct.height / 100) * height,
+  };
 }
