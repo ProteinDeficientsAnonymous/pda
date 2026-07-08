@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -287,6 +287,29 @@ class NonMemberRsvpToken(models.Model):
         if row is None or not row.is_valid:
             return None
         return row.user
+
+
+@receiver(m2m_changed, sender=User.roles.through)
+def reject_role_for_non_member(sender, instance, action, reverse, pk_set, **kwargs):
+    """Reject any role assignment where the user is not a member.
+
+    Fires on every role-assignment path (``user.roles.add``, ``role.users.add``,
+    etc.). Callers should gate on membership first; reaching this guard means one
+    didn't, so the ``ValueError`` surfaces as a loud 500 — fix the caller, don't
+    catch it.
+
+    ``reverse`` is part of Django's ``m2m_changed`` signature: it is ``True`` when
+    the signal fires from the role side (``role.users.add``) and ``False`` from
+    the user side (``user.roles.add``).
+    """
+    if action != "pre_add" or not pk_set:
+        return
+    signal_from_role_side = reverse
+    if signal_from_role_side:
+        if User.objects.filter(pk__in=pk_set, is_member=False).exists():
+            raise ValueError("cannot assign a role to a non-member user")
+    elif not instance.is_member:
+        raise ValueError("cannot assign a role to a non-member user")
 
 
 @receiver(post_save, sender=User)

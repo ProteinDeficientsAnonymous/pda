@@ -33,7 +33,10 @@ def list_roles(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_roles")
     roles = Role.objects.annotate(
-        user_count=Count("users", filter=Q(users__archived_at__isnull=True)),
+        user_count=Count(
+            "users",
+            filter=Q(users__archived_at__isnull=True, users__is_member=True),
+        ),
     )
     return Status(
         200,
@@ -173,7 +176,7 @@ def delete_role(request, role_id: str):
     if role.name in PROTECTED_ROLE_NAMES:
         raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
-    affected_user_count = role.users.filter(archived_at__isnull=True).count()
+    affected_user_count = role.users.filter(archived_at__isnull=True, is_member=True).count()
     role.delete()
     audit_log(
         logging.WARNING,
