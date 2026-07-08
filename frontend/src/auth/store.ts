@@ -15,8 +15,8 @@ import { create } from 'zustand';
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
 import { queryClient } from '@/api/queryClient';
-import type { User } from '@/models/user';
 import type { ConsentTypeValue } from '@/models/consent';
+import type { User } from '@/models/user';
 
 export type AuthStatus = 'idle' | 'loading' | 'authed' | 'unauthed';
 
