@@ -4,14 +4,10 @@ import {
   coverCrop,
   defaultCoverAspect,
   initialCrop,
+  percentToPixelCrop,
   PORTRAIT_ASPECT,
   SQUARE_ASPECT,
 } from './initialCrop';
-
-// Regression for issue 428: the round crop was sized off image *width*, so for any
-// non-portrait image the square was taller than the image and react-image-crop
-// clamped it into an unmovable band. The crop must always fit inside the image.
-// `width`/`height` are rendered preview dimensions, height-capped at 320 by the dialog.
 
 function fits(crop: { x: number; y: number; width: number; height: number }) {
   expect(crop.x).toBeGreaterThanOrEqual(0);
@@ -112,5 +108,25 @@ describe('initialCrop — rect (event cover)', () => {
     fits(crop);
     isCentered(crop);
     expect(pixelAspect(crop, w, h)).toBeCloseTo(PORTRAIT_ASPECT, 3);
+  });
+});
+
+describe('percentToPixelCrop — issue 523 seed conversion', () => {
+  it('converts percent crop to pixel crop against rendered size', () => {
+    // x/width are percentages of width; y/height of height.
+    const px = percentToPixelCrop({ unit: '%', x: 10, y: 25, width: 80, height: 50 }, 400, 200);
+    expect(px).toEqual({ unit: 'px', x: 40, y: 50, width: 320, height: 100 });
+  });
+
+  it('round-trips an initialCrop into a centered square in pixel space', () => {
+    const w = 427;
+    const h = 320;
+    const px = percentToPixelCrop(initialCrop(w, h, 'round'), w, h);
+    expect(px.unit).toBe('px');
+    // 80% of the shorter (height) edge, centered.
+    expect(px.width).toBeCloseTo(0.8 * h, 2);
+    expect(px.height).toBeCloseTo(0.8 * h, 2);
+    expect(px.x).toBeCloseTo((w - px.width) / 2, 2);
+    expect(px.y).toBeCloseTo((h - px.height) / 2, 2);
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -117,6 +117,27 @@ describe('ImageCropDialog', () => {
     await user.click(screen.getByRole('button', { name: /^cancel$/i }));
 
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('enables save and fires onCrop after the image loads, without a manual drag (issue 523)', async () => {
+    const onCrop = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    const { container } = renderDialog({ onCrop });
+
+    const save = screen.getByRole('button', { name: /^save$/i });
+    expect(save).toBeDisabled();
+
+    const img = container.querySelector('img');
+    expect(img).not.toBeNull();
+    fireEvent.load(img!);
+
+    await waitFor(() => {
+      expect(save).toBeEnabled();
+    });
+
+    await user.click(save);
+
+    expect(onCrop).toHaveBeenCalledOnce();
   });
 
   it('dialog container has role="dialog" and is accessible', () => {
