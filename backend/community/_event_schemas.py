@@ -252,6 +252,14 @@ class RSVPIn(BaseModel):
     has_plus_one: bool = False
 
 
+class TextRecipientsOut(BaseModel):
+    attending: list[str] = []
+    maybe: list[str] = []
+    cant_go: list[str] = []
+    waitlisted: list[str] = []
+    invited: list[str] = []
+
+
 class CancellationOut(BaseModel):
     user_id: str
     name: str

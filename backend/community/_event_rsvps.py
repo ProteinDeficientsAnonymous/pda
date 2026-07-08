@@ -26,7 +26,13 @@ from community._event_helpers import (
     _waitlisted_count,
     promote_from_waitlist,
 )
-from community._event_schemas import AttendanceIn, EventOut, EventStatsOut, RSVPIn
+from community._event_schemas import (
+    AttendanceIn,
+    EventOut,
+    EventStatsOut,
+    RSVPIn,
+    TextRecipientsOut,
+)
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -213,6 +219,41 @@ def get_event_stats(request, event_id: UUID):
             cancellations=_cancellations(event),
         ),
     )
+
+
+def _build_text_recipients(event: Event) -> TextRecipientsOut:
+    by_status: dict[str, list[str]] = {
+        RSVPStatus.ATTENDING: [],
+        RSVPStatus.MAYBE: [],
+        RSVPStatus.CANT_GO: [],
+        RSVPStatus.WAITLISTED: [],
+    }
+    for rsvp in event.rsvps.all():
+        phone = rsvp.user.phone_number
+        if phone and rsvp.status in by_status:
+            by_status[rsvp.status].append(phone)
+    invited = [u.phone_number for u in event.invited_users.all() if u.phone_number]
+    return TextRecipientsOut(
+        attending=by_status[RSVPStatus.ATTENDING],
+        maybe=by_status[RSVPStatus.MAYBE],
+        cant_go=by_status[RSVPStatus.CANT_GO],
+        waitlisted=by_status[RSVPStatus.WAITLISTED],
+        invited=invited,
+    )
+
+
+@router.get(
+    "/events/{event_id}/text-recipients/",
+    response={200: TextRecipientsOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def get_text_recipients(request, event_id: UUID):
+    event = _load_event_with_stats_prefetch(event_id)
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if not _can_edit_event(request.auth, event):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="get_text_recipients")
+    return Status(200, _build_text_recipients(event))
 
 
 @router.post(

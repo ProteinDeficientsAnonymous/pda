@@ -4121,6 +4121,52 @@
         "title": "TagOut",
         "type": "object"
       },
+      "TextRecipientsOut": {
+        "properties": {
+          "attending": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Attending",
+            "type": "array"
+          },
+          "cant_go": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Cant Go",
+            "type": "array"
+          },
+          "invited": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited",
+            "type": "array"
+          },
+          "maybe": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Maybe",
+            "type": "array"
+          },
+          "waitlisted": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Waitlisted",
+            "type": "array"
+          }
+        },
+        "title": "TextRecipientsOut",
+        "type": "object"
+      },
       "TokenOut": {
         "properties": {
           "access": {
@@ -8875,6 +8921,64 @@
           }
         ],
         "summary": "Get Event Stats",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/text-recipients/": {
+      "get": {
+        "operationId": "community__event_rsvps_get_text_recipients",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextRecipientsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Text Recipients",
         "tags": [
           "community"
         ]

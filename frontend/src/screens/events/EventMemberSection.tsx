@@ -23,6 +23,7 @@ import { EventCommentsCard } from './comments/EventCommentsCard';
 import { EventAdminActions } from './EventAdminActions';
 import { EventAttendancePanel } from './EventAttendancePanel';
 import { EventFlagDialog } from './EventFlagDialog';
+import { GroupTextButton } from './GroupTextButton';
 import { InviteDialog } from './InviteDialog';
 import { InvitedList } from './RsvpGuestList';
 import { RsvpSection } from './RsvpSection';
@@ -60,6 +61,11 @@ export function EventMemberSection({ event }: Props) {
       {showRsvp ? (
         <Card label="rsvp">
           <RsvpSection event={event} canSeeInvited={canSeeInvited} />
+          {isCoHost ? (
+            <div className="mt-4 flex justify-end">
+              <GroupTextButton event={event} />
+            </div>
+          ) : null}
         </Card>
       ) : null}
       {showStandaloneInvited ? (

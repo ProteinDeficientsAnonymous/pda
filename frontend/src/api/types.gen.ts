@@ -958,6 +958,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/text-recipients/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Text Recipients */
+        get: operations["community__event_rsvps_get_text_recipients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/faq/": {
         parameters: {
             query?: never;
@@ -3339,6 +3356,34 @@ export interface components {
             name: string;
             /** Slug */
             slug: string;
+        };
+        /** TextRecipientsOut */
+        TextRecipientsOut: {
+            /**
+             * Attending
+             * @default []
+             */
+            attending: string[];
+            /**
+             * Cant Go
+             * @default []
+             */
+            cant_go: string[];
+            /**
+             * Invited
+             * @default []
+             */
+            invited: string[];
+            /**
+             * Maybe
+             * @default []
+             */
+            maybe: string[];
+            /**
+             * Waitlisted
+             * @default []
+             */
+            waitlisted: string[];
         };
         /** TokenOut */
         TokenOut: {
@@ -6569,6 +6614,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventStatsOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_rsvps_get_text_recipients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextRecipientsOut"];
                 };
             };
             /** @description Forbidden */
