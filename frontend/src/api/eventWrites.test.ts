@@ -1,6 +1,6 @@
 // Pure-helper tests for the event write layer: enum-coercion on the inbound
 // side (eventToFormValues) and per-field PATCH body building (toPartialWireBody).
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   type Event,
