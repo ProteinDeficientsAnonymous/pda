@@ -11,6 +11,7 @@
 // calls /api/auth/refresh/ (cookie is sent automatically) and rehydrates.
 
 import { create } from 'zustand';
+
 import * as authApi from '@/api/auth';
 import { setAuthBridge } from '@/api/client';
 import { queryClient } from '@/api/queryClient';
@@ -116,6 +117,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async uploadProfilePhoto(file) {
+    // The upload response carries a fresh server-stamped photoUpdatedAt, which
+    // drives the cache-buster ?v= param so the avatar refreshes without a reload.
     const user = await authApi.uploadProfilePhoto(file);
     set({ user });
   },

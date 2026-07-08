@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 
 from django.db import models
 
+from users.permissions import PermissionKey
+
 if TYPE_CHECKING:
     from django.db.models import Manager
 
@@ -32,7 +34,5 @@ class Role(models.Model):
         the DB row was seeded before newer keys were added.
         """
         if self.name == "admin" and self.is_default:
-            from users.permissions import PermissionKey
-
             return list(PermissionKey.values)
         return list(self.permissions)

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+
 import { ContentContainer } from './ContentContainer';
 
 export default function JoinSuccessScreen() {

@@ -8,12 +8,14 @@ from config.audit import audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
+from django.contrib.auth import authenticate
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
 from ninja_jwt.authentication import JWTAuth
+from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import stamp_consents
@@ -58,8 +60,6 @@ _ALLOWED_IMAGE_TYPES = {
 
 @router.post("/login/", response={200: TokenOut, 401: ErrorOut, 403: ErrorOut}, auth=None)
 def login(request, payload: LoginIn, response: HttpResponse):
-    from django.contrib.auth import authenticate
-
     auth_user = authenticate(request, username=payload.phone_number, password=payload.password)
     if auth_user is None:
         logger.warning("Authentication failure: invalid credentials")
@@ -189,8 +189,6 @@ def magic_login(request, token: str, response: HttpResponse):
 
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
 def refresh_token(request, response: HttpResponse):
-    from ninja_jwt.exceptions import TokenError
-
     token = read_refresh_cookie(request)
     if not token:
         raise_validation(Code.Auth.REFRESH_TOKEN_INVALID, status_code=401)
@@ -294,7 +292,9 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
         user.profile_photo.delete(save=False)
     name = photo.name or ""
     ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
-    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=True)
+    user.profile_photo.save(f"{user.pk}.{ext}", photo, save=False)
+    user.photo_updated_at = timezone.now()
+    user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(
         logging.INFO, "profile_photo_uploaded", request, target_type="user", target_id=str(user.pk)
     )
@@ -307,7 +307,8 @@ def delete_photo(request):
     if user.profile_photo:
         user.profile_photo.delete(save=False)
         user.profile_photo = ""
-        user.save(update_fields=["profile_photo"])
+        user.photo_updated_at = None
+        user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(
         logging.INFO, "profile_photo_deleted", request, target_type="user", target_id=str(user.pk)
     )
@@ -321,12 +322,11 @@ def delete_photo(request):
 )
 def list_member_directory(request):
     """Authed-only member directory. Respects each user's show_phone/show_email flags."""
-    users = User.objects.filter(
-        is_active=True,
-        is_paused=False,
-        archived_at__isnull=True,
-        needs_onboarding=False,
-    ).order_by("display_name", "phone_number")
+    users = (
+        User.objects.active_members()
+        .filter(needs_onboarding=False)
+        .order_by("display_name", "phone_number")
+    )
     return Status(
         200,
         [
@@ -351,9 +351,7 @@ def list_member_directory(request):
 )
 def get_member_profile(request, user_id: str):
     try:
-        user = User.objects.get(
-            pk=user_id, is_active=True, is_paused=False, archived_at__isnull=True
-        )
+        user = User.objects.active_members().get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.Member.NOT_FOUND, status_code=404)
     is_own_profile = str(request.auth.pk) == user_id

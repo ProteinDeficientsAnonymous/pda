@@ -5,8 +5,9 @@
 //   - failed refresh fires onSessionExpired and rethrows
 //   - retried requests aren't retried again (no infinite loop)
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import MockAdapter from 'axios-mock-adapter';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { apiClient, authClient, setAuthBridge } from './client';
 
 let accessToken: string | null = null;

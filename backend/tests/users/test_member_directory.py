@@ -32,6 +32,14 @@ class TestMemberDirectory:
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
 
+    def test_excludes_non_members(self, api_client, auth_headers, other_user):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
+        response = api_client.get("/api/auth/users/directory/", **auth_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert str(other_user.pk) not in ids
+
     def test_excludes_onboarding_pending_users(self, api_client, auth_headers, other_user):
         other_user.needs_onboarding = True
         other_user.save(update_fields=["needs_onboarding"])

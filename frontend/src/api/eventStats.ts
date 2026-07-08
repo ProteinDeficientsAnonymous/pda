@@ -4,10 +4,12 @@
 // the `enabled` flag on host status themselves to avoid noisy error toasts.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
-import { eventKeys } from './events';
-import { mapEvent, type WireEvent } from './eventMapper';
+
 import type { AttendanceStatusValue, EventCancellation, EventStats } from '@/models/event';
+
+import { apiClient } from './client';
+import { mapEvent, type WireEvent } from './eventMapper';
+import { eventKeys } from './events';
 
 interface WireCancellation {
   user_id: string;

@@ -3,13 +3,14 @@
 // are read-only — opened only so admins can see which permissions
 // are checked.
 
-import { useState, type SyntheticEvent } from 'react';
+import { type SyntheticEvent, useState } from 'react';
+
+import { type Role, useCreateRole, useUpdateRole } from '@/api/roles';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
 import { Permission } from '@/models/permissions';
 import { extractApiError } from '@/utils/errors';
-import { useCreateRole, useUpdateRole, type Role } from '@/api/roles';
 
 interface Props {
   open: boolean;
@@ -24,7 +25,6 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.ApproveJoinRequests]: 'approve join requests',
   [Permission.ManageEvents]: 'manage events',
   [Permission.EditGuidelines]: 'edit guidelines',
-  [Permission.ManageWhatsapp]: 'manage whatsapp',
   [Permission.EditFaq]: 'edit faq',
   [Permission.EditHomepage]: 'edit homepage',
   [Permission.EditJoinQuestions]: 'edit join questions',

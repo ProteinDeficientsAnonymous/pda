@@ -1,10 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import type * as RouterDom from 'react-router-dom';
-import ConsentScreen from './ConsentScreen';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
+
+import ConsentScreen from './ConsentScreen';
 
 const navigate = vi.fn();
 vi.mock('react-router-dom', async (importActual) => {

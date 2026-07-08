@@ -47,6 +47,13 @@ export const AttendanceStatus = {
 } as const;
 export type AttendanceStatusValue = (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
 
+// A curated, admin-managed event tag (e.g. "walk", "restaurant meetup").
+export interface EventTag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface EventGuest {
   userId: string;
   name: string;
@@ -138,6 +145,9 @@ export interface Event {
   eventType: string;
   visibility: string;
   photoUrl: string;
+
+  // Curated tags assigned to the event. Present on both list and detail.
+  tags: EventTag[];
 
   isPast: boolean;
   status: string;

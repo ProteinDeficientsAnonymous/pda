@@ -7,12 +7,13 @@ from django.utils import timezone
 from ninja.responses import Status
 from notifications.service import (
     create_cohost_invite_notifications,
+    create_event_cancellation_notifications,
     create_event_invite_notifications,
 )
 from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import diff_cohost_invites
-from community._event_helpers import _has_attendees
+from community._event_helpers import _event_out, _has_attendees
 from community._validation import Code, raise_validation
 from community.models import Event, EventStatus
 
@@ -26,8 +27,6 @@ def _cancel_event(request, event: Event, notify: bool) -> None:
     event.status = EventStatus.CANCELLED
     event.save(update_fields=["status"])
     if notify:
-        from notifications.service import create_event_cancellation_notifications
-
         create_event_cancellation_notifications(event, request.auth)
     audit_log(
         logging.INFO,
@@ -161,8 +160,6 @@ def _handle_status_update(request, event: Event, new_status: str, notify: bool):
 
     # After a delete transition the event is gone — stop further processing
     if new_status == EventStatus.DELETED:
-        from community._event_helpers import _event_out
-
         return Status(200, _event_out(event, request.auth))
 
     return None

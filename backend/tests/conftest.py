@@ -1,8 +1,17 @@
 from datetime import timedelta
+from unittest.mock import MagicMock
 
 import pytest
+from community.models import JoinFormQuestion, JoinRequest
+from django.core.cache import cache
 from django.test import Client
 from django.utils import timezone
+from ninja_jwt.tokens import RefreshToken
+from notifications import email_sender as email_sender_module
+from notifications.email_sender import SendResult
+from users.models import User, UserManager
+from users.permissions import PermissionKey
+from users.roles import Role
 
 
 def future_iso(days: int = 30, hours: int = 0, minutes: int = 0) -> str:
@@ -36,16 +45,12 @@ def api_client():
 
 @pytest.fixture
 def why_join_id(db):
-    from community.models import JoinFormQuestion
-
     q = JoinFormQuestion.objects.filter(required=True).first()
     return str(q.id) if q else ""
 
 
 @pytest.fixture(autouse=True)
 def _clear_rate_limit_cache():
-    from django.core.cache import cache
-
     cache.clear()
     yield
     cache.clear()
@@ -65,13 +70,11 @@ def _default_test_users_consented(monkeypatch):
     Tests that specifically exercise the consent gate explicitly set
     guidelines_consent_at = None on their user to opt back into the gated state.
     """
-    from django.utils import timezone
-    from users.models import UserManager
-
     original = UserManager.create_user
 
     def create_user(self, phone_number, password=None, **extra_fields):
         extra_fields.setdefault("guidelines_consent_at", timezone.now())
+        extra_fields.setdefault("is_member", True)
         return original(self, phone_number, password=password, **extra_fields)
 
     monkeypatch.setattr(UserManager, "create_user", create_user)
@@ -79,8 +82,6 @@ def _default_test_users_consented(monkeypatch):
 
 @pytest.fixture
 def test_user(db):
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+12025550101",
         password="testpass123",
@@ -91,18 +92,12 @@ def test_user(db):
 
 @pytest.fixture
 def auth_headers(test_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(test_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def vettor_user(db):
-    from users.models import User
-    from users.permissions import PermissionKey
-    from users.roles import Role
-
     user = User.objects.create_user(
         phone_number="+12025550003",
         password="vettorpass123",
@@ -115,18 +110,12 @@ def vettor_user(db):
 
 @pytest.fixture
 def vettor_headers(vettor_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(vettor_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def manage_users_user(db):
-    from users.models import User
-    from users.permissions import PermissionKey
-    from users.roles import Role
-
     user = User.objects.create_user(
         phone_number="+12025550010",
         password="adminpass123",
@@ -142,16 +131,12 @@ def manage_users_user(db):
 
 @pytest.fixture
 def manage_users_headers(manage_users_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(manage_users_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def needs_onboarding_user(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+12025550110",
         password="x",
@@ -162,16 +147,12 @@ def needs_onboarding_user(db):
 
 @pytest.fixture
 def needs_onboarding_auth_headers(needs_onboarding_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(needs_onboarding_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
 @pytest.fixture
 def sample_join_request(db):
-    from community.models import JoinFormQuestion, JoinRequest
-
     q = JoinFormQuestion.objects.filter(required=True).first()
     answers = {}
     if q:
@@ -189,11 +170,6 @@ def fake_email_sender(monkeypatch):
 
     Yields the Mock so tests can inspect call args and tweak return values.
     """
-    from unittest.mock import MagicMock
-
-    from notifications import email_sender as email_sender_module
-    from notifications.email_sender import SendResult
-
     fake = MagicMock()
     fake.send.return_value = SendResult(success=True, provider_message_id="test_msg")
 

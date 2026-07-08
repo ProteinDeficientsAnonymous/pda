@@ -2,8 +2,9 @@
 // permissions. Mirrors the flutter admin_screen.dart tile layout.
 
 import { Link } from 'react-router-dom';
+
 import { useAuthStore } from '@/auth/store';
-import { Permission, hasPermission, type PermissionKey } from '@/models/permissions';
+import { hasPermission, Permission, type PermissionKey } from '@/models/permissions';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 
 interface Tile {
@@ -49,12 +50,6 @@ const TILES: Tile[] = [
     label: 'join form',
     description: 'edit the questions asked on /join',
     perm: Permission.EditJoinQuestions,
-  },
-  {
-    to: '/admin/whatsapp',
-    label: 'whatsapp bot',
-    description: 'bot connection + group config',
-    perm: Permission.ManageWhatsapp,
   },
   {
     to: '/docs',

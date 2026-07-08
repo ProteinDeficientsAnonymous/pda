@@ -3,12 +3,14 @@
 // viewers see counts but not their own votes.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
-import { extractApiErrorOr, getApiStatus } from './apiErrors';
-import { eventKeys } from './events';
-import { mapEventPoll, type WireEventPoll } from './eventPollMapper';
+
 import { useAuthStore } from '@/auth/store';
-import { VoteChoice, type EventPoll } from '@/models/eventPoll';
+import { type EventPoll, VoteChoice } from '@/models/eventPoll';
+
+import { extractApiErrorOr, getApiStatus } from './apiErrors';
+import { apiClient } from './client';
+import { mapEventPoll, type WireEventPoll } from './eventPollMapper';
+import { eventKeys } from './events';
 
 export const eventPollKeys = {
   all: ['event-poll'] as const,

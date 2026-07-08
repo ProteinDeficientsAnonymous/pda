@@ -2,7 +2,11 @@
 
 import pytest
 from community._validation import Code
-from community.models import Event
+from community.api import EventPatchIn
+from community.models import Event, EventStatus
+from django.core.cache import cache
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -13,8 +17,6 @@ from tests.conftest import future_iso, past_iso
 @pytest.fixture
 def manage_events_user(db):
     """A non-superuser with only manage_events permission."""
-    from users.models import User
-
     user = User.objects.create_user(
         phone_number="+14155551234",
         password="eventmanagerpass123",
@@ -27,8 +29,6 @@ def manage_events_user(db):
 
 @pytest.fixture
 def manage_events_headers(manage_events_user):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(manage_events_user)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -84,9 +84,6 @@ class TestEventManagement:
 
     def test_create_event_any_member(self, api_client, db):
         """Any authenticated member can create events."""
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-
         member = User.objects.create_user(
             phone_number="+12025550199",
             password="memberpass",
@@ -384,9 +381,7 @@ class TestEventManagement:
 
     def test_event_patch_fields_match_model(self):
         """All EventPatchIn fields (except M2M and transient fields) must exist on Event model."""
-        from community.api import EventPatchIn
-
-        non_model_fields = {"co_host_ids", "status", "notify_attendees"}
+        non_model_fields = {"co_host_ids", "tag_ids", "status", "notify_attendees"}
         schema_fields = set(EventPatchIn.model_fields.keys()) - non_model_fields
         model_fields = {f.name for f in Event._meta.get_fields()}
         missing = schema_fields - model_fields
@@ -396,8 +391,6 @@ class TestEventManagement:
 
     def test_soft_delete_past_event(self, api_client, manage_events_headers):
         """A manager can soft-delete a past event."""
-        from community.models import EventStatus
-
         event = Event.objects.create(
             title="Past Deletable Event",
             start_datetime=past_iso(days=90),
@@ -418,8 +411,6 @@ class TestEventManagement:
 
     def test_member_can_delete_own_past_event(self, api_client, auth_headers, test_user):
         """A member can soft-delete a past event they created."""
-        from community.models import EventStatus
-
         event = Event.objects.create(
             title="My Past Event",
             start_datetime=past_iso(days=60),
@@ -476,8 +467,6 @@ class TestEventManagement:
 @pytest.mark.django_db
 class TestEventRateLimiting:
     def test_create_event_rate_limited(self, api_client, manage_events_headers):
-        from django.core.cache import cache
-
         cache.clear()
         for i in range(10):
             resp = api_client.post(

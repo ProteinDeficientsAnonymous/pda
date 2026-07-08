@@ -1,11 +1,10 @@
-// Hero cover photo for the event form. The whole banner is one big button —
-// tap anywhere to pick, or drag-and-drop an image onto it on desktop. Crop
-// happens via the shared ImageCropDialog, which lets the user freely
-// drag/resize a crop box over the image.
-// On create the cropped blob is staged and uploaded after the event POST
-// returns an id; on edit it uploads immediately.
+// Hero cover photo for the event form. The whole banner is one button — tap to
+// pick or drag-and-drop an image; cropping happens via the shared ImageCropDialog.
+// On create the cropped blob is staged and uploaded after the event POST returns
+// an id; on edit it uploads immediately.
 
 import { useRef, useState } from 'react';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
 import { cn } from '@/utils/cn';
@@ -155,18 +154,18 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
         disabled={locked}
         aria-label={hasPhoto ? 'change cover photo' : 'add a cover photo'}
         className={cn(
-          'group relative w-full overflow-hidden rounded-[var(--radius-md)]',
+          'group relative overflow-hidden rounded-[var(--radius-md)]',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
           hasPhoto
-            ? 'bg-surface-raised'
-            : 'border-brand-200 bg-brand-50 aspect-video border-2 border-dashed',
+            ? 'mx-auto block w-auto max-w-full'
+            : 'border-brand-200 bg-brand-50 aspect-video w-full border-2 border-dashed',
           dragOver && 'border-brand-500 ring-brand-300 ring-2',
           locked && 'cursor-not-allowed opacity-60',
         )}
       >
         {hasPhoto ? (
           <>
-            <img src={displayUrl} alt="" className="block h-auto max-h-[70vh] w-full" />
+            <img src={displayUrl} alt="" className="mx-auto block max-h-[70vh] w-auto max-w-full" />
             <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
               <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
                 change photo

@@ -1,9 +1,10 @@
-import { useAuthStore } from './store';
 import {
-  hasPermission as check,
   hasAnyAdminPermission as checkAdmin,
+  hasPermission as check,
   type PermissionKey,
 } from '@/models/permissions';
+
+import { useAuthStore } from './store';
 
 export function useHasPermission(key: PermissionKey): boolean {
   return useAuthStore((s) => check(s.user, key));

@@ -1,14 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
   displayName,
-  password,
+  maxLength,
+  minLength,
   optionalDisplayName,
   optionalEmail,
   optionalUrl,
-  roleName,
+  password,
   required,
-  maxLength,
-  minLength,
+  roleName,
 } from './validators';
 
 describe('displayName', () => {

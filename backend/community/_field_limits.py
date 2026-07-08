@@ -18,7 +18,6 @@ class FieldLimit:
     ROLE_NAME = 50
     OPTION_TEXT = 200
     CHOICE = 20
-    BOT_SECRET = 256
     PAYMENT_HANDLE = 100
     BIO = 500
     WELCOME_TEMPLATE = 4000

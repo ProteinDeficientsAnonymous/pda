@@ -1,8 +1,10 @@
 """Tests for join request submission."""
 
 import pytest
-from community.models import JoinRequestStatus
+from community.models import JoinRequest, JoinRequestStatus
+from django.core import mail
 from notifications.models import Notification, NotificationType
+from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -10,8 +12,6 @@ from users.roles import Role
 @pytest.mark.django_db
 class TestJoinRequestSubmission:
     def test_submit_join_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
-
         response = api_client.post(
             "/api/community/join-request/",
             {
@@ -30,7 +30,8 @@ class TestJoinRequestSubmission:
         assert data["phone_number"] == "+12025551234"
         assert len(data["answers"]) >= 1
         # Consent timestamps recorded — sms proof for Twilio toll-free
-        # verification, guidelines proof of agreement.
+        # verification (automated send deferred, see #501), guidelines proof of
+        # agreement.
         jr = JoinRequest.objects.get(phone_number="+12025551234")
         assert jr.sms_consent_at is not None
         assert jr.guidelines_consent_at is not None
@@ -100,8 +101,6 @@ class TestJoinRequestSubmission:
         assert response.json()["detail"][0]["code"] == "join_request.guidelines_consent_required"
 
     def test_submit_honeypot_silently_drops_request(self, api_client, why_join_id):
-        from community.models import JoinRequest
-
         response = api_client.post(
             "/api/community/join-request/",
             {
@@ -119,8 +118,6 @@ class TestJoinRequestSubmission:
         assert not JoinRequest.objects.filter(phone_number="+12025557777").exists()
 
     def test_submit_honeypot_blank_does_not_drop(self, api_client, why_join_id):
-        from community.models import JoinRequest
-
         response = api_client.post(
             "/api/community/join-request/",
             {
@@ -199,8 +196,6 @@ class TestJoinRequestSubmission:
     ):
         settings.VETTING_EMAIL = "vetting@pda.org"
         settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-        from django.core import mail
-
         api_client.post(
             "/api/community/join-request/",
             {
@@ -221,8 +216,6 @@ class TestJoinRequestSubmission:
         self, api_client, settings, why_join_id
     ):
         settings.VETTING_EMAIL = ""
-        from django.core import mail
-
         api_client.post(
             "/api/community/join-request/",
             {
@@ -383,8 +376,6 @@ class TestJoinRequestSubmission:
         assert response.json()["status"] == JoinRequestStatus.PENDING
 
     def test_submit_creates_notifications_for_approvers(self, api_client, why_join_id, db):
-        from users.models import User
-
         approver = User.objects.create_user(
             phone_number="+12025559001", password="pass", display_name="Approver"
         )
@@ -412,7 +403,9 @@ class TestJoinRequestSubmission:
         def _fail(*args, **kwargs):
             raise RuntimeError("notification service down")
 
-        monkeypatch.setattr("community._join_requests.create_join_request_notifications", _fail)
+        monkeypatch.setattr(
+            "community._join_request_submit.create_join_request_notifications", _fail
+        )
         response = api_client.post(
             "/api/community/join-request/",
             {

@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { sortOptionsChrono, pickFinalizeDefault, sortOptionsByVotes } from './pollHelpers';
+import { describe, expect, it } from 'vitest';
+
 import type { EventPollOption } from '@/models/eventPoll';
+
+import { pickFinalizeDefault, sortOptionsByVotes, sortOptionsChrono } from './pollHelpers';
 
 function opt(overrides: Partial<EventPollOption> = {}): EventPollOption {
   return {

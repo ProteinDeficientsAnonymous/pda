@@ -6,9 +6,10 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+
 import { useAuthStore } from '@/auth/store';
-import { extractApiError } from '@/utils/errors';
 import { cn } from '@/utils/cn';
+import { extractApiError } from '@/utils/errors';
 
 interface Props {
   open: boolean;

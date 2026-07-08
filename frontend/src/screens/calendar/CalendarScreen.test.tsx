@@ -1,9 +1,10 @@
-import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 
 // react-big-calendar is a heavy component that requires CSS imports and relies
@@ -26,6 +27,7 @@ vi.mock('@/api/events', () => ({
 }));
 
 import { useEvents } from '@/api/events';
+
 import CalendarScreen from './CalendarScreen';
 
 const mockUseEvents = vi.mocked(useEvents);

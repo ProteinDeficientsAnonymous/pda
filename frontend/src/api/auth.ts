@@ -2,10 +2,12 @@
 // responses — centralizes the mapping from backend snake_case to frontend camelCase.
 
 import { useMutation } from '@tanstack/react-query';
-import { apiClient, authClient, getCurrentAccessToken } from './client';
-import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
-import type { User, Role } from '@/models/user';
+
 import type { ConsentTypeValue } from '@/models/consent';
+import type { Role, User } from '@/models/user';
+import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
+
+import { apiClient, authClient, getCurrentAccessToken } from './client';
 
 // --- Wire types (snake_case, server-shaped). ----------------------------------
 
@@ -153,9 +155,7 @@ export async function completeOnboarding(payload: {
 }
 
 export async function acceptConsents(consentTypes: ConsentTypeValue[]): Promise<User> {
-  // Records the given consents and returns the updated user so the store can
-  // drop the matching needs*Consent flags. Accepting "guidelines" clears the
-  // hard login gate. Registry-driven on both ends (see models/consent.ts).
+  // records the given consents; accepting "guidelines" clears the hard login gate
   const { data } = await apiClient.post<WireUser>('/api/auth/accept-consents/', {
     consent_types: consentTypes,
   });

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { Permission, hasPermission, hasAnyAdminPermission, type UserLike } from './permissions';
+import { describe, expect, it } from 'vitest';
+
+import { hasAnyAdminPermission, hasPermission, Permission, type UserLike } from './permissions';
 
 function user(opts: Partial<UserLike> = {}): UserLike {
   return {

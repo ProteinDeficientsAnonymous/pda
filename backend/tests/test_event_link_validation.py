@@ -8,6 +8,10 @@ Validates that:
 """
 
 import pytest
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
+from users.permissions import PermissionKey
+from users.roles import Role
 
 from tests.conftest import future_iso
 
@@ -21,11 +25,6 @@ def base_event() -> dict:
 
 @pytest.fixture
 def manage_events_headers(db):
-    from ninja_jwt.tokens import RefreshToken
-    from users.models import User
-    from users.permissions import PermissionKey
-    from users.roles import Role
-
     user = User.objects.create_user(
         phone_number="+14155559001",
         password="eventmanagerpass123",

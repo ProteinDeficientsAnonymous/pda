@@ -6,7 +6,8 @@
 
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { eventClass, type Event as PdaEvent } from '@/models/event';
+
+import { type Event as PdaEvent, eventClass } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 interface Props {

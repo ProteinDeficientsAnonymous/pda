@@ -1,6 +1,8 @@
 import type { Editor } from '@tiptap/react';
 import { useEffect, useRef, useState } from 'react';
+
 import { cn } from '@/utils/cn';
+
 import { CtaDialog } from './CtaDialog';
 import type { CtaAttrs } from './CtaExtension';
 

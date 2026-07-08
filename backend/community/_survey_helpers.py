@@ -11,6 +11,7 @@ from community._survey_schemas import (
     SurveyResponseOut,
     VoterOut,
 )
+from community._validation import Code, raise_validation
 from community.models import (
     DatetimePollResult,
     Event,
@@ -85,8 +86,6 @@ def _apply_linked_event_update(updates: dict) -> dict:
 
     Raises ValidationException if the referenced event doesn't exist.
     """
-    from community._validation import Code, raise_validation
-
     eid = updates.pop("linked_event_id")
     if not eid:
         updates["linked_event"] = None

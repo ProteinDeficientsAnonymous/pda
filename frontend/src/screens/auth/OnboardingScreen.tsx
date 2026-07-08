@@ -1,19 +1,21 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { AuthLayout } from './AuthLayout';
-import { ConsentChecklist } from './ConsentChecklist';
-import { useConsentChecklist } from './useConsentChecklist';
+
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { TextField } from '@/components/ui/TextField';
-import { useAuthStore } from '@/auth/store';
-import { extractApiError } from '@/utils/errors';
 import { postAuthRedirect } from '@/models/user';
-import { passwordRule } from './passwordRule';
+import { extractApiError } from '@/utils/errors';
+
+import { AuthLayout } from './AuthLayout';
+import { ConsentChecklist } from './ConsentChecklist';
 import { PasswordChecklist } from './PasswordChecklist';
+import { passwordRule } from './passwordRule';
+import { useConsentChecklist } from './useConsentChecklist';
 
 const schema = z.object({
   displayName: z.string().min(1, 'name required').max(64),
@@ -25,13 +27,9 @@ type FormValues = z.infer<typeof schema>;
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
-  // Prefill displayName for legacy users who were approved before email was
-  // required — they already have a name on file and only need to add email
-  // + set a password.
+  // prefill name for legacy users approved before email was required
   const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
-  // Consent is collected inline only for users who haven't consented yet —
-  // admin-created accounts (no JoinRequest). Join-form users arrive consented,
-  // so missingConsents is empty and no checkboxes render.
+  // checkboxes render only for users with outstanding consent (admin-created accounts)
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);

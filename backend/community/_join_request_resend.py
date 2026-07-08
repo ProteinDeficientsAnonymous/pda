@@ -13,6 +13,8 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from users._helpers import _create_magic_token
+from users.models import MagicLoginToken, User
 from users.permissions import PermissionKey
 
 from community._join_requests import ApproveJoinRequestOut
@@ -35,9 +37,6 @@ def resend_magic_link(request, id: UUID):
     user so the welcome message in the wild can't be claimed twice. Refuses
     on already-logged-in users (use the members screen's password reset
     flow for that)."""
-    from users._helpers import _create_magic_token
-    from users.models import MagicLoginToken, User
-
     if not request.auth.has_permission(PermissionKey.APPROVE_JOIN_REQUESTS):
         audit_log(
             logging.WARNING,

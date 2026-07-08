@@ -1,4 +1,5 @@
 import { cn } from '@/utils/cn';
+
 import { passwordChecks } from './passwordRule';
 
 export function PasswordChecklist({ value }: { value: string }) {

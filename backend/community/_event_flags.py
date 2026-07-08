@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications.service import create_event_flag_notifications
 from pydantic import BaseModel, Field
 from users.permissions import PermissionKey
 
@@ -87,8 +88,6 @@ def flag_event(request, event_id: UUID, data: EventFlagIn):
         flagged_by=request.auth,
         reason=data.reason,
     )
-
-    from notifications.service import create_event_flag_notifications
 
     create_event_flag_notifications(event, request.auth)
 

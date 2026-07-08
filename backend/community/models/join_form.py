@@ -33,6 +33,13 @@ class JoinRequest(models.Model):
     display_name = models.CharField(max_length=64)
     phone_number = models.CharField(max_length=20)
     email = models.EmailField(blank=True, default="")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="join_requests",
+    )
     custom_answers = models.JSONField(default=dict, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
@@ -59,7 +66,9 @@ class JoinRequest(models.Model):
     # Set when the user checks the SMS-consent box on the join form. Required
     # at the API level, but stored as nullable so historical pre-consent rows
     # remain queryable. Used as proof-of-consent for Twilio toll-free
-    # verification + ongoing TCPA defensibility.
+    # verification + ongoing TCPA defensibility. The automated SMS send path is
+    # deferred (see #501); consent is kept for manual group-texting and possible
+    # future automation.
     sms_consent_at = models.DateTimeField(null=True, blank=True)
     # Set when the user checks the community-guidelines box on the join form.
     # Required at the API level; nullable so historical pre-consent rows remain

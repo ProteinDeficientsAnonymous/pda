@@ -1,9 +1,10 @@
-import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 import { NotificationType } from '@/models/notification';
 
@@ -11,7 +12,8 @@ import { NotificationType } from '@/models/notification';
 vi.mock('@/api/notifications', () => ({
   notificationKeys: {
     all: ['notifications'],
-    list: ['notifications', 'list'],
+    bell: ['notifications', 'list', 'bell'],
+    page: ['notifications', 'list', 'page'],
     unread: ['notifications', 'unread-count'],
   },
   useUnreadCount: vi.fn(),
@@ -32,11 +34,12 @@ vi.mock('@/utils/errorReporter', () => ({
 }));
 
 import {
-  useUnreadCount,
-  useNotifications,
-  useMarkNotificationRead,
   useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+  useUnreadCount,
 } from '@/api/notifications';
+
 import { NotificationBell } from './NotificationBell';
 
 const mockUseUnreadCount = vi.mocked(useUnreadCount);
@@ -120,6 +123,17 @@ describe('NotificationBell', () => {
     await user.click(screen.getByRole('button', { name: /^notifications$/i }));
 
     expect(screen.getByText(/nothing new/i)).toBeInTheDocument();
+  });
+
+  it('shows a "see more" link to the full notifications page', async () => {
+    const user = userEvent.setup();
+    renderBell();
+
+    await user.click(screen.getByRole('button', { name: /^notifications$/i }));
+
+    const seeMore = screen.getByRole('link', { name: /see more/i });
+    expect(seeMore).toBeInTheDocument();
+    expect(seeMore).toHaveAttribute('href', '/notifications');
   });
 
   it('tapping an event_invite notification navigates to /events/:id', async () => {

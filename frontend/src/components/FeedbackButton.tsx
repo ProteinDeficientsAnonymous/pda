@@ -9,11 +9,12 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useSubmitFeedback, type FeedbackType } from '@/api/feedback';
+
+import { type FeedbackType, useSubmitFeedback } from '@/api/feedback';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { TextField } from '@/components/ui/TextField';
 import { Textarea } from '@/components/ui/Textarea';
+import { TextField } from '@/components/ui/TextField';
 
 const TITLE_MAX = 150;
 const DESCRIPTION_MAX = 2000;

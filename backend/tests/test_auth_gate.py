@@ -6,7 +6,9 @@ password, pause, archive). GatedJWTAuth re-checks on every protected request and
 """
 
 import pytest
+from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from users.models import User
 
 
 def _headers(user):
@@ -16,8 +18,6 @@ def _headers(user):
 @pytest.mark.django_db
 class TestGatedJWTAuth:
     def test_needs_password_reset_blocks_protected_endpoint(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550301", password="pass", display_name="Reset Me"
         )
@@ -30,8 +30,6 @@ class TestGatedJWTAuth:
         assert resp.json()["detail"][0]["code"] == "auth.password_reset_required"
 
     def test_needs_password_reset_allows_me(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550302", password="pass", display_name="Reset Me"
         )
@@ -44,8 +42,6 @@ class TestGatedJWTAuth:
         assert resp.json()["needs_password_reset"] is True
 
     def test_needs_password_reset_allows_complete_onboarding(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550303",
             password="pass",
@@ -68,8 +64,6 @@ class TestGatedJWTAuth:
         assert user.needs_password_reset is False
 
     def test_needs_onboarding_blocks_protected_endpoint(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550304", password="pass", display_name="", needs_onboarding=True
         )
@@ -79,8 +73,6 @@ class TestGatedJWTAuth:
 
     def test_paused_user_blocked_on_protected_endpoint_after_token_issued(self, api_client):
         """is_paused set AFTER a token was issued must still revoke access per-request."""
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550305", password="pass", display_name="Paused"
         )
@@ -93,9 +85,6 @@ class TestGatedJWTAuth:
         assert resp.json()["detail"][0]["code"] == "auth.account_paused"
 
     def test_archived_user_blocked_on_protected_endpoint_after_token_issued(self, api_client):
-        from django.utils import timezone
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550306", password="pass", display_name="Archived"
         )
@@ -108,8 +97,6 @@ class TestGatedJWTAuth:
         assert resp.json()["detail"][0]["code"] == "auth.account_archived"
 
     def test_normal_user_unaffected(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550307", password="pass", display_name="Normal"
         )
@@ -117,8 +104,6 @@ class TestGatedJWTAuth:
         assert resp.status_code == 200
 
     def test_needs_guidelines_consent_blocks_protected_endpoint(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550308", password="pass", display_name="No Consent"
         )
@@ -131,8 +116,6 @@ class TestGatedJWTAuth:
         assert resp.json()["detail"][0]["code"] == "auth.guidelines_consent_required"
 
     def test_needs_guidelines_consent_allows_me(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550309", password="pass", display_name="No Consent"
         )
@@ -145,8 +128,6 @@ class TestGatedJWTAuth:
         assert resp.json()["needs_guidelines_consent"] is True
 
     def test_needs_guidelines_consent_allows_accept_endpoint(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550310", password="pass", display_name="No Consent"
         )
@@ -164,8 +145,6 @@ class TestGatedJWTAuth:
 
     def test_password_reset_takes_priority_over_consent(self, api_client):
         """A user owing both a password and consent is sent to the password gate first."""
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550311", password="pass", display_name="Both"
         )

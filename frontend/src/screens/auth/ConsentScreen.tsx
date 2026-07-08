@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import { useAuthStore } from '@/auth/store';
+import { Button } from '@/components/ui/Button';
+import { extractApiError } from '@/utils/errors';
+
 import { AuthLayout } from './AuthLayout';
 import { ConsentChecklist } from './ConsentChecklist';
 import { useConsentChecklist } from './useConsentChecklist';
-import { Button } from '@/components/ui/Button';
-import { useAuthStore } from '@/auth/store';
-import { extractApiError } from '@/utils/errors';
 
-// Standalone consent gate: accept every outstanding consent to continue, or "not now" to log out. Registry-driven (models/consent.ts).
+// standalone consent gate: accept every outstanding consent to continue, or "not now" to log out
 export default function ConsentScreen() {
   const user = useAuthStore((s) => s.user);
   const acceptConsents = useAuthStore((s) => s.acceptConsents);

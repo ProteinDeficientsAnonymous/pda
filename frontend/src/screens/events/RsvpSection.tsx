@@ -5,13 +5,15 @@
 //   - +1 is a second POST with the same status + hasPlusOne: true
 //   - waitlisted state shows only "leave waitlist" (no maybe/can't pills)
 
-import { extractApiErrorOr } from '@/api/apiErrors';
 import { useState } from 'react';
-import { RsvpStatus, RsvpServerStatus, type Event } from '@/models/event';
+
+import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
+
 import { RsvpGuestList } from './RsvpGuestList';
 
 interface Props {
@@ -86,21 +88,22 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
       ) : (
         <>
           <div className="flex flex-wrap justify-center gap-2">
-            {PILLS.map((p) => (
-              <RsvpPill
-                key={p.status}
-                label={p.label}
-                active={myRsvp === p.status}
-                disabled={busy}
-                onClick={() => void apply(p.status)}
-              />
-            ))}
+            {PILLS.map((p) => {
+              const waitlistAttending =
+                p.status === RsvpStatus.Attending &&
+                atCapacity &&
+                myRsvp !== RsvpServerStatus.Attending;
+              return (
+                <RsvpPill
+                  key={p.status}
+                  label={waitlistAttending ? 'join the waitlist' : p.label}
+                  active={myRsvp === p.status}
+                  disabled={busy}
+                  onClick={() => void apply(p.status)}
+                />
+              );
+            })}
           </div>
-          {atCapacity && myRsvp !== RsvpServerStatus.Attending ? (
-            <p className="text-warning text-center text-xs">
-              event is full — tapping "i'm going" adds you to the waitlist
-            </p>
-          ) : null}
           {event.allowPlusOnes &&
           (myRsvp === RsvpServerStatus.Attending || myRsvp === RsvpServerStatus.Maybe) ? (
             <div className="flex justify-center">

@@ -30,3 +30,5 @@ frontend/.vite/
 
 # Claude Code
 .claude/worktrees
+.claude/task.md
+.claude/settings.local.json

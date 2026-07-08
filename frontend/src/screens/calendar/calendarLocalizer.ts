@@ -2,9 +2,9 @@
 // preference (Sunday=0 | Monday=1), defaulting to Sunday to match the project
 // rule that weekStart is user-configurable on the profile.
 
-import { dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { format, getDay, parse, startOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import { dateFnsLocalizer } from 'react-big-calendar';
 
 export function makeLocalizer(weekStartsOn: 0 | 1) {
   const locales = { 'en-US': enUS };

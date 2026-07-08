@@ -1,23 +1,24 @@
 // Docs tree: nested folders and documents. Members with manage_documents can
 // create folders and docs, delete, and drag-reorder within the tree.
 
-import { useMemo, useState, type ElementType } from 'react';
+import { type ElementType, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/auth/store';
+
 import {
+  type DocFolder,
   useCreateDocFolder,
   useCreateDocument,
   useDeleteDocFolder,
   useDeleteDocument,
   useDocFolders,
   useReorderDocuments,
-  type DocFolder,
 } from '@/api/docs';
+import { useAuthStore } from '@/auth/store';
 import { SortableList } from '@/components/SortableList';
 import { Button } from '@/components/ui/Button';
-import { useConfirm } from '@/components/ui/useConfirm';
 import { TextField } from '@/components/ui/TextField';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 

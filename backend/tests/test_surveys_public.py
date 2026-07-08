@@ -5,6 +5,10 @@ import json
 import pytest
 from community._validation import Code
 from community.models import Survey, SurveyQuestion, SurveyQuestionType, SurveyResponse
+from ninja_jwt.tokens import RefreshToken
+from users.models import User
+from users.permissions import PermissionKey
+from users.roles import Role
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso
@@ -16,8 +20,6 @@ from tests.conftest import future_iso
 
 @pytest.fixture
 def survey_owner(db):
-    from users.models import User
-
     return User.objects.create_user(
         phone_number="+12025557001",
         password="ownerpass",
@@ -27,8 +29,6 @@ def survey_owner(db):
 
 @pytest.fixture
 def survey_owner_headers(survey_owner):
-    from ninja_jwt.tokens import RefreshToken
-
     refresh = RefreshToken.for_user(survey_owner)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
@@ -70,11 +70,6 @@ class TestSurveyTalliesAuthz:
         assert isinstance(response.json(), list)
 
     def test_manage_surveys_can_read_tallies(self, api_client, db, poll_survey):
-        from ninja_jwt.tokens import RefreshToken
-        from users.models import User
-        from users.permissions import PermissionKey
-        from users.roles import Role
-
         admin = User.objects.create_user(
             phone_number="+12025557010", password="x", display_name="Surveys Admin"
         )

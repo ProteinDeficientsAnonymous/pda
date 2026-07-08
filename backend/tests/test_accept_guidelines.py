@@ -2,6 +2,8 @@
 
 import pytest
 from ninja_jwt.tokens import RefreshToken
+from users.models import User
+from users.roles import Role
 
 
 def _headers(user):
@@ -20,8 +22,6 @@ def _accept(api_client, user, consent_types):
 @pytest.mark.django_db
 class TestAcceptConsents:
     def test_stamps_consent_and_clears_flag(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550401", password="pass", display_name="Consenter"
         )
@@ -36,8 +36,6 @@ class TestAcceptConsents:
         assert user.guidelines_consent_at is not None
 
     def test_after_consent_protected_endpoints_unblock(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550402", password="pass", display_name="Consenter"
         )
@@ -53,8 +51,6 @@ class TestAcceptConsents:
         assert api_client.get("/api/notifications/", **headers).status_code == 200
 
     def test_already_consented_is_noop_and_preserves_timestamp(self, api_client):
-        from users.models import User
-
         user = User.objects.create_user(
             phone_number="+12025550403", password="pass", display_name="Consenter"
         )
@@ -142,9 +138,6 @@ class TestAcceptConsents:
 
     def test_admin_is_not_grandfathered(self, api_client):
         """Admins are gated too — a fresh admin with null consent is blocked."""
-        from users.models import User
-        from users.roles import Role
-
         admin = User.objects.create_user(
             phone_number="+12025550404", password="pass", display_name="Admin"
         )

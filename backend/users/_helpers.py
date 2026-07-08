@@ -145,6 +145,7 @@ def _create_user_with_role(  # noqa: PLR0913
         phone_number=validated_phone,
         display_name=display_name,
         email=normalized_email,
+        is_member=True,
         needs_onboarding=True,
         guidelines_consent_at=consent.guidelines_consent_at if consent else None,
         sms_consent_at=consent.sms_consent_at if consent else None,

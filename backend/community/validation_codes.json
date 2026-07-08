@@ -595,6 +595,11 @@
         "params": []
       },
       {
+        "name": "ALREADY_MEMBER",
+        "value": "join_request.already_member",
+        "params": []
+      },
+      {
         "name": "PHONE_ALREADY_INVITED",
         "value": "join_request.phone_already_invited",
         "params": []

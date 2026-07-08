@@ -1,7 +1,7 @@
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -10,14 +10,15 @@ vi.mock('@/api/client', () => ({
 }));
 
 import { apiClient } from '@/api/client';
+
 import {
-  useUsers,
-  useCreateUser,
-  useUpdateUser,
-  useBulkCreateUsers,
   useArchiveUser,
+  useBulkCreateUsers,
+  useCreateUser,
   useSendMemberMagicLink,
   useUpdateMemberRoles,
+  useUpdateUser,
+  useUsers,
 } from './users';
 
 const mockedGet = vi.mocked(apiClient.get);

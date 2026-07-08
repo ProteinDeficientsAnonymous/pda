@@ -73,6 +73,7 @@ class UserOut(BaseModel):
     needs_guidelines_consent: bool = False
     needs_sms_consent: bool = False
     profile_photo_url: str = ""
+    photo_updated_at: str | None = None
     show_phone: bool = True
     show_email: bool = True
     is_paused: bool = False
@@ -95,6 +96,7 @@ class UserOut(BaseModel):
             needs_guidelines_consent=user.guidelines_consent_at is None,
             needs_sms_consent=user.sms_consent_at is None,
             profile_photo_url=media_path(user.profile_photo),
+            photo_updated_at=(user.photo_updated_at.isoformat() if user.photo_updated_at else None),
             show_phone=user.show_phone,
             show_email=user.show_email,
             is_paused=user.is_paused,

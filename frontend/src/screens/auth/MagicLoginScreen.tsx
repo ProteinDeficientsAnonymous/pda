@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
 import { AxiosError } from 'axios';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+
 import { useAuthStore } from '@/auth/store';
-import { postAuthRedirect } from '@/models/user';
-import { AuthLayout } from './AuthLayout';
 import { Button } from '@/components/ui/Button';
+import { postAuthRedirect } from '@/models/user';
+
+import { AuthLayout } from './AuthLayout';
 import { RequestLoginLinkDialog } from './RequestLoginLinkDialog';
 
 type State = 'pending' | 'expired' | 'cross_user';

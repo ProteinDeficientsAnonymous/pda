@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import { format } from 'date-fns';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useDecideFlag, useEventFlags, type FlagStatus, type EventFlag } from '@/api/eventFlags';
+import { type EventFlag, type FlagStatus, useDecideFlag, useEventFlags } from '@/api/eventFlags';
 import { Button } from '@/components/ui/Button';
-import { cn } from '@/utils/cn';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { cn } from '@/utils/cn';
 
 const FILTERS: { value: FlagStatus | 'all'; label: string }[] = [
   { value: 'pending', label: 'pending' },

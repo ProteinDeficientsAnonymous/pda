@@ -1,8 +1,8 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
 vi.mock('@/api/join', () => ({
@@ -16,8 +16,9 @@ vi.mock('@/api/join', () => ({
   },
 }));
 
-import JoinScreen from './JoinScreen';
 import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+
+import JoinScreen from './JoinScreen';
 
 const mockUseJoinQuestions = vi.mocked(useJoinQuestions);
 const mockUseSubmitJoinRequest = vi.mocked(useSubmitJoinRequest);

@@ -2,10 +2,11 @@
 // we enable here must also have a handler in backend/community/_prosemirror_html.py,
 // otherwise it will be silently dropped on render.
 
-import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import type { Extensions } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+
 import { CtaExtension } from './CtaExtension';
 
 export function pdaExtensions(): Extensions {

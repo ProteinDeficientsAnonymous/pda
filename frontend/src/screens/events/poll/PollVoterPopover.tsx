@@ -3,6 +3,7 @@
 // Dismisses on outside-click + Escape.
 
 import { useEffect, useRef } from 'react';
+
 import type { EventPollOption, PollVoter } from '@/models/eventPoll';
 
 interface Props {
