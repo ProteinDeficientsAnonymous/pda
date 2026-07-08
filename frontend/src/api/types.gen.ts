@@ -7969,7 +7969,10 @@ export interface operations {
     };
     notifications_api_list_notifications: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
