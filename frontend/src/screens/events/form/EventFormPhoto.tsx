@@ -148,10 +148,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
           reveals the pills. the banner is a <button>, so the "remove photo"
           control must be a sibling overlay (a button can't nest a button). */}
       <div
-        className={cn(
-          'group relative',
-          hasPhoto ? 'mx-auto block w-auto max-w-full' : 'w-full',
-        )}
+        className={cn('group relative', hasPhoto ? 'mx-auto block w-auto max-w-full' : 'w-full')}
       >
         <button
           type="button"
@@ -179,7 +176,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
                 alt=""
                 className="mx-auto block max-h-[70vh] w-auto max-w-full"
               />
-              <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+              <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                 <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
                   change photo
                 </span>
@@ -212,7 +209,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
             aria-label="remove cover photo"
             className={cn(
               'text-destructive absolute top-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium',
-              'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100',
+              'opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100',
               'focus-visible:ring-destructive focus-visible:ring-2 focus-visible:outline-none',
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
