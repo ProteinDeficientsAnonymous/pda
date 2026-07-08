@@ -1,88 +1,73 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { EventGuest } from '@/models/event';
-import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
-import { makeEvent } from '@/test/fixtures';
-import { buildSmsUri, collectRecipients, RecipientGroup } from './groupText';
+import { afterEach, describe, expect, it } from 'vitest';
 
-function guest(overrides: Partial<EventGuest>): EventGuest {
+import type { TextRecipients } from '@/api/textRecipients';
+
+import { availableGroups, buildSmsUri, collectPhones, RecipientGroup } from './groupText';
+
+function recipients(overrides: Partial<TextRecipients> = {}): TextRecipients {
   return {
-    userId: 'u',
-    name: 'someone',
-    status: RsvpServerStatus.Attending,
-    phone: null,
-    photoUrl: '',
-    hasPlusOne: false,
-    attendance: AttendanceStatus.Unknown,
+    attending: [],
+    maybe: [],
+    cantGo: [],
+    waitlisted: [],
+    invited: [],
     ...overrides,
   };
 }
 
-const FOUR_STATUS_EVENT = makeEvent({
-  guests: [
-    guest({ userId: 'a', phone: '+15551112222', status: RsvpServerStatus.Attending }),
-    guest({ userId: 'b', phone: '+15553334444', status: RsvpServerStatus.Maybe }),
-    guest({ userId: 'c', phone: '+15555556666', status: RsvpServerStatus.CantGo }),
-    guest({ userId: 'd', phone: '+15557778888', status: RsvpServerStatus.Waitlisted }),
-  ],
+describe('availableGroups', () => {
+  it('offers only groups with at least one number', () => {
+    const r = recipients({ attending: ['+15551112222'], invited: ['+15559990000'] });
+    expect(availableGroups(r).map((o) => o.value)).toEqual([
+      RecipientGroup.Going,
+      RecipientGroup.Invited,
+    ]);
+  });
+
+  it('includes the count per group', () => {
+    const r = recipients({ attending: ['+1', '+2'], maybe: ['+3'] });
+    const byValue = Object.fromEntries(availableGroups(r).map((o) => [o.value, o.count]));
+    expect(byValue[RecipientGroup.Going]).toBe(2);
+    expect(byValue[RecipientGroup.Maybe]).toBe(1);
+  });
 });
 
-describe('collectRecipients', () => {
+describe('collectPhones', () => {
+  const FULL = recipients({
+    attending: ['+15551112222'],
+    maybe: ['+15553334444'],
+    cantGo: ['+15555556666'],
+    waitlisted: ['+15557778888'],
+  });
+
   it('only collects phones for the selected groups', () => {
-    const result = collectRecipients(FOUR_STATUS_EVENT, [
-      RecipientGroup.Going,
-      RecipientGroup.Maybe,
+    expect(collectPhones(FULL, [RecipientGroup.Going, RecipientGroup.Maybe])).toEqual([
+      '+15551112222',
+      '+15553334444',
     ]);
-    expect(result.phones).toEqual(['+15551112222', '+15553334444']);
   });
 
   it('includes every group when all are selected', () => {
-    const result = collectRecipients(FOUR_STATUS_EVENT, [
-      RecipientGroup.Going,
-      RecipientGroup.Maybe,
-      RecipientGroup.CantGo,
-      RecipientGroup.Waitlisted,
+    expect(
+      collectPhones(FULL, [
+        RecipientGroup.Going,
+        RecipientGroup.Maybe,
+        RecipientGroup.CantGo,
+        RecipientGroup.Waitlisted,
+      ]),
+    ).toEqual(['+15551112222', '+15553334444', '+15555556666', '+15557778888']);
+  });
+
+  it('dedupes a number that appears in more than one selected group', () => {
+    // An invited member who also RSVP'd going shows up in both lists.
+    const r = recipients({ attending: ['+15551112222'], invited: ['+15551112222'] });
+    expect(collectPhones(r, [RecipientGroup.Going, RecipientGroup.Invited])).toEqual([
+      '+15551112222',
     ]);
-    expect(result.phones).toEqual(['+15551112222', '+15553334444', '+15555556666', '+15557778888']);
   });
 
-  it('includes invited members when the invited group is selected', () => {
-    const event = makeEvent({
-      guests: [guest({ userId: 'a', phone: '+15551112222' })],
-      invitedUserPhones: ['+15559990000', null],
-    });
-    const result = collectRecipients(event, [RecipientGroup.Going, RecipientGroup.Invited]);
-    expect(result.phones).toEqual(['+15551112222', '+15559990000']);
-    // The null invited phone (hidden from this viewer) counts as skipped.
-    expect(result.skippedCount).toBe(1);
-  });
-
-  it('excludes guests with no phone and counts them', () => {
-    const event = makeEvent({
-      guests: [
-        guest({ userId: 'a', phone: '+15551112222' }),
-        guest({ userId: 'b', phone: null }),
-        guest({ userId: 'c', phone: '   ' }),
-      ],
-    });
-    const result = collectRecipients(event, [RecipientGroup.Going]);
-    expect(result.phones).toEqual(['+15551112222']);
-    expect(result.skippedCount).toBe(2);
-  });
-
-  it('dedupes repeated numbers without counting them as skipped', () => {
-    const event = makeEvent({
-      guests: [
-        guest({ userId: 'a', phone: '+15551112222' }),
-        guest({ userId: 'b', phone: '+15551112222' }),
-      ],
-    });
-    const result = collectRecipients(event, [RecipientGroup.Going]);
-    expect(result.phones).toEqual(['+15551112222']);
-    expect(result.skippedCount).toBe(0);
-  });
-
-  it('returns an empty result when no groups are selected', () => {
-    expect(collectRecipients(FOUR_STATUS_EVENT, [])).toEqual({ phones: [], skippedCount: 0 });
+  it('returns an empty array when no groups are selected', () => {
+    expect(collectPhones(FULL, [])).toEqual([]);
   });
 });
 
@@ -117,8 +102,4 @@ describe('buildSmsUri', () => {
   it('returns null when there are no numbers', () => {
     expect(buildSmsUri([])).toBeNull();
   });
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
 });

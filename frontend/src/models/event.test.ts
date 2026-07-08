@@ -41,7 +41,6 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     invitedUserIds: [],
     invitedUserNames: [],
     invitedUserPhotoUrls: [],
-    invitedUserPhones: [],
     invitePermission: 'all_members',
     pendingCohostInvites: [],
     myPendingCohostInviteId: null,

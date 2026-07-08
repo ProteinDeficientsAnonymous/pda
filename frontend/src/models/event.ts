@@ -134,9 +134,6 @@ export interface Event {
   invitedUserIds: string[];
   invitedUserNames: string[];
   invitedUserPhotoUrls: string[];
-  // Parallel to invitedUserIds. Entries are null when the viewer can't see
-  // phones (non-host); the array is empty when the invited list is hidden.
-  invitedUserPhones: (string | null)[];
   invitePermission: string;
 
   // Co-host invite approval flow (#363). Pending list visible to creator +

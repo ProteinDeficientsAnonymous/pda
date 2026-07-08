@@ -84,7 +84,6 @@ const BASE_EVENT: Event = {
   invitedUserIds: [],
   invitedUserNames: [],
   invitedUserPhotoUrls: [],
-  invitedUserPhones: [],
   invitePermission: InvitePermission.CoHostsOnly,
   pendingCohostInvites: [],
   myPendingCohostInviteId: null,

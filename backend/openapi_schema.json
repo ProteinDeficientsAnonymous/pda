@@ -1497,21 +1497,6 @@
             "title": "Invited User Names",
             "type": "array"
           },
-          "invited_user_phones": {
-            "default": [],
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "title": "Invited User Phones",
-            "type": "array"
-          },
           "invited_user_photo_urls": {
             "default": [],
             "items": {
@@ -4039,6 +4024,53 @@
           "slug"
         ],
         "title": "TagOut",
+        "type": "object"
+      },
+      "TextRecipientsOut": {
+        "description": "Phone numbers grouped by rsvp status for the host group-text action.\n\nHost/co-host only (see the /text-recipients/ endpoint gate). Members with\nno number are simply absent from their group's list.",
+        "properties": {
+          "attending": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Attending",
+            "type": "array"
+          },
+          "cant_go": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Cant Go",
+            "type": "array"
+          },
+          "invited": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Invited",
+            "type": "array"
+          },
+          "maybe": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Maybe",
+            "type": "array"
+          },
+          "waitlisted": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Waitlisted",
+            "type": "array"
+          }
+        },
+        "title": "TextRecipientsOut",
         "type": "object"
       },
       "TokenOut": {
@@ -8785,6 +8817,65 @@
           }
         ],
         "summary": "Get Event Stats",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/text-recipients/": {
+      "get": {
+        "description": "Host/co-host only: phone numbers for the group-text action, grouped by\nrsvp status. The permission gate here is the ONLY thing exposing phones \u2014\nthey are not on the shared event payload.",
+        "operationId": "community__event_rsvps_get_text_recipients",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextRecipientsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Text Recipients",
         "tags": [
           "community"
         ]

@@ -1,22 +1,15 @@
-import type { Event } from '@/models/event';
-import { RsvpServerStatus } from '@/models/event';
+import type { TextRecipients } from '@/api/textRecipients';
 
-// The recipient groups a host can pick when texting attendees. The four RSVP
-// statuses come from each guest's `status`; `invited` covers invite-only
-// members who haven't responded (their phones ride along on the event).
+// The recipient groups a host can pick when texting attendees. Each value is a
+// key into the host-only TextRecipients payload fetched from the backend.
 export const RecipientGroup = {
-  Going: RsvpServerStatus.Attending,
-  Maybe: RsvpServerStatus.Maybe,
-  CantGo: RsvpServerStatus.CantGo,
-  Waitlisted: RsvpServerStatus.Waitlisted,
+  Going: 'attending',
+  Maybe: 'maybe',
+  CantGo: 'cantGo',
+  Waitlisted: 'waitlisted',
   Invited: 'invited',
 } as const;
 export type RecipientGroupValue = (typeof RecipientGroup)[keyof typeof RecipientGroup];
-
-export interface GroupTextRecipients {
-  phones: string[];
-  skippedCount: number;
-}
 
 export interface GroupOption {
   value: RecipientGroupValue;
@@ -32,53 +25,32 @@ const GROUP_LABELS: { value: RecipientGroupValue; label: string }[] = [
   { value: RecipientGroup.Invited, label: 'invited' },
 ];
 
-// How many people in this group have a textable number.
-export function countForGroup(event: Event, value: RecipientGroupValue): number {
-  if (value === RecipientGroup.Invited) {
-    return event.invitedUserPhones.filter((p) => p?.trim()).length;
-  }
-  return event.guests.filter((g) => g.status === value && g.phone?.trim()).length;
-}
-
 // The groups worth offering — those with at least one reachable number.
-export function availableGroups(event: Event): GroupOption[] {
+export function availableGroups(recipients: TextRecipients): GroupOption[] {
   return GROUP_LABELS.map(({ value, label }) => ({
     value,
     label,
-    count: countForGroup(event, value),
+    count: recipients[value].length,
   })).filter((o) => o.count > 0);
 }
 
-// Pull deduped phone numbers for the selected groups. Guests (and invited
-// members) with no number are counted as skipped so the UI can say so.
-export function collectRecipients(
-  event: Event,
+// Deduped phone numbers for the selected groups. A number can appear in more
+// than one group (e.g. an invited member who also RSVP'd) — dedupe so it isn't
+// texted twice.
+export function collectPhones(
+  recipients: TextRecipients,
   groups: Iterable<RecipientGroupValue>,
-): GroupTextRecipients {
-  const selected = new Set<RecipientGroupValue>(groups);
+): string[] {
   const phones: string[] = [];
   const seen = new Set<string>();
-  let skippedCount = 0;
-
-  const add = (raw: string | null | undefined) => {
-    const phone = raw?.trim();
-    if (!phone) {
-      skippedCount += 1;
-      return;
+  for (const group of groups) {
+    for (const phone of recipients[group]) {
+      if (seen.has(phone)) continue;
+      seen.add(phone);
+      phones.push(phone);
     }
-    if (seen.has(phone)) return;
-    seen.add(phone);
-    phones.push(phone);
-  };
-
-  for (const guest of event.guests) {
-    if (selected.has(guest.status as RecipientGroupValue)) add(guest.phone);
   }
-  if (selected.has(RecipientGroup.Invited)) {
-    for (const phone of event.invitedUserPhones) add(phone);
-  }
-
-  return { phones, skippedCount };
+  return phones;
 }
 
 // Apple platforms (macOS Messages + iOS) need the `sms:/open?addresses=`

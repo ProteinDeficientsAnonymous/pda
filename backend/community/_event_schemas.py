@@ -239,10 +239,6 @@ class EventOut(BaseModel):
     invited_user_ids: list[str] = []
     invited_user_names: list[str] = []
     invited_user_photo_urls: list[str] = []
-    # Parallel to the ids/names arrays. Only populated when the requester can
-    # see phones (creator/co-host); everyone else gets None entries so the
-    # array length still lines up with the other invited_* arrays.
-    invited_user_phones: list[str | None] = []
     invite_permission: str = InvitePermission.ALL_MEMBERS
     is_past: bool = False
     status: str = "active"
@@ -254,6 +250,20 @@ class EventOut(BaseModel):
 class RSVPIn(BaseModel):
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
+
+
+class TextRecipientsOut(BaseModel):
+    """Phone numbers grouped by rsvp status for the host group-text action.
+
+    Host/co-host only (see the /text-recipients/ endpoint gate). Members with
+    no number are simply absent from their group's list.
+    """
+
+    attending: list[str] = []
+    maybe: list[str] = []
+    cant_go: list[str] = []
+    waitlisted: list[str] = []
+    invited: list[str] = []
 
 
 class CancellationOut(BaseModel):

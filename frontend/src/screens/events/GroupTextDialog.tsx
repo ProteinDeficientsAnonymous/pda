@@ -1,43 +1,33 @@
 // Group-text picker (see #500). Hosts choose which rsvp groups to message,
 // then open an sms: group draft (primary) or copy the numbers (fallback for
-// platforms with no SMS app).
+// platforms with no SMS app). Phone numbers are fetched from a host-only
+// endpoint when the dialog opens — they are not on the shared event payload.
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+
+import { type TextRecipients, useTextRecipients } from '@/api/textRecipients';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import type { Event } from '@/models/event';
 import {
   availableGroups,
   buildSmsUri,
-  collectRecipients,
-  countForGroup,
+  collectPhones,
   RecipientGroup,
   type RecipientGroupValue,
 } from '@/utils/groupText';
 
 const DEFAULT_GROUPS: RecipientGroupValue[] = [RecipientGroup.Going, RecipientGroup.Maybe];
 
-function skippedNote(count: number): string {
-  const subject = count === 1 ? 'person has' : 'people have';
-  return `${String(count)} ${subject} no number and weren't included`;
-}
-
 interface Props {
-  event: Event;
+  eventId: string;
   open: boolean;
   onClose: () => void;
 }
 
-export function GroupTextDialog({ event, open, onClose }: Props) {
-  const options = availableGroups(event);
-  const [selected, setSelected] = useState<Set<RecipientGroupValue>>(
-    () => new Set(DEFAULT_GROUPS.filter((g) => countForGroup(event, g) > 0)),
-  );
-
-  const { phones, skippedCount } = collectRecipients(event, selected);
-  const smsUri = buildSmsUri(phones);
-  const disabled = phones.length === 0;
+export function GroupTextDialog({ eventId, open, onClose }: Props) {
+  const recipientsQ = useTextRecipients(eventId, open);
+  const [selected, setSelected] = useState<Set<RecipientGroupValue>>(() => new Set(DEFAULT_GROUPS));
 
   function toggle(value: RecipientGroupValue) {
     setSelected((prev) => {
@@ -48,13 +38,46 @@ export function GroupTextDialog({ event, open, onClose }: Props) {
     });
   }
 
+  return (
+    <Dialog open={open} onClose={onClose} title="group text">
+      {recipientsQ.isPending ? (
+        <p className="text-muted text-sm">loading numbers…</p>
+      ) : recipientsQ.isError ? (
+        <p className="text-muted text-sm">couldn't load numbers — try again</p>
+      ) : (
+        <RecipientPicker
+          recipients={recipientsQ.data}
+          selected={selected}
+          onToggle={toggle}
+          onClose={onClose}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+function RecipientPicker({
+  recipients,
+  selected,
+  onToggle,
+  onClose,
+}: {
+  recipients: TextRecipients;
+  selected: Set<RecipientGroupValue>;
+  onToggle: (value: RecipientGroupValue) => void;
+  onClose: () => void;
+}) {
+  const options = availableGroups(recipients);
+  const phones = collectPhones(recipients, selected);
+  const smsUri = buildSmsUri(phones);
+  const disabled = phones.length === 0;
+
   function handleCopy() {
     if (disabled) return;
     void navigator.clipboard
       .writeText(phones.join(', '))
       .then(() => {
-        const note = skippedCount > 0 ? ` — ${skippedNote(skippedCount)}` : '';
-        toast.success(`copied ${String(phones.length)} numbers${note}`);
+        toast.success(`copied ${String(phones.length)} numbers`);
         onClose();
       })
       .catch(() => {
@@ -62,13 +85,12 @@ export function GroupTextDialog({ event, open, onClose }: Props) {
       });
   }
 
-  function handleText() {
-    if (skippedCount > 0) toast.info(skippedNote(skippedCount));
-    onClose();
+  if (options.length === 0) {
+    return <p className="text-muted text-sm">no one has a number to text yet</p>;
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="group text">
+    <>
       <p className="text-foreground-secondary text-sm">pick who to message</p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {options.map((o) => (
@@ -78,7 +100,7 @@ export function GroupTextDialog({ event, open, onClose }: Props) {
             count={o.count}
             active={selected.has(o.value)}
             onToggle={() => {
-              toggle(o.value);
+              onToggle(o.value);
             }}
           />
         ))}
@@ -111,7 +133,7 @@ export function GroupTextDialog({ event, open, onClose }: Props) {
           ) : (
             <a
               href={smsUri}
-              onClick={handleText}
+              onClick={onClose}
               aria-label="text them"
               className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors"
             >
@@ -120,7 +142,7 @@ export function GroupTextDialog({ event, open, onClose }: Props) {
           )}
         </div>
       </div>
-    </Dialog>
+    </>
   );
 }
 

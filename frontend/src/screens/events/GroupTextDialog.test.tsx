@@ -1,12 +1,10 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Event } from '@/models/event';
-import { RsvpServerStatus } from '@/models/event';
-import { makeEvent } from '@/test/fixtures';
+
+import type { TextRecipients } from '@/api/textRecipients';
 
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
-const toastInfo = vi.fn();
 vi.mock('sonner', () => ({
   toast: {
     success: (m: string) => {
@@ -15,35 +13,35 @@ vi.mock('sonner', () => ({
     error: (m: string) => {
       toastError(m);
     },
-    info: (m: string) => {
-      toastInfo(m);
-    },
   },
+}));
+
+interface RecipientsQueryResult {
+  data: TextRecipients | undefined;
+  isPending: boolean;
+  isError: boolean;
+}
+const useTextRecipients = vi.fn<() => RecipientsQueryResult>();
+vi.mock('@/api/textRecipients', () => ({
+  useTextRecipients: () => useTextRecipients(),
 }));
 
 import { GroupTextDialog } from './GroupTextDialog';
 
-function guest(overrides: Partial<Event['guests'][number]>): Event['guests'][number] {
+function recipients(overrides: Partial<TextRecipients> = {}): TextRecipients {
   return {
-    userId: 'u',
-    name: 'someone',
-    status: RsvpServerStatus.Attending,
-    phone: null,
-    photoUrl: '',
-    hasPlusOne: false,
-    attendance: 'unknown',
+    attending: ['+15551112222'],
+    maybe: ['+15559990000'],
+    cantGo: ['+15553334444'],
+    waitlisted: [],
+    invited: [],
     ...overrides,
   };
 }
 
-// alice = going, carol = maybe, bob = cant_go.
-const EVENT = makeEvent({
-  guests: [
-    guest({ userId: 'a', phone: '+15551112222', status: RsvpServerStatus.Attending }),
-    guest({ userId: 'c', phone: '+15559990000', status: RsvpServerStatus.Maybe }),
-    guest({ userId: 'b', phone: '+15553334444', status: RsvpServerStatus.CantGo }),
-  ],
-});
+function mockLoaded(data: TextRecipients) {
+  useTextRecipients.mockReturnValue({ data, isPending: false, isError: false });
+}
 
 const noop = () => {};
 const originalUserAgent = navigator.userAgent;
@@ -51,7 +49,7 @@ const originalUserAgent = navigator.userAgent;
 beforeEach(() => {
   toastSuccess.mockClear();
   toastError.mockClear();
-  toastInfo.mockClear();
+  useTextRecipients.mockReset();
   // Pin an Apple UA so buildSmsUri emits the /open?addresses= form.
   Object.defineProperty(navigator, 'userAgent', {
     value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
@@ -65,8 +63,21 @@ afterEach(() => {
 });
 
 describe('GroupTextDialog', () => {
+  it('shows a loading state while recipients load', () => {
+    useTextRecipients.mockReturnValue({ data: undefined, isPending: true, isError: false });
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
+    expect(screen.getByText(/loading numbers/i)).toBeInTheDocument();
+  });
+
+  it('shows an error state when the fetch fails', () => {
+    useTextRecipients.mockReturnValue({ data: undefined, isPending: false, isError: true });
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
+    expect(screen.getByText(/couldn't load numbers/i)).toBeInTheDocument();
+  });
+
   it('defaults to going + maybe selected', () => {
-    render(<GroupTextDialog event={EVENT} open onClose={noop} />);
+    mockLoaded(recipients());
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
     const pressed = screen.getAllByRole('button', { pressed: true }).map((el) => el.textContent);
     expect(pressed).toEqual(['going1', 'maybe1']);
     expect(screen.getAllByRole('button', { pressed: false }).map((el) => el.textContent)).toContain(
@@ -75,39 +86,28 @@ describe('GroupTextDialog', () => {
   });
 
   it('renders an sms: group-draft link (Apple /open?addresses= form) for the selected groups', () => {
-    render(<GroupTextDialog event={EVENT} open onClose={noop} />);
+    mockLoaded(recipients());
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
     const link = screen.getByRole('link', { name: /text them/i });
     expect(link).toHaveAttribute('href', 'sms:/open?addresses=+15551112222,+15559990000');
   });
 
   it('updates the sms: link when a group is toggled', () => {
-    render(<GroupTextDialog event={EVENT} open onClose={noop} />);
+    mockLoaded(recipients());
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
     fireEvent.click(screen.getByRole('button', { name: /^maybe/i }));
     fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
     const link = screen.getByRole('link', { name: /text them/i });
     expect(link).toHaveAttribute('href', 'sms:/open?addresses=+15551112222,+15553334444');
   });
 
-  it('closes and surfaces skipped count when texting', () => {
-    const onClose = vi.fn();
-    const event = makeEvent({
-      guests: [
-        guest({ userId: 'a', phone: '+15551112222', status: RsvpServerStatus.Attending }),
-        guest({ userId: 'x', phone: null, status: RsvpServerStatus.Attending }),
-      ],
-    });
-    render(<GroupTextDialog event={event} open onClose={onClose} />);
-    fireEvent.click(screen.getByRole('link', { name: /text them/i }));
-    expect(toastInfo).toHaveBeenCalledWith("1 person has no number and weren't included");
-    expect(onClose).toHaveBeenCalled();
-  });
-
   it('copies numbers via the secondary copy action and closes', async () => {
+    mockLoaded(recipients());
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     const onClose = vi.fn();
 
-    render(<GroupTextDialog event={EVENT} open onClose={onClose} />);
+    render(<GroupTextDialog eventId="e1" open onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: /copy numbers instead/i }));
     await vi.waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('+15551112222, +15559990000');
@@ -116,20 +116,21 @@ describe('GroupTextDialog', () => {
   });
 
   it('does not offer a group with no textable people', () => {
-    const event = makeEvent({
-      guests: [guest({ userId: 'a', phone: '+15551112222', status: RsvpServerStatus.Attending })],
-    });
-    render(<GroupTextDialog event={event} open onClose={noop} />);
+    mockLoaded(recipients({ maybe: [], cantGo: [] }));
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
     expect(screen.queryByRole('button', { name: /^maybe/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /invited/i })).toBeNull();
   });
 
   it('offers the invited group when invited phones are present', () => {
-    const event = makeEvent({
-      guests: [guest({ userId: 'a', phone: '+15551112222', status: RsvpServerStatus.Attending })],
-      invitedUserPhones: ['+15558887777'],
-    });
-    render(<GroupTextDialog event={event} open onClose={noop} />);
+    mockLoaded(recipients({ invited: ['+15558887777'] }));
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
     expect(screen.getByRole('button', { name: /invited/i })).toBeInTheDocument();
+  });
+
+  it('shows an empty state when no group has a number', () => {
+    mockLoaded(recipients({ attending: [], maybe: [], cantGo: [], waitlisted: [], invited: [] }));
+    render(<GroupTextDialog eventId="e1" open onClose={noop} />);
+    expect(screen.getByText(/no one has a number/i)).toBeInTheDocument();
   });
 });

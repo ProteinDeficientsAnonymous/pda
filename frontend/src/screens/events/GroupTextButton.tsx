@@ -1,9 +1,11 @@
-// Host-only "group text" trigger (see #500). Opens a dialog to pick which
-// rsvp groups to message; the dialog handles copy (desktop) / sms: (mobile).
+// Host-only "group text" trigger (see #500). Opens a dialog that fetches the
+// recipient phone numbers (host-only endpoint) and lets the host pick which
+// rsvp groups to message. Rendered only for co-hosts by the parent section.
 
 import { useState } from 'react';
+
 import type { Event } from '@/models/event';
-import { availableGroups } from '@/utils/groupText';
+
 import { GroupTextDialog } from './GroupTextDialog';
 
 interface Props {
@@ -12,9 +14,6 @@ interface Props {
 
 export function GroupTextButton({ event }: Props) {
   const [open, setOpen] = useState(false);
-
-  // Nothing to text if no group has a reachable number.
-  if (availableGroups(event).length === 0) return null;
 
   return (
     <>
@@ -30,7 +29,7 @@ export function GroupTextButton({ event }: Props) {
         group text
       </button>
       <GroupTextDialog
-        event={event}
+        eventId={event.id}
         open={open}
         onClose={() => {
           setOpen(false);

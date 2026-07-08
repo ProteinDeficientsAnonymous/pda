@@ -1,46 +1,23 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { Event } from '@/models/event';
-import { RsvpServerStatus } from '@/models/event';
+
 import { makeEvent } from '@/test/fixtures';
 
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+// Stub the dialog so this test focuses on the trigger; the dialog has its own
+// suite and pulls in the data hook.
+vi.mock('./GroupTextDialog', () => ({
+  GroupTextDialog: ({ open }: { open: boolean }) =>
+    open ? <div role="dialog" aria-label="group text" /> : null,
+}));
 
 import { GroupTextButton } from './GroupTextButton';
 
-function guest(overrides: Partial<Event['guests'][number]>): Event['guests'][number] {
-  return {
-    userId: 'u',
-    name: 'someone',
-    status: RsvpServerStatus.Attending,
-    phone: null,
-    photoUrl: '',
-    hasPlusOne: false,
-    attendance: 'unknown',
-    ...overrides,
-  };
-}
-
-const EVENT = makeEvent({
-  guests: [guest({ userId: 'a', phone: '+15551112222', status: RsvpServerStatus.Attending })],
-});
-
 describe('GroupTextButton', () => {
   it('renders a trigger and opens the picker dialog on click', () => {
-    render(<GroupTextButton event={EVENT} />);
-    // Dialog is closed initially.
+    render(<GroupTextButton event={makeEvent()} />);
     expect(screen.queryByRole('dialog')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'group text' }));
     expect(screen.getByRole('dialog', { name: 'group text' })).toBeInTheDocument();
-  });
-
-  it('renders nothing when no group has a reachable number', () => {
-    const event = makeEvent({
-      guests: [guest({ userId: 'a', phone: null, status: RsvpServerStatus.Attending })],
-      invitedUserPhones: [],
-    });
-    const { container } = render(<GroupTextButton event={event} />);
-    expect(container).toBeEmptyDOMElement();
   });
 });

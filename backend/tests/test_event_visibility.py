@@ -302,49 +302,93 @@ class TestInviteOnlyVisibility:
         assert response.status_code == 200
         assert b"Exclusive Hangout" in response.content
 
-    def test_invited_phones_visible_to_creator(self, api_client):
-        creator = self._make_user("+12025550230", "Creator30")
-        invited = self._make_user("+12025550231", "Invited30")
-        event = self._make_invite_only_event(creator, invited_user=invited)
+
+@pytest.mark.django_db
+class TestTextRecipients:
+    """GET /events/{id}/text-recipients/ — host/co-host-only phone lists for
+    the group-text action. This endpoint's gate is the ONLY thing exposing
+    phones; they are not on the shared event payload."""
+
+    def _make_user(self, phone, name):
+        from users.models import User
+
+        return User.objects.create_user(phone_number=phone, password="pass123", display_name=name)
+
+    def _auth_headers(self, user):
+        from ninja_jwt.tokens import RefreshToken
+
+        refresh = RefreshToken.for_user(user)
+        return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # ty: ignore[unresolved-attribute]
+
+    def _make_event(self, creator, co_host=None, invited_user=None):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        future = timezone.now() + timedelta(days=7)
+        event = Event.objects.create(
+            title="Group Text Event",
+            start_datetime=future,
+            end_datetime=future + timedelta(hours=2),
+            rsvp_enabled=True,
+            created_by=creator,
+        )
+        if co_host:
+            event.co_hosts.add(co_host)
+        if invited_user:
+            event.invited_users.add(invited_user)
+        return event
+
+    def test_creator_gets_phones_grouped_by_status(self, api_client):
+        from community.models import EventRSVP, RSVPStatus
+
+        creator = self._make_user("+12025550240", "Creator40")
+        going = self._make_user("+12025550241", "Going40")
+        maybe = self._make_user("+12025550242", "Maybe40")
+        invited = self._make_user("+12025550243", "Invited40")
+        event = self._make_event(creator, invited_user=invited)
+        EventRSVP.objects.create(event=event, user=going, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=maybe, status=RSVPStatus.MAYBE)
 
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(creator)
+            f"/api/community/events/{event.id}/text-recipients/",
+            **self._auth_headers(creator),
         )
         assert response.status_code == 200
         body = response.json()
-        assert body["invited_user_ids"] == [str(invited.id)]
-        assert body["invited_user_phones"] == [invited.phone_number]
+        assert body["attending"] == [going.phone_number]
+        assert body["maybe"] == [maybe.phone_number]
+        assert body["cant_go"] == []
+        assert body["invited"] == [invited.phone_number]
 
-    def test_invited_phones_visible_to_co_host(self, api_client):
-        creator = self._make_user("+12025550232", "Creator32")
-        co_host = self._make_user("+12025550233", "CoHost32")
-        invited = self._make_user("+12025550234", "Invited32")
-        event = self._make_invite_only_event(
-            creator, co_host=co_host, invited_user=invited
-        )
+    def test_co_host_can_fetch(self, api_client):
+        creator = self._make_user("+12025550244", "Creator44")
+        co_host = self._make_user("+12025550245", "CoHost44")
+        event = self._make_event(creator, co_host=co_host)
 
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(co_host)
+            f"/api/community/events/{event.id}/text-recipients/",
+            **self._auth_headers(co_host),
         )
         assert response.status_code == 200
-        body = response.json()
-        assert body["invited_user_ids"] == [str(invited.id)]
-        assert body["invited_user_phones"] == [invited.phone_number]
 
-    def test_invited_phones_hidden_from_non_privileged_invitee(self, api_client):
-        creator = self._make_user("+12025550235", "Creator35")
-        invited = self._make_user("+12025550236", "Invited35")
-        event = self._make_invite_only_event(creator, invited_user=invited)
+    def test_non_host_member_gets_403(self, api_client):
+        creator = self._make_user("+12025550246", "Creator46")
+        member = self._make_user("+12025550247", "Member46")
+        event = self._make_event(creator)
 
-        # A plain invited member is neither creator nor co-host, so the whole
-        # invited list (and therefore its phones) is withheld from them.
         response = api_client.get(
-            f"/api/community/events/{event.id}/", **self._auth_headers(invited)
+            f"/api/community/events/{event.id}/text-recipients/",
+            **self._auth_headers(member),
         )
-        assert response.status_code == 200
-        body = response.json()
-        assert body["invited_user_ids"] == []
-        assert body["invited_user_phones"] == []
+        assert response.status_code == 403
+
+    def test_anonymous_gets_401(self, api_client):
+        creator = self._make_user("+12025550248", "Creator48")
+        event = self._make_event(creator)
+
+        response = api_client.get(f"/api/community/events/{event.id}/text-recipients/")
+        assert response.status_code in (401, 403)
 
 
 @pytest.mark.django_db
