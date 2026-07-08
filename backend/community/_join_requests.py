@@ -88,11 +88,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         for qid, data in (jr.custom_answers or {}).items()
     ]
     phone_user = User.objects.filter(phone_number=jr.phone_number).first()
-    # Prefer the FK (email-matched links can point at a user whose phone differs
-    # from the request's); fall back to the phone match for create/reactivate rows.
     user = jr.user or phone_user
-    # A prior archived account on this phone means a former member is re-applying,
-    # which the admin list badges so approval can be handled accordingly.
     previously_archived = phone_user is not None and phone_user.archived_at is not None
     official_rsvp_count = _official_rsvp_count(jr)
     return JoinRequestOut(
