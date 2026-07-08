@@ -14,6 +14,7 @@ import {
   defaultCoverAspect,
   initialCrop,
   MAX_PREVIEW_PX,
+  percentToPixelCrop,
   PORTRAIT_ASPECT,
   SQUARE_ASPECT,
 } from './initialCrop';
@@ -50,8 +51,10 @@ export function ImageCropDialog({
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    setCrop(initialCrop(width, height, shape));
+    const pct = initialCrop(width, height, shape);
+    setCrop(pct);
     if (shape === 'rect') setAspect(defaultCoverAspect(width, height));
+    setCompleted(percentToPixelCrop(pct, width, height));
   }
 
   function selectAspect(next: number) {
