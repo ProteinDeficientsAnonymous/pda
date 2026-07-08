@@ -3,6 +3,7 @@
 // Add-to-calendar is a tiny popover with google / apple / download-ics.
 // Share uses the Web Share API when available; falls back to clipboard.
 
+import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -126,7 +127,7 @@ function CalendarMenu({ event }: { event: Event }) {
 
 interface IconChipProps {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onClick: () => void;
   'aria-expanded'?: boolean;
 }

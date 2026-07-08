@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
+import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,7 +36,7 @@ const defaultSubmitResult = {
   mutateAsync: vi.fn(),
 } as unknown as ReturnType<typeof useSubmitJoinRequest>;
 
-function renderWith(component: React.ReactElement, initialRoute = '/join') {
+function renderWith(component: ReactElement, initialRoute = '/join') {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>

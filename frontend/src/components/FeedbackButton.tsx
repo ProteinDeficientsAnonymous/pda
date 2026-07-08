@@ -5,7 +5,7 @@
 // per .claude/rules/ui-copy-tone.md. maxLength caps match the frontend
 // input-validation guidance (title 150, description 2000) and stay under
 // the backend FieldLimit on FeedbackIn (200 / 10000).
-
+import type { SyntheticEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -55,7 +55,7 @@ export function FeedbackButton() {
     setDescriptionError(undefined);
   }
 
-  async function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+  async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmedTitle = title.trim();
     const trimmedDescription = description.trim();

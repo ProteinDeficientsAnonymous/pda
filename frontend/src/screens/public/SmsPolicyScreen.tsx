@@ -4,6 +4,8 @@
 // breaks Twilio's verification process. The automated SMS send path is deferred
 // (see #501), but this policy page stays to back manual group-text consent.
 
+import type { ReactNode } from 'react';
+
 import { ContentContainer } from './ContentContainer';
 
 export default function SmsPolicyScreen() {
@@ -82,7 +84,7 @@ export default function SmsPolicyScreen() {
   );
 }
 
-function Section({ heading, children }: { heading: string; children: React.ReactNode }) {
+function Section({ heading, children }: { heading: string; children: ReactNode }) {
   return (
     <section className="mb-6">
       <h2 className="text-foreground mb-2 text-sm font-medium tracking-wide">{heading}</h2>

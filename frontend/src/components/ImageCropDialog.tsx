@@ -3,6 +3,7 @@
 
 import 'react-image-crop/dist/ReactCrop.css';
 
+import type { SyntheticEvent } from 'react';
 import { useRef, useState } from 'react';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 
@@ -14,7 +15,6 @@ import {
   defaultCoverAspect,
   initialCrop,
   MAX_PREVIEW_PX,
-  percentToPixelCrop,
   PORTRAIT_ASPECT,
   SQUARE_ASPECT,
 } from './initialCrop';
@@ -49,12 +49,10 @@ export function ImageCropDialog({
   const [saving, setSaving] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+  function onImageLoad(e: SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    const pct = initialCrop(width, height, shape);
-    setCrop(pct);
+    setCrop(initialCrop(width, height, shape));
     if (shape === 'rect') setAspect(defaultCoverAspect(width, height));
-    setCompleted(percentToPixelCrop(pct, width, height));
   }
 
   function selectAspect(next: number) {
