@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0059_delete_whatsappconfig"),
+        ("community", "0060_eventtag_event_tags"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
