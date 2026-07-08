@@ -30,6 +30,7 @@ function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues 
     cashappLink: '',
     zelleInfo: '',
     coHostIds: [],
+    tagIds: [],
     status: 'active',
     ...overrides,
   };

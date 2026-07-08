@@ -12,6 +12,7 @@ import { type Event as PdaEvent, eventClass } from '@/models/event';
 
 import { AgendaList } from './AgendaList';
 import { makeLocalizer } from './calendarLocalizer';
+import { CalendarTagFilter } from './CalendarTagFilter';
 import { CalendarToolbar } from './CalendarToolbar';
 import { DayEventList } from './DayEventList';
 import { NarrowWeekView } from './NarrowWeekView';
@@ -68,15 +69,24 @@ export default function CalendarScreen() {
   const isWide = useIsWideScreen(720);
 
   const { data: events = [], isPending, isError, refetch } = useEvents();
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  // OR semantics: an event matches when it carries any selected tag.
+  const filteredEvents = useMemo(
+    () =>
+      tagFilter.length === 0
+        ? events
+        : events.filter((e) => e.tags.some((t) => tagFilter.includes(t.id))),
+    [events, tagFilter],
+  );
   const bigCalEvents = useMemo<BigCalEvent[]>(
     () =>
-      events
+      filteredEvents
         .filter((e) => !e.datetimeTbd)
         .map(toBigCalEvent)
         .filter((e): e is BigCalEvent => e !== null),
-    [events],
+    [filteredEvents],
   );
-  const datedEvents = useMemo(() => events.filter((e) => !e.datetimeTbd), [events]);
+  const datedEvents = useMemo(() => filteredEvents.filter((e) => !e.datetimeTbd), [filteredEvents]);
 
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState<Date>(new Date());
@@ -99,6 +109,8 @@ export default function CalendarScreen() {
       <header className="mb-4 flex justify-center">
         <ViewSwitcher value={view} onChange={setView} />
       </header>
+
+      <CalendarTagFilter selected={tagFilter} onChange={setTagFilter} />
 
       {isError ? (
         <div className="border-destructive bg-destructive-subtle text-destructive mb-4 rounded-md border px-3 py-2 text-sm">

@@ -12,6 +12,7 @@ import { linkifyText } from '@/utils/linkifyText';
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
 import { EventMemberSection } from './EventMemberSection';
+import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
 
 export default function EventDetailScreen() {
@@ -45,6 +46,7 @@ export default function EventDetailScreen() {
       </div>
 
       <WhenLine event={event} />
+      <EventTagChips tags={event.tags} className="mt-2" />
       <EventActions event={event} />
       {isAuthed ? <CohostInviteBanner event={event} /> : null}
       <EventPollCard event={event} />

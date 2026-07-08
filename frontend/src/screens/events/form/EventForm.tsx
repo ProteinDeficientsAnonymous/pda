@@ -36,6 +36,7 @@ import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
 import { EventFormPhoto } from './EventFormPhoto';
 import { EventFormRsvp } from './EventFormRsvp';
+import { EventFormTags } from './EventFormTags';
 import { validateEventForm } from './validateEventForm';
 
 interface Props {
@@ -291,6 +292,17 @@ export function EventForm({ existing }: Props) {
           errors={errors}
           canTagOfficial={canTagOfficial}
         />
+      </CollapsibleCard>
+
+      <CollapsibleCard
+        title="tags"
+        summary={
+          values.tagIds.length > 0
+            ? `${String(values.tagIds.length)} tag${values.tagIds.length === 1 ? '' : 's'}`
+            : undefined
+        }
+      >
+        <EventFormTags values={values} onChange={patch} />
       </CollapsibleCard>
 
       <CollapsibleCard
