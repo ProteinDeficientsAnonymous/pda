@@ -135,7 +135,12 @@ class TestGatedJWTAuth:
         user.save(update_fields=["guidelines_consent_at"])
 
         # The escape hatch must stay reachable while gated.
-        resp = api_client.post("/api/auth/accept-guidelines/", **_headers(user))
+        resp = api_client.post(
+            "/api/auth/accept-consents/",
+            data={"consent_types": ["guidelines"]},
+            content_type="application/json",
+            **_headers(user),
+        )
         assert resp.status_code == 200, resp.content
 
     def test_password_reset_takes_priority_over_consent(self, api_client):

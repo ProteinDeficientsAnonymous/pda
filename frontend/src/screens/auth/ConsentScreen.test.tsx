@@ -25,16 +25,27 @@ vi.mock('@/api/client', () => ({
 }));
 
 describe('ConsentScreen', () => {
-  const acceptGuidelines = vi.fn();
+  const acceptConsents = vi.fn();
   const logout = vi.fn();
 
+  function mockStore({
+    needsGuidelinesConsent = true,
+    needsSmsConsent = false,
+  }: { needsGuidelinesConsent?: boolean; needsSmsConsent?: boolean } = {}) {
+    vi.mocked(useAuthStore).mockImplementation((selector) =>
+      selector({
+        acceptConsents,
+        logout,
+        user: { needsGuidelinesConsent, needsSmsConsent },
+      } as never),
+    );
+  }
+
   beforeEach(() => {
-    acceptGuidelines.mockReset();
+    acceptConsents.mockReset();
     logout.mockReset();
     navigate.mockReset();
-    vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ acceptGuidelines, logout } as never),
-    );
+    mockStore();
   });
 
   it('disables continue until the checkbox is ticked', () => {
@@ -59,7 +70,7 @@ describe('ConsentScreen', () => {
   });
 
   it('accepts the guidelines once checked and goes to calendar', async () => {
-    acceptGuidelines.mockResolvedValue(undefined);
+    acceptConsents.mockResolvedValue(undefined);
     render(
       <MemoryRouter>
         <ConsentScreen />
@@ -67,12 +78,51 @@ describe('ConsentScreen', () => {
     );
     await userEvent.click(screen.getByRole('checkbox'));
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
-    expect(acceptGuidelines).toHaveBeenCalledOnce();
+    expect(acceptConsents).toHaveBeenCalledExactlyOnceWith(['guidelines']);
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/calendar', { replace: true }));
+  });
+
+  it('hides the sms checkbox when sms consent is not needed', () => {
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('link', { name: /sms policy/i })).not.toBeInTheDocument();
+  });
+
+  it('requires both checkboxes when sms consent is also needed', async () => {
+    mockStore({ needsSmsConsent: true });
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    const continueBtn = screen.getByRole('button', { name: /continue/i });
+    expect(continueBtn).toBeDisabled();
+    await userEvent.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    expect(continueBtn).toBeDisabled();
+    await userEvent.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    expect(continueBtn).toBeEnabled();
+  });
+
+  it('submits all required consents when both are accepted', async () => {
+    acceptConsents.mockResolvedValue(undefined);
+    mockStore({ needsSmsConsent: true });
+    render(
+      <MemoryRouter>
+        <ConsentScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /sms policy/i }));
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(acceptConsents).toHaveBeenCalledExactlyOnceWith(['guidelines', 'sms']);
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/calendar', { replace: true }));
   });
 
   it('shows a server error on failure', async () => {
-    acceptGuidelines.mockRejectedValue(new Error('boom'));
+    acceptConsents.mockRejectedValue(new Error('boom'));
     render(
       <MemoryRouter>
         <ConsentScreen />
@@ -94,7 +144,7 @@ describe('ConsentScreen', () => {
     expect(logout).toHaveBeenCalledOnce();
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/', { replace: true }));
     // "not now" is available without ticking the checkbox — it's a decline.
-    expect(acceptGuidelines).not.toHaveBeenCalled();
+    expect(acceptConsents).not.toHaveBeenCalled();
   });
 
   it('allows "not now" even before the checkbox is ticked', () => {

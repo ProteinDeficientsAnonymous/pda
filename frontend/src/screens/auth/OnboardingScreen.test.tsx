@@ -89,8 +89,7 @@ describe('OnboardingScreen', () => {
       displayName: 'Tester',
       email: 'tester@example.com',
       newPassword: 'abcd1234ABCD!',
-      acceptGuidelines: undefined,
-      acceptSms: undefined,
+      consentTypes: [],
     });
   });
 
@@ -133,14 +132,13 @@ describe('OnboardingScreen', () => {
     await userEvent.click(smsBox);
     expect(screen.getByRole('button', { name: /continue/i })).not.toBeDisabled();
 
-    // Submit and verify both consent flags passed through
+    // Submit and verify both consent types passed through
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledWith({
       displayName: 'Tester',
       email: 'tester@example.com',
       newPassword: 'abcd1234ABCD!',
-      acceptGuidelines: true,
-      acceptSms: true,
+      consentTypes: ['guidelines', 'sms'],
     });
   });
 });

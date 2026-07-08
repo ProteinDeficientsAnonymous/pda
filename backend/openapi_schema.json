@@ -1,6 +1,19 @@
 {
   "components": {
     "schemas": {
+      "AcceptConsentsIn": {
+        "properties": {
+          "consent_types": {
+            "items": {
+              "$ref": "#/components/schemas/ConsentType"
+            },
+            "title": "Consent Types",
+            "type": "array"
+          }
+        },
+        "title": "AcceptConsentsIn",
+        "type": "object"
+      },
       "AccessOut": {
         "properties": {
           "access": {
@@ -304,6 +317,14 @@
         ],
         "title": "CommentReactionSummaryOut",
         "type": "object"
+      },
+      "ConsentType": {
+        "enum": [
+          "guidelines",
+          "sms"
+        ],
+        "title": "ConsentType",
+        "type": "string"
       },
       "DocFolderOut": {
         "properties": {
@@ -3121,15 +3142,12 @@
       },
       "OnboardingIn": {
         "properties": {
-          "accept_guidelines": {
-            "default": false,
-            "title": "Accept Guidelines",
-            "type": "boolean"
-          },
-          "accept_sms": {
-            "default": false,
-            "title": "Accept Sms",
-            "type": "boolean"
+          "consent_types": {
+            "items": {
+              "$ref": "#/components/schemas/ConsentType"
+            },
+            "title": "Consent Types",
+            "type": "array"
           },
           "display_name": {
             "anyOf": [
@@ -4505,11 +4523,21 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/api/auth/accept-guidelines/": {
+    "/api/auth/accept-consents/": {
       "post": {
-        "description": "Stamp the current user's guidelines consent, clearing the hard gate.\n\nIdempotent: re-accepting just re-stamps the timestamp. The gate (see\nconfig.auth.GatedJWTAuth) treats a null guidelines_consent_at as \"must\nconsent\", so any non-null value satisfies it.",
-        "operationId": "users__auth_accept_guidelines",
+        "description": "Record the consents the caller is accepting, clearing the relevant gates.",
+        "operationId": "users__auth_accept_consents",
         "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptConsentsIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -4527,7 +4555,7 @@
             "GatedJWTAuth": []
           }
         ],
-        "summary": "Accept Guidelines",
+        "summary": "Accept Consents",
         "tags": [
           "auth"
         ]

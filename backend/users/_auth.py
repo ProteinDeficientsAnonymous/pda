@@ -18,6 +18,7 @@ from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
+from users._consents import stamp_consents
 from users._helpers import _check_and_set_email
 from users._password_validation import validate_password
 from users._refresh_cookie import (
@@ -28,6 +29,7 @@ from users._refresh_cookie import (
 from users.models import MagicLoginToken, User
 from users.permissions import PermissionKey
 from users.schemas import (
+    AcceptConsentsIn,
     AccessOut,
     ChangePasswordIn,
     ErrorOut,
@@ -368,14 +370,6 @@ def get_member_profile(request, user_id: str):
     )
 
 
-def _stamp_onboarding_consents(user, payload):
-    """Record any newly-given consents during onboarding, never overwriting existing ones."""
-    if payload.accept_guidelines and user.guidelines_consent_at is None:
-        user.guidelines_consent_at = timezone.now()
-    if payload.accept_sms and user.sms_consent_at is None:
-        user.sms_consent_at = timezone.now()
-
-
 @router.post(
     "/complete-onboarding/",
     response={200: UserOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut},
@@ -405,7 +399,7 @@ def complete_onboarding(request, payload: OnboardingIn):
         user.onboarded_at = timezone.now()
     user.needs_onboarding = False
     user.needs_password_reset = False
-    _stamp_onboarding_consents(user, payload)
+    stamp_consents(user, payload.consent_types)
     user.save()
     audit_log(
         logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)
@@ -413,20 +407,21 @@ def complete_onboarding(request, payload: OnboardingIn):
     return Status(200, UserOut.from_user(user))
 
 
-@router.post("/accept-guidelines/", response={200: UserOut}, auth=gated_jwt)
+@router.post("/accept-consents/", response={200: UserOut}, auth=gated_jwt)
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
-def accept_guidelines(request):
-    """Stamp the current user's guidelines consent, clearing the hard gate.
-
-    Idempotent: re-accepting just re-stamps the timestamp. The gate (see
-    config.auth.GatedJWTAuth) treats a null guidelines_consent_at as "must
-    consent", so any non-null value satisfies it.
-    """
+def accept_consents(request, payload: AcceptConsentsIn):
+    """Record the consents the caller is accepting, clearing the relevant gates."""
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
-    user.guidelines_consent_at = timezone.now()
-    user.save(update_fields=["guidelines_consent_at"])
+    changed = stamp_consents(user, payload.consent_types)
+    if changed:
+        user.save(update_fields=changed)
     audit_log(
-        logging.INFO, "guidelines_accepted", request, target_type="user", target_id=str(user.pk)
+        logging.INFO,
+        "consents_accepted",
+        request,
+        target_type="user",
+        target_id=str(user.pk),
+        details={"consent_types": [str(c) for c in payload.consent_types]},
     )
     return Status(200, UserOut.from_user(user))
 

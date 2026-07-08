@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { useAuthStore } from '@/auth/store';
@@ -12,8 +12,10 @@ import { postAuthRedirect } from '@/models/user';
 import { extractApiError } from '@/utils/errors';
 
 import { AuthLayout } from './AuthLayout';
+import { ConsentChecklist } from './ConsentChecklist';
 import { PasswordChecklist } from './PasswordChecklist';
 import { passwordRule } from './passwordRule';
+import { useConsentChecklist } from './useConsentChecklist';
 
 const schema = z.object({
   displayName: z.string().min(1, 'name required').max(64),
@@ -25,19 +27,13 @@ type FormValues = z.infer<typeof schema>;
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
-  // Prefill displayName for legacy users who were approved before email was
-  // required — they already have a name on file and only need to add email
-  // + set a password.
+  // prefill name for legacy users approved before email was required
   const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
-  // Consent is collected inline only for users who haven't consented yet —
-  // admin-created accounts (no JoinRequest). Join-form users arrive consented,
-  // so these are false and the checkboxes don't render.
-  const needsGuidelines = useAuthStore((s) => s.user?.needsGuidelinesConsent ?? false);
-  const needsSms = useAuthStore((s) => s.user?.needsSmsConsent ?? false);
+  // checkboxes render only for users with outstanding consent (admin-created accounts)
+  const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [guidelinesChecked, setGuidelinesChecked] = useState(false);
-  const [smsChecked, setSmsChecked] = useState(false);
+  const { consents, checked, toggle, allChecked, acceptedTypes } = useConsentChecklist(user);
 
   const {
     register,
@@ -50,8 +46,6 @@ export default function OnboardingScreen() {
   });
   const passwordValue = useWatch({ control, name: 'newPassword' });
 
-  const consentBlocked = (needsGuidelines && !guidelinesChecked) || (needsSms && !smsChecked);
-
   async function onSubmit(values: FormValues) {
     setServerError(null);
     try {
@@ -59,8 +53,7 @@ export default function OnboardingScreen() {
         displayName: values.displayName,
         email: values.email,
         newPassword: values.newPassword,
-        acceptGuidelines: needsGuidelines ? guidelinesChecked : undefined,
-        acceptSms: needsSms ? smsChecked : undefined,
+        consentTypes: acceptedTypes,
       });
       const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
       void navigate(next, { replace: true });
@@ -92,48 +85,13 @@ export default function OnboardingScreen() {
           {...register('newPassword')}
           error={errors.newPassword?.message}
         />
-        {needsGuidelines ? (
-          <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
-            <input
-              type="checkbox"
-              checked={guidelinesChecked}
-              onChange={(e) => {
-                setGuidelinesChecked(e.target.checked);
-              }}
-              className="mt-1"
-            />
-            <span>
-              i have read and agree to the{' '}
-              <Link to="/guidelines" target="_blank" className="text-brand-700 underline">
-                community guidelines
-              </Link>
-            </span>
-          </label>
-        ) : null}
-        {needsSms ? (
-          <label className="text-foreground flex items-start gap-2 text-sm leading-relaxed">
-            <input
-              type="checkbox"
-              checked={smsChecked}
-              onChange={(e) => {
-                setSmsChecked(e.target.checked);
-              }}
-              className="mt-1"
-            />
-            <span>
-              i agree to the{' '}
-              <Link to="/sms-policy" target="_blank" className="text-brand-700 underline">
-                sms policy
-              </Link>
-            </span>
-          </label>
-        ) : null}
+        <ConsentChecklist consents={consents} checked={checked} onToggle={toggle} />
         {serverError ? (
           <p role="alert" className="text-destructive text-sm">
             {serverError}
           </p>
         ) : null}
-        <Button type="submit" fullWidth disabled={isSubmitting || consentBlocked}>
+        <Button type="submit" fullWidth disabled={isSubmitting || !allChecked}>
           {isSubmitting ? 'saving…' : 'continue'}
         </Button>
       </form>

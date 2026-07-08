@@ -5,6 +5,7 @@ from community._validation import Code, raise_validation
 from config.media_proxy import media_path
 from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator
 
+from users._consents import ConsentType
 from users.models import User
 from users.permissions import PermissionKey
 
@@ -222,18 +223,15 @@ class ErrorOut(BaseModel):
     detail: str
 
 
+class AcceptConsentsIn(BaseModel):
+    consent_types: list[ConsentType] = Field(default_factory=list)
+
+
 class OnboardingIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
-    # OptionalEmail (like the other schemas) so an empty-string email from the
-    # client coerces to None instead of failing EmailStr validation.
     email: OptionalEmail = None
-    # Inline consent collected during onboarding for users with no prior consent
-    # (admin-created accounts have no JoinRequest). Each flag stamps the matching
-    # *_consent_at only when True AND the user hasn't already consented — so an
-    # existing timestamp is never overwritten. Omitted/False = leave as-is.
-    accept_guidelines: bool = False
-    accept_sms: bool = False
+    consent_types: list[ConsentType] = Field(default_factory=list)
 
 
 class UserSearchOut(BaseModel):

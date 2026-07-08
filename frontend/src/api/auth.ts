@@ -3,6 +3,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 
+import type { ConsentTypeValue } from '@/models/consent';
 import type { Role, User } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 
@@ -142,23 +143,22 @@ export async function completeOnboarding(payload: {
   newPassword: string;
   displayName?: string | undefined;
   email?: string | undefined;
-  acceptGuidelines?: boolean | undefined;
-  acceptSms?: boolean | undefined;
+  consentTypes?: ConsentTypeValue[] | undefined;
 }): Promise<User> {
   const { data } = await apiClient.post<WireUser>('/api/auth/complete-onboarding/', {
     new_password: payload.newPassword,
     display_name: payload.displayName,
     email: payload.email,
-    accept_guidelines: payload.acceptGuidelines ?? false,
-    accept_sms: payload.acceptSms ?? false,
+    consent_types: payload.consentTypes ?? [],
   });
   return mapUser(data);
 }
 
-export async function acceptGuidelines(): Promise<User> {
-  // Clears the hard guidelines-consent gate. Returns the updated user so the
-  // store can drop needsGuidelinesConsent and let the gate release.
-  const { data } = await apiClient.post<WireUser>('/api/auth/accept-guidelines/');
+export async function acceptConsents(consentTypes: ConsentTypeValue[]): Promise<User> {
+  // records the given consents; accepting "guidelines" clears the hard login gate
+  const { data } = await apiClient.post<WireUser>('/api/auth/accept-consents/', {
+    consent_types: consentTypes,
+  });
   return mapUser(data);
 }
 
