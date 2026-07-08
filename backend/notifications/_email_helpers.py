@@ -1,5 +1,3 @@
-"""Helpers for sending specific transactional emails."""
-
 from dataclasses import dataclass
 
 from django.template.loader import render_to_string

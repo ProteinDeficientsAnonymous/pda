@@ -1,5 +1,3 @@
-"""Public (no-auth) non-member RSVP submission."""
-
 import logging
 
 from config.audit import audit_log
@@ -60,6 +58,8 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
 def _load_public_rsvp_event(event_id) -> Event:
     """Fetch a public-RSVP-eligible event, else 404 (every ineligible state hides as NOT_FOUND)."""
     event = Event.objects.prefetch_related("co_hosts", "invited_users").filter(id=event_id).first()
+    # OFFICIAL + PUBLIC are redundant today (official implies public); the type/visibility
+    # taxonomy needs untangling — see issue #604.
     if (
         event is None
         or event.event_type != EventType.OFFICIAL
@@ -72,20 +72,12 @@ def _load_public_rsvp_event(event_id) -> Event:
     return event
 
 
-def _reuse_phone_match(phone_match: User, email: str) -> User:
+def _backfill_email(phone_match: User, email: str) -> User:
     # Backfill the email only if blank — never overwrite an existing one.
     if email and not phone_match.email:
         phone_match.email = email
         phone_match.save(update_fields=["email"])
     return phone_match
-
-
-def _reuse_email_match(email_match: User, phone: str) -> User:
-    # Phone is required for non-members; backfill it only if somehow blank.
-    if not email_match.phone_number:
-        email_match.phone_number = phone
-        email_match.save(update_fields=["phone_number"])
-    return email_match
 
 
 def _create_non_member(name: str, email: str, phone: str) -> User:
@@ -109,10 +101,10 @@ def _create_non_member(name: str, email: str, phone: str) -> User:
 
 
 def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
+    # Same row → the phone and email belong to one user; reuse it.
     if phone_match.pk == email_match.pk:
         return phone_match
-    # Phone and email point at different rows. Phone is canonical here — reuse it
-    # and flag the ambiguity for admins.
+    # Different rows: phone is canonical — reuse it and flag the ambiguity for admins.
     audit_log(
         logging.WARNING,
         "public_rsvp_contact_ambiguous",
@@ -130,11 +122,8 @@ def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
     Must run inside the surrounding transaction.
     """
     phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
-    # iexact: stored emails aren't guaranteed lowercased, so exact could miss a member.
     email_match = (
-        User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
-        if email
-        else None
+        User.objects.filter(email=email, archived_at__isnull=True).first() if email else None
     )
 
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
@@ -143,9 +132,9 @@ def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
     if phone_match and email_match:
         return _resolve_both_match(request, phone_match, email_match)
     if phone_match:
-        return _reuse_phone_match(phone_match, email)
+        return _backfill_email(phone_match, email)
     if email_match:
-        return _reuse_email_match(email_match, phone)
+        return email_match
     return _create_non_member(name, email, phone)
 
 
