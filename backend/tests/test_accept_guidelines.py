@@ -1,9 +1,4 @@
-"""Tests for POST /api/auth/accept-consents/ — the consent-gate escape hatch.
-
-Records the consent types in the payload on the current user. Accepting
-"guidelines" stamps guidelines_consent_at, clearing the hard gate enforced by
-config.auth.GatedJWTAuth.
-"""
+"""Tests for POST /api/auth/accept-consents/."""
 
 import pytest
 from ninja_jwt.tokens import RefreshToken

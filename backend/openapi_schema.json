@@ -4441,7 +4441,7 @@
   "paths": {
     "/api/auth/accept-consents/": {
       "post": {
-        "description": "Record the consents the caller is accepting, clearing the relevant gates.\n\nRegistry-driven (see users._consents): each ConsentType in the payload stamps\nits matching *_consent_at, but only when null \u2014 an existing timestamp is never\noverwritten. Accepting GUIDELINES clears the hard login gate (see\nconfig.auth.GatedJWTAuth). New consent types slot into the registry without\ntouching this endpoint.",
+        "description": "Record the consents the caller is accepting, clearing the relevant gates.",
         "operationId": "users__auth_accept_consents",
         "parameters": [],
         "requestBody": {

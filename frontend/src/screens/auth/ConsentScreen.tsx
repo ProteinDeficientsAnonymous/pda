@@ -31,8 +31,7 @@ export default function ConsentScreen() {
   }
 
   async function onSkip() {
-    // Decline for now: drop the session and return to the landing page logged
-    // out. No half-authed state — the only way into the app is to accept.
+    // decline: drop the session and return to the landing page logged out
     setSubmitting(true);
     await logout();
     void navigate('/', { replace: true });

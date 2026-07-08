@@ -222,19 +222,13 @@ class ErrorOut(BaseModel):
 
 
 class AcceptConsentsIn(BaseModel):
-    # Which consents the user is accepting. Stamping is registry-driven and never
-    # overwrites an existing timestamp; see users._consents.
     consent_types: list[ConsentType] = Field(default_factory=list)
 
 
 class OnboardingIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
-    # OptionalEmail (like the other schemas) so an empty-string email from the
-    # client coerces to None instead of failing EmailStr validation.
     email: OptionalEmail = None
-    # Inline consent collected during onboarding for users with no prior consent
-    # (admin-created accounts have no JoinRequest). Registry-driven; see _consents.
     consent_types: list[ConsentType] = Field(default_factory=list)
 
 

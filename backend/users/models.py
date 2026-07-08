@@ -47,24 +47,8 @@ class User(AbstractUser):
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     needs_onboarding = models.BooleanField(default=False)
     onboarded_at = models.DateTimeField(null=True, blank=True)
-    # PERSISTENT USER STATE: "this person still owes us a new password." Set on
-    # consume of a self-service login link (see MagicLoginToken.requires_password_reset),
-    # read by the frontend from /me/ on every load to force a /new-password redirect,
-    # and cleared by complete_onboarding. Distinct from needs_onboarding (first-time
-    # name+password setup), which routes to /onboarding instead.
     needs_password_reset = models.BooleanField(default=False)
-    # PERSISTENT USER STATE: when this user last accepted the community guidelines
-    # and agreements. Null means they have never consented (or are being asked to
-    # re-consent) — surfaced on /me/ as needs_guidelines_consent and enforced as a
-    # hard gate (see config.auth.GatedJWTAuth). Stamped by POST /accept-consents/.
-    # Deliberately NOT backfilled: everyone, admins included, must re-consent.
     guidelines_consent_at = models.DateTimeField(null=True, blank=True)
-    # PERSISTENT USER STATE: when this user last accepted the SMS messaging
-    # policy. Null means they have never consented. Mirrors guidelines_consent_at
-    # and is surfaced on /me/ as needs_sms_consent, but — unlike guidelines — is
-    # NOT a hard gate (see config.auth.GatedJWTAuth): we record SMS consent, we
-    # do not lock legacy users out for lacking it. Carried from JoinRequest on
-    # approval, or stamped by complete_onboarding when collected inline.
     sms_consent_at = models.DateTimeField(null=True, blank=True)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")

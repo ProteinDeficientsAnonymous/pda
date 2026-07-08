@@ -98,7 +98,6 @@ describe('ConsentScreen', () => {
     );
     const continueBtn = screen.getByRole('button', { name: /continue/i });
     expect(continueBtn).toBeDisabled();
-    // Ticking only guidelines is not enough — sms is still required.
     await userEvent.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
     expect(continueBtn).toBeDisabled();
     await userEvent.click(screen.getByRole('checkbox', { name: /sms policy/i }));

@@ -412,14 +412,7 @@ def complete_onboarding(request, payload: OnboardingIn):
 @router.post("/accept-consents/", response={200: UserOut}, auth=gated_jwt)
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def accept_consents(request, payload: AcceptConsentsIn):
-    """Record the consents the caller is accepting, clearing the relevant gates.
-
-    Registry-driven (see users._consents): each ConsentType in the payload stamps
-    its matching *_consent_at, but only when null — an existing timestamp is never
-    overwritten. Accepting GUIDELINES clears the hard login gate (see
-    config.auth.GatedJWTAuth). New consent types slot into the registry without
-    touching this endpoint.
-    """
+    """Record the consents the caller is accepting, clearing the relevant gates."""
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     changed = stamp_consents(user, payload.consent_types)
     if changed:

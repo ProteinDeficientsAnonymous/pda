@@ -16,12 +16,6 @@ export interface paths {
         /**
          * Accept Consents
          * @description Record the consents the caller is accepting, clearing the relevant gates.
-         *
-         *     Registry-driven (see users._consents): each ConsentType in the payload stamps
-         *     its matching *_consent_at, but only when null — an existing timestamp is never
-         *     overwritten. Accepting GUIDELINES clears the hard login gate (see
-         *     config.auth.GatedJWTAuth). New consent types slot into the registry without
-         *     touching this endpoint.
          */
         post: operations["users__auth_accept_consents"];
         delete?: never;
