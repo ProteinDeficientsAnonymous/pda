@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { type ConsentTypeValue,missingConsents } from '@/models/consent';
+import { type ConsentTypeValue, missingConsents } from '@/models/consent';
 import type { User } from '@/models/user';
 
 // Shared state for the consent checkboxes: which consents are still outstanding
