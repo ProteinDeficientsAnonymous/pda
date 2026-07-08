@@ -1,14 +1,3 @@
-"""Join-flow integration: non-member attach on submit + promotion on approval.
-
-Covers issue #495 (epic #490 stage 5):
-  - phone OR email matching a member → 409 ALREADY_MEMBER
-  - phone OR email matching a non-member → JoinRequest attaches to that User
-  - approval promotes the linked non-member in place (is_member flips True, no
-    new User, outstanding RSVP tokens revoked, onboarding path runs)
-  - linked User deleted between submit and approve → falls back to create-new
-  - attached_user_official_rsvp_count surfaces prior official RSVPs
-"""
-
 from datetime import timedelta
 
 import pytest

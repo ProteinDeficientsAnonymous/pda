@@ -249,8 +249,7 @@
       "CheckPhoneOut": {
         "properties": {
           "status": {
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/CheckPhoneStatus"
           }
         },
         "required": [
@@ -258,6 +257,15 @@
         ],
         "title": "CheckPhoneOut",
         "type": "object"
+      },
+      "CheckPhoneStatus": {
+        "enum": [
+          "member",
+          "pending",
+          "unknown"
+        ],
+        "title": "CheckPhoneStatus",
+        "type": "string"
       },
       "CommentBodyIn": {
         "properties": {

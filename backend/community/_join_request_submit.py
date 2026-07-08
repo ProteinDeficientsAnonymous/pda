@@ -1,6 +1,7 @@
 """Public join-request submission and phone-check endpoints (unauthenticated)."""
 
 import logging
+from enum import StrEnum
 
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
@@ -59,8 +60,14 @@ class JoinRequestIn(BaseModel):
         return v
 
 
+class CheckPhoneStatus(StrEnum):
+    MEMBER = "member"
+    PENDING = "pending"
+    UNKNOWN = "unknown"
+
+
 class CheckPhoneOut(BaseModel):
-    status: str  # "member" | "pending" | "unknown"
+    status: CheckPhoneStatus
 
 
 class CheckPhoneIn(BaseModel):
@@ -264,11 +271,11 @@ def check_phone(request, payload: CheckPhoneIn):
     try:
         normalized = _validate_phone(payload.phone_number)
     except ValidationException:
-        return Status(200, CheckPhoneOut(status="unknown"))
+        return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
     if User.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
-        return Status(200, CheckPhoneOut(status="member"))
+        return Status(200, CheckPhoneOut(status=CheckPhoneStatus.MEMBER))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING
     ).exists():
-        return Status(200, CheckPhoneOut(status="pending"))
-    return Status(200, CheckPhoneOut(status="unknown"))
+        return Status(200, CheckPhoneOut(status=CheckPhoneStatus.PENDING))
+    return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))

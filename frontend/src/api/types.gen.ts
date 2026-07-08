@@ -1655,9 +1655,13 @@ export interface components {
         };
         /** CheckPhoneOut */
         CheckPhoneOut: {
-            /** Status */
-            status: string;
+            status: components["schemas"]["CheckPhoneStatus"];
         };
+        /**
+         * CheckPhoneStatus
+         * @enum {string}
+         */
+        CheckPhoneStatus: "member" | "pending" | "unknown";
         /** CommentBodyIn */
         CommentBodyIn: {
             /** Body */

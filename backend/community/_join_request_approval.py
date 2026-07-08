@@ -62,11 +62,14 @@ def _promote_non_member(user, join_request):
     return _create_magic_token(user)
 
 
-def _provision_approved_user(join_request, requesting_user):
+def _provision_approved_user(join_request, requesting_user) -> tuple[str | None, bool]:
     """Create, reactivate, or promote the user for an approved join request.
 
-    Returns (magic_token, user_created). When the phone number already maps to an
-    active member, nothing is provisioned and (None, False) is returned.
+    Returns ``(magic_token, user_created)``: the one-time login token and whether
+    a brand-new User row was created. A promoted non-member or reactivated
+    archived user returns a token with ``user_created`` reflecting whether the
+    row is new. When the phone already maps to an active member, nothing is
+    provisioned and ``(None, False)`` is returned.
     """
     # A linked non-member is promoted in place; SET_NULL FK means a deleted user falls through.
     if join_request.user is not None and not join_request.user.is_member:

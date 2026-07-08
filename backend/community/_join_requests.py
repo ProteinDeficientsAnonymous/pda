@@ -1,8 +1,3 @@
-"""Admin-side join request management: list, approve/reject, unreject.
-
-Public submission + phone-check endpoints live in ``_join_request_submit.py``.
-"""
-
 import logging
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -74,29 +69,32 @@ class ApproveJoinRequestOut(BaseModel):
     user_id: str | None = None
 
 
+def _official_rsvp_count(jr: JoinRequest) -> int:
+    # The list endpoint annotates this to avoid an N+1; single-row callers have
+    # no annotation and fall back to a direct count.
+    annotated = getattr(jr, "official_rsvp_count", None)
+    if annotated is not None:
+        return annotated
+    if not jr.user_id:
+        return 0
+    return EventRSVP.objects.filter(
+        user_id=jr.user_id, event__event_type=EventType.OFFICIAL
+    ).count()
+
+
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
         for qid, data in (jr.custom_answers or {}).items()
     ]
-    # Prefer the FK so user_id/onboarded_at stay consistent with the RSVP count
-    # for email-matched links (where the linked user's phone differs from the
-    # request's); fall back to the phone match for unlinked create/reactivate rows.
-    user = jr.user or User.objects.filter(phone_number=jr.phone_number).first()
-    previously_archived = bool(
-        User.objects.filter(phone_number=jr.phone_number, archived_at__isnull=False).exists()
-    )
-    # The list endpoint annotates this to avoid an N+1 count; single-row callers
-    # have no annotation, so fall back to a direct count.
-    annotated = getattr(jr, "official_rsvp_count", None)
-    if annotated is not None:
-        official_rsvp_count = annotated
-    elif jr.user_id:
-        official_rsvp_count = EventRSVP.objects.filter(
-            user_id=jr.user_id, event__event_type=EventType.OFFICIAL
-        ).count()
-    else:
-        official_rsvp_count = 0
+    phone_user = User.objects.filter(phone_number=jr.phone_number).first()
+    # Prefer the FK (email-matched links can point at a user whose phone differs
+    # from the request's); fall back to the phone match for create/reactivate rows.
+    user = jr.user or phone_user
+    # A prior archived account on this phone means a former member is re-applying,
+    # which the admin list badges so approval can be handled accordingly.
+    previously_archived = phone_user is not None and phone_user.archived_at is not None
+    official_rsvp_count = _official_rsvp_count(jr)
     return JoinRequestOut(
         id=str(jr.id),
         display_name=jr.display_name,

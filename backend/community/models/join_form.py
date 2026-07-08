@@ -33,7 +33,6 @@ class JoinRequest(models.Model):
     display_name = models.CharField(max_length=64)
     phone_number = models.CharField(max_length=20)
     email = models.EmailField(blank=True, default="")
-    # Links a public-RSVP non-member so approval promotes that row in place; SET_NULL keeps the request if the user is deleted.
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
