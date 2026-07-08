@@ -80,9 +80,7 @@
       "AttendanceIn": {
         "properties": {
           "attendance": {
-            "maxLength": 20,
-            "title": "Attendance",
-            "type": "string"
+            "$ref": "#/components/schemas/AttendanceStatus"
           }
         },
         "required": [
@@ -90,6 +88,15 @@
         ],
         "title": "AttendanceIn",
         "type": "object"
+      },
+      "AttendanceStatus": {
+        "enum": [
+          "unknown",
+          "attended",
+          "no_show"
+        ],
+        "title": "AttendanceStatus",
+        "type": "string"
       },
       "BulkUserCreateIn": {
         "properties": {
@@ -3454,9 +3461,7 @@
             "type": "boolean"
           },
           "status": {
-            "maxLength": 20,
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/RSVPStatus"
           }
         },
         "required": [
@@ -3464,6 +3469,16 @@
         ],
         "title": "RSVPIn",
         "type": "object"
+      },
+      "RSVPStatus": {
+        "enum": [
+          "attending",
+          "maybe",
+          "cant_go",
+          "waitlisted"
+        ],
+        "title": "RSVPStatus",
+        "type": "string"
       },
       "ReactionToggleIn": {
         "properties": {

@@ -15,6 +15,7 @@ from community.models import (
     EventType,
     InvitePermission,
     PageVisibility,
+    RSVPStatus,
 )
 
 # Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
@@ -249,7 +250,7 @@ class EventOut(BaseModel):
 
 
 class RSVPIn(BaseModel):
-    status: str = Field(max_length=FieldLimit.CHOICE)
+    status: RSVPStatus
     has_plus_one: bool = False
 
 
@@ -281,19 +282,7 @@ class EventStatsOut(BaseModel):
 
 
 class AttendanceIn(BaseModel):
-    attendance: str = Field(max_length=FieldLimit.CHOICE)
-
-    @field_validator("attendance")
-    @classmethod
-    def validate_attendance(cls, v: str) -> str:
-        valid = {AttendanceStatus.UNKNOWN, AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW}
-        if v not in valid:
-            raise_validation(
-                Code.Event.ATTENDANCE_INVALID_CHOICE,
-                field="attendance",
-                allowed=sorted(valid),
-            )
-        return v
+    attendance: AttendanceStatus
 
 
 class EventIn(BaseModel):

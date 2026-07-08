@@ -121,13 +121,14 @@ class TestRSVP:
         assert response.json()["my_rsvp"] == RSVPStatus.CANT_GO
 
     def test_rsvp_invalid_status(self, api_client, auth_headers, rsvp_event):
+        # "going" is not an RSVPStatus member, so Pydantic rejects it at parse time (422).
         response = api_client.post(
             f"/api/community/events/{rsvp_event.id}/rsvp/",
             {"status": "going"},
             content_type="application/json",
             **auth_headers,
         )
-        assert response.status_code == 400
+        assert response.status_code == 422
 
     def test_rsvp_disabled_event(self, api_client, auth_headers, no_rsvp_event):
         response = api_client.post(
