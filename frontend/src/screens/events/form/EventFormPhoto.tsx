@@ -144,65 +144,83 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
         aria-label="choose event photo"
       />
 
-      <button
-        type="button"
-        onClick={open}
-        onDragEnter={onDragEnter}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        onDrop={onDrop}
-        disabled={locked}
-        aria-label={hasPhoto ? 'change cover photo' : 'add a cover photo'}
+      {/* group wraps the banner + overlay controls so hover/focus on either
+          reveals the pills. the banner is a <button>, so the "remove photo"
+          control must be a sibling overlay (a button can't nest a button). */}
+      <div
         className={cn(
-          'group relative overflow-hidden rounded-[var(--radius-md)]',
-          'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
-          hasPhoto
-            ? 'mx-auto block w-auto max-w-full'
-            : 'border-brand-200 bg-brand-50 aspect-video w-full border-2 border-dashed',
-          dragOver && 'border-brand-500 ring-brand-300 ring-2',
-          locked && 'cursor-not-allowed opacity-60',
+          'group relative',
+          hasPhoto ? 'mx-auto block w-auto max-w-full' : 'w-full',
         )}
       >
-        {hasPhoto ? (
-          <>
-            <img src={displayUrl} alt="" className="mx-auto block max-h-[70vh] w-auto max-w-full" />
-            <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-              <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
-                change photo
+        <button
+          type="button"
+          onClick={open}
+          onDragEnter={onDragEnter}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          disabled={locked}
+          aria-label={hasPhoto ? 'change cover photo' : 'add a cover photo'}
+          className={cn(
+            'relative block w-full overflow-hidden rounded-[var(--radius-md)]',
+            'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
+            hasPhoto
+              ? 'w-auto max-w-full'
+              : 'border-brand-200 bg-brand-50 aspect-video border-2 border-dashed',
+            dragOver && 'border-brand-500 ring-brand-300 ring-2',
+            locked && 'cursor-not-allowed opacity-60',
+          )}
+        >
+          {hasPhoto ? (
+            <>
+              <img
+                src={displayUrl}
+                alt=""
+                className="mx-auto block max-h-[70vh] w-auto max-w-full"
+              />
+              <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
+                  change photo
+                </span>
+              </div>
+            </>
+          ) : (
+            <span className="text-brand-700 absolute inset-0 flex flex-col items-center justify-center gap-2">
+              <span aria-hidden="true" className="text-3xl">
+                📸
               </span>
-            </div>
-          </>
-        ) : (
-          <span className="text-brand-700 absolute inset-0 flex flex-col items-center justify-center gap-2">
-            <span aria-hidden="true" className="text-3xl">
-              📸
+              <span className="text-sm font-medium">add a cover photo</span>
+              <span className="text-brand-600/80 text-xs">tap or drop a photo</span>
             </span>
-            <span className="text-sm font-medium">add a cover photo</span>
-            <span className="text-brand-600/80 text-xs">tap or drop a photo</span>
-          </span>
-        )}
-        {dragOver ? (
-          <div
-            aria-hidden="true"
-            className="bg-brand-50/90 text-brand-700 pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-medium"
-          >
-            drop to use this photo
-          </div>
-        ) : null}
-      </button>
+          )}
+          {dragOver ? (
+            <div
+              aria-hidden="true"
+              className="bg-brand-50/90 text-brand-700 pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-medium"
+            >
+              drop to use this photo
+            </div>
+          ) : null}
+        </button>
 
-      {hasPhoto && onDelete ? (
-        <div className="flex justify-end">
+        {hasPhoto && onDelete ? (
           <button
             type="button"
             onClick={(e) => void handleDelete(e)}
             disabled={locked}
-            className="text-muted hover:text-destructive text-xs underline decoration-dotted disabled:cursor-not-allowed"
+            aria-label="remove cover photo"
+            className={cn(
+              'text-destructive absolute top-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium',
+              'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100',
+              'focus-visible:ring-destructive focus-visible:ring-2 focus-visible:outline-none',
+              'disabled:cursor-not-allowed disabled:opacity-60',
+            )}
           >
             remove photo
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       {error ? (
         <p role="alert" className="text-destructive text-xs">
