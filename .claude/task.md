@@ -1,18 +1,20 @@
-# Task — issue #525
-**Goal:** feat(public-rsvp): enforce non-members never hold a role + trustworthy role counts
+# Task — issue #588
+**Goal:** Add CLAUDE.md rule: avoid verbose comments, only comment when code doesn't explain itself
 **Source:** label
-**Labels:** backend,RSVP & Attendance,auto
-**Acceptance criteria:** see issue #525 body.
+**Labels:** auto,chore,p2
+**Acceptance criteria:** see issue #588 body.
 
 ## Pipeline stage
 done
 
 ## Restart count
-1
+0
 
 ## Progress log
 - dispatched
-- work: added m2m_changed pre_add guard (reject_role_for_non_member) on User.roles.through; added is_member=True to list_roles/delete_role counts; added TestNonMemberCannotHoldRole
-- review: code-reviewer clean (no high); applied medium fixes (docstring note + member-swap/reverse-set tests). 23 tests pass.
-- ci: backend make agent-ci passed (1026 tests, typecheck, complexity, schema); frontend lint/format/typecheck/types-check clean after pnpm install
-- PR: https://github.com/ProteinDeficientsAnonymous/pda/pull/557 (draft)
+- pickup: read task + issue #588; no `explore` label -> implement pipeline
+- triage: actionable as scoped; add `### comments` rule under `## Standards` in CLAUDE.md
+- work: added comments rule (no verbose/redundant comments; comment only non-obvious why; no what-restating; no multi-line blocks)
+- review: code-reviewer subagent round 1 -> no high/medium findings; clean
+- ci: backend green (1032 passed, ty, complexity, schemas); frontend green in isolation (JoinScreen timeouts were machine-contention flakes, pass 10/10 alone); change is doc-only
+- pr: opened draft PR #591 (https://github.com/ProteinDeficientsAnonymous/pda/pull/591)
