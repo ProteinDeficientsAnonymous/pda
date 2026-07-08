@@ -123,10 +123,7 @@ class TestRSVP:
         assert response.json()["my_rsvp"] == RSVPStatus.CANT_GO
 
     def test_rsvp_invalid_status(self, api_client, auth_headers, rsvp_event):
-        # "going" is not a member of the RSVPStatus enum, so Pydantic rejects it
-        # at request-parse time (422) before the endpoint's status guard runs.
-        # A *valid-but-forbidden* value (waitlisted) is what the 400 guard
-        # covers — see test_cannot_set_waitlisted_directly.
+        # "going" is not an RSVPStatus member, so Pydantic rejects it at parse time (422).
         response = api_client.post(
             f"/api/community/events/{rsvp_event.id}/rsvp/",
             {"status": "going"},

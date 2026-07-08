@@ -241,10 +241,6 @@ class EventOut(BaseModel):
 
 
 class RSVPIn(BaseModel):
-    # Typed by the enum so Pydantic rejects unknown values up front. Note this
-    # accepts ``waitlisted`` (a valid enum member) — the upsert endpoint's
-    # ``_validate_rsvp_status`` guard still rejects member-supplied waitlisting,
-    # which is system-assigned only.
     status: RSVPStatus
     has_plus_one: bool = False
 
@@ -269,8 +265,6 @@ class EventStatsOut(BaseModel):
 
 
 class AttendanceIn(BaseModel):
-    # The enum's three members are exactly the previously hand-validated set,
-    # so typing the field replaces the manual choice check entirely.
     attendance: AttendanceStatus
 
 
