@@ -232,6 +232,10 @@ class EventOut(BaseModel):
     invited_user_ids: list[str] = []
     invited_user_names: list[str] = []
     invited_user_photo_urls: list[str] = []
+    # Parallel to the ids/names arrays. Only populated when the requester can
+    # see phones (creator/co-host); everyone else gets None entries so the
+    # array length still lines up with the other invited_* arrays.
+    invited_user_phones: list[str | None] = []
     invite_permission: str = InvitePermission.ALL_MEMBERS
     is_past: bool = False
     status: str = "active"

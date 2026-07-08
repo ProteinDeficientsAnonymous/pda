@@ -1473,6 +1473,21 @@
             "title": "Invited User Names",
             "type": "array"
           },
+          "invited_user_phones": {
+            "default": [],
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Invited User Phones",
+            "type": "array"
+          },
           "invited_user_photo_urls": {
             "default": [],
             "items": {

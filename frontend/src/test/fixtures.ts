@@ -69,6 +69,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     invitedUserIds: [],
     invitedUserNames: [],
     invitedUserPhotoUrls: [],
+    invitedUserPhones: [],
     invitePermission: InvitePermission.AllMembers,
     pendingCohostInvites: [],
     myPendingCohostInviteId: null,

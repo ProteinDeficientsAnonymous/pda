@@ -2272,6 +2272,11 @@ export interface components {
              */
             invited_user_names: string[];
             /**
+             * Invited User Phones
+             * @default []
+             */
+            invited_user_phones: (string | null)[];
+            /**
              * Invited User Photo Urls
              * @default []
              */

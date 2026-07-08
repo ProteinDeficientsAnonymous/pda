@@ -1,62 +1,42 @@
-// Host-only "group text" action (see #500): mobile opens a group thread, desktop
-// copies the list.
+// Host-only "group text" trigger (see #500). Opens a dialog to pick which
+// rsvp groups to message; the dialog handles copy (desktop) / sms: (mobile).
 
-import { toast } from 'sonner';
+import { useState } from 'react';
 import type { Event } from '@/models/event';
-import { buildSmsUri, collectRecipients, isSmsSupported } from '@/utils/groupText';
+import { availableGroups } from '@/utils/groupText';
+import { GroupTextDialog } from './GroupTextDialog';
 
 interface Props {
   event: Event;
 }
 
-function skippedNote(count: number): string {
-  const subject = count === 1 ? 'attendee has' : 'attendees have';
-  return `${String(count)} ${subject} no number and weren't included`;
-}
-
 export function GroupTextButton({ event }: Props) {
-  const { phones, skippedCount } = collectRecipients(event.guests);
-  const smsSupported = isSmsSupported();
+  const [open, setOpen] = useState(false);
 
-  function handleClick() {
-    if (phones.length === 0) {
-      toast.error('no attendee phone numbers to text');
-      return;
-    }
-
-    if (smsSupported) {
-      const uri = buildSmsUri(phones);
-      if (uri) window.location.href = uri;
-      if (skippedCount > 0) toast.info(skippedNote(skippedCount));
-      return;
-    }
-
-    void navigator.clipboard
-      .writeText(phones.join(', '))
-      .then(() => {
-        const note = skippedCount > 0 ? ` — ${skippedNote(skippedCount)}` : '';
-        toast.success(`copied ${String(phones.length)} numbers${note}`);
-      })
-      .catch(() => {
-        toast.error("couldn't copy — try again");
-      });
-  }
-
-  const label = smsSupported ? 'text attendees' : 'copy attendee numbers';
-  const disabled = phones.length === 0;
+  // Nothing to text if no group has a reachable number.
+  if (availableGroups(event).length === 0) return null;
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={disabled}
-      aria-label={label}
-      title={disabled ? 'no attendee phone numbers to text' : label}
-      className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 hover:text-foreground inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      <MessageIcon />
-      {label}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(true);
+        }}
+        aria-label="group text"
+        className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 hover:text-foreground inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors"
+      >
+        <MessageIcon />
+        group text
+      </button>
+      <GroupTextDialog
+        event={event}
+        open={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      />
+    </>
   );
 }
 

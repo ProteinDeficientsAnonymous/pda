@@ -331,6 +331,50 @@ class TestInviteOnlyVisibility:
         assert response.status_code == 200
         assert b"Exclusive Hangout" in response.content
 
+    def test_invited_phones_visible_to_creator(self, api_client):
+        creator = self._make_user("+12025550230", "Creator30")
+        invited = self._make_user("+12025550231", "Invited30")
+        event = self._make_invite_only_event(creator, invited_user=invited)
+
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **self._auth_headers(creator)
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["invited_user_ids"] == [str(invited.id)]
+        assert body["invited_user_phones"] == [invited.phone_number]
+
+    def test_invited_phones_visible_to_co_host(self, api_client):
+        creator = self._make_user("+12025550232", "Creator32")
+        co_host = self._make_user("+12025550233", "CoHost32")
+        invited = self._make_user("+12025550234", "Invited32")
+        event = self._make_invite_only_event(
+            creator, co_host=co_host, invited_user=invited
+        )
+
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **self._auth_headers(co_host)
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["invited_user_ids"] == [str(invited.id)]
+        assert body["invited_user_phones"] == [invited.phone_number]
+
+    def test_invited_phones_hidden_from_non_privileged_invitee(self, api_client):
+        creator = self._make_user("+12025550235", "Creator35")
+        invited = self._make_user("+12025550236", "Invited35")
+        event = self._make_invite_only_event(creator, invited_user=invited)
+
+        # A plain invited member is neither creator nor co-host, so the whole
+        # invited list (and therefore its phones) is withheld from them.
+        response = api_client.get(
+            f"/api/community/events/{event.id}/", **self._auth_headers(invited)
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["invited_user_ids"] == []
+        assert body["invited_user_phones"] == []
+
 
 @pytest.mark.django_db
 class TestOfficialEventVisibility:

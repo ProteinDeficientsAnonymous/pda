@@ -58,6 +58,7 @@ export interface WireEvent {
   invited_user_ids?: string[];
   invited_user_names?: string[];
   invited_user_photo_urls?: string[];
+  invited_user_phones?: (string | null)[];
   invite_permission?: string;
 
   pending_cohost_invites?: WirePendingCohostInvite[];
@@ -152,6 +153,7 @@ export function mapEvent(e: WireEvent): Event {
     invitedUserIds: e.invited_user_ids ?? [],
     invitedUserNames: e.invited_user_names ?? [],
     invitedUserPhotoUrls: e.invited_user_photo_urls ?? [],
+    invitedUserPhones: e.invited_user_phones ?? [],
     invitePermission: e.invite_permission ?? 'all_members',
 
     pendingCohostInvites: (e.pending_cohost_invites ?? []).map(mapPendingCohostInvite),
