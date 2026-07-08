@@ -1,6 +1,3 @@
-// Maps a notification to the in-app route it should open when clicked. Shared by
-// the bell dropdown and the full notifications page so both navigate alike.
-
 import { type AppNotification, NotificationType } from '@/models/notification';
 
 export function notificationTarget(n: AppNotification): string | null {

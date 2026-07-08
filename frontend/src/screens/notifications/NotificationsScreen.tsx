@@ -1,7 +1,3 @@
-// Full notification history — the "see more" destination from the bell dropdown.
-// Pages through the complete list with "load more"; the bell only shows the 10
-// most recent.
-
 import { useMarkNotificationRead, useNotificationHistory } from '@/api/notifications';
 import { Button } from '@/components/ui/Button';
 import { NotificationRow } from '@/layout/NotificationRow';

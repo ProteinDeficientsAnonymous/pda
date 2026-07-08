@@ -1,7 +1,3 @@
-// A single notification line — unread dot + message, navigates to the related
-// resource on click and marks itself read. Shared by the bell dropdown and the
-// full notifications page.
-
 import { useNavigate } from 'react-router-dom';
 
 import { type AppNotification } from '@/models/notification';
@@ -16,7 +12,6 @@ export function NotificationRow({
 }: {
   n: AppNotification;
   onMarkRead: () => void;
-  // Runs after navigation is queued — the dropdown closes itself here.
   onActivate?: () => void;
 }) {
   const navigate = useNavigate();

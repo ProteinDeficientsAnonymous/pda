@@ -1,8 +1,3 @@
-// Bell + unread-count badge + dropdown sheet of notifications. Subscribes to
-// SSE when authed — server pushes `notification` events that trigger a
-// count refetch. Polling is a fallback (30s when SSE is disconnected, 5 min
-// when connected).
-
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';

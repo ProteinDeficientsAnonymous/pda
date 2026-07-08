@@ -11,9 +11,7 @@ from notifications.schemas import NotificationOut, UnreadCountOut
 
 router = Router()
 
-# Upper bound on a single list page. The bell asks for the 10 most recent; the
-# full notifications page pages through with limit/offset. Capped so a caller
-# can't ask for an unbounded slab in one request.
+# Cap a single list page so callers can't request an unbounded slab.
 MAX_LIST_LIMIT = 50
 DEFAULT_LIST_LIMIT = 30
 
