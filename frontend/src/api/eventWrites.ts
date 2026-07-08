@@ -5,20 +5,22 @@
 // dedicated error so the UI can show a sane message.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from './client';
-import { extractApiErrorOr, getApiStatus } from './apiErrors';
+
 import { useAuthStore } from '@/auth/store';
-import { eventKeys } from './events';
-import { mapEvent, type WireEvent } from './eventMapper';
 import {
+  type Event,
   EventStatus as EventStatusEnum,
   EventType as EventTypeEnum,
   EventVisibility,
   InvitePermission,
-  type Event,
 } from '@/models/event';
 import { reportError } from '@/utils/errorReporter';
 import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/paymentHandle';
+
+import { extractApiErrorOr, getApiStatus } from './apiErrors';
+import { apiClient } from './client';
+import { mapEvent, type WireEvent } from './eventMapper';
+import { eventKeys } from './events';
 
 const ROUTE = '/events';
 

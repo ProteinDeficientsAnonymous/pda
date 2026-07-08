@@ -1,22 +1,25 @@
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+
 import { addDays, format as dfFormat, startOfWeek } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Calendar, type View } from 'react-big-calendar';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useNavigate } from 'react-router-dom';
+
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { useIsWideScreen } from '@/hooks/useResponsive';
-import { eventClass, type Event as PdaEvent } from '@/models/event';
+import { type Event as PdaEvent,eventClass } from '@/models/event';
+
+import { AgendaList } from './AgendaList';
+import { makeLocalizer } from './calendarLocalizer';
 import { CalendarTagFilter } from './CalendarTagFilter';
 import { CalendarToolbar } from './CalendarToolbar';
-import { makeLocalizer } from './calendarLocalizer';
-import { AgendaList } from './AgendaList';
 import { DayEventList } from './DayEventList';
 import { NarrowWeekView } from './NarrowWeekView';
-import { WideWeekView } from './WideWeekView';
 import { TodayIconButton } from './TodayIconButton';
 import type { BigCalEvent } from './types';
 import { ViewSwitcher } from './ViewSwitcher';
+import { WideWeekView } from './WideWeekView';
 
 function toBigCalEvent(e: PdaEvent): BigCalEvent | null {
   // TBD events have no date — skip them on the calendar.

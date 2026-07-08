@@ -1,9 +1,8 @@
-// Event tags API — the curated, admin-managed tag set. Public endpoint, so it
-// works for both authed and unauthed callers (calendar filtering + display).
-
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from './client';
+
 import type { EventTag } from '@/models/event';
+
+import { apiClient } from './client';
 
 interface WireTag {
   id: string;

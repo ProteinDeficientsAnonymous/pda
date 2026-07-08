@@ -1,7 +1,8 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { fireEvent,render, screen } from '@testing-library/react';
+import React from 'react';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { Event, EventStats } from '@/models/event';
 import {
   AttendanceStatus,
@@ -20,6 +21,7 @@ vi.mock('@/api/eventStats', () => ({
 }));
 
 import { useEventStats } from '@/api/eventStats';
+
 import { EventAttendancePanel } from './EventAttendancePanel';
 
 const BASE_EVENT: Event = {

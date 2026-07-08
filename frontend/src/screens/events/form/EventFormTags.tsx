@@ -1,7 +1,3 @@
-// "tags" section — toggle chips for the curated, admin-managed tag set.
-// Rendered inside a CollapsibleCard by the parent form; this component only
-// owns the body layout. Selecting a chip toggles its id in `values.tagIds`.
-
 import { useEventTags } from '@/api/eventTags';
 import type { EventFormValues } from '@/api/eventWrites';
 

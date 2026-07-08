@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect,it } from 'vitest';
+
 import type { EventTag } from '@/models/event';
+
 import { EventTagChips } from './EventTagChips';
 
 const TAGS: EventTag[] = [

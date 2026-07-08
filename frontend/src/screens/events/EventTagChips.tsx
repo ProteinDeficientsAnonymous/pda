@@ -1,7 +1,3 @@
-// Read-only display of an event's tags as a row of neutral chips.
-// Neutral styling (no color-coding) keeps it color-blind safe — the tag name
-// itself carries the meaning. Renders nothing when there are no tags.
-
 import type { EventTag } from '@/models/event';
 
 interface Props {

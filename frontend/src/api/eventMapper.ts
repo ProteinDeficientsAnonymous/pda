@@ -1,6 +1,3 @@
-// Wire (snake_case, ISO strings) → Event (camelCase, Date objects) mapper.
-// Kept separate from events.ts so the caller module stays ≤150 lines.
-
 import type {
   AttendanceStatusValue,
   Event,

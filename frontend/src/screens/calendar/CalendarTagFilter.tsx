@@ -1,7 +1,3 @@
-// Tag filter for the calendar — a row of toggle chips. An event matches when it
-// carries any selected tag (OR semantics). Renders nothing while tags are
-// loading or when the curated set is empty, so the calendar isn't cluttered.
-
 import { useEventTags } from '@/api/eventTags';
 
 interface Props {

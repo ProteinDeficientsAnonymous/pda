@@ -1,14 +1,16 @@
 // Pure-helper tests for the event write layer: enum-coercion on the inbound
 // side (eventToFormValues) and per-field PATCH body building (toPartialWireBody).
-import { describe, it, expect } from 'vitest';
-import { eventToFormValues, toPartialWireBody } from './eventWrites';
+import { describe, expect,it } from 'vitest';
+
 import {
+  type Event,
   EventStatus,
   EventType,
   EventVisibility,
   InvitePermission,
-  type Event,
 } from '@/models/event';
+
+import { eventToFormValues, toPartialWireBody } from './eventWrites';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
