@@ -1,22 +1,3 @@
-"""Machine-readable validation errors.
-
-Validators raise ``ValidationException(code, field, params?)`` instead of
-``ValueError("free text")``. The global Ninja handler (see
-``config/validation_handlers.py``) catches both ``ValidationException`` and
-Ninja's wrapped Pydantic errors and reshapes them to
-``{ detail: [{code, field, params?}, ...] }`` so the frontend owns UI copy.
-
-Code strings are part of the API contract — **never rename** once shipped.
-Organize codes under ``Code.<Domain>.<NAME>``; the frontend mirrors this.
-
-Adding a new code:
-  1. Add a constant under the right ``Code.<Domain>`` class.
-  2. ``raise_validation(Code.Domain.NAME, field="foo")`` (or
-     ``raise ValidationException(...)`` if you need custom args).
-  3. Add a ``case`` in the frontend's ``validationCodes.ts``
-     ``messageForCode()``.
-"""
-
 from typing import Any, NoReturn
 
 

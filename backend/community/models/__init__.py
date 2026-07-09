@@ -1,8 +1,3 @@
-"""Community models package — re-exports all symbols from sub-modules.
-
-All existing ``from community.models import X`` imports continue to work unchanged.
-"""
-
 from community.models.choices import (
     AttendanceStatus,
     CoHostInviteStatus,

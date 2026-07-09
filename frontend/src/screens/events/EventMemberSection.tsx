@@ -1,7 +1,3 @@
-// The authed branch of the event detail. Renders the sections that the
-// backend gates behind auth: hosts, location, links, cost, invite, rsvp,
-// plus the admin actions card for the event's creator / co-hosts / managers.
-
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';

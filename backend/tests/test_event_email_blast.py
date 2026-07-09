@@ -1,10 +1,3 @@
-"""Tests for the host email-blast endpoint (issue #499).
-
-Hosts/co-hosts email everyone who RSVP'd to their event. Default audience is
-every RSVP status (including ``can't go``). Sends individually so addresses are
-never shared; one bad send doesn't abort the batch.
-"""
-
 import logging
 
 import pytest

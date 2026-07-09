@@ -1,5 +1,3 @@
-"""Host email-blast endpoint — email everyone who RSVP'd to an event."""
-
 import logging
 from uuid import UUID
 

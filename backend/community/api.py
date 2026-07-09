@@ -1,5 +1,3 @@
-"""Community API — thin composer that mounts all domain sub-routers."""
-
 from ninja import Router
 
 from community._calendar import router as calendar_router

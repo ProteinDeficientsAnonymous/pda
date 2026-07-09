@@ -1,20 +1,3 @@
-// UI copy for machine-readable validation errors.
-//
-// Backend raises ValidationException(code, field, params?) and a global Ninja
-// handler reshapes those (plus Pydantic errors) into
-// { detail: [{ code, field, params? }, ...] }.
-//
-// The `Code` tree and `ValidationCode` union are generated from the backend
-// (see validationCodes.gen.ts). This file owns the UI copy for each code and
-// re-exports `Code` with an added FE-only `Generic` namespace for the
-// Pydantic-shape codes the handler emits.
-//
-// Adding a code:
-//   1. Add the constant in backend/community/_validation.py.
-//   2. Run `make generate-codes` (regenerates validationCodes.gen.ts).
-//   3. Add a `case` in messageForKnownCode() below — TS will fail the build
-//      until every generated code has a case.
-
 import { Code as GeneratedCode, type ValidationCode } from './validationCodes.gen';
 
 /**

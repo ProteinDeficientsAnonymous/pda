@@ -1,6 +1,3 @@
-// Admin actions for events: edit, publish (drafts), cancel, delete.
-// Visible only to the creator, a co-host, or a user with manage_events.
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 

@@ -1,5 +1,3 @@
-"""Lightweight rate-limit decorator using Django's cache framework."""
-
 import inspect
 from functools import wraps
 
