@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAME_FILE="$ROOT/.dev-pg-db-name"
 STAMP_FILE="$ROOT/.dev-pg-db.stamp"
+COMPOSE=(docker compose -f "$ROOT/docker-compose.yml" -p pda)
+PSQL_ADMIN=(psql postgresql://pda:pda@localhost:5432/postgres -v ON_ERROR_STOP=1)
 
 read_base_url() {
   if [[ -n "${DATABASE_URL:-}" ]]; then
@@ -49,8 +51,23 @@ print(urlunparse(parsed._replace(path="/" + name)))
 PY
 }
 
-docker_psql() {
-  docker compose -f "$ROOT/docker-compose.yml" exec -T db psql -U pda -d postgres -v ON_ERROR_STOP=1 "$@"
+pg_ready() {
+  pg_isready -h localhost -p 5432 -U pda >/dev/null 2>&1
+}
+
+start_pg_if_needed() {
+  pg_ready && return 0
+  "${COMPOSE[@]}" up -d db
+  for _ in $(seq 1 60); do
+    pg_ready && return 0
+    sleep 0.5
+  done
+  echo "postgres did not become ready on localhost:5432" >&2
+  return 1
+}
+
+admin_psql() {
+  "${PSQL_ADMIN[@]}" "$@"
 }
 
 fingerprint() {
@@ -64,7 +81,7 @@ fingerprint() {
 
 is_current() {
   [[ -f "$STAMP_FILE" ]] || return 1
-  docker_psql -tAc "SELECT 1 FROM pg_database WHERE datname='$(ensure_name)'" | grep -q 1 || return 1
+  admin_psql -tAc "SELECT 1 FROM pg_database WHERE datname='$(ensure_name)'" | grep -q 1 || return 1
   [[ "$(tr -d '[:space:]' < "$STAMP_FILE")" == "$(fingerprint)" ]]
 }
 
@@ -75,10 +92,10 @@ write_stamp() {
 create_db() {
   local name
   name=$(ensure_name)
-  if docker_psql -tAc "SELECT 1 FROM pg_database WHERE datname='${name}'" | grep -q 1; then
+  if admin_psql -tAc "SELECT 1 FROM pg_database WHERE datname='${name}'" | grep -q 1; then
     return 0
   fi
-  docker_psql -c "CREATE DATABASE \"${name}\""
+  admin_psql -c "CREATE DATABASE \"${name}\""
 }
 
 drop_db() {
@@ -88,12 +105,12 @@ drop_db() {
   fi
   local name
   name=$(ensure_name)
-  docker_psql -c "DROP DATABASE IF EXISTS \"${name}\"" || true
+  admin_psql -c "DROP DATABASE IF EXISTS \"${name}\"" || true
   rm -f "$NAME_FILE" "$STAMP_FILE"
 }
 
 ensure() {
-  docker compose -f "$ROOT/docker-compose.yml" up -d db
+  start_pg_if_needed
   create_db
   is_current && return 0
 
@@ -123,7 +140,7 @@ case "${1:-}" in
   url) worktree_url ;;
   fingerprint) fingerprint ;;
   check) is_current ;;
-  create) create_db ;;
+  create) start_pg_if_needed && create_db ;;
   drop) drop_db ;;
   ensure) ensure ;;
   *)

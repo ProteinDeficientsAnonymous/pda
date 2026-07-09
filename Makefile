@@ -129,10 +129,10 @@ seed:
 
 # Database
 db-start:
-	docker compose up -d db
+	docker compose -p pda up -d db
 
 db-stop:
-	docker compose down
+	docker compose -p pda down
 
 # Per-worktree SQLite dev DB (no Docker). Init logic: scripts/dev_sqlite_db.sh
 dev-db-ensure:
