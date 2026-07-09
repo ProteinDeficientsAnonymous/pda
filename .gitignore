@@ -5,6 +5,7 @@ __pycache__/
 venv/
 .venv/
 *.db
+*.db.stamp
 *.sqlite3
 
 # Environment

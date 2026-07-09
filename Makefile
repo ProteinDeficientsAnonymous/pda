@@ -4,8 +4,14 @@
 -include .env
 export
 
+# Per-worktree SQLite dev DB (gitignored via *.db). Absolute path — recipes cd into
+# backend/, so a relative path would land in the wrong place. DATABASE_URL is set
+# inline on manage.py/uvicorn calls (not via sub-make) so it beats .env.
+SQLITE_DB := $(abspath $(CURDIR)/dev.db)
+SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
+
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
@@ -28,6 +34,10 @@ help:
 	@echo "  make complexity       Run Python cognitive complexity check"
 	@echo "  make db-start         Start local PostgreSQL (Docker)"
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
+	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"
+	@echo "  make dev-db-reset     Delete and re-init the SQLite dev.db"
+	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-migrates + seeds)"
+	@echo "  make dev-sqlite       Run Django (SQLite) + Vite concurrently (no Docker)"
 	@echo ""
 	@echo "Frontend commands:"
 	@echo "  make frontend-install   pnpm install (frontend)"
@@ -119,6 +129,24 @@ db-start:
 
 db-stop:
 	docker compose down
+
+# Per-worktree SQLite dev DB (no Docker). Init logic: scripts/dev_sqlite_db.sh
+dev-db-ensure:
+	@./scripts/dev_sqlite_db.sh ensure "$(SQLITE_DB)"
+
+dev-db-init: dev-db-ensure
+
+dev-db-reset:
+	@rm -f "$(SQLITE_DB)" "$(SQLITE_DB).stamp"
+	@$(MAKE) dev-db-ensure
+
+# Run the backend against the per-worktree SQLite DB (auto-migrates + seeds).
+run-sqlite: dev-db-ensure
+	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+
+# Concurrent backend (SQLite) + Vite. Same as `make dev` but no Docker/Postgres.
+dev-sqlite: dev-db-ensure
+	DATABASE_URL="$(SQLITE_DATABASE_URL)" RUN_TARGET=run-sqlite ./dev.sh
 
 # Frontend (Vite + React)
 frontend-install:
