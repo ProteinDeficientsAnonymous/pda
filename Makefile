@@ -12,6 +12,37 @@ SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+
+# Per-worktree Postgres dev DB on the shared Docker instance. Each worktree gets a
+# unique database name in gitignored .dev-pg-db-name; scripts/dev_pg_db.sh builds
+# the DATABASE_URL inline so it beats the .env value (same sub-make clobber issue
+# as SQLite). dev-pg-db-ensure runs idempotent create+migrate+seed under a lock.
+dev-pg-db-ensure:
+	@$(MAKE) db-start
+	@./scripts/dev_pg_db.sh create
+	@lock="$(CURDIR)/.dev-pg-db.lock.d"; \
+	while ! mkdir "$$lock" 2>/dev/null; do sleep 0.2; done; \
+	status=0; \
+	url=$$(./scripts/dev_pg_db.sh url); \
+	(cd backend && DATABASE_URL="$$url" uv run python manage.py migrate && \
+	 DATABASE_URL="$$url" uv run python manage.py seed) \
+	|| status=$$?; \
+	rmdir "$$lock"; exit $$status
+
+dev-pg-db-init: dev-pg-db-ensure
+
+dev-pg-db-reset:
+	@./scripts/dev_pg_db.sh drop
+	@$(MAKE) dev-pg-db-init
+
+run-pg: dev-pg-db-ensure
+	@url=$$(./scripts/dev_pg_db.sh url); \
+	cd backend && DATABASE_URL="$$url" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+
+dev-pg: dev-pg-db-ensure
+	@url=$$(./scripts/dev_pg_db.sh url); \
+	DATABASE_URL="$$url" RUN_TARGET=run-pg ./dev.sh
+
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
@@ -34,10 +65,7 @@ help:
 	@echo "  make complexity       Run Python cognitive complexity check"
 	@echo "  make db-start         Start local PostgreSQL (Docker)"
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
-	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"
-	@echo "  make dev-db-reset     Delete and re-init the SQLite dev.db"
-	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-migrates + seeds)"
-	@echo "  make dev-sqlite       Run Django (SQLite) + Vite concurrently (no Docker)"
+        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
 	@echo ""
 	@echo "Frontend commands:"
 	@echo "  make frontend-install   pnpm install (frontend)"
@@ -130,23 +158,14 @@ db-start:
 db-stop:
 	docker compose down
 
-# Per-worktree SQLite dev DB (no Docker). Init logic: scripts/dev_sqlite_db.sh
-dev-db-ensure:
-	@./scripts/dev_sqlite_db.sh ensure "$(SQLITE_DB)"
-
-dev-db-init: dev-db-ensure
-
-dev-db-reset:
-	@rm -f "$(SQLITE_DB)" "$(SQLITE_DB).stamp"
-	@$(MAKE) dev-db-ensure
-
-# Run the backend against the per-worktree SQLite DB (auto-migrates + seeds).
-run-sqlite: dev-db-ensure
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
-
-# Concurrent backend (SQLite) + Vite. Same as `make dev` but no Docker/Postgres.
-dev-sqlite: dev-db-ensure
-	DATABASE_URL="$(SQLITE_DATABASE_URL)" RUN_TARGET=run-sqlite ./dev.sh
+	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"
+	@echo "  make dev-db-reset     Delete and re-init the SQLite dev.db"
+	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-migrates + seeds)"
+	@echo "  make dev-sqlite       Run Django (SQLite) + Vite concurrently (no Docker)"
+	@echo "  make dev-pg-db-init   Create per-worktree Postgres DB + migrate + seed"
+	@echo "  make dev-pg-db-reset  Drop and re-init the per-worktree Postgres DB"
+	@echo "  make run-pg           Run Django against per-worktree Postgres (auto-migrates + seeds)"
+	@echo "  make dev-pg           Run Django (Postgres) + Vite with per-worktree DB isolation"
 
 # Frontend (Vite + React)
 frontend-install:

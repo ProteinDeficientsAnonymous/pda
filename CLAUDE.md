@@ -25,6 +25,10 @@ make dev-sqlite       # Run Django (SQLite) + Vite — no Docker, per-worktree d
 make run-sqlite       # Run Django against SQLite dev.db (auto-migrates + seeds)
 make dev-db-init      # Migrate + seed the per-worktree SQLite dev.db
 make dev-db-reset     # Delete and re-init the SQLite dev.db
+make dev-pg           # Run Django (Postgres) + Vite — per-worktree DB on shared Docker
+make run-pg           # Run Django against per-worktree Postgres (auto-migrates + seeds)
+make dev-pg-db-init   # Create + migrate + seed the per-worktree Postgres DB
+make dev-pg-db-reset  # Drop and re-init the per-worktree Postgres DB
 make migrate          # makemigrations + migrate
 make seed             # Seed database with sample data (local dev)
 make agent-test       # Run pytest (quiet)
@@ -78,7 +82,7 @@ Routes: see `.claude/docs/routes.md`
 
 ## Environment
 
-- **Dev database**: PostgreSQL via Docker (`make db-start`), or a Docker-free per-worktree SQLite DB via `make dev-sqlite` / `make run-sqlite`. The SQLite DB lives at the worktree root as `dev.db` (gitignored), so concurrent worktrees never share state. SSE live-updates require Postgres and degrade gracefully on SQLite (the `/api/notifications/stream/` endpoint returns 503; notifications are still written to the DB).
+- **Dev database**: Prefer Docker-free per-worktree SQLite via `make dev-sqlite` / `make run-sqlite` (gitignored `dev.db` at the worktree root). Use per-worktree Postgres via `make dev-pg` / `make run-pg` when concurrent worktrees need Postgres features or shared Docker with isolated DBs: one shared Postgres container, each worktree gets its own database (name in gitignored `.dev-pg-db-name`). SSE live-updates require Postgres (`/api/notifications/stream/` uses `pg_notify`; returns 503 on SQLite). `make dev` / `make run` still use the shared `DATABASE_URL` from `.env` (typically `pda` on localhost:5432).
 - **Prod database**: PostgreSQL via `DATABASE_URL`
 - **Deployed on**: Railway (`railway.json`)
 - **Deploy flow:** `main` is the default branch. Pushes to `main` auto-deploy to Railway **staging** (Railway's GitHub integration watches `main` on the staging environment). Production deploys are **manual only** via GitHub Actions `workflow_dispatch` — Railway auto-deploy is disconnected on the production environment.
