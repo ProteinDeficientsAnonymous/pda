@@ -15,6 +15,8 @@ vi.mock('@/api/eventWrites', () => ({
   useDeleteEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
 import { EventAdminActions } from './EventAdminActions';
 
 const CREATOR_ID = 'creator-user';
@@ -126,7 +128,6 @@ describe('EventAdminActions', () => {
     expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
-  // With no one RSVP'd, skip the cancel-then-delete two-step: show delete outright.
   it('creator sees delete (no cancel) for active upcoming event with no attendees', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });

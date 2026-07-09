@@ -1,0 +1,7 @@
+an update about {{ event_title|lower }}
+
+{% autoescape off %}{{ message }}{% endautoescape %}
+
+you're receiving this because you rsvp'd to this event on pda.
+
+— pda

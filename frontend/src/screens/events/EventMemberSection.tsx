@@ -1,7 +1,3 @@
-// The authed branch of the event detail. Renders the sections that the
-// backend gates behind auth: hosts, location, links, cost, invite, rsvp,
-// plus the admin actions card for the event's creator / co-hosts / managers.
-
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -20,6 +16,7 @@ import { ensureHttps } from '@/utils/url';
 
 import { AddCoHostDialog } from './AddCoHostDialog';
 import { EventCommentsCard } from './comments/EventCommentsCard';
+import { EmailBlastButton } from './EmailBlastButton';
 import { EventAdminActions } from './EventAdminActions';
 import { EventAttendancePanel } from './EventAttendancePanel';
 import { EventFlagDialog } from './EventFlagDialog';
@@ -62,7 +59,8 @@ export function EventMemberSection({ event }: Props) {
         <Card label="rsvp">
           <RsvpSection event={event} canSeeInvited={canSeeInvited} />
           {isCoHost ? (
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-end gap-2">
+              <EmailBlastButton event={event} />
               <GroupTextButton event={event} />
             </div>
           ) : null}
