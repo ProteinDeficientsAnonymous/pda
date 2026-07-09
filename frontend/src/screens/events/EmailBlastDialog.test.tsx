@@ -103,6 +103,11 @@ function renderDialog(event: Event) {
 
 const THREE_GUESTS = [guest('attending', 1), guest('maybe', 2), guest('cant_go', 3)];
 
+// Audience chips are labelled "<group> <count>" (e.g. "going 1").
+function chip(label: string): HTMLElement {
+  return screen.getByRole('button', { name: new RegExp(`^${label}\\s*\\d+$`, 'i') });
+}
+
 beforeEach(() => {
   mutateAsyncMock.mockReset();
   toastSuccessMock.mockReset();
@@ -110,14 +115,15 @@ beforeEach(() => {
 });
 
 describe('EmailBlastDialog', () => {
-  it('previews the recipient count for the default everyone audience', () => {
+  it('previews the recipient count with every audience selected by default', () => {
     renderDialog(makeEvent(THREE_GUESTS));
     expect(screen.getByText(/emailing 3 attendees/i)).toBeInTheDocument();
   });
 
   it('updates the recipient count when narrowing the audience to going only', async () => {
     renderDialog(makeEvent(THREE_GUESTS));
-    await userEvent.selectOptions(screen.getByLabelText('send to'), 'going');
+    await userEvent.click(chip('maybe'));
+    await userEvent.click(chip("can't go"));
     expect(screen.getByText(/emailing 1 attendee\b/i)).toBeInTheDocument();
   });
 
@@ -154,6 +160,7 @@ describe('EmailBlastDialog', () => {
       expect(mutateAsyncMock).toHaveBeenCalledWith({
         subject: 'schedule update',
         message: 'we moved to 6pm',
+        audience: ['attending', 'maybe', 'cant_go'],
       });
     });
   });
@@ -167,7 +174,8 @@ describe('EmailBlastDialog', () => {
     renderDialog(makeEvent(THREE_GUESTS));
     await userEvent.type(screen.getByLabelText('subject'), 'hi');
     await userEvent.type(screen.getByLabelText('message'), 'going folks only');
-    await userEvent.selectOptions(screen.getByLabelText('send to'), 'going');
+    await userEvent.click(chip('maybe'));
+    await userEvent.click(chip("can't go"));
     await userEvent.click(screen.getByRole('button', { name: /next/i }));
     await userEvent.click(screen.getByRole('button', { name: /^send$/i }));
     await waitFor(() => {
@@ -188,7 +196,9 @@ describe('EmailBlastDialog', () => {
     renderDialog(makeEvent([...THREE_GUESTS, guest('waitlisted', 4)]));
     await userEvent.type(screen.getByLabelText('subject'), 'hi');
     await userEvent.type(screen.getByLabelText('message'), 'waitlist only');
-    await userEvent.selectOptions(screen.getByLabelText('send to'), 'waitlisted');
+    await userEvent.click(chip('going'));
+    await userEvent.click(chip('maybe'));
+    await userEvent.click(chip("can't go"));
     expect(screen.getByText(/emailing 1 attendee\b/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /next/i }));
     await userEvent.click(screen.getByRole('button', { name: /^send$/i }));
@@ -210,7 +220,8 @@ describe('EmailBlastDialog', () => {
     renderDialog(makeEvent(THREE_GUESTS));
     await userEvent.type(screen.getByLabelText('subject'), 'hi');
     await userEvent.type(screen.getByLabelText('message'), 'sorry you missed it');
-    await userEvent.selectOptions(screen.getByLabelText('send to'), 'cant_go');
+    await userEvent.click(chip('going'));
+    await userEvent.click(chip('maybe'));
     await userEvent.click(screen.getByRole('button', { name: /next/i }));
     await userEvent.click(screen.getByRole('button', { name: /^send$/i }));
     await waitFor(() => {

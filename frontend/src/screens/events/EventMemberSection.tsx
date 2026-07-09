@@ -20,6 +20,7 @@ import { ensureHttps } from '@/utils/url';
 
 import { AddCoHostDialog } from './AddCoHostDialog';
 import { EventCommentsCard } from './comments/EventCommentsCard';
+import { EmailBlastButton } from './EmailBlastButton';
 import { EventAdminActions } from './EventAdminActions';
 import { EventAttendancePanel } from './EventAttendancePanel';
 import { EventFlagDialog } from './EventFlagDialog';
@@ -62,7 +63,8 @@ export function EventMemberSection({ event }: Props) {
         <Card label="rsvp">
           <RsvpSection event={event} canSeeInvited={canSeeInvited} />
           {isCoHost ? (
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-end gap-2">
+              <EmailBlastButton event={event} />
               <GroupTextButton event={event} />
             </div>
           ) : null}

@@ -15,10 +15,6 @@ vi.mock('@/api/eventWrites', () => ({
   useDeleteEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
-vi.mock('@/api/eventBlast', () => ({
-  useEmailBlast: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
-}));
-
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { EventAdminActions } from './EventAdminActions';
@@ -130,62 +126,6 @@ describe('EventAdminActions', () => {
     expect(screen.getByRole('button', { name: /cancel event/i })).toBeInTheDocument();
     // With attendees, the event must be cancelled before it can be deleted.
     expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
-  });
-
-  // With no one RSVP'd, skip the cancel-then-delete two-step: show delete outright.
-  it('host sees email-attendees button when the event has rsvps', () => {
-    const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
-
-    const withGuests: Event = {
-      ...BASE_EVENT,
-      guests: [
-        {
-          userId: 'g1',
-          name: 'Guest',
-          status: 'attending',
-          phone: null,
-          photoUrl: '',
-          hasPlusOne: false,
-          attendance: 'unknown',
-        },
-      ],
-    };
-    renderActions(withGuests);
-
-    expect(screen.getByRole('button', { name: /email attendees/i })).toBeInTheDocument();
-  });
-
-  it('hides email-attendees button when no one has rsvpd', () => {
-    const creator = makeUser(CREATOR_ID);
-    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
-
-    renderActions(BASE_EVENT); // guests: []
-
-    expect(screen.queryByRole('button', { name: /email attendees/i })).not.toBeInTheDocument();
-  });
-
-  it('hides all admin actions (incl. email attendees) from a non-host member', () => {
-    const regular = makeUser(REGULAR_ID);
-    useAuthStore.setState({ status: 'authed', user: regular, accessToken: 'tok' });
-
-    const withGuests: Event = {
-      ...BASE_EVENT,
-      guests: [
-        {
-          userId: 'g1',
-          name: 'Guest',
-          status: 'attending',
-          phone: null,
-          photoUrl: '',
-          hasPlusOne: false,
-          attendance: 'unknown',
-        },
-      ],
-    };
-    renderActions(withGuests);
-
-    expect(screen.queryByRole('button', { name: /email attendees/i })).not.toBeInTheDocument();
   });
 
   it('creator sees delete (no cancel) for active upcoming event with no attendees', () => {

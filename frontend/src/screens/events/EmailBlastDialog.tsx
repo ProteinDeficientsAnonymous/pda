@@ -1,13 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { useEmailBlast } from '@/api/eventBlast';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { type Event,RsvpServerStatus } from '@/models/event';
+import { type Event, RsvpServerStatus } from '@/models/event';
 
 interface Props {
   event: Event;
@@ -18,49 +17,57 @@ interface Props {
 const SUBJECT_MAX = 150;
 const MESSAGE_MAX = 5000;
 
-const AUDIENCE_EVERYONE = 'everyone';
-const AUDIENCE_GOING = 'going';
-const AUDIENCE_WAITLISTED = 'waitlisted';
-const AUDIENCE_MAYBE = 'maybe';
-const AUDIENCE_CANT_GO = 'cant_go';
-
-const AUDIENCE_OPTIONS = [
-  { value: AUDIENCE_EVERYONE, label: "everyone who rsvp'd" },
-  { value: AUDIENCE_GOING, label: 'going' },
-  { value: AUDIENCE_WAITLISTED, label: 'waitlisted' },
-  { value: AUDIENCE_MAYBE, label: 'maybe' },
-  { value: AUDIENCE_CANT_GO, label: "can't go" },
+const AUDIENCE_LABELS: { value: string; label: string }[] = [
+  { value: RsvpServerStatus.Attending, label: 'going' },
+  { value: RsvpServerStatus.Maybe, label: 'maybe' },
+  { value: RsvpServerStatus.CantGo, label: "can't go" },
+  { value: RsvpServerStatus.Waitlisted, label: 'waitlisted' },
 ];
 
-function statusesForAudience(audience: string): string[] | null {
-  if (audience === AUDIENCE_GOING) return [RsvpServerStatus.Attending];
-  if (audience === AUDIENCE_WAITLISTED) return [RsvpServerStatus.Waitlisted];
-  if (audience === AUDIENCE_MAYBE) return [RsvpServerStatus.Maybe];
-  if (audience === AUDIENCE_CANT_GO) return [RsvpServerStatus.CantGo];
-  return null;
+interface AudienceGroup {
+  value: string;
+  label: string;
+  count: number;
 }
 
-function recipientCount(event: Event, audience: string): number {
-  const statuses = statusesForAudience(audience);
-  if (statuses === null) return event.guests.length;
-  const allowed = new Set(statuses);
-  return event.guests.filter((g) => allowed.has(g.status)).length;
+function availableAudiences(event: Event): AudienceGroup[] {
+  return AUDIENCE_LABELS.map(({ value, label }) => ({
+    value,
+    label,
+    count: event.guests.filter((g) => g.status === value).length,
+  })).filter((o) => o.count > 0);
+}
+
+function countForSelected(event: Event, selected: Set<string>): number {
+  return event.guests.filter((g) => selected.has(g.status)).length;
 }
 
 export function EmailBlastDialog({ event, open, onClose }: Props) {
   const blast = useEmailBlast(event.id);
+  const audiences = useMemo(() => availableAudiences(event), [event]);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [audience, setAudience] = useState(AUDIENCE_EVERYONE);
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(availableAudiences(event).map((a) => a.value)),
+  );
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const count = recipientCount(event, audience);
+  const count = countForSelected(event, selected);
+
+  function toggle(value: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
 
   function reset() {
     setSubject('');
     setMessage('');
-    setAudience(AUDIENCE_EVERYONE);
+    setSelected(new Set(audiences.map((a) => a.value)));
     setConfirming(false);
     setError(null);
   }
@@ -86,12 +93,12 @@ export function EmailBlastDialog({ event, open, onClose }: Props) {
 
   async function send() {
     setError(null);
-    const statuses = statusesForAudience(audience);
+    const statuses = [...selected];
     try {
       const result = await blast.mutateAsync({
         subject: subject.trim(),
         message: message.trim(),
-        ...(statuses ? { audience: statuses } : {}),
+        audience: statuses,
       });
       const skipped =
         result.skipped_no_email_count > 0
@@ -142,7 +149,7 @@ export function EmailBlastDialog({ event, open, onClose }: Props) {
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} title="email attendees">
+    <Dialog open={open} onClose={handleClose} title="email blast">
       <div className="flex flex-col gap-3">
         <TextField
           label="subject"
@@ -166,14 +173,22 @@ export function EmailBlastDialog({ event, open, onClose }: Props) {
             className="border-border-strong bg-surface focus:ring-brand-200 focus:border-brand-500 h-32 w-full rounded-md border px-3 py-2 text-sm transition-colors outline-none focus:ring-2"
           />
         </div>
-        <Select
-          label="send to"
-          options={AUDIENCE_OPTIONS}
-          value={audience}
-          onChange={(e) => {
-            setAudience(e.target.value);
-          }}
-        />
+        <div className="flex flex-col gap-1.5">
+          <span className="text-foreground text-sm font-medium">send to</span>
+          <div className="flex flex-wrap gap-1.5">
+            {audiences.map((a) => (
+              <AudienceChip
+                key={a.value}
+                label={a.label}
+                count={a.count}
+                active={selected.has(a.value)}
+                onToggle={() => {
+                  toggle(a.value);
+                }}
+              />
+            ))}
+          </div>
+        </div>
         <p className="text-muted text-xs">
           emailing {count} {count === 1 ? 'attendee' : 'attendees'} — anyone without an email is
           skipped
@@ -193,5 +208,34 @@ export function EmailBlastDialog({ event, open, onClose }: Props) {
         </Button>
       </div>
     </Dialog>
+  );
+}
+
+function AudienceChip({
+  label,
+  count,
+  active,
+  onToggle,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onToggle: () => void;
+}) {
+  const base =
+    'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors';
+  const activeCls = 'border-brand-300 bg-brand-100 text-brand-700';
+  const idleCls =
+    'border-border text-foreground-secondary hover:border-border-strong hover:text-foreground';
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={active}
+      className={`${base} ${active ? activeCls : idleCls}`}
+    >
+      {label}
+      <span className="opacity-60">{String(count)}</span>
+    </button>
   );
 }
