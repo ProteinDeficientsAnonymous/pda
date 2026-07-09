@@ -137,21 +137,26 @@ db-stop:
 # The DATABASE_URL override is applied inline on the manage.py call (not via a
 # sub-make) because a sub-make re-includes .env and would clobber an inherited
 # DATABASE_URL with the Postgres value.
-# dev-db-ensure runs idempotent migrate+seed under a mkdir lock (portable on macOS
-# without flock(1)) so concurrent starts serialize and pulled migrations re-apply.
+# dev-db-ensure runs migrate+seed under a mkdir lock when the stamp is stale.
+# dev.db.stamp caches a fingerprint of migration + seed files so warm starts skip Django.
 dev-db-ensure:
-	@lock="$(SQLITE_DB_ABS).lock.d"; \
+	@uv run python scripts/sqlite_dev_stamp.py check "$(SQLITE_DB_ABS)" && exit 0; \
+	lock="$(SQLITE_DB_ABS).lock.d"; \
 	while ! mkdir "$$lock" 2>/dev/null; do sleep 0.2; done; \
 	status=0; \
+	if uv run python scripts/sqlite_dev_stamp.py check "$(SQLITE_DB_ABS)"; then \
+		rmdir "$$lock"; exit 0; \
+	fi; \
 	(cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py migrate && \
-	 DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py seed) \
+	 DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py seed && \
+	 uv run python "$(CURDIR)/scripts/sqlite_dev_stamp.py" write "$(SQLITE_DB_ABS)") \
 	|| status=$$?; \
 	rmdir "$$lock"; exit $$status
 
 dev-db-init: dev-db-ensure
 
 dev-db-reset:
-	rm -f "$(SQLITE_DB_ABS)"
+	rm -f "$(SQLITE_DB_ABS)" "$(SQLITE_DB_ABS).stamp"
 	@$(MAKE) dev-db-init
 
 # Run the backend against the per-worktree SQLite DB (auto-migrates + seeds).
