@@ -10,6 +10,15 @@ export
 SQLITE_DB := $(abspath $(CURDIR)/dev.db)
 SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
 
+# pytest-xdist worker count for the AGENT ci ladder (agent-test*). The interactive
+# `test` target keeps `-n auto` (one worker per core — a solo run should own the box).
+# The agent ladder instead honors PYTEST_XDIST_AUTO_NUM_WORKERS, defaulting to 3: when
+# several supervisor-dispatched sessions run CI at once, `-n auto` per session
+# oversubscribes the machine (N × cores test processes on `cores` cores). The skillet
+# supervisor exports this var; a bare local `make agent-test` also benefits from the
+# gentler default. `$$` defers expansion to the recipe shell so the env var is read.
+AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
+
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
@@ -247,18 +256,18 @@ agent-check:
 
 agent-test:
 	cd backend && uv run python -m pytest tests/ \
-		-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings
+		-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings
 
 agent-test-since:
 	@affected=$$(uv run python "$(CURDIR)/scripts/list_affected_tests.py"); \
 	if [ "$$affected" = "__FULL__" ]; then \
 		cd backend && uv run python -m pytest tests/ \
-			-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings; \
+			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
 	elif [ -z "$$affected" ]; then \
 		echo "No affected backend tests inferred; skipping pytest."; \
 	else \
 		cd backend && uv run python -m pytest $$(echo "$$affected" | tr '\n' ' ') \
-			-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings; \
+			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
 	fi
 
 agent-typecheck:
