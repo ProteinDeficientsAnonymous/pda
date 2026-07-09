@@ -11,7 +11,7 @@ SQLITE_DB := $(abspath $(CURDIR)/dev.db)
 SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
@@ -38,6 +38,10 @@ help:
 	@echo "  make dev-db-reset     Delete and re-init the SQLite dev.db"
 	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-migrates + seeds)"
 	@echo "  make dev-sqlite       Run Django (SQLite) + Vite concurrently (no Docker)"
+	@echo "  make dev-pg-db-init   Create per-worktree Postgres DB + migrate + seed"
+	@echo "  make dev-pg-db-reset  Drop and re-init the per-worktree Postgres DB"
+	@echo "  make run-pg           Run Django against per-worktree Postgres (auto-migrates + seeds)"
+	@echo "  make dev-pg           Run Django (Postgres) + Vite with per-worktree DB isolation"
 	@echo ""
 	@echo "Frontend commands:"
 	@echo "  make frontend-install   pnpm install (frontend)"
@@ -125,10 +129,10 @@ seed:
 
 # Database
 db-start:
-	docker compose up -d db
+	docker compose -p pda up -d db
 
 db-stop:
-	docker compose down
+	docker compose -p pda down
 
 # Per-worktree SQLite dev DB (no Docker). Init logic: scripts/dev_sqlite_db.sh
 dev-db-ensure:
@@ -147,6 +151,26 @@ run-sqlite: dev-db-ensure
 # Concurrent backend (SQLite) + Vite. Same as `make dev` but no Docker/Postgres.
 dev-sqlite: dev-db-ensure
 	DATABASE_URL="$(SQLITE_DATABASE_URL)" RUN_TARGET=run-sqlite ./dev.sh
+
+
+# Per-worktree Postgres on shared Docker — scripts/dev_pg_db.sh
+dev-pg-db-ensure:
+	@./scripts/dev_pg_db.sh ensure
+
+dev-pg-db-init: dev-pg-db-ensure
+
+dev-pg-db-reset:
+	@./scripts/dev_pg_db.sh drop
+	@$(MAKE) dev-pg-db-ensure
+
+run-pg: dev-pg-db-ensure
+	@url=$$(./scripts/dev_pg_db.sh url); \
+	cd backend && DATABASE_URL="$$url" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+
+dev-pg: dev-pg-db-ensure
+	@url=$$(./scripts/dev_pg_db.sh url); \
+	DATABASE_URL="$$url" RUN_TARGET=run-pg ./dev.sh
+
 
 # Frontend (Vite + React)
 frontend-install:
