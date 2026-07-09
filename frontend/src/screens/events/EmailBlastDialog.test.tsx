@@ -84,6 +84,7 @@ function makeEvent(guests: EventGuest[]): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    photoUpdatedAt: null,
     isPast: false,
     status: EventStatus.Active,
     tags: [],

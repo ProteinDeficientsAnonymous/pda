@@ -44,6 +44,7 @@ class Event(models.Model):
     allow_plus_ones = models.BooleanField(default=False)
     max_attendees = models.PositiveIntegerField(null=True, blank=True)
     photo = models.ImageField(upload_to="event_photos/", blank=True)
+    photo_updated_at = models.DateTimeField(null=True, blank=True)
     event_type = models.CharField(
         max_length=20,
         choices=EventType.choices,

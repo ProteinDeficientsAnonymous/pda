@@ -16,6 +16,11 @@ import { EventMemberSection } from './EventMemberSection';
 import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
 
+function photoSrc(url: string, updatedAt: string | null): string {
+  if (!updatedAt) return url;
+  return `${url}?v=${encodeURIComponent(updatedAt)}`;
+}
+
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
@@ -34,7 +39,7 @@ export default function EventDetailScreen() {
     <ContentContainer>
       {event.photoUrl ? (
         <img
-          src={event.photoUrl}
+          src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
           alt=""
           className="mx-auto mb-4 block max-h-[70vh] w-auto max-w-full rounded-lg"
           loading="lazy"

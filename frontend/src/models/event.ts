@@ -127,6 +127,7 @@ export interface Event {
   eventType: string;
   visibility: string;
   photoUrl: string;
+  photoUpdatedAt: string | null;
 
   // Curated tags assigned to the event. Present on both list and detail.
   tags: EventTag[];

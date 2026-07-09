@@ -168,6 +168,7 @@ class EventListOut(BaseModel):
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
+    photo_updated_at: str | None = None
     whatsapp_link: str = ""
     partiful_link: str = ""
     other_link: str = ""
@@ -228,6 +229,7 @@ class EventOut(BaseModel):
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
+    photo_updated_at: str | None = None
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
     max_attendees: int | None = None

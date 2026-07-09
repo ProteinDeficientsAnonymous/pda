@@ -1353,6 +1353,17 @@
             "title": "Partiful Link",
             "type": "string"
           },
+          "photo_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Updated At"
+          },
           "photo_url": {
             "default": "",
             "title": "Photo Url",
@@ -1684,6 +1695,17 @@
             },
             "title": "Pending Cohost Invites",
             "type": "array"
+          },
+          "photo_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Updated At"
           },
           "photo_url": {
             "default": "",

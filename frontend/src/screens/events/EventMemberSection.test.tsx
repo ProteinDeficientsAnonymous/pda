@@ -71,6 +71,7 @@ const BASE_EVENT: Event = {
   eventType: EventType.Community,
   visibility: EventVisibility.Public,
   photoUrl: '',
+  photoUpdatedAt: null,
   tags: [],
   isPast: false,
   status: EventStatus.Active,

@@ -330,6 +330,10 @@ def _resolve_comment_count(event: Event) -> int:
     return event.comments.filter(deleted_at__isnull=True).count()
 
 
+def _iso_or_none(value) -> str | None:
+    return value.isoformat() if value else None
+
+
 def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
@@ -382,6 +386,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         event_type=event.event_type,
         visibility=event.visibility,
         photo_url=media_path(event.photo),
+        photo_updated_at=_iso_or_none(event.photo_updated_at),
         survey_slugs=list(event.surveys.filter(is_active=True).values_list("slug", flat=True)),
         datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
