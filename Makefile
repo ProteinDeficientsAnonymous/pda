@@ -4,14 +4,11 @@
 -include .env
 export
 
-# Per-worktree SQLite dev DB (gitignored via *.db). Absolute path so it lands at
-# the worktree root regardless of recipe cwd. The dev-* recipes below set this
-# DATABASE_URL inline so it beats the .env value (an exported make variable).
-SQLITE_DB ?= $(CURDIR)/dev.db
-# Normalize to absolute: recipes cd into backend/, so a relative override would
-# otherwise resolve there and desync from the path the guards/URL use.
-SQLITE_DB_ABS := $(abspath $(SQLITE_DB))
-SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB_ABS)
+# Per-worktree SQLite dev DB (gitignored via *.db). Absolute path — recipes cd into
+# backend/, so a relative path would land in the wrong place. DATABASE_URL is set
+# inline on manage.py/uvicorn calls (not via sub-make) so it beats .env.
+SQLITE_DB := $(abspath $(CURDIR)/dev.db)
+SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
         createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
@@ -133,31 +130,15 @@ db-start:
 db-stop:
 	docker compose down
 
-# Per-worktree SQLite dev DB (no Docker). See SQLITE_DB / SQLITE_DATABASE_URL above.
-# The DATABASE_URL override is applied inline on the manage.py call (not via a
-# sub-make) because a sub-make re-includes .env and would clobber an inherited
-# DATABASE_URL with the Postgres value.
-# dev-db-ensure runs migrate+seed under a mkdir lock when the stamp is stale.
-# dev.db.stamp caches a fingerprint of migration + seed files so warm starts skip Django.
+# Per-worktree SQLite dev DB (no Docker). Init logic: scripts/dev_sqlite_db.sh
 dev-db-ensure:
-	@uv run python scripts/sqlite_dev_stamp.py check "$(SQLITE_DB_ABS)" && exit 0; \
-	lock="$(SQLITE_DB_ABS).lock.d"; \
-	while ! mkdir "$$lock" 2>/dev/null; do sleep 0.2; done; \
-	status=0; \
-	if uv run python scripts/sqlite_dev_stamp.py check "$(SQLITE_DB_ABS)"; then \
-		rmdir "$$lock"; exit 0; \
-	fi; \
-	(cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py migrate && \
-	 DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py seed && \
-	 uv run python "$(CURDIR)/scripts/sqlite_dev_stamp.py" write "$(SQLITE_DB_ABS)") \
-	|| status=$$?; \
-	rmdir "$$lock"; exit $$status
+	@./scripts/dev_sqlite_db.sh ensure "$(SQLITE_DB)"
 
 dev-db-init: dev-db-ensure
 
 dev-db-reset:
-	rm -f "$(SQLITE_DB_ABS)" "$(SQLITE_DB_ABS).stamp"
-	@$(MAKE) dev-db-init
+	@rm -f "$(SQLITE_DB)" "$(SQLITE_DB).stamp"
+	@$(MAKE) dev-db-ensure
 
 # Run the backend against the per-worktree SQLite DB (auto-migrates + seeds).
 run-sqlite: dev-db-ensure
