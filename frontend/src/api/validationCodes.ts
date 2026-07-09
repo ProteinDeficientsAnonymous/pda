@@ -119,6 +119,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'check-in opens an hour before the event starts';
     case Code.Event.AttendanceOnlyForGoingRsvps:
       return 'attendance can only be marked on going rsvps';
+    case Code.Event.BlastInvalidAudience:
+      return 'that audience choice is not valid';
+    case Code.Event.BlastNoRecipients:
+      return 'no attendees in that audience have an email — nothing to send';
 
     // Poll
     case Code.Poll.NotFound:
