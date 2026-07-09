@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+# Per-worktree Postgres on shared Docker: unique DB name, stamp cache for migrate+seed.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAME_FILE="$ROOT/.dev-pg-db-name"
-LOCK_DIR="$ROOT/.dev-pg-db.lock.d"
+STAMP_FILE="$ROOT/.dev-pg-db.stamp"
 
 read_base_url() {
   if [[ -n "${DATABASE_URL:-}" ]]; then
@@ -52,13 +53,26 @@ docker_psql() {
   docker compose -f "$ROOT/docker-compose.yml" exec -T db psql -U pda -d postgres -v ON_ERROR_STOP=1 "$@"
 }
 
-with_lock() {
-  while ! mkdir "$LOCK_DIR" 2>/dev/null; do sleep 0.2; done
-  trap 'rmdir "$LOCK_DIR"' EXIT
-  "$@"
+fingerprint() {
+  {
+    find "$ROOT/backend" -path '*/migrations/*.py' | sort
+    printf '%s\n' \
+      "$ROOT/backend/community/management/commands/seed.py" \
+      "$ROOT/backend/community/management/commands/_seed_data.py"
+  } | xargs shasum -a 256 | shasum -a 256 | awk '{print $1}'
 }
 
-cmd_create() {
+is_current() {
+  [[ -f "$STAMP_FILE" ]] || return 1
+  docker_psql -tAc "SELECT 1 FROM pg_database WHERE datname='$(ensure_name)'" | grep -q 1 || return 1
+  [[ "$(tr -d '[:space:]' < "$STAMP_FILE")" == "$(fingerprint)" ]]
+}
+
+write_stamp() {
+  fingerprint > "$STAMP_FILE"
+}
+
+create_db() {
   local name
   name=$(ensure_name)
   if docker_psql -tAc "SELECT 1 FROM pg_database WHERE datname='${name}'" | grep -q 1; then
@@ -67,23 +81,53 @@ cmd_create() {
   docker_psql -c "CREATE DATABASE \"${name}\""
 }
 
-cmd_drop() {
-  local name
+drop_db() {
   if [[ ! -f "$NAME_FILE" ]]; then
+    rm -f "$STAMP_FILE"
     return 0
   fi
+  local name
   name=$(ensure_name)
   docker_psql -c "DROP DATABASE IF EXISTS \"${name}\"" || true
-  rm -f "$NAME_FILE"
+  rm -f "$NAME_FILE" "$STAMP_FILE"
+}
+
+ensure() {
+  docker compose -f "$ROOT/docker-compose.yml" up -d db
+  create_db
+  is_current && return 0
+
+  local lock="$ROOT/.dev-pg-db.lock.d"
+  while ! mkdir "$lock" 2>/dev/null; do sleep 0.2; done
+  trap "rmdir '$lock'" EXIT
+
+  if is_current; then
+    rmdir "$lock"
+    trap - EXIT
+    return 0
+  fi
+  local url
+  url=$(worktree_url)
+  (
+    cd "$ROOT/backend"
+    DATABASE_URL="$url" uv run python manage.py migrate
+    DATABASE_URL="$url" uv run python manage.py seed
+  )
+  write_stamp
+  rmdir "$lock"
+  trap - EXIT
 }
 
 case "${1:-}" in
   name) ensure_name ;;
   url) worktree_url ;;
-  create) with_lock cmd_create ;;
-  drop) with_lock cmd_drop ;;
+  fingerprint) fingerprint ;;
+  check) is_current ;;
+  create) create_db ;;
+  drop) drop_db ;;
+  ensure) ensure ;;
   *)
-    echo "usage: $0 {name|url|create|drop}" >&2
-    exit 1
+    echo "usage: $0 {name|url|fingerprint|check|create|drop|ensure}" >&2
+    exit 2
     ;;
 esac

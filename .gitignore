@@ -11,6 +11,7 @@ venv/
 # Environment
 .env
 .dev-pg-db-name
+.dev-pg-db.stamp
 .dev-pg-db.lock.d
 
 # IDE
