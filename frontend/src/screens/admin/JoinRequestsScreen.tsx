@@ -143,8 +143,8 @@ export default function JoinRequestsScreen() {
 
       {filter === Filter.APPROVED ? (
         <p className="text-muted mb-3 text-xs">
-          approved members stay here for 3 days after their first login — then they drop off the
-          list automatically
+          approved members show here until 3 days after their first login — this tab clears them out
+          automatically once they're settled in
         </p>
       ) : null}
 
