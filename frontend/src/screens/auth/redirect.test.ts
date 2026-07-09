@@ -46,4 +46,17 @@ describe('safeRedirect', () => {
     expect(safeRedirect('%')).toBe(DEFAULT);
     expect(safeRedirect('%E0%A4%A')).toBe(DEFAULT);
   });
+
+  // Issue 479: /members is a low-value bounce target — a fresh login should
+  // land on the calendar rather than the member directory.
+  it('does not preserve /members or its subpaths', () => {
+    expect(safeRedirect('/members')).toBe(DEFAULT);
+    expect(safeRedirect('/members/abc123')).toBe(DEFAULT);
+    expect(safeRedirect('/members?tab=all')).toBe(DEFAULT);
+    expect(safeRedirect(encodeURIComponent('/members/abc123'))).toBe(DEFAULT);
+  });
+
+  it('still preserves /admin/members (a different route)', () => {
+    expect(safeRedirect('/admin/members')).toBe('/admin/members');
+  });
 });

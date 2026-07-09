@@ -4,6 +4,16 @@
 
 export const DEFAULT_POST_LOGIN_ROUTE = '/calendar';
 
+// The member directory is a low-value landing spot after login — bouncing an
+// expired session back onto it (via RequireAuth's ?redirect=) surprised users
+// who expected the calendar. Treat /members (and its subpaths) as non-preserved
+// so those land on the default route instead. Note: /admin/members is a
+// different route and stays preservable. (Issue 479)
+function isNonPreservedTarget(path: string): boolean {
+  const pathname = path.split(/[?#]/, 1)[0] ?? path;
+  return pathname === '/members' || pathname.startsWith('/members/');
+}
+
 // Only allow relative in-app paths. Reject anything that could leave the app —
 // absolute URLs (`http://evil.com`), scheme-relative URLs (`//evil.com`),
 // backslash tricks (`/\evil.com`), or paths that don't start with a single
@@ -20,5 +30,6 @@ export function safeRedirect(raw: string | null): string {
     decoded.startsWith('/') && !decoded.startsWith('//') && !decoded.includes('://');
   // Normalize backslashes — some browsers treat `/\` like `//`.
   if (!isRelativePath || decoded.startsWith('/\\')) return DEFAULT_POST_LOGIN_ROUTE;
+  if (isNonPreservedTarget(decoded)) return DEFAULT_POST_LOGIN_ROUTE;
   return decoded;
 }
