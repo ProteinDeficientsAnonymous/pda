@@ -1,8 +1,3 @@
-// Host email-blast mutation — email everyone who RSVP'd to an event.
-//
-// Backend: POST /api/community/events/{id}/email-blast/ (host/co-host only,
-// rate-limited 5/h per host+event). See backend community/_event_blasts.py.
-
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from './client';
 import { reportError } from '@/utils/errorReporter';

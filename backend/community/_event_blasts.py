@@ -1,13 +1,4 @@
-"""Host email-blast endpoint — email everyone who RSVP'd to an event.
-
-Replaces the dormant SMS text-blast (issue #403, not feasible). Email via Resend
-is the channel we actually have. Hosts/co-hosts compose a subject + message and
-send to a chosen audience of RSVP statuses (default: everyone who RSVP'd,
-including ``can't go`` — they still want time/location/cancellation updates).
-
-Messages are sent individually per recipient so attendee addresses are never
-exposed to each other; one bad address does not abort the batch.
-"""
+"""Host email-blast endpoint — email everyone who RSVP'd to an event."""
 
 import logging
 from uuid import UUID
@@ -30,16 +21,12 @@ router = Router()
 
 logger = logging.getLogger("pda.community.event_blasts")
 
-# Default audience when the host doesn't narrow it: everyone who RSVP'd,
-# including ``can't go`` — they still want updates (time/location/cancellation).
 _ALL_RSVP_STATUSES = [status.value for status in RSVPStatus]
 
 
 class EmailBlastIn(Schema):
     subject: str = Field(..., min_length=1, max_length=150)
     message: str = Field(..., min_length=1, max_length=5000)
-    # When omitted/empty, defaults to every RSVP status. Otherwise a subset of
-    # RSVPStatus values to narrow the audience.
     audience: list[str] | None = None
 
 
@@ -50,10 +37,7 @@ class EmailBlastOut(Schema):
 
 
 def _resolve_audience(audience: list[str] | None) -> list[str]:
-    """Validate the requested audience, falling back to all RSVP statuses.
-
-    Raises 400 if any requested status is not a valid ``RSVPStatus``.
-    """
+    """Validate the requested audience, defaulting to every RSVP status."""
     if not audience:
         return _ALL_RSVP_STATUSES
     valid = set(_ALL_RSVP_STATUSES)
@@ -66,17 +50,11 @@ def _resolve_audience(audience: list[str] | None) -> list[str]:
             invalid=invalid,
             allowed=_ALL_RSVP_STATUSES,
         )
-    # De-dupe while preserving the canonical order.
     return [s for s in _ALL_RSVP_STATUSES if s in set(audience)]
 
 
 def _collect_recipients(event: Event, statuses: list[str]) -> tuple[list, int]:
-    """Return (recipients, skipped_no_email_count).
-
-    ``recipients`` is a list of (email, display_name) for each unique user with
-    a matching RSVP and a non-blank email. Users without an email are skipped
-    and counted so the host knows who was missed.
-    """
+    """Return (unique (email, display_name) recipients, skipped_no_email_count)."""
     rsvps = event.rsvps.filter(status__in=statuses).select_related("user").order_by("created_at")
     recipients: list[tuple[str, str]] = []
     seen_user_ids: set = set()
@@ -95,11 +73,7 @@ def _collect_recipients(event: Event, statuses: list[str]) -> tuple[list, int]:
 
 
 def _send_blast(event: Event, subject: str, message: str, recipients: list) -> int:
-    """Send the blast to each recipient individually. Returns failed_count.
-
-    A send failure to one recipient never aborts the rest — each outcome is
-    collected independently.
-    """
+    """Send one message per recipient so addresses are never shared. Returns failed_count."""
     sender = get_email_sender()
     failed = 0
     for email, _display_name in recipients:
@@ -127,10 +101,7 @@ def _send_blast(event: Event, subject: str, message: str, recipients: list) -> i
 )
 @rate_limit(key_func=lambda r, event_id, **_: f"{r.auth.pk}:{event_id}", rate="5/h")
 def send_email_blast(request, event_id: UUID, payload: EmailBlastIn):
-    """Email everyone who RSVP'd to this event in the chosen audience.
-
-    Host/co-host only. Sends individually (addresses never shared). Records a
-    blast history row and writes an audit log."""
+    """Email everyone who RSVP'd to this event in the chosen audience. Host/co-host only."""
     try:
         event = Event.objects.get(id=event_id)
     except Event.DoesNotExist:

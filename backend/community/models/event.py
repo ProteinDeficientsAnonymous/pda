@@ -183,11 +183,7 @@ class EventFlag(models.Model):
 
 
 class EventEmailBlast(models.Model):
-    """A record of an email blast a host sent to an event's attendees.
-
-    Persisted so hosts have a history ("last sent") and for auditability. The
-    body is stored verbatim; recipient addresses are never stored here.
-    """
+    """A record of an email blast a host sent to an event's attendees."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="email_blasts")
@@ -197,9 +193,7 @@ class EventEmailBlast(models.Model):
     subject = models.CharField(max_length=150)
     body = models.TextField(max_length=5000)
     audience = models.CharField(max_length=120, blank=True)
-    # Recipients the blast successfully reached (sends minus failures). The total
-    # attempted is recipient_count + failed_count; skipped (no-email) members are
-    # excluded from both, counted separately in skipped_no_email_count.
+    # successful sends only; attempts = recipient_count + failed_count
     recipient_count = models.PositiveIntegerField(default=0)
     skipped_no_email_count = models.PositiveIntegerField(default=0)
     failed_count = models.PositiveIntegerField(default=0)

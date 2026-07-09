@@ -69,11 +69,7 @@ def rate_limit(*, key_func, rate: str):
 
 
 def _key_func_wants_kwargs(key_func) -> bool:
-    """True if ``key_func`` accepts more than just the request (path-param keys).
-
-    Detected via signature: a second positional param or a ``**kwargs`` catch-all
-    means the caller wants the view's path params threaded in.
-    """
+    """True if ``key_func`` accepts more than just the request (path-param keys)."""
     try:
         params = list(inspect.signature(key_func).parameters.values())
     except (ValueError, TypeError):

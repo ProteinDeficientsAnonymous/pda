@@ -44,12 +44,7 @@ def send_event_blast_email(
     subject: str,
     message: str,
 ) -> SendResult:
-    """Render and send one event email-blast message to a single recipient.
-
-    Sent individually per recipient so attendee addresses are never exposed to
-    each other. Recipient validation happens at the ``EmailSender.send()``
-    boundary.
-    """
+    """Render and send one event email-blast message to a single recipient."""
     context = {
         "event_title": event_title,
         "message": message,
