@@ -86,3 +86,26 @@ def send_magic_login_email(
         html=html,
         text=text,
     )
+
+
+def send_event_blast_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    event_title: str,
+    subject: str,
+    message: str,
+) -> SendResult:
+    """Render and send one event email-blast message to a single recipient."""
+    context = {
+        "event_title": event_title,
+        "message": message,
+    }
+    html = render_to_string("emails/event_blast.html", context)
+    text = render_to_string("emails/event_blast.txt", context)
+    return sender.send(
+        to=to,
+        subject=subject,
+        html=html,
+        text=text,
+    )
