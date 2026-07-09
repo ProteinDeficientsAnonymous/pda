@@ -22,7 +22,7 @@ make dev              # Run Django + Vite concurrently
 make db-start         # Start local PostgreSQL via Docker
 make db-stop          # Stop local PostgreSQL
 make dev-sqlite       # Run Django (SQLite) + Vite — no Docker, per-worktree dev.db
-make run-sqlite       # Run Django against SQLite dev.db (auto-migrates + seeds on first run)
+make run-sqlite       # Run Django against SQLite dev.db (auto-migrates + seeds)
 make dev-db-init      # Migrate + seed the per-worktree SQLite dev.db
 make dev-db-reset     # Delete and re-init the SQLite dev.db
 make migrate          # makemigrations + migrate

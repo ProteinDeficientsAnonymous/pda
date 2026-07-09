@@ -14,7 +14,7 @@ SQLITE_DB_ABS := $(abspath $(SQLITE_DB))
 SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB_ABS)
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop dev-db-init dev-db-reset run-sqlite dev-sqlite ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
@@ -39,7 +39,7 @@ help:
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
 	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"
 	@echo "  make dev-db-reset     Delete and re-init the SQLite dev.db"
-	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-inits on first run)"
+	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-migrates + seeds)"
 	@echo "  make dev-sqlite       Run Django (SQLite) + Vite concurrently (no Docker)"
 	@echo ""
 	@echo "Frontend commands:"
@@ -137,23 +137,29 @@ db-stop:
 # The DATABASE_URL override is applied inline on the manage.py call (not via a
 # sub-make) because a sub-make re-includes .env and would clobber an inherited
 # DATABASE_URL with the Postgres value.
-dev-db-init:
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py migrate
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py seed
+# dev-db-ensure runs idempotent migrate+seed under a mkdir lock (portable on macOS
+# without flock(1)) so concurrent starts serialize and pulled migrations re-apply.
+dev-db-ensure:
+	@lock="$(SQLITE_DB_ABS).lock.d"; \
+	while ! mkdir "$$lock" 2>/dev/null; do sleep 0.2; done; \
+	status=0; \
+	(cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py migrate && \
+	 DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py seed) \
+	|| status=$$?; \
+	rmdir "$$lock"; exit $$status
+
+dev-db-init: dev-db-ensure
 
 dev-db-reset:
 	rm -f "$(SQLITE_DB_ABS)"
 	@$(MAKE) dev-db-init
 
-# Run the backend against the per-worktree SQLite DB, auto-initializing it on
-# first run (migrate + seed) if dev.db doesn't exist yet.
-run-sqlite:
-	@test -f "$(SQLITE_DB_ABS)" || $(MAKE) dev-db-init
+# Run the backend against the per-worktree SQLite DB (auto-migrates + seeds).
+run-sqlite: dev-db-ensure
 	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
 
 # Concurrent backend (SQLite) + Vite. Same as `make dev` but no Docker/Postgres.
-dev-sqlite:
-	@test -f "$(SQLITE_DB_ABS)" || $(MAKE) dev-db-init
+dev-sqlite: dev-db-ensure
 	DATABASE_URL="$(SQLITE_DATABASE_URL)" RUN_TARGET=run-sqlite ./dev.sh
 
 # Frontend (Vite + React)
