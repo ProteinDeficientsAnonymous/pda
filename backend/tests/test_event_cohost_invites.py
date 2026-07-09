@@ -1,11 +1,11 @@
 """Tests for the co-host invite approval flow (issue #363).
 
-Covers diff-on-create, diff-on-patch, accept/decline/rescind endpoints, lazy
-expiration, notifications, EventOut visibility, and permission checks.
+Covers diff-on-create, diff-on-patch, accept/decline/rescind endpoints,
+notifications, EventOut visibility, and permission checks. Scheduled expiration
+lives in test_cohost_invite_expiration.py.
 """
 
 import json
-from datetime import timedelta
 
 import pytest
 from community.models import (
@@ -14,7 +14,6 @@ from community.models import (
     EventCoHostInvite,
     EventStatus,
 )
-from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
@@ -308,30 +307,6 @@ class TestRescind:
             **_auth_headers(creator),
         )
         assert response.status_code == 400
-
-
-# ─── Lazy expiration ──────────────────────────────────────────────────────────
-
-
-@pytest.mark.django_db
-class TestLazyExpire:
-    def test_pending_invite_expires_when_event_is_past(
-        self, api_client, creator, event_with_pending_invite
-    ):
-        event, invite = event_with_pending_invite
-        past = timezone.now() - timedelta(days=1)
-        Event.objects.filter(pk=event.pk).update(
-            start_datetime=past - timedelta(hours=1),
-            end_datetime=past,
-        )
-        # Simply reading the event detail triggers lazy expiration.
-        response = api_client.get(
-            f"/api/community/events/{event.id}/",
-            **_auth_headers(creator),
-        )
-        assert response.status_code == 200
-        invite.refresh_from_db()
-        assert invite.status == CoHostInviteStatus.EXPIRED
 
 
 # ─── EventOut visibility ──────────────────────────────────────────────────────

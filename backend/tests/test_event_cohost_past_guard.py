@@ -122,9 +122,8 @@ class TestPastEventGuard:
         # Removal is housekeeping — should keep working after the event ends.
         event_id = _create_active_event(api_client, creator, co_host_ids=[str(invitee.pk)])
         _make_event_past(event_id)
-        # Invite would have been lazily expired on read; patch with empty list
-        # is a noop for the now-EXPIRED row (rescind branch only acts on
-        # PENDING/ACCEPTED).
+        # Removal path: patch with an empty list rescinds the still-PENDING
+        # invite — the guard only blocks upserts, not removals.
         response = api_client.patch(
             f"/api/community/events/{event_id}/",
             data=json.dumps({"co_host_ids": []}),
