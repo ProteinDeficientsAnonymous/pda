@@ -195,6 +195,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 event_type=e.event_type,
                 visibility=e.visibility,
                 photo_url=media_path(e.photo),
+                photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
                 whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
                 partiful_link=_members_only(e.partiful_link, "", is_authed),
                 other_link=_members_only(e.other_link, "", is_authed),

@@ -2202,6 +2202,8 @@ export interface components {
              * @default
              */
             partiful_link: string;
+            /** Photo Updated At */
+            photo_updated_at?: string | null;
             /**
              * Photo Url
              * @default
@@ -2388,6 +2390,8 @@ export interface components {
              * @default []
              */
             pending_cohost_invites: components["schemas"]["PendingCoHostInviteOut"][];
+            /** Photo Updated At */
+            photo_updated_at?: string | null;
             /**
              * Photo Url
              * @default

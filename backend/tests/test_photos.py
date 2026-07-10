@@ -137,7 +137,11 @@ class TestEventPhoto:
             **_auth(member),
         )
         assert response.status_code == 200
-        assert response.json()["photo_url"] != ""
+        data = response.json()
+        assert data["photo_url"] != ""
+        assert data["photo_updated_at"] is not None
+        event.refresh_from_db()
+        assert event.photo_updated_at is not None
 
     def test_manager_can_upload(self, api_client, manager, event):
         photo = _make_test_image()
@@ -193,7 +197,11 @@ class TestEventPhoto:
             **_auth(member),
         )
         assert response.status_code == 200
-        assert response.json()["photo_url"] == ""
+        body = response.json()
+        assert body["photo_url"] == ""
+        assert body["photo_updated_at"] is None
+        event.refresh_from_db()
+        assert event.photo_updated_at is None
 
     def test_photo_url_in_event_detail(self, api_client, member, event):
         photo = _make_test_image()

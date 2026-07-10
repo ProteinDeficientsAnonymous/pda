@@ -237,7 +237,7 @@ export function EventForm({ existing }: Props) {
     >
       <EventFormPhoto
         photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
-        photoUpdatedAt={null}
+        photoUpdatedAt={existing?.photoUpdatedAt ?? null}
         onCrop={onCropPhoto}
         onDelete={existing || pendingPhoto ? onDeletePhoto : undefined}
         disabled={saving}
