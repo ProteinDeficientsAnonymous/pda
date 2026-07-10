@@ -1,3 +1,6 @@
+import { hasPermission, Permission } from './permissions';
+import type { User } from './user';
+
 export const EventType = {
   Community: 'community',
   Official: 'official',
@@ -142,6 +145,13 @@ export interface PendingCohostInvite {
   userName: string;
   userPhotoUrl: string;
   invitedAt: Date;
+}
+
+export function canManageEvent(event: Event, user: User | null): boolean {
+  if (!user) return false;
+  if (user.id === event.createdById) return true;
+  if (event.coHostIds.includes(user.id)) return true;
+  return hasPermission(user, Permission.ManageEvents);
 }
 
 export function eventClass(e: Event): string {

@@ -1,14 +1,11 @@
-// Dedicated host-only page for event attendance — accessed via the kebab menu
-// on the event detail screen. Gates the panel behind creator/co-host/manage_events.
-
 import { Link, useParams } from 'react-router-dom';
+
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
-import type { Event } from '@/models/event';
-import { Permission, hasPermission } from '@/models/permissions';
-import type { User } from '@/models/user';
+import { canManageEvent } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+
 import { EventAttendancePanel } from './EventAttendancePanel';
 
 export default function EventAttendanceScreen() {
@@ -25,7 +22,7 @@ export default function EventAttendanceScreen() {
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
 
-  if (!canSeeAttendance(event, user)) {
+  if (!canManageEvent(event, user)) {
     return (
       <ForbiddenNotice eventId={event.id} message="only the host or a co-host can see attendance" />
     );
@@ -39,13 +36,6 @@ export default function EventAttendanceScreen() {
       <EventAttendancePanel event={event} />
     </ContentContainer>
   );
-}
-
-function canSeeAttendance(event: Event, user: User | null): boolean {
-  if (!user) return false;
-  if (user.id === event.createdById) return true;
-  if (event.coHostIds.includes(user.id)) return true;
-  return hasPermission(user, Permission.ManageEvents);
 }
 
 function BackLink({ eventId }: { eventId: string }) {

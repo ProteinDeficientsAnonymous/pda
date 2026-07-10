@@ -1,7 +1,3 @@
-// Host-only kebab menu rendered next to the event title. Items navigate to
-// dedicated pages rather than opening modals — keeps the detail page tidy and
-// gives each setting room to breathe.
-
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 

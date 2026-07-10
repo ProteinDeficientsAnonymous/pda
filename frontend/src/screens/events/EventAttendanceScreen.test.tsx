@@ -1,11 +1,10 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
-import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
-import type { User } from '@/models/user';
+import { makeEvent, makeUser } from '@/test/fixtures';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -18,75 +17,17 @@ vi.mock('@/api/eventStats', () => ({
 }));
 
 import { useEvent } from '@/api/events';
+
 import EventAttendanceScreen from './EventAttendanceScreen';
 
-const BASE_EVENT: Event = {
-  id: 'ev1',
+const BASE_EVENT = makeEvent({
   title: 'Spring Potluck',
-  description: '',
-  startDatetime: new Date('2099-06-01T18:00:00Z'),
-  endDatetime: null,
-  location: '',
-  latitude: null,
-  longitude: null,
-  whatsappLink: '',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
-  rsvpEnabled: true,
-  allowPlusOnes: false,
-  maxAttendees: null,
-  attendingCount: 0,
-  waitlistedCount: 0,
-  invitedCount: 0,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
   createdById: 'user-creator',
-  createdByName: 'Alice',
-  createdByPhotoUrl: '',
-  coHostIds: [],
-  coHostNames: [],
-  coHostPhotoUrls: [],
-  coHostInviteIds: [],
   guests: [],
-  myRsvp: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
-  invitePermission: InvitePermission.AllMembers,
-  pendingCohostInvites: [],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  isPast: false,
-  status: EventStatus.Active,
-};
+});
 
-const CREATOR: User = {
-  id: 'user-creator',
-  phoneNumber: '+12125550001',
-  displayName: 'Alice',
-  email: '',
-  bio: '',
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  showPhone: false,
-  showEmail: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
-
-const STRANGER: User = { ...CREATOR, id: 'user-stranger', displayName: 'Stranger' };
+const CREATOR = makeUser({ id: 'user-creator', displayName: 'Alice' });
+const nonMember = makeUser({ id: 'user-nonmember', displayName: 'Casey' });
 
 function renderScreen() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -120,7 +61,7 @@ describe('EventAttendanceScreen', () => {
   });
 
   it('blocks non-host members with a forbidden notice', () => {
-    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    useAuthStore.setState({ status: 'authed', user: nonMember, accessToken: 'tok' });
     renderScreen();
 
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
