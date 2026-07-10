@@ -5,6 +5,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # 10 MB app cap (_MAX_EVENT_PHOTO_SIZE) + multipart overhead; else nginx's 1 MB default 413s phone photos (Issue 655).
+    client_max_body_size 12m;
+
     gzip on;
     gzip_types text/plain text/css application/javascript application/json image/svg+xml;
     gzip_min_length 1024;
