@@ -5,8 +5,9 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient } from './client';
 import { normalizePermissions } from '@/models/permissions';
+
+import { apiClient } from './client';
 
 export interface Role {
   id: string;
