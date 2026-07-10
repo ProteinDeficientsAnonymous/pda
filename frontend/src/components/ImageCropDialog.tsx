@@ -15,6 +15,7 @@ import {
   defaultCoverAspect,
   initialCrop,
   MAX_PREVIEW_PX,
+  percentToPixelCrop,
   PORTRAIT_ASPECT,
   SQUARE_ASPECT,
 } from './initialCrop';
@@ -58,7 +59,10 @@ export function ImageCropDialog({
   function selectAspect(next: number) {
     const img = imgRef.current;
     setAspect(next);
-    if (img) setCrop(coverCrop(img.width, img.height, next));
+    if (!img) return;
+    const nextCrop = coverCrop(img.width, img.height, next);
+    setCrop(nextCrop);
+    setCompleted(percentToPixelCrop(nextCrop, img.width, img.height));
   }
 
   function handleCancel() {

@@ -1,7 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { cropImage } from '@/utils/cropImage';
 
 // react-image-crop uses pointer events + ResizeObserver that jsdom doesn't
 // fully support. Stub it so it renders a simple sentinel element that
@@ -25,7 +27,17 @@ vi.mock('react-image-crop', () => ({
     </div>
   ),
   centerCrop: (c: unknown) => c,
-  makeAspectCrop: () => ({ unit: '%', x: 0, y: 0, width: 80, height: 80 }),
+  makeAspectCrop: (_base: unknown, aspect: number, width: number, height: number) => {
+    const cropW = Math.min(width, height * aspect);
+    const cropH = cropW / aspect;
+    return {
+      unit: '%',
+      x: 0,
+      y: 0,
+      width: (cropW / width) * 100,
+      height: (cropH / height) * 100,
+    };
+  },
 }));
 
 // cropImage reaches into canvas APIs — stub it
@@ -102,6 +114,28 @@ describe('ImageCropDialog', () => {
     expect(portrait).toHaveAttribute('aria-pressed', 'true');
     expect(square).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByTestId('cropper')).toHaveAttribute('data-aspect', '0.8');
+  });
+
+  it('saves the toggled square aspect even without dragging the crop (issue 598)', async () => {
+    const user = userEvent.setup();
+    const onCrop = vi.fn();
+    const { container } = renderDialog({ shape: 'rect', onCrop });
+
+    const img = container.querySelector('img')!;
+    Object.defineProperty(img, 'width', { value: 400, configurable: true });
+    Object.defineProperty(img, 'height', { value: 500, configurable: true });
+    Object.defineProperty(img, 'naturalWidth', { value: 400, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 500, configurable: true });
+    fireEvent.load(img);
+
+    expect(screen.getByRole('button', { name: /^4:5$/i })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: /^square$/i }));
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(cropImage).toHaveBeenCalledOnce();
+    const [, area] = vi.mocked(cropImage).mock.lastCall!;
+    expect(area.width).toBeCloseTo(area.height);
   });
 
   it('does not show the shape toggle in round mode', () => {
