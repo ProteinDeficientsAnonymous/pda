@@ -164,6 +164,24 @@ describe('EventDetailScreen', () => {
     expect(screen.getByText(/a test event description/i)).toBeInTheDocument();
   });
 
+  it('wraps long unbroken description text so it cannot overflow the viewport (issue 611)', () => {
+    const longUrl = `https://example.com/${'x'.repeat(200)}`;
+    mockUseEvent.mockReturnValue({
+      data: { ...BASE_EVENT, description: `join here ${longUrl}` },
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    renderScreen();
+
+    const namePattern = new RegExp(longUrl.slice(8, 40).replace(/\./g, '\\.'));
+    const link = screen.getByRole('link', { name: namePattern });
+    const paragraph = link.closest('p');
+    expect(paragraph).not.toBeNull();
+    // break-words alone doesn't reliably break a spaceless token in WebKit;
+    // overflow-wrap:anywhere is what actually forces the break (see RichEditor).
+    expect(paragraph).toHaveClass('break-words', '[overflow-wrap:anywhere]');
+  });
+
   it('shows WhatsApp link for authenticated member', () => {
     useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
     renderScreen();
