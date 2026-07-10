@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -136,6 +136,28 @@ describe('ImageCropDialog', () => {
     expect(cropImage).toHaveBeenCalledOnce();
     const [, area] = vi.mocked(cropImage).mock.lastCall!;
     expect(area.width).toBeCloseTo(area.height);
+  });
+
+  it('surfaces an error and clears saving when cropping fails (issue 580)', async () => {
+    const user = userEvent.setup();
+    vi.mocked(cropImage).mockRejectedValueOnce(new Error('timed out processing image'));
+    const { container } = renderDialog({ shape: 'rect' });
+
+    const img = container.querySelector('img')!;
+    Object.defineProperty(img, 'width', { value: 400, configurable: true });
+    Object.defineProperty(img, 'height', { value: 400, configurable: true });
+    Object.defineProperty(img, 'naturalWidth', { value: 400, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 400, configurable: true });
+    fireEvent.load(img);
+
+    // Toggling an aspect populates `completed` (mock doesn't fire onComplete).
+    await user.click(screen.getByRole('button', { name: /^square$/i }));
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/couldn't process that photo/i);
+    });
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument();
   });
 
   it('does not show the shape toggle in round mode', () => {
