@@ -140,6 +140,25 @@ class TestRolesAndPermissions:
         user = User.objects.prefetch_related("roles").get(pk=test_user.pk)
         assert not user.has_permission(PermissionKey.MANAGE_USERS)
 
+    @pytest.mark.parametrize("bad_value", ["manage_events", {"manage_events": True}, 42])
+    def test_corrupt_permissions_shape_grants_no_permissions(self, test_user, bad_value):
+        role = Role.objects.get(name="member")
+        Role.objects.filter(pk=role.pk).update(permissions=bad_value)
+        role.refresh_from_db()
+        test_user.roles.add(role)
+        assert role.effective_permissions == []
+        assert not test_user.has_permission(PermissionKey.MANAGE_EVENTS)
+
+    def test_corrupt_permissions_filters_non_string_entries(self, test_user):
+        role = Role.objects.get(name="member")
+        Role.objects.filter(pk=role.pk).update(
+            permissions=[PermissionKey.MANAGE_EVENTS, None, 7, {"x": 1}]
+        )
+        role.refresh_from_db()
+        test_user.roles.add(role)
+        assert role.effective_permissions == [PermissionKey.MANAGE_EVENTS]
+        assert test_user.has_permission(PermissionKey.MANAGE_EVENTS)
+
 
 # ---------------------------------------------------------------------------
 # User management API (#3)

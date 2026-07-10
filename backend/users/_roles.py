@@ -84,7 +84,7 @@ def create_role(request, payload: RoleIn):
             id=str(role.id),
             name=role.name,
             is_default=role.is_default,
-            permissions=role.permissions,
+            permissions=role.effective_permissions,
         ),
     )
 
@@ -114,7 +114,7 @@ def update_role(request, role_id: str, payload: RolePatchIn):
         raise_validation(Code.Role.PROTECTED_CANNOT_EDIT, status_code=400, role_name=role.name)
 
     old_name = role.name
-    old_permissions = list(role.permissions)
+    old_permissions = role.effective_permissions
 
     if payload.name is not None and payload.name != role.name:
         if role.name in PROTECTED_ROLE_NAMES:
@@ -148,7 +148,7 @@ def update_role(request, role_id: str, payload: RolePatchIn):
             id=str(role.id),
             name=role.name,
             is_default=role.is_default,
-            permissions=role.permissions,
+            permissions=role.effective_permissions,
         ),
     )
 

@@ -137,9 +137,8 @@ class User(AbstractUser):
         cache = getattr(self, "_prefetched_objects_cache", {})
         roles = cache["roles"] if "roles" in cache else self.roles.all()
         for role in roles:
-            if role.name == "admin" and role.is_default:
-                return True
-            if key in (role.permissions or []):
+            # effective_permissions expands the admin role and guards corrupt rows
+            if key in role.effective_permissions:
                 return True
         return False
 

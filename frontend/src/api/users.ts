@@ -3,6 +3,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { normalizePermissions } from '@/models/permissions';
+
 import { apiClient } from './client';
 
 // --- Domain types (camelCase) ------------------------------------------------
@@ -60,7 +62,7 @@ function mapRole(r: WireRole): MemberRole {
     id: r.id,
     name: r.name,
     isDefault: r.is_default,
-    permissions: r.permissions,
+    permissions: normalizePermissions(r.permissions),
   };
 }
 

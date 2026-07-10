@@ -39,10 +39,18 @@ export interface UserLike {
   }[];
 }
 
+// defense-in-depth: backend already sends string[], but guard corrupt/missing values so render can't throw
+export function normalizePermissions(value: readonly string[] | null | undefined): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === 'string');
+}
+
 export function hasPermission(user: UserLike | null, key: PermissionKey): boolean {
   if (!user) return false;
   return user.roles.some(
-    (r) => (r.name === ADMIN_ROLE_NAME && r.isDefault) || r.permissions.includes(key),
+    (r) =>
+      (r.name === ADMIN_ROLE_NAME && r.isDefault) ||
+      normalizePermissions(r.permissions).includes(key),
   );
 }
 
