@@ -12,6 +12,17 @@ from tests._asserts import assert_error_code
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    # /login/ is rate-limited (5/m keyed on client IP). Tests share the same
+    # REMOTE_ADDR, so clear the cache around each test to keep counts isolated.
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.fixture
 def onboarding_user(db):
     return User.objects.create_user(

@@ -1,6 +1,3 @@
-// Auth endpoint callers. Returns are shaped for the auth store, not raw axios
-// responses — centralizes the mapping from backend snake_case to frontend camelCase.
-
 import { useMutation } from '@tanstack/react-query';
 
 import type { ConsentTypeValue } from '@/models/consent';
@@ -40,6 +37,7 @@ interface WireUser {
 }
 
 interface TokenOut {
+  // No `refresh`: the refresh token arrives via the httpOnly cookie, never the body.
   access: string;
 }
 
