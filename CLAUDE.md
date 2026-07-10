@@ -92,7 +92,7 @@ Routes: see `.claude/docs/routes.md`
 
 ## Standards
 
-**Agents:** Run **`make agent-ci`** (or matching `make agent-*` step) before claiming work complete or committing.
+**Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched (typecheck + relevant tests).
 
 References: `~/.claude/rules/standards-django-ninja.md`
 
