@@ -164,6 +164,21 @@ describe('EventDetailScreen', () => {
     expect(screen.getByText(/a test event description/i)).toBeInTheDocument();
   });
 
+  it('wraps long unbroken description text so it cannot overflow the viewport (issue 611)', () => {
+    const longUrl = `https://example.com/${'x'.repeat(200)}`;
+    mockUseEvent.mockReturnValue({
+      data: { ...BASE_EVENT, description: `join here ${longUrl}` },
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    renderScreen();
+
+    const link = screen.getByRole('link', { name: new RegExp(longUrl.slice(8, 40)) });
+    const paragraph = link.closest('p');
+    expect(paragraph).not.toBeNull();
+    expect(paragraph).toHaveClass('break-words');
+  });
+
   it('shows WhatsApp link for authenticated member', () => {
     useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
     renderScreen();

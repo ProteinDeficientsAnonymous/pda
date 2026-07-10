@@ -47,7 +47,7 @@ export default function EventDetailScreen() {
       ) : null}
 
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-medium tracking-tight">{event.title}</h1>
+        <h1 className="text-2xl font-medium tracking-tight break-words">{event.title}</h1>
         <VisibilityBadge event={event} />
       </div>
 
@@ -60,7 +60,9 @@ export default function EventDetailScreen() {
       {event.description ? (
         <section className="mt-6">
           <h2 className="text-muted mb-2 text-sm font-medium">about</h2>
-          <p className="text-foreground whitespace-pre-wrap">{linkifyText(event.description)}</p>
+          <p className="text-foreground break-words whitespace-pre-wrap">
+            {linkifyText(event.description)}
+          </p>
         </section>
       ) : null}
 
