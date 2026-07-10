@@ -29,12 +29,7 @@ class Role(models.Model):
 
     @property
     def effective_permissions(self) -> list[str]:
-        """The permission keys this role grants (see User.has_permission).
-
-        The default admin role implicitly grants every current key. Other roles
-        return their stored keys, coerced to a clean list[str] — the JSONField
-        defaults to a list, but legacy/corrupt rows may hold other values.
-        """
+        """Permission keys this role grants: all keys for the default admin role, else the stored keys coerced to a clean list[str] (legacy/corrupt rows may hold non-list or non-string values)."""
         if self.name == "admin" and self.is_default:
             return list(PermissionKey.values)
         stored = self.permissions

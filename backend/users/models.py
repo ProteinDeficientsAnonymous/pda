@@ -137,8 +137,7 @@ class User(AbstractUser):
         cache = getattr(self, "_prefetched_objects_cache", {})
         roles = cache["roles"] if "roles" in cache else self.roles.all()
         for role in roles:
-            # effective_permissions returns the full key set for the admin role
-            # and a normalized list[str] otherwise (guards corrupt JSONField rows).
+            # effective_permissions expands the admin role and guards corrupt rows
             if key in role.effective_permissions:
                 return True
         return False
