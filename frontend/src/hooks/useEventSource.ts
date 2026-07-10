@@ -4,6 +4,8 @@ import { refreshAccessToken } from '@/api/client';
 import { fetchSseTicket } from '@/api/notifications';
 import { API_BASE_URL } from '@/config/env';
 
+import { isRateLimitError, normalBackoffDelay, rateLimitBackoffDelay } from './sseBackoff';
+
 type Handler = (event: MessageEvent<string>) => void;
 
 interface Options {
@@ -12,8 +14,6 @@ interface Options {
   events: Record<string, Handler>;
   onStatusChange?: (connected: boolean) => void;
 }
-
-const MAX_BACKOFF_MS = 30_000;
 
 export function useEventSource({ url, token, events, onStatusChange }: Options): void {
   // Keep the latest handlers in a ref so we don't tear down the connection
@@ -44,9 +44,15 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
         if (state.closed) return;
         if (next && next !== token) return; // outer effect reruns with new token
         retry += 1;
-        const delay = Math.min(2 ** (retry - 1) * 1000, MAX_BACKOFF_MS);
-        reconnectTimer = window.setTimeout(() => void connect(), delay);
+        reconnectTimer = window.setTimeout(() => void connect(), normalBackoffDelay(retry));
       });
+    }
+
+    function scheduleRateLimitedReconnect() {
+      // Ticket minting was rate-limited (429). This is not an auth problem, so
+      // skip the token refresh and don't touch the normal backoff counter —
+      // just wait out the rate window (jittered) and try minting again.
+      reconnectTimer = window.setTimeout(() => void connect(), rateLimitBackoffDelay());
     }
 
     function attachHandlers(source: EventSource) {
@@ -74,8 +80,13 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
         // Mint a fresh single-use ticket. If this fails the session may be gone
         // or the backend is down — back off and retry like any other error.
         ticket = await fetchSseTicket();
-      } catch {
-        if (!state.closed) scheduleReconnect();
+      } catch (err) {
+        if (state.closed) return;
+        if (isRateLimitError(err)) {
+          scheduleRateLimitedReconnect();
+        } else {
+          scheduleReconnect();
+        }
         return;
       }
       if (state.closed) return;
