@@ -131,3 +131,20 @@ class TestMagicLogin:
         resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
         assert resp.status_code == 429
         assert resp.json()["detail"][0]["code"] == "rate.limited"
+
+    def test_rate_limit_survives_spoofed_xff(self, api_client, settings):
+        from django.core.cache import cache
+
+        cache.clear()
+        # Railway puts exactly one trusted proxy in front of the app.
+        settings.TRUSTED_PROXY_COUNT = 1
+        url = "/api/auth/magic-login/00000000-0000-0000-0000-000000000000/"
+        # Attacker rotates the spoofed leftmost XFF on every request but always
+        # reaches us through one real proxy (rightmost hop). The limiter must
+        # still bucket them together and trip at the 6th attempt.
+        for i in range(5):
+            resp = api_client.get(url, HTTP_X_FORWARDED_FOR=f"9.9.9.{i}, 198.51.100.7")
+            assert resp.status_code == 400
+        resp = api_client.get(url, HTTP_X_FORWARDED_FOR="123.45.67.89, 198.51.100.7")
+        assert resp.status_code == 429
+        assert resp.json()["detail"][0]["code"] == "rate.limited"
