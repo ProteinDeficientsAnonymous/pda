@@ -173,10 +173,13 @@ describe('EventDetailScreen', () => {
     } as ReturnType<typeof useEvent>);
     renderScreen();
 
-    const link = screen.getByRole('link', { name: new RegExp(longUrl.slice(8, 40)) });
+    const namePattern = new RegExp(longUrl.slice(8, 40).replace(/\./g, '\\.'));
+    const link = screen.getByRole('link', { name: namePattern });
     const paragraph = link.closest('p');
     expect(paragraph).not.toBeNull();
-    expect(paragraph).toHaveClass('break-words');
+    // break-words alone doesn't reliably break a spaceless token in WebKit;
+    // overflow-wrap:anywhere is what actually forces the break (see RichEditor).
+    expect(paragraph).toHaveClass('break-words', '[overflow-wrap:anywhere]');
   });
 
   it('shows WhatsApp link for authenticated member', () => {
