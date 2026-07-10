@@ -37,6 +37,7 @@ const baseEvent = {
   photo_url: '',
   price: '',
   status: 'active',
+  tags: [],
   venmo_link: '',
   visibility: 'public',
   waitlisted_count: 0,
