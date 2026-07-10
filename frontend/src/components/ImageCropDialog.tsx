@@ -4,7 +4,7 @@
 import 'react-image-crop/dist/ReactCrop.css';
 
 import type { SyntheticEvent } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 
 import { cn } from '@/utils/cn';
@@ -48,7 +48,14 @@ export function ImageCropDialog({
   const [aspect, setAspect] = useState(shape === 'round' ? 1 : SQUARE_ASPECT);
   const [completed, setCompleted] = useState<PixelCrop | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      URL.revokeObjectURL(src);
+    };
+  }, [src]);
 
   function onImageLoad(e: SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
@@ -65,11 +72,6 @@ export function ImageCropDialog({
     setCompleted(percentToPixelCrop(nextCrop, img.width, img.height));
   }
 
-  function handleCancel() {
-    URL.revokeObjectURL(src);
-    onCancel();
-  }
-
   async function handleSave() {
     const img = imgRef.current;
     if (!completed || !img) return;
@@ -82,10 +84,12 @@ export function ImageCropDialog({
       height: completed.height * scaleY,
     };
     setSaving(true);
+    setError(null);
     try {
       const blob = await cropImage(file, area, outputSize);
       await onCrop(blob);
-      URL.revokeObjectURL(src);
+    } catch {
+      setError("couldn't process that photo — try again");
     } finally {
       setSaving(false);
     }
@@ -142,8 +146,13 @@ export function ImageCropDialog({
             ))}
           </div>
         ) : null}
+        {error ? (
+          <p role="alert" className="text-xs text-red-600">
+            {error}
+          </p>
+        ) : null}
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={handleCancel} disabled={saving}>
+          <Button variant="ghost" onClick={onCancel} disabled={saving}>
             cancel
           </Button>
           <Button onClick={() => void handleSave()} disabled={!completed || saving}>

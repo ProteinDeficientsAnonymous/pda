@@ -34,9 +34,7 @@ function fitToMaxSize(w: number, h: number, maxSize: number): { width: number; h
   return { width: Math.round(w * scale), height: Math.round(h * scale) };
 }
 
-// iOS Safari can leave Image.onload and canvas.toBlob callbacks pending
-// indefinitely for some photo-library images, wedging the crop dialog on
-// "saving…" forever (issue 580). Bound both so the promise always settles.
+// iOS Safari can leave Image.onload / canvas.toBlob callbacks pending forever; bound them (issue 580).
 const IMAGE_OP_TIMEOUT_MS = 15000;
 
 function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
