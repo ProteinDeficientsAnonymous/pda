@@ -86,4 +86,12 @@ describe('AppShell + BottomNav', () => {
     const nav = screen.getByRole('navigation', { name: /primary/i });
     expect(nav).toBeInTheDocument();
   });
+
+  it('renders a lowercase copyright footer in the shared app shell', () => {
+    renderShell('/');
+
+    expect(screen.getByRole('contentinfo')).toHaveTextContent(
+      `© ${new Date().getFullYear()} protein deficients anonymous`,
+    );
+  });
 });

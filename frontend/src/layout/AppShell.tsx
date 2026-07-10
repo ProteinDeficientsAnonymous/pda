@@ -10,6 +10,7 @@ import { useAuthStore } from '@/auth/store';
 import { FeedbackButton } from '@/components/FeedbackButton';
 
 import { BottomNav } from './BottomNav';
+import { Footer } from './Footer';
 import { NotificationBell } from './NotificationBell';
 import { PdaMenuSheet } from './PdaMenuSheet';
 
@@ -40,7 +41,12 @@ export function AppShell() {
       {/* Pad the bottom so the fixed BottomNav (h-14 + iOS safe area) doesn't
           cover the end of the scroll. Header already eats its own space. */}
       <div className="flex-1 overflow-x-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-        <Outlet />
+        <div className="flex min-h-full flex-col">
+          <div className="flex-1">
+            <Outlet />
+          </div>
+          <Footer />
+        </div>
       </div>
 
       <div id="pda-menu-sheet">
