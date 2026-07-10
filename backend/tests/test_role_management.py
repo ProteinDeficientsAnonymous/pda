@@ -112,6 +112,18 @@ class TestRoleManagementAPI:
         assert response.status_code == 200
         assert PermissionKey.MANAGE_EVENTS in response.json()["permissions"]
 
+    def test_patch_role_with_corrupt_stored_permissions(self, api_client, manage_users_headers):
+        role = Role.objects.create(name="corrupt", permissions=[])
+        Role.objects.filter(pk=role.pk).update(permissions=42)
+        response = api_client.patch(
+            f"/api/auth/roles/{role.id}/",
+            {"permissions": [PermissionKey.MANAGE_EVENTS]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["permissions"] == [PermissionKey.MANAGE_EVENTS]
+
     def test_patch_default_role_blocked(self, api_client, manage_users_headers):
         admin_role = Role.objects.get(name="admin")
         response = api_client.patch(

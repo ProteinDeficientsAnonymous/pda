@@ -142,12 +142,6 @@ class TestRolesAndPermissions:
 
     @pytest.mark.parametrize("bad_value", ["manage_events", {"manage_events": True}, 42])
     def test_corrupt_permissions_shape_grants_no_permissions(self, test_user, bad_value):
-        """A JSONField row holding a non-list value (edited out-of-band) must
-        not crash or accidentally match — it degrades to 'no perms'.
-
-        `None` is not tested: the column is NOT NULL, so a null is unreachable
-        even via raw .update(). The reachable corrupt shapes are non-null JSON.
-        """
         role = Role.objects.get(name="member")
         Role.objects.filter(pk=role.pk).update(permissions=bad_value)
         role.refresh_from_db()
