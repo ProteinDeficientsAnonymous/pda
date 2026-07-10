@@ -21,6 +21,7 @@ import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
 import { eventKeys } from './events';
+import { textRecipientsKeys } from './textRecipients';
 
 const ROUTE = '/events';
 
@@ -197,6 +198,7 @@ export function useInviteToEvent(eventId: string) {
     onSuccess: (event) => {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: textRecipientsKeys.detail(event.id) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'invite-to-event', eventId });

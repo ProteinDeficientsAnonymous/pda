@@ -1,6 +1,10 @@
 // Pure-helper tests for the event write layer: enum-coercion on the inbound
 // side (eventToFormValues) and per-field PATCH body building (toPartialWireBody).
-import { describe, expect, it } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type Event,
@@ -10,7 +14,22 @@ import {
   InvitePermission,
 } from '@/models/event';
 
-import { eventToFormValues, toPartialWireBody } from './eventWrites';
+vi.mock('@/api/client', () => ({
+  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+}));
+
+vi.mock('@/auth/store', () => {
+  const state = { status: 'authed', user: { id: 'u-me' } };
+  const useAuthStore = vi.fn((selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state,
+  );
+  return { useAuthStore };
+});
+
+import { apiClient } from '@/api/client';
+
+import { eventToFormValues, toPartialWireBody, useInviteToEvent } from './eventWrites';
+import { textRecipientsKeys } from './textRecipients';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -153,5 +172,36 @@ describe('toPartialWireBody', () => {
   it('maps tagIds to tag_ids, including an empty list (clears tags)', () => {
     expect(toPartialWireBody({ tagIds: ['t1', 't2'] })).toEqual({ tag_ids: ['t1', 't2'] });
     expect(toPartialWireBody({ tagIds: [] })).toEqual({ tag_ids: [] });
+  });
+});
+
+describe('useInviteToEvent', () => {
+  const EVENT_ID = '11111111-1111-1111-1111-111111111111';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function buildWrapper() {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+    return { qc, Wrapper };
+  }
+
+  it('invalidates the text-recipients query so the group-text count refreshes (issue 612)', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { id: EVENT_ID } });
+    const { qc, Wrapper } = buildWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+
+    const { result } = renderHook(() => useInviteToEvent(EVENT_ID), { wrapper: Wrapper });
+    result.current.mutate(['user-a']);
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: textRecipientsKeys.detail(EVENT_ID),
+    });
   });
 });
