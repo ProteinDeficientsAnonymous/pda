@@ -31,6 +31,8 @@ class JoinFormQuestion(models.Model):
 class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     display_name = models.CharField(max_length=64)
+    first_name = models.CharField(max_length=64, blank=True, default="")
+    last_name = models.CharField(max_length=64, blank=True, default="")
     phone_number = models.CharField(max_length=20)
     email = models.EmailField(blank=True, default="")
     user = models.ForeignKey(
@@ -78,6 +80,20 @@ class JoinRequest(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["-submitted_at"]
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def save(self, *args, **kwargs):
+        if self.full_name:
+            self.display_name = self.full_name
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                update_fields = set(update_fields)
+                update_fields.add("display_name")
+                kwargs["update_fields"] = update_fields
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.display_name} ({self.phone_number}) — {self.submitted_at:%Y-%m-%d}"

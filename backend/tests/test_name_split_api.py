@@ -45,3 +45,14 @@ class TestBackfillParsing:
         u.refresh_from_db()
         assert (u.first_name, u.last_name) == ("Grace", "Hopper")
         assert u.display_name == "Grace Hopper"
+
+
+@pytest.mark.django_db
+class TestJoinRequestNames:
+    def test_join_request_full_name(self):
+        from community.models.join_form import JoinRequest
+
+        jr = JoinRequest.objects.create(
+            first_name="Ada", last_name="Lovelace", phone_number="+15551239999"
+        )
+        assert jr.full_name == "Ada Lovelace"
