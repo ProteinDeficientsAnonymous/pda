@@ -120,10 +120,10 @@ describe('eventToFormValues enum validation', () => {
     expect(form.status).toBe(EventStatus.Active);
   });
 
-  it('derives visibilityChoice from the coerced (not raw) values', () => {
+  it('coerces type and visibility independently', () => {
     const form = eventToFormValues(makeEvent({ eventType: 'bogus', visibility: 'bogus' }));
-    // community + public → 'public'
-    expect(form.visibilityChoice).toBe('public');
+    expect(form.eventType).toBe('community');
+    expect(form.visibility).toBe('public');
   });
 
   it('maps tags to tagIds', () => {
@@ -155,14 +155,13 @@ describe('toPartialWireBody', () => {
     expect(body).toEqual({ title: 'x' });
   });
 
-  it('expands visibilityChoice into visibility + event_type', () => {
-    expect(toPartialWireBody({ visibilityChoice: 'official' })).toEqual({
-      visibility: 'public',
+  it('sends event_type and visibility as independent wire fields', () => {
+    expect(toPartialWireBody({ eventType: 'official', visibility: 'public' })).toEqual({
       event_type: 'official',
+      visibility: 'public',
     });
-    expect(toPartialWireBody({ visibilityChoice: 'invite_only' })).toEqual({
+    expect(toPartialWireBody({ visibility: 'invite_only' })).toEqual({
       visibility: 'invite_only',
-      event_type: 'community',
     });
   });
 

@@ -27,24 +27,6 @@ const ROUTE = '/events';
 
 export type EventStatus = (typeof EventStatusEnum)[keyof typeof EventStatusEnum];
 
-export type VisibilityChoice = 'official' | 'public' | 'members_only' | 'invite_only';
-
-export function visibilityChoiceToFields(choice: VisibilityChoice): {
-  visibility: EventFormValues['visibility'];
-  eventType: EventFormValues['eventType'];
-} {
-  if (choice === 'official') return { visibility: 'public', eventType: 'official' };
-  return { visibility: choice, eventType: 'community' };
-}
-
-export function fieldsToVisibilityChoice(
-  visibility: EventFormValues['visibility'],
-  eventType: EventFormValues['eventType'],
-): VisibilityChoice {
-  if (eventType === 'official') return 'official';
-  return visibility as VisibilityChoice;
-}
-
 export interface EventFormValues {
   title: string;
   description: string;
@@ -56,7 +38,6 @@ export interface EventFormValues {
   datetimeTbd: boolean;
   eventType: 'community' | 'official';
   visibility: 'public' | 'members_only' | 'invite_only';
-  visibilityChoice: VisibilityChoice;
   invitePermission: 'all_members' | 'co_hosts_only';
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;
@@ -79,8 +60,6 @@ type WireBody = Record<string, unknown>;
 // Each encoder receives *only its own field's value*, so the same map drives
 // both the full-body and partial-body builders without ever casting a
 // `Partial<EventFormValues>` to the full type.
-// `visibilityChoice` is virtual on the wire — it expands into `visibility` +
-// `event_type` — so it's handled separately rather than living in this map.
 type WireField<K extends keyof EventFormValues> = readonly [
   wireKey: string,
   encode: (value: EventFormValues[K]) => unknown,
@@ -91,6 +70,8 @@ type WireFieldMap = { [K in keyof EventFormValues]?: WireField<K> };
 const FIELD_TO_WIRE: WireFieldMap = {
   title: ['title', (v) => v],
   description: ['description', (v) => v],
+  eventType: ['event_type', (v) => v],
+  visibility: ['visibility', (v) => v],
   location: ['location', (v) => v],
   latitude: ['latitude', (v) => v],
   longitude: ['longitude', (v) => v],
@@ -127,8 +108,7 @@ function encodeField<K extends keyof EventFormValues>(
 }
 
 function toWireBody(values: EventFormValues): WireBody {
-  const { visibility, eventType } = visibilityChoiceToFields(values.visibilityChoice);
-  const body: WireBody = { visibility, event_type: eventType };
+  const body: WireBody = {};
   for (const key of Object.keys(FIELD_TO_WIRE) as (keyof EventFormValues)[]) {
     const encoded = encodeField(key, values[key]);
     if (!encoded) continue;
@@ -139,19 +119,10 @@ function toWireBody(values: EventFormValues): WireBody {
 
 // Build a PATCH body from only the keys present in the Partial. Each encoder
 // reads only its own field's value, so no `Partial → full` cast is needed.
-// `visibilityChoice` (if present) expands into `visibility` + `event_type`.
 export function toPartialWireBody(values: Partial<EventFormValues>): WireBody {
   const body: WireBody = {};
   for (const key of Object.keys(values) as (keyof EventFormValues)[]) {
     if (values[key] === undefined) continue;
-    if (key === 'visibilityChoice') {
-      const choice = values.visibilityChoice;
-      if (choice === undefined) continue;
-      const { visibility, eventType } = visibilityChoiceToFields(choice);
-      body.visibility = visibility;
-      body.event_type = eventType;
-      continue;
-    }
     const encoded = encodeField(key, values[key]);
     if (!encoded) continue;
     body[encoded[0]] = encoded[1];
@@ -338,7 +309,6 @@ export function emptyEventFormValues(): EventFormValues {
     datetimeTbd: false,
     eventType: 'community',
     visibility: 'public',
-    visibilityChoice: 'public',
     invitePermission: 'all_members',
     rsvpEnabled: true,
     allowPlusOnes: true,
@@ -394,7 +364,6 @@ export function eventToFormValues(e: Event): EventFormValues {
     datetimeTbd: e.datetimeTbd,
     eventType,
     visibility,
-    visibilityChoice: fieldsToVisibilityChoice(visibility, eventType),
     invitePermission: coerceEnum(
       e.invitePermission,
       FORM_INVITE_PERMISSIONS,

@@ -28,7 +28,7 @@ import { useAuthStore } from '@/auth/store';
 import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
-import type { Event } from '@/models/event';
+import { type Event, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { EventFormBasics } from './EventFormBasics';
@@ -49,7 +49,6 @@ interface Props {
 const DETAILS_FIELDS: readonly (keyof EventFormValues)[] = [
   'description',
   'visibility',
-  'visibilityChoice',
   'eventType',
   'invitePermission',
 ];
@@ -249,6 +248,7 @@ export function EventForm({ existing }: Props) {
         values={values}
         onChange={patch}
         errors={errors}
+        canTagOfficial={canTagOfficial}
         timeLocked={!!existing?.hasPoll && !existing.startDatetime}
         existingEventId={existing?.id}
         existingHasPoll={!!existing?.hasPoll}
@@ -292,7 +292,7 @@ export function EventForm({ existing }: Props) {
           values={values}
           onChange={patch}
           errors={errors}
-          canTagOfficial={canTagOfficial}
+          typeLocked={values.eventType === EventType.Official}
         />
       </CollapsibleCard>
 

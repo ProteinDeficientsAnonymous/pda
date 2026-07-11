@@ -1,5 +1,5 @@
-// Always-visible zone: title, tbd toggle, start + end, poll button, location.
-// Description / visibility / event type moved into the details section.
+// Always-visible zone: title, type toggle, tbd toggle, start + end, poll
+// button, location. Description / visibility live in the details section.
 //
 // Layout order (when no poll/buffered dates): tbd toggle → start/end pickers
 // → centered "poll for dates" button. The tbd toggle stays above the pickers
@@ -25,10 +25,13 @@ import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { PollCreateDialog } from '@/screens/events/poll/PollCreateDialog';
 
+import { EventFormType } from './EventFormType';
+
 interface Props {
   values: EventFormValues;
   onChange: (patch: Partial<EventFormValues>) => void;
   errors: Partial<Record<keyof EventFormValues, string>>;
+  canTagOfficial: boolean;
   timeLocked?: boolean;
   existingEventId?: string | undefined;
   existingHasPoll?: boolean;
@@ -40,6 +43,7 @@ export function EventFormBasics({
   values,
   onChange,
   errors,
+  canTagOfficial,
   timeLocked = false,
   existingEventId,
   existingHasPoll = false,
@@ -69,6 +73,8 @@ export function EventFormBasics({
         error={errors.title}
         required
       />
+
+      <EventFormType values={values} onChange={onChange} canTagOfficial={canTagOfficial} />
 
       {timeLocked ? (
         <p className="text-sm text-neutral-600">
