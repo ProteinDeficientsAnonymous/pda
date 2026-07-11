@@ -243,6 +243,25 @@ describe('EventMemberSection — pending host row', () => {
     expect(screen.getByText(/pending/i)).toBeInTheDocument();
   });
 
+  it('hides pending chips on a past event', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({
+      ...BASE_EVENT,
+      isPast: true,
+      pendingCohostInvites: [
+        {
+          id: 'inv1',
+          userId: 'user-bob',
+          userName: 'Bob',
+          userPhotoUrl: '',
+          invitedAt: new Date(),
+        },
+      ],
+    });
+
+    expect(screen.queryByLabelText(/bob \(pending\)/i)).not.toBeInTheDocument();
+  });
+
   it('shows the rescind button only when the viewer is a host', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection({
