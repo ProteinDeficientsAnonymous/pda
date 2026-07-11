@@ -75,6 +75,10 @@ def _resolve_rsvp_status(
     Returns (status, has_plus_one). Raises ValidationException if a +1 is
     denied at capacity.
     """
+    # Don't trust the client: a stale/crafted +1 must not inflate a disallowed event.
+    if not event.allow_plus_ones:
+        has_plus_one = False
+
     if requested_status != RSVPStatus.ATTENDING or event.max_attendees is None:
         return requested_status, has_plus_one
 
