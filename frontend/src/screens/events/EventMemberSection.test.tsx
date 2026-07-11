@@ -23,6 +23,9 @@ vi.mock('./EventAdminActions', () => ({ EventAdminActions: () => null }));
 vi.mock('./EventFlagDialog', () => ({ EventFlagDialog: () => null }));
 vi.mock('./InviteDialog', () => ({ InviteDialog: () => null }));
 vi.mock('./AddCoHostDialog', () => ({ AddCoHostDialog: () => null }));
+vi.mock('./comments/EventCommentsCard', () => ({
+  EventCommentsCard: () => <div data-testid="comments-card" />,
+}));
 
 import { EventMemberSection } from './EventMemberSection';
 
@@ -221,6 +224,34 @@ describe('EventMemberSection — past event gates (#385)', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection({ ...ACCEPTED_COHOST_EVENT, isPast: true });
     expect(screen.getByRole('button', { name: /remove bob as co-host/i })).toBeInTheDocument();
+  });
+});
+
+describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
+  const RSVP_ENABLED_EVENT: Event = { ...BASE_EVENT, rsvpEnabled: true };
+
+  it('hides the comments section when rsvp is disabled (#666)', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...BASE_EVENT, rsvpEnabled: false });
+    expect(screen.queryByTestId('comments-card')).not.toBeInTheDocument();
+  });
+
+  it('shows the comments section when rsvp is enabled', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection(RSVP_ENABLED_EVENT);
+    expect(screen.getByTestId('comments-card')).toBeInTheDocument();
+  });
+
+  it('hides the invite members button when rsvp is disabled (#667)', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...BASE_EVENT, rsvpEnabled: false });
+    expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the invite members button when rsvp is enabled and the viewer may invite', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection(RSVP_ENABLED_EVENT);
+    expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 });
 
