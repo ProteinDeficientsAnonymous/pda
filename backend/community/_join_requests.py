@@ -195,10 +195,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             allowed=valid_statuses,
         )
 
-    # select_for_update() serializes concurrent approvals: the second blocks until
-    # the first commits, then sees APPROVED and gets ALREADY_DECIDED. Provisioning
-    # shares the transaction so a mid-provision failure never leaves the request
-    # APPROVED with a half-promoted user.
+    # select_for_update() serializes concurrent approvals so only one provisions.
     magic_token = None
     user_created = False
     with transaction.atomic():
