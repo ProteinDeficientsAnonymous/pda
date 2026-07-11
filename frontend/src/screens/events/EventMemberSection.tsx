@@ -18,7 +18,6 @@ import { AddCoHostDialog } from './AddCoHostDialog';
 import { EventCommentsCard } from './comments/EventCommentsCard';
 import { EmailBlastButton } from './EmailBlastButton';
 import { EventAdminActions } from './EventAdminActions';
-import { EventAttendancePanel } from './EventAttendancePanel';
 import { EventFlagDialog } from './EventFlagDialog';
 import { GroupTextButton } from './GroupTextButton';
 import { InviteDialog } from './InviteDialog';
@@ -73,7 +72,6 @@ export function EventMemberSection({ event }: Props) {
       ) : null}
       {canInvite ? <InviteSection event={event} /> : null}
       <EventCommentsCard eventId={event.id} />
-      {canSeeInvited && event.rsvpEnabled ? <EventAttendancePanel event={event} /> : null}
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
     </div>
