@@ -11,7 +11,7 @@
 // matching the Flutter behavior.
 
 import { type ReactNode, useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
@@ -141,8 +141,23 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
 
 export function EmailGate() {
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+  // You can't stay logged in without an email, but "not now" isn't a dead end:
+  // it drops the session and lands on the public calendar, so the app stays
+  // usable from a logged-out state (an authed-only route would otherwise
+  // bounce to /login). A failed logout is swallowed so RequireEmail can
+  // re-enable its button and let the user retry.
+  async function onSkip() {
+    try {
+      await logout();
+      void navigate('/calendar', { replace: true });
+    } catch {
+      // network/server error — stay on the modal, user can retry
+    }
+  }
   if (user && !user.needsOnboarding && !user.email) {
-    return <RequireEmail />;
+    return <RequireEmail onSkip={onSkip} />;
   }
   return <Outlet />;
 }

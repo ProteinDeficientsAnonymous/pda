@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -465,8 +466,33 @@ describe('EmailGate', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/add your email/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /add your email/i })).toBeInTheDocument();
     expect(screen.queryByText('calendar')).not.toBeInTheDocument();
+  });
+
+  it('logs out and lands on public calendar (not /login) when "not now" is clicked', async () => {
+    const user = makeUser({ email: '' });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/members']}>
+        <Routes>
+          <Route element={<EmailGate />}>
+            <Route path="/calendar" element={<div>calendar</div>} />
+            <Route element={<RequireAuth />}>
+              <Route path="/members" element={<div>members</div>} />
+            </Route>
+            <Route path="/login" element={<div>login</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /not now/i }));
+    expect(useAuthStore.getState().status).toBe('unauthed');
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(await screen.findByText('calendar')).toBeInTheDocument();
+    expect(screen.queryByText('login')).not.toBeInTheDocument();
   });
 
   it('renders Outlet when authed user has email', () => {
