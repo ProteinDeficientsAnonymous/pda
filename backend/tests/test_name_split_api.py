@@ -30,3 +30,18 @@ class TestUserFullName:
         u.save(update_fields=["first_name", "last_name"])
         u.refresh_from_db()
         assert u.display_name == "Grace Hopper"
+
+
+@pytest.mark.django_db
+class TestBackfillParsing:
+    """The backfill logic (parse_display_name) applied to representative names."""
+
+    def test_backfill_maps_existing_names(self):
+        from users._name_parsing import parse_display_name
+
+        u = User.objects.create_user(phone_number="+15551230100", first_name="x")
+        u.first_name, u.last_name = parse_display_name("Grace Hopper")
+        u.save()
+        u.refresh_from_db()
+        assert (u.first_name, u.last_name) == ("Grace", "Hopper")
+        assert u.display_name == "Grace Hopper"
