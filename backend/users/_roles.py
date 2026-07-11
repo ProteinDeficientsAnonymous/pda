@@ -5,12 +5,12 @@ import logging
 from community._validation import Code, raise_validation
 from config.audit import audit_log
 from config.auth import gated_jwt
-from django.db.models import Count, Q
+from django.db.models import Count
 from ninja import Router
 from ninja.responses import Status
 
 from users.permissions import PermissionKey
-from users.roles import PROTECTED_ROLE_NAMES, Role
+from users.roles import LIVE_ROLE_MEMBER, PROTECTED_ROLE_NAMES, Role
 from users.schemas import ErrorOut, RoleIn, RoleOut, RolePatchIn
 
 router = Router()
@@ -33,10 +33,7 @@ def list_roles(request):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_roles")
     roles = Role.objects.annotate(
-        user_count=Count(
-            "users",
-            filter=Q(users__archived_at__isnull=True, users__is_member=True),
-        ),
+        user_count=Count("users", filter=LIVE_ROLE_MEMBER),
     )
     return Status(
         200,
@@ -176,7 +173,7 @@ def delete_role(request, role_id: str):
     if role.name in PROTECTED_ROLE_NAMES:
         raise_validation(Code.Role.PROTECTED_CANNOT_DELETE, status_code=400, role_name=role.name)
     role_name = role.name
-    affected_user_count = role.users.filter(archived_at__isnull=True, is_member=True).count()
+    affected_user_count = role.live_member_count()
     role.delete()
     audit_log(
         logging.WARNING,

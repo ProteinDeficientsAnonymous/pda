@@ -2,6 +2,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from django.db import models
+from django.db.models import Q
 
 from users.permissions import PermissionKey
 
@@ -11,6 +12,10 @@ if TYPE_CHECKING:
     from users.models import User
 
 PROTECTED_ROLE_NAMES = ("admin", "member")
+
+# Live members holding a role — excludes archived and non-member rows. Reused as a
+# reverse-relation predicate (annotation filter=) and by Role.live_member_count.
+LIVE_ROLE_MEMBER = Q(users__archived_at__isnull=True, users__is_member=True)
 
 
 class Role(models.Model):
@@ -26,6 +31,10 @@ class Role(models.Model):
 
     def __str__(self):
         return self.name
+
+    def live_member_count(self) -> int:
+        """Count of live members holding this role — excludes archived and non-members."""
+        return self.users.filter(archived_at__isnull=True, is_member=True).count()
 
     @property
     def effective_permissions(self) -> list[str]:

@@ -43,7 +43,7 @@ def _is_last_admin(user: User) -> bool:
         return False
     if not user.roles.filter(pk=admin_role.pk).exists():
         return False
-    return admin_role.users.filter(archived_at__isnull=True).count() <= 1
+    return admin_role.live_member_count() <= 1
 
 
 def _is_admin(user: User) -> bool:
