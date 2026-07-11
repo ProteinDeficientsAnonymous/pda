@@ -115,6 +115,34 @@ user's phone so they can be logged into.
   events titled `[staging] *`) before re-seeding. `--reset` never touches
   non-scoped data.
 
+### Running on staging & the production guard
+
+The container entrypoint (`entrypoint.sh`) runs `migrate` then uvicorn — it does
+**not** seed. The command is run **on demand** as a Railway one-off against the
+staging environment:
+
+```bash
+railway run --environment staging python backend/manage.py seed_staging
+```
+
+This executes inside the deployed container with staging's real `DATABASE_URL`.
+No deploy-config / entrypoint changes are needed.
+
+**Production guard.** The command inspects `RAILWAY_ENVIRONMENT_NAME` — the same
+Railway-provided env-name variable `community/_version.py` already reads (values
+like `staging` / `production`; unset locally). Note `settings.IS_PRODUCTION`
+cannot distinguish staging from prod (it only checks that `RAILWAY_ENVIRONMENT` is
+*set*, which is true for both), so the guard keys off the `_NAME` value:
+
+- `RAILWAY_ENVIRONMENT_NAME == "staging"` → run.
+- Unset (local dev / CI) → run (so tests and `make`-driven local runs work).
+- Any other value (`production`, etc.) → **refuse** with a clear error, unless
+  `--force` is passed.
+
+The command prints the detected environment before doing anything so the operator
+sees where it is about to seed. A tiny pure helper (`_is_seed_allowed(env_name,
+force) -> bool`) makes this unit-testable without env manipulation.
+
 ### Output
 
 Summary table printed at the end: each `PermissionKey` → role name → user phone →
@@ -139,10 +167,15 @@ and counts of events/roles/users created vs skipped.
 - Events created span past/current/future (`start_datetime` before/around/after
   now).
 - `--reset` removes only staging-scoped rows and re-seeds cleanly.
+- Production guard: `_is_seed_allowed` returns True for `"staging"` and for
+  unset/local, False for `"production"`, and True for `"production"` only when
+  `force=True`. The command exits non-zero and seeds nothing when the guard
+  refuses.
 
 ## Out of scope
 
 - No frontend changes. `PERMISSION_LABELS` in `RoleFormDialog.tsx` is separate;
   this command surfaces every permission as a role, which incidentally makes any
   missing label visible in the editor, but syncing that mirror is not this task.
-- Not wired into any automatic deploy step — run on demand against staging.
+- Not wired into any automatic deploy step — run on demand via a Railway one-off
+  (see "Running on staging"). No entrypoint/CI changes.
