@@ -84,11 +84,8 @@ export function OnboardingGate() {
       return <Navigate to={setupTarget} replace />;
     }
   } else if (consentTarget) {
-    // Consent gate. The consent screen blocks login completion, but the user can
-    // either accept (clears the needs-consent flags on /me/) or pick "not now" on
-    // the screen itself to log out. We pin them to /consent EXCEPT for the policy
-    // pages it links to — they must be able to read what they're agreeing to, so
-    // trapping those pages would make honest consent impossible.
+    // Pin to /consent, but leave the policy pages it links to reachable — users
+    // must be able to read what they're agreeing to.
     if (path !== consentTarget && !CONSENT_POLICY_PATHS.has(path)) {
       return <Navigate to={consentTarget} replace />;
     }
