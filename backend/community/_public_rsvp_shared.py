@@ -79,7 +79,7 @@ def _log_email_failure(request, event: Event, user: User, exc: Exception) -> Non
 
 
 def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[str]) -> None:
-    """Email any promoted non-members a fresh manage link. Best-effort per user."""
+    """Email any promoted non-members their manage link. Best-effort per user."""
     if not promoted_user_ids:
         return
     promoted = User.objects.filter(id__in=promoted_user_ids, is_member=False, email__isnull=False)

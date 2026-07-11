@@ -1,9 +1,16 @@
 import pytest
-from community.models import EventRSVP, EventType, RSVPStatus
+from community.models import (
+    EventRSVP,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    RSVPStatus,
+)
 from django.utils import timezone
 from users.models import NonMemberRsvpToken
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event
+from tests.conftest import future_iso, past_iso
 
 GET_URL = "/api/community/public/my-rsvps/"
 
@@ -56,6 +63,49 @@ class TestGetMyRsvps:
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
         token.revoke()
         assert api_client.get(f"{GET_URL}?token={token.token}").status_code == 404
+
+
+@pytest.mark.django_db
+class TestGetMyRsvpsHidesIneligibleEvents:
+    """An RSVP'd event that later becomes ineligible must drop out of the list —
+    otherwise its member-only details keep leaking to the token holder."""
+
+    def _rsvp_and_list(self, api_client, nonmember, event):
+        EventRSVP.objects.create(event=event, user=nonmember, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        resp = api_client.get(f"{GET_URL}?token={token.token}")
+        assert resp.status_code == 200
+        return resp.json()["rsvps"]
+
+    def test_cancelled_event_hidden(self, api_client, nonmember):
+        event = make_official_event(title="Cancelled", status=EventStatus.CANCELLED)
+        assert self._rsvp_and_list(api_client, nonmember, event) == []
+
+    def test_deleted_event_hidden(self, api_client, nonmember):
+        event = make_official_event(title="Deleted", status=EventStatus.DELETED)
+        assert self._rsvp_and_list(api_client, nonmember, event) == []
+
+    def test_draft_event_hidden(self, api_client, nonmember):
+        event = make_official_event(title="Draft", status=EventStatus.DRAFT)
+        assert self._rsvp_and_list(api_client, nonmember, event) == []
+
+    def test_members_only_visibility_hidden(self, api_client, nonmember):
+        event = make_official_event(title="Hidden", visibility=PageVisibility.MEMBERS_ONLY)
+        assert self._rsvp_and_list(api_client, nonmember, event) == []
+
+    def test_rsvp_disabled_hidden(self, api_client, nonmember):
+        event = make_official_event(title="No RSVP", rsvp_enabled=False)
+        assert self._rsvp_and_list(api_client, nonmember, event) == []
+
+    def test_past_event_hidden(self, api_client, nonmember):
+        event = make_official_event(title="Past", start_datetime=past_iso(days=2))
+        assert self._rsvp_and_list(api_client, nonmember, event) == []
+
+    def test_eligible_event_still_shown(self, api_client, nonmember):
+        event = make_official_event(title="Live", start_datetime=future_iso(days=5))
+        rsvps = self._rsvp_and_list(api_client, nonmember, event)
+        assert len(rsvps) == 1
+        assert rsvps[0]["event"]["id"] == str(event.id)
 
 
 @pytest.mark.django_db
