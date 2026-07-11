@@ -76,6 +76,8 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
     display_name = models.CharField(max_length=64, blank=True)
+    first_name = models.CharField(max_length=64, blank=True, default="")
+    last_name = models.CharField(max_length=64, blank=True, default="")
     # Defaults False; non-members are excluded via objects.members().
     is_member = models.BooleanField(default=False, db_index=True)
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
@@ -109,11 +111,9 @@ class User(AbstractUser):
 
     # Remove inherited AbstractUser fields
     username = None
-    first_name = None
-    last_name = None
 
     USERNAME_FIELD = "phone_number"
-    REQUIRED_FIELDS = ["display_name"]
+    REQUIRED_FIELDS = ["first_name"]
     objects = UserManager()
 
     class Meta:
@@ -126,8 +126,17 @@ class User(AbstractUser):
             ),
         ]
 
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def save(self, *args, **kwargs):
+        # Keep the transitional display_name column in sync until PR1c drops it.
+        self.display_name = self.full_name
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return self.display_name or self.phone_number
+        return self.full_name or self.phone_number
 
     def has_permission(self, key: str) -> bool:
         """Return True if any of the user's roles grants this permission key.
