@@ -129,6 +129,10 @@ export function useMarkAllNotificationsRead() {
       await apiClient.post('/api/notifications/read-all/');
     },
     onMutate: () => {
+      // Snapshot for onError rollback so a failed mark-all doesn't leave the badge stuck at 0.
+      const prevUnread = qc.getQueryData<number>(notificationKeys.unread);
+      const prevBell = qc.getQueryData<AppNotification[]>(notificationKeys.bell);
+      const prevPage = qc.getQueryData<InfiniteData<AppNotification[]>>(notificationKeys.page);
       qc.setQueryData<number>(notificationKeys.unread, 0);
       qc.setQueryData<AppNotification[]>(notificationKeys.bell, (prev) =>
         prev ? prev.map((n) => ({ ...n, isRead: true })) : prev,
@@ -141,6 +145,13 @@ export function useMarkAllNotificationsRead() {
             }
           : prev,
       );
+      return { prevUnread, prevBell, prevPage };
+    },
+    onError: (_err, _vars, context) => {
+      if (!context) return;
+      qc.setQueryData(notificationKeys.unread, context.prevUnread);
+      qc.setQueryData(notificationKeys.bell, context.prevBell);
+      qc.setQueryData(notificationKeys.page, context.prevPage);
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: notificationKeys.all });

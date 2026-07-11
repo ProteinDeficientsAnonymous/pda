@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { useEventStats, useSetAttendance } from '@/api/eventStats';
 import type {
@@ -43,7 +44,10 @@ export function EventAttendancePanel({ event }: Props) {
         <CheckInList
           guests={goingGuests}
           onMark={(userId, attendance) => {
-            setAttendance.mutate({ userId, attendance });
+            setAttendance.mutate(
+              { userId, attendance },
+              { onError: () => toast.error("couldn't save check-in — try again") },
+            );
           }}
           isPending={setAttendance.isPending}
         />

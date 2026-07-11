@@ -57,6 +57,15 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     }
   }
 
+  async function leaveWaitlist() {
+    setError(null);
+    try {
+      await removeRsvp.mutateAsync(event.id);
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
   async function togglePlusOne() {
     if (!myRsvp || onWaitlist) return;
     // Only attending/maybe can bring a +1 (server-enforced on attending; UI
@@ -79,12 +88,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {onWaitlist ? (
-        <WaitlistView
-          onLeave={() => {
-            void removeRsvp.mutateAsync(event.id);
-          }}
-          busy={busy}
-        />
+        <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
       ) : (
         <>
           <div className="flex flex-wrap justify-center gap-2">
