@@ -149,7 +149,7 @@ def create_magic_link_request_notifications(user: User) -> None:
         User.objects.members()
         .filter(
             Q(roles__name="admin", roles__is_default=True)
-            | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
+            | Q(roles__permissions__contains=PermissionKey.MANAGE_USERS)
         )
         .distinct()
     )
