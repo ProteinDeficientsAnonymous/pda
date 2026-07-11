@@ -94,8 +94,8 @@ class TestAuth:
         data = response.json()
         assert data["phone_number"] == "+12025550101"
         assert data["display_name"] == "Test Member"
-        assert "first_name" not in data
-        assert "last_name" not in data
+        assert data["first_name"] == "Test"
+        assert data["last_name"] == "Member"
         assert "roles" in data
 
     def test_me_unauthenticated(self, api_client):
