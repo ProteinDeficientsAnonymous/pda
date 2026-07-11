@@ -447,11 +447,11 @@ describe('EmailGate', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/add your email/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /add your email/i })).toBeInTheDocument();
     expect(screen.queryByText('calendar')).not.toBeInTheDocument();
   });
 
-  it('reveals the app after dismissing via "not now"', async () => {
+  it('logs out (drops the session) when "not now" is clicked', async () => {
     const user = makeUser({ email: '' });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
@@ -466,8 +466,8 @@ describe('EmailGate', () => {
     );
 
     await userEvent.click(screen.getByRole('button', { name: /not now/i }));
-    expect(screen.getByText('calendar')).toBeInTheDocument();
-    expect(screen.queryByText(/add your email/i)).not.toBeInTheDocument();
+    expect(useAuthStore.getState().status).toBe('unauthed');
+    expect(useAuthStore.getState().user).toBeNull();
   });
 
   it('renders Outlet when authed user has email', () => {
