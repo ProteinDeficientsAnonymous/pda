@@ -174,8 +174,7 @@ class MagicLoginToken(models.Model):
 
 # Number of days a non-member RSVP-management link stays valid from issuance.
 NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
-# Absolute cap on a single token's life, even with repeated extension: a link
-# older than this is retired and a fresh one issued, bounding leak exposure.
+# Absolute cap on a token's life, even with repeated extension, to bound leak exposure.
 NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
 
 
@@ -243,16 +242,8 @@ class NonMemberRsvpToken(models.Model):
     def issue_or_extend(cls, user: "User") -> "NonMemberRsvpToken":
         """Return a usable non-member RSVP token, reusing one when possible.
 
-        Called on each non-member RSVP. If the user already has a valid (not
-        expired, not revoked) token that is still within its absolute lifetime,
-        its expiry is pushed out to 90 days from now and the SAME token string
-        is kept — so a link saved from a previous email keeps resolving. Extension
-        is capped: a token older than NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS is
-        retired and a fresh one issued, so repeated RSVPs can't keep one link
-        alive forever. Newest token wins when several exist (Meta.ordering is
-        -created_at).
-
-        Rejects members, like issue(): a member must use the member flow.
+        Extends the newest valid token still within its absolute lifetime (so an
+        emailed link keeps resolving), else issues a fresh one. Rejects members.
         """
         if user.is_member:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
