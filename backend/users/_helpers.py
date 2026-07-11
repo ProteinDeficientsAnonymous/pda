@@ -5,10 +5,13 @@ import string
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Protocol
 
 import phonenumbers
+from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 
+from users._name_parsing import parse_display_name
 from users.models import MagicLoginToken, User
 from users.roles import Role
 
@@ -24,6 +27,33 @@ class ConsentTimestamps:
 def _generate_temp_password(length: int = 16) -> str:
     alphabet = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+class NamePatchPayload(Protocol):
+    first_name: str | None
+    last_name: str | None
+    display_name: str | None
+
+
+def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
+    """Apply first/last name from a patch payload to user (in memory).
+
+    first/last win when provided; a bare legacy display_name is parsed as a
+    fallback. Returns True if any name field was set.
+    """
+    if payload.first_name is not None or payload.last_name is not None:
+        if payload.first_name is not None:
+            validate_display_name(payload.first_name)
+            user.first_name = payload.first_name.strip()
+        if payload.last_name is not None:
+            validate_display_name(payload.last_name)
+            user.last_name = payload.last_name.strip()
+        return True
+    if payload.display_name is not None:
+        validate_display_name(payload.display_name)
+        user.first_name, user.last_name = parse_display_name(payload.display_name.strip())
+        return True
+    return False
 
 
 def _create_magic_token(user: User, *, requires_password_reset: bool = False) -> str:

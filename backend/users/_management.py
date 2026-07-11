@@ -18,6 +18,7 @@ from users._helpers import (
     _create_user_with_role,
     _is_admin,
     _is_last_admin,
+    _resolve_name_fields,
     _validate_admin_role_change,
     _validate_member_role_required,
     _validate_phone,
@@ -304,16 +305,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
-    if payload.first_name is not None or payload.last_name is not None:
-        if payload.first_name is not None:
-            validate_display_name(payload.first_name)
-            user.first_name = payload.first_name.strip()
-        if payload.last_name is not None:
-            validate_display_name(payload.last_name)
-            user.last_name = payload.last_name.strip()
-    elif payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.first_name, user.last_name = parse_display_name(payload.display_name.strip())
+    _resolve_name_fields(user, payload)
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)

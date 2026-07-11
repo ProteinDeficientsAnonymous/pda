@@ -59,6 +59,39 @@ class TestJoinRequestNames:
 
 
 @pytest.mark.django_db
+class TestPatchMeNameFields:
+    def test_patch_first_and_last_updates_display_name(self, api_client, auth_headers, test_user):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"first_name": "Grace", "last_name": "Hopper"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["first_name"] == "Grace"
+        assert body["last_name"] == "Hopper"
+        assert body["display_name"] == "Grace Hopper"
+        test_user.refresh_from_db()
+        assert (test_user.first_name, test_user.last_name) == ("Grace", "Hopper")
+        assert test_user.display_name == "Grace Hopper"
+
+    def test_patch_legacy_display_name_splits_into_first_last(
+        self, api_client, auth_headers, test_user
+    ):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"display_name": "Ada Lovelace"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        test_user.refresh_from_db()
+        assert (test_user.first_name, test_user.last_name) == ("Ada", "Lovelace")
+        assert test_user.display_name == "Ada Lovelace"
+
+
+@pytest.mark.django_db
 class TestUserOutSchema:
     def test_user_out_includes_new_and_legacy_names(self):
         from users.schemas import UserOut
