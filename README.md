@@ -73,3 +73,7 @@ publishes a github release.
 
 commits follow conventional commits: `feat` → minor, `fix`/`perf` → patch,
 `BREAKING CHANGE` → major; `chore`/`docs`/`test`/`refactor` → no release.
+
+the `[skip ci]` release commit skips the release workflow (loop prevention) but
+still lands on `main`, so railway's staging auto-deploy will redeploy once per
+release — expected and harmless, since only the version files and changelog change.
