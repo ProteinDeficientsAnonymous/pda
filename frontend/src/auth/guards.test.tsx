@@ -451,15 +451,19 @@ describe('EmailGate', () => {
     expect(screen.queryByText('calendar')).not.toBeInTheDocument();
   });
 
-  it('logs out (drops the session) when "not now" is clicked', async () => {
+  it('logs out and lands on public calendar (not /login) when "not now" is clicked', async () => {
     const user = makeUser({ email: '' });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
-      <MemoryRouter initialEntries={['/calendar']}>
+      <MemoryRouter initialEntries={['/members']}>
         <Routes>
           <Route element={<EmailGate />}>
             <Route path="/calendar" element={<div>calendar</div>} />
+            <Route element={<RequireAuth />}>
+              <Route path="/members" element={<div>members</div>} />
+            </Route>
+            <Route path="/login" element={<div>login</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,
@@ -468,6 +472,8 @@ describe('EmailGate', () => {
     await userEvent.click(screen.getByRole('button', { name: /not now/i }));
     expect(useAuthStore.getState().status).toBe('unauthed');
     expect(useAuthStore.getState().user).toBeNull();
+    expect(await screen.findByText('calendar')).toBeInTheDocument();
+    expect(screen.queryByText('login')).not.toBeInTheDocument();
   });
 
   it('renders Outlet when authed user has email', () => {

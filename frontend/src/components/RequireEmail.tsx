@@ -44,8 +44,8 @@ export function RequireEmail({ onSkip }: { onSkip: () => void }) {
           add your email
         </h2>
         <p className="text-muted mb-4 text-sm">
-          we use email for account recovery and event updates — add your email to login or come back
-          later
+          we use email for account recovery and event updates — add yours to stay logged in, or
+          keep browsing logged out
         </p>
         <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3" noValidate>
           <TextField
