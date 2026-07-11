@@ -11,12 +11,12 @@ _spec.loader.exec_module(srv)
 def test_set_pyproject_version_rewrites_only_version_line(tmp_path):
     p = tmp_path / "pyproject.toml"
     p.write_text(
-        '[project]\n'
+        "[project]\n"
         'name = "pda"\n'
         'version = "0.1.0"\n'
         'description = "keep me"\n'
-        '\n'
-        '[tool.ruff]\n'
+        "\n"
+        "[tool.ruff]\n"
         'version = "should-not-touch"\n'
     )
     srv.set_pyproject_version(p, "1.2.3")
@@ -30,7 +30,9 @@ def test_set_pyproject_version_rewrites_only_version_line(tmp_path):
 
 def test_set_package_json_version_rewrites_version(tmp_path):
     p = tmp_path / "package.json"
-    p.write_text(json.dumps({"name": "frontend", "version": "0.0.0", "type": "module"}, indent=2) + "\n")
+    p.write_text(
+        json.dumps({"name": "frontend", "version": "0.0.0", "type": "module"}, indent=2) + "\n"
+    )
     srv.set_package_json_version(p, "1.2.3")
     data = json.loads(p.read_text())
     assert data["version"] == "1.2.3"
