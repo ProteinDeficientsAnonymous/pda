@@ -77,7 +77,7 @@ describe('EventAttendanceScreen', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderScreen();
 
-    expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
+    expect(screen.getByText(/rsvps are off for this event/i)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /^attendance$/i })).not.toBeInTheDocument();
   });
 });
