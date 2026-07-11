@@ -70,6 +70,15 @@ def test_pyproject_version_handles_single_quotes_and_no_spaces(tmp_path):
     assert tomllib.loads(p.read_text())["project"]["version"] == "1.2.3"
 
 
+def test_pyproject_version_inserts_literally_not_as_regex_template(tmp_path):
+    p = tmp_path / "pyproject.toml"
+    p.write_text('[project]\nversion = "0.1.0"\n')
+    # a value containing regex-replacement syntax must land in the file verbatim,
+    # not be expanded by re.sub (which would corrupt the line)
+    srv.set_pyproject_version(p, r"9.9.9\g<1>x")
+    assert r'version = "9.9.9\g<1>x"' in p.read_text()
+
+
 def test_pyproject_version_raises_when_value_is_ambiguous(tmp_path):
     p = tmp_path / "pyproject.toml"
     p.write_text(

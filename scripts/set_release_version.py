@@ -18,9 +18,10 @@ def set_pyproject_version(path: Path, version: str) -> None:
     current = tomllib.loads(text).get("project", {}).get("version")
     if current is None:
         raise ValueError(f"no [project].version in {path}")
-    # Scope by the known value tomllib reported, tolerant of spacing/quote style.
+    # Scope by the known value; a replacement function inserts `version` literally
+    # so a value with regex-replacement syntax (\g<1>, \1) can't corrupt the output.
     line = re.compile(rf"""(?m)^(version\s*=\s*)(["']){re.escape(current)}\2""")
-    new_text, count = line.subn(rf'\g<1>"{version}"', text)
+    new_text, count = line.subn(lambda m: f'{m.group(1)}"{version}"', text)
     if count != 1:
         raise ValueError(
             f"expected exactly one version = {current!r} line in {path}, found {count}"
