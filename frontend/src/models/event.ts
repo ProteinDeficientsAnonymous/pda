@@ -4,6 +4,7 @@ import type { User } from './user';
 export const EventType = {
   Community: 'community',
   Official: 'official',
+  Club: 'club',
 } as const;
 
 export const EventVisibility = {
@@ -157,6 +158,7 @@ export function canManageEvent(event: Event, user: User | null): boolean {
 export function eventClass(e: Event): string {
   if (e.status === EventStatus.Cancelled) return 'pda-evt pda-evt-cancelled';
   if (e.eventType === EventType.Official) return 'pda-evt pda-evt-official';
+  if (e.eventType === EventType.Club) return 'pda-evt pda-evt-club';
   if (e.visibility === EventVisibility.InviteOnly) return 'pda-evt pda-evt-invite';
   if (e.visibility === EventVisibility.MembersOnly) return 'pda-evt pda-evt-members';
   return 'pda-evt pda-evt-community';

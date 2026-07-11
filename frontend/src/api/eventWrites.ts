@@ -36,7 +36,7 @@ export interface EventFormValues {
   startDatetime: string | null; // null when datetimeTbd
   endDatetime: string | null;
   datetimeTbd: boolean;
-  eventType: 'community' | 'official';
+  eventType: 'community' | 'official' | 'club';
   visibility: 'public' | 'members_only' | 'invite_only';
   invitePermission: 'all_members' | 'co_hosts_only';
   rsvpEnabled: boolean;
@@ -333,7 +333,11 @@ function coerceEnum<T extends string>(value: string, allowed: readonly T[], fall
   return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
 }
 
-const FORM_EVENT_TYPES = [EventTypeEnum.Community, EventTypeEnum.Official] as const;
+const FORM_EVENT_TYPES = [
+  EventTypeEnum.Community,
+  EventTypeEnum.Official,
+  EventTypeEnum.Club,
+] as const;
 const FORM_VISIBILITIES = [
   EventVisibility.Public,
   EventVisibility.MembersOnly,

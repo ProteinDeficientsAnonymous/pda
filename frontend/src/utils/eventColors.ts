@@ -1,9 +1,12 @@
-export type EventType = 'community' | 'official';
+export type EventType = 'community' | 'official' | 'club';
 export type Visibility = 'public' | 'members_only' | 'invite_only';
 export type Brightness = 'light' | 'dark';
 
 const officialLight = { bg: '#D0E8FF', fg: '#1A3A5C' };
 const officialDark = { bg: '#1A3050', fg: '#B0D4FF' };
+
+const clubLight = { bg: '#F5D0E0', fg: '#5C1A3A' };
+const clubDark = { bg: '#3D1028', fg: '#F0B0D0' };
 
 const publicLight = { bg: '#CCE8E4', fg: '#0A3D35' };
 const publicDark = { bg: '#103028', fg: '#A8E0D8' };
@@ -21,6 +24,9 @@ export function getEventColors(
 ): { bg: string; fg: string } {
   if (eventType === 'official') {
     return brightness === 'dark' ? officialDark : officialLight;
+  }
+  if (eventType === 'club') {
+    return brightness === 'dark' ? clubDark : clubLight;
   }
   if (visibility === 'invite_only') {
     return brightness === 'dark' ? inviteOnlyDark : inviteOnlyLight;

@@ -38,7 +38,7 @@ interface Props {
 
 export function EventFormDetails({ values, onChange, errors, typeLocked }: Props) {
   const helper = typeLocked
-    ? 'official pda events are always public'
+    ? 'official and club pda events are always public'
     : VISIBILITY_HELPER[values.visibility];
 
   return (

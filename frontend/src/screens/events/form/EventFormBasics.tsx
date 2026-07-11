@@ -32,6 +32,7 @@ interface Props {
   onChange: (patch: Partial<EventFormValues>) => void;
   errors: Partial<Record<keyof EventFormValues, string>>;
   canTagOfficial: boolean;
+  canTagClub: boolean;
   timeLocked?: boolean;
   existingEventId?: string | undefined;
   existingHasPoll?: boolean;
@@ -44,6 +45,7 @@ export function EventFormBasics({
   onChange,
   errors,
   canTagOfficial,
+  canTagClub,
   timeLocked = false,
   existingEventId,
   existingHasPoll = false,
@@ -74,7 +76,12 @@ export function EventFormBasics({
         required
       />
 
-      <EventFormType values={values} onChange={onChange} canTagOfficial={canTagOfficial} />
+      <EventFormType
+        values={values}
+        onChange={onChange}
+        canTagOfficial={canTagOfficial}
+        canTagClub={canTagClub}
+      />
 
       {timeLocked ? (
         <p className="text-sm text-neutral-600">
