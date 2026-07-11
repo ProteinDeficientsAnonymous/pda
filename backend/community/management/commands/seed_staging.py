@@ -3,16 +3,19 @@
 import os
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
-from users.models import User
+from users.models import NonMemberRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-from community.models import Event
+from community.models import Event, EventRSVP
 
 from ._seed_staging_data import (
+    NON_MEMBER_EVENT_TITLE,
+    NON_MEMBER_SPECS,
     PASSWORD,
     STAGING_EVENTS,
     cond_email,
@@ -20,6 +23,8 @@ from ._seed_staging_data import (
     condition_combinations,
     condition_label,
     is_seed_allowed,
+    nonmember_email,
+    nonmember_phone,
     perm_email,
     perm_phone,
 )
@@ -52,12 +57,15 @@ class Command(BaseCommand):
             cond_users = self._seed_condition_users()
             admin = perm_users[0] if perm_users else None
             events = self._seed_events(admin)
-        self._print_summary(roles, perm_users, cond_users, events)
+            non_members = self._seed_non_members(events)
+        self._print_summary(roles, perm_users, cond_users, events, non_members)
 
     def _reset(self) -> None:
         Event.objects.filter(title__startswith="[staging] ").delete()
+        Event.objects.filter(title=NON_MEMBER_EVENT_TITLE).delete()
         User.objects.filter(phone_number__startswith="+170255501").delete()
         User.objects.filter(phone_number__startswith="+170255502").delete()
+        User.objects.filter(phone_number__startswith="+170255503").delete()
         Role.objects.filter(name__startswith="perm: ").delete()
         self.stdout.write("  reset: removed staging-scoped rows")
 
@@ -162,12 +170,41 @@ class Command(BaseCommand):
             self.stdout.write(f"  {'created' if created else 'exists'} event: {data.title}")
         return events
 
-    def _print_summary(self, roles, perm_users, cond_users, events) -> None:
+    def _seed_non_members(self, events: list[Event]) -> list[User]:
+        events_by_title = {e.title: e for e in events}
+        users: list[User] = []
+        for index, spec in enumerate(NON_MEMBER_SPECS):
+            user, created = User.objects.get_or_create(
+                phone_number=nonmember_phone(index),
+                defaults={
+                    "display_name": spec.label,
+                    "email": nonmember_email(index),
+                    "is_member": False,
+                },
+            )
+            if created:
+                user.set_unusable_password()
+                user.save(update_fields=["password"])
+            for title, status in zip(spec.event_titles, spec.statuses):
+                event = events_by_title.get(title)
+                if event is None:
+                    continue
+                EventRSVP.objects.update_or_create(
+                    event=event, user=user, defaults={"status": status}
+                )
+            if spec.event_titles:
+                NonMemberRsvpToken.issue_or_extend(user)
+            users.append(user)
+            self.stdout.write(f"  {'created' if created else 'exists'} non-member: {spec.label}")
+        return users
+
+    def _print_summary(self, roles, perm_users, cond_users, events, non_members) -> None:
         self.stdout.write("")
         self.stdout.write(f"password for all seeded users: {PASSWORD}")
         self.stdout.write(
             f"events: {len(events)}  roles: {len(roles)}  "
-            f"perm users: {len(perm_users)}  condition users: {len(cond_users)}"
+            f"perm users: {len(perm_users)}  condition users: {len(cond_users)}  "
+            f"non-member users: {len(non_members)}"
         )
         self.stdout.write("per-permission users (phone -> role):")
         for user in perm_users:
@@ -176,3 +213,11 @@ class Command(BaseCommand):
         self.stdout.write("profile-condition users (phone -> pattern):")
         for user in cond_users:
             self.stdout.write(f"  {user.phone_number} -> {user.display_name}")
+        self.stdout.write("non-member users (phone -> manage link):")
+        for user in non_members:
+            token = NonMemberRsvpToken.objects.filter(user=user).first()
+            if token is None:
+                self.stdout.write(f"  {user.phone_number} -> (no rsvp)")
+                continue
+            url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
+            self.stdout.write(f"  {user.phone_number} -> {url}")
