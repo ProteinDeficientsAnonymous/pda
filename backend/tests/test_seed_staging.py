@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from community.management.commands._seed_staging_data import (
     PASSWORD,
@@ -10,8 +12,10 @@ from community.management.commands._seed_staging_data import (
     perm_email,
     perm_phone,
 )
+from community.models import Event
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
+from django.utils import timezone
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -102,3 +106,82 @@ def test_seed_staging_perm_users_hold_only_their_role_and_are_onboarded():
         assert user.email == perm_email(key)
         assert user.guidelines_consent_at is not None
         assert user.sms_consent_at is not None
+
+
+@pytest.mark.django_db
+def test_seed_staging_creates_eight_member_only_condition_users():
+    call_command("seed_staging")
+    combos_seen = set()
+    for index in range(8):
+        user = User.objects.get(phone_number=cond_phone(index))
+        assert user.is_member is True
+        assert user.needs_onboarding is False
+        assert check_password(PASSWORD, user.password)
+        role_names = set(user.roles.values_list("name", flat=True))
+        assert role_names == {"member"}
+        combos_seen.add(
+            (
+                user.email is not None and user.email != "",
+                user.guidelines_consent_at is not None,
+                user.sms_consent_at is not None,
+            )
+        )
+    assert combos_seen == set(condition_combinations())
+
+
+@pytest.mark.django_db
+def test_seed_staging_perm_and_condition_users_are_disjoint():
+    call_command("seed_staging")
+    perm = set(
+        User.objects.filter(phone_number__startswith="+170255501").values_list(
+            "phone_number", flat=True
+        )
+    )
+    cond = set(
+        User.objects.filter(phone_number__startswith="+170255502").values_list(
+            "phone_number", flat=True
+        )
+    )
+    assert len(perm) == 12
+    assert len(cond) == 8
+    assert perm.isdisjoint(cond)
+
+
+@pytest.mark.django_db
+def test_seed_staging_events_span_past_current_future():
+    call_command("seed_staging")
+    now = timezone.now()
+    events = list(Event.objects.filter(title__startswith="[staging] "))
+    assert len(events) >= 8
+    assert any(e.start_datetime < now - timedelta(hours=1) for e in events)
+    assert any(e.start_datetime > now + timedelta(hours=1) for e in events)
+
+
+@pytest.mark.django_db
+def test_seed_staging_is_idempotent():
+    call_command("seed_staging")
+    call_command("seed_staging")
+    assert User.objects.filter(phone_number__startswith="+170255501").count() == 12
+    assert User.objects.filter(phone_number__startswith="+170255502").count() == 8
+    assert Role.objects.filter(name__startswith="perm: ").count() == len(PermissionKey.values)
+    assert Event.objects.filter(title__startswith="[staging] ").count() == len(STAGING_EVENTS)
+
+
+@pytest.mark.django_db
+def test_seed_staging_reset_removes_only_scoped_rows():
+    User.objects.create_user(
+        phone_number="+17025559999", display_name="real person", is_member=True
+    )
+    call_command("seed_staging")
+    call_command("seed_staging", "--reset")
+    assert User.objects.filter(phone_number="+17025559999").exists()
+    assert User.objects.filter(phone_number__startswith="+170255501").count() == 12
+    assert User.objects.filter(phone_number__startswith="+170255502").count() == 8
+
+
+@pytest.mark.django_db
+def test_seed_staging_refuses_in_production(monkeypatch):
+    monkeypatch.setenv("RAILWAY_ENVIRONMENT_NAME", "production")
+    with pytest.raises(Exception):
+        call_command("seed_staging")
+    assert Role.objects.filter(name__startswith="perm: ").count() == 0
