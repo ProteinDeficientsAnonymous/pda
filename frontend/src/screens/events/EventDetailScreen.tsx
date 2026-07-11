@@ -37,7 +37,7 @@ export default function EventDetailScreen() {
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
 
-  const showKebab = isAuthed && canManageEvent(event, user);
+  const showKebab = isAuthed && event.rsvpEnabled && canManageEvent(event, user);
 
   return (
     <ContentContainer>

@@ -22,7 +22,7 @@ export default function EventAttendanceScreen() {
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
 
-  if (!canManageEvent(event, user)) {
+  if (!event.rsvpEnabled || !canManageEvent(event, user)) {
     return (
       <ForbiddenNotice eventId={event.id} message="only the host or a co-host can see attendance" />
     );

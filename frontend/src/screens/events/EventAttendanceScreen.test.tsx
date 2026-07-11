@@ -67,4 +67,17 @@ describe('EventAttendanceScreen', () => {
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /^attendance$/i })).not.toBeInTheDocument();
   });
+
+  it('blocks even the creator when rsvp is disabled', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: makeEvent({ createdById: 'user-creator', guests: [], rsvpEnabled: false }),
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /^attendance$/i })).not.toBeInTheDocument();
+  });
 });
