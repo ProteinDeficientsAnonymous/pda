@@ -13,19 +13,44 @@ and remove `display_name` entirely.
 
 ## Scope & PR staging
 
-Delivered as **three independent PRs**, one implementation plan each, under this single spec.
+Delivered as a sequence of small PRs, each targeting **<500 diff lines (ideally <300)** and
+each independently green. The `display_name` → first/last rename touches ~96 files, so the
+core split (PR1) is decomposed backend-first with a transitional kept column.
 
-- **PR1 — name split (end-to-end).** Model, migration, API, all read sites, all forms.
-- **PR2 — hide last name.** Per-member settings toggle; last name suppressed for
-  non-admin viewers, enforced on the backend.
+- **PR1a — backend split.** Add `first_name`/`last_name`, backfill migration, **keep the
+  `display_name` column** (synced `display_name = full_name` on save), expose both old and
+  new fields in the API, update join-request + welcome vars + backend tests/conftest. Old
+  frontend keeps working unchanged.
+- **PR1b — frontend split.** Swap read sites `displayName` → `fullName`, add first/last form
+  inputs (join form = both required), update fixtures + frontend tests. May be split further
+  into read-sites vs. forms if it exceeds ~500 lines.
+- **PR1c — drop transitional column.** Remove the `display_name` column (migration) and its
+  schema fields once nothing reads it.
+- **PR2 — hide last name.** Per-member settings toggle; last name suppressed for non-admin
+  viewers, enforced on the backend.
 - **PR3 — nickname.** Optional nickname displayed beneath the real name on the profile.
 
-PR2 and PR3 build on PR1 and are specified here so the data model is designed once, but
-each ships and reviews on its own branch.
+Each PR builds on the previous and is specified here so the data model is designed once, but
+each ships and reviews on its own branch. A plan may propose further sub-splits at planning
+time if a PR is trending over the line budget.
+
+### Transition mechanic (PR1a → PR1c)
+
+The `display_name` column is **kept and synced**, not dropped, until the frontend is off it:
+
+- **PR1a:** add `first_name`/`last_name`; backfill both from `display_name`; keep
+  `display_name` and set `display_name = full_name` in `User.save()` (and the equivalent
+  write paths) so it stays correct as names change. API output sends `display_name`
+  **and** `first_name`/`last_name`/`full_name`.
+- **PR1b:** frontend reads `full_name`; forms write `first_name`/`last_name`.
+- **PR1c:** drop the `display_name` column and remove it from all schemas.
+
+This keeps every migration trivial and DB-rollback-friendly, with no computed "phantom"
+`display_name` masquerading as a real column mid-transition.
 
 ---
 
-## PR1 — name split
+## PR1a — backend split
 
 ### Data model
 
@@ -34,7 +59,8 @@ each ships and reviews on its own branch.
 - Add `first_name = CharField(max_length=64)` — **required** (non-blank enforced at the
   schema layer; the column itself is non-null after backfill).
 - Add `last_name = CharField(max_length=64, blank=True, default="")` — optional.
-- Remove the `display_name` column.
+- **Keep** the `display_name` column through PR1a/PR1b; drop it in PR1c. Sync it on write:
+  `display_name = full_name` in `User.save()` so it stays correct as names change.
 - Add a `full_name` property: `f"{self.first_name} {self.last_name}".strip()`. Canonical
   display string, never stored.
 - `__str__` → `self.full_name or self.phone_number`.
@@ -42,17 +68,19 @@ each ships and reviews on its own branch.
 
 **JoinRequest** (`backend/community/models/join_form.py`)
 
-- Same two columns, remove `display_name`. (Both first **and** last are required on the
-  public join form — see Forms below — but the model keeps `last_name` blankable to match
-  User and allow admin edits.)
+- Same two columns; keep `display_name` through PR1a/PR1b (sync on save), drop in PR1c.
+  (Both first **and** last are required on the public join form — see Forms below — but the
+  model keeps `last_name` blankable to match User and allow admin edits.)
 
 ### Migration (parse existing data)
 
-Three-step sequence per model to stay reversible and non-null-safe:
+Per model, in PR1a (column drop is deferred to PR1c):
 
 1. Add `first_name` / `last_name` as nullable.
 2. Data migration backfilling from `display_name` using the parse rule below.
-3. Make `first_name` non-null (`default=""` transitional, then drop `display_name`).
+3. Make `first_name` non-null (`default=""` transitional). **Leave `display_name` in place.**
+
+PR1c adds the column-drop migration once nothing reads `display_name`.
 
 **Parse rule** (from the issue comment):
 
@@ -63,20 +91,22 @@ Three-step sequence per model to stay reversible and non-null-safe:
 - **1 word:** `first_name = word`, `last_name = ""`.
 - **2+ words:** `last_name = <last word>`, `first_name = <everything before it, space-joined>`.
 
-Applies identically to `User` and `JoinRequest`. Include a reverse migration that
-recombines (`full_name` → `display_name`) so the step is reversible.
+Applies identically to `User` and `JoinRequest`. The backfill's reverse operation is a
+no-op (the `display_name` column is untouched in PR1a), so the migration is trivially
+reversible.
 
 ### API / schemas (`backend/users/schemas.py`)
 
-**Output schemas** — replace `display_name` with `first_name`, `last_name`, and a
-server-computed `full_name`:
+**Output schemas** — **add** `first_name`, `last_name`, and a server-computed `full_name`
+alongside the existing `display_name` (which stays until PR1c):
 
 - `UserOut`, `MemberProfileOut`, `MemberDirectoryOut`, `UserSearchOut`, `UserCreateOut`.
-- Read surfaces consume `full_name`. `first_name` / `last_name` are also sent for forms
-  and (in PR2) viewer-dependent suppression.
+- New read surfaces will consume `full_name` (in PR1b). `first_name` / `last_name` are also
+  sent for forms and (in PR2) viewer-dependent suppression.
 
-**Input schemas** — replace `display_name` with `first_name` (required where a name is
-required) + `last_name` (optional):
+**Input schemas** — **add** `first_name` (required where a name is required) + `last_name`
+(optional). Keep accepting `display_name` as optional through PR1a so old clients don't
+break; when first/last are provided they win and `display_name` is derived:
 
 - `UserCreateIn`, `UserPatchIn`, `MePatchIn`, `OnboardingIn`.
 
@@ -92,6 +122,21 @@ required) + `last_name` (optional):
 carry `first_name` + `last_name`. Approval copies both to the new `User` directly — no
 parsing at approval time anymore (parsing only happens once, in the migration).
 
+### Testing (PR1a)
+
+- Migration parse tests (0 / 1 / 2 / 3+ words) for `User` and `JoinRequest`.
+- Schema round-trips: output includes `first_name`/`last_name`/`full_name` **and**
+  `display_name`; input accepts first/last and derives `display_name`.
+- Join-request approval copies both names to the new `User`.
+- `User.save()` keeps `display_name == full_name`.
+- Update shared `tests/conftest.py` fixtures to set `first_name`/`last_name` — ripples
+  through the ~40 test files that build users. (Fixtures can set both old and new during the
+  transition, but prefer new-only so PR1c is a clean removal.)
+
+---
+
+## PR1b — frontend split
+
 ### Welcome message variables
 
 Rendered frontend-side in `renderWelcomeMessage` (`frontend/src/utils/welcomeMessage.ts`):
@@ -102,10 +147,11 @@ Rendered frontend-side in `renderWelcomeMessage` (`frontend/src/utils/welcomeMes
   text listing available variables.
 - `buildWelcomeMessage` (legacy hardcoded body) greets with first name.
 
-### Frontend (~56 files)
+### Model + read sites
 
-`User` model (`frontend/src/models/user.ts`): `displayName` → `firstName`, `lastName`,
-`fullName`. Update `passwordSetupRedirect`'s name check to `firstName.length > 0`.
+`User` model (`frontend/src/models/user.ts`): add `firstName`, `lastName`, `fullName`
+(drop `displayName` here — the API still sends it, but nothing should read it after this
+PR). Update `passwordSetupRedirect`'s name check to `firstName.length > 0`.
 
 **Read sites** — mechanical `displayName` → `fullName` rename (member cards, profile
 headings, initials, directory/admin search + sort):
@@ -115,7 +161,9 @@ headings, initials, directory/admin search + sort):
 - `screens/profile/ProfileScreen.tsx`
 - plus remaining `displayName` references surfaced by grep.
 
-**Forms** — two inputs, first required / last optional (except join = both required):
+### Forms
+
+Two inputs, first required / last optional (except join = both required):
 
 - `screens/auth/OnboardingScreen.tsx`
 - `screens/settings/SettingsScreen.tsx`
@@ -125,14 +173,25 @@ headings, initials, directory/admin search + sort):
 `validators.ts`: reuse the existing name-char regex for both first and last; rename/param
 the `displayName` validator accordingly.
 
-### Testing (PR1)
+> If PR1b trends over ~500 lines, split into **PR1b-read** (model + read sites + fixtures)
+> and **PR1b-forms** (the four form screens + their tests). The read-sites rename is
+> independently green because the forms still write the old shape until they're updated.
 
-- **Backend:** migration parse tests (0 / 1 / 2 / 3+ words), schema round-trips,
-  join-request approval copies both names, welcome-var rendering (first vs full). Update
-  shared `tests/conftest.py` fixtures (`display_name` → `first_name`/`last_name`) — ripples
-  through the ~40 test files that build users.
-- **Frontend:** update `test/fixtures.ts`; update form / directory / profile / onboarding /
-  settings / member-create tests and the `JoinScreen` a11y test for the new second field.
+### Testing (PR1b)
+
+Update `test/fixtures.ts`; update form / directory / profile / onboarding / settings /
+member-create tests and the `JoinScreen` a11y test for the new second field; welcome-var
+rendering tests (first vs full).
+
+---
+
+## PR1c — drop the transitional column
+
+- Migration dropping `display_name` from `User` and `JoinRequest`.
+- Remove `display_name` from all output/input schemas and `User.save()` sync logic.
+- Remove any lingering `display_name` acceptance in input schemas.
+- Grep-sweep for `display_name` / `displayName` to confirm nothing references it.
+- Small, mostly-deletion PR.
 
 ---
 
