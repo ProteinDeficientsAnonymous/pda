@@ -9,11 +9,18 @@ import { enableMocking } from './mocks/enable';
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element #root not found');
 
+const root = createRoot(rootElement);
+
 // Start MSW (no-op unless mock mode is on) before the app fires boot requests.
-void enableMocking().then(() => {
-  createRoot(rootElement).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-});
+// Render even if mock setup fails so the failure is visible, not a blank page.
+void enableMocking()
+  .catch((err: unknown) => {
+    console.error('mock setup failed — rendering app without mocks', err);
+  })
+  .then(() => {
+    root.render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  });

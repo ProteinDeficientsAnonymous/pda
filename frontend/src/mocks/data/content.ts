@@ -1,7 +1,3 @@
-// Canned content-page, version, calendar-token and notification fixtures for
-// mock mode. Typed off the generated OpenAPI schema. All user-facing copy is
-// lowercase per the project convention.
-
 import type { components } from '@/api/types.gen';
 
 type HomePageOut = components['schemas']['HomePageOut'];

@@ -1,5 +1,3 @@
-// Notification handlers — the bell's unread count, list, and mark-read calls.
-
 import { http, HttpResponse } from 'msw';
 
 import { mockNotifications, mockUnreadCount } from '../data/content';
