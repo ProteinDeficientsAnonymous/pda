@@ -28,16 +28,16 @@ describe('RequireEmail', () => {
   });
 
   it('renders the blocking form', () => {
-    render(<RequireEmail />);
+    render(<RequireEmail onDismiss={() => {}} />);
     expect(screen.getByText(/add your email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('email')).toBeInTheDocument();
   });
 
   it('submits and clears modal on success', async () => {
     const returned = { email: 'foo@example.com' };
     vi.mocked(updateProfile).mockResolvedValue(returned as never);
-    render(<RequireEmail />);
-    await userEvent.type(screen.getByLabelText(/email/i), 'foo@example.com');
+    render(<RequireEmail onDismiss={() => {}} />);
+    await userEvent.type(screen.getByLabelText('email'), 'foo@example.com');
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(updateProfile).toHaveBeenCalledWith({ email: 'foo@example.com' });
     expect(
@@ -53,17 +53,32 @@ describe('RequireEmail', () => {
         data: { detail: [{ code: 'email.already_exists', field: 'email' }] },
       },
     });
-    render(<RequireEmail />);
-    await userEvent.type(screen.getByLabelText(/email/i), 'taken@example.com');
+    render(<RequireEmail onDismiss={() => {}} />);
+    await userEvent.type(screen.getByLabelText('email'), 'taken@example.com');
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(await screen.findByText(/already on another account/i)).toBeInTheDocument();
   });
 
   it('shows malformed-email error inline', async () => {
-    render(<RequireEmail />);
-    await userEvent.type(screen.getByLabelText(/email/i), 'not-an-email');
+    render(<RequireEmail onDismiss={() => {}} />);
+    await userEvent.type(screen.getByLabelText('email'), 'not-an-email');
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(await screen.findByText(/not a valid email/i)).toBeInTheDocument();
     expect(updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('dismisses via the "not now" button', async () => {
+    const onDismiss = vi.fn();
+    render(<RequireEmail onDismiss={onDismiss} />);
+    await userEvent.click(screen.getByRole('button', { name: /not now/i }));
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('dismisses via escape', async () => {
+    const onDismiss = vi.fn();
+    render(<RequireEmail onDismiss={onDismiss} />);
+    await userEvent.keyboard('{Escape}');
+    expect(onDismiss).toHaveBeenCalledOnce();
   });
 });

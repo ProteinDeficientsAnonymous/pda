@@ -1,8 +1,4 @@
-// Blocking modal shown when a logged-in user has no email on file.
-// There is intentionally no close button — the user must supply an email
-// before the guard layer allows them to proceed.
-
-import { type SyntheticEvent, useState } from 'react';
+import { type SyntheticEvent, useEffect, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { updateProfile } from '@/api/auth';
@@ -10,10 +6,20 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 
-export function RequireEmail() {
+export function RequireEmail({ onDismiss }: { onDismiss: () => void }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onDismiss();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [onDismiss]);
 
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
@@ -36,11 +42,24 @@ export function RequireEmail() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-surface w-full max-w-sm rounded-lg p-6">
-        <h2 className="mb-2 text-lg font-medium">add your email</h2>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="require-email-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <button
+        type="button"
+        aria-label="dismiss"
+        onClick={onDismiss}
+        className="absolute inset-0 cursor-default bg-black/60"
+      />
+      <div className="bg-surface relative w-full max-w-sm rounded-lg p-6">
+        <h2 id="require-email-title" className="mb-2 text-lg font-medium">
+          add your email
+        </h2>
         <p className="text-muted mb-4 text-sm">
-          we use email for account recovery and event updates — please add yours to continue
+          we use email for account recovery and event updates — add yours now, or skip for now
         </p>
         <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3" noValidate>
           <TextField
@@ -56,6 +75,9 @@ export function RequireEmail() {
           />
           <Button type="submit" fullWidth disabled={submitting}>
             {submitting ? 'saving…' : 'save'}
+          </Button>
+          <Button type="button" variant="ghost" fullWidth onClick={onDismiss} disabled={submitting}>
+            not now
           </Button>
         </form>
       </div>

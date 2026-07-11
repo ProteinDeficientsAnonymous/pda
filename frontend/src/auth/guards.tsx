@@ -10,7 +10,7 @@
 // The onboarding gate wraps the WHOLE app so it applies on every navigation,
 // matching the Flutter behavior.
 
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { RequireEmail } from '@/components/RequireEmail';
@@ -140,8 +140,17 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
 
 export function EmailGate() {
   const user = useAuthStore((s) => s.user);
-  if (user && !user.needsOnboarding && !user.email) {
-    return <RequireEmail />;
+  // Session-scoped: dismissing lets the user keep browsing without an email.
+  // A fresh login remounts this gate, so the prompt returns next session.
+  const [dismissed, setDismissed] = useState(false);
+  if (!dismissed && user && !user.needsOnboarding && !user.email) {
+    return (
+      <RequireEmail
+        onDismiss={() => {
+          setDismissed(true);
+        }}
+      />
+    );
   }
   return <Outlet />;
 }

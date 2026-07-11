@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -448,6 +449,25 @@ describe('EmailGate', () => {
 
     expect(screen.getByText(/add your email/i)).toBeInTheDocument();
     expect(screen.queryByText('calendar')).not.toBeInTheDocument();
+  });
+
+  it('reveals the app after dismissing via "not now"', async () => {
+    const user = makeUser({ email: '' });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <Routes>
+          <Route element={<EmailGate />}>
+            <Route path="/calendar" element={<div>calendar</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /not now/i }));
+    expect(screen.getByText('calendar')).toBeInTheDocument();
+    expect(screen.queryByText(/add your email/i)).not.toBeInTheDocument();
   });
 
   it('renders Outlet when authed user has email', () => {
