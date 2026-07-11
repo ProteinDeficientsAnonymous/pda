@@ -21,6 +21,7 @@ export interface User {
   displayName: string;
   email: string;
   bio: string;
+  pronouns: string;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;

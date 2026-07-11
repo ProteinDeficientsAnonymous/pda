@@ -282,6 +282,7 @@ export interface MemberProfile {
   phoneNumber: string;
   email: string;
   bio: string;
+  pronouns: string;
   profilePhotoUrl: string;
   loginLinkRequested: boolean;
 }
@@ -292,6 +293,7 @@ interface WireMemberProfile {
   phone_number: string;
   email: string;
   bio: string;
+  pronouns: string;
   profile_photo_url: string;
   login_link_requested: boolean;
 }
@@ -303,6 +305,7 @@ function fromWireProfile(w: WireMemberProfile): MemberProfile {
     phoneNumber: w.phone_number,
     email: w.email,
     bio: w.bio,
+    pronouns: w.pronouns,
     profilePhotoUrl: w.profile_photo_url,
     loginLinkRequested: w.login_link_requested,
   };

@@ -365,6 +365,25 @@ class TestCompleteOnboarding:
         onboarding_user.refresh_from_db()
         assert onboarding_user.email == "user@example.com"
 
+    def test_complete_onboarding_with_pronouns(
+        self, api_client, onboarding_headers, onboarding_user
+    ):
+        response = api_client.post(
+            "/api/auth/complete-onboarding/",
+            {
+                "display_name": "Named",
+                "new_password": "SecurePass99!",
+                "email": "user@example.com",
+                "pronouns": "  she/they  ",
+            },
+            content_type="application/json",
+            **onboarding_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["pronouns"] == "she/they"
+        onboarding_user.refresh_from_db()
+        assert onboarding_user.pronouns == "she/they"
+
     def test_complete_onboarding_password_too_short(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",

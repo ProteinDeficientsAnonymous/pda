@@ -34,6 +34,7 @@ const mockUser: User = {
   displayName: 'Alice',
   email: 'alice@example.com',
   bio: '',
+  pronouns: '',
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,

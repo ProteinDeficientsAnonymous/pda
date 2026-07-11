@@ -21,6 +21,7 @@ interface WireUser {
   display_name: string;
   email?: string;
   bio?: string;
+  pronouns?: string;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -63,6 +64,7 @@ function mapUser(u: WireUser): User {
     displayName: u.display_name,
     email: u.email ?? '',
     bio: u.bio ?? '',
+    pronouns: u.pronouns ?? '',
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
@@ -141,12 +143,14 @@ export async function completeOnboarding(payload: {
   newPassword: string;
   displayName?: string | undefined;
   email?: string | undefined;
+  pronouns?: string | undefined;
   consentTypes?: ConsentTypeValue[] | undefined;
 }): Promise<User> {
   const { data } = await apiClient.post<WireUser>('/api/auth/complete-onboarding/', {
     new_password: payload.newPassword,
     display_name: payload.displayName,
     email: payload.email,
+    pronouns: payload.pronouns,
     consent_types: payload.consentTypes ?? [],
   });
   return mapUser(data);
@@ -171,6 +175,7 @@ export interface ProfileUpdate {
   displayName?: string;
   email?: string;
   bio?: string;
+  pronouns?: string;
   showPhone?: boolean;
   showEmail?: boolean;
   weekStart?: 'sunday' | 'monday';
@@ -183,6 +188,7 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.displayName !== undefined) body.display_name = patch.displayName;
   if (patch.email !== undefined) body.email = patch.email;
   if (patch.bio !== undefined) body.bio = patch.bio;
+  if (patch.pronouns !== undefined) body.pronouns = patch.pronouns;
   if (patch.showPhone !== undefined) body.show_phone = patch.showPhone;
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;

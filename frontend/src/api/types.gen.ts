@@ -2945,6 +2945,8 @@ export interface components {
             email?: string | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
+            /** Pronouns */
+            pronouns?: string | null;
             /** Show Email */
             show_email?: boolean | null;
             /** Show Phone */
@@ -3002,6 +3004,11 @@ export interface components {
              * @default
              */
             profile_photo_url: string;
+            /**
+             * Pronouns
+             * @default
+             */
+            pronouns: string;
         };
         /** NotificationOut */
         NotificationOut: {
@@ -3033,6 +3040,8 @@ export interface components {
             email?: string | null;
             /** New Password */
             new_password: string;
+            /** Pronouns */
+            pronouns?: string | null;
         };
         /** PendingCoHostInviteOut */
         PendingCoHostInviteOut: {
@@ -3565,6 +3574,11 @@ export interface components {
              * @default
              */
             profile_photo_url: string;
+            /**
+             * Pronouns
+             * @default
+             */
+            pronouns: string;
             /** Roles */
             roles: components["schemas"]["RoleOut"][];
             /**

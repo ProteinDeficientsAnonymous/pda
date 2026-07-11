@@ -33,6 +33,7 @@ const baseUser: User = {
   displayName: 'Admin User',
   email: 'admin@example.com',
   bio: '',
+  pronouns: '',
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
