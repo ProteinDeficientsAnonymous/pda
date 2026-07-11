@@ -24,12 +24,17 @@ In scope:
 - New test file `backend/tests/test_my_rsvps.py`.
 - Extract shared helpers out of `_public_rsvp.py` so the new module reuses them
   without a circular import.
+- Staging seed: extend the `seed_staging` command with non-member users so the
+  full flow is testable on staging (see "Staging seed" below).
 
-Out of scope (follow-ups):
+Out of scope (follow-ups, each its own issue):
 
-- "rsvp updated" email (Email 2 in the parent spec) — deferred to a follow-up
-  issue to keep this PR small. POST/DELETE still call `issue_or_extend` so the
-  emailed link keeps resolving; they just don't send a new email yet.
+- "rsvp updated" email (Email 2 in the parent spec) — deferred to keep this PR
+  small. POST/DELETE still call `issue_or_extend` so the emailed link keeps
+  resolving; they just don't send a new email yet.
+- "show non-members" toggle on `/admin/members` — the epic deliberately filters
+  non-members out of the member directory; adding an admin way to view them is a
+  separate feature. Until it lands, the seed prints the manage links directly.
 - Frontend `/my-rsvps` screen + anon form (#626, handled in the July bug sweep).
 - Wiring `issue_or_extend` into the *submit* endpoint (#630, July bug sweep).
 
@@ -87,6 +92,34 @@ Reused verbatim, no duplication: `NonMemberRsvpToken.resolve_user` /
 `_event_out`, `_validate_rsvp_status`, `_load_public_rsvp_event`,
 `_email_details`, `_email_promoted_non_members`, `PublicRsvpOut` /
 `PublicRsvpStateOut` schemas.
+
+## Staging seed
+
+Extend the existing `seed_staging` management command (idempotent, staging-gated,
+`--reset`-aware) so the non-member flow is testable end-to-end on staging.
+
+- Add one new event to `STAGING_EVENTS`: OFFICIAL + PUBLIC + `rsvp_enabled=True`,
+  near-future (a few days out), purpose-built for the non-member demo. (The two
+  existing official events stay; this adds a clearly-eligible one.)
+- Seed ~4 non-member users on a new phone band `+170255503NN` (distinct from the
+  `...501` perm and `...502` condition bands so `--reset` can scope-delete them):
+  `is_member=False`, `set_unusable_password()`, email `nonmember{NN}@staging.example`,
+  display names like `non-member: attending` / `waitlisted` / `multi-event` / `no-rsvp`.
+- Give each RSVP'd non-member EventRSVPs on the official events spanning
+  attending / maybe / waitlisted, and a valid `NonMemberRsvpToken`
+  (`issue_or_extend`).
+- The command summary prints each non-member's `/my-rsvps?token=...` URL. Tokens
+  in staging deploy logs are acceptable (staging only, low-sensitivity); this is
+  the stopgap until the `/admin/members` non-member toggle lands. Reuse
+  `FRONTEND_BASE_URL` for the link.
+- Extend `_reset()` to remove the `+170255503` band and the new event.
+- Pure data/helpers (phone/email builders, the non-member spec list) go in
+  `_seed_staging_data.py` next to the existing helpers.
+
+Tests (extend `backend/tests/test_seed_staging.py`): non-members created with
+`is_member=False` and unusable passwords; each has a valid token and the expected
+RSVPs; `--reset` removes the non-member band and the seeded event; idempotent
+re-run makes no duplicates.
 
 ## Testing — `backend/tests/test_my_rsvps.py`
 
