@@ -272,11 +272,15 @@ export function useDeleteEvent(eventId: string) {
   });
 }
 
-export function useUploadEventPhoto(eventId: string) {
+// The event id is a mutation variable, not a hook argument: on the create
+// flow the id doesn't exist until create-event resolves, so binding it at
+// hook-call time (when it's still '') POSTed to a route with no id → 404 and
+// the photo was silently dropped (Issue 668).
+export function useUploadEventPhoto() {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async (blob: Blob) => {
+    mutationFn: async ({ eventId, blob }: { eventId: string; blob: Blob }) => {
       const formData = new FormData();
       formData.append('photo', blob, 'event.png');
       const { data } = await apiClient.post<WireEvent>(
@@ -290,7 +294,7 @@ export function useUploadEventPhoto(eventId: string) {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
-    onError: (err) => {
+    onError: (err, { eventId }) => {
       void reportError(err, ROUTE, { action: 'upload-event-photo', eventId });
     },
   });

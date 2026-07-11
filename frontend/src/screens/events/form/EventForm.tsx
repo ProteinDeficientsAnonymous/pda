@@ -123,7 +123,7 @@ export function EventForm({ existing }: Props) {
 
   const create = useCreateEvent();
   const update = useUpdateEvent(existing?.id ?? '');
-  const uploadPhoto = useUploadEventPhoto(existing?.id ?? '');
+  const uploadPhoto = useUploadEventPhoto();
   const deletePhoto = useDeleteEventPhoto(existing?.id ?? '');
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
@@ -178,9 +178,11 @@ export function EventForm({ existing }: Props) {
       const created = await create.mutateAsync(merged);
       if (pendingPhoto) {
         try {
-          await uploadPhoto.mutateAsync(pendingPhoto);
+          await uploadPhoto.mutateAsync({ eventId: created.id, blob: pendingPhoto });
         } catch {
-          // Event saved; only the photo failed. Let the user retry from edit.
+          // Event saved; only the photo failed. Surface it so the host knows
+          // to re-add it from edit instead of the photo silently vanishing.
+          toast.error("event saved, but the photo didn't upload — add it again from edit");
         }
       }
       if (bufferedPollOptions && bufferedPollOptions.length >= 2) {
@@ -201,7 +203,7 @@ export function EventForm({ existing }: Props) {
 
   async function onCropPhoto(blob: Blob) {
     if (existing) {
-      await uploadPhoto.mutateAsync(blob);
+      await uploadPhoto.mutateAsync({ eventId: existing.id, blob });
     } else {
       setPendingPhoto(blob);
     }

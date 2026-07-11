@@ -28,7 +28,12 @@ vi.mock('@/auth/store', () => {
 
 import { apiClient } from '@/api/client';
 
-import { eventToFormValues, toPartialWireBody, useInviteToEvent } from './eventWrites';
+import {
+  eventToFormValues,
+  toPartialWireBody,
+  useInviteToEvent,
+  useUploadEventPhoto,
+} from './eventWrites';
 import { textRecipientsKeys } from './textRecipients';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -203,5 +208,40 @@ describe('useInviteToEvent', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: textRecipientsKeys.detail(EVENT_ID),
     });
+  });
+});
+
+describe('useUploadEventPhoto', () => {
+  const EVENT_ID = '22222222-2222-2222-2222-222222222222';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function buildWrapper() {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+    return { qc, Wrapper };
+  }
+
+  // Regression for issue 668: on create the id isn't known until create-event
+  // resolves, so the upload must use the id from the mutation variables — not
+  // an id captured at hook-call time (which was '' on create → 404).
+  it('posts to the event id passed at call-time', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
+    const { Wrapper } = buildWrapper();
+
+    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
+    result.current.mutate({ eventId: EVENT_ID, blob: new Blob(['x'], { type: 'image/png' }) });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(apiClient.post).toHaveBeenCalledWith(
+      `/api/community/events/${EVENT_ID}/photo/`,
+      expect.any(FormData),
+      expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+    );
   });
 });
