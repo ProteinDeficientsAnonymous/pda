@@ -1,5 +1,7 @@
 """Tests for event RSVP endpoints and event detail GET."""
 
+from unittest.mock import patch
+
 import pytest
 from community._validation import Code
 from community.models import Event, EventRSVP, EventStatus, PageVisibility, RSVPStatus
@@ -103,12 +105,24 @@ class TestRSVP:
     def test_rsvp_broadcasts_event_update_excluding_actor(
         self, api_client, auth_headers, rsvp_event, test_user
     ):
-        # Other viewers' capacity UI must refresh live, so a successful RSVP
-        # pings the event_updates channel — excluding the actor, who already
-        # has the fresh event in this response.
-        from unittest.mock import patch
+        with patch("community._event_rsvps.broadcast_capacity_change") as mock_broadcast:
+            api_client.post(
+                f"/api/community/events/{rsvp_event.id}/rsvp/",
+                {"status": RSVPStatus.ATTENDING},
+                content_type="application/json",
+                **auth_headers,
+            )
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == rsvp_event.id
+        assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(test_user.pk)}
 
-        with patch("community._event_rsvps.broadcast_event_update") as mock_broadcast:
+    def test_rsvp_fires_event_update_on_commit(
+        self, api_client, auth_headers, rsvp_event, django_capture_on_commit_callbacks
+    ):
+        with (
+            patch("community._event_helpers.broadcast_event_update") as mock_broadcast,
+            django_capture_on_commit_callbacks(execute=True),
+        ):
             api_client.post(
                 f"/api/community/events/{rsvp_event.id}/rsvp/",
                 {"status": RSVPStatus.ATTENDING},
@@ -117,7 +131,6 @@ class TestRSVP:
             )
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0].id == rsvp_event.id
-        assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(test_user.pk)}
 
     def test_rsvp_maybe(self, api_client, auth_headers, rsvp_event):
         response = api_client.post(
@@ -203,6 +216,16 @@ class TestRSVP:
         )
         assert response.status_code == 204
         assert not EventRSVP.objects.filter(event=rsvp_event, user=test_user).exists()
+
+    def test_rsvp_delete_broadcasts_capacity_change(
+        self, api_client, auth_headers, rsvp_event, test_user
+    ):
+        EventRSVP.objects.create(event=rsvp_event, user=test_user, status=RSVPStatus.ATTENDING)
+        with patch("community._event_rsvps.broadcast_capacity_change") as mock_broadcast:
+            api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/", **auth_headers)
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == rsvp_event.id
+        assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(test_user.pk)}
 
     def test_rsvp_delete_not_found(self, api_client, auth_headers, rsvp_event):
         response = api_client.delete(

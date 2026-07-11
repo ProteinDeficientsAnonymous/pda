@@ -11,7 +11,6 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from notifications.service import broadcast_event_update
 
 from community._event_helpers import (
     _attended_count,
@@ -25,6 +24,7 @@ from community._event_helpers import (
     _no_show_count,
     _not_marked_count,
     _waitlisted_count,
+    broadcast_capacity_change,
     promote_from_waitlist,
 )
 from community._event_schemas import (
@@ -178,14 +178,11 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         target_id=str(event_id),
         details={"status": final_status},
     )
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .get(id=event_id)
-    )
-    # Live-refresh other viewers' capacity UI (attendingCount / atCapacity).
-    # The actor already has the fresh event from this response, so exclude them.
-    broadcast_event_update(event, exclude_user_ids={str(request.auth.pk)})
+    event = _load_event_with_stats_prefetch(event_id)
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    # Actor already has the fresh event in this response, so exclude them.
+    broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     return Status(200, _event_out(event, request.auth))
 
 
@@ -343,6 +340,8 @@ def delete_rsvp(request, event_id: UUID):
         rsvp.delete()
         if was_attending:
             promote_from_waitlist(event)
+            # Deferred to on_commit inside broadcast_capacity_change.
+            broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
 
     audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
     return Status(204, None)

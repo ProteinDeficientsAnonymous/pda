@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from config.media_proxy import media_path
+from django.db import transaction
 from django.db.models import Case, IntegerField, Sum, Value, When
 from notifications.service import (
     broadcast_cohost_change,
+    broadcast_event_update,
     create_cohost_invite_notifications,
     create_event_invite_notifications,
     create_waitlist_promoted_notifications,
@@ -41,6 +44,28 @@ from community.models import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+
+def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | None = None) -> None:
+    """Ping every stakeholder's SSE channel so their capacity UI refreshes live.
+
+    Deferred to on_commit so it reads committed state and never fires for a
+    rolled-back RSVP; safe to call inside or outside a transaction. Any RSVP or
+    attendance mutation that changes the headcount should route through here.
+    """
+    excluded = exclude_user_ids or set()
+
+    def _run() -> None:
+        event = (
+            Event.objects.select_related("created_by")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .filter(id=event_id)
+            .first()
+        )
+        if event is not None:
+            broadcast_event_update(event, exclude_user_ids=excluded)
+
+    transaction.on_commit(_run)
 
 
 def _can_see_phones(requesting_user, creator, co_host_ids: set[str]) -> bool:
