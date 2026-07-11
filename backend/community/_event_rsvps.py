@@ -11,6 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications.service import broadcast_event_update
 
 from community._event_helpers import (
     _attended_count,
@@ -182,6 +183,9 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         .prefetch_related("co_hosts", "invited_users", "rsvps__user")
         .get(id=event_id)
     )
+    # Live-refresh other viewers' capacity UI (attendingCount / atCapacity).
+    # The actor already has the fresh event from this response, so exclude them.
+    broadcast_event_update(event, exclude_user_ids={str(request.auth.pk)})
     return Status(200, _event_out(event, request.auth))
 
 

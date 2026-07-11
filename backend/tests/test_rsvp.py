@@ -100,6 +100,25 @@ class TestRSVP:
         assert response.status_code == 200
         assert response.json()["my_rsvp"] == RSVPStatus.ATTENDING
 
+    def test_rsvp_broadcasts_event_update_excluding_actor(
+        self, api_client, auth_headers, rsvp_event, test_user
+    ):
+        # Other viewers' capacity UI must refresh live, so a successful RSVP
+        # pings the event_updates channel — excluding the actor, who already
+        # has the fresh event in this response.
+        from unittest.mock import patch
+
+        with patch("community._event_rsvps.broadcast_event_update") as mock_broadcast:
+            api_client.post(
+                f"/api/community/events/{rsvp_event.id}/rsvp/",
+                {"status": RSVPStatus.ATTENDING},
+                content_type="application/json",
+                **auth_headers,
+            )
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0].id == rsvp_event.id
+        assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(test_user.pk)}
+
     def test_rsvp_maybe(self, api_client, auth_headers, rsvp_event):
         response = api_client.post(
             f"/api/community/events/{rsvp_event.id}/rsvp/",

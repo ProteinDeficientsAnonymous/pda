@@ -60,6 +60,16 @@ class TestPublicRsvpHappyPath:
         token = NonMemberRsvpToken.objects.get(user=user)
         assert token.token in sent["text"]
 
+    def test_broadcasts_event_update(self, api_client, official_event, fake_email_sender):
+        # A public RSVP consumes a spot too, so other viewers' capacity UI must
+        # refresh live via the event_updates channel.
+        from unittest.mock import patch
+
+        with patch("community._public_rsvp.broadcast_event_update") as mock_broadcast:
+            post(api_client, official_event)
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0].id == official_event.id
+
     def test_response_exposes_gated_event_details(
         self, api_client, official_event, fake_email_sender
     ):

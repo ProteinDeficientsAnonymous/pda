@@ -13,6 +13,7 @@ from notifications._email_helpers import (
     send_rsvp_waitlist_promoted_email,
 )
 from notifications.email_sender import get_email_sender
+from notifications.service import broadcast_event_update
 from pydantic import BaseModel, EmailStr, Field
 from users.models import NonMemberRsvpToken, User
 
@@ -269,6 +270,8 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         .prefetch_related("co_hosts", "invited_users", "rsvps__user")
         .get(id=event.id)
     )
+    # Live-refresh other viewers' capacity UI after a public RSVP consumes a spot.
+    broadcast_event_update(fresh_event, exclude_user_ids={str(user.pk)})
     final_rsvp = user.event_rsvps.get(event=fresh_event)
     return Status(
         200,
