@@ -20,3 +20,13 @@ class TestUserFullName:
         )
         u.refresh_from_db()
         assert u.display_name == "Ada Lovelace"
+
+    def test_save_with_restricted_update_fields_still_syncs_display_name(self):
+        u = User.objects.create_user(
+            phone_number="+15551239500", first_name="Ada", last_name="Lovelace"
+        )
+        u.first_name = "Grace"
+        u.last_name = "Hopper"
+        u.save(update_fields=["first_name", "last_name"])
+        u.refresh_from_db()
+        assert u.display_name == "Grace Hopper"

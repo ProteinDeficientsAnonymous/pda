@@ -132,7 +132,13 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         # Keep the transitional display_name column in sync until PR1c drops it.
+        # A restricted update_fields must still include it, or the sync above is lost.
         self.display_name = self.full_name
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.add("display_name")
+            kwargs["update_fields"] = update_fields
         super().save(*args, **kwargs)
 
     def __str__(self):
