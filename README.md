@@ -52,3 +52,24 @@ Manual Railway deploys via GitHub Actions (`workflow_dispatch`) are documented i
 4. When ready, run the `deploy railway (production)` GitHub Action to promote to production
 
 Direct pushes to `main` are not allowed for contributors.
+
+## releases
+
+versioning and the changelog are automated with semantic-release. every push
+to `main` runs `.github/workflows/release.yml`, which computes the next semver
+version from conventional commits, updates `CHANGELOG.md`, bumps the version in
+`frontend/package.json` and `pyproject.toml`, tags the release, and
+publishes a github release.
+
+**one-time setup (owner):**
+1. create a `RELEASE_TOKEN` repo actions secret — a fine-grained PAT or github
+   app token with `contents: write` on this repo, on an identity allowed to
+   bypass `main` branch protection.
+2. add that identity to the branch-protection bypass allowlist (main requires a
+   PR + approval; `enforce_admins` is off).
+3. push a seed tag on `main` before the first release:
+   `git tag v0.1.0 && git push origin v0.1.0`
+   (prevents the first changelog from spanning the entire history).
+
+commits follow conventional commits: `feat` → minor, `fix`/`perf` → patch,
+`BREAKING CHANGE` → major; `chore`/`docs`/`test`/`refactor` → no release.
