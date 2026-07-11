@@ -12,6 +12,7 @@ export const Permission = {
   EditJoinQuestions: 'edit_join_questions',
   ManageSurveys: 'manage_surveys',
   TagOfficialEvent: 'tag_official_event',
+  TagClubEvent: 'tag_club_event',
   ManageDocuments: 'manage_documents',
 } as const;
 

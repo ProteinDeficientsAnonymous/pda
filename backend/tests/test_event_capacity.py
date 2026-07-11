@@ -78,6 +78,7 @@ def capped_event(db, test_user):
         start_datetime=future_iso(days=30),
         rsvp_enabled=True,
         max_attendees=2,
+        allow_plus_ones=True,
         created_by=test_user,
     )
 
@@ -127,6 +128,25 @@ class TestEventCapacity:
         resp = _rsvp(api_client, capped_event, headers2)
         assert resp.status_code == 200
         assert resp.json()["my_rsvp"] == RSVPStatus.WAITLISTED
+
+    def test_plus_one_ignored_when_event_disallows(
+        self, api_client, test_user, headers1, headers2, user1
+    ):
+        event = Event.objects.create(
+            title="No Plus Ones",
+            start_datetime=future_iso(days=30),
+            rsvp_enabled=True,
+            max_attendees=2,
+            allow_plus_ones=False,
+            created_by=test_user,
+        )
+        resp = _rsvp(api_client, event, headers1, has_plus_one=True)
+        assert resp.status_code == 200
+        assert resp.json()["my_rsvp"] == RSVPStatus.ATTENDING
+        assert EventRSVP.objects.get(event=event, user=user1).has_plus_one is False
+        # +1 was dropped, so the second spot is still open (not consumed).
+        resp2 = _rsvp(api_client, event, headers2)
+        assert resp2.json()["my_rsvp"] == RSVPStatus.ATTENDING
 
     def test_plus_one_denied_at_capacity(self, api_client, capped_event, headers1, headers2):
         _rsvp(api_client, capped_event, headers1)

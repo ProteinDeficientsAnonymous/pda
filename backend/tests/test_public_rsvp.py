@@ -159,18 +159,23 @@ class TestPublicRsvpDedup:
         assert new_user.email is None
         assert EventRSVP.objects.filter(user=new_user).exists()
 
-    def test_multiple_rsvps_accumulate_fresh_tokens(
+    def test_multiple_rsvps_reuse_the_same_token(
         self, api_client, official_event, fake_email_sender
     ):
         other_event = make_official_event(
             title="Second Official", start_datetime=future_iso(days=20)
         )
         post(api_client, official_event)
+        first_token = NonMemberRsvpToken.objects.get(user__phone_number="+14155550123").token
         post(api_client, other_event)
 
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(user=user).count() == 2
-        assert NonMemberRsvpToken.objects.filter(user=user).count() == 2
+        # A second RSVP extends the existing valid token rather than minting a new
+        # one, so a link saved from a previous email keeps resolving.
+        tokens = NonMemberRsvpToken.objects.filter(user=user)
+        assert tokens.count() == 1
+        assert tokens.first().token == first_token
 
 
 @pytest.mark.django_db
@@ -201,11 +206,11 @@ class TestPublicRsvpMemberCollision:
         assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
         assert not EventRSVP.objects.exists()
 
-    def test_member_email_match_is_case_sensitive(
+    def test_member_email_match_is_case_insensitive(
         self, api_client, official_event, fake_email_sender
     ):
-        # The member gate matches stored emails exactly, so a case-mismatched
-        # submission is not recognized as a member and the RSVP is accepted.
+        # A member whose email is stored mixed-case must still trip the gate when
+        # the RSVP submits the same address in different case.
         User.objects.create_user(
             phone_number="+14155550555",
             display_name="A Member",
@@ -215,8 +220,9 @@ class TestPublicRsvpMemberCollision:
 
         response = post(api_client, official_event, email="sam@example.com")
 
-        assert response.status_code == 200
-        assert EventRSVP.objects.count() == 1
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert not EventRSVP.objects.exists()
 
 
 @pytest.mark.django_db

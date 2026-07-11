@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import type { Event } from '@/models/event';
+import { type Event, EventType } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 type Bucket = 'upcoming' | 'past' | 'drafts' | 'cancelled';
@@ -150,8 +150,16 @@ function EventRow({ event }: { event: Event }) {
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2 text-xs">
-        {event.eventType === 'official' ? (
+        {event.eventType === EventType.Official ? (
           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">official</span>
+        ) : null}
+        {event.eventType === EventType.Club ? (
+          <span
+            className="rounded-full px-2 py-0.5"
+            style={{ background: 'var(--color-evt-club-bg)', color: 'var(--color-evt-club-fg)' }}
+          >
+            pda club
+          </span>
         ) : null}
         <Button
           variant="ghost"

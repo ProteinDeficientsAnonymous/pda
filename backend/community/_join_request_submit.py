@@ -283,7 +283,9 @@ def check_phone(request, payload: CheckPhoneIn):
         normalized = _validate_phone(payload.phone_number)
     except ValidationException:
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
-    if User.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
+    if User.objects.filter(
+        phone_number=normalized, is_member=True, archived_at__isnull=True
+    ).exists():
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.MEMBER))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING

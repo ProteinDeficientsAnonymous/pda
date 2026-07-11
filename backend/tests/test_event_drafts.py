@@ -362,6 +362,28 @@ class TestPublishDraft:
         )
         assert response.status_code == 400
 
+    def test_publish_stale_draft_with_corrected_date_in_one_patch(
+        self, api_client, creator_headers, creator
+    ):
+        # Fixing a stale draft's past date and publishing in the same PATCH must
+        # validate against the new date, not the old one.
+        draft = Event.objects.create(
+            title="Stale Draft",
+            start_datetime=past_iso(days=90),
+            created_by=creator,
+            status=EventStatus.DRAFT,
+        )
+        response = api_client.patch(
+            f"/api/community/events/{draft.id}/",
+            data=json.dumps({"status": "active", "start_datetime": future_iso(days=30)}),
+            content_type="application/json",
+            **creator_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "active"
+        draft.refresh_from_db()
+        assert draft.status == EventStatus.ACTIVE
+
     def test_publish_dateless_draft_rejected(self, api_client, creator_headers, creator):
         """A draft with no start_datetime and datetime_tbd=False can't be published.
         Drafts may be saved incomplete, but publishing requires a real date or tbd."""

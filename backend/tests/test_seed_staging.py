@@ -39,7 +39,7 @@ def test_cond_phone_is_zero_padded_in_own_block():
 
 
 def test_perm_and_cond_blocks_are_disjoint():
-    perm = {perm_phone(i) for i in range(12)}
+    perm = {perm_phone(i) for i in range(len(PermissionKey.values))}
     cond = {cond_phone(i) for i in range(8)}
     assert perm.isdisjoint(cond)
     assert all(not p.startswith("+1702555000") for p in perm | cond)
@@ -142,7 +142,7 @@ def test_seed_staging_perm_and_condition_users_are_disjoint():
             "phone_number", flat=True
         )
     )
-    assert len(perm) == 12
+    assert len(perm) == len(PermissionKey.values)
     assert len(cond) == 8
     assert perm.isdisjoint(cond)
 
@@ -161,7 +161,9 @@ def test_seed_staging_events_span_past_current_future():
 def test_seed_staging_is_idempotent():
     call_command("seed_staging")
     call_command("seed_staging")
-    assert User.objects.filter(phone_number__startswith="+170255501").count() == 12
+    assert User.objects.filter(phone_number__startswith="+170255501").count() == len(
+        PermissionKey.values
+    )
     assert User.objects.filter(phone_number__startswith="+170255502").count() == 8
     assert Role.objects.filter(name__startswith="perm: ").count() == len(PermissionKey.values)
     assert Event.objects.filter(title__startswith="[staging] ").count() == len(STAGING_EVENTS)
@@ -175,7 +177,9 @@ def test_seed_staging_reset_removes_only_scoped_rows():
     call_command("seed_staging")
     call_command("seed_staging", "--reset")
     assert User.objects.filter(phone_number="+17025559999").exists()
-    assert User.objects.filter(phone_number__startswith="+170255501").count() == 12
+    assert User.objects.filter(phone_number__startswith="+170255501").count() == len(
+        PermissionKey.values
+    )
     assert User.objects.filter(phone_number__startswith="+170255502").count() == 8
 
 
