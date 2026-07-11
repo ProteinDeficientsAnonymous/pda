@@ -14,10 +14,15 @@ import { type ReactNode, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { RequireEmail } from '@/components/RequireEmail';
+import { CONSENT_REGISTRY } from '@/models/consent';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { guidelinesConsentRedirect, passwordSetupRedirect } from '@/models/user';
 
 import { useAuthStore } from './store';
+
+// Policy pages the consent screen links to must stay reachable while the consent
+// gate is active, otherwise the user can't read what they're agreeing to.
+const CONSENT_POLICY_PATHS = new Set(CONSENT_REGISTRY.map((c) => c.linkTo.toLowerCase()));
 
 // ----------------------------------------------------------------------------
 // AuthBoot — kick off session restore exactly once on mount.
@@ -79,13 +84,9 @@ export function OnboardingGate() {
       return <Navigate to={setupTarget} replace />;
     }
   } else if (consentTarget) {
-    // Guidelines-consent gate. The consent screen blocks login completion, but
-    // the user can either accept (clears needsGuidelinesConsent on /me/) or pick
-    // "not now" on the screen itself to log out. We pin them to /consent EXCEPT
-    // for /guidelines — they must be able to read what they're agreeing to (the
-    // consent screen links there), so trapping that page would make honest
-    // consent impossible.
-    if (path !== consentTarget && path !== '/guidelines') {
+    // Pin to /consent, but leave the policy pages it links to reachable — users
+    // must be able to read what they're agreeing to.
+    if (path !== consentTarget && !CONSENT_POLICY_PATHS.has(path)) {
       return <Navigate to={consentTarget} replace />;
     }
   } else if (user) {

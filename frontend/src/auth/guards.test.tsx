@@ -343,6 +343,25 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('consent page')).not.toBeInTheDocument();
   });
 
+  it('lets a needsSmsConsent user read /sms-policy (so consent is possible)', () => {
+    const user = makeUser({ needsGuidelinesConsent: true, needsSmsConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/sms-policy']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/sms-policy" element={<div>sms policy page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('sms policy page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
   it('sends a password setup to /onboarding before asking for consent', () => {
     // A brand-new user who owes both password setup and consent resolves the
     // password gate first — consent is only asked once setup is done.
