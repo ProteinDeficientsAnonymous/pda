@@ -201,11 +201,11 @@ class TestPublicRsvpMemberCollision:
         assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
         assert not EventRSVP.objects.exists()
 
-    def test_member_email_match_is_case_sensitive(
+    def test_member_email_match_is_case_insensitive(
         self, api_client, official_event, fake_email_sender
     ):
-        # The member gate matches stored emails exactly, so a case-mismatched
-        # submission is not recognized as a member and the RSVP is accepted.
+        # A member whose email is stored mixed-case must still trip the gate when
+        # the RSVP submits the same address in different case.
         User.objects.create_user(
             phone_number="+14155550555",
             display_name="A Member",
@@ -215,8 +215,9 @@ class TestPublicRsvpMemberCollision:
 
         response = post(api_client, official_event, email="sam@example.com")
 
-        assert response.status_code == 200
-        assert EventRSVP.objects.count() == 1
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert not EventRSVP.objects.exists()
 
 
 @pytest.mark.django_db

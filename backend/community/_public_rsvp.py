@@ -122,8 +122,12 @@ def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
     Must run inside the surrounding transaction.
     """
     phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
+    # iexact so a mixed-case stored member email (e.g. admin-created) still trips
+    # the member gate below — the incoming email is already lowercased.
     email_match = (
-        User.objects.filter(email=email, archived_at__isnull=True).first() if email else None
+        User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
+        if email
+        else None
     )
 
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
