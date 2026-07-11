@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  guidelinesConsentRedirect,
-  passwordSetupRedirect,
-  postAuthRedirect,
-  type User,
-} from './user';
+import { consentRedirect, passwordSetupRedirect, postAuthRedirect, type User } from './user';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {
@@ -48,13 +43,23 @@ describe('passwordSetupRedirect', () => {
   });
 });
 
-describe('guidelinesConsentRedirect', () => {
-  it('returns null when consented', () => {
-    expect(guidelinesConsentRedirect(makeUser())).toBeNull();
+describe('consentRedirect', () => {
+  it('returns null when every consent is on file', () => {
+    expect(consentRedirect(makeUser())).toBeNull();
   });
 
-  it('returns /consent when consent is pending', () => {
-    expect(guidelinesConsentRedirect(makeUser({ needsGuidelinesConsent: true }))).toBe('/consent');
+  it('returns /consent when guidelines consent is pending', () => {
+    expect(consentRedirect(makeUser({ needsGuidelinesConsent: true }))).toBe('/consent');
+  });
+
+  it('returns /consent when only sms consent is pending', () => {
+    expect(consentRedirect(makeUser({ needsSmsConsent: true }))).toBe('/consent');
+  });
+
+  it('returns /consent when both consents are pending', () => {
+    expect(consentRedirect(makeUser({ needsGuidelinesConsent: true, needsSmsConsent: true }))).toBe(
+      '/consent',
+    );
   });
 });
 
@@ -72,6 +77,10 @@ describe('postAuthRedirect', () => {
     // OnboardingGate, which raced the lazy target route and showed a blank
     // screen. The resolver must surface /consent so auth screens navigate there.
     expect(postAuthRedirect(makeUser({ needsGuidelinesConsent: true }))).toBe('/consent');
+  });
+
+  it('routes an sms-only consent-pending user to /consent', () => {
+    expect(postAuthRedirect(makeUser({ needsSmsConsent: true }))).toBe('/consent');
   });
 
   it('prioritises password setup over consent when both are pending', () => {

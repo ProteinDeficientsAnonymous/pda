@@ -343,8 +343,65 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('consent page')).not.toBeInTheDocument();
   });
 
-  it('lets a needsSmsConsent user read /sms-policy (so consent is possible)', () => {
-    const user = makeUser({ needsGuidelinesConsent: true, needsSmsConsent: true });
+  it('redirects an sms-only consent-pending user to /consent', () => {
+    const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/calendar" element={<div>calendar page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('consent page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('does not bounce an sms-only consent-pending user away from /consent', () => {
+    const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/consent']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/consent" element={<div>consent page</div>} />
+            <Route path="/calendar" element={<div>calendar page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('consent page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('lets an sms-only consent-pending user read /sms-policy (so consent is possible)', () => {
+    const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/sms-policy']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/sms-policy" element={<div>sms policy page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('sms policy page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
+  it('lets a guidelines-consent-pending user read /sms-policy too', () => {
+    const user = makeUser({ needsGuidelinesConsent: true });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
