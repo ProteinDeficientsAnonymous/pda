@@ -4,10 +4,11 @@ from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from ninja import Router
+from ninja.responses import Status
 from pydantic import BaseModel
 from users.models import NonMemberRsvpToken, User
 
-from community._event_helpers import _event_out
+from community._event_helpers import _event_out, promote_from_waitlist
 from community._event_rsvps import _apply_rsvp_in_transaction, _validate_rsvp_status
 from community._event_schemas import EventOut
 from community._public_rsvp_shared import (
@@ -18,7 +19,7 @@ from community._public_rsvp_shared import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventType
+from community.models import Event, EventRSVP, EventType, RSVPStatus
 
 router = Router()
 
@@ -121,3 +122,39 @@ def update_my_rsvp(request, event_id, payload: ManageRsvpIn, token: str = ""):
         event=_event_out(fresh_event, user),
         rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
     )
+
+
+@router.delete(
+    "/public/my-rsvps/{event_id}/",
+    response={204: None, 404: ErrorOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="30/h")
+def delete_my_rsvp(request, event_id, token: str = ""):
+    user = _resolve_token_user(token)
+    with transaction.atomic():
+        event = (
+            Event.objects.select_for_update()
+            .prefetch_related("co_hosts", "invited_users")
+            .filter(id=event_id)
+            .first()
+        )
+        if event is None:
+            raise_validation(Code.Event.NOT_FOUND, status_code=404)
+        rsvp = EventRSVP.objects.filter(event=event, user=user).first()
+        if not rsvp:
+            raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+        was_attending = rsvp.status == RSVPStatus.ATTENDING
+        rsvp.delete()
+        if was_attending:
+            promote_from_waitlist(event)
+
+    audit_log(
+        logging.INFO,
+        "public_rsvp_deleted",
+        request,
+        target_type="event",
+        target_id=str(event_id),
+        details={"user_id": str(user.pk)},
+    )
+    return Status(204, None)

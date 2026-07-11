@@ -118,3 +118,37 @@ class TestPostMyRsvps:
             content_type="application/json",
         )
         assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+class TestDeleteMyRsvps:
+    def test_delete_removes_rsvp(self, api_client, nonmember, official_event):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
+        assert resp.status_code == 204
+        assert not EventRSVP.objects.filter(event=official_event, user=nonmember).exists()
+        # subsequent GET no longer lists it
+        listed = api_client.get(f"{GET_URL}?token={token.token}").json()["rsvps"]
+        assert listed == []
+
+    def test_delete_promotes_waitlist(self, api_client, nonmember, official_event):
+        official_event.max_attendees = 1
+        official_event.save(update_fields=["max_attendees"])
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        waiter = make_non_member("+14155550002", "w@example.com", name="waiter")
+        EventRSVP.objects.create(event=official_event, user=waiter, status=RSVPStatus.WAITLISTED)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
+        assert resp.status_code == 204
+        waiter_rsvp = EventRSVP.objects.get(event=official_event, user=waiter)
+        assert waiter_rsvp.status == RSVPStatus.ATTENDING
+
+    def test_delete_no_rsvp_404(self, api_client, nonmember, official_event):
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
+        assert resp.status_code == 404
+
+    def test_delete_bad_token_404(self, api_client, official_event):
+        resp = api_client.delete(f"{_post_url(official_event)}?token=nope")
+        assert resp.status_code == 404
