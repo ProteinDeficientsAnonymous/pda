@@ -53,7 +53,7 @@ class TestPublicRsvpCapacity:
         response = post(
             api_client,
             event,
-            name="A",
+            first_name="A",
             phone_number="+14155550101",
             email="a@e.com",
             status=RSVPStatus.CANT_GO,

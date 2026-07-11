@@ -343,9 +343,10 @@ class TestSearchUsersRespectsShowPhone:
     ):
         # Member with no display_name (e.g. pre-onboarding) must not leak the
         # private phone via the display_name fallback.
-        other_user.display_name = ""
+        other_user.first_name = ""
+        other_user.last_name = ""
         other_user.show_phone = False
-        other_user.save(update_fields=["display_name", "show_phone"])
+        other_user.save(update_fields=["first_name", "last_name", "show_phone"])
         response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
         assert response.status_code == 200
         match = self._find(response, other_user.pk)
