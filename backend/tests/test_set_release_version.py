@@ -40,8 +40,31 @@ def test_set_package_json_version_rewrites_version(tmp_path):
     assert data["type"] == "module"
 
 
+def test_pyproject_version_scoped_to_project_table_even_when_tool_table_is_first(tmp_path):
+    p = tmp_path / "pyproject.toml"
+    p.write_text(
+        '[tool.foo]\nversion = "should-not-touch"\n\n[project]\nname = "pda"\nversion = "0.1.0"\n'
+    )
+    srv.set_pyproject_version(p, "1.2.3")
+    out = p.read_text()
+    assert 'version = "1.2.3"' in out
+    assert out.count('version = "1.2.3"') == 1
+    assert 'version = "should-not-touch"' in out  # [tool.foo] before [project] untouched
+
+
 def test_package_json_preserves_trailing_newline(tmp_path):
     p = tmp_path / "package.json"
     p.write_text(json.dumps({"name": "frontend", "version": "0.0.0"}, indent=2) + "\n")
     srv.set_package_json_version(p, "9.9.9")
     assert p.read_text().endswith("\n")
+
+
+def test_package_json_preserves_non_ascii(tmp_path):
+    p = tmp_path / "package.json"
+    p.write_text(
+        json.dumps({"author": "José", "version": "0.0.0"}, indent=2, ensure_ascii=False) + "\n"
+    )
+    srv.set_package_json_version(p, "1.2.3")
+    out = p.read_text()
+    assert "José" in out  # not escaped to é
+    assert json.loads(out)["version"] == "1.2.3"

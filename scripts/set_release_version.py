@@ -1,6 +1,7 @@
 import json
 import re
 import sys
+import tomllib
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -9,18 +10,25 @@ _PACKAGE_JSON = _ROOT / "frontend" / "package.json"
 
 
 def set_pyproject_version(path: Path, version: str) -> None:
-    """Rewrite the [project].version line only.
+    """Rewrite the version under [project], leaving every other table untouched.
     param path(Path): path to pyproject.toml
     param version(str): new semver string, e.g. "1.2.3"
     """
     text = path.read_text()
-    # Match the first `version = "..."` that sits under [project]: it is the
-    # first version assignment in the file, before any [tool.*] table.
-    pattern = re.compile(r'(?m)^(version\s*=\s*")[^"]*(")')
-    new_text, count = pattern.subn(rf'\g<1>{version}\g<2>', text, count=1)
-    if count != 1:
-        raise ValueError(f"expected exactly one [project].version line in {path}")
-    path.write_text(new_text)
+    if "version" not in tomllib.loads(text).get("project", {}):
+        raise ValueError(f"no [project].version in {path}")
+    # Replace `version = "..."` only within the [project] table: scan from the
+    # [project] header to the next top-level table header.
+    project = re.compile(r"(?ms)^\[project\]\s*$.*?(?=^\[|\Z)")
+    version_line = re.compile(r'(?m)^(version\s*=\s*")[^"]*(")')
+
+    def bump(block: re.Match[str]) -> str:
+        new_block, count = version_line.subn(rf"\g<1>{version}\g<2>", block.group(0), count=1)
+        if count != 1:
+            raise ValueError(f"expected exactly one [project].version line in {path}")
+        return new_block
+
+    path.write_text(project.sub(bump, text, count=1))
 
 
 def set_package_json_version(path: Path, version: str) -> None:
@@ -30,7 +38,7 @@ def set_package_json_version(path: Path, version: str) -> None:
     """
     data = json.loads(path.read_text())
     data["version"] = version
-    path.write_text(json.dumps(data, indent=2) + "\n")
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
 def main(version: str) -> None:

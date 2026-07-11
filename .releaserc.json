@@ -9,12 +9,12 @@
     ],
     [
       "@semantic-release/exec",
-      { "prepareCmd": "python scripts/set_release_version.py ${nextRelease.version}" }
+      { "prepareCmd": "python scripts/set_release_version.py \"${nextRelease.version}\" && uv lock" }
     ],
     [
       "@semantic-release/git",
       {
-        "assets": ["CHANGELOG.md", "frontend/package.json", "pyproject.toml"],
+        "assets": ["CHANGELOG.md", "frontend/package.json", "pyproject.toml", "uv.lock"],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
