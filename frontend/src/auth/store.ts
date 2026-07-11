@@ -115,6 +115,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async updateProfile(patch) {
     const user = await authApi.updateProfile(patch);
     set({ user });
+    // The view-profile screen reads from its own ['member-profile', id] query,
+    // which won't see store-only edits — invalidate so it refetches on next view.
+    void queryClient.invalidateQueries({ queryKey: ['member-profile', user.id] });
   },
 
   async uploadProfilePhoto(file) {
