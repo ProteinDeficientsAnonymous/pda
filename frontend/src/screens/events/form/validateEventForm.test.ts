@@ -17,7 +17,6 @@ function validValues(overrides: Partial<EventFormValues> = {}): EventFormValues 
     datetimeTbd: false,
     eventType: 'community',
     visibility: 'public',
-    visibilityChoice: 'public',
     invitePermission: 'all_members',
     rsvpEnabled: false,
     allowPlusOnes: false,
