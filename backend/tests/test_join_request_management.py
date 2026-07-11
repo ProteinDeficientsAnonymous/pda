@@ -143,6 +143,31 @@ class TestJoinRequestManagement:
         assert response.status_code == 400
         assert_error_code(response, Code.JoinRequest.ALREADY_DECIDED)
 
+    def test_approve_locks_row_for_update(
+        self, api_client, vettor_headers, sample_join_request, monkeypatch
+    ):
+        # The already-decided guard only closes the concurrent-approval race if
+        # the row is locked before the check. Assert select_for_update() is used.
+        from community import _join_requests
+
+        original = JoinRequest.objects.select_for_update
+        called = False
+
+        def spy(*args, **kwargs):
+            nonlocal called
+            called = True
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(_join_requests.JoinRequest.objects, "select_for_update", spy)
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        assert called
+
     def test_reject_after_reject_fails(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",

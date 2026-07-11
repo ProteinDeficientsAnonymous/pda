@@ -195,20 +195,21 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             allowed=valid_statuses,
         )
 
-    try:
-        join_request = JoinRequest.objects.get(id=id)
-    except JoinRequest.DoesNotExist:
-        raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
-
-    if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
-        raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
-
-    # Stamp + provision together so a mid-provision failure never leaves the
-    # request APPROVED with a half-promoted user (member flag set but no role,
-    # or no magic link issued).
+    # select_for_update() serializes concurrent approvals: the second blocks until
+    # the first commits, then sees APPROVED and gets ALREADY_DECIDED. Provisioning
+    # shares the transaction so a mid-provision failure never leaves the request
+    # APPROVED with a half-promoted user.
     magic_token = None
     user_created = False
     with transaction.atomic():
+        try:
+            join_request = JoinRequest.objects.select_for_update().get(id=id)
+        except JoinRequest.DoesNotExist:
+            raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
+
+        if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
+            raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
+
         _stamp_decision(join_request, payload.status, request.auth)
         if payload.status == JoinRequestStatus.APPROVED:
             magic_token, user_created = _provision_approved_user(join_request, request.auth)
