@@ -30,11 +30,12 @@ In scope:
 Out of scope (follow-ups, each its own issue):
 
 - "rsvp updated" email (Email 2 in the parent spec) — deferred to keep this PR
-  small. POST/DELETE still call `issue_or_extend` so the emailed link keeps
+  small (#705). POST/DELETE still call `issue_or_extend` so the emailed link keeps
   resolving; they just don't send a new email yet.
-- "show non-members" toggle on `/admin/members` — the epic deliberately filters
-  non-members out of the member directory; adding an admin way to view them is a
-  separate feature. Until it lands, the seed prints the manage links directly.
+- "show non-members" toggle on `/admin/members` (#706) — the epic deliberately
+  filters non-members out of the member directory; adding an admin way to view
+  them is a separate feature. Until it lands, the seed prints the manage links
+  directly.
 - Frontend `/my-rsvps` screen + anon form (#626, handled in the July bug sweep).
 - Wiring `issue_or_extend` into the *submit* endpoint (#630, July bug sweep).
 
