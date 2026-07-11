@@ -92,9 +92,7 @@ class UserOut(BaseModel):
     login_link_requested: bool = False
     week_start: str = "sunday"
     calendar_feed_scope: str = "all"
-    # Most recent event start the member has an ATTENDED check-in for. None if
-    # they've never been marked attended. Populated from a queryset annotation
-    # (``last_attended``) in list_users; absent elsewhere → stays None.
+    # Only populated by the list_users annotation; None everywhere else.
     last_attended: datetime | None = None
     roles: list[RoleOut]
 

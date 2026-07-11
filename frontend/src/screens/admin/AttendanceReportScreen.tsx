@@ -1,7 +1,3 @@
-// Admin: /admin/attendance — cross-event attendance report built on the
-// existing per-event check-in. Shows, per event, how many people attended /
-// no-showed out of the going rsvps. Gated by manage_events (route + backend).
-
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 

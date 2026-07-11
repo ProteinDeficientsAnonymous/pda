@@ -1,7 +1,3 @@
-// Admin attendance report — cross-event attendance summary. Gated server-side
-// by manage_events; the screen mounts behind a RequirePermission guard so we
-// don't need an `enabled` flag here.
-
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from './client';

@@ -1,9 +1,4 @@
-"""Tests for the admin attendance-reporting layer.
-
-Covers the cross-event attendance report endpoint and the `last_attended`
-annotation exposed on the admin member list. Both read from the existing
-per-event check-in (`EventRSVP.attendance`).
-"""
+"""Tests for the attendance report endpoint and member-list last_attended."""
 
 from datetime import timedelta
 
@@ -125,6 +120,36 @@ class TestAttendanceReportEndpoint:
         assert response.status_code == 200
         assert response.json()["events"] == []
 
+    def test_excludes_cancelled_events(self, api_client, host_user, members, events_admin):
+        cancelled = _make_event(host_user, "Cancelled Event", days_ago=3)
+        EventRSVP.objects.create(
+            event=cancelled,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+        Event.objects.filter(pk=cancelled.pk).update(status=EventStatus.CANCELLED)
+
+        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        assert response.status_code == 200
+        assert response.json()["events"] == []
+
+    def test_stranded_mark_after_rsvp_change_not_counted(
+        self, api_client, host_user, members, events_admin
+    ):
+        event = _make_event(host_user, "Flipped Event", days_ago=2)
+        # Marked attended while ATTENDING, then flipped to CANT_GO — attendance
+        # is not cleared, but the report must not count it.
+        EventRSVP.objects.create(
+            event=event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+
+        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        assert response.json()["events"] == []
+
     def test_sorted_newest_first(self, api_client, host_user, members, events_admin):
         older = _make_event(host_user, "Older", days_ago=10)
         newer = _make_event(host_user, "Newer", days_ago=1)
@@ -198,6 +223,21 @@ class TestLastAttendedOnMemberList:
         row = next(r for r in response.json() if r["id"] == str(members[0].pk))
         assert row["last_attended"] is None
 
+    def test_last_attended_excludes_stranded_mark_after_rsvp_change(
+        self, api_client, host_user, members, manage_users_headers
+    ):
+        event = _make_event(host_user, "Flipped Event", days_ago=2)
+        EventRSVP.objects.create(
+            event=event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        row = next(r for r in response.json() if r["id"] == str(members[0].pk))
+        assert row["last_attended"] is None
+
     def test_last_attended_excludes_deleted_events(
         self, api_client, host_user, members, manage_users_headers
     ):
@@ -209,6 +249,22 @@ class TestLastAttendedOnMemberList:
             attendance=AttendanceStatus.ATTENDED,
         )
         Event.objects.filter(pk=deleted.pk).update(status=EventStatus.DELETED)
+
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        row = next(r for r in response.json() if r["id"] == str(members[0].pk))
+        assert row["last_attended"] is None
+
+    def test_last_attended_excludes_cancelled_events(
+        self, api_client, host_user, members, manage_users_headers
+    ):
+        cancelled = _make_event(host_user, "Cancelled Event", days_ago=2)
+        EventRSVP.objects.create(
+            event=cancelled,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+        Event.objects.filter(pk=cancelled.pk).update(status=EventStatus.CANCELLED)
 
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         row = next(r for r in response.json() if r["id"] == str(members[0].pk))

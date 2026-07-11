@@ -7,7 +7,7 @@ from uuid import UUID
 
 from config.media_proxy import media_path
 from django.db import transaction
-from django.db.models import Case, IntegerField, Sum, Value, When
+from django.db.models import Case, IntegerField, Q, Sum, Value, When
 from notifications.service import (
     broadcast_cohost_change,
     broadcast_event_update,
@@ -141,6 +141,24 @@ def _no_response_count(event: Event) -> int:
     """Invited users who have no RSVP row."""
     responded = {r.user_id for r in event.rsvps.all()}
     return sum(1 for u in event.invited_users.all() if u.pk not in responded)
+
+
+def attendance_q(attendance: str, prefix: str = "rsvps") -> Q:
+    """Shared attended/no-show predicate so report + member-list can't drift.
+
+    Gates on ATTENDING so a mark stranded on an rsvp that later changed status
+    isn't counted.
+
+    attendance(str): the AttendanceStatus to match.
+    prefix(str): relation lookup prefix from the queried model to EventRSVP.
+    return(Q): filter on status=ATTENDING AND attendance=<attendance>.
+    """
+    return Q(**{f"{prefix}__status": RSVPStatus.ATTENDING, f"{prefix}__attendance": attendance})
+
+
+def going_q(prefix: str = "rsvps") -> Q:
+    """Q matching all ATTENDING rsvps across `prefix` (the going denominator)."""
+    return Q(**{f"{prefix}__status": RSVPStatus.ATTENDING})
 
 
 def _attended_count(event: Event) -> int:

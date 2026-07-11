@@ -611,10 +611,7 @@ export interface paths {
         };
         /**
          * Attendance Report
-         * @description Per-event attendance summary for every event with at least one mark.
-         *
-         *     Only events with an attended or no-show mark are included — events nobody
-         *     checked in for would just be noise in an attendance report. Newest first.
+         * @description Per-event attendance summary, newest first, for events with any mark.
          */
         get: operations["community__attendance_report_attendance_report"];
         put?: never;

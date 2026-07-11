@@ -1,10 +1,4 @@
-"""Admin-only attendance reporting across events.
-
-Builds on the existing per-event check-in (``EventRSVP.attendance``). This is a
-read-only aggregation layer: it does not record attendance — that happens in the
-host check-in flow (``_event_rsvps.set_attendance``). Gated by ``MANAGE_EVENTS``,
-matching the rest of the event-admin surface.
-"""
+"""Admin-only read model aggregating per-event check-in across events."""
 
 from config.auth import gated_jwt
 from django.db.models import Count, Q
@@ -12,10 +6,11 @@ from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
+from community._event_helpers import attendance_q, going_q
 from community._event_schemas import AttendanceReportOut, EventAttendanceRowOut
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import AttendanceStatus, Event, EventStatus, RSVPStatus
+from community.models import AttendanceStatus, Event, EventStatus
 
 router = Router()
 
@@ -26,30 +21,20 @@ router = Router()
     auth=gated_jwt,
 )
 def attendance_report(request):
-    """Per-event attendance summary for every event with at least one mark.
-
-    Only events with an attended or no-show mark are included — events nobody
-    checked in for would just be noise in an attendance report. Newest first.
-    """
+    """Per-event attendance summary, newest first, for events with any mark."""
     if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         raise_validation(Code.Perm.DENIED, status_code=403, action="attendance_report")
 
-    attended_q = Q(
-        rsvps__status=RSVPStatus.ATTENDING,
-        rsvps__attendance=AttendanceStatus.ATTENDED,
-    )
-    no_show_q = Q(
-        rsvps__status=RSVPStatus.ATTENDING,
-        rsvps__attendance=AttendanceStatus.NO_SHOW,
-    )
-    going_q = Q(rsvps__status=RSVPStatus.ATTENDING)
-
     events = (
-        Event.objects.exclude(status=EventStatus.DELETED)
+        Event.objects.exclude(status__in=(EventStatus.DELETED, EventStatus.CANCELLED))
         .annotate(
-            attended_total=Count("rsvps", filter=attended_q, distinct=True),
-            no_show_total=Count("rsvps", filter=no_show_q, distinct=True),
-            going_total=Count("rsvps", filter=going_q, distinct=True),
+            attended_total=Count(
+                "rsvps", filter=attendance_q(AttendanceStatus.ATTENDED), distinct=True
+            ),
+            no_show_total=Count(
+                "rsvps", filter=attendance_q(AttendanceStatus.NO_SHOW), distinct=True
+            ),
+            going_total=Count("rsvps", filter=going_q(), distinct=True),
         )
         .filter(Q(attended_total__gt=0) | Q(no_show_total__gt=0))
         .order_by("-start_datetime")

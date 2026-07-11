@@ -3,6 +3,7 @@
 import logging
 import re
 
+from community._event_helpers import attendance_q
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from community.models import AttendanceStatus, EventStatus
@@ -230,8 +231,13 @@ def list_users(request):
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
-    # Annotate each member's most recent ATTENDED check-in (by event start) so
-    # the admin member list can sort/filter on "last attended" without N+1.
+    # last_attended shares attendance_q with the attendance report so the two
+    # admin surfaces can't disagree on what "attended" means; both also drop
+    # deleted/cancelled events. Annotated (not N+1) for sort/filter.
+    attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
+    excluded_events = dj_models.Q(
+        event_rsvps__event__status__in=(EventStatus.DELETED, EventStatus.CANCELLED)
+    )
     users = (
         User.objects.members()
         .filter(archived_at__isnull=True)
@@ -239,10 +245,7 @@ def list_users(request):
         .annotate(
             last_attended=dj_models.Max(
                 "event_rsvps__event__start_datetime",
-                # Exclude deleted events so this matches the attendance report,
-                # which also drops them.
-                filter=dj_models.Q(event_rsvps__attendance=AttendanceStatus.ATTENDED)
-                & ~dj_models.Q(event_rsvps__event__status=EventStatus.DELETED),
+                filter=attended & ~excluded_events,
             )
         )
         .order_by("phone_number")
