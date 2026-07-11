@@ -1,3 +1,4 @@
+import pytest
 from community.management.commands._seed_staging_data import (
     PASSWORD,
     STAGING_EVENTS,
@@ -9,6 +10,11 @@ from community.management.commands._seed_staging_data import (
     perm_email,
     perm_phone,
 )
+from django.contrib.auth.hashers import check_password
+from django.core.management import call_command
+from users.models import User
+from users.permissions import PermissionKey
+from users.roles import Role
 
 
 def test_password_meets_validators():
@@ -71,3 +77,28 @@ def test_staging_events_span_past_current_future():
     assert any(d == 0 for d in deltas)
     assert any(d > 0 for d in deltas)
     assert len(STAGING_EVENTS) >= 8
+
+
+@pytest.mark.django_db
+def test_seed_staging_creates_one_role_per_permission():
+    call_command("seed_staging")
+    for key in PermissionKey.values:
+        role = Role.objects.get(name=f"perm: {key}")
+        assert role.permissions == [key]
+        assert role.is_default is False
+
+
+@pytest.mark.django_db
+def test_seed_staging_perm_users_hold_only_their_role_and_are_onboarded():
+    call_command("seed_staging")
+    for index, key in enumerate(PermissionKey.values):
+        user = User.objects.get(phone_number=perm_phone(index))
+        assert user.is_member is True
+        assert user.needs_onboarding is False
+        assert user.onboarded_at is not None
+        assert check_password(PASSWORD, user.password)
+        role_names = set(user.roles.values_list("name", flat=True))
+        assert role_names == {f"perm: {key}"}
+        assert user.email == perm_email(key)
+        assert user.guidelines_consent_at is not None
+        assert user.sms_consent_at is not None
