@@ -56,12 +56,39 @@ def _can_edit_event(user, event: Event) -> bool:
     return event.co_hosts.filter(pk=user.pk).exists()
 
 
-_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL})
+_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
+
+# Event types that require an explicit permission to tag. Community events need
+# none. Maps type → the permission that gates it.
+_TYPE_TAG_PERMISSIONS = {
+    EventType.OFFICIAL: PermissionKey.TAG_OFFICIAL_EVENT,
+    EventType.CLUB: PermissionKey.TAG_CLUB_EVENT,
+}
 
 
 def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
     """Public-only event types (official, club) must have public visibility."""
     return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
+
+
+def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
+    """Raise 403 if the event type requires a tag permission the user lacks."""
+    required = _TYPE_TAG_PERMISSIONS.get(event_type)
+    if required is None or request.auth.has_permission(required):
+        return
+    details = {"endpoint": endpoint, "required_permission": required}
+    if event_id is not None:
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details=details,
+        )
+    else:
+        audit_log(logging.WARNING, "permission_denied", request, details=details)
+    raise_validation(Code.Perm.DENIED, status_code=403, action=required)
 
 
 def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
@@ -78,21 +105,8 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 
 def _validate_update_payload(request, event: Event, event_id, updates: dict) -> None:
     """Validate PATCH payload fields. Raises ValidationException on failure."""
-    if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
-        PermissionKey.TAG_OFFICIAL_EVENT
-    ):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={
-                "endpoint": "update_event",
-                "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
-            },
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
+    if "event_type" in updates:
+        _enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
     effective_type = updates.get("event_type", event.event_type)
     effective_visibility = updates.get("visibility", event.visibility)
     if _is_invalid_typed_visibility(effective_type, effective_visibility):
@@ -290,23 +304,12 @@ def get_event(request, event_id: UUID):
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/d")
 def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
-    # Official events require tag_official_event permission.
+    # Official/club events require their respective tag permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 
-    if payload.event_type == EventType.OFFICIAL:
-        if not request.auth.has_permission(PermissionKey.TAG_OFFICIAL_EVENT):
-            audit_log(
-                logging.WARNING,
-                "permission_denied",
-                request,
-                details={
-                    "endpoint": "create_event",
-                    "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
-                },
-            )
-            raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
+    _enforce_type_tag_permission(request, payload.event_type, "create_event")
 
     if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
