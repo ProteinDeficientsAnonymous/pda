@@ -49,9 +49,7 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
     }
 
     function scheduleRateLimitedReconnect() {
-      // Ticket minting was rate-limited (429). This is not an auth problem, so
-      // skip the token refresh and don't touch the normal backoff counter —
-      // just wait out the rate window (jittered) and try minting again.
+      // A 429 isn't auth, so skip the refresh and leave the backoff counter alone.
       reconnectTimer = window.setTimeout(() => void connect(), rateLimitBackoffDelay());
     }
 
