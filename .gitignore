@@ -37,3 +37,7 @@ frontend/.vite/
 .claude/task.md
 .claude/settings.local.json
 .worktrees/
+
+# root release tooling
+node_modules/
+package-lock.json
