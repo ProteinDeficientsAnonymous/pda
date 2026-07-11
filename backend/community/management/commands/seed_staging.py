@@ -104,32 +104,35 @@ class Command(BaseCommand):
         role, _ = Role.objects.get_or_create(name="member", defaults={"is_default": True})
         return role
 
+    def _apply_condition_user_fields(self, user, combo, index, now) -> None:
+        has_email, guidelines_done, sms_done = combo
+        user.email = cond_email(index) if has_email else None
+        user.guidelines_consent_at = now if guidelines_done else None
+        user.sms_consent_at = now if sms_done else None
+        user.needs_onboarding = False
+        user.onboarded_at = now
+        user.display_name = condition_label(combo)
+        user.save(
+            update_fields=[
+                "email",
+                "guidelines_consent_at",
+                "sms_consent_at",
+                "needs_onboarding",
+                "onboarded_at",
+                "display_name",
+            ]
+        )
+
     def _seed_condition_users(self) -> list[User]:
         member_role = self._member_role()
         now = timezone.now()
         users: list[User] = []
         for index, combo in enumerate(condition_combinations()):
-            has_email, guidelines_done, sms_done = combo
             user, created = User.objects.get_or_create(
                 phone_number=cond_phone(index),
                 defaults={"display_name": condition_label(combo), "is_member": True},
             )
-            user.email = cond_email(index) if has_email else None
-            user.guidelines_consent_at = now if guidelines_done else None
-            user.sms_consent_at = now if sms_done else None
-            user.needs_onboarding = False
-            user.onboarded_at = now
-            user.display_name = condition_label(combo)
-            user.save(
-                update_fields=[
-                    "email",
-                    "guidelines_consent_at",
-                    "sms_consent_at",
-                    "needs_onboarding",
-                    "onboarded_at",
-                    "display_name",
-                ]
-            )
+            self._apply_condition_user_fields(user, combo, index, now)
             if created:
                 user.set_password(PASSWORD)
                 user.save(update_fields=["password"])
