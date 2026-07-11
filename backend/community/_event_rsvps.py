@@ -340,7 +340,6 @@ def delete_rsvp(request, event_id: UUID):
         rsvp.delete()
         if was_attending:
             promote_from_waitlist(event)
-            # Deferred to on_commit inside broadcast_capacity_change.
             broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
 
     audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))

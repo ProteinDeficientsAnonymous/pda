@@ -116,19 +116,15 @@ class TestRSVP:
         assert mock_broadcast.call_args.args[0] == rsvp_event.id
         assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(test_user.pk)}
 
-    def test_rsvp_fires_event_update_on_commit(
-        self, api_client, auth_headers, rsvp_event, django_capture_on_commit_callbacks
+    def test_delete_rsvp_fires_event_update_on_commit(
+        self, api_client, auth_headers, rsvp_event, test_user, django_capture_on_commit_callbacks
     ):
+        EventRSVP.objects.create(event=rsvp_event, user=test_user, status=RSVPStatus.ATTENDING)
         with (
             patch("community._event_helpers.broadcast_event_update") as mock_broadcast,
             django_capture_on_commit_callbacks(execute=True),
         ):
-            api_client.post(
-                f"/api/community/events/{rsvp_event.id}/rsvp/",
-                {"status": RSVPStatus.ATTENDING},
-                content_type="application/json",
-                **auth_headers,
-            )
+            api_client.delete(f"/api/community/events/{rsvp_event.id}/rsvp/", **auth_headers)
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0].id == rsvp_event.id
 

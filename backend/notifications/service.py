@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from community.models import RSVPStatus
-from django.db import connection
+from django.db import DatabaseError, connection
 from django.db.models import Q
 from users.models import User
 from users.permissions import PermissionKey
@@ -47,7 +47,7 @@ def _ping_event_update(user_ids: Iterable[str], event_id: str) -> None:
             for uid in user_ids:
                 payload = f"{uid}:{event_id}"
                 cursor.execute(f"SELECT pg_notify('{_EVENT_UPDATES_CHANNEL}', %s)", [payload])
-    except Exception:
+    except DatabaseError:
         logging.getLogger(__name__).warning("event_update ping failed", exc_info=True)
 
 
