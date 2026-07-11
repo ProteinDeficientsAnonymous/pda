@@ -20,7 +20,7 @@ version bookkeeping.
   on each merge. No-op when the commits since the last release are only
   chore/docs/test (nothing that warrants a release).
 - **Sync all three artifacts.** semantic-release writes the computed version to
-  `CHANGELOG.md`, `frontend/package.json`, and `backend/pyproject.toml`, and
+  `CHANGELOG.md`, `frontend/package.json`, and `pyproject.toml`, and
   commits them back to `main`. The package files stay honest.
 - **Real committed `CHANGELOG.md`** in the repo tree (not Releases-only),
   authenticated with a token that bypasses branch protection.
@@ -84,7 +84,7 @@ semantic-release devDependency and the release scripts. Keeps
       "prepareCmd": "python scripts/set_release_version.py ${nextRelease.version}"
     }],
     ["@semantic-release/git", {
-      "assets": ["CHANGELOG.md", "frontend/package.json", "backend/pyproject.toml"],
+      "assets": ["CHANGELOG.md", "frontend/package.json", "pyproject.toml"],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }],
     "@semantic-release/github"
@@ -101,7 +101,7 @@ no release.
 A single `prepareCmd` script — `scripts/set_release_version.py` — owns **both**
 package-file bumps, so there is one place to reason about and test:
 
-- **`backend/pyproject.toml`** — rewrite the `[project].version` line to the new
+- **`pyproject.toml`** — rewrite the `[project].version` line to the new
   version.
 - **`frontend/package.json`** — rewrite its `version` field to the new version.
 
@@ -167,7 +167,7 @@ merge PR to main
   → release.yml runs (skipped if head commit has [skip ci])
   → semantic-release reads commits since last tag
   → computes next version
-  → writes CHANGELOG.md, bumps frontend/package.json + backend/pyproject.toml
+  → writes CHANGELOG.md, bumps frontend/package.json + pyproject.toml
   → commits assets to main via RELEASE_TOKEN, message "chore(release): X.Y.Z [skip ci]"
   → tags vX.Y.Z
   → creates GitHub Release with generated notes
