@@ -33,7 +33,6 @@ class Code:
         OFFICIAL_MUST_BE_PUBLIC = "event.official_must_be_public"
         INVALID_CREATE_STATUS = "event.invalid_create_status"
         DATE_LOCKED_BY_POLL = "event.date_locked_by_poll"
-        INVITE_ONLY = "event.invite_only"
         AUTH_REQUIRED = "event.auth_required"
         CANCELLED_CANNOT_BE_EDITED = "event.cancelled_cannot_be_edited"
         PAST_CANNOT_BE_CANCELLED = "event.past_cannot_be_cancelled"

@@ -82,7 +82,7 @@ class TestSingleEventIcs:
 
         resp = api_client.get(f"/api/community/events/{event.id}/ics/")
         # Matches the canonical get_event gate, which 403s invite-only for
-        # non-invited/anon callers (Code.Event.INVITE_ONLY).
+        # non-invited/anon callers (Code.Event.PERM_DENIED).
         assert resp.status_code == 403
 
     def test_members_only_non_official_event_hidden_from_anon(self, api_client, test_user):

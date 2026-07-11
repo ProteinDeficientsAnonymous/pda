@@ -16,7 +16,6 @@ export const Code = {
     OfficialMustBePublic: 'event.official_must_be_public',
     InvalidCreateStatus: 'event.invalid_create_status',
     DateLockedByPoll: 'event.date_locked_by_poll',
-    InviteOnly: 'event.invite_only',
     AuthRequired: 'event.auth_required',
     CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
     PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
@@ -210,7 +209,6 @@ export type ValidationCode =
   | 'event.official_must_be_public'
   | 'event.invalid_create_status'
   | 'event.date_locked_by_poll'
-  | 'event.invite_only'
   | 'event.auth_required'
   | 'event.cancelled_cannot_be_edited'
   | 'event.past_cannot_be_cancelled'
@@ -354,7 +352,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.official_must_be_public': [],
   'event.invalid_create_status': [],
   'event.date_locked_by_poll': [],
-  'event.invite_only': [],
   'event.auth_required': [],
   'event.cancelled_cannot_be_edited': [],
   'event.past_cannot_be_cancelled': [],
