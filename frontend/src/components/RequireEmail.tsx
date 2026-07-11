@@ -6,10 +6,21 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 
-export function RequireEmail({ onSkip }: { onSkip: () => void }) {
+export function RequireEmail({ onSkip }: { onSkip: () => Promise<void> }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [skipping, setSkipping] = useState(false);
+  const busy = submitting || skipping;
+
+  async function onSkipClick() {
+    setSkipping(true);
+    try {
+      await onSkip();
+    } finally {
+      setSkipping(false);
+    }
+  }
 
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
@@ -59,10 +70,16 @@ export function RequireEmail({ onSkip }: { onSkip: () => void }) {
             error={error ?? undefined}
             required
           />
-          <Button type="submit" fullWidth disabled={submitting}>
+          <Button type="submit" fullWidth disabled={busy}>
             {submitting ? 'saving…' : 'save'}
           </Button>
-          <Button type="button" variant="ghost" fullWidth onClick={onSkip} disabled={submitting}>
+          <Button
+            type="button"
+            variant="ghost"
+            fullWidth
+            onClick={() => void onSkipClick()}
+            disabled={busy}
+          >
             not now
           </Button>
         </form>

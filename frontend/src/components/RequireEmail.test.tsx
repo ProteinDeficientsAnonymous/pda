@@ -28,7 +28,7 @@ describe('RequireEmail', () => {
   });
 
   it('renders the blocking form', () => {
-    render(<RequireEmail onSkip={() => {}} />);
+    render(<RequireEmail onSkip={() => Promise.resolve()} />);
     expect(screen.getByRole('heading', { name: /add your email/i })).toBeInTheDocument();
     expect(screen.getByLabelText('email')).toBeInTheDocument();
   });
@@ -36,7 +36,7 @@ describe('RequireEmail', () => {
   it('submits and clears modal on success', async () => {
     const returned = { email: 'foo@example.com' };
     vi.mocked(updateProfile).mockResolvedValue(returned as never);
-    render(<RequireEmail onSkip={() => {}} />);
+    render(<RequireEmail onSkip={() => Promise.resolve()} />);
     await userEvent.type(screen.getByLabelText('email'), 'foo@example.com');
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(updateProfile).toHaveBeenCalledWith({ email: 'foo@example.com' });
@@ -53,14 +53,14 @@ describe('RequireEmail', () => {
         data: { detail: [{ code: 'email.already_exists', field: 'email' }] },
       },
     });
-    render(<RequireEmail onSkip={() => {}} />);
+    render(<RequireEmail onSkip={() => Promise.resolve()} />);
     await userEvent.type(screen.getByLabelText('email'), 'taken@example.com');
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(await screen.findByText(/already on another account/i)).toBeInTheDocument();
   });
 
   it('shows malformed-email error inline', async () => {
-    render(<RequireEmail onSkip={() => {}} />);
+    render(<RequireEmail onSkip={() => Promise.resolve()} />);
     await userEvent.type(screen.getByLabelText('email'), 'not-an-email');
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(await screen.findByText(/not a valid email/i)).toBeInTheDocument();
@@ -68,15 +68,27 @@ describe('RequireEmail', () => {
   });
 
   it('skips via the "not now" button without saving', async () => {
-    const onSkip = vi.fn();
+    const onSkip = vi.fn(() => Promise.resolve());
     render(<RequireEmail onSkip={onSkip} />);
     await userEvent.click(screen.getByRole('button', { name: /not now/i }));
     expect(onSkip).toHaveBeenCalledOnce();
     expect(updateProfile).not.toHaveBeenCalled();
   });
 
+  it('disables "not now" while the skip is in flight (no double-fire)', async () => {
+    let resolve!: () => void;
+    const onSkip = vi.fn(() => new Promise<void>((r) => (resolve = r)));
+    render(<RequireEmail onSkip={onSkip} />);
+    const button = screen.getByRole('button', { name: /not now/i });
+    await userEvent.click(button);
+    expect(button).toBeDisabled();
+    await userEvent.click(button);
+    expect(onSkip).toHaveBeenCalledOnce();
+    resolve();
+  });
+
   it('does not skip on escape', async () => {
-    const onSkip = vi.fn();
+    const onSkip = vi.fn(() => Promise.resolve());
     render(<RequireEmail onSkip={onSkip} />);
     await userEvent.keyboard('{Escape}');
     expect(onSkip).not.toHaveBeenCalled();

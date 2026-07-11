@@ -145,13 +145,18 @@ export function EmailGate() {
   // You can't stay logged in without an email, but "not now" isn't a dead end:
   // it drops the session and lands on the public calendar, so the app stays
   // usable from a logged-out state (an authed-only route would otherwise
-  // bounce to /login).
+  // bounce to /login). A failed logout is swallowed so RequireEmail can
+  // re-enable its button and let the user retry.
   async function onSkip() {
-    await logout();
-    void navigate('/calendar', { replace: true });
+    try {
+      await logout();
+      void navigate('/calendar', { replace: true });
+    } catch {
+      // network/server error — stay on the modal, user can retry
+    }
   }
   if (user && !user.needsOnboarding && !user.email) {
-    return <RequireEmail onSkip={() => void onSkip()} />;
+    return <RequireEmail onSkip={onSkip} />;
   }
   return <Outlet />;
 }
