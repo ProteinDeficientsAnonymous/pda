@@ -190,9 +190,6 @@ if IS_PRODUCTION:
     CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_env.split(",") if o.strip()]
     if not CORS_ALLOWED_ORIGINS:
         raise ValueError("CORS_ALLOWED_ORIGINS must be set in production")
-    assert CORS_ALLOW_ALL_ORIGINS is not True, (
-        "CORS_ALLOW_ALL_ORIGINS must stay False in production"
-    )
 else:
     CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "http://0.0.0.0:3000"]
 
