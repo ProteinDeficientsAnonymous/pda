@@ -124,7 +124,9 @@ class TestApprovalCopiesNames:
 
 @pytest.mark.django_db
 class TestNameValidationErrorFields:
-    def test_invalid_first_name_error_field_is_first_name_not_display_name(self, api_client, auth_headers):
+    def test_invalid_first_name_error_field_is_first_name_not_display_name(
+        self, api_client, auth_headers
+    ):
         resp = api_client.patch(
             "/api/auth/me/",
             {"first_name": "Ada1"},
@@ -137,11 +139,13 @@ class TestNameValidationErrorFields:
         assert any(e["field"] == "first_name" for e in detail), (
             f"expected error with field='first_name' but got fields: {[e.get('field') for e in detail]}"
         )
-        assert not any(
-            e["field"] == "display_name" for e in detail
-        ), "error should not be attributed to display_name"
+        assert not any(e["field"] == "display_name" for e in detail), (
+            "error should not be attributed to display_name"
+        )
 
-    def test_invalid_last_name_error_field_is_last_name_not_display_name(self, api_client, auth_headers):
+    def test_invalid_last_name_error_field_is_last_name_not_display_name(
+        self, api_client, auth_headers
+    ):
         resp = api_client.patch(
             "/api/auth/me/",
             {"last_name": "Hopper2"},
@@ -154,6 +158,6 @@ class TestNameValidationErrorFields:
         assert any(e["field"] == "last_name" for e in detail), (
             f"expected error with field='last_name' but got fields: {[e.get('field') for e in detail]}"
         )
-        assert not any(
-            e["field"] == "display_name" for e in detail
-        ), "error should not be attributed to display_name"
+        assert not any(e["field"] == "display_name" for e in detail), (
+            "error should not be attributed to display_name"
+        )
