@@ -1282,6 +1282,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/public/my-rsvps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Rsvps */
+        get: operations["community__my_rsvps_list_my_rsvps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/public/my-rsvps/{event_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update My Rsvp */
+        post: operations["community__my_rsvps_update_my_rsvp"];
+        /** Delete My Rsvp */
+        delete: operations["community__my_rsvps_delete_my_rsvp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/request-login-link/": {
         parameters: {
             query?: never;
@@ -2933,6 +2968,16 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** ManageRsvpIn */
+        ManageRsvpIn: {
+            /**
+             * Has Plus One
+             * @default false
+             */
+            has_plus_one: boolean;
+            /** Status */
+            status: string;
+        };
         /** MePatchIn */
         MePatchIn: {
             /** Bio */
@@ -3009,6 +3054,29 @@ export interface components {
              * @default
              */
             pronouns: string;
+        };
+        /** MyRsvpItemOut */
+        MyRsvpItemOut: {
+            event: components["schemas"]["EventOut"];
+            /** Has Plus One */
+            has_plus_one: boolean;
+            /** Status */
+            status: string;
+        };
+        /** MyRsvpsOut */
+        MyRsvpsOut: {
+            /** Rsvps */
+            rsvps: components["schemas"]["MyRsvpItemOut"][];
+            user: components["schemas"]["MyRsvpsUserOut"];
+        };
+        /** MyRsvpsUserOut */
+        MyRsvpsUserOut: {
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Phone Number */
+            phone_number: string;
         };
         /** NotificationOut */
         NotificationOut: {
@@ -7619,6 +7687,141 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__my_rsvps_list_my_rsvps: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyRsvpsOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__my_rsvps_update_my_rsvp: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManageRsvpIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRsvpOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__my_rsvps_delete_my_rsvp: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
