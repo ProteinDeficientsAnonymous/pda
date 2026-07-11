@@ -252,14 +252,32 @@ Expected: semantic-release loads all plugins without a config error, reports the
 
 If it reports a git-auth or push error, that's expected in `--dry-run` only if it reaches the publish phase — dry-run should stop before pushing. If it complains the branch is not `main`, add `--branches "$(git rev-parse --abbrev-ref HEAD)"` is NOT valid; instead confirm dry-run recognizes the current branch via `GITHUB_REF`. Simplest: the assertion is only that plugins load and a version is computed; ignore push-phase messages.
 
-- [ ] **Step 5: Confirm the prepareCmd script is reachable from repo root**
+- [ ] **Step 5: Confirm the prepareCmd script bumps both files (against temp copies — never mutate tracked files)**
 
-Run: `python scripts/set_release_version.py 0.1.0 && git diff --stat`
-Expected: shows `pyproject.toml` unchanged (0.1.0 → 0.1.0 is a no-op) and `frontend/package.json` changed from `0.0.0` → `0.1.0`. Then restore the frontend file so it isn't committed with a bogus bump:
+Do NOT run the bump against the real tracked files. Copy them to a temp dir,
+bump the copies, and diff the copies, so nothing tracked is ever modified (this
+project forbids `git checkout`/`git restore` on the working tree):
 
-Run: `git checkout -- frontend/package.json`
+```bash
+T=$(mktemp -d)
+mkdir -p "$T/frontend"
+cp pyproject.toml "$T/pyproject.toml"
+cp frontend/package.json "$T/frontend/package.json"
+uv run python -c "
+import importlib.util, pathlib
+s = pathlib.Path('scripts/set_release_version.py')
+spec = importlib.util.spec_from_file_location('srv', s)
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+m.set_pyproject_version(pathlib.Path('$T/pyproject.toml'), '9.9.9')
+m.set_package_json_version(pathlib.Path('$T/frontend/package.json'), '9.9.9')
+"
+grep -n '9.9.9' "$T/pyproject.toml" "$T/frontend/package.json"
+echo '--- tracked files untouched: ---'
+git diff --stat
+rm -rf "$T"
+```
 
-(This proves the script runs from repo root as the config invokes it. The restore is fine here — it's undoing our own throwaway probe, not user work.)
+Expected: both temp files show `9.9.9` in their version fields, and `git diff --stat` reports NO changes to tracked files (the real `pyproject.toml` / `frontend/package.json` were never written). This proves the two bump functions work against real-shaped files without touching the working tree.
 
 - [ ] **Step 6: Commit**
 
@@ -396,7 +414,7 @@ Expected: `3 passed`.
 - [ ] **Step 2: Confirm no stray version bumps are staged**
 
 Run: `git status --short && git diff --stat origin/main -- frontend/package.json pyproject.toml`
-Expected: `frontend/package.json` and `pyproject.toml` are UNCHANGED vs `origin/main` (the automation bumps them at release time, not now). If either shows a diff, restore it: `git checkout origin/main -- <file>`.
+Expected: `frontend/package.json` and `pyproject.toml` are UNCHANGED vs `origin/main` (the automation bumps them at release time, not now). If either shows a diff, STOP — do not run `git checkout`/`git restore` (forbidden on the working tree here). Report the unexpected diff; it means an earlier probe wrote a tracked file, which the Task 2 Step 5 temp-copy approach is designed to prevent.
 
 - [ ] **Step 3: Run the frontend + backend CI gate**
 
