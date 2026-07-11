@@ -91,6 +91,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     displayName: 'Test User',
     email: '',
     bio: '',
+    pronouns: '',
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,

@@ -31,6 +31,8 @@ make dev-pg-db-init   # Create + migrate + seed the per-worktree Postgres DB
 make dev-pg-db-reset  # Drop and re-init the per-worktree Postgres DB
 make migrate          # makemigrations + migrate
 make seed             # Seed database with sample data (local dev)
+# seed staging demo data on demand (roles/users/events); never prod:
+#   railway run --environment staging python backend/manage.py seed_staging
 make agent-test       # Run pytest (quiet)
 make agent-test-since # Run pytest subset from git diff
 make agent-lint       # Run ruff (lint + format; minimal output)
