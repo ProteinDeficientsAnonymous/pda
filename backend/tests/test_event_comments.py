@@ -402,7 +402,7 @@ class TestCommentVisibility:
             **stranger_headers,
         )
         # _can_see_invite_only returns False → _enforce_event_read_visibility
-        # raises Code.Event.INVITE_ONLY with status 403.
+        # raises Code.Event.PERM_DENIED with status 403.
         assert response.status_code == 403
 
     def test_invite_only_invitee_can_list(self, api_client, db, rsvp_user, rsvp_headers):

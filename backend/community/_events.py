@@ -252,7 +252,9 @@ def _enforce_event_read_visibility(event: Event, auth_user) -> None:
         co_host_ids = {str(c.id) for c in event.co_hosts.all()}
         invited_user_ids = {str(u.id) for u in event.invited_users.all()}
         if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
-            raise_validation(Code.Event.INVITE_ONLY, status_code=403)
+            raise_validation(
+                Code.Event.PERM_DENIED, status_code=403, action="view_invite_only_event"
+            )
 
 
 @router.get(

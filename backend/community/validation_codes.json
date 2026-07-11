@@ -42,11 +42,6 @@
         "params": []
       },
       {
-        "name": "INVITE_ONLY",
-        "value": "event.invite_only",
-        "params": []
-      },
-      {
         "name": "AUTH_REQUIRED",
         "value": "event.auth_required",
         "params": []
