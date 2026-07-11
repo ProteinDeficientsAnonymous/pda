@@ -1,5 +1,4 @@
 import pytest
-
 from users._name_parsing import parse_display_name
 
 
