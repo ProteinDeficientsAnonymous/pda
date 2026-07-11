@@ -84,6 +84,9 @@ def create_user(request, payload: UserCreateIn):
             id=str(user.id),
             phone_number=user.phone_number,
             display_name=user.display_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            full_name=user.full_name,
             magic_link_token=magic_token,
         ),
     )
@@ -189,6 +192,9 @@ def search_users(request, q: str = ""):
                 # Don't leak a private phone via the display_name fallback when
                 # show_phone is false (e.g. members with no display_name set).
                 display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                first_name=u.first_name,
+                last_name=u.last_name,
+                full_name=u.full_name,
                 # Respect each member's privacy flag — blank the phone rather
                 # than dropping the field, so callers (co-host/invite picker)
                 # don't break on a missing key. Mirrors the member directory.

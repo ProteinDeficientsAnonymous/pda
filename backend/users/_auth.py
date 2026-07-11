@@ -363,6 +363,9 @@ def list_member_directory(request):
                 # Don't leak a private phone via the display_name fallback when
                 # show_phone is false (e.g. members with no display_name set).
                 display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                first_name=u.first_name,
+                last_name=u.last_name,
+                full_name=u.full_name,
                 phone_number=u.phone_number if u.show_phone else "",
                 email=(u.email or "") if u.show_email else "",
                 profile_photo_url=media_path(u.profile_photo),
@@ -389,6 +392,9 @@ def get_member_profile(request, user_id: str):
         MemberProfileOut(
             id=str(user.id),
             display_name=user.display_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            full_name=user.full_name,
             phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
             email=(user.email or "") if (user.show_email or is_own_profile) else "",
             bio=user.bio or "",

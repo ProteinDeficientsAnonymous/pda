@@ -56,3 +56,18 @@ class TestJoinRequestNames:
             first_name="Ada", last_name="Lovelace", phone_number="+15551239999"
         )
         assert jr.full_name == "Ada Lovelace"
+
+
+@pytest.mark.django_db
+class TestUserOutSchema:
+    def test_user_out_includes_new_and_legacy_names(self):
+        from users.schemas import UserOut
+
+        u = User.objects.create_user(
+            phone_number="+15551230200", first_name="Ada", last_name="Lovelace"
+        )
+        out = UserOut.from_user(u)
+        assert out.first_name == "Ada"
+        assert out.last_name == "Lovelace"
+        assert out.full_name == "Ada Lovelace"
+        assert out.display_name == "Ada Lovelace"  # transitional
