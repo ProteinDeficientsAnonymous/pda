@@ -56,9 +56,12 @@ def _can_edit_event(user, event: Event) -> bool:
     return event.co_hosts.filter(pk=user.pk).exists()
 
 
-def _is_invalid_official_visibility(event_type: str, visibility: str) -> bool:
-    """Official events must have public visibility."""
-    return event_type == EventType.OFFICIAL and visibility != PageVisibility.PUBLIC
+_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL})
+
+
+def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
+    """Public-only event types (official, club) must have public visibility."""
+    return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
 
 
 def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
@@ -92,7 +95,7 @@ def _validate_update_payload(request, event: Event, event_id, updates: dict) -> 
         raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
     effective_type = updates.get("event_type", event.event_type)
     effective_visibility = updates.get("visibility", event.visibility)
-    if _is_invalid_official_visibility(effective_type, effective_visibility):
+    if _is_invalid_typed_visibility(effective_type, effective_visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
     # While a poll is active, the poll is the source of truth for when. Block
     # direct edits to start/end so the event time can't drift from the poll.
@@ -148,7 +151,7 @@ def _build_events_queryset(status: str, auth_user, is_authed):
         .filter(status=EventStatus.ACTIVE)
     )
     if not is_authed:
-        qs = qs.filter(Q(visibility=PageVisibility.PUBLIC) | Q(event_type=EventType.OFFICIAL))
+        qs = qs.filter(visibility=PageVisibility.PUBLIC)
     return qs
 
 
@@ -242,11 +245,7 @@ def _enforce_event_read_visibility(event: Event, auth_user) -> None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.is_draft and not _can_see_draft(event, auth_user):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="view_draft_event")
-    if (
-        event.visibility == PageVisibility.MEMBERS_ONLY
-        and auth_user is None
-        and event.event_type != EventType.OFFICIAL
-    ):
+    if event.visibility == PageVisibility.MEMBERS_ONLY and auth_user is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.visibility == PageVisibility.INVITE_ONLY:
         co_host_ids = {str(c.id) for c in event.co_hosts.all()}
@@ -309,7 +308,7 @@ def create_event(request, payload: EventIn):
             )
             raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
 
-    if _is_invalid_official_visibility(payload.event_type, payload.visibility):
+    if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
     # Drafts can save without a start_datetime (see #357). But if a start IS
