@@ -10,25 +10,22 @@ _PACKAGE_JSON = _ROOT / "frontend" / "package.json"
 
 
 def set_pyproject_version(path: Path, version: str) -> None:
-    """Rewrite the version under [project], leaving every other table untouched.
+    """Rewrite [project].version, leaving every other table untouched.
     param path(Path): path to pyproject.toml
     param version(str): new semver string, e.g. "1.2.3"
     """
     text = path.read_text()
-    if "version" not in tomllib.loads(text).get("project", {}):
+    current = tomllib.loads(text).get("project", {}).get("version")
+    if current is None:
         raise ValueError(f"no [project].version in {path}")
-    # Replace `version = "..."` only within the [project] table: scan from the
-    # [project] header to the next top-level table header.
-    project = re.compile(r"(?ms)^\[project\]\s*$.*?(?=^\[|\Z)")
-    version_line = re.compile(r'(?m)^(version\s*=\s*")[^"]*(")')
-
-    def bump(block: re.Match[str]) -> str:
-        new_block, count = version_line.subn(rf"\g<1>{version}\g<2>", block.group(0), count=1)
-        if count != 1:
-            raise ValueError(f"expected exactly one [project].version line in {path}")
-        return new_block
-
-    path.write_text(project.sub(bump, text, count=1))
+    # Scope by the known value tomllib reported, tolerant of spacing/quote style.
+    line = re.compile(rf"""(?m)^(version\s*=\s*)(["']){re.escape(current)}\2""")
+    new_text, count = line.subn(rf'\g<1>"{version}"', text)
+    if count != 1:
+        raise ValueError(
+            f"expected exactly one version = {current!r} line in {path}, found {count}"
+        )
+    path.write_text(new_text)
 
 
 def set_package_json_version(path: Path, version: str) -> None:
