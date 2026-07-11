@@ -7,6 +7,7 @@ them; the member upsert/delete paths promoted them silently (Issue 629).
 
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
+from users.models import User
 
 from tests._public_rsvp_helpers import make_non_member
 from tests.conftest import future_iso
@@ -66,3 +67,18 @@ class TestWaitlistPromotionEmailsNonMember:
 
         assert EventRSVP.objects.get(event=event, user=waited).status == RSVPStatus.ATTENDING
         assert _promoted_email_count(fake_email_sender, "waited2@e.com") == 1
+
+    def test_promoted_member_is_not_emailed(
+        self, api_client, test_user, auth_headers, fake_email_sender
+    ):
+        event = _one_spot_event(test_user)
+        _rsvp(api_client, event, auth_headers)
+        member = User.objects.create_user(
+            phone_number="+14155559913", password="p", email="member@e.com"
+        )
+        EventRSVP.objects.create(event=event, user=member, status=RSVPStatus.WAITLISTED)
+
+        api_client.delete(f"/api/community/events/{event.id}/rsvp/", **auth_headers)
+
+        assert EventRSVP.objects.get(event=event, user=member).status == RSVPStatus.ATTENDING
+        assert _promoted_email_count(fake_email_sender, "member@e.com") == 0

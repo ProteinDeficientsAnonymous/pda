@@ -121,7 +121,5 @@ class TestPublicRsvpRobustness:
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(event=official_event, user=user).exists()
         assert NonMemberRsvpToken.objects.filter(user=user).exists()
-        failures = [
-            r for r in caplog.records if getattr(r, "action", None) == "public_rsvp_email_failed"
-        ]
+        failures = [r for r in caplog.records if getattr(r, "action", None) == "rsvp_email_failed"]
         assert len(failures) == 1

@@ -47,10 +47,10 @@ def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails
 
 
 def _log_email_failure(request, event: Event, user: User, exc: Exception) -> None:
-    logger.warning("public rsvp email failed", exc_info=True)
+    logger.warning("rsvp email failed", exc_info=True)
     audit_log(
         logging.WARNING,
-        "public_rsvp_email_failed",
+        "rsvp_email_failed",
         request,
         target_type="event",
         target_id=str(event.id),
