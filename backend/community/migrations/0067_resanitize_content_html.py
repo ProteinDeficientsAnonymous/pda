@@ -37,7 +37,7 @@ def resanitize(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0057_joinrequest_email"),
+        ("community", "0066_backfill_joinrequest_names"),
     ]
 
     operations = [
