@@ -79,6 +79,11 @@ describe('eventClass', () => {
     expect(eventClass(event)).toBe('pda-evt pda-evt-official');
   });
 
+  it('returns club class for club events', () => {
+    const event = makeEvent({ eventType: EventType.Club });
+    expect(eventClass(event)).toBe('pda-evt pda-evt-club');
+  });
+
   it('returns invite class for invite-only community events', () => {
     const event = makeEvent({
       eventType: EventType.Community,

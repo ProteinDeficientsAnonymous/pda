@@ -81,6 +81,7 @@ export function EventForm({ existing }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const canTagOfficial = hasPermission(user, Permission.TagOfficialEvent);
+  const canTagClub = hasPermission(user, Permission.TagClubEvent);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const [values, setValues] = useState<EventFormValues>(() =>
@@ -249,6 +250,7 @@ export function EventForm({ existing }: Props) {
         onChange={patch}
         errors={errors}
         canTagOfficial={canTagOfficial}
+        canTagClub={canTagClub}
         timeLocked={!!existing?.hasPoll && !existing.startDatetime}
         existingEventId={existing?.id}
         existingHasPoll={!!existing?.hasPoll}
@@ -292,7 +294,9 @@ export function EventForm({ existing }: Props) {
           values={values}
           onChange={patch}
           errors={errors}
-          typeLocked={values.eventType === EventType.Official}
+          typeLocked={
+            values.eventType === EventType.Official || values.eventType === EventType.Club
+          }
         />
       </CollapsibleCard>
 
