@@ -291,7 +291,7 @@ class TestCreateUserWithRole:
     def test_creates_user_with_default_member_role(self):
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
         user, magic_token = _create_user_with_role(
-            "+12025559999", "Test User", "t@e.com", None, requesting_user=self._requester()
+            "+12025559999", "Test", "User", "t@e.com", None, requesting_user=self._requester()
         )
         assert user.phone_number == "+12025559999"
         assert len(magic_token) == 36  # UUID format
@@ -301,7 +301,8 @@ class TestCreateUserWithRole:
         role = Role.objects.create(name="custom_role")
         user, _ = _create_user_with_role(
             "+12025558888",
-            "Custom User",
+            "Custom",
+            "User",
             "c@e.com",
             str(role.pk),
             requesting_user=self._requester(),
@@ -312,14 +313,14 @@ class TestCreateUserWithRole:
         User.objects.create_user(phone_number="+12025557777", password="pass123")
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
-                "+12025557777", "Dup", None, None, requesting_user=self._requester()
+                "+12025557777", "Dup", "", None, None, requesting_user=self._requester()
             )
         assert exc_info.value.code == Code.Phone.ALREADY_EXISTS
 
     def test_raises_on_invalid_phone(self):
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
-                "not-a-phone", "Bad Phone", None, None, requesting_user=self._requester()
+                "not-a-phone", "Bad", "Phone", None, None, requesting_user=self._requester()
             )
         assert exc_info.value.code == Code.Phone.INVALID
 
@@ -327,7 +328,8 @@ class TestCreateUserWithRole:
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
                 "+12025556666",
-                "Bad Role User",
+                "Bad Role",
+                "User",
                 "b@e.com",
                 "00000000-0000-0000-0000-000000000000",
                 requesting_user=self._requester(),
@@ -341,7 +343,8 @@ class TestCreateUserWithRole:
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
                 "+12025554444",
-                "Sneaky Admin",
+                "Sneaky",
+                "Admin",
                 None,
                 str(admin_role.pk),
                 requesting_user=non_admin,
@@ -355,7 +358,12 @@ class TestCreateUserWithRole:
         requester = self._requester()
         requester.roles.add(admin_role)
         user, _ = _create_user_with_role(
-            "+12025553333", "New Admin", None, str(admin_role.pk), requesting_user=requester
+            "+12025553333",
+            "New",
+            "Admin",
+            None,
+            str(admin_role.pk),
+            requesting_user=requester,
         )
         assert user.roles.filter(pk=admin_role.pk).exists()
 

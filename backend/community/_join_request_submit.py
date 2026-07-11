@@ -13,6 +13,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from users._name_parsing import parse_display_name
 from users.models import User
 
 from community._field_limits import FieldLimit
@@ -36,7 +37,9 @@ router = Router()
 
 
 class JoinRequestIn(BaseModel):
-    display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
+    display_name: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
+    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     email: EmailStr
     answers: dict[str, str] = {}
@@ -199,7 +202,11 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
 )
 @rate_limit(key_func=client_ip, rate="3/h")
 def submit_join_request(request, payload: JoinRequestIn):
-    display_name = payload.display_name.strip()
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    if not first_name and payload.display_name:
+        first_name, last_name = parse_display_name(payload.display_name.strip())
+    display_name = f"{first_name} {last_name}".strip() or payload.display_name.strip()
 
     # Honeypot trip — silently 201 without persisting so bots don't retry.
     if payload.website.strip():
@@ -217,7 +224,9 @@ def submit_join_request(request, payload: JoinRequestIn):
     if not payload.guidelines_consent:
         raise_validation(Code.JoinRequest.GUIDELINES_CONSENT_REQUIRED, field="guidelines_consent")
 
-    validate_display_name(display_name)
+    validate_display_name(first_name, field="first_name")
+    if last_name:
+        validate_display_name(last_name, field="last_name")
     validated_phone = _validate_phone(payload.phone_number)
     normalized_email = payload.email.strip().lower()
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
@@ -239,6 +248,8 @@ def submit_join_request(request, payload: JoinRequestIn):
 
         join_request = JoinRequest.objects.create(
             display_name=display_name,
+            first_name=first_name,
+            last_name=last_name,
             phone_number=validated_phone,
             email=normalized_email,
             user=matched_user,

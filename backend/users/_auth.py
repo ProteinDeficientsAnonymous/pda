@@ -21,6 +21,7 @@ from ninja_jwt.tokens import RefreshToken
 
 from users._consents import stamp_consents
 from users._helpers import _check_and_set_email
+from users._name_parsing import parse_display_name
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
@@ -251,10 +252,19 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     to the global handler.
     """
     changed: list[str] = []
-    if payload.display_name is not None:
+    if payload.first_name is not None or payload.last_name is not None:
+        if payload.first_name is not None:
+            validate_display_name(payload.first_name)
+            user.first_name = payload.first_name.strip()
+        if payload.last_name is not None:
+            validate_display_name(payload.last_name)
+            user.last_name = payload.last_name.strip()
+        changed.extend(["first_name", "last_name", "display_name"])
+    elif payload.display_name is not None:
         validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
-        changed.append("display_name")
+        first, last = parse_display_name(payload.display_name.strip())
+        user.first_name, user.last_name = first, last
+        changed.extend(["first_name", "last_name", "display_name"])
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
@@ -422,9 +432,16 @@ def complete_onboarding(request, payload: OnboardingIn):
     # check_password always fails and this is correctly skipped.
     if user.has_usable_password() and user.check_password(payload.new_password):
         raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
-    if payload.display_name is not None:
+    if payload.first_name is not None or payload.last_name is not None:
+        if payload.first_name is not None:
+            validate_display_name(payload.first_name)
+            user.first_name = payload.first_name.strip()
+        if payload.last_name is not None:
+            validate_display_name(payload.last_name)
+            user.last_name = payload.last_name.strip()
+    elif payload.display_name is not None:
         validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
+        user.first_name, user.last_name = parse_display_name(payload.display_name.strip())
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:

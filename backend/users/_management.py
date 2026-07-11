@@ -22,6 +22,7 @@ from users._helpers import (
     _validate_member_role_required,
     _validate_phone,
 )
+from users._name_parsing import parse_display_name
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -56,12 +57,20 @@ def create_user(request, payload: UserCreateIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
-    if payload.display_name:
+    if payload.first_name:
+        validate_display_name(payload.first_name)
+    if payload.last_name:
+        validate_display_name(payload.last_name)
+    first_name = payload.first_name
+    last_name = payload.last_name
+    if not first_name and payload.display_name:
         validate_display_name(payload.display_name)
+        first_name, last_name = parse_display_name(payload.display_name)
 
     user, magic_token = _create_user_with_role(
         payload.phone_number,
-        payload.display_name,
+        first_name,
+        last_name,
         payload.email,
         payload.role_id,
         requesting_user=request.auth,
@@ -295,9 +304,16 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
-    if payload.display_name is not None:
+    if payload.first_name is not None or payload.last_name is not None:
+        if payload.first_name is not None:
+            validate_display_name(payload.first_name)
+            user.first_name = payload.first_name.strip()
+        if payload.last_name is not None:
+            validate_display_name(payload.last_name)
+            user.last_name = payload.last_name.strip()
+    elif payload.display_name is not None:
         validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
+        user.first_name, user.last_name = parse_display_name(payload.display_name.strip())
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)

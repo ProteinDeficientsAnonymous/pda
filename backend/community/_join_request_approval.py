@@ -11,7 +11,8 @@ def _reactivate_archived_user(existing_user, join_request):
     """Un-archive an existing user on re-approval, carrying any new consents."""
     existing_user.archived_at = None
     existing_user.needs_onboarding = True
-    existing_user.display_name = join_request.display_name
+    existing_user.first_name = join_request.first_name
+    existing_user.last_name = join_request.last_name
     if join_request.guidelines_consent_at is not None:
         existing_user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
@@ -20,6 +21,8 @@ def _reactivate_archived_user(existing_user, join_request):
         update_fields=[
             "archived_at",
             "needs_onboarding",
+            "first_name",
+            "last_name",
             "display_name",
             "guidelines_consent_at",
             "sms_consent_at",
@@ -37,7 +40,8 @@ def _promote_non_member(user, join_request):
     """
     user.is_member = True
     user.needs_onboarding = True
-    user.display_name = join_request.display_name
+    user.first_name = join_request.first_name
+    user.last_name = join_request.last_name
     if join_request.guidelines_consent_at is not None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
@@ -46,6 +50,8 @@ def _promote_non_member(user, join_request):
         update_fields=[
             "is_member",
             "needs_onboarding",
+            "first_name",
+            "last_name",
             "display_name",
             "guidelines_consent_at",
             "sms_consent_at",
@@ -79,7 +85,8 @@ def _provision_approved_user(join_request, requesting_user) -> tuple[str | None,
     if existing_user is None:
         _, magic_token = _create_user_with_role(
             join_request.phone_number,
-            join_request.display_name,
+            join_request.first_name,
+            join_request.last_name,
             join_request.email,
             None,
             requesting_user=requesting_user,

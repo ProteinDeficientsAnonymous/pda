@@ -117,7 +117,8 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
 
 def _create_user_with_role(  # noqa: PLR0913
     phone: str,
-    display_name: str,
+    first_name: str,
+    last_name: str,
     email: str | None,
     role_id: str | None,
     *,
@@ -143,7 +144,8 @@ def _create_user_with_role(  # noqa: PLR0913
     _guard_admin_role_grant(role_id, requesting_user)
     user = User.objects.create_user(
         phone_number=validated_phone,
-        display_name=display_name,
+        first_name=first_name,
+        last_name=last_name,
         email=normalized_email,
         is_member=True,
         needs_onboarding=True,

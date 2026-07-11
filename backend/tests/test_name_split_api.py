@@ -71,3 +71,19 @@ class TestUserOutSchema:
         assert out.last_name == "Lovelace"
         assert out.full_name == "Ada Lovelace"
         assert out.display_name == "Ada Lovelace"  # transitional
+
+
+@pytest.mark.django_db
+class TestApprovalCopiesNames:
+    def test_new_user_gets_first_last_from_join_request(self, manage_users_user):
+        from community._join_request_approval import _provision_approved_user
+        from community.models.join_form import JoinRequest
+
+        jr = JoinRequest.objects.create(
+            first_name="Grace", last_name="Hopper", phone_number="+12025551212"
+        )
+        token, created = _provision_approved_user(jr, manage_users_user)
+        assert created is True
+        u = User.objects.get(phone_number="+12025551212")
+        assert (u.first_name, u.last_name) == ("Grace", "Hopper")
+        assert u.display_name == "Grace Hopper"
