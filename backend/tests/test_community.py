@@ -196,6 +196,20 @@ class TestCheckPhone:
         assert response.status_code == 200
         assert response.json()["status"] == "unknown"
 
+    def test_check_phone_non_member_returns_unknown(self, api_client, db):
+        User.objects.create_user(
+            phone_number="+12025550188",
+            display_name="Public RSVP",
+            is_member=False,
+        )
+        response = api_client.post(
+            "/api/community/check-phone/",
+            {"phone_number": "+12025550188"},
+            content_type="application/json",
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "unknown"
+
     def test_check_phone_invalid_format_returns_false(self, api_client, db):
         response = api_client.post(
             "/api/community/check-phone/",
