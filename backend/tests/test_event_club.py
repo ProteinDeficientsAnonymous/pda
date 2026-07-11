@@ -1,5 +1,3 @@
-"""Tests for club event type — public-only, gated by tag_club_event."""
-
 import pytest
 from community.models import Event, EventType
 from django.utils import timezone

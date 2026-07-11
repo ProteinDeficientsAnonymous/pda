@@ -9,9 +9,7 @@ interface Props {
   canTagClub: boolean;
 }
 
-// event_type is a single value, so the two toggles are mutually exclusive:
-// turning one on switches the type (and forces public); turning it off reverts
-// to community. Official/club are public-only, hence the forced visibility.
+// Single-valued event_type makes the toggles mutually exclusive; both force public.
 export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: Props) {
   if (!canTagOfficial && !canTagClub) return null;
 
