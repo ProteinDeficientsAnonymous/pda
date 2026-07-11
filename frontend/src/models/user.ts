@@ -32,9 +32,6 @@ export interface User {
   // is null server-side). A hard gate — routes to /consent with no skip. Nobody
   // is grandfathered; existing members and admins must re-consent.
   needsGuidelinesConsent: boolean;
-  // True until the user accepts the sms messaging policy (sms_consent_at is null
-  // server-side). Unlike guidelines this is NOT a hard gate — it is collected
-  // inline during onboarding when missing, but never locks an existing user out.
   needsSmsConsent: boolean;
   showPhone: boolean;
   showEmail: boolean;
@@ -64,16 +61,9 @@ export function passwordSetupRedirect(user: User | null): '/new-password' | '/on
   return hasNameAndEmail ? '/new-password' : '/onboarding';
 }
 
-/**
- * Where a user must go to accept the community guidelines before using the app,
- * or null if they've already consented. The consent gate is HARD — no skip, no
- * dismiss — and applies to everyone (admins included). It runs only after any
- * password setup (passwordSetupRedirect) is resolved, so a brand-new user sets
- * their name + password first, then consents.
- */
-export function guidelinesConsentRedirect(user: User | null): '/consent' | null {
+export function consentRedirect(user: User | null): '/consent' | null {
   if (!user) return null;
-  return user.needsGuidelinesConsent ? '/consent' : null;
+  return user.needsGuidelinesConsent || user.needsSmsConsent ? '/consent' : null;
 }
 
 /**
@@ -93,5 +83,5 @@ export function guidelinesConsentRedirect(user: User | null): '/consent' | null 
 export function postAuthRedirect(
   user: User | null,
 ): '/new-password' | '/onboarding' | '/consent' | null {
-  return passwordSetupRedirect(user) ?? guidelinesConsentRedirect(user);
+  return passwordSetupRedirect(user) ?? consentRedirect(user);
 }

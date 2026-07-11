@@ -16,7 +16,7 @@ import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
-import { guidelinesConsentRedirect, passwordSetupRedirect } from '@/models/user';
+import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
 import { useAuthStore } from './store';
 
@@ -77,7 +77,7 @@ export function OnboardingGate() {
   // takes priority over the consent gate — a brand-new user sets their name +
   // password before being asked to consent.
   const setupTarget = passwordSetupRedirect(user);
-  const consentTarget = guidelinesConsentRedirect(user);
+  const consentTarget = consentRedirect(user);
 
   if (setupTarget) {
     if (path !== setupTarget) {
