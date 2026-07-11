@@ -430,10 +430,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     new_status = updates.pop("status", None)
     notify_attendees = updates.pop("notify_attendees", False) or False
 
-    # Apply field edits before the status transition so a draft published in the
-    # same PATCH as a corrected date validates against the new date, not the stale
-    # one (_publish_draft re-checks start_datetime is in the future). Field edits
-    # are allowed on active, cancelled, or draft events.
+    # Field edits before the transition so publish validates the corrected date.
     _apply_field_updates(request, event, event_id, updates)
 
     if new_status is not None:
