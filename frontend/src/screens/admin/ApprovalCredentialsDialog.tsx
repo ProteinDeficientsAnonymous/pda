@@ -121,7 +121,7 @@ function SendLink({ href, label, disabled }: { href: string; label: string; disa
     );
   }
   return (
-    <a href={href} className={className}>
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
       {label}
     </a>
   );

@@ -83,6 +83,13 @@ describe('ApprovalCredentialsDialog', () => {
     expect(wa?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter Vee: '));
   });
 
+  it('opens send links in a new tab with safe rel', () => {
+    renderDialog(makeUser());
+    const wa = screen.getByText('send via whatsapp').closest('a');
+    expect(wa?.getAttribute('target')).toBe('_blank');
+    expect(wa?.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
   it('hides edit-template trigger without permission', () => {
     renderDialog(makeUser());
     expect(screen.queryByRole('button', { name: /edit shared welcome template/i })).toBeNull();
