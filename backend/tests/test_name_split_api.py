@@ -120,3 +120,40 @@ class TestApprovalCopiesNames:
         u = User.objects.get(phone_number="+12025551212")
         assert (u.first_name, u.last_name) == ("Grace", "Hopper")
         assert u.display_name == "Grace Hopper"
+
+
+@pytest.mark.django_db
+class TestNameValidationErrorFields:
+    def test_invalid_first_name_error_field_is_first_name_not_display_name(self, api_client, auth_headers):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            {"first_name": "Ada1"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 422
+        detail = resp.json()["detail"]
+        assert isinstance(detail, list)
+        assert any(e["field"] == "first_name" for e in detail), (
+            f"expected error with field='first_name' but got fields: {[e.get('field') for e in detail]}"
+        )
+        assert not any(
+            e["field"] == "display_name" for e in detail
+        ), "error should not be attributed to display_name"
+
+    def test_invalid_last_name_error_field_is_last_name_not_display_name(self, api_client, auth_headers):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            {"last_name": "Hopper2"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 422
+        detail = resp.json()["detail"]
+        assert isinstance(detail, list)
+        assert any(e["field"] == "last_name" for e in detail), (
+            f"expected error with field='last_name' but got fields: {[e.get('field') for e in detail]}"
+        )
+        assert not any(
+            e["field"] == "display_name" for e in detail
+        ), "error should not be attributed to display_name"

@@ -59,9 +59,9 @@ def create_user(request, payload: UserCreateIn):
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
     if payload.first_name:
-        validate_display_name(payload.first_name)
+        validate_display_name(payload.first_name, field="first_name")
     if payload.last_name:
-        validate_display_name(payload.last_name)
+        validate_display_name(payload.last_name, field="last_name")
     first_name = payload.first_name
     last_name = payload.last_name
     if not first_name and payload.display_name:

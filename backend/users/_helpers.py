@@ -43,10 +43,10 @@ def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     """
     if payload.first_name is not None or payload.last_name is not None:
         if payload.first_name is not None:
-            validate_display_name(payload.first_name)
+            validate_display_name(payload.first_name, field="first_name")
             user.first_name = payload.first_name.strip()
         if payload.last_name is not None:
-            validate_display_name(payload.last_name)
+            validate_display_name(payload.last_name, field="last_name")
             user.last_name = payload.last_name.strip()
         return True
     if payload.display_name is not None:
