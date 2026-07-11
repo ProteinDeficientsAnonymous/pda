@@ -205,7 +205,7 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
         if not user.email:
             continue
         try:
-            token = NonMemberRsvpToken.issue(user)
+            token = NonMemberRsvpToken.issue_or_extend(user)
             result = send_rsvp_waitlist_promoted_email(
                 sender=get_email_sender(),
                 details=_email_details(event, user, token.token),
@@ -249,7 +249,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event.id, user, payload.status, payload.has_plus_one
         )
-        token = NonMemberRsvpToken.issue(user)
+        token = NonMemberRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,

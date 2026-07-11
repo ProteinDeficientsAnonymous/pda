@@ -159,18 +159,23 @@ class TestPublicRsvpDedup:
         assert new_user.email is None
         assert EventRSVP.objects.filter(user=new_user).exists()
 
-    def test_multiple_rsvps_accumulate_fresh_tokens(
+    def test_multiple_rsvps_reuse_the_same_token(
         self, api_client, official_event, fake_email_sender
     ):
         other_event = make_official_event(
             title="Second Official", start_datetime=future_iso(days=20)
         )
         post(api_client, official_event)
+        first_token = NonMemberRsvpToken.objects.get(user__phone_number="+14155550123").token
         post(api_client, other_event)
 
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(user=user).count() == 2
-        assert NonMemberRsvpToken.objects.filter(user=user).count() == 2
+        # A second RSVP extends the existing valid token rather than minting a new
+        # one, so a link saved from a previous email keeps resolving.
+        tokens = NonMemberRsvpToken.objects.filter(user=user)
+        assert tokens.count() == 1
+        assert tokens.first().token == first_token
 
 
 @pytest.mark.django_db
