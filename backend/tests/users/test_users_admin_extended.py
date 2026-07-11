@@ -139,6 +139,13 @@ class TestMemberProfile:
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 
+    def test_member_profile_returns_pronouns(self, api_client, auth_headers, other_user):
+        other_user.pronouns = "they/them"
+        other_user.save(update_fields=["pronouns"])
+        response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
+        assert response.status_code == 200
+        assert response.json()["pronouns"] == "they/them"
+
 
 @pytest.mark.django_db
 class TestDeleteUser:

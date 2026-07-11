@@ -82,6 +82,7 @@ const CREATOR: User = {
   displayName: 'Alice',
   email: '',
   bio: '',
+  pronouns: '',
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,

@@ -35,6 +35,7 @@ interface AuthState {
     newPassword: string;
     displayName?: string | undefined;
     email?: string | undefined;
+    pronouns?: string | undefined;
     consentTypes?: ConsentTypeValue[] | undefined;
   }) => Promise<void>;
   acceptConsents: (consentTypes: ConsentTypeValue[]) => Promise<void>;

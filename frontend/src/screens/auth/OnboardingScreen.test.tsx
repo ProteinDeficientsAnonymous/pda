@@ -25,6 +25,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     displayName: '',
     email: '',
     bio: '',
+    pronouns: '',
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: true,
@@ -88,6 +89,28 @@ describe('OnboardingScreen', () => {
     expect(completeOnboarding).toHaveBeenCalledWith({
       displayName: 'Tester',
       email: 'tester@example.com',
+      newPassword: 'abcd1234ABCD!',
+      consentTypes: [],
+    });
+  });
+
+  it('passes an entered pronoun through to completeOnboarding', async () => {
+    completeOnboarding.mockResolvedValue(undefined);
+    setupMock(makeUser({ needsGuidelinesConsent: false, needsSmsConsent: false }));
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
+    await userEvent.type(screen.getByLabelText(/pronouns/i), 'they/them');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(completeOnboarding).toHaveBeenCalledWith({
+      displayName: 'Tester',
+      email: 'tester@example.com',
+      pronouns: 'they/them',
       newPassword: 'abcd1234ABCD!',
       consentTypes: [],
     });

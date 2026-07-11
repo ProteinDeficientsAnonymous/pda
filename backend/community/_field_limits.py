@@ -20,4 +20,5 @@ class FieldLimit:
     CHOICE = 20
     PAYMENT_HANDLE = 100
     BIO = 500
+    PRONOUNS = 100
     WELCOME_TEMPLATE = 4000

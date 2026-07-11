@@ -72,6 +72,7 @@ const TEST_USER: User = {
   displayName: 'Test User',
   email: 'test@example.com',
   bio: '',
+  pronouns: '',
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -130,6 +131,21 @@ describe('SettingsScreen', () => {
 
     await waitFor(() => {
       expect(useAccessibilityStore.getState().themeMode).toBe('dark');
+    });
+  });
+
+  it('saves an edited pronouns value via updateProfile', async () => {
+    const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit pronouns/i }));
+    const field = screen.getByLabelText(/^pronouns$/i);
+    await user.type(field, 'they/them');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ pronouns: 'they/them' });
     });
   });
 

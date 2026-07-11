@@ -29,6 +29,7 @@ function makeUser(overrides?: Partial<User>): User {
     displayName: 'Vetter Vee',
     email: '',
     bio: '',
+    pronouns: '',
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,

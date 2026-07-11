@@ -53,6 +53,39 @@ class TestUpdateMe:
         )
         assert response.status_code == 422
 
+    def test_update_pronouns_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"pronouns": "  they/them  "},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["pronouns"] == "they/them"
+        test_user.refresh_from_db()
+        assert test_user.pronouns == "they/them"
+
+    def test_update_pronouns_can_be_cleared(self, api_client, auth_headers, test_user):
+        test_user.pronouns = "she/her"
+        test_user.save(update_fields=["pronouns"])
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"pronouns": ""},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["pronouns"] == ""
+
+    def test_update_pronouns_too_long_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"pronouns": "x" * 101},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
 
 @pytest.mark.django_db
 class TestPatchMeEmail:

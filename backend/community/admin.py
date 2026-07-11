@@ -24,8 +24,8 @@ class EditablePageAdmin(admin.ModelAdmin):
 
 @admin.register(JoinRequest)
 class JoinRequestAdmin(admin.ModelAdmin):
-    list_display = ("display_name", "phone_number", "email", "pronouns", "submitted_at")
-    list_filter = ("submitted_at",)
+    list_display = ("display_name", "phone_number", "email", "status", "submitted_at")
+    list_filter = ("status", "submitted_at")
     search_fields = ("display_name", "phone_number", "email")
     ordering = ("-submitted_at",)
     readonly_fields = ("id", "submitted_at")

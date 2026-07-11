@@ -34,6 +34,7 @@ const ME: User = {
   displayName: 'Me',
   email: '',
   bio: '',
+  pronouns: '',
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,

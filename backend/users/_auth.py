@@ -261,6 +261,9 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     if payload.bio is not None:
         user.bio = payload.bio.strip()
         changed.append("bio")
+    if payload.pronouns is not None:
+        user.pronouns = payload.pronouns.strip()
+        changed.append("pronouns")
     if payload.needs_onboarding is not None:
         user.needs_onboarding = payload.needs_onboarding
         changed.append("needs_onboarding")
@@ -389,6 +392,7 @@ def get_member_profile(request, user_id: str):
             phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
             email=(user.email or "") if (user.show_email or is_own_profile) else "",
             bio=user.bio or "",
+            pronouns=user.pronouns or "",
             profile_photo_url=media_path(user.profile_photo),
             login_link_requested=user.login_link_requested if can_manage_users else False,
         ),
@@ -419,6 +423,8 @@ def complete_onboarding(request, payload: OnboardingIn):
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:
         raise_validation(Code.Email.REQUIRED, field="email", status_code=422)
+    if payload.pronouns is not None:
+        user.pronouns = payload.pronouns.strip()
     user.set_password(payload.new_password)
     if user.needs_onboarding and user.onboarded_at is None:
         user.onboarded_at = timezone.now()

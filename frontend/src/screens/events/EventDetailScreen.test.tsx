@@ -92,6 +92,7 @@ const AUTHED_USER: User = {
   displayName: 'Test Member',
   email: 'test@example.com',
   bio: '',
+  pronouns: '',
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,

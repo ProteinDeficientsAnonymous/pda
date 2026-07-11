@@ -3064,6 +3064,18 @@
             ],
             "title": "Needs Onboarding"
           },
+          "pronouns": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pronouns"
+          },
           "show_email": {
             "anyOf": [
               {
@@ -3171,6 +3183,11 @@
             "default": "",
             "title": "Profile Photo Url",
             "type": "string"
+          },
+          "pronouns": {
+            "default": "",
+            "title": "Pronouns",
+            "type": "string"
           }
         },
         "required": [
@@ -3276,6 +3293,18 @@
             "maxLength": 128,
             "title": "New Password",
             "type": "string"
+          },
+          "pronouns": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pronouns"
           }
         },
         "required": [
@@ -4462,6 +4491,11 @@
           "profile_photo_url": {
             "default": "",
             "title": "Profile Photo Url",
+            "type": "string"
+          },
+          "pronouns": {
+            "default": "",
+            "title": "Pronouns",
             "type": "string"
           },
           "roles": {

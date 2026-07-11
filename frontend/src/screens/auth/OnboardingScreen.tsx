@@ -20,6 +20,7 @@ import { useConsentChecklist } from './useConsentChecklist';
 const schema = z.object({
   displayName: z.string().min(1, 'name required').max(64),
   email: z.string().min(1, 'email required').pipe(z.email('not a valid email')),
+  pronouns: z.string().max(100).optional(),
   newPassword: passwordRule,
 });
 
@@ -42,16 +43,18 @@ export default function OnboardingScreen() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { displayName: existingDisplayName, email: '', newPassword: '' },
+    defaultValues: { displayName: existingDisplayName, email: '', pronouns: '', newPassword: '' },
   });
   const passwordValue = useWatch({ control, name: 'newPassword' });
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
     try {
+      const pronouns = values.pronouns?.trim();
       await completeOnboarding({
         displayName: values.displayName,
         email: values.email,
+        ...(pronouns ? { pronouns } : {}),
         newPassword: values.newPassword,
         consentTypes: acceptedTypes,
       });
@@ -77,6 +80,12 @@ export default function OnboardingScreen() {
           autoComplete="email"
           {...register('email')}
           error={errors.email?.message}
+        />
+        <TextField
+          label="pronouns (optional)"
+          placeholder="e.g. she/her, they/them"
+          {...register('pronouns')}
+          error={errors.pronouns?.message}
         />
         <PasswordChecklist value={passwordValue} />
         <PasswordField

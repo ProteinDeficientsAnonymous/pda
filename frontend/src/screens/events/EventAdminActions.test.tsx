@@ -30,6 +30,7 @@ function makeUser(id: string, permissions: string[] = []): User {
     displayName: 'Test User',
     email: '',
     bio: '',
+    pronouns: '',
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,

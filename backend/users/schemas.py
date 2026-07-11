@@ -74,6 +74,7 @@ class UserOut(BaseModel):
     display_name: str
     email: str = ""
     bio: str = ""
+    pronouns: str = ""
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False
@@ -97,6 +98,7 @@ class UserOut(BaseModel):
             display_name=user.display_name,
             email=user.email or "",
             bio=user.bio or "",
+            pronouns=user.pronouns or "",
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
@@ -128,6 +130,7 @@ class MemberProfileOut(BaseModel):
     phone_number: str
     email: str = ""
     bio: str = ""
+    pronouns: str = ""
     profile_photo_url: str = ""
     login_link_requested: bool = False
 
@@ -183,6 +186,7 @@ class MePatchIn(BaseModel):
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
     email: OptionalEmail = None
     bio: str | None = Field(default=None, max_length=FieldLimit.BIO)
+    pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
@@ -238,6 +242,7 @@ class OnboardingIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
     email: OptionalEmail = None
+    pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     consent_types: list[ConsentType] = Field(default_factory=list)
 
 
