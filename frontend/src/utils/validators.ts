@@ -26,9 +26,6 @@ export function optionalDisplayName(value: string | null | undefined): string | 
   return null;
 }
 
-export const firstName = displayName;
-export const lastName = optionalDisplayName;
-
 const emailRe = /^[a-zA-Z0-9.!#$%&*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
 
 export function optionalEmail(value: string | null | undefined): string | null {

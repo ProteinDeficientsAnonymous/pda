@@ -182,7 +182,6 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 export interface ProfileUpdate {
-  displayName?: string;
   firstName?: string;
   lastName?: string;
   nickname?: string;
@@ -198,7 +197,6 @@ export interface ProfileUpdate {
 export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   // Omit undefined so PATCH doesn't clobber fields that weren't explicitly set.
   const body: Record<string, unknown> = {};
-  if (patch.displayName !== undefined) body.display_name = patch.displayName;
   if (patch.firstName !== undefined) body.first_name = patch.firstName;
   if (patch.lastName !== undefined) body.last_name = patch.lastName;
   if (patch.nickname !== undefined) body.nickname = patch.nickname;
