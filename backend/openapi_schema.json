@@ -3100,6 +3100,18 @@
             ],
             "title": "Needs Onboarding"
           },
+          "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          },
           "pronouns": {
             "anyOf": [
               {
@@ -3240,6 +3252,11 @@
             "default": false,
             "title": "Login Link Requested",
             "type": "boolean"
+          },
+          "nickname": {
+            "default": "",
+            "title": "Nickname",
+            "type": "string"
           },
           "phone_number": {
             "title": "Phone Number",
@@ -4693,6 +4710,11 @@
             "default": false,
             "title": "Needs Sms Consent",
             "type": "boolean"
+          },
+          "nickname": {
+            "default": "",
+            "title": "Nickname",
+            "type": "string"
           },
           "phone_number": {
             "title": "Phone Number",

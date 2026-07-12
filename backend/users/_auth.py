@@ -255,27 +255,22 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
-    if payload.bio is not None:
-        user.bio = payload.bio.strip()
-        changed.append("bio")
-    if payload.pronouns is not None:
-        user.pronouns = payload.pronouns.strip()
-        changed.append("pronouns")
-    if payload.needs_onboarding is not None:
-        user.needs_onboarding = payload.needs_onboarding
-        changed.append("needs_onboarding")
-    if payload.show_phone is not None:
-        user.show_phone = payload.show_phone
-        changed.append("show_phone")
-    if payload.show_email is not None:
-        user.show_email = payload.show_email
-        changed.append("show_email")
-    if payload.week_start is not None:
-        user.week_start = payload.week_start
-        changed.append("week_start")
-    if payload.calendar_feed_scope is not None:
-        user.calendar_feed_scope = payload.calendar_feed_scope
-        changed.append("calendar_feed_scope")
+    for field in ("bio", "pronouns", "nickname"):
+        value = getattr(payload, field)
+        if value is not None:
+            setattr(user, field, value.strip())
+            changed.append(field)
+    for field in (
+        "needs_onboarding",
+        "show_phone",
+        "show_email",
+        "week_start",
+        "calendar_feed_scope",
+    ):
+        value = getattr(payload, field)
+        if value is not None:
+            setattr(user, field, value)
+            changed.append(field)
     return changed
 
 
@@ -392,6 +387,7 @@ def get_member_profile(request, user_id: str):
             first_name=user.first_name,
             last_name=user.last_name,
             full_name=user.full_name,
+            nickname=user.nickname or "",
             phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
             email=(user.email or "") if (user.show_email or is_own_profile) else "",
             bio=user.bio or "",

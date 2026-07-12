@@ -75,6 +75,7 @@ class UserOut(BaseModel):
     first_name: str = ""
     last_name: str = ""
     full_name: str = ""
+    nickname: str = ""
     email: str = ""
     bio: str = ""
     pronouns: str = ""
@@ -102,6 +103,7 @@ class UserOut(BaseModel):
             first_name=user.first_name,
             last_name=user.last_name,
             full_name=user.full_name,
+            nickname=user.nickname or "",
             email=user.email or "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
@@ -136,6 +138,7 @@ class MemberProfileOut(BaseModel):
     first_name: str = ""
     last_name: str = ""
     full_name: str = ""
+    nickname: str = ""
     phone_number: str
     email: str = ""
     bio: str = ""
@@ -208,6 +211,7 @@ class MePatchIn(BaseModel):
     email: OptionalEmail = None
     bio: str | None = Field(default=None, max_length=FieldLimit.BIO)
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
+    nickname: str | None = Field(default=None, max_length=FieldLimit.NICKNAME)
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
