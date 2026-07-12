@@ -170,32 +170,38 @@ class Command(BaseCommand):
             self.stdout.write(f"  {'created' if created else 'exists'} event: {data.title}")
         return events
 
+    def _ensure_non_member(self, index: int, spec) -> User:
+        user, created = User.objects.get_or_create(
+            phone_number=nonmember_phone(index),
+            defaults={
+                "display_name": spec.label,
+                "email": nonmember_email(index),
+                "is_member": False,
+            },
+        )
+        if created:
+            user.set_unusable_password()
+            user.save(update_fields=["password"])
+        self.stdout.write(f"  {'created' if created else 'exists'} non-member: {spec.label}")
+        return user
+
+    def _attach_spec_rsvps(self, user, spec, events_by_title: dict) -> None:
+        for title, status in zip(spec.event_titles, spec.statuses):
+            event = events_by_title.get(title)
+            if event is not None:
+                EventRSVP.objects.update_or_create(
+                    event=event, user=user, defaults={"status": status}
+                )
+        if spec.event_titles:
+            NonMemberRsvpToken.issue_or_extend(user)
+
     def _seed_non_members(self, events: list[Event]) -> list[User]:
         events_by_title = {e.title: e for e in events}
         users: list[User] = []
         for index, spec in enumerate(NON_MEMBER_SPECS):
-            user, created = User.objects.get_or_create(
-                phone_number=nonmember_phone(index),
-                defaults={
-                    "display_name": spec.label,
-                    "email": nonmember_email(index),
-                    "is_member": False,
-                },
-            )
-            if created:
-                user.set_unusable_password()
-                user.save(update_fields=["password"])
-            for title, status in zip(spec.event_titles, spec.statuses):
-                event = events_by_title.get(title)
-                if event is None:
-                    continue
-                EventRSVP.objects.update_or_create(
-                    event=event, user=user, defaults={"status": status}
-                )
-            if spec.event_titles:
-                NonMemberRsvpToken.issue_or_extend(user)
+            user = self._ensure_non_member(index, spec)
+            self._attach_spec_rsvps(user, spec, events_by_title)
             users.append(user)
-            self.stdout.write(f"  {'created' if created else 'exists'} non-member: {spec.label}")
         return users
 
     def _print_summary(self, roles, perm_users, cond_users, events, non_members) -> None:
