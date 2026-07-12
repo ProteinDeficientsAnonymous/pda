@@ -5,20 +5,22 @@ export function buildMagicLinkUrl(token: string): string {
 // Legacy hardcoded body — still used by member-create / bulk-create /
 // member-detail flows. The join-request approval flow uses the editable
 // template via renderWelcomeMessage instead.
-export function buildWelcomeMessage(displayName: string | null | undefined, url: string): string {
-  const name = (displayName ?? '').trim();
+export function buildWelcomeMessage(firstName: string | null | undefined, url: string): string {
+  const name = (firstName ?? '').trim();
   const greeting = name ? `hi ${name} 🌱` : 'hi 🌱';
   return `${greeting} welcome to pda! use this link to sign in: ${url}`;
 }
 
 export interface WelcomeMessageVars {
   name: string;
+  fullName: string;
   senderName: string;
   magicLink: string;
 }
 
 export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars): string {
   return template
+    .replaceAll('${FULL_NAME}', vars.fullName)
     .replaceAll('${NAME}', vars.name)
     .replaceAll('${SENDER_NAME}', vars.senderName)
     .replaceAll('${MAGIC_LINK}', vars.magicLink);

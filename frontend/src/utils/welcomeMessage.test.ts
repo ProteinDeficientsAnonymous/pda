@@ -61,6 +61,7 @@ describe('renderWelcomeMessage', () => {
   it('substitutes all three placeholders', () => {
     const out = renderWelcomeMessage('hi ${NAME}, this is ${SENDER_NAME}, sign in: ${MAGIC_LINK}', {
       name: 'Sam',
+      fullName: 'Sam Sample',
       senderName: 'Vetter',
       magicLink: 'https://pda.test/m/abc',
     });
@@ -70,6 +71,7 @@ describe('renderWelcomeMessage', () => {
   it('replaces every occurrence of a repeated placeholder', () => {
     const out = renderWelcomeMessage('${NAME} ${NAME}!', {
       name: 'Sam',
+      fullName: 'Sam Sample',
       senderName: '',
       magicLink: '',
     });
@@ -79,10 +81,21 @@ describe('renderWelcomeMessage', () => {
   it('leaves unrelated text and unknown placeholders alone', () => {
     const out = renderWelcomeMessage('${NAME} — ${UNKNOWN}', {
       name: 'Sam',
+      fullName: 'Sam Sample',
       senderName: '',
       magicLink: '',
     });
     expect(out).toBe('Sam — ${UNKNOWN}');
+  });
+
+  it('renders ${NAME} as the first name and ${FULL_NAME} as the full name', () => {
+    const out = renderWelcomeMessage('hi ${NAME}! (${FULL_NAME})', {
+      name: 'ada',
+      fullName: 'ada lovelace',
+      senderName: 'sender',
+      magicLink: 'http://x',
+    });
+    expect(out).toBe('hi ada! (ada lovelace)');
   });
 });
 
