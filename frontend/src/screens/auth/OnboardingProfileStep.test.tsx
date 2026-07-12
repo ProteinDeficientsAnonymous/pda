@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
@@ -22,10 +22,13 @@ const baseUser: User = {
   displayName: 'Tester',
   email: 'tester@example.com',
   bio: '',
+  pronouns: '',
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
   needsPasswordReset: false,
+  needsGuidelinesConsent: false,
+  needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
   weekStart: 'sunday',

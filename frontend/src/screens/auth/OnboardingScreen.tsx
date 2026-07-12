@@ -26,16 +26,18 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-type Step = 'account' | 'profile';
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+  const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
+  // profileStepActive flips true once account setup succeeds; drives the wizard's
+  // second step. Kept in the store (not local state) so OnboardingGate can see it.
+  const profileStepActive = useAuthStore((s) => s.profileStepActive);
   // prefill name for legacy users approved before email was required
   const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
   // checkboxes render only for users with outstanding consent (admin-created accounts)
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
-  const [step, setStep] = useState<Step>('account');
   const [serverError, setServerError] = useState<string | null>(null);
   const { consents, checked, toggle, allChecked, acceptedTypes } = useConsentChecklist(user);
 
@@ -61,13 +63,12 @@ export default function OnboardingScreen() {
         newPassword: values.newPassword,
         consentTypes: acceptedTypes,
       });
-      setStep('profile');
     } catch (err) {
       setServerError(extractApiError(err, "couldn't finish onboarding — try again"));
     }
   }
 
-  if (step === 'profile') {
+  if (profileStepActive) {
     return (
       <AuthLayout
         title="make it yours ✨"
@@ -75,6 +76,7 @@ export default function OnboardingScreen() {
       >
         <OnboardingProfileStep
           onDone={() => {
+            finishProfileStep();
             const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
             void navigate(next, { replace: true });
           }}

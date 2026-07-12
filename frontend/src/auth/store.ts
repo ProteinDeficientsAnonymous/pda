@@ -28,6 +28,10 @@ interface AuthState {
   // unauthed). Guards the app-level boot spinner so later 'loading' states
   // (login, magic-login) don't unmount the tree.
   booted: boolean;
+  // True while the optional profile step of onboarding is showing. Set once
+  // account setup succeeds — which clears needs_onboarding — so OnboardingGate
+  // doesn't immediately bounce /onboarding to /guidelines and unmount the step.
+  profileStepActive: boolean;
   login: (phoneNumber: string, password: string) => Promise<void>;
   magicLogin: (token: string) => Promise<void>;
   restoreSession: () => Promise<void>;
@@ -38,6 +42,8 @@ interface AuthState {
     pronouns?: string | undefined;
     consentTypes?: ConsentTypeValue[] | undefined;
   }) => Promise<void>;
+  // Clears profileStepActive once the user finishes or skips the profile step.
+  finishProfileStep: () => void;
   acceptConsents: (consentTypes: ConsentTypeValue[]) => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
   updateProfile: (patch: authApi.ProfileUpdate) => Promise<void>;
@@ -54,6 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   booted: false,
+  profileStepActive: false,
 
   async login(phoneNumber, password) {
     set({ status: 'loading' });
@@ -100,7 +107,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async completeOnboarding(payload) {
     const user = await authApi.completeOnboarding(payload);
-    set({ user });
+    set({ user, profileStepActive: true });
+  },
+
+  finishProfileStep() {
+    set({ profileStepActive: false });
   },
 
   async acceptConsents(consentTypes) {
@@ -139,12 +150,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async logout() {
     await authApi.logout();
     queryClient.clear();
-    set({ status: 'unauthed', user: null, accessToken: null });
+    set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
   },
 
   forceLogout() {
     queryClient.clear();
-    set({ status: 'unauthed', user: null, accessToken: null });
+    set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
   },
 }));
 

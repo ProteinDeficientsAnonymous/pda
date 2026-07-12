@@ -50,9 +50,16 @@ function makeUser(overrides: Partial<User> = {}): User {
 describe('OnboardingScreen', () => {
   const completeOnboarding = vi.fn();
   const updateProfile = vi.fn();
+  const finishProfileStep = vi.fn();
 
-  function setupMock(user: User) {
-    const storeState = { completeOnboarding, updateProfile, user };
+  function setupMock(user: User, profileStepActive = false) {
+    const storeState = {
+      completeOnboarding,
+      updateProfile,
+      finishProfileStep,
+      user,
+      profileStepActive,
+    };
     // Cast via `as never` so partial state satisfies the full AuthState type.
     vi.mocked(useAuthStore).mockImplementation(
       Object.assign((selector: (s: typeof storeState) => unknown) => selector(storeState), {
@@ -64,6 +71,7 @@ describe('OnboardingScreen', () => {
   beforeEach(() => {
     completeOnboarding.mockReset();
     updateProfile.mockReset();
+    finishProfileStep.mockReset();
     updateProfile.mockResolvedValue(undefined);
     setupMock(makeUser());
   });
@@ -173,7 +181,7 @@ describe('OnboardingScreen', () => {
     });
   });
 
-  it('advances to the profile step after successful account setup', async () => {
+  it('calls completeOnboarding on submit and does not error on success', async () => {
     completeOnboarding.mockResolvedValue(undefined);
     render(
       <MemoryRouter>
@@ -184,7 +192,18 @@ describe('OnboardingScreen', () => {
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
-    expect(await screen.findByRole('button', { name: /^done$/i })).toBeInTheDocument();
+    expect(completeOnboarding).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/couldn't finish onboarding/i)).not.toBeInTheDocument();
+  });
+
+  it('renders the profile step when profileStepActive is set', () => {
+    setupMock(makeUser({ needsOnboarding: false }), true);
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: /^done$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /do this later/i })).toBeInTheDocument();
   });
 
