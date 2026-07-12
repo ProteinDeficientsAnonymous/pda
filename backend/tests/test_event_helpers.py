@@ -42,7 +42,16 @@ class TestBuildGuestList:
     def _make_rsvp(self, user_id, name, status, phone):
         return SimpleNamespace(
             user_id=user_id,
-            user=SimpleNamespace(display_name=name, phone_number=phone, profile_photo=None),
+            user=SimpleNamespace(
+                id=user_id,
+                display_name=name,
+                first_name=name or "",
+                last_name="",
+                full_name=name or "",
+                phone_number=phone,
+                profile_photo=None,
+                hide_last_name=False,
+            ),
             status=status,
             has_plus_one=False,
             attendance=AttendanceStatus.UNKNOWN,

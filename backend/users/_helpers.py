@@ -82,17 +82,28 @@ def _is_admin(user: User) -> bool:
     return user.roles.filter(name="admin", is_default=True).exists()
 
 
-def visible_name(target: User, viewer: User) -> tuple[str, str]:
+def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
     """Return (last_name, full_name) as they should appear to viewer.
 
     Admins and the target themself always see the full name. Everyone else
-    sees first-name-only when target.hide_last_name is set.
+    sees first-name-only when target.hide_last_name is set. A None viewer
+    (anonymous/optional-auth) is treated as non-admin, non-self.
     """
-    if target.id == viewer.id or _is_admin(viewer):
+    if viewer is not None and (target.id == viewer.id or _is_admin(viewer)):
         return target.last_name, target.full_name
     if target.hide_last_name:
         return "", target.first_name.strip()
     return target.last_name, target.full_name
+
+
+def visible_display_name(target: User, viewer: User | None) -> str:
+    """Member-facing name honoring hide_last_name, falling back to phone.
+
+    Reuses visible_name's admin/self/hide_last_name logic; viewer=None
+    (anonymous/optional-auth) is treated as non-admin, non-self.
+    """
+    _last, full = visible_name(target, viewer)
+    return full or target.phone_number
 
 
 def _normalize_email(raw: str | None) -> str | None:

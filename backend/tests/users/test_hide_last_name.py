@@ -1,4 +1,16 @@
 import pytest
+from community.models import (
+    Event,
+    EventComment,
+    EventPoll,
+    EventRSVP,
+    PollAvailability,
+    PollOption,
+    PollVote,
+    RSVPStatus,
+)
+from ninja_jwt.tokens import RefreshToken
+from tests.conftest import future_iso
 from users.models import User
 from users.roles import Role
 
@@ -136,3 +148,86 @@ class TestMeHideLastName:
         assert response.json()["hide_last_name"] is True
         test_user.refresh_from_db()
         assert test_user.hide_last_name is True
+
+
+@pytest.fixture
+def hidden_headers(hidden_user):
+    refresh = RefreshToken.for_user(hidden_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.mark.django_db
+class TestEventGuestListHidesLastName:
+    def test_non_admin_sees_first_name_only(self, api_client, auth_headers, hidden_user):
+        event = Event.objects.create(
+            title="Guest List Event",
+            start_datetime=future_iso(days=10),
+            rsvp_enabled=True,
+        )
+        EventRSVP.objects.create(event=event, user=hidden_user, status=RSVPStatus.ATTENDING)
+        response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
+        assert response.status_code == 200
+        guest = next(g for g in response.json()["guests"] if g["user_id"] == str(hidden_user.pk))
+        assert guest["name"] == "Hidden"
+
+    def test_admin_sees_full_name(self, api_client, admin_headers, hidden_user):
+        event = Event.objects.create(
+            title="Guest List Event Admin",
+            start_datetime=future_iso(days=10),
+            rsvp_enabled=True,
+        )
+        EventRSVP.objects.create(event=event, user=hidden_user, status=RSVPStatus.ATTENDING)
+        response = api_client.get(f"/api/community/events/{event.id}/", **admin_headers)
+        assert response.status_code == 200
+        guest = next(g for g in response.json()["guests"] if g["user_id"] == str(hidden_user.pk))
+        assert guest["name"] == "Hidden Lastname"
+
+
+@pytest.mark.django_db
+class TestPollVotersHideLastName:
+    def test_non_admin_sees_first_name_only(self, api_client, auth_headers, hidden_user):
+        event = Event.objects.create(title="Poll Event", start_datetime=future_iso(days=10))
+        poll = EventPoll.objects.create(event=event, created_by=hidden_user)
+        option = PollOption.objects.create(poll=poll, datetime=future_iso(days=20), display_order=0)
+        PollVote.objects.create(option=option, user=hidden_user, availability=PollAvailability.YES)
+        response = api_client.get(f"/api/community/events/{event.id}/poll/", **auth_headers)
+        assert response.status_code == 200
+        voter = response.json()["options"][0]["yes_voters"][0]
+        assert voter["name"] == "Hidden"
+
+    def test_admin_sees_full_name(self, api_client, admin_headers, hidden_user):
+        event = Event.objects.create(title="Poll Event Admin", start_datetime=future_iso(days=10))
+        poll = EventPoll.objects.create(event=event, created_by=hidden_user)
+        option = PollOption.objects.create(poll=poll, datetime=future_iso(days=20), display_order=0)
+        PollVote.objects.create(option=option, user=hidden_user, availability=PollAvailability.YES)
+        response = api_client.get(f"/api/community/events/{event.id}/poll/", **admin_headers)
+        assert response.status_code == 200
+        voter = response.json()["options"][0]["yes_voters"][0]
+        assert voter["name"] == "Hidden Lastname"
+
+
+@pytest.mark.django_db
+class TestCommentAuthorHidesLastName:
+    def test_non_admin_sees_first_name_only(self, api_client, auth_headers, hidden_user):
+        event = Event.objects.create(
+            title="Comment Event", start_datetime=future_iso(days=10), created_by=hidden_user
+        )
+        EventRSVP.objects.create(event=event, user=hidden_user, status=RSVPStatus.ATTENDING)
+        EventComment.objects.create(event=event, author=hidden_user, body="hello")
+        response = api_client.get(f"/api/community/events/{event.id}/comments/", **auth_headers)
+        assert response.status_code == 200
+        comment = response.json()["items"][0]
+        assert comment["author_display_name"] == "Hidden"
+
+    def test_admin_sees_full_name(self, api_client, admin_headers, hidden_user):
+        event = Event.objects.create(
+            title="Comment Event Admin",
+            start_datetime=future_iso(days=10),
+            created_by=hidden_user,
+        )
+        EventRSVP.objects.create(event=event, user=hidden_user, status=RSVPStatus.ATTENDING)
+        EventComment.objects.create(event=event, author=hidden_user, body="hello")
+        response = api_client.get(f"/api/community/events/{event.id}/comments/", **admin_headers)
+        assert response.status_code == 200
+        comment = response.json()["items"][0]
+        assert comment["author_display_name"] == "Hidden Lastname"

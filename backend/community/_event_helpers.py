@@ -14,6 +14,7 @@ from notifications.service import (
     create_event_invite_notifications,
     create_waitlist_promoted_notifications,
 )
+from users._helpers import visible_display_name
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
@@ -75,12 +76,12 @@ def _can_see_phones(requesting_user, creator, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 
-def _build_guest_list(rsvps, can_see_phones: bool) -> list[RSVPGuestOut]:
+def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGuestOut]:
     """Build guest list with optional phone visibility."""
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
-            name=r.user.display_name or r.user.phone_number,
+            name=visible_display_name(r.user, viewer),
             status=r.status,
             has_plus_one=r.has_plus_one,
             phone=r.user.phone_number if can_see_phones else None,
@@ -101,7 +102,7 @@ def _find_my_rsvp(rsvps, user) -> str | None:
     return None
 
 
-def _cancellations(event: Event) -> list[CancellationOut]:
+def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Return currently-CANT_GO RSVPs with inferred lead time (days before start).
 
     Lossy for users who flipped between statuses — uses updated_at as proxy.
@@ -112,7 +113,7 @@ def _cancellations(event: Event) -> list[CancellationOut]:
     rows = [
         CancellationOut(
             user_id=str(r.user_id),
-            name=r.user.display_name or r.user.phone_number,
+            name=visible_display_name(r.user, viewer),
             cancelled_at=r.updated_at,
             days_before_event=(event.start_datetime - r.updated_at).days,
         )
@@ -210,10 +211,10 @@ def _can_see_invite_only(
     return user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
-def _get_creator_name(creator) -> str | None:
+def _get_creator_name(creator, viewer=None) -> str | None:
     if creator is None:
         return None
-    return creator.display_name or creator.phone_number
+    return visible_display_name(creator, viewer)
 
 
 def _tags_out(event: Event) -> list[TagOut]:
@@ -253,7 +254,7 @@ def _pending_cohost_invites_out(
         PendingCoHostInviteOut(
             id=str(inv.id),
             user_id=str(inv.user_id),
-            user_name=inv.user.display_name or inv.user.phone_number,
+            user_name=visible_display_name(inv.user, auth_user),
             user_photo_url=media_path(inv.user.profile_photo),
             invited_at=inv.invited_at,
         )
@@ -329,13 +330,13 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         invited_count=len(all_invited),
         comment_count=comment_count,
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
-        created_by_name=_get_creator_name(creator),
+        created_by_name=_get_creator_name(creator, auth_user),
         created_by_photo_url=media_path(creator.profile_photo) if creator else "",
         co_host_ids=[str(u.id) for u in co_hosts],
-        co_host_names=[u.display_name or u.phone_number for u in co_hosts],
+        co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         co_host_invite_ids=co_host_invite_ids,
-        guests=_members_only(_build_guest_list(rsvps, phones_visible), [], is_authed),
+        guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
         event_type=event.event_type,
         visibility=event.visibility,
@@ -345,7 +346,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
         invited_user_ids=[str(u.id) for u in invited],
-        invited_user_names=[u.display_name or u.phone_number for u in invited],
+        invited_user_names=[visible_display_name(u, auth_user) for u in invited],
         invited_user_photo_urls=[media_path(u.profile_photo) for u in invited],
         invite_permission=event.invite_permission,
         is_past=event.is_past,
