@@ -1,10 +1,3 @@
-"""Shared best-effort RSVP email helpers.
-
-Used by both the public RSVP endpoint and the member RSVP endpoints so that a
-non-member promoted off the waitlist gets a manage-link email no matter which
-path freed the spot. A send failure must never roll back the RSVP.
-"""
-
 import logging
 
 from config.audit import audit_log

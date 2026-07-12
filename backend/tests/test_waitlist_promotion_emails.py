@@ -1,10 +1,3 @@
-"""A non-member promoted off the waitlist by a member's action must be emailed.
-
-Non-members can't see the in-app WAITLIST_PROMOTED notification, so the manage-
-link email is their only signal. Previously only the public RSVP path emailed
-them; the member upsert/delete paths promoted them silently (Issue 629).
-"""
-
 import pytest
 from community.models import Event, EventRSVP, RSVPStatus
 from users.models import User
