@@ -10,7 +10,7 @@ from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import NonMemberRsvpToken, User
 
-from community._event_helpers import _event_out
+from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_rsvps import _apply_rsvp_in_transaction, _validate_rsvp_status
 from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
@@ -96,8 +96,12 @@ def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
     Must run inside the surrounding transaction.
     """
     phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
+    # iexact so a mixed-case stored member email (e.g. admin-created) still trips
+    # the member gate below — the incoming email is already lowercased.
     email_match = (
-        User.objects.filter(email=email, archived_at__isnull=True).first() if email else None
+        User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
+        if email
+        else None
     )
 
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
@@ -163,7 +167,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event.id, user, payload.status, payload.has_plus_one
         )
-        token = NonMemberRsvpToken.issue(user)
+        token = NonMemberRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,
@@ -183,6 +187,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         .prefetch_related("co_hosts", "invited_users", "rsvps__user")
         .get(id=event.id)
     )
+    broadcast_capacity_change(event.id)
     final_rsvp = user.event_rsvps.get(event=fresh_event)
     return Status(
         200,

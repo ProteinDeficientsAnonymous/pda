@@ -7,6 +7,8 @@ scoped NonMemberRsvpToken, and emails a confirmation with a /my-rsvps magic link
 Capacity / waitlist / robustness cases live in test_public_rsvp_capacity.py.
 """
 
+from unittest.mock import patch
+
 import pytest
 from community._validation import Code
 from community.models import EventRSVP, EventStatus, EventType, PageVisibility, RSVPStatus
@@ -59,6 +61,12 @@ class TestPublicRsvpHappyPath:
         assert "you're in" in sent["subject"]
         token = NonMemberRsvpToken.objects.get(user=user)
         assert token.token in sent["text"]
+
+    def test_broadcasts_event_update(self, api_client, official_event, fake_email_sender):
+        with patch("community._public_rsvp_submit.broadcast_capacity_change") as mock_broadcast:
+            post(api_client, official_event)
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == official_event.id
 
     def test_response_exposes_gated_event_details(
         self, api_client, official_event, fake_email_sender
@@ -159,18 +167,21 @@ class TestPublicRsvpDedup:
         assert new_user.email is None
         assert EventRSVP.objects.filter(user=new_user).exists()
 
-    def test_multiple_rsvps_accumulate_fresh_tokens(
+    def test_multiple_rsvps_reuse_the_same_token(
         self, api_client, official_event, fake_email_sender
     ):
         other_event = make_official_event(
             title="Second Official", start_datetime=future_iso(days=20)
         )
         post(api_client, official_event)
+        first_token = NonMemberRsvpToken.objects.get(user__phone_number="+14155550123").token
         post(api_client, other_event)
 
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(user=user).count() == 2
-        assert NonMemberRsvpToken.objects.filter(user=user).count() == 2
+        tokens = NonMemberRsvpToken.objects.filter(user=user)
+        assert tokens.count() == 1
+        assert tokens.first().token == first_token
 
 
 @pytest.mark.django_db
@@ -201,11 +212,11 @@ class TestPublicRsvpMemberCollision:
         assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
         assert not EventRSVP.objects.exists()
 
-    def test_member_email_match_is_case_sensitive(
+    def test_member_email_match_is_case_insensitive(
         self, api_client, official_event, fake_email_sender
     ):
-        # The member gate matches stored emails exactly, so a case-mismatched
-        # submission is not recognized as a member and the RSVP is accepted.
+        # A member whose email is stored mixed-case must still trip the gate when
+        # the RSVP submits the same address in different case.
         User.objects.create_user(
             phone_number="+14155550555",
             display_name="A Member",
@@ -215,8 +226,9 @@ class TestPublicRsvpMemberCollision:
 
         response = post(api_client, official_event, email="sam@example.com")
 
-        assert response.status_code == 200
-        assert EventRSVP.objects.count() == 1
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert not EventRSVP.objects.exists()
 
 
 @pytest.mark.django_db

@@ -24,6 +24,7 @@ from community._event_helpers import (
     _no_show_count,
     _not_marked_count,
     _waitlisted_count,
+    broadcast_capacity_change,
     promote_from_waitlist,
 )
 from community._event_schemas import (
@@ -75,6 +76,10 @@ def _resolve_rsvp_status(
     Returns (status, has_plus_one). Raises ValidationException if a +1 is
     denied at capacity.
     """
+    # Don't trust the client: a stale/crafted +1 must not inflate a disallowed event.
+    if not event.allow_plus_ones:
+        has_plus_one = False
+
     if requested_status != RSVPStatus.ATTENDING or event.max_attendees is None:
         return requested_status, has_plus_one
 
@@ -177,11 +182,11 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         target_id=str(event_id),
         details={"status": final_status},
     )
-    event = (
-        Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
-        .get(id=event_id)
-    )
+    event = _load_event_with_stats_prefetch(event_id)
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    # Actor already has the fresh event in this response, so exclude them.
+    broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     return Status(200, _event_out(event, request.auth))
 
 
@@ -339,6 +344,7 @@ def delete_rsvp(request, event_id: UUID):
         rsvp.delete()
         if was_attending:
             promote_from_waitlist(event)
+            broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
 
     audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
     return Status(204, None)

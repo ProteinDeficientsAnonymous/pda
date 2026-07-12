@@ -430,14 +430,13 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     new_status = updates.pop("status", None)
     notify_attendees = updates.pop("notify_attendees", False) or False
 
-    # Handle status transition first (may be the only change in the payload)
+    # Field edits before the transition so publish validates the corrected date.
+    _apply_field_updates(request, event, event_id, updates)
+
     if new_status is not None:
         early = _handle_status_update(request, event, new_status, notify_attendees)
         if early is not None:
             return early
-
-    # Field edits are allowed on active, cancelled, or draft events
-    _apply_field_updates(request, event, event_id, updates)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

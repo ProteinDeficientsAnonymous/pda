@@ -40,3 +40,6 @@ frontend/.vite/
 
 # workflow design docs (superpowers) — not tracked
 docs/superpowers/
+
+# root release tooling
+node_modules/

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from community.models import RSVPStatus
-from django.db import connection
+from django.db import DatabaseError, connection
 from django.db.models import Q
 from users.models import User
 from users.permissions import PermissionKey
@@ -39,10 +40,15 @@ def _ping_event_update(user_ids: Iterable[str], event_id: str) -> None:
     if connection.vendor != "postgresql":
         return
 
-    with connection.cursor() as cursor:
-        for uid in user_ids:
-            payload = f"{uid}:{event_id}"
-            cursor.execute(f"SELECT pg_notify('{_EVENT_UPDATES_CHANNEL}', %s)", [payload])
+    # Best-effort: the caller's write has already committed, so a pg_notify
+    # failure here must not surface as a 500 for a request that succeeded.
+    try:
+        with connection.cursor() as cursor:
+            for uid in user_ids:
+                payload = f"{uid}:{event_id}"
+                cursor.execute(f"SELECT pg_notify('{_EVENT_UPDATES_CHANNEL}', %s)", [payload])
+    except DatabaseError:
+        logging.getLogger(__name__).warning("event_update ping failed", exc_info=True)
 
 
 def broadcast_cohost_change(
@@ -60,7 +66,7 @@ def broadcast_cohost_change(
     recipients: set[str] = set()
     if event.created_by_id:
         recipients.add(str(event.created_by_id))
-    recipients.update(str(uid) for uid in event.co_hosts.values_list("pk", flat=True))
+    recipients.update(str(c.pk) for c in event.co_hosts.all())
     recipients.update(str(uid) for uid in extra_user_ids)
     recipients.difference_update(str(uid) for uid in exclude_user_ids)
     if recipients:
@@ -82,8 +88,8 @@ def broadcast_event_update(
     recipients: set[str] = set()
     if event.created_by_id:
         recipients.add(str(event.created_by_id))
-    recipients.update(str(uid) for uid in event.co_hosts.values_list("pk", flat=True))
-    recipients.update(str(uid) for uid in event.invited_users.values_list("pk", flat=True))
+    recipients.update(str(c.pk) for c in event.co_hosts.all())
+    recipients.update(str(u.pk) for u in event.invited_users.all())
     recipients.update(
         str(r.user_id)
         for r in event.rsvps.all()

@@ -1,0 +1,18 @@
+## [0.2.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.2.0...v0.2.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **rsvp:** broadcast event update so capacity UI refreshes live (Issue 637) ([#707](https://github.com/ProteinDeficientsAnonymous/pda/issues/707)) ([f7f32c5](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7f32c5ed0da4f428c6bee032993d2d67b28096f))
+
+# [0.2.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.1.0...v0.2.0) (2026-07-11)
+
+
+### Bug Fixes
+
+* **events:** apply field edits before status transition on PATCH (Issue 627) ([#709](https://github.com/ProteinDeficientsAnonymous/pda/issues/709)) ([595acde](https://github.com/ProteinDeficientsAnonymous/pda/commit/595acdecdaa4ab8ad0a305bc6f285752e612b9aa))
+
+
+### Features
+
+* **release:** automated versioning + changelog via semantic-release ([#690](https://github.com/ProteinDeficientsAnonymous/pda/issues/690)) ([e0bff3b](https://github.com/ProteinDeficientsAnonymous/pda/commit/e0bff3bdf7ad5e3e15c026c5bcef09f6de5a0a82))
