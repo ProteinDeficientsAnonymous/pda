@@ -3,9 +3,9 @@
 from datetime import timedelta
 
 import pytest
-from community._event_helpers import (
+from community._event_helpers import _cancellations
+from community._rsvp_counts import (
     _attended_count,
-    _cancellations,
     _no_response_count,
     _no_show_count,
 )

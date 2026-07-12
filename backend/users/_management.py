@@ -3,10 +3,10 @@
 import logging
 import re
 
-from community._event_helpers import attendance_q
+from community._rsvp_counts import attendance_q, reportable_events_q
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
-from community.models import AttendanceStatus, EventStatus
+from community.models import AttendanceStatus
 from config.audit import audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -231,13 +231,11 @@ def list_users(request):
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
-    # last_attended shares attendance_q with the attendance report so the two
-    # admin surfaces can't disagree on what "attended" means; both also drop
-    # deleted/cancelled events. Annotated (not N+1) for sort/filter.
+    # last_attended shares attendance_q + reportable_events_q with the attendance
+    # report so the two admin surfaces can't disagree on what "attended" means or
+    # which events count. Annotated (not N+1) for sort/filter.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
-    excluded_events = dj_models.Q(
-        event_rsvps__event__status__in=(EventStatus.DELETED, EventStatus.CANCELLED)
-    )
+    reportable = reportable_events_q(prefix="event_rsvps__event")
     users = (
         User.objects.members()
         .filter(archived_at__isnull=True)
@@ -245,7 +243,7 @@ def list_users(request):
         .annotate(
             last_attended=dj_models.Max(
                 "event_rsvps__event__start_datetime",
-                filter=attended & ~excluded_events,
+                filter=attended & reportable,
             )
         )
         .order_by("phone_number")

@@ -15,7 +15,6 @@ from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
-    _attending_headcount,
     _can_see_invite_only,
     _event_out,
     _find_my_rsvp,
@@ -23,7 +22,6 @@ from community._event_helpers import (
     _set_event_tags,
     _tags_out,
     _update_co_hosts,
-    _waitlisted_count,
 )
 from community._event_schemas import (
     EventIn,
@@ -35,6 +33,7 @@ from community._event_transitions import (
     _handle_status_update,
     _set_event_participants,
 )
+from community._rsvp_counts import _attending_headcount, _waitlisted_count
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (

@@ -134,6 +134,40 @@ class TestAttendanceReportEndpoint:
         assert response.status_code == 200
         assert response.json()["events"] == []
 
+    def test_going_count_includes_plus_ones(self, api_client, host_user, members, events_admin):
+        event = _make_event(host_user, "Plus One Event", days_ago=2)
+        EventRSVP.objects.create(
+            event=event,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+            has_plus_one=True,
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=members[1],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.UNKNOWN,
+        )
+
+        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        row = response.json()["events"][0]
+        # 2 attending rsvps, one with a +1 → headcount 3, matching event detail.
+        assert row["going_count"] == 3
+
+    def test_excludes_draft_events(self, api_client, host_user, members, events_admin):
+        draft = _make_event(host_user, "Draft Event", days_ago=3)
+        EventRSVP.objects.create(
+            event=draft,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+        Event.objects.filter(pk=draft.pk).update(status=EventStatus.DRAFT)
+
+        response = api_client.get("/api/community/events/attendance-report/", **_auth(events_admin))
+        assert response.json()["events"] == []
+
     def test_stranded_mark_after_rsvp_change_not_counted(
         self, api_client, host_user, members, events_admin
     ):
@@ -265,6 +299,22 @@ class TestLastAttendedOnMemberList:
             attendance=AttendanceStatus.ATTENDED,
         )
         Event.objects.filter(pk=cancelled.pk).update(status=EventStatus.CANCELLED)
+
+        response = api_client.get("/api/auth/users/", **manage_users_headers)
+        row = next(r for r in response.json() if r["id"] == str(members[0].pk))
+        assert row["last_attended"] is None
+
+    def test_last_attended_excludes_draft_events(
+        self, api_client, host_user, members, manage_users_headers
+    ):
+        draft = _make_event(host_user, "Draft Event", days_ago=2)
+        EventRSVP.objects.create(
+            event=draft,
+            user=members[0],
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+        Event.objects.filter(pk=draft.pk).update(status=EventStatus.DRAFT)
 
         response = api_client.get("/api/auth/users/", **manage_users_headers)
         row = next(r for r in response.json() if r["id"] == str(members[0].pk))
