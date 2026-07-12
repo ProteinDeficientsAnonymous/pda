@@ -198,7 +198,7 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
@@ -225,7 +225,7 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
