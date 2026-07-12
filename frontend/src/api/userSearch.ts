@@ -29,7 +29,7 @@ export function useUserSearch(term: string) {
       });
       return data.map<MemberSearchResult>((u) => ({
         id: u.id,
-        fullName: u.full_name ?? u.display_name ?? '',
+        fullName: u.full_name ?? u.display_name,
         phoneNumber: u.phone_number,
       }));
     },

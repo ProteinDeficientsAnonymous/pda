@@ -74,7 +74,7 @@ function mapRole(r: WireRole): MemberRole {
 function fromWire(w: WireMember): Member {
   return {
     id: w.id,
-    fullName: w.full_name ?? w.display_name ?? '',
+    fullName: w.full_name ?? w.display_name,
     firstName: w.first_name ?? '',
     lastName: w.last_name ?? '',
     phoneNumber: w.phone_number,
@@ -142,7 +142,7 @@ export function useCreateUser() {
       return {
         id: data.id,
         phoneNumber: data.phone_number,
-        fullName: data.full_name ?? data.display_name ?? '',
+        fullName: data.full_name ?? data.display_name,
         firstName: data.first_name ?? '',
         magicLinkToken: data.magic_link_token,
       };
@@ -320,7 +320,7 @@ interface WireMemberProfile {
 function fromWireProfile(w: WireMemberProfile): MemberProfile {
   return {
     id: w.id,
-    fullName: w.full_name ?? w.display_name ?? '',
+    fullName: w.full_name ?? w.display_name,
     nickname: w.nickname ?? '',
     phoneNumber: w.phone_number,
     email: w.email,
@@ -360,7 +360,7 @@ export function useMembersDirectory() {
       const { data } = await apiClient.get<WireDirectoryMember[]>('/api/auth/users/directory/');
       return data.map<DirectoryMember>((w) => ({
         id: w.id,
-        fullName: w.full_name ?? w.display_name ?? '',
+        fullName: w.full_name ?? w.display_name,
         phoneNumber: w.phone_number,
         email: w.email,
         profilePhotoUrl: w.profile_photo_url,

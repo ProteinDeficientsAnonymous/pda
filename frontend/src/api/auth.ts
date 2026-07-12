@@ -68,7 +68,7 @@ function mapUser(u: WireUser): User {
     phoneNumber: u.phone_number,
     firstName: u.first_name ?? '',
     lastName: u.last_name ?? '',
-    fullName: u.full_name ?? u.display_name ?? '',
+    fullName: u.full_name ?? u.display_name,
     nickname: u.nickname ?? '',
     email: u.email ?? '',
     bio: u.bio ?? '',

@@ -165,7 +165,7 @@ interface WireJoinRequest {
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
   return {
     id: w.id,
-    fullName: w.full_name ?? w.display_name ?? '',
+    fullName: w.full_name ?? w.display_name,
     phoneNumber: w.phone_number,
     answers: w.answers.map((a) => ({
       questionId: a.question_id,
@@ -318,7 +318,7 @@ export function useDecideJoinRequest() {
       );
       return {
         id: data.id,
-        fullName: data.full_name ?? data.display_name ?? '',
+        fullName: data.full_name ?? data.display_name,
         firstName: data.first_name ?? '',
         phoneNumber: data.phone_number,
         status: data.status,
@@ -352,7 +352,7 @@ export function useResendMagicLink() {
       );
       return {
         id: data.id,
-        fullName: data.full_name ?? data.display_name ?? '',
+        fullName: data.full_name ?? data.display_name,
         firstName: data.first_name ?? '',
         phoneNumber: data.phone_number,
         status: data.status,
