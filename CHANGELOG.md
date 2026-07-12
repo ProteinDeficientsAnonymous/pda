@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.2...v0.5.0) (2026-07-12)
+
+
+### Features
+
+* **public-rsvp:** frontend RSVP form + confirmation on event detail (Issue 496) ([#727](https://github.com/ProteinDeficientsAnonymous/pda/issues/727)) ([1dc55b9](https://github.com/ProteinDeficientsAnonymous/pda/commit/1dc55b92bb42779c9840bb8f84b6ecd1905b6065))
+
 ## [0.4.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.1...v0.4.2) (2026-07-12)
 
 
