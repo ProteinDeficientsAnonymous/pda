@@ -2,6 +2,7 @@
 
 import json
 import uuid
+from unittest.mock import patch
 
 import pytest
 from community.models import Event, EventPoll, PollAvailability, PollOption, PollVote
@@ -300,6 +301,20 @@ class TestFinalizePoll:
         # Event datetime should be updated
         poll_event.refresh_from_db()
         assert poll_event.datetime_tbd is False
+
+    def test_finalize_broadcasts_capacity_change(
+        self, api_client, auth_headers, poll_with_options, poll_event
+    ):
+        option = poll_with_options.options.first()
+        payload = {"winning_option_id": str(option.id)}
+        with patch("community._polls.broadcast_capacity_change") as mock_broadcast:
+            api_client.post(
+                f"/api/community/events/{poll_event.id}/poll/finalize/",
+                data=json.dumps(payload),
+                content_type="application/json",
+                **auth_headers,
+            )
+        mock_broadcast.assert_called_once_with(poll_event.id)
 
     def test_finalize_updates_event_datetime(
         self, api_client, auth_headers, poll_with_options, poll_event

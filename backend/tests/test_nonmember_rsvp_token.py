@@ -4,6 +4,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from users.models import (
+    NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS,
     NON_MEMBER_RSVP_TOKEN_TTL_DAYS,
     NonMemberRsvpToken,
     User,
@@ -102,6 +103,18 @@ class TestIssueOrExtend:
         # The revoked token stays revoked.
         revoked.refresh_from_db()
         assert revoked.is_revoked
+
+    def test_issues_fresh_token_when_existing_exceeds_max_lifetime(self, non_member):
+        old = NonMemberRsvpToken.issue(non_member)
+        # created_at is auto_now_add, so age it past the absolute cap via update().
+        aged = timezone.now() - timedelta(days=NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS + 1)
+        NonMemberRsvpToken.objects.filter(pk=old.pk).update(created_at=aged)
+
+        fresh = NonMemberRsvpToken.issue_or_extend(non_member)
+        # Still valid (not expired/revoked) but too old to keep extending.
+        assert fresh.pk != old.pk
+        assert fresh.token != old.token
+        assert NonMemberRsvpToken.objects.filter(user=non_member).count() == 2
 
     def test_rejects_member(self, db):
         member = User.objects.create_user(

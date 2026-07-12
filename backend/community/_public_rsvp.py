@@ -16,7 +16,7 @@ from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import NonMemberRsvpToken, User
 
-from community._event_helpers import _event_out
+from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_rsvps import _apply_rsvp_in_transaction, _validate_rsvp_status
 from community._event_schemas import EventOut
 from community._field_limits import FieldLimit
@@ -269,6 +269,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         .prefetch_related("co_hosts", "invited_users", "rsvps__user")
         .get(id=event.id)
     )
+    broadcast_capacity_change(event.id)
     final_rsvp = user.event_rsvps.get(event=fresh_event)
     return Status(
         200,

@@ -15,6 +15,7 @@ from ninja import Router
 from ninja.responses import Status
 from users.permissions import PermissionKey
 
+from community._event_helpers import broadcast_capacity_change
 from community._event_poll_schemas import (
     EventPollFinalizeIn,
     EventPollIn,
@@ -305,6 +306,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
                 user_id=user_id,
                 defaults={"status": RSVPStatus.ATTENDING},
             )
+    broadcast_capacity_change(event_id)
     audit_log(
         logging.INFO,
         "poll_finalized",

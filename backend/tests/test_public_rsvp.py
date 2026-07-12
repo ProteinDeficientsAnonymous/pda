@@ -7,6 +7,8 @@ scoped NonMemberRsvpToken, and emails a confirmation with a /my-rsvps magic link
 Capacity / waitlist / robustness cases live in test_public_rsvp_capacity.py.
 """
 
+from unittest.mock import patch
+
 import pytest
 from community._validation import Code
 from community.models import EventRSVP, EventStatus, EventType, PageVisibility, RSVPStatus
@@ -59,6 +61,12 @@ class TestPublicRsvpHappyPath:
         assert "you're in" in sent["subject"]
         token = NonMemberRsvpToken.objects.get(user=user)
         assert token.token in sent["text"]
+
+    def test_broadcasts_event_update(self, api_client, official_event, fake_email_sender):
+        with patch("community._public_rsvp.broadcast_capacity_change") as mock_broadcast:
+            post(api_client, official_event)
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == official_event.id
 
     def test_response_exposes_gated_event_details(
         self, api_client, official_event, fake_email_sender
@@ -171,8 +179,6 @@ class TestPublicRsvpDedup:
 
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(user=user).count() == 2
-        # A second RSVP extends the existing valid token rather than minting a new
-        # one, so a link saved from a previous email keeps resolving.
         tokens = NonMemberRsvpToken.objects.filter(user=user)
         assert tokens.count() == 1
         assert tokens.first().token == first_token
