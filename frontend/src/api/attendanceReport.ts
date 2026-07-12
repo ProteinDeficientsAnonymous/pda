@@ -35,9 +35,11 @@ function mapRow(w: WireRow): EventAttendanceRow {
   };
 }
 
+export const attendanceReportKey = ['attendance-report'] as const;
+
 export function useAttendanceReport() {
   return useQuery({
-    queryKey: ['attendance-report'] as const,
+    queryKey: attendanceReportKey,
     queryFn: async () => {
       const { data } = await apiClient.get<WireReport>('/api/community/events/attendance-report/');
       return data.events.map(mapRow);

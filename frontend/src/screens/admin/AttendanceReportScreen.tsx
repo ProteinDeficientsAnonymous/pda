@@ -49,7 +49,7 @@ function AttendanceRow({ row }: { row: EventAttendanceRow }) {
       <div className="flex shrink-0 flex-wrap justify-end gap-1 text-xs">
         <Stat label="attended" value={row.attendedCount} />
         <Stat label="no-show" value={row.noShowCount} />
-        <Stat label="going" value={row.goingCount} />
+        <Stat label="going (heads)" value={row.goingCount} />
       </div>
     </Link>
   );

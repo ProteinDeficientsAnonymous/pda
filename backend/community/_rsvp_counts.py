@@ -11,8 +11,7 @@ from community.models import (
     RSVPStatus,
 )
 
-# Events that never belong in attendance surfaces: soft-deleted, cancelled, or
-# still-unpublished drafts. Centralized so the report and member-list can't drift.
+# Excluded from attendance surfaces; centralized so report + member-list can't drift.
 NON_REPORTABLE_EVENT_STATUSES = (EventStatus.DELETED, EventStatus.CANCELLED, EventStatus.DRAFT)
 
 
@@ -23,10 +22,7 @@ def reportable_events_q(prefix: str = "event") -> Q:
 
 
 def attendance_q(attendance: str, prefix: str = "rsvps") -> Q:
-    """Shared attended/no-show predicate so report + member-list can't drift.
-
-    Gates on ATTENDING so a mark stranded on an rsvp that later changed status
-    isn't counted.
+    """Attended/no-show predicate, gated on ATTENDING so stranded marks aren't counted.
 
     attendance(str): the AttendanceStatus to match.
     prefix(str): relation lookup prefix from the queried model to EventRSVP.
@@ -40,19 +36,19 @@ def going_q(prefix: str = "rsvps") -> Q:
     return Q(**{f"{prefix}__status": RSVPStatus.ATTENDING})
 
 
+def _plus_one_weight_case(prefix: str = "") -> Case:
+    """Case weighting each rsvp as 2 spots when it carries a plus-one, else 1."""
+    field = f"{prefix}__has_plus_one" if prefix else "has_plus_one"
+    return Case(
+        When(**{field: True}, then=Value(2)),
+        default=Value(1),
+        output_field=IntegerField(),
+    )
+
+
 def going_headcount_expr(prefix: str = "rsvps") -> Coalesce:
     """Sum of ATTENDING spots incl. plus-ones, matching _attending_headcount."""
-    return Coalesce(
-        Sum(
-            Case(
-                When(**{f"{prefix}__has_plus_one": True}, then=Value(2)),
-                default=Value(1),
-                output_field=IntegerField(),
-            ),
-            filter=going_q(prefix),
-        ),
-        Value(0),
-    )
+    return Coalesce(Sum(_plus_one_weight_case(prefix), filter=going_q(prefix)), Value(0))
 
 
 def _is_attended(rsvp: EventRSVP) -> bool:
@@ -93,15 +89,7 @@ def _attending_headcount_db(event: Event, exclude_user=None) -> int:
     qs = EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
     if exclude_user is not None:
         qs = qs.exclude(user=exclude_user)
-    result = qs.aggregate(
-        total=Sum(
-            Case(
-                When(has_plus_one=True, then=Value(2)),
-                default=Value(1),
-                output_field=IntegerField(),
-            )
-        )
-    )
+    result = qs.aggregate(total=Sum(_plus_one_weight_case()))
     return result["total"] or 0
 
 

@@ -90,7 +90,7 @@ function fromWire(w: WireMember): Member {
 
 // --- Queries / mutations -----------------------------------------------------
 
-const USERS_KEY = ['users'] as const;
+export const USERS_KEY = ['users'] as const;
 
 export function useUsers() {
   return useQuery({

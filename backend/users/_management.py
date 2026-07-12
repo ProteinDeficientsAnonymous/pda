@@ -231,9 +231,7 @@ def list_users(request):
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
-    # last_attended shares attendance_q + reportable_events_q with the attendance
-    # report so the two admin surfaces can't disagree on what "attended" means or
-    # which events count. Annotated (not N+1) for sort/filter.
+    # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
     users = (

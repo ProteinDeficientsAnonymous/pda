@@ -7,9 +7,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { AttendanceStatusValue, EventCancellation, EventStats } from '@/models/event';
 
+import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
 import { eventKeys } from './events';
+import { USERS_KEY } from './users';
 
 interface WireCancellation {
   user_id: string;
@@ -82,6 +84,9 @@ export function useSetAttendance(eventId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, true) });
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
+      // attendance marks feed the admin report + members-list last_attended.
+      void qc.invalidateQueries({ queryKey: attendanceReportKey });
+      void qc.invalidateQueries({ queryKey: USERS_KEY });
     },
   });
 }
