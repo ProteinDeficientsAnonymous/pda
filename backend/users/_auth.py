@@ -19,7 +19,7 @@ from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import stamp_consents
-from users._helpers import _check_and_set_email, _resolve_name_fields
+from users._helpers import _check_and_set_email, _resolve_name_fields, visible_name
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
@@ -243,6 +243,22 @@ def me(request):
     return Status(200, UserOut.from_user(user))
 
 
+# (payload attr, user attr, strip-whitespace) for fields that pass straight
+# through with no extra validation — keeps _apply_me_patch's branch count flat
+# as fields are added.
+_ME_PATCH_PASSTHROUGH_FIELDS = (
+    ("bio", "bio", True),
+    ("pronouns", "pronouns", True),
+    ("nickname", "nickname", True),
+    ("needs_onboarding", "needs_onboarding", False),
+    ("show_phone", "show_phone", False),
+    ("show_email", "show_email", False),
+    ("hide_last_name", "hide_last_name", False),
+    ("week_start", "week_start", False),
+    ("calendar_feed_scope", "calendar_feed_scope", False),
+)
+
+
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """Apply MePatchIn fields to user. Returns the list of changed fields.
 
@@ -255,22 +271,11 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
-    for field in ("bio", "pronouns", "nickname"):
-        value = getattr(payload, field)
+    for payload_attr, user_attr, strip in _ME_PATCH_PASSTHROUGH_FIELDS:
+        value = getattr(payload, payload_attr)
         if value is not None:
-            setattr(user, field, value.strip())
-            changed.append(field)
-    for field in (
-        "needs_onboarding",
-        "show_phone",
-        "show_email",
-        "week_start",
-        "calendar_feed_scope",
-    ):
-        value = getattr(payload, field)
-        if value is not None:
-            setattr(user, field, value)
-            changed.append(field)
+            setattr(user, user_attr, value.strip() if strip else value)
+            changed.append(user_attr)
     return changed
 
 
@@ -347,24 +352,24 @@ def list_member_directory(request):
         .filter(needs_onboarding=False)
         .order_by("display_name", "phone_number")
     )
-    return Status(
-        200,
-        [
+    results = []
+    for u in users:
+        last_name, full_name = visible_name(u, request.auth)
+        results.append(
             MemberDirectoryOut(
                 id=str(u.id),
                 # Don't leak a private phone via the display_name fallback when
                 # show_phone is false (e.g. members with no display_name set).
                 display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
                 first_name=u.first_name,
-                last_name=u.last_name,
-                full_name=u.full_name,
+                last_name=last_name,
+                full_name=full_name,
                 phone_number=u.phone_number if u.show_phone else "",
                 email=(u.email or "") if u.show_email else "",
                 profile_photo_url=media_path(u.profile_photo),
             )
-            for u in users
-        ],
-    )
+        )
+    return Status(200, results)
 
 
 @router.get(
@@ -379,14 +384,15 @@ def get_member_profile(request, user_id: str):
         raise_validation(Code.Member.NOT_FOUND, status_code=404)
     is_own_profile = str(request.auth.pk) == user_id
     can_manage_users = request.auth.has_permission(PermissionKey.MANAGE_USERS)
+    last_name, full_name = visible_name(user, request.auth)
     return Status(
         200,
         MemberProfileOut(
             id=str(user.id),
             display_name=user.display_name,
             first_name=user.first_name,
-            last_name=user.last_name,
-            full_name=user.full_name,
+            last_name=last_name,
+            full_name=full_name,
             nickname=user.nickname or "",
             phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
             email=(user.email or "") if (user.show_email or is_own_profile) else "",

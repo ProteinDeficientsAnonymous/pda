@@ -82,6 +82,19 @@ def _is_admin(user: User) -> bool:
     return user.roles.filter(name="admin", is_default=True).exists()
 
 
+def visible_name(target: User, viewer: User) -> tuple[str, str]:
+    """Return (last_name, full_name) as they should appear to viewer.
+
+    Admins and the target themself always see the full name. Everyone else
+    sees first-name-only when target.hide_last_name is set.
+    """
+    if target.id == viewer.id or _is_admin(viewer):
+        return target.last_name, target.full_name
+    if target.hide_last_name:
+        return "", target.first_name.strip()
+    return target.last_name, target.full_name
+
+
 def _normalize_email(raw: str | None) -> str | None:
     """Lowercase + strip an email. Returns None for blank input.
 

@@ -3137,6 +3137,17 @@
             ],
             "title": "First Name"
           },
+          "hide_last_name": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hide Last Name"
+          },
           "last_name": {
             "anyOf": [
               {
@@ -4726,6 +4737,11 @@
             "default": "",
             "title": "Full Name",
             "type": "string"
+          },
+          "hide_last_name": {
+            "default": false,
+            "title": "Hide Last Name",
+            "type": "boolean"
           },
           "id": {
             "title": "Id",

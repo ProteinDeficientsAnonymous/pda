@@ -98,6 +98,7 @@ class User(AbstractUser):
     photo_updated_at = models.DateTimeField(null=True, blank=True)
     show_phone = models.BooleanField(default=True)
     show_email = models.BooleanField(default=True)
+    hide_last_name = models.BooleanField(default=False)
     is_paused = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     login_link_requested = models.BooleanField(default=False)

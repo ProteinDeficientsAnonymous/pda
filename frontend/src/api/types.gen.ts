@@ -3048,6 +3048,8 @@ export interface components {
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Hide Last Name */
+            hide_last_name?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Needs Onboarding */
@@ -3749,6 +3751,11 @@ export interface components {
              * @default
              */
             full_name: string;
+            /**
+             * Hide Last Name
+             * @default false
+             */
+            hide_last_name: boolean;
             /** Id */
             id: string;
             /**

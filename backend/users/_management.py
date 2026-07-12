@@ -24,6 +24,7 @@ from users._helpers import (
     _validate_admin_role_change,
     _validate_member_role_required,
     _validate_phone,
+    visible_name,
 )
 from users._name_parsing import parse_display_name
 from users.models import User
@@ -185,36 +186,56 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
     )
 
 
+def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
+    """Whether a search hit is legitimate for a non-admin viewer.
+
+    display_name is one concatenated string, so the DB-level icontains match
+    can't tell "matched on last name" from "matched on first name" — a
+    hide_last_name user would otherwise leak via search even though their
+    last name is suppressed in the response. Re-check the match here against
+    only the fields a non-admin can actually see (first name, phone).
+    """
+    if not u.hide_last_name:
+        return True
+    if q.lower() in u.first_name.lower():
+        return True
+    return bool(u.show_phone and (q in u.phone_number or (digits and digits in u.phone_number)))
+
+
 @router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
 def search_users(request, q: str = ""):
     qs = User.objects.active_members().exclude(pk=request.auth.pk)
     q = q.strip()
+    digits = re.sub(r"\D", "", q)
     if q:
-        digits = re.sub(r"\D", "", q)
         phone_q = dj_models.Q(phone_number__icontains=q)
         if digits and digits != q:
             phone_q = phone_q | dj_models.Q(phone_number__icontains=digits)
         qs = qs.filter(dj_models.Q(display_name__icontains=q) | phone_q)
-    qs = qs.order_by("display_name")[:10]
-    return Status(
-        200,
-        [
+    qs = qs.order_by("display_name")
+    users = list(qs)
+    if q and not _is_admin(request.auth):
+        users = [u for u in users if _matches_for_non_admin(u, q, digits)]
+    users = users[:10]
+    results = []
+    for u in users:
+        last_name, full_name = visible_name(u, request.auth)
+        results.append(
             UserSearchOut(
                 id=str(u.id),
                 # Don't leak a private phone via the display_name fallback when
                 # show_phone is false (e.g. members with no display_name set).
                 display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
                 first_name=u.first_name,
-                last_name=u.last_name,
-                full_name=u.full_name,
+                last_name=last_name,
+                full_name=full_name,
                 # Respect each member's privacy flag — blank the phone rather
                 # than dropping the field, so callers (co-host/invite picker)
                 # don't break on a missing key. Mirrors the member directory.
                 phone_number=u.phone_number if u.show_phone else "",
             )
-            for u in qs
-        ],
-    )
+        )
+    return Status(200, results)
 
 
 @router.get(
