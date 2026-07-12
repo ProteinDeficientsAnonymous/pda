@@ -63,7 +63,7 @@ class TestPublicRsvpHappyPath:
         assert token.token in sent["text"]
 
     def test_broadcasts_event_update(self, api_client, official_event, fake_email_sender):
-        with patch("community._public_rsvp.broadcast_capacity_change") as mock_broadcast:
+        with patch("community._public_rsvp_submit.broadcast_capacity_change") as mock_broadcast:
             post(api_client, official_event)
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == official_event.id

@@ -38,5 +38,8 @@ frontend/.vite/
 .claude/settings.local.json
 .worktrees/
 
+# workflow design docs (superpowers) — not tracked
+docs/superpowers/
+
 # root release tooling
 node_modules/

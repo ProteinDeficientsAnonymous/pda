@@ -2,6 +2,8 @@ from datetime import timedelta
 
 import pytest
 from community.management.commands._seed_staging_data import (
+    NON_MEMBER_EVENT_TITLE,
+    NON_MEMBER_SPECS,
     PASSWORD,
     STAGING_EVENTS,
     cond_email,
@@ -12,11 +14,11 @@ from community.management.commands._seed_staging_data import (
     perm_email,
     perm_phone,
 )
-from community.models import Event
+from community.models import Event, EventRSVP
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.utils import timezone
-from users.models import User
+from users.models import NonMemberRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -189,3 +191,53 @@ def test_seed_staging_refuses_in_production(monkeypatch):
     with pytest.raises(Exception):
         call_command("seed_staging")
     assert Role.objects.filter(name__startswith="perm: ").count() == 0
+
+
+@pytest.mark.django_db
+def test_seed_staging_creates_non_members():
+    call_command("seed_staging")
+    non_members = User.objects.filter(phone_number__startswith="+170255503")
+    assert non_members.count() == len(NON_MEMBER_SPECS)
+    for u in non_members:
+        assert u.is_member is False
+        assert not u.has_usable_password()
+
+
+@pytest.mark.django_db
+def test_seed_staging_non_members_have_valid_tokens_and_rsvps():
+    call_command("seed_staging")
+    rsvped = User.objects.filter(
+        phone_number__startswith="+170255503", event_rsvps__isnull=False
+    ).distinct()
+    assert rsvped.exists()
+    for u in rsvped:
+        token = NonMemberRsvpToken.objects.filter(user=u).first()
+        assert token is not None and token.is_valid
+    demo = Event.objects.get(title=NON_MEMBER_EVENT_TITLE)
+    assert EventRSVP.objects.filter(event=demo).exists()
+
+
+@pytest.mark.django_db
+def test_seed_staging_reset_removes_non_member_band():
+    call_command("seed_staging")
+    stale_user = User.objects.filter(phone_number__startswith="+170255503").first()
+    stale_event = Event.objects.get(title=NON_MEMBER_EVENT_TITLE)
+    call_command("seed_staging", "--reset")
+    # --reset deletes the band then reseeds it fresh in the same call, mirroring
+    # the perm/cond bands (see test_seed_staging_reset_removes_only_scoped_rows).
+    assert User.objects.filter(phone_number__startswith="+170255503").count() == len(
+        NON_MEMBER_SPECS
+    )
+    refreshed_user = User.objects.filter(phone_number__startswith="+170255503").first()
+    assert refreshed_user.pk != stale_user.pk
+    refreshed_event = Event.objects.get(title=NON_MEMBER_EVENT_TITLE)
+    assert refreshed_event.pk != stale_event.pk
+
+
+@pytest.mark.django_db
+def test_seed_staging_non_members_idempotent():
+    call_command("seed_staging")
+    call_command("seed_staging")
+    assert User.objects.filter(phone_number__startswith="+170255503").count() == len(
+        NON_MEMBER_SPECS
+    )
