@@ -265,7 +265,7 @@ describe('MembersScreen', () => {
       data: [
         makeMember({
           id: 'm1',
-          displayName: 'Ada Lovelace',
+          fullName: 'Ada Lovelace',
           lastAttendedAt: new Date('2026-03-15T18:00:00Z'),
         }),
       ],
@@ -278,7 +278,7 @@ describe('MembersScreen', () => {
 
   it('shows "never attended" for a member with no attendance', () => {
     mockUsersResult({
-      data: [makeMember({ id: 'm1', displayName: 'Ada Lovelace', lastAttendedAt: null })],
+      data: [makeMember({ id: 'm1', fullName: 'Ada Lovelace', lastAttendedAt: null })],
     });
 
     renderScreen();
@@ -291,13 +291,13 @@ describe('MembersScreen', () => {
       data: [
         makeMember({
           id: 'm1',
-          displayName: 'Older Attendee',
+          fullName: 'Older Attendee',
           lastAttendedAt: new Date('2026-01-01T00:00:00Z'),
         }),
-        makeMember({ id: 'm2', displayName: 'Never Attendee', lastAttendedAt: null }),
+        makeMember({ id: 'm2', fullName: 'Never Attendee', lastAttendedAt: null }),
         makeMember({
           id: 'm3',
-          displayName: 'Recent Attendee',
+          fullName: 'Recent Attendee',
           lastAttendedAt: new Date('2026-06-01T00:00:00Z'),
         }),
       ],

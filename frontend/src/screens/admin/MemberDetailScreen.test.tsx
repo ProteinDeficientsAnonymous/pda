@@ -42,6 +42,7 @@ const member: Member = {
   isPaused: false,
   needsOnboarding: false,
   loginLinkRequested: false,
+  lastAttendedAt: null,
   roles: [],
 };
 
