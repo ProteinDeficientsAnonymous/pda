@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.7.0...v0.8.0) (2026-07-12)
+
+
+### Features
+
+* **events:** admin attendance reporting (Issue 507) ([#543](https://github.com/ProteinDeficientsAnonymous/pda/issues/543)) ([9e50078](https://github.com/ProteinDeficientsAnonymous/pda/commit/9e500780e888b306ef3d8ad842a2e0d6f36c8887))
+
 # [0.7.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.6.0...v0.7.0) (2026-07-12)
 
 
