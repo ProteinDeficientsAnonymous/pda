@@ -149,14 +149,16 @@ async function fetchMeWithToken(access: string): Promise<User> {
 
 export async function completeOnboarding(payload: {
   newPassword: string;
-  displayName?: string | undefined;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
   email?: string | undefined;
   pronouns?: string | undefined;
   consentTypes?: ConsentTypeValue[] | undefined;
 }): Promise<User> {
   const { data } = await apiClient.post<WireUser>('/api/auth/complete-onboarding/', {
     new_password: payload.newPassword,
-    display_name: payload.displayName,
+    first_name: payload.firstName,
+    last_name: payload.lastName,
     email: payload.email,
     pronouns: payload.pronouns,
     consent_types: payload.consentTypes ?? [],
@@ -181,6 +183,8 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
 export interface ProfileUpdate {
   displayName?: string;
+  firstName?: string;
+  lastName?: string;
   nickname?: string;
   email?: string;
   bio?: string;
@@ -195,6 +199,8 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   // Omit undefined so PATCH doesn't clobber fields that weren't explicitly set.
   const body: Record<string, unknown> = {};
   if (patch.displayName !== undefined) body.display_name = patch.displayName;
+  if (patch.firstName !== undefined) body.first_name = patch.firstName;
+  if (patch.lastName !== undefined) body.last_name = patch.lastName;
   if (patch.nickname !== undefined) body.nickname = patch.nickname;
   if (patch.email !== undefined) body.email = patch.email;
   if (patch.bio !== undefined) body.bio = patch.bio;

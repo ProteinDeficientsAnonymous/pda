@@ -38,9 +38,15 @@ export default function SettingsScreen() {
       <Section label="profile">
         <AvatarUpload />
         <InlineText
-          label="display name"
-          value={user.fullName}
-          onSave={(v) => updateProfile({ displayName: v })}
+          label="first name"
+          value={user.firstName}
+          onSave={(v) => updateProfile({ firstName: v })}
+        />
+        <InlineText
+          label="last name"
+          value={user.lastName}
+          onSave={(v) => updateProfile({ lastName: v })}
+          placeholder="add a last name"
         />
         <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
         <InlineText
