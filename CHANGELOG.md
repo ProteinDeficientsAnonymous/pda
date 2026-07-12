@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.8.0...v0.8.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **test:** add missing nickname to OnboardingProfileStep User fixture (Issue 532) ([#736](https://github.com/ProteinDeficientsAnonymous/pda/issues/736)) ([9e4f722](https://github.com/ProteinDeficientsAnonymous/pda/commit/9e4f72252a4428c8a3d9e3273eff0cbafd60c2ec)), closes [#730](https://github.com/ProteinDeficientsAnonymous/pda/issues/730)
+
 # [0.8.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.7.0...v0.8.0) (2026-07-12)
 
 

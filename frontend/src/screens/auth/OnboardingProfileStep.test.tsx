@@ -20,6 +20,7 @@ const baseUser: User = {
   id: 'u1',
   phoneNumber: '+15551234567',
   displayName: 'Tester',
+  nickname: '',
   email: 'tester@example.com',
   bio: '',
   pronouns: '',
