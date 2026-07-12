@@ -53,7 +53,7 @@ class TestPublicRsvpCapacity:
         response = post(
             api_client,
             event,
-            name="A",
+            first_name="A",
             phone_number="+14155550101",
             email="a@e.com",
             status=RSVPStatus.CANT_GO,
@@ -121,5 +121,7 @@ class TestPublicRsvpRobustness:
         user = User.objects.get(phone_number="+14155550123")
         assert EventRSVP.objects.filter(event=official_event, user=user).exists()
         assert NonMemberRsvpToken.objects.filter(user=user).exists()
-        failures = [r for r in caplog.records if getattr(r, "action", None) == "rsvp_email_failed"]
+        failures = [
+            r for r in caplog.records if getattr(r, "action", None) == "public_rsvp_email_failed"
+        ]
         assert len(failures) == 1

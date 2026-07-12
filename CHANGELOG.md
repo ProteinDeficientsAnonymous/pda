@@ -1,3 +1,17 @@
+# [0.4.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.3.0...v0.4.0) (2026-07-12)
+
+
+### Features
+
+* **public-rsvp:** non-member manage-rsvp endpoints + staging seed (Epic 490) ([#711](https://github.com/ProteinDeficientsAnonymous/pda/issues/711)) ([d05a003](https://github.com/ProteinDeficientsAnonymous/pda/commit/d05a00302b643ff36ecf7db84c30424aa509a4ea)), closes [#705](https://github.com/ProteinDeficientsAnonymous/pda/issues/705) [#706](https://github.com/ProteinDeficientsAnonymous/pda/issues/706)
+
+# [0.3.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.2.1...v0.3.0) (2026-07-12)
+
+
+### Features
+
+* **users:** split display name into first/last name — PR1a backend (Issue 532) ([#713](https://github.com/ProteinDeficientsAnonymous/pda/issues/713)) ([4b5bc05](https://github.com/ProteinDeficientsAnonymous/pda/commit/4b5bc05195c62a454b6521bfede8e9fc115e36cf))
+
 ## [0.2.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.2.0...v0.2.1) (2026-07-12)
 
 

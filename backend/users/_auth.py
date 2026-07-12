@@ -2,7 +2,6 @@
 
 import logging
 
-from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 from config.audit import audit_log
 from config.auth import gated_jwt
@@ -20,7 +19,7 @@ from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import stamp_consents
-from users._helpers import _check_and_set_email
+from users._helpers import _check_and_set_email, _resolve_name_fields
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
@@ -251,10 +250,8 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     to the global handler.
     """
     changed: list[str] = []
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
-        changed.append("display_name")
+    if _resolve_name_fields(user, payload):
+        changed.extend(["first_name", "last_name", "display_name"])
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
@@ -363,6 +360,9 @@ def list_member_directory(request):
                 # Don't leak a private phone via the display_name fallback when
                 # show_phone is false (e.g. members with no display_name set).
                 display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                first_name=u.first_name,
+                last_name=u.last_name,
+                full_name=u.full_name,
                 phone_number=u.phone_number if u.show_phone else "",
                 email=(u.email or "") if u.show_email else "",
                 profile_photo_url=media_path(u.profile_photo),
@@ -389,6 +389,9 @@ def get_member_profile(request, user_id: str):
         MemberProfileOut(
             id=str(user.id),
             display_name=user.display_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            full_name=user.full_name,
             phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
             email=(user.email or "") if (user.show_email or is_own_profile) else "",
             bio=user.bio or "",
@@ -416,9 +419,7 @@ def complete_onboarding(request, payload: OnboardingIn):
     # check_password always fails and this is correctly skipped.
     if user.has_usable_password() and user.check_password(payload.new_password):
         raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
+    _resolve_name_fields(user, payload)
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:

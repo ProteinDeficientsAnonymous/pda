@@ -33,7 +33,7 @@ from community._event_schemas import (
     TextRecipientsOut,
 )
 from community._events import _can_edit_event, _enforce_event_read_visibility
-from community._rsvp_emails import email_promoted_non_members
+from community._public_rsvp_shared import _email_promoted_non_members
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventRSVP, RSVPStatus
@@ -186,7 +186,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     # Actor already has the fresh event in this response, so exclude them.
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
-    email_promoted_non_members(request, event, promoted_user_ids)
+    _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
 
@@ -321,7 +321,7 @@ def delete_rsvp(request, event_id: UUID):
         event, promoted_user_ids = _delete_rsvp_in_transaction(event_id, request.auth)
 
     audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
-    email_promoted_non_members(request, event, promoted_user_ids)
+    _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(204, None)
 
 

@@ -82,6 +82,8 @@ def resend_magic_link(request, id: UUID):
         target_id=str(join_request.id),
         details={
             "display_name": join_request.display_name,
+            "first_name": join_request.first_name,
+            "last_name": join_request.last_name,
             "user_id": str(user.id),
             "invalidated_token_count": invalidated,
         },

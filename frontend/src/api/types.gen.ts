@@ -1275,8 +1275,43 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Public Rsvp */
-        post: operations["community__public_rsvp_submit_public_rsvp"];
+        post: operations["community__public_rsvp_submit_submit_public_rsvp"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/public/my-rsvps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Rsvps */
+        get: operations["community__public_rsvp_manage_list_my_rsvps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/public/my-rsvps/{event_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update My Rsvp */
+        post: operations["community__public_rsvp_manage_update_my_rsvp"];
+        /** Delete My Rsvp */
+        delete: operations["community__public_rsvp_manage_delete_my_rsvp"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2848,7 +2883,10 @@ export interface components {
             answers: {
                 [key: string]: string;
             };
-            /** Display Name */
+            /**
+             * Display Name
+             * @default
+             */
             display_name: string;
             /**
              * Email
@@ -2856,10 +2894,20 @@ export interface components {
              */
             email: string;
             /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
              * Guidelines Consent
              * @default false
              */
             guidelines_consent: boolean;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
             /**
@@ -2943,6 +2991,10 @@ export interface components {
             display_name?: string | null;
             /** Email */
             email?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
             /** Pronouns */
@@ -2963,8 +3015,23 @@ export interface components {
              * @default
              */
             email: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /**
              * Phone Number
              * @default
@@ -2990,8 +3057,23 @@ export interface components {
              * @default
              */
             email: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /**
              * Login Link Requested
              * @default false
@@ -3038,6 +3120,10 @@ export interface components {
             display_name?: string | null;
             /** Email */
             email?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
             /** New Password */
             new_password: string;
             /** Pronouns */
@@ -3114,13 +3200,18 @@ export interface components {
              * Format: email
              */
             email: string;
+            /** First Name */
+            first_name: string;
             /**
              * Has Plus One
              * @default false
              */
             has_plus_one: boolean;
-            /** Name */
-            name: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
             /** Status */
@@ -3130,6 +3221,39 @@ export interface components {
              * @default
              */
             website: string;
+        };
+        /** PublicRsvpManageIn */
+        PublicRsvpManageIn: {
+            /**
+             * Has Plus One
+             * @default false
+             */
+            has_plus_one: boolean;
+            /** Status */
+            status: string;
+        };
+        /** PublicRsvpManageItemOut */
+        PublicRsvpManageItemOut: {
+            event: components["schemas"]["EventOut"];
+            /** Has Plus One */
+            has_plus_one: boolean;
+            /** Status */
+            status: string;
+        };
+        /** PublicRsvpManageOut */
+        PublicRsvpManageOut: {
+            /** Rsvps */
+            rsvps: components["schemas"]["PublicRsvpManageItemOut"][];
+            user: components["schemas"]["PublicRsvpManageUserOut"];
+        };
+        /** PublicRsvpManageUserOut */
+        PublicRsvpManageUserOut: {
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Phone Number */
+            phone_number: string;
         };
         /** PublicRsvpOut */
         PublicRsvpOut: {
@@ -3493,6 +3617,16 @@ export interface components {
             display_name: string;
             /** Email */
             email?: string | null;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
             /** Role Id */
@@ -3502,8 +3636,23 @@ export interface components {
         UserCreateOut: {
             /** Display Name */
             display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Magic Link Token */
             magic_link_token: string;
             /** Phone Number */
@@ -3528,6 +3677,16 @@ export interface components {
              * @default
              */
             email: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
             /**
@@ -3540,6 +3699,11 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /**
              * Login Link Requested
              * @default false
@@ -3603,8 +3767,12 @@ export interface components {
             display_name?: string | null;
             /** Email */
             email?: string | null;
+            /** First Name */
+            first_name?: string | null;
             /** Is Paused */
             is_paused?: boolean | null;
+            /** Last Name */
+            last_name?: string | null;
             /** Phone Number */
             phone_number?: string | null;
         };
@@ -3617,8 +3785,23 @@ export interface components {
         UserSearchOut: {
             /** Display Name */
             display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
         };
@@ -6705,6 +6888,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     community__event_rsvps_set_attendance: {
@@ -7575,7 +7767,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_submit_public_rsvp: {
+    community__public_rsvp_submit_submit_public_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -7619,6 +7811,141 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__public_rsvp_manage_list_my_rsvps: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRsvpManageOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__public_rsvp_manage_update_my_rsvp: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicRsvpManageIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRsvpOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__public_rsvp_manage_delete_my_rsvp: {
+        parameters: {
+            query?: {
+                token?: string;
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

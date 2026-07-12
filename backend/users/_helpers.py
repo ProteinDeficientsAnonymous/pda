@@ -5,10 +5,13 @@ import string
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Protocol
 
 import phonenumbers
+from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 
+from users._name_parsing import parse_display_name
 from users.models import MagicLoginToken, User
 from users.roles import Role
 
@@ -24,6 +27,34 @@ class ConsentTimestamps:
 def _generate_temp_password(length: int = 16) -> str:
     alphabet = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+class NamePatchPayload(Protocol):
+    first_name: str | None
+    last_name: str | None
+    display_name: str | None
+
+
+def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
+    """Apply first/last name from a patch payload to user (in memory).
+
+    first/last win when provided; a bare legacy display_name is parsed as a
+    fallback. Returns True if any name field was set.
+    """
+    if payload.first_name is not None or payload.last_name is not None:
+        if payload.first_name is not None:
+            validate_display_name(payload.first_name, field="first_name")
+            user.first_name = payload.first_name.strip()
+        if payload.last_name is not None:
+            if payload.last_name.strip():
+                validate_display_name(payload.last_name, field="last_name")
+            user.last_name = payload.last_name.strip()
+        return True
+    if payload.display_name is not None:
+        validate_display_name(payload.display_name)
+        user.first_name, user.last_name = parse_display_name(payload.display_name.strip())
+        return True
+    return False
 
 
 def _create_magic_token(user: User, *, requires_password_reset: bool = False) -> str:
@@ -117,7 +148,8 @@ def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
 
 def _create_user_with_role(  # noqa: PLR0913
     phone: str,
-    display_name: str,
+    first_name: str,
+    last_name: str,
     email: str | None,
     role_id: str | None,
     *,
@@ -143,7 +175,8 @@ def _create_user_with_role(  # noqa: PLR0913
     _guard_admin_role_grant(role_id, requesting_user)
     user = User.objects.create_user(
         phone_number=validated_phone,
-        display_name=display_name,
+        first_name=first_name,
+        last_name=last_name,
         email=normalized_email,
         is_member=True,
         needs_onboarding=True,

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from community.models.choices import EventType
+from community.models.choices import EventType, RSVPStatus
 
 PASSWORD = "testPassword1@"
 
@@ -31,6 +31,17 @@ def perm_email(key: str) -> str:
 
 def cond_email(index: int) -> str:
     return f"cond{index:02d}@staging.example"
+
+
+def nonmember_phone(index: int) -> str:
+    return f"+170255503{index:02d}"
+
+
+def nonmember_email(index: int) -> str:
+    return f"nonmember{index:02d}@staging.example"
+
+
+NON_MEMBER_EVENT_TITLE = "[staging] official public rsvp demo"
 
 
 def condition_combinations() -> list[tuple[bool, bool, bool]]:
@@ -134,5 +145,44 @@ STAGING_EVENTS = [
         delta_days=90,
         duration_hours=48,
         location="the lodge",
+    ),
+    SeedStagingEvent(
+        title=NON_MEMBER_EVENT_TITLE,
+        description="official public event for testing non-member rsvp.",
+        delta_days=5,
+        duration_hours=3,
+        location="downtown hub",
+        event_type=EventType.OFFICIAL,
+    ),
+]
+
+
+@dataclass
+class NonMemberSpec:
+    label: str
+    event_titles: list[str]
+    statuses: list[str]
+
+
+NON_MEMBER_SPECS = [
+    NonMemberSpec(
+        label="non-member: attending",
+        event_titles=[NON_MEMBER_EVENT_TITLE],
+        statuses=[RSVPStatus.ATTENDING],
+    ),
+    NonMemberSpec(
+        label="non-member: maybe",
+        event_titles=[NON_MEMBER_EVENT_TITLE],
+        statuses=[RSVPStatus.MAYBE],
+    ),
+    NonMemberSpec(
+        label="non-member: multi-event",
+        event_titles=[NON_MEMBER_EVENT_TITLE, "[staging] monthly official meeting"],
+        statuses=[RSVPStatus.ATTENDING, RSVPStatus.ATTENDING],
+    ),
+    NonMemberSpec(
+        label="non-member: no-rsvp",
+        event_titles=[],
+        statuses=[],
     ),
 ]

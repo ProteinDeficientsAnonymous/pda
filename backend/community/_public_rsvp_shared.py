@@ -5,14 +5,41 @@ from django.conf import settings
 from django.utils import timezone
 from notifications._email_helpers import (
     RsvpEmailDetails,
-    send_rsvp_confirmation_email,
     send_rsvp_waitlist_promoted_email,
 )
 from notifications.email_sender import get_email_sender
+from pydantic import BaseModel
 from users.models import NonMemberRsvpToken, User
 
+from community._event_schemas import EventOut
 from community._shared import logger
-from community.models import Event
+from community._validation import Code, raise_validation
+from community.models import Event, EventStatus, EventType, PageVisibility
+
+
+class PublicRsvpStateOut(BaseModel):
+    status: str
+    has_plus_one: bool
+
+
+class PublicRsvpOut(BaseModel):
+    event: EventOut
+    rsvp: PublicRsvpStateOut
+
+
+def _load_public_rsvp_event(event_id) -> Event:
+    """Fetch a public-RSVP-eligible event, else 404 (every ineligible state hides as NOT_FOUND)."""
+    event = Event.objects.prefetch_related("co_hosts", "invited_users").filter(id=event_id).first()
+    if (
+        event is None
+        or event.event_type != EventType.OFFICIAL
+        or event.status != EventStatus.ACTIVE
+        or event.visibility != PageVisibility.PUBLIC
+        or not event.rsvp_enabled
+        or event.is_past
+    ):
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    return event
 
 
 def _format_event_when(event: Event) -> str:
@@ -40,10 +67,10 @@ def _email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails
 
 
 def _log_email_failure(request, event: Event, user: User, exc: Exception) -> None:
-    logger.warning("rsvp email failed", exc_info=True)
+    logger.warning("public rsvp email failed", exc_info=True)
     audit_log(
         logging.WARNING,
-        "rsvp_email_failed",
+        "public_rsvp_email_failed",
         request,
         target_type="event",
         target_id=str(event.id),
@@ -51,26 +78,8 @@ def _log_email_failure(request, event: Event, user: User, exc: Exception) -> Non
     )
 
 
-def send_confirmation_email(
-    request, event: Event, user: User, token_str: str, waitlisted: bool
-) -> None:
-    """Best-effort confirmation email. A send failure must NOT roll back the RSVP."""
-    if not user.email:
-        return
-    try:
-        result = send_rsvp_confirmation_email(
-            sender=get_email_sender(),
-            details=_email_details(event, user, token_str),
-            waitlisted=waitlisted,
-        )
-        if not result.success:
-            raise RuntimeError(result.error or "send returned failure")
-    except Exception as exc:
-        _log_email_failure(request, event, user, exc)
-
-
-def email_promoted_non_members(request, event: Event, promoted_user_ids: list[str]) -> None:
-    """Email any promoted non-members a fresh manage link. Best-effort per user."""
+def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[str]) -> None:
+    """Email any promoted non-members their manage link. Best-effort per user."""
     if not promoted_user_ids:
         return
     promoted = User.objects.filter(id__in=promoted_user_ids, is_member=False, email__isnull=False)

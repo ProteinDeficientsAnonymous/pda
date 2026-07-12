@@ -26,7 +26,8 @@ def url(event):
 
 def payload(**overrides):
     base = {
-        "name": "Sam Green",
+        "first_name": "Sam",
+        "last_name": "Green",
         "email": "sam@example.com",
         "phone_number": "+14155550123",
         "status": RSVPStatus.ATTENDING,
@@ -58,9 +59,11 @@ def make_official_event(**overrides):
 
 
 def make_non_member(phone, email, name="Existing Nonmember"):
+    first_name, _, last_name = name.partition(" ")
     user = User.objects.create_user(
         phone_number=phone,
-        display_name=name,
+        first_name=first_name,
+        last_name=last_name,
         email=email,
         is_member=False,
     )

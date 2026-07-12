@@ -63,7 +63,7 @@ class TestPublicRsvpHappyPath:
         assert token.token in sent["text"]
 
     def test_broadcasts_event_update(self, api_client, official_event, fake_email_sender):
-        with patch("community._public_rsvp.broadcast_capacity_change") as mock_broadcast:
+        with patch("community._public_rsvp_submit.broadcast_capacity_change") as mock_broadcast:
             post(api_client, official_event)
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == official_event.id
@@ -282,13 +282,13 @@ class TestPublicRsvpValidation:
     def test_missing_name(self, api_client, official_event):
         response = api_client.post(
             URL_TEMPLATE.format(event_id=official_event.id),
-            {k: v for k, v in payload().items() if k != "name"},
+            {k: v for k, v in payload().items() if k != "first_name"},
             content_type="application/json",
         )
         assert response.status_code == 422
 
     def test_blank_name(self, api_client, official_event):
-        response = post(api_client, official_event, name="   ")
+        response = post(api_client, official_event, first_name="   ")
         assert response.status_code == 422
 
     def test_missing_email(self, api_client, official_event):

@@ -5,39 +5,38 @@ from config.ratelimit import client_ip, rate_limit
 from django.db import IntegrityError, transaction
 from ninja import Router
 from ninja.responses import Status
+from notifications._email_helpers import send_rsvp_confirmation_email
+from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import NonMemberRsvpToken, User
 
 from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_rsvps import _apply_rsvp_in_transaction, _validate_rsvp_status
-from community._event_schemas import EventOut
 from community._field_limits import FieldLimit
-from community._rsvp_emails import email_promoted_non_members, send_confirmation_email
+from community._public_rsvp_shared import (
+    PublicRsvpOut,
+    PublicRsvpStateOut,
+    _email_details,
+    _email_promoted_non_members,
+    _load_public_rsvp_event,
+    _log_email_failure,
+)
 from community._shared import ErrorOut, _validate_phone, validate_display_name
 from community._validation import Code, raise_validation
-from community.models import Event, EventStatus, EventType, PageVisibility, RSVPStatus
+from community.models import Event, RSVPStatus
 
 router = Router()
 
 
 class PublicRsvpIn(BaseModel):
-    name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str = Field(max_length=FieldLimit.FIRST_NAME)
+    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     email: EmailStr
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
-
-
-class PublicRsvpStateOut(BaseModel):
-    status: str
-    has_plus_one: bool
-
-
-class PublicRsvpOut(BaseModel):
-    event: EventOut
-    rsvp: PublicRsvpStateOut
 
 
 def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicRsvpOut:
@@ -48,23 +47,6 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
     )
 
 
-def _load_public_rsvp_event(event_id) -> Event:
-    """Fetch a public-RSVP-eligible event, else 404 (every ineligible state hides as NOT_FOUND)."""
-    event = Event.objects.prefetch_related("co_hosts", "invited_users").filter(id=event_id).first()
-    # OFFICIAL + PUBLIC are redundant today (official implies public); the type/visibility
-    # taxonomy needs untangling — see issue #604.
-    if (
-        event is None
-        or event.event_type != EventType.OFFICIAL
-        or event.status != EventStatus.ACTIVE
-        or event.visibility != PageVisibility.PUBLIC
-        or not event.rsvp_enabled
-        or event.is_past
-    ):
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    return event
-
-
 def _backfill_email(phone_match: User, email: str) -> User:
     # Backfill the email only if blank — never overwrite an existing one.
     if email and not phone_match.email:
@@ -73,13 +55,13 @@ def _backfill_email(phone_match: User, email: str) -> User:
     return phone_match
 
 
-def _create_non_member(name: str, email: str, phone: str) -> User:
+def _create_non_member(first_name: str, last_name: str, email: str, phone: str) -> User:
     """Get-or-create the non-member User keyed on the unique phone number.
 
     On a unique-email collision the email is dropped inside a savepoint so the
     outer transaction and the RSVP survive; the row is just saved without it.
     """
-    defaults = {"display_name": name, "is_member": False}
+    defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
         with transaction.atomic():
             user, created = User.objects.get_or_create(
@@ -109,7 +91,9 @@ def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
     return phone_match
 
 
-def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
+def _resolve_non_member(
+    *, request, first_name: str, last_name: str, email: str, phone: str
+) -> User:
     """Resolve (or create) the non-member User backing this RSVP; member contact → 409.
 
     Must run inside the surrounding transaction.
@@ -132,7 +116,25 @@ def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
         return _backfill_email(phone_match, email)
     if email_match:
         return email_match
-    return _create_non_member(name, email, phone)
+    return _create_non_member(first_name, last_name, email, phone)
+
+
+def _send_confirmation_email(
+    request, event: Event, user: User, token_str: str, waitlisted: bool
+) -> None:
+    """Best-effort confirmation email. A send failure must NOT roll back the RSVP."""
+    if not user.email:
+        return
+    try:
+        result = send_rsvp_confirmation_email(
+            sender=get_email_sender(),
+            details=_email_details(event, user, token_str),
+            waitlisted=waitlisted,
+        )
+        if not result.success:
+            raise RuntimeError(result.error or "send returned failure")
+    except Exception as exc:
+        _log_email_failure(request, event, user, exc)
 
 
 @router.post(
@@ -155,15 +157,22 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         )
         return Status(200, _public_rsvp_decoy(event, payload.status, payload.has_plus_one))
 
-    name = payload.name.strip()
-    validate_display_name(name, field="name")
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    validate_display_name(first_name, field="first_name")
+    if last_name:
+        validate_display_name(last_name, field="last_name")
     validated_phone = _validate_phone(payload.phone_number)
     normalized_email = payload.email.strip().lower()
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
         user = _resolve_non_member(
-            request=request, name=name, email=normalized_email, phone=validated_phone
+            request=request,
+            first_name=first_name,
+            last_name=last_name,
+            email=normalized_email,
+            phone=validated_phone,
         )
         final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event.id, user, payload.status, payload.has_plus_one
@@ -180,8 +189,8 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     )
 
     waitlisted = final_status == RSVPStatus.WAITLISTED
-    send_confirmation_email(request, event, user, token.token, waitlisted)
-    email_promoted_non_members(request, event, promoted_user_ids)
+    _send_confirmation_email(request, event, user, token.token, waitlisted)
+    _email_promoted_non_members(request, event, promoted_user_ids)
 
     fresh_event = (
         Event.objects.select_related("created_by")

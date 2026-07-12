@@ -10,7 +10,8 @@ def manage_users_user(db):
     user = User.objects.create_user(
         phone_number="+12025550201",
         password="managerpass123",
-        display_name="User Manager",
+        first_name="User",
+        last_name="Manager",
     )
     role = Role.objects.create(
         name="user_manager",
@@ -31,7 +32,8 @@ def other_user(db):
     return User.objects.create_user(
         phone_number="+12025550301",
         password="otherpass123",
-        display_name="Other User",
+        first_name="Other",
+        last_name="User",
     )
 
 
@@ -41,7 +43,8 @@ def member(db):
     return User.objects.create_user(
         phone_number="+12025550401",
         password="memberpass123",
-        display_name="Member User",
+        first_name="Member",
+        last_name="User",
     )
 
 
@@ -54,6 +57,7 @@ def non_member(db):
     """
     return User.objects.create_user(
         phone_number="+12025550402",
-        display_name="Non-member User",
+        first_name="Non-member",
+        last_name="User",
         is_member=False,
     )
