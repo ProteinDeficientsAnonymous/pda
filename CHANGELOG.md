@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.8.2...v0.9.0) (2026-07-12)
+
+
+### Features
+
+* **frontend:** split display name into first/last name — PR1b (Issue 532) ([#728](https://github.com/ProteinDeficientsAnonymous/pda/issues/728)) ([c4f3ad8](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4f3ad8f55f12f203fc2c937de267f08f4fd2cf0))
+
 ## [0.8.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.8.1...v0.8.2) (2026-07-12)
 
 
