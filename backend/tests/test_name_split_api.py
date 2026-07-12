@@ -31,6 +31,34 @@ class TestUserFullName:
         u.refresh_from_db()
         assert u.display_name == "Grace Hopper"
 
+    def test_save_truncates_overlong_full_name_to_column_width(self):
+        # A pathological combination (60 + 60 chars) exceeds display_name's
+        # 64-char column and must not raise (Postgres DataError, Issue 532).
+        u = User.objects.create_user(
+            phone_number="+15551239600",
+            first_name="A" * 60,
+            last_name="B" * 60,
+        )
+        u.refresh_from_db()
+        assert len(u.display_name) <= 64
+        assert len(u.first_name) == 60
+        assert len(u.last_name) == 60
+
+    def test_save_guard_keeps_existing_display_name_when_names_blanked(self):
+        # A user who already has a display_name and is then blanked keeps the
+        # old display_name — the sync guard only sets display_name from a
+        # truthy full_name, it never clears it back out.
+        u = User.objects.create_user(
+            phone_number="+15551239700", first_name="Ada", last_name="Lovelace"
+        )
+        u.refresh_from_db()
+        assert u.display_name == "Ada Lovelace"
+        u.first_name = ""
+        u.last_name = ""
+        u.save(update_fields=["first_name", "last_name"])
+        u.refresh_from_db()
+        assert u.display_name == "Ada Lovelace"
+
 
 @pytest.mark.django_db
 class TestBackfillParsing:
@@ -56,6 +84,19 @@ class TestJoinRequestNames:
             first_name="Ada", last_name="Lovelace", phone_number="+15551239999"
         )
         assert jr.full_name == "Ada Lovelace"
+
+    def test_join_request_save_truncates_overlong_full_name_to_column_width(self):
+        from community.models.join_form import JoinRequest
+
+        jr = JoinRequest.objects.create(
+            first_name="C" * 60,
+            last_name="D" * 60,
+            phone_number="+15551239998",
+        )
+        jr.refresh_from_db()
+        assert len(jr.display_name) <= 64
+        assert len(jr.first_name) == 60
+        assert len(jr.last_name) == 60
 
 
 @pytest.mark.django_db
@@ -89,6 +130,32 @@ class TestPatchMeNameFields:
         test_user.refresh_from_db()
         assert (test_user.first_name, test_user.last_name) == ("Ada", "Lovelace")
         assert test_user.display_name == "Ada Lovelace"
+
+    def test_patch_blank_last_name_clears_it_without_422(self, api_client, auth_headers, test_user):
+        test_user.first_name = "Ada"
+        test_user.last_name = "Lovelace"
+        test_user.save(update_fields=["first_name", "last_name"])
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"first_name": "Ada", "last_name": ""},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 200
+        test_user.refresh_from_db()
+        assert test_user.last_name == ""
+        assert test_user.first_name == "Ada"
+
+    def test_patch_blank_first_name_still_raises_required(self, api_client, auth_headers):
+        resp = api_client.patch(
+            "/api/auth/me/",
+            data={"first_name": "", "last_name": "Lovelace"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert resp.status_code == 422
+        detail = resp.json()["detail"]
+        assert any(e["field"] == "first_name" for e in detail)
 
 
 @pytest.mark.django_db

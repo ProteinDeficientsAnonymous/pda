@@ -4,6 +4,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from users._name_parsing import sync_display_name
 
 from community.models.choices import JoinFormQuestionType, JoinRequestStatus
 
@@ -86,13 +87,7 @@ class JoinRequest(models.Model):
         return f"{self.first_name} {self.last_name}".strip()
 
     def save(self, *args, **kwargs):
-        if self.full_name:
-            self.display_name = self.full_name
-            update_fields = kwargs.get("update_fields")
-            if update_fields is not None:
-                update_fields = set(update_fields)
-                update_fields.add("display_name")
-                kwargs["update_fields"] = update_fields
+        sync_display_name(self, kwargs)
         super().save(*args, **kwargs)
 
     def __str__(self):

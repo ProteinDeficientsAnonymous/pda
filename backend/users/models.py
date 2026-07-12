@@ -9,6 +9,7 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+from users._name_parsing import sync_display_name
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
 
@@ -131,14 +132,7 @@ class User(AbstractUser):
         return f"{self.first_name} {self.last_name}".strip()
 
     def save(self, *args, **kwargs):
-        # Keep the transitional display_name column in sync until PR1c drops it.
-        # A restricted update_fields must still include it, or the sync above is lost.
-        self.display_name = self.full_name
-        update_fields = kwargs.get("update_fields")
-        if update_fields is not None:
-            update_fields = set(update_fields)
-            update_fields.add("display_name")
-            kwargs["update_fields"] = update_fields
+        sync_display_name(self, kwargs)
         super().save(*args, **kwargs)
 
     def __str__(self):

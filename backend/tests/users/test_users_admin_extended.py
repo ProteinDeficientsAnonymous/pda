@@ -339,18 +339,24 @@ class TestSearchUsersRespectsShowPhone:
         assert match["phone_number"] == ""
 
     def test_display_name_does_not_leak_phone_when_show_phone_false(
-        self, api_client, manage_users_headers, other_user
+        self, api_client, manage_users_headers
     ):
-        # Member with no display_name (e.g. pre-onboarding) must not leak the
-        # private phone via the display_name fallback.
-        other_user.first_name = ""
-        other_user.last_name = ""
-        other_user.show_phone = False
-        other_user.save(update_fields=["first_name", "last_name", "show_phone"])
+        # A genuinely nameless member (e.g. pre-onboarding) must not leak the
+        # private phone via the display_name fallback. Built with blank names
+        # from creation — save()'s display_name sync guard means a name once
+        # set is never blanked back out, so this can't be simulated by
+        # blanking an already-named user.
+        nameless_user = User.objects.create_user(
+            phone_number="+12025550999",
+            password="namelesspass123",
+            first_name="",
+            last_name="",
+            show_phone=False,
+        )
         response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
         assert response.status_code == 200
-        match = self._find(response, other_user.pk)
-        assert other_user.phone_number not in match["display_name"]
+        match = self._find(response, nameless_user.pk)
+        assert nameless_user.phone_number not in match["display_name"]
         assert match["display_name"] == "member"
 
 
