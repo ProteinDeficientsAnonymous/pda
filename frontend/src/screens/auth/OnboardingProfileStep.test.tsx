@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { OnboardingProfileStep } from './OnboardingProfileStep';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
+
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+
+import { OnboardingProfileStep } from './OnboardingProfileStep';
 
 vi.mock('@/auth/store', () => ({
   useAuthStore: vi.fn(),

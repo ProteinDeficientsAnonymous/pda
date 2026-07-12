@@ -1,8 +1,9 @@
 import { useState } from 'react';
+
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { AvatarUpload } from '@/screens/settings/AvatarUpload';
-import { useAuthStore } from '@/auth/store';
 import { extractApiError } from '@/utils/errors';
 
 const MAX_BIO = 500;
