@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.5.0...v0.6.0) (2026-07-12)
+
+
+### Features
+
+* **onboarding:** add optional profile step to onboarding wizard ([#720](https://github.com/ProteinDeficientsAnonymous/pda/issues/720)) ([ca9e719](https://github.com/ProteinDeficientsAnonymous/pda/commit/ca9e719bb3174249ce968a4e7ed56cf38d8e27ad))
+
 # [0.5.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.2...v0.5.0) (2026-07-12)
 
 
