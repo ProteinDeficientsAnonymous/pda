@@ -20,6 +20,9 @@ interface WireUser {
   id: string;
   phone_number: string;
   display_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   nickname?: string;
   email?: string;
   bio?: string;
@@ -63,7 +66,9 @@ function mapUser(u: WireUser): User {
   return {
     id: u.id,
     phoneNumber: u.phone_number,
-    displayName: u.display_name,
+    firstName: u.first_name ?? '',
+    lastName: u.last_name ?? '',
+    fullName: u.full_name ?? u.display_name ?? '',
     nickname: u.nickname ?? '',
     email: u.email ?? '',
     bio: u.bio ?? '',

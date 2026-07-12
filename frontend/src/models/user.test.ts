@@ -6,7 +6,9 @@ function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'u1',
     phoneNumber: '+12125550001',
-    displayName: 'Alice',
+    firstName: 'Alice',
+    lastName: 'Anderson',
+    fullName: 'Alice Anderson',
     nickname: '',
     email: 'alice@example.com',
     bio: '',
@@ -41,6 +43,18 @@ describe('passwordSetupRedirect', () => {
     expect(passwordSetupRedirect(makeUser({ needsOnboarding: true, email: '' }))).toBe(
       '/onboarding',
     );
+  });
+
+  it('passwordSetupRedirect uses firstName presence for the name check', () => {
+    const base = makeUser({ firstName: '', email: 'a@b.c', needsOnboarding: true });
+    expect(passwordSetupRedirect(base)).toBe('/onboarding'); // no first name → onboarding
+    const named = makeUser({
+      firstName: 'Ada',
+      email: 'a@b.c',
+      needsOnboarding: true,
+      needsPasswordReset: false,
+    });
+    expect(passwordSetupRedirect(named)).toBe('/new-password'); // has name + email
   });
 });
 
@@ -86,7 +100,7 @@ describe('postAuthRedirect', () => {
 
   it('prioritises password setup over consent when both are pending', () => {
     const target = postAuthRedirect(
-      makeUser({ needsOnboarding: true, displayName: '', needsGuidelinesConsent: true }),
+      makeUser({ needsOnboarding: true, firstName: '', needsGuidelinesConsent: true }),
     );
     expect(target).toBe('/onboarding');
   });
