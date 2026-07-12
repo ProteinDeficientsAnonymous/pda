@@ -9,7 +9,9 @@ import { useSubmitPublicRsvp } from './publicRsvp';
 vi.mock('./client', () => ({ apiClient: { post: vi.fn() } }));
 
 function wrapper({ children }: { children: ReactNode }) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return createElement(QueryClientProvider, { client: qc }, children);
 }
 

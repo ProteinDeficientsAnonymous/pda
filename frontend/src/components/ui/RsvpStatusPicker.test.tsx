@@ -14,7 +14,10 @@ describe('RsvpStatusPicker', () => {
   it('marks the active pill via aria-pressed', () => {
     render(<RsvpStatusPicker value="maybe" onSelect={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'maybe' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: "i'm going" })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: "i'm going" })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
   });
 
   it('calls onSelect with the status and does not toggle off the active pill', () => {
