@@ -37,3 +37,6 @@ frontend/.vite/
 .claude/task.md
 .claude/settings.local.json
 .worktrees/
+
+# workflow design docs (superpowers) — not tracked
+docs/superpowers/
