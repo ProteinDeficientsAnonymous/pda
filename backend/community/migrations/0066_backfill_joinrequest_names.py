@@ -18,6 +18,6 @@ def noop_reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0064_joinrequest_first_name_joinrequest_last_name"),
+        ("community", "0065_joinrequest_first_name_joinrequest_last_name"),
     ]
     operations = [migrations.RunPython(backfill, noop_reverse)]

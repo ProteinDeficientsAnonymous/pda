@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0063_event_photo_updated_at"),
+        ("community", "0064_alter_event_event_type"),
     ]
 
     operations = [
