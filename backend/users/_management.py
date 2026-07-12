@@ -24,6 +24,7 @@ from users._helpers import (
     _validate_admin_role_change,
     _validate_member_role_required,
     _validate_phone,
+    visible_display_name,
     visible_name,
 )
 from users._name_parsing import parse_display_name
@@ -213,19 +214,20 @@ def search_users(request, q: str = ""):
             phone_q = phone_q | dj_models.Q(phone_number__icontains=digits)
         qs = qs.filter(dj_models.Q(display_name__icontains=q) | phone_q)
     qs = qs.order_by("display_name")
-    users = list(qs)
-    if q and not _is_admin(request.auth):
-        users = [u for u in users if _matches_for_non_admin(u, q, digits)]
-    users = users[:10]
+    needs_non_admin_filter = bool(q) and not _is_admin(request.auth)
+    # Non-admins post-filter in Python (the DB icontains can't tell a first-name
+    # from a last-name match), so fetch some headroom before capping to 10.
+    # Admins take the top 10 straight from the DB.
+    users = list(qs[:200]) if needs_non_admin_filter else list(qs[:10])
+    if needs_non_admin_filter:
+        users = [u for u in users if _matches_for_non_admin(u, q, digits)][:10]
     results = []
     for u in users:
         last_name, full_name = visible_name(u, request.auth)
         results.append(
             UserSearchOut(
                 id=str(u.id),
-                # Don't leak a private phone via the display_name fallback when
-                # show_phone is false (e.g. members with no display_name set).
-                display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                display_name=visible_display_name(u, request.auth),
                 first_name=u.first_name,
                 last_name=last_name,
                 full_name=full_name,

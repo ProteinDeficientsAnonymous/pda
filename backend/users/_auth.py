@@ -19,7 +19,12 @@ from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import stamp_consents
-from users._helpers import _check_and_set_email, _resolve_name_fields, visible_name
+from users._helpers import (
+    _check_and_set_email,
+    _resolve_name_fields,
+    visible_display_name,
+    visible_name,
+)
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
@@ -243,20 +248,17 @@ def me(request):
     return Status(200, UserOut.from_user(user))
 
 
-# (payload attr, user attr, strip-whitespace) for fields that pass straight
-# through with no extra validation — keeps _apply_me_patch's branch count flat
-# as fields are added.
+# Fields copied straight from payload to user with no extra validation.
 _ME_PATCH_PASSTHROUGH_FIELDS = (
-    ("bio", "bio", True),
-    ("pronouns", "pronouns", True),
-    ("nickname", "nickname", True),
-    ("needs_onboarding", "needs_onboarding", False),
-    ("show_phone", "show_phone", False),
-    ("show_email", "show_email", False),
-    ("hide_last_name", "hide_last_name", False),
-    ("week_start", "week_start", False),
-    ("calendar_feed_scope", "calendar_feed_scope", False),
+    "needs_onboarding",
+    "show_phone",
+    "show_email",
+    "hide_last_name",
+    "week_start",
+    "calendar_feed_scope",
 )
+# Passthrough fields that also get whitespace-stripped.
+_ME_PATCH_STRIPPED_FIELDS = ("bio", "pronouns", "nickname")
 
 
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
@@ -271,11 +273,16 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
-    for payload_attr, user_attr, strip in _ME_PATCH_PASSTHROUGH_FIELDS:
-        value = getattr(payload, payload_attr)
+    for attr in _ME_PATCH_STRIPPED_FIELDS:
+        value = getattr(payload, attr)
         if value is not None:
-            setattr(user, user_attr, value.strip() if strip else value)
-            changed.append(user_attr)
+            setattr(user, attr, value.strip())
+            changed.append(attr)
+    for attr in _ME_PATCH_PASSTHROUGH_FIELDS:
+        value = getattr(payload, attr)
+        if value is not None:
+            setattr(user, attr, value)
+            changed.append(attr)
     return changed
 
 
@@ -358,9 +365,7 @@ def list_member_directory(request):
         results.append(
             MemberDirectoryOut(
                 id=str(u.id),
-                # Don't leak a private phone via the display_name fallback when
-                # show_phone is false (e.g. members with no display_name set).
-                display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                display_name=visible_display_name(u, request.auth),
                 first_name=u.first_name,
                 last_name=last_name,
                 full_name=full_name,
@@ -389,7 +394,7 @@ def get_member_profile(request, user_id: str):
         200,
         MemberProfileOut(
             id=str(user.id),
-            display_name=user.display_name,
+            display_name=visible_display_name(user, request.auth),
             first_name=user.first_name,
             last_name=last_name,
             full_name=full_name,

@@ -99,11 +99,21 @@ def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
 def visible_display_name(target: User, viewer: User | None) -> str:
     """Member-facing name honoring hide_last_name, falling back to phone.
 
-    Reuses visible_name's admin/self/hide_last_name logic; viewer=None
-    (anonymous/optional-auth) is treated as non-admin, non-self.
+    viewer=None (anonymous/optional-auth) is treated as non-admin, non-self.
+    When the last name is hidden we can only show first_name — display_name is
+    the concatenated full name and would leak the last name. When not hidden we
+    prefer full_name, then the display_name column (covers legacy accounts whose
+    name lives only there). The phone fallback is suppressed when show_phone is
+    false so a nameless member's private number is never surfaced as their name.
     """
-    _last, full = visible_name(target, viewer)
-    return full or target.phone_number
+    is_privileged = viewer is not None and (target.id == viewer.id or _is_admin(viewer))
+    if target.hide_last_name and not is_privileged:
+        name = target.first_name.strip()
+    else:
+        name = target.full_name or target.display_name or ""
+    if name:
+        return name
+    return target.phone_number if target.show_phone else "member"
 
 
 def _normalize_email(raw: str | None) -> str | None:

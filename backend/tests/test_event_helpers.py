@@ -39,7 +39,7 @@ class TestCanSeePhones:
 
 
 class TestBuildGuestList:
-    def _make_rsvp(self, user_id, name, status, phone):
+    def _make_rsvp(self, user_id, name, status, phone, show_phone=True):
         return SimpleNamespace(
             user_id=user_id,
             user=SimpleNamespace(
@@ -49,6 +49,7 @@ class TestBuildGuestList:
                 last_name="",
                 full_name=name or "",
                 phone_number=phone,
+                show_phone=show_phone,
                 profile_photo=None,
                 hide_last_name=False,
             ),
@@ -74,6 +75,11 @@ class TestBuildGuestList:
         rsvp = self._make_rsvp("u1", None, RSVPStatus.ATTENDING, "+1555000")
         result = _build_guest_list([rsvp], can_see_phones=False)
         assert result[0].name == "+1555000"
+
+    def test_nameless_private_phone_falls_back_to_member(self):
+        rsvp = self._make_rsvp("u1", None, RSVPStatus.ATTENDING, "+1555000", show_phone=False)
+        result = _build_guest_list([rsvp], can_see_phones=False)
+        assert result[0].name == "member"
 
 
 class TestFindMyRsvp:
