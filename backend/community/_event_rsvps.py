@@ -1,5 +1,3 @@
-"""RSVP endpoints for events."""
-
 import logging
 from datetime import timedelta
 from uuid import UUID
@@ -35,6 +33,7 @@ from community._event_schemas import (
     TextRecipientsOut,
 )
 from community._events import _can_edit_event, _enforce_event_read_visibility
+from community._public_rsvp_shared import _email_promoted_non_members
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventRSVP, RSVPStatus
@@ -170,7 +169,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, _promoted_user_ids = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event_id, request.auth, payload.status, payload.has_plus_one
         )
 
@@ -187,6 +186,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     # Actor already has the fresh event in this response, so exclude them.
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
+    _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
 
 
@@ -307,9 +307,10 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
 
 @router.delete(
     "/events/{event_id}/rsvp/",
-    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=gated_jwt,
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def delete_rsvp(request, event_id: UUID):
     try:
         Event.objects.get(id=event_id)
@@ -317,34 +318,54 @@ def delete_rsvp(request, event_id: UUID):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     with transaction.atomic():
-        event = (
-            Event.objects.select_for_update()
-            .prefetch_related("co_hosts", "invited_users")
-            .get(id=event_id)
-        )
-        if event.is_deleted:
-            raise_validation(Code.Event.NOT_FOUND, status_code=404)
-        rsvp = EventRSVP.objects.filter(event=event, user=request.auth).first()
-        if not rsvp:
-            # No standing RSVP: don't let a caller probe an event they can't
-            # read. An existing RSVP-holder skips the read-visibility gate so
-            # they can withdraw even if the event later turned invite-only /
-            # draft and excluded them — their stale RSVP would otherwise be
-            # unremovable while still counting toward the headcount. (The
-            # cancelled / past freezes below still apply, matching upsert_rsvp.)
-            _enforce_event_read_visibility(event, request.auth)
-            if event.is_draft and not _can_edit_event(request.auth, event):
-                raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
-            raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
-        if event.is_cancelled:
-            raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
-        if event.is_past and not _can_edit_event(request.auth, event):
-            raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
-        was_attending = rsvp.status == RSVPStatus.ATTENDING
-        rsvp.delete()
-        if was_attending:
-            promote_from_waitlist(event)
-            broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
+        event, promoted_user_ids = _delete_rsvp_in_transaction(event_id, request.auth)
 
     audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
+    _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(204, None)
+
+
+def _validate_rsvp_delete_access(event: Event, user) -> None:
+    """Raise ValidationException if the user cannot withdraw their RSVP."""
+    # No standing RSVP: don't let a caller probe an event they can't read. An
+    # existing RSVP-holder skips the read-visibility gate so they can withdraw
+    # even if the event later turned invite-only / draft and excluded them —
+    # their stale RSVP would otherwise be unremovable while still counting
+    # toward the headcount. (The cancelled / past freezes still apply.)
+    _enforce_event_read_visibility(event, user)
+    if event.is_draft and not _can_edit_event(user, event):
+        raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
+    raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+
+
+def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
+    """Delete the user's RSVP inside a locked transaction.
+
+    Returns (event, promoted_user_ids). promoted_user_ids is empty unless a
+    spot freed, surfaced so the caller can email promoted users after commit.
+
+    Raises ValidationException on failure.
+    """
+    event = (
+        Event.objects.select_for_update()
+        .prefetch_related("co_hosts", "invited_users")
+        .get(id=event_id)
+    )
+    if event.is_deleted:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    rsvp = EventRSVP.objects.filter(event=event, user=user).first()
+    if not rsvp:
+        _validate_rsvp_delete_access(event, user)
+    if event.is_cancelled:
+        raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
+    if event.is_past and not _can_edit_event(user, event):
+        raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
+
+    was_attending = rsvp.status == RSVPStatus.ATTENDING
+    rsvp.delete()
+    if not was_attending:
+        return event, []
+
+    promoted_user_ids = promote_from_waitlist(event)
+    broadcast_capacity_change(event_id, exclude_user_ids={str(user.pk)})
+    return event, promoted_user_ids
