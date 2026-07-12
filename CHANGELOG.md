@@ -1,3 +1,31 @@
+# [0.8.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.7.0...v0.8.0) (2026-07-12)
+
+
+### Features
+
+* **events:** admin attendance reporting (Issue 507) ([#543](https://github.com/ProteinDeficientsAnonymous/pda/issues/543)) ([9e50078](https://github.com/ProteinDeficientsAnonymous/pda/commit/9e500780e888b306ef3d8ad842a2e0d6f36c8887))
+
+# [0.7.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.6.0...v0.7.0) (2026-07-12)
+
+
+### Features
+
+* **profile:** optional nickname beneath the name — PR3 (Issue 532) ([#730](https://github.com/ProteinDeficientsAnonymous/pda/issues/730)) ([a393b85](https://github.com/ProteinDeficientsAnonymous/pda/commit/a393b85e4aa74ff10a55e94a10a1c867abeb3385))
+
+# [0.6.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.5.0...v0.6.0) (2026-07-12)
+
+
+### Features
+
+* **onboarding:** add optional profile step to onboarding wizard ([#720](https://github.com/ProteinDeficientsAnonymous/pda/issues/720)) ([ca9e719](https://github.com/ProteinDeficientsAnonymous/pda/commit/ca9e719bb3174249ce968a4e7ed56cf38d8e27ad))
+
+# [0.5.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.2...v0.5.0) (2026-07-12)
+
+
+### Features
+
+* **public-rsvp:** frontend RSVP form + confirmation on event detail (Issue 496) ([#727](https://github.com/ProteinDeficientsAnonymous/pda/issues/727)) ([1dc55b9](https://github.com/ProteinDeficientsAnonymous/pda/commit/1dc55b92bb42779c9840bb8f84b6ecd1905b6065))
+
 ## [0.4.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.1...v0.4.2) (2026-07-12)
 
 

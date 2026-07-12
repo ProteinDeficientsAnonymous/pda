@@ -283,6 +283,21 @@ class EventStatsOut(BaseModel):
     cancellations: list[CancellationOut] = []
 
 
+class EventAttendanceRowOut(BaseModel):
+    """One event's attendance summary for the admin attendance report."""
+
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+    attended_count: int = 0
+    no_show_count: int = 0
+    going_count: int = 0
+
+
+class AttendanceReportOut(BaseModel):
+    events: list[EventAttendanceRowOut] = []
+
+
 class AttendanceIn(BaseModel):
     attendance: AttendanceStatus
 

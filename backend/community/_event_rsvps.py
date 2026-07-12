@@ -11,17 +11,8 @@ from ninja import Router
 from ninja.responses import Status
 
 from community._event_helpers import (
-    _attended_count,
-    _attending_headcount,
-    _attending_headcount_db,
     _cancellations,
-    _cant_go_count,
     _event_out,
-    _maybe_count,
-    _no_response_count,
-    _no_show_count,
-    _not_marked_count,
-    _waitlisted_count,
     broadcast_capacity_change,
     promote_from_waitlist,
 )
@@ -34,6 +25,17 @@ from community._event_schemas import (
 )
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._public_rsvp_shared import _email_promoted_non_members
+from community._rsvp_counts import (
+    _attended_count,
+    _attending_headcount,
+    _attending_headcount_db,
+    _cant_go_count,
+    _maybe_count,
+    _no_response_count,
+    _no_show_count,
+    _not_marked_count,
+    _waitlisted_count,
+)
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventRSVP, RSVPStatus

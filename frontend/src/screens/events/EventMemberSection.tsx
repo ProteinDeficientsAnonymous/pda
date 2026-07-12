@@ -12,6 +12,7 @@ import type { Event, PendingCohostInvite } from '@/models/event';
 import { EventStatus, InvitePermission } from '@/models/event';
 import { hasPermission } from '@/models/permissions';
 import { Permission } from '@/models/permissions';
+import { buildEventLinks } from '@/utils/eventLinks';
 import { ensureHttps } from '@/utils/url';
 
 import { AddCoHostDialog } from './AddCoHostDialog';
@@ -371,14 +372,7 @@ function LocationSection({ event }: { event: Event }) {
 }
 
 function LinksSection({ event }: { event: Event }) {
-  const links: { label: string; url: string }[] = [];
-  if (event.whatsappLink) {
-    links.push({ label: 'whatsapp group', url: ensureHttps(event.whatsappLink) });
-  }
-  if (event.partifulLink) links.push({ label: 'partiful', url: ensureHttps(event.partifulLink) });
-  if (event.otherLink) {
-    links.push({ label: prettyUrl(event.otherLink), url: ensureHttps(event.otherLink) });
-  }
+  const links = buildEventLinks(event);
   const feedbackSurveys = event.surveySlugs.filter((s) => s !== event.datetimePollSlug);
 
   if (links.length === 0 && feedbackSurveys.length === 0) return null;
@@ -472,13 +466,4 @@ function InviteSection({ event }: { event: Event }) {
       />
     </div>
   );
-}
-
-// Strip scheme + optional www. and trailing slash for display. `href` should
-// still get the full URL (via ensureHttps).
-function prettyUrl(url: string): string {
-  return url
-    .replace(/^https?:\/\//i, '')
-    .replace(/^www\./i, '')
-    .replace(/\/$/, '');
 }

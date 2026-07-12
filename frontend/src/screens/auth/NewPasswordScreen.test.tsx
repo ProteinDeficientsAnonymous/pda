@@ -21,11 +21,13 @@ const VALID = 'abcd1234ABCD!';
 
 describe('NewPasswordScreen', () => {
   const completeOnboarding = vi.fn();
+  const startProfileStep = vi.fn();
 
   beforeEach(() => {
     completeOnboarding.mockReset();
+    startProfileStep.mockReset();
     vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ completeOnboarding } as never),
+      selector({ completeOnboarding, startProfileStep } as never),
     );
   });
 
@@ -57,5 +59,8 @@ describe('NewPasswordScreen', () => {
     await vi.waitFor(() => {
       expect(completeOnboarding).toHaveBeenCalledWith({ newPassword: VALID });
     });
+    // the password-reset flow shares completeOnboarding but must not enter the
+    // onboarding profile step
+    expect(startProfileStep).not.toHaveBeenCalled();
   });
 });

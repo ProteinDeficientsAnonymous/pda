@@ -5,7 +5,13 @@ import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { canManageEvent, EventStatus, EventType, EventVisibility } from '@/models/event';
+import {
+  canManageEvent,
+  canPublicRsvp,
+  EventStatus,
+  EventType,
+  EventVisibility,
+} from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
@@ -16,6 +22,7 @@ import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { EventMemberSection } from './EventMemberSection';
 import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
+import { PublicRsvpSection } from './PublicRsvpSection';
 
 function photoSrc(url: string, updatedAt: string | null): string {
   if (!updatedAt) return url;
@@ -77,7 +84,7 @@ export default function EventDetailScreen() {
         </section>
       ) : null}
 
-      {isAuthed ? <EventMemberSection event={event} /> : <LoginOrJoinSection />}
+      {isAuthed ? <EventMemberSection event={event} /> : <AnonSection event={event} />}
     </ContentContainer>
   );
 }
@@ -157,6 +164,11 @@ function ForbiddenNotice({ message }: { message: string }) {
       </section>
     </ContentContainer>
   );
+}
+
+function AnonSection({ event }: { event: Event }) {
+  if (canPublicRsvp(event)) return <PublicRsvpSection event={event} />;
+  return <LoginOrJoinSection />;
 }
 
 function LoginOrJoinSection() {

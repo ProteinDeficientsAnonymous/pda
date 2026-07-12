@@ -27,6 +27,7 @@ function makeUser(overrides?: Partial<User>): User {
     id: 'u1',
     phoneNumber: '+12125550000',
     displayName: 'Vetter Vee',
+    nickname: '',
     email: '',
     bio: '',
     pronouns: '',

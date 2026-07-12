@@ -39,6 +39,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     id: 'user-1',
     phoneNumber: '+12125551234',
     displayName: 'Alice',
+    nickname: '',
     email: 'alice@example.com',
     bio: '',
     pronouns: '',
@@ -60,7 +61,12 @@ function makeUser(overrides: Partial<User> = {}): User {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  useAuthStore.setState({
+    status: 'unauthed',
+    user: null,
+    accessToken: null,
+    profileStepActive: false,
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -482,6 +488,30 @@ describe('OnboardingGate', () => {
 
     expect(screen.getByText('guidelines page')).toBeInTheDocument();
     expect(screen.queryByText('onboarding page')).not.toBeInTheDocument();
+  });
+
+  it('keeps an onboarding-complete user on /onboarding while the profile step is active', () => {
+    const user = makeUser({ needsOnboarding: false });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/onboarding']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/onboarding" element={<div>onboarding page</div>} />
+            <Route path="/guidelines" element={<div>guidelines page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('onboarding page')).toBeInTheDocument();
+    expect(screen.queryByText('guidelines page')).not.toBeInTheDocument();
   });
 
   it('redirects an onboarding-complete user on /login to /calendar', () => {

@@ -13,6 +13,7 @@ import { extractApiError } from '@/utils/errors';
 
 import { AuthLayout } from './AuthLayout';
 import { ConsentChecklist } from './ConsentChecklist';
+import { OnboardingProfileStep } from './OnboardingProfileStep';
 import { PasswordChecklist } from './PasswordChecklist';
 import { passwordRule } from './passwordRule';
 import { useConsentChecklist } from './useConsentChecklist';
@@ -28,6 +29,9 @@ type FormValues = z.infer<typeof schema>;
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+  const startProfileStep = useAuthStore((s) => s.startProfileStep);
+  const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
+  const profileStepActive = useAuthStore((s) => s.profileStepActive);
   // prefill name for legacy users approved before email was required
   const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
   // checkboxes render only for users with outstanding consent (admin-created accounts)
@@ -58,11 +62,27 @@ export default function OnboardingScreen() {
         newPassword: values.newPassword,
         consentTypes: acceptedTypes,
       });
-      const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
-      void navigate(next, { replace: true });
+      startProfileStep();
     } catch (err) {
       setServerError(extractApiError(err, "couldn't finish onboarding — try again"));
     }
+  }
+
+  if (profileStepActive) {
+    return (
+      <AuthLayout
+        title="make it yours ✨"
+        subtitle="add a photo and a few words so folks can put a face to your name — you can always do this later"
+      >
+        <OnboardingProfileStep
+          onDone={() => {
+            finishProfileStep();
+            const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
+            void navigate(next, { replace: true });
+          }}
+        />
+      </AuthLayout>
+    );
   }
 
   return (
