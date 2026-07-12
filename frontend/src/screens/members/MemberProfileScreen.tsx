@@ -19,7 +19,7 @@ export default function MemberProfileScreen() {
     <ContentContainer>
       <header className="flex flex-col items-center gap-3 text-center">
         <Avatar member={data} />
-        <h1 className="text-2xl font-medium tracking-tight">{data.displayName || 'member'}</h1>
+        <h1 className="text-2xl font-medium tracking-tight">{data.fullName || 'member'}</h1>
         {data.nickname ? <p className="text-muted text-sm">"{data.nickname}"</p> : null}
         {data.pronouns ? <p className="text-muted text-sm">{data.pronouns}</p> : null}
         <ContactLines member={data} />
@@ -41,7 +41,7 @@ function Avatar({ member }: { member: MemberProfile }) {
       <img src={member.profilePhotoUrl} alt="" className="h-28 w-28 rounded-full object-cover" />
     );
   }
-  const initials = (member.displayName || '?').slice(0, 2).toLowerCase();
+  const initials = (member.fullName || '?').slice(0, 2).toLowerCase();
   return (
     <span
       aria-hidden="true"

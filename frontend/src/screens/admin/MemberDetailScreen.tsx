@@ -47,7 +47,7 @@ function MemberDetailView({ member }: { member: Member }) {
   async function onArchive() {
     const confirmed = await confirm({
       title: 'archive member',
-      message: `archive ${member.displayName || formatPhone(member.phoneNumber)}? they'll lose access immediately — you can restore them later by approving a new join request.`,
+      message: `archive ${member.fullName || formatPhone(member.phoneNumber)}? they'll lose access immediately — you can restore them later by approving a new join request.`,
       confirmLabel: 'archive',
       destructive: true,
     });
@@ -71,7 +71,7 @@ function MemberDetailView({ member }: { member: Member }) {
         <MemberAvatar member={member} />
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-2xl font-medium tracking-tight">
-            {member.displayName || formatPhone(member.phoneNumber)}
+            {member.fullName || formatPhone(member.phoneNumber)}
           </h1>
           <p className="text-foreground-secondary text-sm">{formatPhone(member.phoneNumber)}</p>
           {member.email ? (
@@ -214,7 +214,7 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
     }, 2000);
   }
 
-  const welcomeMessage = url ? buildWelcomeMessage(member.displayName, url) : '';
+  const welcomeMessage = url ? buildWelcomeMessage(member.fullName, url) : '';
   const smsHref = url ? buildSmsHref(member.phoneNumber, welcomeMessage) : '';
 
   return (
@@ -256,7 +256,7 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
 }
 
 function MemberAvatar({ member }: { member: Member }) {
-  const initials = (member.displayName || member.phoneNumber).slice(0, 2).toLowerCase() || '?';
+  const initials = (member.fullName || member.phoneNumber).slice(0, 2).toLowerCase() || '?';
   if (member.profilePhotoUrl) {
     return (
       <img src={member.profilePhotoUrl} alt="" className="h-28 w-28 rounded-full object-cover" />
@@ -282,7 +282,7 @@ function MemberEditForm({
   onSaved: () => void;
 }) {
   const update = useUpdateUser(member.id);
-  const [displayName, setDisplayName] = useState(member.displayName);
+  const [displayName, setDisplayName] = useState(member.fullName);
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
   const [isPaused, setIsPaused] = useState(member.isPaused);
@@ -293,7 +293,7 @@ function MemberEditForm({
     e.preventDefault();
     setError(null);
     const patch: Parameters<typeof update.mutateAsync>[0] = {};
-    if (displayName !== member.displayName) patch.displayName = displayName.trim();
+    if (displayName !== member.fullName) patch.displayName = displayName.trim();
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
     if (isPaused !== member.isPaused) patch.isPaused = isPaused;

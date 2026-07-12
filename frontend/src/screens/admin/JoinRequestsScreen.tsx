@@ -44,7 +44,7 @@ export default function JoinRequestsScreen() {
   const [filter, setFilter] = useState<Filter>(Filter.PENDING);
   const [error, setError] = useState<string | null>(null);
   const [credsFor, setCredsFor] = useState<{
-    displayName: string;
+    fullName: string;
     phoneNumber: string;
     magicLinkToken: string;
   } | null>(null);
@@ -58,7 +58,7 @@ export default function JoinRequestsScreen() {
   if (isError) return <ContentError message="couldn't load join requests — try refreshing" />;
 
   async function decideRequest(request: JoinRequestSummary, status: Decision) {
-    const name = request.displayName || formatPhone(request.phoneNumber);
+    const name = request.fullName || formatPhone(request.phoneNumber);
     const isApprove = status === JoinRequestStatus.APPROVED;
     const message = isApprove
       ? `approve ${name}? once you approve someone you can't un-approve them — are you sure?`
@@ -76,7 +76,7 @@ export default function JoinRequestsScreen() {
       const result = await decide.mutateAsync({ id: request.id, status });
       if (isApprove && result.magicLinkToken) {
         setCredsFor({
-          displayName: result.displayName,
+          fullName: result.fullName,
           phoneNumber: result.phoneNumber,
           magicLinkToken: result.magicLinkToken,
         });
@@ -87,7 +87,7 @@ export default function JoinRequestsScreen() {
   }
 
   async function unrejectRequest(request: JoinRequestSummary) {
-    const name = request.displayName || formatPhone(request.phoneNumber);
+    const name = request.fullName || formatPhone(request.phoneNumber);
     const ok = await confirm({
       title: 'un-reject request',
       message: `un-reject ${name}? this will move them back to pending review.`,
@@ -104,7 +104,7 @@ export default function JoinRequestsScreen() {
   }
 
   async function resendWelcome(request: JoinRequestSummary) {
-    const name = request.displayName || formatPhone(request.phoneNumber);
+    const name = request.fullName || formatPhone(request.phoneNumber);
     const ok = await confirm({
       title: 're-send welcome',
       message: `re-send welcome to ${name}? this generates a fresh login link and invalidates any earlier link you sent them.`,
@@ -117,7 +117,7 @@ export default function JoinRequestsScreen() {
       const result = await resend.mutateAsync(request.id);
       if (result.magicLinkToken) {
         setCredsFor({
-          displayName: result.displayName,
+          fullName: result.fullName,
           phoneNumber: result.phoneNumber,
           magicLinkToken: result.magicLinkToken,
         });
@@ -184,7 +184,7 @@ export default function JoinRequestsScreen() {
           onClose={() => {
             setCredsFor(null);
           }}
-          displayName={credsFor.displayName}
+          fullName={credsFor.fullName}
           phoneNumber={credsFor.phoneNumber}
           magicLinkToken={credsFor.magicLinkToken}
         />
@@ -214,7 +214,7 @@ function JoinRequestCard({
     <article className="border-border bg-surface rounded-lg border p-4">
       <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-medium">{request.displayName}</h2>
+          <h2 className="text-base font-medium">{request.fullName}</h2>
           <p className="text-muted text-xs">
             {formatPhone(request.phoneNumber)} · submitted{' '}
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}

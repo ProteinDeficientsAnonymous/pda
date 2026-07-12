@@ -33,7 +33,7 @@ export default function OnboardingScreen() {
   const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
   const profileStepActive = useAuthStore((s) => s.profileStepActive);
   // prefill name for legacy users approved before email was required
-  const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
+  const existingDisplayName = useAuthStore((s) => s.user?.fullName ?? '');
   // checkboxes render only for users with outstanding consent (admin-created accounts)
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();

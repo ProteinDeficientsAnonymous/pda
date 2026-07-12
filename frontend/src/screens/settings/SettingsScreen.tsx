@@ -39,7 +39,7 @@ export default function SettingsScreen() {
         <AvatarUpload />
         <InlineText
           label="display name"
-          value={user.displayName}
+          value={user.fullName}
           onSave={(v) => updateProfile({ displayName: v })}
         />
         <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
