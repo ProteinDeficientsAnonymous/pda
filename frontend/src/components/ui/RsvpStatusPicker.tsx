@@ -1,7 +1,6 @@
+import type { RsvpInputStatus } from '@/models/event';
 import { RsvpStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
-
-type RsvpInputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 
 const PILLS: { status: RsvpInputStatus; label: string }[] = [
   { status: RsvpStatus.Attending, label: "i'm going" },

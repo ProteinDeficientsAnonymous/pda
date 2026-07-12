@@ -4,14 +4,15 @@ import { Link } from 'react-router-dom';
 import { getApiStatus } from '@/api/apiErrors';
 import { type PublicRsvpOut, useSubmitPublicRsvp } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
+import { Honeypot } from '@/components/ui/Honeypot';
 import { PhoneField } from '@/components/ui/PhoneField';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
-import { type Event, type RsvpStatus } from '@/models/event';
+import { type Event, type RsvpInputStatus } from '@/models/event';
+import { optionalEmail } from '@/utils/validators';
 
 const MAX_NAME = 100;
-type Status = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 
 interface Props {
   event: Event;
@@ -42,7 +43,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [status, setStatus] = useState<Status | null>(null);
+  const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [hasPlusOne, setHasPlusOne] = useState(false);
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,7 +53,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     const next: Record<string, string> = {};
     if (!firstName.trim()) next.firstName = 'first name required';
     if (!email.trim()) next.email = 'email required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';
+    else if (optionalEmail(email)) next.email = 'not a valid email';
     if (!phone.trim()) next.phone = 'phone required';
     if (!status) next.status = 'pick a status';
     setErrors(next);
@@ -86,20 +87,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     <section aria-label="rsvp" className="border-border bg-surface mt-8 rounded-lg border p-6">
       <h2 className="mb-4 text-base font-medium">rsvp</h2>
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
-        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
-          <label htmlFor="website-hp">website (leave blank)</label>
-          <input
-            id="website-hp"
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-            value={website}
-            onChange={(e) => {
-              setWebsite(e.target.value);
-            }}
-          />
-        </div>
+        <Honeypot value={website} onChange={setWebsite} />
 
         <TextField
           label="first name"

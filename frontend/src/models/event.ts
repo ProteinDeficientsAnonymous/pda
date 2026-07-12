@@ -31,6 +31,8 @@ export const RsvpStatus = {
   CantGo: 'cant_go',
 } as const;
 
+export type RsvpInputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
+
 export const RsvpServerStatus = {
   ...RsvpStatus,
   Waitlisted: 'waitlisted',

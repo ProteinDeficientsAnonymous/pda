@@ -2,27 +2,25 @@ import { Link } from 'react-router-dom';
 
 import type { PublicRsvpOut } from '@/api/publicRsvp';
 import type { Event } from '@/models/event';
+import { RsvpServerStatus } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
-import { ensureHttps } from '@/utils/url';
+import { buildEventLinks } from '@/utils/eventLinks';
 
 interface Props {
   event: Event;
   result: PublicRsvpOut;
 }
 
-function eventLinks(event: Event): { label: string; url: string }[] {
-  const links: { label: string; url: string }[] = [];
-  if (event.whatsappLink)
-    links.push({ label: 'whatsapp group', url: ensureHttps(event.whatsappLink) });
-  if (event.partifulLink) links.push({ label: 'partiful', url: ensureHttps(event.partifulLink) });
-  if (event.otherLink) links.push({ label: 'event link', url: ensureHttps(event.otherLink) });
-  return links;
-}
+const STATUS_HEADINGS: Record<string, string> = {
+  [RsvpServerStatus.Attending]: "you're in! 🌱",
+  [RsvpServerStatus.Waitlisted]: "you're on the waitlist",
+  [RsvpServerStatus.Maybe]: "you're down as a maybe",
+  [RsvpServerStatus.CantGo]: 'thanks for letting us know',
+};
 
 export function PublicRsvpConfirmation({ event, result }: Props) {
-  const attending = result.rsvp.status === 'attending';
-  const heading = attending ? "you're in! 🌱" : "you're on the waitlist";
-  const links = eventLinks(event);
+  const heading = STATUS_HEADINGS[result.rsvp.status] ?? 'thanks for your rsvp';
+  const links = buildEventLinks(event);
   return (
     <section
       aria-label="rsvp confirmation"

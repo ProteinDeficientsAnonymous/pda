@@ -12,7 +12,13 @@ import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { type Event, RsvpServerStatus, RsvpStatus, spotsLeft } from '@/models/event';
+import {
+  type Event,
+  type RsvpInputStatus,
+  RsvpServerStatus,
+  RsvpStatus,
+  spotsLeft,
+} from '@/models/event';
 
 import { RsvpGuestList } from './RsvpGuestList';
 
@@ -20,8 +26,6 @@ interface Props {
   event: Event;
   canSeeInvited: boolean;
 }
-
-type InputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 
 export function RsvpSection({ event, canSeeInvited }: Props) {
   const setRsvp = useSetRsvp();
@@ -38,7 +42,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
 
-  async function apply(next: InputStatus) {
+  async function apply(next: RsvpInputStatus) {
     setError(null);
     try {
       if (next === myRsvp) {
@@ -69,7 +73,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     try {
       await setRsvp.mutateAsync({
         eventId: event.id,
-        status: myRsvp as InputStatus,
+        status: myRsvp as RsvpInputStatus,
         hasPlusOne: !hasPlusOne,
       });
     } catch (err) {
