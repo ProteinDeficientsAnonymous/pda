@@ -188,9 +188,18 @@ rendering tests (first vs full).
 ## PR1c — drop the transitional column
 
 - Migration dropping `display_name` from `User` and `JoinRequest`.
-- Remove `display_name` from all output/input schemas and `User.save()` sync logic.
+- Remove `display_name` from all output/input schemas and the `sync_display_name`
+  save-sync logic (`users/_name_parsing.py`), plus the `save()` overrides that call it.
 - Remove any lingering `display_name` acceptance in input schemas.
 - Grep-sweep for `display_name` / `displayName` to confirm nothing references it.
+- **Dedupe the name-resolution logic (deferred from PR1a review).** PR1a extracted the
+  save-sync into a shared helper, but the "first/last wins, else parse a bare legacy
+  `display_name`" resolution rule is still hand-rolled in three places:
+  `_resolve_name_fields` (`users/_helpers.py`, used by PATCH /me + admin patch + onboarding),
+  the inline block in `_join_request_submit.py`, and the inline block in
+  `_management.py::create_user`. Once `display_name` is dropped, the legacy-parse fallback
+  goes away entirely, so collapse these into one shared resolver (or delete the fallback
+  branch). Doing it here avoids editing three copies in lockstep while the fallback still exists.
 - Small, mostly-deletion PR.
 
 ---
