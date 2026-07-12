@@ -7,7 +7,6 @@ from uuid import UUID
 
 from config.media_proxy import media_path
 from django.db import transaction
-from django.db.models import Case, IntegerField, Sum, Value, When
 from notifications.service import (
     broadcast_cohost_change,
     broadcast_event_update,
@@ -30,9 +29,13 @@ from community._event_schemas import (
     RSVPGuestOut,
     TagOut,
 )
+from community._rsvp_counts import (
+    _attending_headcount,
+    _attending_headcount_db,
+    _waitlisted_count,
+)
 from community._shared import _authenticated_user, _members_only
 from community.models import (
-    AttendanceStatus,
     CoHostInviteStatus,
     Event,
     EventCoHostInvite,
@@ -96,75 +99,6 @@ def _find_my_rsvp(rsvps, user) -> str | None:
         if r.user_id == user.pk:
             return r.status
     return None
-
-
-def _attending_headcount(event: Event) -> int:
-    """Count attending spots from prefetched RSVPs (each attendee + their +1)."""
-    return sum(
-        1 + (1 if r.has_plus_one else 0)
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING
-    )
-
-
-def _attending_headcount_db(event: Event, exclude_user=None) -> int:
-    """Count attending spots via DB query (use inside select_for_update transactions)."""
-    qs = EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
-    if exclude_user is not None:
-        qs = qs.exclude(user=exclude_user)
-    result = qs.aggregate(
-        total=Sum(
-            Case(
-                When(has_plus_one=True, then=Value(2)),
-                default=Value(1),
-                output_field=IntegerField(),
-            )
-        )
-    )
-    return result["total"] or 0
-
-
-def _waitlisted_count(event: Event) -> int:
-    """Count waitlisted RSVPs from prefetched data."""
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.WAITLISTED)
-
-
-def _maybe_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.MAYBE)
-
-
-def _cant_go_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.CANT_GO)
-
-
-def _no_response_count(event: Event) -> int:
-    """Invited users who have no RSVP row."""
-    responded = {r.user_id for r in event.rsvps.all()}
-    return sum(1 for u in event.invited_users.all() if u.pk not in responded)
-
-
-def _attended_count(event: Event) -> int:
-    return sum(
-        1
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.ATTENDED
-    )
-
-
-def _no_show_count(event: Event) -> int:
-    return sum(
-        1
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.NO_SHOW
-    )
-
-
-def _not_marked_count(event: Event) -> int:
-    return sum(
-        1
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.UNKNOWN
-    )
 
 
 def _cancellations(event: Event) -> list[CancellationOut]:

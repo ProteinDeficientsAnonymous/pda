@@ -1,6 +1,7 @@
 // Members tab body — the actual list/filter/sort/create UI. The outer
 // MembersScreen shell just switches between this and the RolesTab.
 
+import { format } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -15,11 +16,12 @@ import { formatPhone } from '@/utils/formatPhone';
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
 
-type SortKey = 'name' | 'newest';
+type SortKey = 'name' | 'newest' | 'lastAttended';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'name', label: 'name (a–z)' },
   { value: 'newest', label: 'newest first' },
+  { value: 'lastAttended', label: 'last attended' },
 ];
 
 export function MembersTab() {
@@ -307,17 +309,27 @@ function filterAndSort(
   if (selectedRoles.size > 0) {
     result = result.filter((m) => m.roles.some((r) => selectedRoles.has(r.name)));
   }
-  const sorted = [...result];
+  return sortMembers(result, sort);
+}
+
+function sortMembers(members: Member[], sort: SortKey): Member[] {
+  const sorted = [...members];
   if (sort === 'name') {
     sorted.sort((a, b) =>
       (a.fullName || a.phoneNumber)
         .toLowerCase()
         .localeCompare((b.fullName || b.phoneNumber).toLowerCase()),
     );
-  } else {
-    sorted.reverse();
+    return sorted;
   }
-  return sorted;
+  if (sort === 'lastAttended') {
+    // Most recent attendance first; members who never attended sink to the bottom.
+    sorted.sort((a, b) => (b.lastAttendedAt?.getTime() ?? 0) - (a.lastAttendedAt?.getTime() ?? 0));
+    return sorted;
+  }
+  // 'newest' — the list arrives oldest-first (phone_number order ≈ creation),
+  // so reverse approximates newest-first, matching the prior behavior.
+  return sorted.reverse();
 }
 
 function MemberRow({ member }: { member: Member }) {
@@ -353,6 +365,11 @@ function MemberRow({ member }: { member: Member }) {
         ) : (
           <p className="text-foreground-tertiary/60 truncate text-xs italic">no email</p>
         )}
+        <p className="text-foreground-tertiary/80 truncate text-xs">
+          {member.lastAttendedAt
+            ? `last attended ${format(member.lastAttendedAt, 'MMM d, yyyy').toLowerCase()}`
+            : 'never attended'}
+        </p>
       </div>
       <div className="flex shrink-0 flex-wrap justify-end gap-1">
         {member.roles.map((role) => (

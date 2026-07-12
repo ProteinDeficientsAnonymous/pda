@@ -602,6 +602,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/attendance-report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attendance Report
+         * @description Per-event attendance summary, newest first, for events with any mark.
+         */
+        get: operations["community__attendance_report_attendance_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/": {
         parameters: {
             query?: never;
@@ -1705,6 +1725,14 @@ export interface components {
         AttendanceIn: {
             attendance: components["schemas"]["AttendanceStatus"];
         };
+        /** AttendanceReportOut */
+        AttendanceReportOut: {
+            /**
+             * Events
+             * @default []
+             */
+            events: components["schemas"]["EventAttendanceRowOut"][];
+        };
         /**
          * AttendanceStatus
          * @enum {string}
@@ -1964,6 +1992,33 @@ export interface components {
         ErrorReportOut: {
             /** Detail */
             detail: string;
+        };
+        /**
+         * EventAttendanceRowOut
+         * @description One event's attendance summary for the admin attendance report.
+         */
+        EventAttendanceRowOut: {
+            /**
+             * Attended Count
+             * @default 0
+             */
+            attended_count: number;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Going Count
+             * @default 0
+             */
+            going_count: number;
+            /**
+             * No Show Count
+             * @default 0
+             */
+            no_show_count: number;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
         };
         /** EventCommentListOut */
         EventCommentListOut: {
@@ -3706,6 +3761,8 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /** Last Attended */
+            last_attended?: string | null;
             /**
              * Last Name
              * @default
@@ -5503,6 +5560,35 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_report_attendance_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceReportOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
