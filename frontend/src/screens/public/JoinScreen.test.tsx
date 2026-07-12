@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -35,6 +35,11 @@ const defaultSubmitResult = {
   isError: false,
   mutateAsync: vi.fn(),
 } as unknown as ReturnType<typeof useSubmitJoinRequest>;
+
+// One-shot fill: typing costs ~350ms per test (245-option country select re-renders each keystroke), tripping the 5s timeout under load.
+function fillPhone(value = '(555) 123-4567') {
+  fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value } });
+}
 
 function renderWith(component: ReactElement, initialRoute = '/join') {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -102,7 +107,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/first name/i), 'Jane');
     await user.type(screen.getByLabelText(/last name/i), 'Smith');
-    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    fillPhone();
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
@@ -124,7 +129,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/first name/i), 'Jane');
     await user.type(screen.getByLabelText(/last name/i), 'Smith');
-    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    fillPhone();
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
@@ -153,7 +158,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/first name/i), 'Jane');
     await user.type(screen.getByLabelText(/last name/i), 'Smith');
-    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    fillPhone();
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('button', { name: /submit request/i }));
@@ -185,7 +190,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/first name/i), 'Jane');
     await user.type(screen.getByLabelText(/last name/i), 'Smith');
-    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    fillPhone();
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
@@ -208,7 +213,7 @@ describe('JoinScreen', () => {
 
     await user.type(screen.getByLabelText(/first name/i), 'Jane');
     await user.type(screen.getByLabelText(/last name/i), 'Smith');
-    await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
+    fillPhone();
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
@@ -232,7 +237,7 @@ describe('JoinScreen', () => {
     // Fill out form
     await user.type(screen.getByLabelText(/first name/i), 'Alex');
     await user.type(screen.getByLabelText(/last name/i), 'Jones');
-    await user.type(screen.getByLabelText(/phone number/i), '+15559876543');
+    fillPhone();
     await user.type(screen.getByLabelText(/email/i), 'alex@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
     await user.click(screen.getByRole('checkbox', { name: /community guidelines/i }));
@@ -254,7 +259,7 @@ describe('email validation', () => {
     renderWith(<JoinScreen />);
     await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/last name/i), 'Tester');
-    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    fillPhone();
     await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
     await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
     expect(await screen.findByText(/email required/i)).toBeInTheDocument();
@@ -270,7 +275,7 @@ describe('email validation', () => {
     renderWith(<JoinScreen />);
     await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/last name/i), 'Tester');
-    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    fillPhone();
     await userEvent.type(screen.getByLabelText(/email/i), 'Tester@Example.com');
     await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
     await userEvent.click(screen.getByLabelText(/i have read and agree to the/i));

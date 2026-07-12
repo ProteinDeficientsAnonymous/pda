@@ -1,3 +1,10 @@
+## [0.8.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.8.1...v0.8.2) (2026-07-12)
+
+
+### Bug Fixes
+
+* **test:** stop JoinScreen phone field flake by filling in one shot (Issue 731) ([#735](https://github.com/ProteinDeficientsAnonymous/pda/issues/735)) ([89b55e4](https://github.com/ProteinDeficientsAnonymous/pda/commit/89b55e4382d9f9336e6e1b25a68ecd1a9c9f4d4a))
+
 ## [0.8.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.8.0...v0.8.1) (2026-07-12)
 
 
