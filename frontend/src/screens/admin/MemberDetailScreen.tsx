@@ -293,9 +293,14 @@ function MemberEditForm({
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setError(null);
+    const nextFirstName = firstName.trim();
+    if (!nextFirstName) {
+      setError('first name required');
+      return;
+    }
     const patch: Parameters<typeof update.mutateAsync>[0] = {};
-    if (firstName !== member.firstName) patch.firstName = firstName.trim();
-    if (lastName !== member.lastName) patch.lastName = lastName.trim();
+    if (nextFirstName !== member.firstName) patch.firstName = nextFirstName;
+    if (lastName.trim() !== member.lastName) patch.lastName = lastName.trim();
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
     if (isPaused !== member.isPaused) patch.isPaused = isPaused;

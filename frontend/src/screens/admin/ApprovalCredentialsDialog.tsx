@@ -51,7 +51,6 @@ export function ApprovalCredentialsDialog({
   const welcomeMessage = templateQ.data
     ? renderWelcomeMessage(templateQ.data.body, {
         name: firstName,
-        fullName,
         senderName,
         magicLink: magicLinkUrl,
       })

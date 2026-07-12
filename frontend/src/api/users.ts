@@ -107,7 +107,6 @@ export function useUsers() {
 
 export interface CreateUserInput {
   phoneNumber: string;
-  displayName?: string;
   email?: string;
   roleId?: string;
 }
@@ -125,7 +124,6 @@ interface WireCreateResult {
   phone_number: string;
   display_name: string;
   first_name?: string;
-  last_name?: string;
   full_name?: string;
   magic_link_token: string;
 }
@@ -135,7 +133,6 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: async (input: CreateUserInput): Promise<CreateUserResult> => {
       const body: Record<string, unknown> = { phone_number: input.phoneNumber };
-      if (input.displayName !== undefined) body.display_name = input.displayName;
       if (input.email !== undefined) body.email = input.email;
       if (input.roleId !== undefined) body.role_id = input.roleId;
       const { data } = await apiClient.post<WireCreateResult>('/api/auth/create-user/', body);
@@ -307,8 +304,6 @@ export interface MemberProfile {
 interface WireMemberProfile {
   id: string;
   display_name: string;
-  first_name?: string;
-  last_name?: string;
   full_name?: string;
   nickname?: string;
   phone_number: string;
@@ -347,8 +342,6 @@ export interface DirectoryMember {
 interface WireDirectoryMember {
   id: string;
   display_name: string;
-  first_name?: string;
-  last_name?: string;
   full_name?: string;
   phone_number: string;
   email: string;

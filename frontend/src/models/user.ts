@@ -60,7 +60,7 @@ export interface User {
 export function passwordSetupRedirect(user: User | null): '/new-password' | '/onboarding' | null {
   if (!user) return null;
   if (!user.needsOnboarding && !user.needsPasswordReset) return null;
-  const hasNameAndEmail = user.firstName.length > 0 && !!user.email;
+  const hasNameAndEmail = user.fullName.length > 0 && !!user.email;
   return hasNameAndEmail ? '/new-password' : '/onboarding';
 }
 

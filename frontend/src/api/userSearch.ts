@@ -13,8 +13,6 @@ export interface MemberSearchResult {
 interface Wire {
   id: string;
   display_name: string;
-  first_name?: string;
-  last_name?: string;
   full_name?: string;
   phone_number: string;
 }

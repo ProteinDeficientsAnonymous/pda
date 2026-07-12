@@ -1,10 +1,10 @@
-const displayNameRe = /^[\p{L}\p{M}' .-]+$/u;
+export const nameCharsRe = /^[\p{L}\p{M}' .-]+$/u;
 
 export function displayName(value: string | null | undefined): string | null {
   if (!value || value.trim() === '') {
     return 'Required';
   }
-  if (!displayNameRe.test(value.trim())) {
+  if (!nameCharsRe.test(value.trim())) {
     return 'letters, spaces, hyphens, and apostrophes only';
   }
   if (value.trim().length > 64) {
@@ -17,7 +17,7 @@ export function optionalDisplayName(value: string | null | undefined): string | 
   if (!value || value.trim() === '') {
     return null;
   }
-  if (!displayNameRe.test(value.trim())) {
+  if (!nameCharsRe.test(value.trim())) {
     return 'letters, spaces, hyphens, and apostrophes only';
   }
   if (value.trim().length > 64) {

@@ -13,14 +13,12 @@ export function buildWelcomeMessage(firstName: string | null | undefined, url: s
 
 export interface WelcomeMessageVars {
   name: string;
-  fullName: string;
   senderName: string;
   magicLink: string;
 }
 
 export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars): string {
   return template
-    .replaceAll('${FULL_NAME}', vars.fullName)
     .replaceAll('${NAME}', vars.name)
     .replaceAll('${SENDER_NAME}', vars.senderName)
     .replaceAll('${MAGIC_LINK}', vars.magicLink);

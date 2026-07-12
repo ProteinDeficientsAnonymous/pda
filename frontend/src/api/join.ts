@@ -148,8 +148,6 @@ interface WireAnswer {
 interface WireJoinRequest {
   id: string;
   display_name: string;
-  first_name?: string;
-  last_name?: string;
   full_name?: string;
   phone_number: string;
   answers: WireAnswer[];
@@ -299,7 +297,6 @@ interface WireDecision {
   id: string;
   display_name: string;
   first_name?: string;
-  last_name?: string;
   full_name?: string;
   phone_number: string;
   status: JoinRequestStatus;

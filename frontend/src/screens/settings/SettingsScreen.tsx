@@ -41,6 +41,7 @@ export default function SettingsScreen() {
           label="first name"
           value={user.firstName}
           onSave={(v) => updateProfile({ firstName: v })}
+          required
         />
         <InlineText
           label="last name"
@@ -154,11 +155,13 @@ function InlineText({
   value,
   onSave,
   placeholder,
+  required = false,
 }: {
   label: string;
   value: string;
   onSave: (v: string) => Promise<void>;
   placeholder?: string;
+  required?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -166,6 +169,10 @@ function InlineText({
   const [error, setError] = useState<string | null>(null);
 
   async function commit() {
+    if (required && !draft.trim()) {
+      setError(`${label} required`);
+      return;
+    }
     if (draft.trim() === value) {
       setEditing(false);
       return;
