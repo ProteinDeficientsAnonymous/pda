@@ -30,7 +30,9 @@ const mockUseUsers = vi.mocked(useUsers);
 const baseUser: User = {
   id: 'me',
   phoneNumber: '+15551230000',
-  displayName: 'Admin User',
+  firstName: 'Admin',
+  lastName: 'User',
+  fullName: 'Admin User',
   nickname: '',
   email: 'admin@example.com',
   bio: '',
@@ -67,7 +69,9 @@ function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
 function makeMember(overrides: Partial<Member> = {}): Member {
   return {
     id: 'member-1',
-    displayName: 'Ada',
+    firstName: 'Ada',
+    lastName: '',
+    fullName: 'Ada',
     phoneNumber: '+15551230001',
     email: '',
     bio: '',
@@ -116,8 +120,13 @@ describe('MembersScreen', () => {
   it('displays member display names from the users query', () => {
     mockUsersResult({
       data: [
-        makeMember({ id: 'm1', displayName: 'Ada Lovelace' }),
-        makeMember({ id: 'm2', displayName: 'Grace Hopper' }),
+        makeMember({ id: 'm1', firstName: 'Ada', lastName: 'Lovelace', fullName: 'Ada Lovelace' }),
+        makeMember({
+          id: 'm2',
+          firstName: 'Grace',
+          lastName: 'Hopper',
+          fullName: 'Grace Hopper',
+        }),
       ],
     });
 
@@ -130,8 +139,18 @@ describe('MembersScreen', () => {
   it('filters members by user id prefix when searching', async () => {
     mockUsersResult({
       data: [
-        makeMember({ id: 'abc12345-aaaa-bbbb-cccc-dddddddddddd', displayName: 'Ada Lovelace' }),
-        makeMember({ id: 'def67890-eeee-ffff-1111-222222222222', displayName: 'Grace Hopper' }),
+        makeMember({
+          id: 'abc12345-aaaa-bbbb-cccc-dddddddddddd',
+          firstName: 'Ada',
+          lastName: 'Lovelace',
+          fullName: 'Ada Lovelace',
+        }),
+        makeMember({
+          id: 'def67890-eeee-ffff-1111-222222222222',
+          firstName: 'Grace',
+          lastName: 'Hopper',
+          fullName: 'Grace Hopper',
+        }),
       ],
     });
 

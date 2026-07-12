@@ -69,7 +69,9 @@ import SettingsScreen from './SettingsScreen';
 const TEST_USER: User = {
   id: 'u1',
   phoneNumber: '+12125550001',
-  displayName: 'Test User',
+  firstName: 'Test',
+  lastName: 'User',
+  fullName: 'Test User',
   nickname: '',
   email: 'test@example.com',
   bio: '',

@@ -26,7 +26,9 @@ function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'u1',
     phoneNumber: '+12125550001',
-    displayName: '',
+    firstName: '',
+    lastName: '',
+    fullName: '',
     nickname: '',
     email: '',
     bio: '',

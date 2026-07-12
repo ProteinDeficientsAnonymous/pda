@@ -14,7 +14,7 @@ vi.mock('@/api/users', () => ({
 
 const BASE: MemberProfile = {
   id: 'u1',
-  displayName: 'Alex',
+  fullName: 'Alex',
   nickname: '',
   phoneNumber: '',
   email: '',

@@ -35,7 +35,9 @@ function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'user-1',
     phoneNumber: '+12125551234',
-    displayName: 'alice',
+    firstName: 'alice',
+    lastName: '',
+    fullName: 'alice',
     nickname: '',
     email: 'alice@example.com',
     bio: '',
@@ -176,7 +178,7 @@ describe('FeedbackButton', () => {
   it('never sends user display name, phone, or id from the client — backend derives identity from auth', async () => {
     useAuthStore.setState({
       status: 'authed',
-      user: makeUser({ displayName: 'alice smith' }),
+      user: makeUser({ firstName: 'alice', lastName: 'smith', fullName: 'alice smith' }),
       accessToken: 'tok',
     });
     const user = userEvent.setup();

@@ -82,7 +82,9 @@ const BASE_EVENT: Event = {
 const CREATOR: User = {
   id: 'user-creator',
   phoneNumber: '+12125550001',
-  displayName: 'Alice',
+  firstName: 'Alice',
+  lastName: '',
+  fullName: 'Alice',
   nickname: '',
   email: '',
   bio: '',
@@ -102,7 +104,12 @@ const CREATOR: User = {
   roles: [],
 };
 
-const STRANGER: User = { ...CREATOR, id: 'user-stranger', displayName: 'Stranger' };
+const STRANGER: User = {
+  ...CREATOR,
+  id: 'user-stranger',
+  firstName: 'Stranger',
+  fullName: 'Stranger',
+};
 
 function renderSection(event: Event) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -127,7 +134,7 @@ const ACCEPTED_COHOST_EVENT: Event = {
   coHostInviteIds: ['inv-accepted-1'],
 };
 
-const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', displayName: 'Bob' };
+const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
 
 describe('EventMemberSection — accepted host row', () => {
   it('renders × on accepted co-host chip for host viewer', () => {

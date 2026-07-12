@@ -88,7 +88,9 @@ export function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'user1',
     phoneNumber: '+12125550001',
-    displayName: 'Test User',
+    firstName: 'Test',
+    lastName: 'User',
+    fullName: 'Test User',
     nickname: '',
     email: '',
     bio: '',
