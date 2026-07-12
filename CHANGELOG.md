@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.0...v0.4.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **events,notifications:** surface silent frontend failures (Issues 633, 634, 635) ([#714](https://github.com/ProteinDeficientsAnonymous/pda/issues/714)) ([8861a71](https://github.com/ProteinDeficientsAnonymous/pda/commit/8861a71a153acce866dc767b72b17a1ff20b7f7c))
+
 # [0.4.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.3.0...v0.4.0) (2026-07-12)
 
 
