@@ -52,6 +52,7 @@ describe('useUsers', () => {
         {
           id: 'u1',
           display_name: 'Ada',
+          full_name: 'Ada',
           phone_number: '+15551230001',
           email: 'ada@example.com',
           bio: '',
@@ -82,7 +83,7 @@ describe('useUsers', () => {
     expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/');
     expect(result.current.data).toHaveLength(1);
     const [member] = result.current.data!;
-    expect(member?.displayName).toBe('Ada');
+    expect(member?.fullName).toBe('Ada');
     expect(member?.phoneNumber).toBe('+15551230001');
     expect(member?.email).toBe('ada@example.com');
     expect(member?.showPhone).toBe(true);
@@ -126,6 +127,7 @@ describe('useCreateUser', () => {
         id: 'u2',
         phone_number: '+15551230002',
         display_name: 'Grace',
+        full_name: 'Grace',
         magic_link_token: 'magic-abc',
       },
     });
@@ -150,7 +152,7 @@ describe('useCreateUser', () => {
     expect(created).toEqual({
       id: 'u2',
       phoneNumber: '+15551230002',
-      displayName: 'Grace',
+      fullName: 'Grace',
       magicLinkToken: 'magic-abc',
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));

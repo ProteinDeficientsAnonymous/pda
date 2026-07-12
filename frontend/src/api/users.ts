@@ -18,7 +18,7 @@ export interface MemberRole {
 
 export interface Member {
   id: string;
-  displayName: string;
+  fullName: string;
   phoneNumber: string;
   email: string;
   bio: string;
@@ -44,6 +44,9 @@ interface WireRole {
 interface WireMember {
   id: string;
   display_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   phone_number: string;
   email?: string;
   bio?: string;
@@ -69,7 +72,7 @@ function mapRole(r: WireRole): MemberRole {
 function fromWire(w: WireMember): Member {
   return {
     id: w.id,
-    displayName: w.display_name,
+    fullName: w.full_name ?? w.display_name ?? '',
     phoneNumber: w.phone_number,
     email: w.email ?? '',
     bio: w.bio ?? '',
@@ -108,7 +111,7 @@ export interface CreateUserInput {
 export interface CreateUserResult {
   id: string;
   phoneNumber: string;
-  displayName: string;
+  fullName: string;
   magicLinkToken: string;
 }
 
@@ -116,6 +119,9 @@ interface WireCreateResult {
   id: string;
   phone_number: string;
   display_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   magic_link_token: string;
 }
 
@@ -131,7 +137,7 @@ export function useCreateUser() {
       return {
         id: data.id,
         phoneNumber: data.phone_number,
-        displayName: data.display_name,
+        fullName: data.full_name ?? data.display_name ?? '',
         magicLinkToken: data.magic_link_token,
       };
     },
@@ -280,7 +286,7 @@ export function useUpdateMemberRoles(userId: string) {
 
 export interface MemberProfile {
   id: string;
-  displayName: string;
+  fullName: string;
   nickname: string;
   phoneNumber: string;
   email: string;
@@ -293,6 +299,9 @@ export interface MemberProfile {
 interface WireMemberProfile {
   id: string;
   display_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   nickname?: string;
   phone_number: string;
   email: string;
@@ -305,7 +314,7 @@ interface WireMemberProfile {
 function fromWireProfile(w: WireMemberProfile): MemberProfile {
   return {
     id: w.id,
-    displayName: w.display_name,
+    fullName: w.full_name ?? w.display_name ?? '',
     nickname: w.nickname ?? '',
     phoneNumber: w.phone_number,
     email: w.email,
@@ -321,7 +330,7 @@ function fromWireProfile(w: WireMemberProfile): MemberProfile {
 
 export interface DirectoryMember {
   id: string;
-  displayName: string;
+  fullName: string;
   phoneNumber: string;
   email: string;
   profilePhotoUrl: string;
@@ -330,6 +339,9 @@ export interface DirectoryMember {
 interface WireDirectoryMember {
   id: string;
   display_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
   phone_number: string;
   email: string;
   profile_photo_url: string;
@@ -342,7 +354,7 @@ export function useMembersDirectory() {
       const { data } = await apiClient.get<WireDirectoryMember[]>('/api/auth/users/directory/');
       return data.map<DirectoryMember>((w) => ({
         id: w.id,
-        displayName: w.display_name,
+        fullName: w.full_name ?? w.display_name ?? '',
         phoneNumber: w.phone_number,
         email: w.email,
         profilePhotoUrl: w.profile_photo_url,

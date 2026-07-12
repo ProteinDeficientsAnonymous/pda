@@ -44,6 +44,7 @@ describe('useJoinRequests', () => {
         {
           id: 'jr-1',
           display_name: 'Alex Smith',
+          full_name: 'Alex Smith',
           phone_number: '+12125551234',
           answers: [{ question_id: 'q-1', label: 'Why join?', answer: 'Community' }],
           submitted_at: '2024-04-01T09:00:00Z',
@@ -61,7 +62,7 @@ describe('useJoinRequests', () => {
     expect(result.current.data).toEqual([
       {
         id: 'jr-1',
-        displayName: 'Alex Smith',
+        fullName: 'Alex Smith',
         phoneNumber: '+12125551234',
         answers: [{ questionId: 'q-1', label: 'Why join?', answer: 'Community' }],
         submittedAt: '2024-04-01T09:00:00Z',
