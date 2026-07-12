@@ -16,10 +16,15 @@ PASSWORD = "testpass123"
 @dataclass
 class SeedUser:
     phone_number: str
-    display_name: str
+    first_name: str
     is_superuser: bool
+    last_name: str = ""
     email: str = ""
     bio: str = ""
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
 
 
 @dataclass
@@ -52,11 +57,16 @@ class SeedRSVP:
 
 @dataclass
 class SeedJoinRequest:
-    display_name: str
+    first_name: str
     phone_number: str
     answers: dict[str, str]
     status: str
+    last_name: str = ""
     decided_days_ago: int | None = None
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
 
 
 @dataclass
@@ -71,34 +81,39 @@ class SeedJoinFormQuestion:
 SEED_USERS = [
     SeedUser(
         phone_number="+17025550001",
-        display_name="Seed Admin",
+        first_name="Seed",
+        last_name="Admin",
         is_superuser=True,
         email="admin@pda.test",
         bio="org admin — ping me if anything's broken 🌿",
     ),
     SeedUser(
         phone_number="+17025550002",
-        display_name="Seed Member",
+        first_name="Seed",
+        last_name="Member",
         is_superuser=False,
         email="member@pda.test",
         bio="vegan six years, big into potlucks and mutual aid.",
     ),
     SeedUser(
         phone_number="+17025550003",
-        display_name="Jamie Okafor",
+        first_name="Jamie",
+        last_name="Okafor",
         is_superuser=False,
         email="jamie@pda.test",
         bio="food not bombs volunteer. cook, eat, organize.",
     ),
     SeedUser(
         phone_number="+17025550004",
-        display_name="Rin Takahashi",
+        first_name="Rin",
+        last_name="Takahashi",
         is_superuser=False,
         email="rin@pda.test",
     ),
     SeedUser(
         phone_number="+17025550005",
-        display_name="Ash Morales",
+        first_name="Ash",
+        last_name="Morales",
         is_superuser=False,
         email="ash@pda.test",
         bio="plant-based chef, always down to swap recipes.",
@@ -230,7 +245,8 @@ SEED_FAQ = {
 
 SEED_JOIN_REQUESTS = [
     SeedJoinRequest(
-        display_name="Alex Rivera",
+        first_name="Alex",
+        last_name="Rivera",
         phone_number="+17025550010",
         answers={
             "Why do you want to join?": "I've been vegan for two years and want to connect with community.",
@@ -239,7 +255,8 @@ SEED_JOIN_REQUESTS = [
         status=JoinRequestStatus.PENDING,
     ),
     SeedJoinRequest(
-        display_name="Jordan Chen",
+        first_name="Jordan",
+        last_name="Chen",
         phone_number="+17025550011",
         answers={
             "Why do you want to join?": "Looking for local vegan friends and events.",
@@ -249,7 +266,8 @@ SEED_JOIN_REQUESTS = [
         decided_days_ago=5,
     ),
     SeedJoinRequest(
-        display_name="Sam Taylor",
+        first_name="Sam",
+        last_name="Taylor",
         phone_number="+17025550012",
         answers={
             "Why do you want to join?": "Curious about veganism.",
@@ -258,7 +276,8 @@ SEED_JOIN_REQUESTS = [
         decided_days_ago=3,
     ),
     SeedJoinRequest(
-        display_name="Priya Raghavendra-Nakamura",
+        first_name="Priya",
+        last_name="Raghavendra-Nakamura",
         phone_number="+17025550013",
         answers={
             "Why do you want to join?": (
@@ -272,7 +291,7 @@ SEED_JOIN_REQUESTS = [
         status=JoinRequestStatus.PENDING,
     ),
     SeedJoinRequest(
-        display_name="Mo",
+        first_name="Mo",
         phone_number="+442079460958",
         answers={
             "Why do you want to join?": "moving to the area next month and want to plug in before i arrive.",
@@ -281,7 +300,8 @@ SEED_JOIN_REQUESTS = [
         status=JoinRequestStatus.PENDING,
     ),
     SeedJoinRequest(
-        display_name="Riley Okonkwo-Vasquez",
+        first_name="Riley",
+        last_name="Okonkwo-Vasquez",
         phone_number="+17025550015",
         answers={
             "Why do you want to join?": "food not bombs volunteer, interested in mutual aid + vegan outreach.",
@@ -290,7 +310,8 @@ SEED_JOIN_REQUESTS = [
         status=JoinRequestStatus.PENDING,
     ),
     SeedJoinRequest(
-        display_name="Taylor Kim",
+        first_name="Taylor",
+        last_name="Kim",
         phone_number="+17025550016",
         answers={
             "Why do you want to join?": "just curious — not vegan yet but open to learning.",
@@ -298,7 +319,8 @@ SEED_JOIN_REQUESTS = [
         status=JoinRequestStatus.PENDING,
     ),
     SeedJoinRequest(
-        display_name="Devon Alvarez",
+        first_name="Devon",
+        last_name="Alvarez",
         phone_number="+17025550017",
         answers={
             "Why do you want to join?": "longtime abolitionist looking for aligned community.",

@@ -2848,7 +2848,10 @@ export interface components {
             answers: {
                 [key: string]: string;
             };
-            /** Display Name */
+            /**
+             * Display Name
+             * @default
+             */
             display_name: string;
             /**
              * Email
@@ -2856,10 +2859,20 @@ export interface components {
              */
             email: string;
             /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
              * Guidelines Consent
              * @default false
              */
             guidelines_consent: boolean;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
             /**
@@ -2943,6 +2956,10 @@ export interface components {
             display_name?: string | null;
             /** Email */
             email?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
             /** Pronouns */
@@ -2963,8 +2980,23 @@ export interface components {
              * @default
              */
             email: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /**
              * Phone Number
              * @default
@@ -2990,8 +3022,23 @@ export interface components {
              * @default
              */
             email: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /**
              * Login Link Requested
              * @default false
@@ -3038,6 +3085,10 @@ export interface components {
             display_name?: string | null;
             /** Email */
             email?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
             /** New Password */
             new_password: string;
             /** Pronouns */
@@ -3114,13 +3165,18 @@ export interface components {
              * Format: email
              */
             email: string;
+            /** First Name */
+            first_name: string;
             /**
              * Has Plus One
              * @default false
              */
             has_plus_one: boolean;
-            /** Name */
-            name: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
             /** Status */
@@ -3493,6 +3549,16 @@ export interface components {
             display_name: string;
             /** Email */
             email?: string | null;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
             /** Role Id */
@@ -3502,8 +3568,23 @@ export interface components {
         UserCreateOut: {
             /** Display Name */
             display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Magic Link Token */
             magic_link_token: string;
             /** Phone Number */
@@ -3528,6 +3609,16 @@ export interface components {
              * @default
              */
             email: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
             /**
@@ -3540,6 +3631,11 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /**
              * Login Link Requested
              * @default false
@@ -3603,8 +3699,12 @@ export interface components {
             display_name?: string | null;
             /** Email */
             email?: string | null;
+            /** First Name */
+            first_name?: string | null;
             /** Is Paused */
             is_paused?: boolean | null;
+            /** Last Name */
+            last_name?: string | null;
             /** Phone Number */
             phone_number?: string | null;
         };
@@ -3617,8 +3717,23 @@ export interface components {
         UserSearchOut: {
             /** Display Name */
             display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Phone Number */
             phone_number: string;
         };

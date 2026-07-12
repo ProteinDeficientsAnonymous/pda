@@ -72,6 +72,9 @@ class UserOut(BaseModel):
     id: str
     phone_number: str
     display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     email: str = ""
     bio: str = ""
     pronouns: str = ""
@@ -96,6 +99,9 @@ class UserOut(BaseModel):
             id=str(user.id),
             phone_number=user.phone_number,
             display_name=user.display_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            full_name=user.full_name,
             email=user.email or "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
@@ -127,6 +133,9 @@ class UserOut(BaseModel):
 class MemberProfileOut(BaseModel):
     id: str
     display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     phone_number: str
     email: str = ""
     bio: str = ""
@@ -138,6 +147,9 @@ class MemberProfileOut(BaseModel):
 class MemberDirectoryOut(BaseModel):
     id: str
     display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     phone_number: str = ""
     email: str = ""
     profile_photo_url: str = ""
@@ -146,6 +158,8 @@ class MemberDirectoryOut(BaseModel):
 class UserCreateIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     display_name: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
+    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     role_id: str | None = None
 
@@ -154,6 +168,9 @@ class UserCreateOut(BaseModel):
     id: str
     phone_number: str
     display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     magic_link_token: str
 
 
@@ -178,12 +195,16 @@ class BulkUserCreateOut(BaseModel):
 class UserPatchIn(BaseModel):
     phone_number: str | None = Field(default=None, max_length=FieldLimit.PHONE)
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
+    last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     is_paused: bool | None = None
 
 
 class MePatchIn(BaseModel):
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
+    last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     bio: str | None = Field(default=None, max_length=FieldLimit.BIO)
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
@@ -241,6 +262,8 @@ class AcceptConsentsIn(BaseModel):
 class OnboardingIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
     display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
+    last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     consent_types: list[ConsentType] = Field(default_factory=list)
@@ -249,4 +272,7 @@ class OnboardingIn(BaseModel):
 class UserSearchOut(BaseModel):
     id: str
     display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     phone_number: str

@@ -66,7 +66,8 @@ class Command(BaseCommand):
     def _create_or_skip_user(self, data, admin_role, member_role) -> tuple[User, bool]:
         """Create user from seed data or return existing. Returns (user, created)."""
         defaults: dict[str, object] = {
-            "display_name": data.display_name,
+            "first_name": data.first_name,
+            "last_name": data.last_name,
             "email": data.email,
             "bio": data.bio,
             "is_member": True,
@@ -201,12 +202,13 @@ class Command(BaseCommand):
                     defaults["rejected_at"] = decided_at
                     defaults["rejected_by"] = admin_user
             _, created = JoinRequest.objects.get_or_create(
-                display_name=data.display_name,
+                first_name=data.first_name,
+                last_name=data.last_name,
                 phone_number=data.phone_number,
                 defaults=defaults,
             )
             label = "Created" if created else "Already exists"
-            self.stdout.write(f"  {label} join request: {data.display_name}")
+            self.stdout.write(f"  {label} join request: {data.full_name}")
 
     def _seed_content(self) -> None:
         _seed_singleton(HomePage, SEED_HOME_PAGE, ("content_html",), self)
@@ -226,4 +228,4 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write("Credentials (all seed users):")
         for data in SEED_USERS:
-            self.stdout.write(f"  {data.display_name}: {data.phone_number} / {PASSWORD}")
+            self.stdout.write(f"  {data.full_name}: {data.phone_number} / {PASSWORD}")

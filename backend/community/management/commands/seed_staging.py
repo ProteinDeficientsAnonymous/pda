@@ -83,7 +83,7 @@ class Command(BaseCommand):
             user, created = User.objects.get_or_create(
                 phone_number=perm_phone(index),
                 defaults={
-                    "display_name": f"perm: {key}",
+                    "first_name": f"perm: {key}",
                     "email": perm_email(key),
                     "is_member": True,
                     "needs_onboarding": False,
@@ -111,7 +111,8 @@ class Command(BaseCommand):
         user.sms_consent_at = now if sms_done else None
         user.needs_onboarding = False
         user.onboarded_at = now
-        user.display_name = condition_label(combo)
+        user.first_name = condition_label(combo)
+        user.last_name = ""
         user.save(
             update_fields=[
                 "email",
@@ -119,7 +120,8 @@ class Command(BaseCommand):
                 "sms_consent_at",
                 "needs_onboarding",
                 "onboarded_at",
-                "display_name",
+                "first_name",
+                "last_name",
             ]
         )
 
@@ -130,7 +132,7 @@ class Command(BaseCommand):
         for index, combo in enumerate(condition_combinations()):
             user, created = User.objects.get_or_create(
                 phone_number=cond_phone(index),
-                defaults={"display_name": condition_label(combo), "is_member": True},
+                defaults={"first_name": condition_label(combo), "is_member": True},
             )
             self._apply_condition_user_fields(user, combo, index, now)
             if created:

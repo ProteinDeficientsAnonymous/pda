@@ -18,10 +18,12 @@ from users._helpers import (
     _create_user_with_role,
     _is_admin,
     _is_last_admin,
+    _resolve_name_fields,
     _validate_admin_role_change,
     _validate_member_role_required,
     _validate_phone,
 )
+from users._name_parsing import parse_display_name
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -56,12 +58,20 @@ def create_user(request, payload: UserCreateIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
-    if payload.display_name:
+    if payload.first_name:
+        validate_display_name(payload.first_name, field="first_name")
+    if payload.last_name:
+        validate_display_name(payload.last_name, field="last_name")
+    first_name = payload.first_name
+    last_name = payload.last_name
+    if not first_name and payload.display_name:
         validate_display_name(payload.display_name)
+        first_name, last_name = parse_display_name(payload.display_name)
 
     user, magic_token = _create_user_with_role(
         payload.phone_number,
-        payload.display_name,
+        first_name,
+        last_name,
         payload.email,
         payload.role_id,
         requesting_user=request.auth,
@@ -84,6 +94,9 @@ def create_user(request, payload: UserCreateIn):
             id=str(user.id),
             phone_number=user.phone_number,
             display_name=user.display_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            full_name=user.full_name,
             magic_link_token=magic_token,
         ),
     )
@@ -189,6 +202,9 @@ def search_users(request, q: str = ""):
                 # Don't leak a private phone via the display_name fallback when
                 # show_phone is false (e.g. members with no display_name set).
                 display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                first_name=u.first_name,
+                last_name=u.last_name,
+                full_name=u.full_name,
                 # Respect each member's privacy flag — blank the phone rather
                 # than dropping the field, so callers (co-host/invite picker)
                 # don't break on a missing key. Mirrors the member directory.
@@ -289,9 +305,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
+    _resolve_name_fields(user, payload)
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
