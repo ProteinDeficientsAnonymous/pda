@@ -84,7 +84,8 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   const submit = useSubmitJoinRequest();
   const navigate = useNavigate();
 
-  const [displayName, setDisplayName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -98,8 +99,10 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
 
   function validate(): boolean {
     const next: Record<string, string> = {};
-    if (!displayName.trim()) next.displayName = 'name required';
-    else if (!/^[\p{L}\p{M}' \-.]+$/u.test(displayName)) next.displayName = 'letters only';
+    if (!firstName.trim()) next.firstName = 'first name required';
+    else if (!/^[\p{L}\p{M}' \-.]+$/u.test(firstName)) next.firstName = 'letters only';
+    if (!lastName.trim()) next.lastName = 'last name required';
+    else if (!/^[\p{L}\p{M}' \-.]+$/u.test(lastName)) next.lastName = 'letters only';
     if (!phoneNumber.trim()) next.phoneNumber = 'phone required';
     if (!email.trim()) next.email = 'email required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';
@@ -123,7 +126,8 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
     const nonEmpty = Object.fromEntries(Object.entries(answers).filter(([, v]) => v.trim() !== ''));
     try {
       await submit.mutateAsync({
-        displayName: displayName.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         phoneNumber: phoneNumber.trim(),
         email: email.trim(),
         answers: nonEmpty,
@@ -151,15 +155,25 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
         <Honeypot value={website} onChange={setWebsite} />
         <TextField
-          label="display name"
-          value={displayName}
+          label="first name"
+          value={firstName}
           onChange={(e) => {
-            setDisplayName(e.target.value);
+            setFirstName(e.target.value);
           }}
           maxLength={MAX_NAME}
-          autoComplete="name"
-          error={errors.displayName}
-          hint="at least first name + last initial"
+          autoComplete="given-name"
+          error={errors.firstName}
+          required
+        />
+        <TextField
+          label="last name"
+          value={lastName}
+          onChange={(e) => {
+            setLastName(e.target.value);
+          }}
+          maxLength={MAX_NAME}
+          autoComplete="family-name"
+          error={errors.lastName}
           required
         />
         <PhoneField

@@ -52,7 +52,8 @@ export function useJoinQuestions() {
 }
 
 export interface SubmitJoinRequestPayload {
-  displayName: string;
+  firstName: string;
+  lastName: string;
   phoneNumber: string;
   email: string;
   answers: Record<string, string>;
@@ -73,7 +74,8 @@ export function useSubmitJoinRequest() {
     mutationFn: async (payload: SubmitJoinRequestPayload) => {
       try {
         await apiClient.post('/api/community/join-request/', {
-          display_name: payload.displayName,
+          first_name: payload.firstName,
+          last_name: payload.lastName,
           phone_number: payload.phoneNumber,
           email: payload.email,
           answers: payload.answers,

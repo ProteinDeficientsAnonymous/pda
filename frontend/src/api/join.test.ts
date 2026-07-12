@@ -111,7 +111,8 @@ describe('useJoinRequests', () => {
 // ---------------------------------------------------------------------------
 
 const validPayload = {
-  displayName: 'Sam Green',
+  firstName: 'Sam',
+  lastName: 'Green',
   phoneNumber: '+12125559876',
   email: 'sam@example.com',
   answers: { 'q-1': 'Because community', 'q-2': 'A friend' },

@@ -58,19 +58,28 @@ describe('JoinScreen accessibility', () => {
     expect(screen.getByRole('button', { name: /submit request/i })).toBeInTheDocument();
   });
 
+  it('has two labeled name inputs (first name, last name)', () => {
+    renderWith(<JoinScreen />);
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
+  });
+
   it('form fields follow logical source order for tab traversal', () => {
     renderWith(<JoinScreen />);
-    const displayName = screen.getByLabelText(/display name/i);
+    const firstName = screen.getByLabelText(/first name/i);
+    const lastName = screen.getByLabelText(/last name/i);
     const phone = screen.getByLabelText(/phone number/i);
     const submit = screen.getByRole('button', { name: /submit request/i });
 
     const all = Array.from(document.querySelectorAll('input, button, select, textarea'));
-    const nameIdx = all.indexOf(displayName);
+    const firstNameIdx = all.indexOf(firstName);
+    const lastNameIdx = all.indexOf(lastName);
     const phoneIdx = all.indexOf(phone);
     const submitIdx = all.indexOf(submit);
 
-    expect(nameIdx).toBeGreaterThanOrEqual(0);
-    expect(nameIdx).toBeLessThan(phoneIdx);
+    expect(firstNameIdx).toBeGreaterThanOrEqual(0);
+    expect(firstNameIdx).toBeLessThan(lastNameIdx);
+    expect(lastNameIdx).toBeLessThan(phoneIdx);
     expect(phoneIdx).toBeLessThan(submitIdx);
   });
 });

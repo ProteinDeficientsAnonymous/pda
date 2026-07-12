@@ -67,10 +67,11 @@ beforeEach(() => {
 });
 
 describe('JoinScreen', () => {
-  it('renders required form fields (display name, phone)', () => {
+  it('renders required form fields (first name, last name, phone)', () => {
     renderWith(<JoinScreen />);
 
-    expect(screen.getByLabelText(/display name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /submit request/i })).toBeInTheDocument();
   });
@@ -82,8 +83,9 @@ describe('JoinScreen', () => {
     await user.click(screen.getByRole('button', { name: /submit request/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('name required')).toBeInTheDocument();
+      expect(screen.getByText('first name required')).toBeInTheDocument();
     });
+    expect(screen.getByText('last name required')).toBeInTheDocument();
     expect(screen.getByText('phone required')).toBeInTheDocument();
     expect(screen.getByText(/please agree to receive sms/i)).toBeInTheDocument();
   });
@@ -98,7 +100,8 @@ describe('JoinScreen', () => {
     const user = userEvent.setup();
     renderWith(<JoinScreen />);
 
-    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('button', { name: /submit request/i }));
@@ -119,7 +122,8 @@ describe('JoinScreen', () => {
     const user = userEvent.setup();
     renderWithRoutes();
 
-    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
@@ -147,7 +151,8 @@ describe('JoinScreen', () => {
     const user = userEvent.setup();
     renderWith(<JoinScreen />);
 
-    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
@@ -178,7 +183,8 @@ describe('JoinScreen', () => {
     const user = userEvent.setup();
     renderWith(<JoinScreen />);
 
-    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
@@ -200,7 +206,8 @@ describe('JoinScreen', () => {
     const user = userEvent.setup();
     renderWithRoutes();
 
-    await user.type(screen.getByLabelText(/display name/i), 'Jane Smith');
+    await user.type(screen.getByLabelText(/first name/i), 'Jane');
+    await user.type(screen.getByLabelText(/last name/i), 'Smith');
     await user.type(screen.getByLabelText(/phone number/i), '+15551234567');
     await user.type(screen.getByLabelText(/email/i), 'jane@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
@@ -223,7 +230,8 @@ describe('JoinScreen', () => {
     renderWithRoutes();
 
     // Fill out form
-    await user.type(screen.getByLabelText(/display name/i), 'Alex Jones');
+    await user.type(screen.getByLabelText(/first name/i), 'Alex');
+    await user.type(screen.getByLabelText(/last name/i), 'Jones');
     await user.type(screen.getByLabelText(/phone number/i), '+15559876543');
     await user.type(screen.getByLabelText(/email/i), 'alex@example.com');
     await user.click(screen.getByRole('checkbox', { name: /sms policy/i }));
@@ -244,7 +252,8 @@ describe('JoinScreen', () => {
 describe('email validation', () => {
   it('shows email required when blank', async () => {
     renderWith(<JoinScreen />);
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
     await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
     await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
@@ -259,12 +268,15 @@ describe('email validation', () => {
     } as unknown as ReturnType<typeof useSubmitJoinRequest>);
 
     renderWith(<JoinScreen />);
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
     await userEvent.type(screen.getByLabelText(/email/i), 'Tester@Example.com');
     await userEvent.click(screen.getByLabelText(/i agree to pda's/i));
     await userEvent.click(screen.getByLabelText(/i have read and agree to the/i));
     await userEvent.click(screen.getByRole('button', { name: /submit request/i }));
-    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ email: 'Tester@Example.com' }));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'Tester', lastName: 'Tester', email: 'Tester@Example.com' }),
+    );
   });
 });
