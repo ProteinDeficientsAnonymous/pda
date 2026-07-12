@@ -3000,24 +3000,6 @@
         "title": "LogoutOut",
         "type": "object"
       },
-      "ManageRsvpIn": {
-        "properties": {
-          "has_plus_one": {
-            "default": false,
-            "title": "Has Plus One",
-            "type": "boolean"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "title": "ManageRsvpIn",
-        "type": "object"
-      },
       "MePatchIn": {
         "properties": {
           "bio": {
@@ -3214,71 +3196,6 @@
           "phone_number"
         ],
         "title": "MemberProfileOut",
-        "type": "object"
-      },
-      "MyRsvpItemOut": {
-        "properties": {
-          "event": {
-            "$ref": "#/components/schemas/EventOut"
-          },
-          "has_plus_one": {
-            "title": "Has Plus One",
-            "type": "boolean"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event",
-          "status",
-          "has_plus_one"
-        ],
-        "title": "MyRsvpItemOut",
-        "type": "object"
-      },
-      "MyRsvpsOut": {
-        "properties": {
-          "rsvps": {
-            "items": {
-              "$ref": "#/components/schemas/MyRsvpItemOut"
-            },
-            "title": "Rsvps",
-            "type": "array"
-          },
-          "user": {
-            "$ref": "#/components/schemas/MyRsvpsUserOut"
-          }
-        },
-        "required": [
-          "user",
-          "rsvps"
-        ],
-        "title": "MyRsvpsOut",
-        "type": "object"
-      },
-      "MyRsvpsUserOut": {
-        "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
-          "email": {
-            "title": "Email",
-            "type": "string"
-          },
-          "phone_number": {
-            "title": "Phone Number",
-            "type": "string"
-          }
-        },
-        "required": [
-          "display_name",
-          "email",
-          "phone_number"
-        ],
-        "title": "MyRsvpsUserOut",
         "type": "object"
       },
       "NotificationOut": {
@@ -3561,6 +3478,89 @@
           "status"
         ],
         "title": "PublicRsvpIn",
+        "type": "object"
+      },
+      "PublicRsvpManageIn": {
+        "properties": {
+          "has_plus_one": {
+            "default": false,
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "PublicRsvpManageIn",
+        "type": "object"
+      },
+      "PublicRsvpManageItemOut": {
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/EventOut"
+          },
+          "has_plus_one": {
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event",
+          "status",
+          "has_plus_one"
+        ],
+        "title": "PublicRsvpManageItemOut",
+        "type": "object"
+      },
+      "PublicRsvpManageOut": {
+        "properties": {
+          "rsvps": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRsvpManageItemOut"
+            },
+            "title": "Rsvps",
+            "type": "array"
+          },
+          "user": {
+            "$ref": "#/components/schemas/PublicRsvpManageUserOut"
+          }
+        },
+        "required": [
+          "user",
+          "rsvps"
+        ],
+        "title": "PublicRsvpManageOut",
+        "type": "object"
+      },
+      "PublicRsvpManageUserOut": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "email",
+          "phone_number"
+        ],
+        "title": "PublicRsvpManageUserOut",
         "type": "object"
       },
       "PublicRsvpOut": {
@@ -10443,7 +10443,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MyRsvpsOut"
+                  "$ref": "#/components/schemas/PublicRsvpManageOut"
                 }
               }
             },
@@ -10557,7 +10557,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ManageRsvpIn"
+                "$ref": "#/components/schemas/PublicRsvpManageIn"
               }
             }
           },

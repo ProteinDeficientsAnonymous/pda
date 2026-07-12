@@ -2968,16 +2968,6 @@ export interface components {
             /** Detail */
             detail: string;
         };
-        /** ManageRsvpIn */
-        ManageRsvpIn: {
-            /**
-             * Has Plus One
-             * @default false
-             */
-            has_plus_one: boolean;
-            /** Status */
-            status: string;
-        };
         /** MePatchIn */
         MePatchIn: {
             /** Bio */
@@ -3054,29 +3044,6 @@ export interface components {
              * @default
              */
             pronouns: string;
-        };
-        /** MyRsvpItemOut */
-        MyRsvpItemOut: {
-            event: components["schemas"]["EventOut"];
-            /** Has Plus One */
-            has_plus_one: boolean;
-            /** Status */
-            status: string;
-        };
-        /** MyRsvpsOut */
-        MyRsvpsOut: {
-            /** Rsvps */
-            rsvps: components["schemas"]["MyRsvpItemOut"][];
-            user: components["schemas"]["MyRsvpsUserOut"];
-        };
-        /** MyRsvpsUserOut */
-        MyRsvpsUserOut: {
-            /** Display Name */
-            display_name: string;
-            /** Email */
-            email: string;
-            /** Phone Number */
-            phone_number: string;
         };
         /** NotificationOut */
         NotificationOut: {
@@ -3198,6 +3165,39 @@ export interface components {
              * @default
              */
             website: string;
+        };
+        /** PublicRsvpManageIn */
+        PublicRsvpManageIn: {
+            /**
+             * Has Plus One
+             * @default false
+             */
+            has_plus_one: boolean;
+            /** Status */
+            status: string;
+        };
+        /** PublicRsvpManageItemOut */
+        PublicRsvpManageItemOut: {
+            event: components["schemas"]["EventOut"];
+            /** Has Plus One */
+            has_plus_one: boolean;
+            /** Status */
+            status: string;
+        };
+        /** PublicRsvpManageOut */
+        PublicRsvpManageOut: {
+            /** Rsvps */
+            rsvps: components["schemas"]["PublicRsvpManageItemOut"][];
+            user: components["schemas"]["PublicRsvpManageUserOut"];
+        };
+        /** PublicRsvpManageUserOut */
+        PublicRsvpManageUserOut: {
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Phone Number */
+            phone_number: string;
         };
         /** PublicRsvpOut */
         PublicRsvpOut: {
@@ -7722,7 +7722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MyRsvpsOut"];
+                    "application/json": components["schemas"]["PublicRsvpManageOut"];
                 };
             };
             /** @description Not Found */
@@ -7758,7 +7758,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ManageRsvpIn"];
+                "application/json": components["schemas"]["PublicRsvpManageIn"];
             };
         };
         responses: {

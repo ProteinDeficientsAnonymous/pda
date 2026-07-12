@@ -33,24 +33,24 @@ from community.models import (
 router = Router()
 
 
-class MyRsvpsUserOut(BaseModel):
+class PublicRsvpManageUserOut(BaseModel):
     display_name: str
     email: str
     phone_number: str
 
 
-class MyRsvpItemOut(BaseModel):
+class PublicRsvpManageItemOut(BaseModel):
     event: EventOut
     status: str
     has_plus_one: bool
 
 
-class MyRsvpsOut(BaseModel):
-    user: MyRsvpsUserOut
-    rsvps: list[MyRsvpItemOut]
+class PublicRsvpManageOut(BaseModel):
+    user: PublicRsvpManageUserOut
+    rsvps: list[PublicRsvpManageItemOut]
 
 
-class ManageRsvpIn(BaseModel):
+class PublicRsvpManageIn(BaseModel):
     status: str
     has_plus_one: bool = False
 
@@ -93,7 +93,7 @@ def _eligible_event_rsvps(user):
 
 @router.get(
     "/public/my-rsvps/",
-    response={200: MyRsvpsOut, 404: ErrorOut, 429: ErrorOut},
+    response={200: PublicRsvpManageOut, 404: ErrorOut, 429: ErrorOut},
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="30/h")
@@ -104,14 +104,14 @@ def list_my_rsvps(request, token: str = ""):
         # Feed the annotation to _event_out's event.comment_count lookup, avoiding a per-event query.
         rsvp.event.comment_count = rsvp.event_comment_count
         items.append(
-            MyRsvpItemOut(
+            PublicRsvpManageItemOut(
                 event=_event_out(rsvp.event, user),
                 status=rsvp.status,
                 has_plus_one=rsvp.has_plus_one,
             )
         )
-    return 200, MyRsvpsOut(
-        user=MyRsvpsUserOut(
+    return 200, PublicRsvpManageOut(
+        user=PublicRsvpManageUserOut(
             display_name=user.display_name,
             email=user.email or "",
             phone_number=user.phone_number,
@@ -126,7 +126,7 @@ def list_my_rsvps(request, token: str = ""):
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="30/h")
-def update_my_rsvp(request, event_id, payload: ManageRsvpIn, token: str = ""):
+def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = ""):
     user = _resolve_token_user(token)
     event = _load_public_rsvp_event(event_id)
     _validate_rsvp_status(payload.status)
