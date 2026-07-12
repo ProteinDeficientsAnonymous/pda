@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.1...v0.4.2) (2026-07-12)
+
+
+### Bug Fixes
+
+* **rsvp:** email non-members promoted by member RSVP changes (Issue 629) ([#710](https://github.com/ProteinDeficientsAnonymous/pda/issues/710)) ([594e5c5](https://github.com/ProteinDeficientsAnonymous/pda/commit/594e5c560961daee575b0f0c514499c3ea998d18))
+
 ## [0.4.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.4.0...v0.4.1) (2026-07-12)
 
 
