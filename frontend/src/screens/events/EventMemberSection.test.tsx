@@ -83,6 +83,7 @@ const CREATOR: User = {
   id: 'user-creator',
   phoneNumber: '+12125550001',
   displayName: 'Alice',
+  nickname: '',
   email: '',
   bio: '',
   pronouns: '',

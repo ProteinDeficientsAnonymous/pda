@@ -2997,6 +2997,8 @@ export interface components {
             last_name?: string | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
+            /** Nickname */
+            nickname?: string | null;
             /** Pronouns */
             pronouns?: string | null;
             /** Show Email */
@@ -3079,6 +3081,11 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /**
+             * Nickname
+             * @default
+             */
+            nickname: string;
             /** Phone Number */
             phone_number: string;
             /**
@@ -3729,6 +3736,11 @@ export interface components {
              * @default false
              */
             needs_sms_consent: boolean;
+            /**
+             * Nickname
+             * @default
+             */
+            nickname: string;
             /** Phone Number */
             phone_number: string;
             /** Photo Updated At */

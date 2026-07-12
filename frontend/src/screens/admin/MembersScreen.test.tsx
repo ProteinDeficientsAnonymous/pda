@@ -31,6 +31,7 @@ const baseUser: User = {
   id: 'me',
   phoneNumber: '+15551230000',
   displayName: 'Admin User',
+  nickname: '',
   email: 'admin@example.com',
   bio: '',
   pronouns: '',

@@ -33,6 +33,7 @@ const ME: User = {
   id: 'user-me',
   phoneNumber: '+12125550001',
   displayName: 'Me',
+  nickname: '',
   email: '',
   bio: '',
   pronouns: '',
