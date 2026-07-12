@@ -18,9 +18,7 @@ describe('sanitizeHtml', () => {
     const out = sanitizeHtml('<a href="javascript:alert(1)">x</a>');
     expect(out).not.toContain('javascript:');
     expect(out).not.toContain('href=');
-    // The anchor itself survives (regression guard: a config change that drops
-    // <a> from ALLOWED_TAGS would lose all links and still pass a scheme-only
-    // assertion).
+    // Regression guard: the anchor itself must survive, not just the scheme drop.
     expect(out).toContain('<a');
     expect(out).toContain('x</a>');
   });
@@ -41,25 +39,18 @@ describe('sanitizeHtml', () => {
     '///evil.com', // 3+ leading slashes — browsers read authority
     '////evil.com', // 4 leading slashes
   ])('drops obfuscated protocol-relative href %j', (href) => {
-    // Browsers treat "\" as "/", strip tab/LF/CR from anywhere, and read 2+
-    // leading slashes as an authority, so each resolves off-site; the hook
-    // parses the normalised URL (new URL) to decide rather than substring-match.
     const out = sanitizeHtml(`<a href="${href}">x</a>`);
     expect(out).not.toContain('evil.com');
     expect(out).not.toContain('href=');
   });
 
   it('canonicalises a backslash-obfuscated scheme URL', () => {
-    // "https:/\evil.com" has an allowed scheme and no literal "//"; normalise it
-    // to the https://evil.com a browser resolves rather than storing the trap.
     const out = sanitizeHtml('<a href="https:/\\evil.com">x</a>');
     expect(out).toContain('href="https://evil.com"');
     expect(out).not.toContain('\\');
   });
 
   it('preserves a legitimate backslash in a query string', () => {
-    // Backslash folding applies only to the authority/path, not the query —
-    // rewriting it here would silently corrupt a valid URL.
     const out = sanitizeHtml('<a href="https://good.com/p?x=a\\b">y</a>');
     expect(out).toContain('x=a\\b');
   });
@@ -74,8 +65,6 @@ describe('sanitizeHtml', () => {
     '<img src="data:image/png;base64,AAAA">',
     '<img src="mailto:a@b.test">',
   ])('drops non-http(s) image src %j', (html) => {
-    // Image src is http/https/relative only, matching the backend; DOMPurify
-    // would otherwise keep data:/mailto: on <img>.
     const out = sanitizeHtml(html);
     expect(out).not.toContain('data:');
     expect(out).not.toContain('mailto:');
@@ -105,8 +94,6 @@ describe('sanitizeHtml', () => {
     });
 
     it('keeps valid text-align while stripping a malicious sibling declaration', () => {
-      // The security-critical branch: the hook must rebuild the value to just the
-      // safe text-align, not pass the whole attribute through because it matched.
       const out = sanitizeHtml('<p style="text-align: center; position: fixed; top: 0">hi</p>');
       expect(out).toContain('text-align: center');
       expect(out).not.toContain('position');
@@ -122,6 +109,11 @@ describe('sanitizeHtml', () => {
     it('drops justify (renderers only emit left/center/right)', () => {
       const out = sanitizeHtml('<p style="text-align: justify">hi</p>');
       expect(out).not.toContain('justify');
+      expect(out).not.toContain('style=');
+    });
+
+    it('drops a prefixed text-align property', () => {
+      const out = sanitizeHtml('<p style="-webkit-text-align: right">hi</p>');
       expect(out).not.toContain('style=');
     });
   });

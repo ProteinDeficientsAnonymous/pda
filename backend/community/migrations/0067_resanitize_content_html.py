@@ -1,19 +1,9 @@
-"""Re-sanitize existing rendered HTML through the nh3 chokepoint.
-
-`sanitize_content_html` is applied on the write path (`render_content_payload`),
-so it only protects content saved AFTER it shipped. Rows rendered earlier (e.g.
-backfilled by migration 0037, which ran `delta_to_html` with no scheme/tag
-validation) still hold un-sanitized `content_html`, which non-browser consumers
-(emails, API clients) read verbatim. Run every existing row back through the
-sanitizer so the security boundary is retroactive.
-"""
+"""Retroactively sanitize `content_html` rows saved before the write-path guard shipped."""
 
 from django.db import migrations
 
-# Models carrying a rendered `content_html` column, as of this migration. This
-# is a frozen point-in-time snapshot — a one-shot backfill, NOT a living
-# registry. Do not edit it when new content models are added later; their rows
-# are sanitized on write by `render_content_payload`.
+# Frozen snapshot for this one-shot backfill — not a living registry. New content
+# models are sanitized on write by `render_content_payload`.
 _CONTENT_MODELS = (
     "CommunityGuidelines",
     "FAQ",
@@ -41,7 +31,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Re-running the sanitizer is idempotent (already-clean rows are skipped),
-        # so reversing this migration is a no-op rather than an error.
         migrations.RunPython(resanitize, migrations.RunPython.noop),
     ]

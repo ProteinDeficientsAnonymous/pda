@@ -1,12 +1,4 @@
-"""Tests for the rendered-HTML sanitizer (nh3 chokepoint).
-
-The Delta / ProseMirror renderers no longer validate URL schemes themselves;
-`sanitize_content_html` is the single security boundary, applied in
-`_content_render` to the renderers' output. These tests assert against that
-boundary: dangerous schemes/tags/attributes are stripped, while the renderers'
-legitimate vocabulary (alignment, CTA classes, http/https/mailto/relative URLs)
-survives.
-"""
+"""Tests for the rendered-HTML sanitizer (`sanitize_content_html`)."""
 
 import pytest
 from community._html_sanitize import sanitize_content_html
@@ -53,24 +45,18 @@ class TestSchemeStripping:
         ],
     )
     def test_control_char_scheme_bypass_dropped(self, raw_href):
-        # Browsers strip C0/whitespace from URL values, so "java\tscript:" would
-        # resolve back to "javascript:". nh3 must reject these.
+        # Browsers strip C0/whitespace from URLs, so "java\tscript:" resolves back
+        # to "javascript:"; the whole href must be dropped, not merely mangled.
         result = sanitize_content_html(f'<a href="{raw_href}">x</a>')
         assert "javascript:" not in result.lower()
-        # The whole href must be dropped, not merely mangled — a surviving
-        # href="java\tscript:" still executes in a browser.
         assert "href=" not in result
 
     def test_protocol_relative_link_dropped(self):
-        # "//evil.com" carries no scheme, so the url_schemes allowlist never
-        # rejects it; _attribute_filter must, or it resolves to https://evil.com.
         result = sanitize_content_html('<a href="//evil.com">x</a>')
         assert "evil.com" not in result
         assert "href=" not in result
 
     def test_protocol_relative_image_dropped(self):
-        # A protocol-relative image src is an attacker-controlled remote load
-        # (tracking pixel / IP leak) that bypasses the scheme allowlist.
         result = sanitize_content_html('<img src="//evil.com/x.png">')
         assert "evil.com" not in result
         assert "src=" not in result
@@ -95,43 +81,29 @@ class TestSchemeStripping:
         ],
     )
     def test_protocol_relative_bypass_variants_dropped(self, raw_href):
-        # The literal-"//" check is not enough: browsers ignore leading
-        # whitespace/controls, strip tab/LF/CR from ANYWHERE, and treat "\" as
-        # "/", so each of these resolves to //evil.com. _normalize_url must
-        # canonicalise before the check, dropping every variant.
-        # (A leading NUL is NOT included: html5ever rewrites it to U+FFFD at
-        # parse time, which makes the URL a same-origin relative path, not
-        # protocol-relative — so it is already inert.)
+        # Each obfuscation resolves to //evil.com in a browser; _normalize_url must
+        # canonicalise before the protocol-relative check so every variant drops.
         result = sanitize_content_html(f'<a href="{raw_href}">x</a>')
         assert "evil.com" not in result
         assert "href=" not in result
 
     def test_embedded_control_scheme_url_canonicalised(self):
-        # A tab inside an allowed-scheme URL (`https:/\t/evil.com`) is stripped
-        # by the browser to `https://evil.com`; canonicalise to that rather than
-        # storing the obfuscated form. (Off-site, but a URL an admin could type.)
         result = sanitize_content_html('<a href="https:/\t/evil.com">x</a>')
         assert 'href="https://evil.com"' in result
         assert "\t" not in result
 
     def test_legit_query_backslash_preserved(self):
-        # Backslash folding must apply only to the authority/path, not the query
-        # — browsers don't fold backslashes in a query string, so rewriting one
-        # here would silently corrupt a legitimate URL.
+        # Backslash folding applies only to the authority/path — a query backslash
+        # is legitimate and must survive.
         result = sanitize_content_html('<a href="https://good.com/p?x=a\\b">y</a>')
         assert "x=a\\b" in result
 
     def test_backslash_obfuscated_scheme_url_canonicalised(self):
-        # "https:/\evil.com" has an allowed scheme and no literal "//", but a
-        # browser resolves it to https://evil.com. Canonicalise it so the stored
-        # value is unambiguous rather than a parser-differential trap.
         result = sanitize_content_html('<a href="https:/\\evil.com">x</a>')
         assert 'href="https://evil.com"' in result
         assert "\\" not in result
 
     def test_mailto_image_src_dropped(self):
-        # mailto: is valid for links but inert/pointless on an image src; the
-        # image scheme guard is http/https only.
         result = sanitize_content_html('<img src="mailto:a@b.test">')
         assert "mailto:" not in result
         assert "src=" not in result
@@ -155,7 +127,6 @@ class TestSafeUrlsSurvive:
         assert 'src="https://example.com/i.png"' in result
 
     def test_uploaded_media_image_survives(self):
-        # Uploaded images are served as relative /media/ URLs (no scheme).
         result = sanitize_content_html('<img src="/media/uploads/photo.jpg">')
         assert 'src="/media/uploads/photo.jpg"' in result
 
@@ -182,8 +153,6 @@ class TestStyleAndClassConstraints:
         assert "text-align:center" in result.replace(" ", "")
 
     def test_text_align_case_insensitive(self):
-        # Both the property name AND the value match case-insensitively (mirroring
-        # the frontend's /i flag), so upper/mixed case is preserved, not dropped.
         for raw in ("TEXT-ALIGN: center", "text-align: CENTER", "Text-Align: Center"):
             result = sanitize_content_html(f'<p style="{raw}">hi</p>')
             assert "text-align:center" in result.replace(" ", "").lower()
@@ -204,16 +173,16 @@ class TestStyleAndClassConstraints:
         ],
     )
     def test_malicious_text_align_value_dropped(self, bad_value):
-        # nh3's filter_style_properties keeps the *property* but not the *value*,
-        # so _attribute_filter must reject any value outside left/center/right
-        # (mirroring the frontend's ALLOWED_TEXT_ALIGN).
         result = sanitize_content_html(f'<p style="text-align: {bad_value}">hi</p>')
         assert "style=" not in result
         assert bad_value.split("(")[0] not in result
 
+    def test_prefixed_text_align_property_dropped(self):
+        result = sanitize_content_html('<p style="-webkit-text-align: right">hi</p>')
+        assert "style=" not in result
+
     def test_text_align_preserved_when_mixed_with_malicious_sibling(self):
-        # The security-critical branch: keep the valid alignment while stripping
-        # an adjacent injection, rather than dropping the whole attribute.
+        # Keep the valid alignment while stripping an adjacent injection.
         result = sanitize_content_html(
             '<p style="text-align: center; position: fixed; top: 0">hi</p>'
         )
@@ -239,18 +208,12 @@ class TestRelInjection:
         assert 'target="_blank"' in result
 
     def test_rel_injected_even_without_target(self):
-        # nh3 applies link_rel to every anchor; harmless and consistent.
         result = sanitize_content_html('<a href="https://x.test">x</a>')
         assert 'rel="noopener noreferrer"' in result
 
 
 class TestRendererRoundTrip:
-    """Guards the module's core invariant: the allowlist exactly covers what the
-    renderers emit. These feed real renderer output through the sanitizer, so if
-    a renderer starts emitting a tag/attr/class the allowlist omits, sanitization
-    silently strips it and one of these fails — catching drift the hand-written
-    literals above cannot.
-    """
+    """Feeds real renderer output through the sanitizer to catch allowlist drift."""
 
     def test_prosemirror_full_document_survives(self):
         import json
@@ -300,8 +263,6 @@ class TestRendererRoundTrip:
             }
         )
         result = sanitize_content_html(prosemirror_to_html(pm))
-        # Nothing the renderer emitted is stripped (rel injection / attr reorder
-        # aside, which is why this asserts on fragments rather than equality).
         assert '<h2 style="text-align: center">Title</h2>' in result
         assert "<strong>bold</strong>" in result
         assert '<a href="https://x.test"' in result
@@ -309,8 +270,6 @@ class TestRendererRoundTrip:
         assert '<img src="/media/p.jpg">' in result
         assert 'class="cta cta--primary"' in result
         assert 'role="button"' in result
-        # The CTA opens in a new tab; pin target so an allowlist edit dropping
-        # it (which would also moot the rel-injection guard) fails this test.
         assert 'target="_blank"' in result
 
     def test_delta_document_survives(self):
