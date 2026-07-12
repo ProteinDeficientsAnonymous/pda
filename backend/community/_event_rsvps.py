@@ -318,35 +318,54 @@ def delete_rsvp(request, event_id: UUID):
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
 
     with transaction.atomic():
-        event = (
-            Event.objects.select_for_update()
-            .prefetch_related("co_hosts", "invited_users")
-            .get(id=event_id)
-        )
-        if event.is_deleted:
-            raise_validation(Code.Event.NOT_FOUND, status_code=404)
-        rsvp = EventRSVP.objects.filter(event=event, user=request.auth).first()
-        if not rsvp:
-            # No standing RSVP: don't let a caller probe an event they can't
-            # read. An existing RSVP-holder skips the read-visibility gate so
-            # they can withdraw even if the event later turned invite-only /
-            # draft and excluded them — their stale RSVP would otherwise be
-            # unremovable while still counting toward the headcount. (The
-            # cancelled / past freezes below still apply, matching upsert_rsvp.)
-            _enforce_event_read_visibility(event, request.auth)
-            if event.is_draft and not _can_edit_event(request.auth, event):
-                raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
-            raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
-        if event.is_cancelled:
-            raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
-        if event.is_past and not _can_edit_event(request.auth, event):
-            raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
-        was_attending = rsvp.status == RSVPStatus.ATTENDING
-        rsvp.delete()
-        promoted_user_ids = promote_from_waitlist(event) if was_attending else []
-        if was_attending:
-            broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
+        event, promoted_user_ids = _delete_rsvp_in_transaction(event_id, request.auth)
 
     audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
     email_promoted_non_members(request, event, promoted_user_ids)
     return Status(204, None)
+
+
+def _validate_rsvp_delete_access(event: Event, user) -> None:
+    """Raise ValidationException if the user cannot withdraw their RSVP."""
+    # No standing RSVP: don't let a caller probe an event they can't read. An
+    # existing RSVP-holder skips the read-visibility gate so they can withdraw
+    # even if the event later turned invite-only / draft and excluded them —
+    # their stale RSVP would otherwise be unremovable while still counting
+    # toward the headcount. (The cancelled / past freezes still apply.)
+    _enforce_event_read_visibility(event, user)
+    if event.is_draft and not _can_edit_event(user, event):
+        raise_validation(Code.Event.PERM_DENIED, status_code=403, action="rsvp_draft_event")
+    raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+
+
+def _delete_rsvp_in_transaction(event_id, user) -> tuple[Event, list[str]]:
+    """Delete the user's RSVP inside a locked transaction.
+
+    Returns (event, promoted_user_ids). promoted_user_ids is empty unless a
+    spot freed, surfaced so the caller can email promoted users after commit.
+
+    Raises ValidationException on failure.
+    """
+    event = (
+        Event.objects.select_for_update()
+        .prefetch_related("co_hosts", "invited_users")
+        .get(id=event_id)
+    )
+    if event.is_deleted:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    rsvp = EventRSVP.objects.filter(event=event, user=user).first()
+    if not rsvp:
+        _validate_rsvp_delete_access(event, user)
+    if event.is_cancelled:
+        raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
+    if event.is_past and not _can_edit_event(user, event):
+        raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
+
+    was_attending = rsvp.status == RSVPStatus.ATTENDING
+    rsvp.delete()
+    if not was_attending:
+        return event, []
+
+    promoted_user_ids = promote_from_waitlist(event)
+    broadcast_capacity_change(event_id, exclude_user_ids={str(user.pk)})
+    return event, promoted_user_ids
