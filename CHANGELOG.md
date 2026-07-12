@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.2.0...v0.2.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **rsvp:** broadcast event update so capacity UI refreshes live (Issue 637) ([#707](https://github.com/ProteinDeficientsAnonymous/pda/issues/707)) ([f7f32c5](https://github.com/ProteinDeficientsAnonymous/pda/commit/f7f32c5ed0da4f428c6bee032993d2d67b28096f))
+
 # [0.2.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.1.0...v0.2.0) (2026-07-11)
 
 
