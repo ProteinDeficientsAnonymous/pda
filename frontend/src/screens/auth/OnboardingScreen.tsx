@@ -29,9 +29,8 @@ type FormValues = z.infer<typeof schema>;
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+  const startProfileStep = useAuthStore((s) => s.startProfileStep);
   const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
-  // profileStepActive flips true once account setup succeeds; drives the wizard's
-  // second step. Kept in the store (not local state) so OnboardingGate can see it.
   const profileStepActive = useAuthStore((s) => s.profileStepActive);
   // prefill name for legacy users approved before email was required
   const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
@@ -63,6 +62,7 @@ export default function OnboardingScreen() {
         newPassword: values.newPassword,
         consentTypes: acceptedTypes,
       });
+      startProfileStep();
     } catch (err) {
       setServerError(extractApiError(err, "couldn't finish onboarding — try again"));
     }

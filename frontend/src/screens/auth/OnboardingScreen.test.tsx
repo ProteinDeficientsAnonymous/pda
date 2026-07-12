@@ -50,12 +50,14 @@ function makeUser(overrides: Partial<User> = {}): User {
 describe('OnboardingScreen', () => {
   const completeOnboarding = vi.fn();
   const updateProfile = vi.fn();
+  const startProfileStep = vi.fn();
   const finishProfileStep = vi.fn();
 
   function setupMock(user: User, profileStepActive = false) {
     const storeState = {
       completeOnboarding,
       updateProfile,
+      startProfileStep,
       finishProfileStep,
       user,
       profileStepActive,
@@ -71,6 +73,7 @@ describe('OnboardingScreen', () => {
   beforeEach(() => {
     completeOnboarding.mockReset();
     updateProfile.mockReset();
+    startProfileStep.mockReset();
     finishProfileStep.mockReset();
     updateProfile.mockResolvedValue(undefined);
     setupMock(makeUser());
@@ -181,7 +184,7 @@ describe('OnboardingScreen', () => {
     });
   });
 
-  it('calls completeOnboarding on submit and does not error on success', async () => {
+  it('starts the profile step after successful account setup', async () => {
     completeOnboarding.mockResolvedValue(undefined);
     render(
       <MemoryRouter>
@@ -193,6 +196,7 @@ describe('OnboardingScreen', () => {
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledTimes(1);
+    expect(startProfileStep).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(/couldn't finish onboarding/i)).not.toBeInTheDocument();
   });
 
@@ -219,6 +223,7 @@ describe('OnboardingScreen', () => {
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText(/couldn't finish onboarding/i)).toBeInTheDocument();
+    expect(startProfileStep).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: /^done$/i })).not.toBeInTheDocument();
   });
 });

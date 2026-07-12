@@ -28,9 +28,8 @@ interface AuthState {
   // unauthed). Guards the app-level boot spinner so later 'loading' states
   // (login, magic-login) don't unmount the tree.
   booted: boolean;
-  // True while the optional profile step of onboarding is showing. Set once
-  // account setup succeeds — which clears needs_onboarding — so OnboardingGate
-  // doesn't immediately bounce /onboarding to /guidelines and unmount the step.
+  // Keeps OnboardingGate from bouncing /onboarding once account setup clears
+  // needs_onboarding, so the optional profile step can render.
   profileStepActive: boolean;
   login: (phoneNumber: string, password: string) => Promise<void>;
   magicLogin: (token: string) => Promise<void>;
@@ -42,7 +41,7 @@ interface AuthState {
     pronouns?: string | undefined;
     consentTypes?: ConsentTypeValue[] | undefined;
   }) => Promise<void>;
-  // Clears profileStepActive once the user finishes or skips the profile step.
+  startProfileStep: () => void;
   finishProfileStep: () => void;
   acceptConsents: (consentTypes: ConsentTypeValue[]) => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
@@ -107,7 +106,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async completeOnboarding(payload) {
     const user = await authApi.completeOnboarding(payload);
-    set({ user, profileStepActive: true });
+    set({ user });
+  },
+
+  startProfileStep() {
+    set({ profileStepActive: true });
   },
 
   finishProfileStep() {
