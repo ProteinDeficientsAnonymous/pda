@@ -85,7 +85,8 @@ def test_user(db):
     user = User.objects.create_user(
         phone_number="+12025550101",
         password="testpass123",
-        display_name="Test Member",
+        first_name="Test",
+        last_name="Member",
     )
     return user
 
@@ -101,7 +102,7 @@ def vettor_user(db):
     user = User.objects.create_user(
         phone_number="+12025550003",
         password="vettorpass123",
-        display_name="Vettor",
+        first_name="Vettor",
     )
     role = Role.objects.create(name="vettor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
     user.roles.add(role)
@@ -119,7 +120,8 @@ def manage_users_user(db):
     user = User.objects.create_user(
         phone_number="+12025550010",
         password="adminpass123",
-        display_name="Admin User",
+        first_name="Admin",
+        last_name="User",
     )
     role = Role.objects.create(
         name="admin_mgr",
@@ -140,7 +142,7 @@ def needs_onboarding_user(db):
     return User.objects.create_user(
         phone_number="+12025550110",
         password="x",
-        display_name="",
+        first_name="",
         needs_onboarding=True,
     )
 
@@ -158,7 +160,8 @@ def sample_join_request(db):
     if q:
         answers[str(q.id)] = {"label": q.label, "answer": "I believe in collective liberation."}
     return JoinRequest.objects.create(
-        display_name="Sprout Seedling",
+        first_name="Sprout",
+        last_name="Seedling",
         phone_number="+16505551234",
         custom_answers=answers,
     )

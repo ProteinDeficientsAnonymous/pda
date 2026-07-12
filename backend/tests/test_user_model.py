@@ -11,7 +11,8 @@ class TestUserModel:
         user = User.objects.create_user(
             phone_number="+15550001001",
             password="testpass123",
-            display_name="Test Member",
+            first_name="Test",
+            last_name="Member",
         )
         assert user.phone_number == "+15550001001"
         assert user.display_name == "Test Member"
@@ -20,10 +21,10 @@ class TestUserModel:
     def test_username_field_is_phone_number(self):
         assert User.USERNAME_FIELD == "phone_number"
 
-    def test_user_has_no_first_last_name_fields(self):
-        assert not hasattr(User, "first_name") or User.first_name is None
-        assert not hasattr(User, "last_name") or User.last_name is None
-        assert not hasattr(User, "username") or User.username is None
+    def test_user_has_first_last_name_fields(self):
+        assert hasattr(User, "first_name")
+        assert hasattr(User, "last_name")
+        assert User.username is None
 
     def test_email_is_optional(self):
         user = User.objects.create_user(
@@ -38,7 +39,8 @@ class TestUserModel:
         user = User.objects.create_user(
             phone_number="+15550001003",
             password="testpass123",
-            display_name="Alex R",
+            first_name="Alex",
+            last_name="R",
         )
         assert str(user) == "Alex R"
 

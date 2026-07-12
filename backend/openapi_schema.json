@@ -2793,6 +2793,7 @@
             "type": "object"
           },
           "display_name": {
+            "default": "",
             "maxLength": 64,
             "title": "Display Name",
             "type": "string"
@@ -2802,10 +2803,22 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "First Name",
+            "type": "string"
+          },
           "guidelines_consent": {
             "default": false,
             "title": "Guidelines Consent",
             "type": "boolean"
+          },
+          "last_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Last Name",
+            "type": "string"
           },
           "phone_number": {
             "maxLength": 20,
@@ -2825,7 +2838,6 @@
           }
         },
         "required": [
-          "display_name",
           "phone_number",
           "email"
         ],
@@ -3053,6 +3065,30 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
           "needs_onboarding": {
             "anyOf": [
               {
@@ -3128,8 +3164,23 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -3166,8 +3217,23 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "login_link_requested": {
@@ -3288,6 +3354,30 @@
               }
             ],
             "title": "Email"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "new_password": {
             "maxLength": 128,
@@ -3444,14 +3534,20 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "maxLength": 64,
+            "title": "First Name",
+            "type": "string"
+          },
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
             "type": "boolean"
           },
-          "name": {
+          "last_name": {
+            "default": "",
             "maxLength": 64,
-            "title": "Name",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -3472,7 +3568,7 @@
           }
         },
         "required": [
-          "name",
+          "first_name",
           "email",
           "phone_number",
           "status"
@@ -4445,6 +4541,18 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Last Name",
+            "type": "string"
+          },
           "phone_number": {
             "maxLength": 20,
             "title": "Phone Number",
@@ -4474,8 +4582,23 @@
             "title": "Display Name",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "magic_link_token": {
@@ -4517,6 +4640,16 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -4530,6 +4663,11 @@
             "default": false,
             "title": "Is Superuser",
             "type": "boolean"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
+            "type": "string"
           },
           "login_link_requested": {
             "default": false,
@@ -4639,6 +4777,18 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
           "is_paused": {
             "anyOf": [
               {
@@ -4649,6 +4799,18 @@
               }
             ],
             "title": "Is Paused"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "phone_number": {
             "anyOf": [
@@ -4688,8 +4850,23 @@
             "title": "Display Name",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {

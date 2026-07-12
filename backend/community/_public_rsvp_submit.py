@@ -29,7 +29,8 @@ router = Router()
 
 
 class PublicRsvpIn(BaseModel):
-    name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str = Field(max_length=FieldLimit.FIRST_NAME)
+    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     email: EmailStr
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     status: str = Field(max_length=FieldLimit.CHOICE)
@@ -54,13 +55,13 @@ def _backfill_email(phone_match: User, email: str) -> User:
     return phone_match
 
 
-def _create_non_member(name: str, email: str, phone: str) -> User:
+def _create_non_member(first_name: str, last_name: str, email: str, phone: str) -> User:
     """Get-or-create the non-member User keyed on the unique phone number.
 
     On a unique-email collision the email is dropped inside a savepoint so the
     outer transaction and the RSVP survive; the row is just saved without it.
     """
-    defaults = {"display_name": name, "is_member": False}
+    defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
         with transaction.atomic():
             user, created = User.objects.get_or_create(
@@ -90,7 +91,9 @@ def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
     return phone_match
 
 
-def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
+def _resolve_non_member(
+    *, request, first_name: str, last_name: str, email: str, phone: str
+) -> User:
     """Resolve (or create) the non-member User backing this RSVP; member contact → 409.
 
     Must run inside the surrounding transaction.
@@ -113,7 +116,7 @@ def _resolve_non_member(*, request, name: str, email: str, phone: str) -> User:
         return _backfill_email(phone_match, email)
     if email_match:
         return email_match
-    return _create_non_member(name, email, phone)
+    return _create_non_member(first_name, last_name, email, phone)
 
 
 def _send_confirmation_email(
@@ -154,15 +157,22 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         )
         return Status(200, _public_rsvp_decoy(event, payload.status, payload.has_plus_one))
 
-    name = payload.name.strip()
-    validate_display_name(name, field="name")
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    validate_display_name(first_name, field="first_name")
+    if last_name:
+        validate_display_name(last_name, field="last_name")
     validated_phone = _validate_phone(payload.phone_number)
     normalized_email = payload.email.strip().lower()
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
         user = _resolve_non_member(
-            request=request, name=name, email=normalized_email, phone=validated_phone
+            request=request,
+            first_name=first_name,
+            last_name=last_name,
+            email=normalized_email,
+            phone=validated_phone,
         )
         final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event.id, user, payload.status, payload.has_plus_one
