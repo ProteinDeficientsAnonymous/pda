@@ -42,6 +42,7 @@ function makeUser(id: string, permissions: string[] = []): User {
     needsSmsConsent: false,
     showPhone: false,
     showEmail: false,
+    hideLastName: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
     profilePhotoUrl: '',

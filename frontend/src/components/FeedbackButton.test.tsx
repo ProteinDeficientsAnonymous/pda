@@ -50,6 +50,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     needsSmsConsent: false,
     showPhone: false,
     showEmail: false,
+    hideLastName: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
     profilePhotoUrl: '',

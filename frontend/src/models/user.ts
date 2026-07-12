@@ -38,6 +38,7 @@ export interface User {
   needsSmsConsent: boolean;
   showPhone: boolean;
   showEmail: boolean;
+  hideLastName: boolean;
   weekStart: 'sunday' | 'monday';
   calendarFeedScope: CalendarFeedScopeValue;
   profilePhotoUrl: string;
