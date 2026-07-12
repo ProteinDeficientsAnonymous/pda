@@ -84,6 +84,15 @@ describe('renderWelcomeMessage', () => {
     });
     expect(out).toBe('Sam — ${UNKNOWN}');
   });
+
+  it('renders ${NAME} as the first name', () => {
+    const out = renderWelcomeMessage('hi ${NAME}!', {
+      name: 'ada',
+      senderName: 'sender',
+      magicLink: 'http://x',
+    });
+    expect(out).toBe('hi ada!');
+  });
 });
 
 describe('buildWhatsAppHref', () => {

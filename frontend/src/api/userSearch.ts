@@ -6,13 +6,14 @@ import { apiClient } from './client';
 
 export interface MemberSearchResult {
   id: string;
-  displayName: string;
+  fullName: string;
   phoneNumber: string;
 }
 
 interface Wire {
   id: string;
   display_name: string;
+  full_name?: string;
   phone_number: string;
 }
 
@@ -26,7 +27,7 @@ export function useUserSearch(term: string) {
       });
       return data.map<MemberSearchResult>((u) => ({
         id: u.id,
-        displayName: u.display_name,
+        fullName: u.full_name ?? u.display_name,
         phoneNumber: u.phone_number,
       }));
     },

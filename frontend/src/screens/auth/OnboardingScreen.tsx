@@ -19,7 +19,8 @@ import { passwordRule } from './passwordRule';
 import { useConsentChecklist } from './useConsentChecklist';
 
 const schema = z.object({
-  displayName: z.string().min(1, 'name required').max(64),
+  firstName: z.string().min(1, 'first name required').max(64),
+  lastName: z.string().max(64).optional(),
   email: z.string().min(1, 'email required').pipe(z.email('not a valid email')),
   pronouns: z.string().max(100).optional(),
   newPassword: passwordRule,
@@ -33,7 +34,8 @@ export default function OnboardingScreen() {
   const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
   const profileStepActive = useAuthStore((s) => s.profileStepActive);
   // prefill name for legacy users approved before email was required
-  const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
+  const existingFirstName = useAuthStore((s) => s.user?.firstName ?? '');
+  const existingLastName = useAuthStore((s) => s.user?.lastName ?? '');
   // checkboxes render only for users with outstanding consent (admin-created accounts)
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
@@ -47,7 +49,13 @@ export default function OnboardingScreen() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { displayName: existingDisplayName, email: '', pronouns: '', newPassword: '' },
+    defaultValues: {
+      firstName: existingFirstName,
+      lastName: existingLastName,
+      email: '',
+      pronouns: '',
+      newPassword: '',
+    },
   });
   const passwordValue = useWatch({ control, name: 'newPassword' });
 
@@ -56,7 +64,8 @@ export default function OnboardingScreen() {
     try {
       const pronouns = values.pronouns?.trim();
       await completeOnboarding({
-        displayName: values.displayName,
+        firstName: values.firstName,
+        lastName: values.lastName ?? '',
         email: values.email,
         ...(pronouns ? { pronouns } : {}),
         newPassword: values.newPassword,
@@ -86,13 +95,19 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <AuthLayout title="welcome 🌱" subtitle="set your display name and a password">
+    <AuthLayout title="welcome 🌱" subtitle="set your name and a password">
       <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="flex flex-col gap-4">
         <TextField
-          label="display name"
-          autoComplete="name"
-          {...register('displayName')}
-          error={errors.displayName?.message}
+          label="first name"
+          autoComplete="given-name"
+          {...register('firstName')}
+          error={errors.firstName?.message}
+        />
+        <TextField
+          label="last name (optional)"
+          autoComplete="family-name"
+          {...register('lastName')}
+          error={errors.lastName?.message}
         />
         <TextField
           label="email"

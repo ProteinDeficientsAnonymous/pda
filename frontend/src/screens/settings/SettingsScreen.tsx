@@ -38,9 +38,16 @@ export default function SettingsScreen() {
       <Section label="profile">
         <AvatarUpload />
         <InlineText
-          label="display name"
-          value={user.displayName}
-          onSave={(v) => updateProfile({ displayName: v })}
+          label="first name"
+          value={user.firstName}
+          onSave={(v) => updateProfile({ firstName: v })}
+          required
+        />
+        <InlineText
+          label="last name"
+          value={user.lastName}
+          onSave={(v) => updateProfile({ lastName: v })}
+          placeholder="add a last name"
         />
         <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
         <InlineText
@@ -148,11 +155,13 @@ function InlineText({
   value,
   onSave,
   placeholder,
+  required = false,
 }: {
   label: string;
   value: string;
   onSave: (v: string) => Promise<void>;
   placeholder?: string;
+  required?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -160,6 +169,10 @@ function InlineText({
   const [error, setError] = useState<string | null>(null);
 
   async function commit() {
+    if (required && !draft.trim()) {
+      setError(`${label} required`);
+      return;
+    }
     if (draft.trim() === value) {
       setEditing(false);
       return;

@@ -89,7 +89,9 @@ const BASE_EVENT: Event = {
 const AUTHED_USER: User = {
   id: 'user-me',
   phoneNumber: '+12125550001',
-  displayName: 'Test Member',
+  firstName: 'Test',
+  lastName: 'Member',
+  fullName: 'Test Member',
   nickname: '',
   email: 'test@example.com',
   bio: '',

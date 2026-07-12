@@ -32,7 +32,9 @@ import { RsvpSection } from './RsvpSection';
 const ME: User = {
   id: 'user-me',
   phoneNumber: '+12125550001',
-  displayName: 'Me',
+  firstName: 'Me',
+  lastName: '',
+  fullName: 'Me',
   nickname: '',
   email: '',
   bio: '',

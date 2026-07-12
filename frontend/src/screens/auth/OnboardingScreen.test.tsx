@@ -26,7 +26,9 @@ function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'u1',
     phoneNumber: '+12125550001',
-    displayName: '',
+    firstName: '',
+    lastName: '',
+    fullName: '',
     nickname: '',
     email: '',
     bio: '',
@@ -87,7 +89,7 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText(/email required/i)).toBeInTheDocument();
@@ -102,12 +104,14 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'McTest');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledWith({
-      displayName: 'Tester',
+      firstName: 'Tester',
+      lastName: 'McTest',
       email: 'tester@example.com',
       newPassword: 'abcd1234ABCD!',
       consentTypes: [],
@@ -122,13 +126,14 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/pronouns/i), 'they/them');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledWith({
-      displayName: 'Tester',
+      firstName: 'Tester',
+      lastName: '',
       email: 'tester@example.com',
       pronouns: 'they/them',
       newPassword: 'abcd1234ABCD!',
@@ -160,7 +165,7 @@ describe('OnboardingScreen', () => {
     const [guidelinesBox, smsBox] = screen.getAllByRole('checkbox') as [HTMLElement, HTMLElement];
 
     // Fill in the text fields
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
 
@@ -178,7 +183,8 @@ describe('OnboardingScreen', () => {
     // Submit and verify both consent types passed through
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledWith({
-      displayName: 'Tester',
+      firstName: 'Tester',
+      lastName: '',
       email: 'tester@example.com',
       newPassword: 'abcd1234ABCD!',
       consentTypes: ['guidelines', 'sms'],
@@ -192,7 +198,7 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
@@ -219,7 +225,7 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));

@@ -38,7 +38,9 @@ function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'user-1',
     phoneNumber: '+12125551234',
-    displayName: 'Alice',
+    firstName: 'Alice',
+    lastName: '',
+    fullName: 'Alice',
     nickname: '',
     email: 'alice@example.com',
     bio: '',
@@ -178,8 +180,8 @@ describe('RequirePermission', () => {
 // ---------------------------------------------------------------------------
 
 describe('OnboardingGate', () => {
-  it('redirects a first-time user (needsOnboarding=true, empty displayName) to /onboarding', () => {
-    const user = makeUser({ needsOnboarding: true, displayName: '' });
+  it('redirects a first-time user (needsOnboarding=true, empty name) to /onboarding', () => {
+    const user = makeUser({ needsOnboarding: true, firstName: '', fullName: '' });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
@@ -198,10 +200,11 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
-  it('redirects a password-reset user (needsOnboarding=true, has displayName + email) to /new-password', () => {
+  it('redirects a password-reset user (needsOnboarding=true, has name + email) to /new-password', () => {
     const user = makeUser({
       needsOnboarding: true,
-      displayName: 'Alice',
+      firstName: 'Alice',
+      fullName: 'Alice',
       email: 'alice@example.com',
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
@@ -222,11 +225,16 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
-  it('redirects a legacy user (needsOnboarding=true, has displayName but no email) to /onboarding', () => {
-    // Pre-email-requirement users were approved with a displayName but never
+  it('redirects a legacy user (needsOnboarding=true, has a name but no email) to /onboarding', () => {
+    // Pre-email-requirement users were approved with a name but never
     // supplied an email. On first login they must end up at /onboarding so
     // they can add one — /new-password has no email field and would loop.
-    const user = makeUser({ needsOnboarding: true, displayName: 'Alice', email: '' });
+    const user = makeUser({
+      needsOnboarding: true,
+      firstName: 'Alice',
+      fullName: 'Alice',
+      email: '',
+    });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
@@ -245,11 +253,12 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('new password page')).not.toBeInTheDocument();
   });
 
-  it('redirects a needsPasswordReset user (has displayName + email) to /new-password', () => {
+  it('redirects a needsPasswordReset user (has name + email) to /new-password', () => {
     const user = makeUser({
       needsOnboarding: false,
       needsPasswordReset: true,
-      displayName: 'Bob',
+      firstName: 'Bob',
+      fullName: 'Bob',
       email: 'bob@example.com',
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
@@ -273,7 +282,8 @@ describe('OnboardingGate', () => {
     const user = makeUser({
       needsOnboarding: false,
       needsPasswordReset: true,
-      displayName: 'Bob',
+      firstName: 'Bob',
+      fullName: 'Bob',
       email: 'bob@example.com',
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
@@ -431,7 +441,8 @@ describe('OnboardingGate', () => {
     // password gate first — consent is only asked once setup is done.
     const user = makeUser({
       needsOnboarding: true,
-      displayName: '',
+      firstName: '',
+      fullName: '',
       needsGuidelinesConsent: true,
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });

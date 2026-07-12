@@ -36,7 +36,8 @@ interface AuthState {
   restoreSession: () => Promise<void>;
   completeOnboarding: (payload: {
     newPassword: string;
-    displayName?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
     email?: string | undefined;
     pronouns?: string | undefined;
     consentTypes?: ConsentTypeValue[] | undefined;

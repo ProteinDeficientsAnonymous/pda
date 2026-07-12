@@ -19,7 +19,7 @@ export default function MembersDirectoryScreen() {
     if (!q) return data;
     return data.filter(
       (m) =>
-        m.displayName.toLowerCase().includes(q) ||
+        m.fullName.toLowerCase().includes(q) ||
         m.phoneNumber.toLowerCase().includes(q) ||
         m.email.toLowerCase().includes(q),
     );
@@ -62,7 +62,7 @@ export default function MembersDirectoryScreen() {
 }
 
 function DirectoryRow({ member }: { member: DirectoryMember }) {
-  const initials = (member.displayName || '?').slice(0, 2).toLowerCase();
+  const initials = (member.fullName || '?').slice(0, 2).toLowerCase();
   return (
     <Link
       to={`/members/${member.id}`}
@@ -84,7 +84,7 @@ function DirectoryRow({ member }: { member: DirectoryMember }) {
       )}
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-sm font-medium">
-          {member.displayName || 'member'}
+          {member.fullName || 'member'}
         </p>
         {member.phoneNumber || member.email ? (
           <p className="text-foreground-tertiary truncate text-xs">

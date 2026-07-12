@@ -52,7 +52,8 @@ export function useJoinQuestions() {
 }
 
 export interface SubmitJoinRequestPayload {
-  displayName: string;
+  firstName: string;
+  lastName: string;
   phoneNumber: string;
   email: string;
   answers: Record<string, string>;
@@ -73,7 +74,8 @@ export function useSubmitJoinRequest() {
     mutationFn: async (payload: SubmitJoinRequestPayload) => {
       try {
         await apiClient.post('/api/community/join-request/', {
-          display_name: payload.displayName,
+          first_name: payload.firstName,
+          last_name: payload.lastName,
           phone_number: payload.phoneNumber,
           email: payload.email,
           answers: payload.answers,
@@ -123,7 +125,7 @@ export interface JoinRequestAnswer {
 
 export interface JoinRequestSummary {
   id: string;
-  displayName: string;
+  fullName: string;
   phoneNumber: string;
   answers: JoinRequestAnswer[];
   submittedAt: string;
@@ -146,6 +148,7 @@ interface WireAnswer {
 interface WireJoinRequest {
   id: string;
   display_name: string;
+  full_name?: string;
   phone_number: string;
   answers: WireAnswer[];
   submitted_at: string;
@@ -162,7 +165,7 @@ interface WireJoinRequest {
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
   return {
     id: w.id,
-    displayName: w.display_name,
+    fullName: w.full_name ?? w.display_name,
     phoneNumber: w.phone_number,
     answers: w.answers.map((a) => ({
       questionId: a.question_id,
@@ -281,7 +284,8 @@ export function useReorderJoinQuestions() {
 
 export interface JoinRequestDecision {
   id: string;
-  displayName: string;
+  fullName: string;
+  firstName: string;
   phoneNumber: string;
   status: JoinRequestStatus;
   /** Present only when the decision created a brand-new user. */
@@ -292,6 +296,8 @@ export interface JoinRequestDecision {
 interface WireDecision {
   id: string;
   display_name: string;
+  first_name?: string;
+  full_name?: string;
   phone_number: string;
   status: JoinRequestStatus;
   magic_link_token: string | null;
@@ -311,7 +317,8 @@ export function useDecideJoinRequest() {
       );
       return {
         id: data.id,
-        displayName: data.display_name,
+        fullName: data.full_name ?? data.display_name,
+        firstName: data.first_name ?? '',
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
@@ -344,7 +351,8 @@ export function useResendMagicLink() {
       );
       return {
         id: data.id,
-        displayName: data.display_name,
+        fullName: data.full_name ?? data.display_name,
+        firstName: data.first_name ?? '',
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,

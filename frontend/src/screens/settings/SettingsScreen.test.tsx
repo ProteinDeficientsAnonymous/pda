@@ -69,7 +69,9 @@ import SettingsScreen from './SettingsScreen';
 const TEST_USER: User = {
   id: 'u1',
   phoneNumber: '+12125550001',
-  displayName: 'Test User',
+  firstName: 'Test',
+  lastName: 'User',
+  fullName: 'Test User',
   nickname: '',
   email: 'test@example.com',
   bio: '',
@@ -162,6 +164,38 @@ describe('SettingsScreen', () => {
 
     await waitFor(() => {
       expect(authApi.updateProfile).toHaveBeenCalledWith({ nickname: 'Birdie' });
+    });
+  });
+
+  it('saves an edited first name via updateProfile', async () => {
+    const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit first name/i }));
+    const field = screen.getByLabelText(/^first name$/i);
+    await user.clear(field);
+    await user.type(field, 'Newname');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ firstName: 'Newname' });
+    });
+  });
+
+  it('saves an edited last name via updateProfile', async () => {
+    const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit last name/i }));
+    const field = screen.getByLabelText(/^last name$/i);
+    await user.clear(field);
+    await user.type(field, 'Newlast');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ lastName: 'Newlast' });
     });
   });
 

@@ -28,7 +28,7 @@ export function AvatarUpload({ size = 'md' }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   if (!user) return null;
-  const initials = user.displayName.slice(0, 2).toLowerCase() || '?';
+  const initials = user.fullName.slice(0, 2).toLowerCase() || '?';
   const photoUrl = user.profilePhotoUrl
     ? user.photoUpdatedAt
       ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`

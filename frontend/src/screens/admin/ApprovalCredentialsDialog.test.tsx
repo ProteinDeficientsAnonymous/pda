@@ -26,7 +26,9 @@ function makeUser(overrides?: Partial<User>): User {
   return {
     id: 'u1',
     phoneNumber: '+12125550000',
-    displayName: 'Vetter Vee',
+    firstName: 'Vetter',
+    lastName: 'Vee',
+    fullName: 'Vetter Vee',
     nickname: '',
     email: '',
     bio: '',
@@ -64,7 +66,8 @@ function renderDialog(user: User | null) {
       <ApprovalCredentialsDialog
         open
         onClose={() => {}}
-        displayName="Sam"
+        fullName="Sam Vetterson"
+        firstName="Sam"
         phoneNumber="+12025551234"
         magicLinkToken="abc123"
       />

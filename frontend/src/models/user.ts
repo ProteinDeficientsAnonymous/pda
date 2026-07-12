@@ -18,7 +18,9 @@ export interface Role {
 export interface User {
   id: string;
   phoneNumber: string;
-  displayName: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
   nickname: string;
   email: string;
   bio: string;
@@ -58,7 +60,7 @@ export interface User {
 export function passwordSetupRedirect(user: User | null): '/new-password' | '/onboarding' | null {
   if (!user) return null;
   if (!user.needsOnboarding && !user.needsPasswordReset) return null;
-  const hasNameAndEmail = user.displayName.length > 0 && !!user.email;
+  const hasNameAndEmail = user.firstName.length > 0 && !!user.email;
   return hasNameAndEmail ? '/new-password' : '/onboarding';
 }
 

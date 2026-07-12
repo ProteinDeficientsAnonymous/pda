@@ -52,6 +52,8 @@ describe('useUsers', () => {
         {
           id: 'u1',
           display_name: 'Ada',
+          first_name: 'Ada',
+          full_name: 'Ada',
           phone_number: '+15551230001',
           email: 'ada@example.com',
           bio: '',
@@ -82,7 +84,8 @@ describe('useUsers', () => {
     expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/');
     expect(result.current.data).toHaveLength(1);
     const [member] = result.current.data!;
-    expect(member?.displayName).toBe('Ada');
+    expect(member?.fullName).toBe('Ada');
+    expect(member?.firstName).toBe('Ada');
     expect(member?.phoneNumber).toBe('+15551230001');
     expect(member?.email).toBe('ada@example.com');
     expect(member?.showPhone).toBe(true);
@@ -126,6 +129,8 @@ describe('useCreateUser', () => {
         id: 'u2',
         phone_number: '+15551230002',
         display_name: 'Grace',
+        first_name: 'Grace',
+        full_name: 'Grace',
         magic_link_token: 'magic-abc',
       },
     });
@@ -136,21 +141,20 @@ describe('useCreateUser', () => {
 
     const created = await result.current.mutateAsync({
       phoneNumber: '+15551230002',
-      displayName: 'Grace',
       email: 'grace@example.com',
       roleId: 'role-xyz',
     });
 
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/create-user/', {
       phone_number: '+15551230002',
-      display_name: 'Grace',
       email: 'grace@example.com',
       role_id: 'role-xyz',
     });
     expect(created).toEqual({
       id: 'u2',
       phoneNumber: '+15551230002',
-      displayName: 'Grace',
+      fullName: 'Grace',
+      firstName: 'Grace',
       magicLinkToken: 'magic-abc',
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
@@ -198,10 +202,11 @@ describe('useUpdateUser', () => {
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useUpdateUser('u1'), { wrapper: makeWrapper(qc) });
 
-    await result.current.mutateAsync({ displayName: 'Ada Lovelace', isPaused: false });
+    await result.current.mutateAsync({ firstName: 'Ada', lastName: 'Lovelace', isPaused: false });
 
     expect(mockedPatch).toHaveBeenCalledWith('/api/auth/users/u1/', {
-      display_name: 'Ada Lovelace',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
       is_paused: false,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));

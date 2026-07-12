@@ -300,7 +300,7 @@ function filterAndSort(
   if (q) {
     result = result.filter(
       (m) =>
-        m.displayName.toLowerCase().includes(q) ||
+        m.fullName.toLowerCase().includes(q) ||
         m.phoneNumber.toLowerCase().includes(q) ||
         m.email.toLowerCase().includes(q) ||
         m.id.toLowerCase().startsWith(q),
@@ -316,9 +316,9 @@ function sortMembers(members: Member[], sort: SortKey): Member[] {
   const sorted = [...members];
   if (sort === 'name') {
     sorted.sort((a, b) =>
-      (a.displayName || a.phoneNumber)
+      (a.fullName || a.phoneNumber)
         .toLowerCase()
-        .localeCompare((b.displayName || b.phoneNumber).toLowerCase()),
+        .localeCompare((b.fullName || b.phoneNumber).toLowerCase()),
     );
     return sorted;
   }
@@ -333,7 +333,7 @@ function sortMembers(members: Member[], sort: SortKey): Member[] {
 }
 
 function MemberRow({ member }: { member: Member }) {
-  const initials = (member.displayName || member.phoneNumber).slice(0, 2).toLowerCase();
+  const initials = (member.fullName || member.phoneNumber).slice(0, 2).toLowerCase();
   return (
     <Link
       to={`/admin/members/${member.id}`}
@@ -355,7 +355,7 @@ function MemberRow({ member }: { member: Member }) {
       )}
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-sm font-medium">
-          {member.displayName || formatPhone(member.phoneNumber)}
+          {member.fullName || formatPhone(member.phoneNumber)}
         </p>
         <p className="text-foreground-tertiary truncate text-xs">
           {formatPhone(member.phoneNumber)}

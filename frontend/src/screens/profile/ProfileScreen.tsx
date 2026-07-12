@@ -34,7 +34,7 @@ export default function ProfileScreen() {
       <header className="flex flex-col items-center gap-3 text-center">
         <AvatarUpload size="lg" />
         <div className="flex flex-col items-center gap-1">
-          <h1 className="text-2xl font-medium tracking-tight">{user.displayName}</h1>
+          <h1 className="text-2xl font-medium tracking-tight">{user.fullName}</h1>
           {user.nickname ? <p className="text-muted text-sm">"{user.nickname}"</p> : null}
           {user.pronouns ? <p className="text-muted text-sm">{user.pronouns}</p> : null}
           <ContactLine value={formatPhone(user.phoneNumber)} visible={user.showPhone} />

@@ -31,7 +31,9 @@ import * as authApi from '@/api/auth';
 const mockUser: User = {
   id: 'user-1',
   phoneNumber: '+12125551234',
-  displayName: 'Alice',
+  firstName: 'Alice',
+  lastName: '',
+  fullName: 'Alice',
   nickname: '',
   email: 'alice@example.com',
   bio: '',

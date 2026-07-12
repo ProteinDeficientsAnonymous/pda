@@ -18,7 +18,8 @@ describe('MemberCreateDialog', () => {
     mutateAsync.mockResolvedValue({
       id: '1',
       phoneNumber: '+12025550101',
-      displayName: '',
+      fullName: '',
+      firstName: '',
       magicLinkToken: 'tok',
     });
     vi.mocked(useCreateUser).mockReturnValue({
