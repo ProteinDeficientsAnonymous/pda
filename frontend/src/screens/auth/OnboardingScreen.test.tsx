@@ -18,6 +18,10 @@ vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
 }));
 
+vi.mock('@/screens/settings/AvatarUpload', () => ({
+  AvatarUpload: () => <div data-testid="avatar-upload" />,
+}));
+
 function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'u1',
@@ -45,9 +49,19 @@ function makeUser(overrides: Partial<User> = {}): User {
 
 describe('OnboardingScreen', () => {
   const completeOnboarding = vi.fn();
+  const updateProfile = vi.fn();
+  const startProfileStep = vi.fn();
+  const finishProfileStep = vi.fn();
 
-  function setupMock(user: User) {
-    const storeState = { completeOnboarding, user };
+  function setupMock(user: User, profileStepActive = false) {
+    const storeState = {
+      completeOnboarding,
+      updateProfile,
+      startProfileStep,
+      finishProfileStep,
+      user,
+      profileStepActive,
+    };
     // Cast via `as never` so partial state satisfies the full AuthState type.
     vi.mocked(useAuthStore).mockImplementation(
       Object.assign((selector: (s: typeof storeState) => unknown) => selector(storeState), {
@@ -58,6 +72,11 @@ describe('OnboardingScreen', () => {
 
   beforeEach(() => {
     completeOnboarding.mockReset();
+    updateProfile.mockReset();
+    startProfileStep.mockReset();
+    finishProfileStep.mockReset();
+    updateProfile.mockResolvedValue(undefined);
+    setupMock(makeUser());
   });
 
   it('shows email-required error when email is empty', async () => {
@@ -163,5 +182,48 @@ describe('OnboardingScreen', () => {
       newPassword: 'abcd1234ABCD!',
       consentTypes: ['guidelines', 'sms'],
     });
+  });
+
+  it('starts the profile step after successful account setup', async () => {
+    completeOnboarding.mockResolvedValue(undefined);
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(completeOnboarding).toHaveBeenCalledTimes(1);
+    expect(startProfileStep).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/couldn't finish onboarding/i)).not.toBeInTheDocument();
+  });
+
+  it('renders the profile step when profileStepActive is set', () => {
+    setupMock(makeUser({ needsOnboarding: false }), true);
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: /^done$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /do this later/i })).toBeInTheDocument();
+  });
+
+  it('stays on the account step when account setup fails', async () => {
+    completeOnboarding.mockRejectedValue(new Error('nope'));
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(await screen.findByText(/couldn't finish onboarding/i)).toBeInTheDocument();
+    expect(startProfileStep).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /^done$/i })).not.toBeInTheDocument();
   });
 });
