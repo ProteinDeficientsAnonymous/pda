@@ -309,9 +309,10 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
 
 @router.delete(
     "/events/{event_id}/rsvp/",
-    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=gated_jwt,
 )
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
 def delete_rsvp(request, event_id: UUID):
     try:
         Event.objects.get(id=event_id)
