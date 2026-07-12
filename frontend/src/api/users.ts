@@ -29,6 +29,8 @@ export interface Member {
   isPaused: boolean;
   needsOnboarding: boolean;
   loginLinkRequested: boolean;
+  // Most recent event the member was checked in as attended. null if never.
+  lastAttendedAt: Date | null;
   roles: MemberRole[];
 }
 
@@ -54,6 +56,7 @@ interface WireMember {
   is_paused?: boolean;
   needs_onboarding?: boolean;
   login_link_requested?: boolean;
+  last_attended?: string | null;
   roles: WireRole[];
 }
 
@@ -80,13 +83,14 @@ function fromWire(w: WireMember): Member {
     isPaused: w.is_paused ?? false,
     needsOnboarding: w.needs_onboarding ?? false,
     loginLinkRequested: w.login_link_requested ?? false,
+    lastAttendedAt: w.last_attended ? new Date(w.last_attended) : null,
     roles: w.roles.map(mapRole),
   };
 }
 
 // --- Queries / mutations -----------------------------------------------------
 
-const USERS_KEY = ['users'] as const;
+export const USERS_KEY = ['users'] as const;
 
 export function useUsers() {
   return useQuery({

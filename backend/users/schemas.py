@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
@@ -92,6 +93,8 @@ class UserOut(BaseModel):
     login_link_requested: bool = False
     week_start: str = "sunday"
     calendar_feed_scope: str = "all"
+    # Only populated by the list_users annotation; None everywhere else.
+    last_attended: datetime | None = None
     roles: list[RoleOut]
 
     @classmethod
@@ -120,6 +123,7 @@ class UserOut(BaseModel):
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,
+            last_attended=getattr(user, "last_attended", None),
             roles=[
                 RoleOut(
                     id=str(r.id),

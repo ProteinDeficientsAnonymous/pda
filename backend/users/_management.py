@@ -3,8 +3,10 @@
 import logging
 import re
 
+from community._rsvp_counts import attendance_q, reportable_events_q
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
+from community.models import AttendanceStatus
 from config.audit import audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -229,10 +231,19 @@ def list_users(request):
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
+    # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
+    attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
+    reportable = reportable_events_q(prefix="event_rsvps__event")
     users = (
         User.objects.members()
         .filter(archived_at__isnull=True)
         .prefetch_related("roles")
+        .annotate(
+            last_attended=dj_models.Max(
+                "event_rsvps__event__start_datetime",
+                filter=attended & reportable,
+            )
+        )
         .order_by("phone_number")
     )
     return Status(200, [UserOut.from_user(u) for u in users])
