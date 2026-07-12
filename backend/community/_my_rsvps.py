@@ -64,13 +64,8 @@ def _resolve_token_user(token: str) -> User:
 
 
 def _eligible_event_rsvps(user):
-    """The user's RSVPs on events still public-RSVP-eligible right now.
-
-    Mirrors _load_public_rsvp_event's gate (the write path) so a cancelled,
-    deleted, drafted, or hidden event drops out of the list instead of leaking
-    its member-only details to the token holder. Past events (TBD-aware) are
-    excluded via the datetime bound, matching Event.is_past.
-    """
+    """The user's RSVPs on events still public-RSVP-eligible, matching _load_public_rsvp_event."""
+    # Ineligible events must drop out, else their member-only details leak to the token holder.
     now = timezone.now()
     past = Q(event__datetime_tbd=False) & (
         Q(event__end_datetime__lt=now)
@@ -106,8 +101,7 @@ def list_my_rsvps(request, token: str = ""):
     user = _resolve_token_user(token)
     items = []
     for rsvp in _eligible_event_rsvps(user):
-        # _event_out reads event.comment_count; carry the per-row annotation over
-        # so it doesn't fall back to a per-event count query.
+        # Feed the annotation to _event_out's event.comment_count lookup, avoiding a per-event query.
         rsvp.event.comment_count = rsvp.event_comment_count
         items.append(
             MyRsvpItemOut(
