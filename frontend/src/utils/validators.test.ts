@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   displayName,
+  firstName,
+  lastName,
   maxLength,
   minLength,
   optionalDisplayName,
@@ -11,6 +13,20 @@ import {
   required,
   roleName,
 } from './validators';
+
+describe('firstName / lastName aliases', () => {
+  it('firstName is required and rejects digits', () => {
+    expect(firstName('')).toBe('Required');
+    expect(firstName('Ada')).toBeNull();
+    expect(firstName('Ada1')).not.toBeNull();
+  });
+
+  it('lastName is optional and rejects digits', () => {
+    expect(lastName('')).toBeNull();
+    expect(lastName('Lovelace')).toBeNull();
+    expect(lastName('Lovelace2')).not.toBeNull();
+  });
+});
 
 describe('displayName', () => {
   it('accepts ASCII name', () => {
