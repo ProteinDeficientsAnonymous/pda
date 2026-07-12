@@ -1,5 +1,3 @@
-"""RSVP endpoints for events."""
-
 import logging
 from datetime import timedelta
 from uuid import UUID
