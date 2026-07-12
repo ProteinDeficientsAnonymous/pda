@@ -64,7 +64,8 @@ function renderDialog(user: User | null) {
       <ApprovalCredentialsDialog
         open
         onClose={() => {}}
-        displayName="Sam"
+        fullName="Sam Vetterson"
+        firstName="Sam"
         phoneNumber="+12025551234"
         magicLinkToken="abc123"
       />

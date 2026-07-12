@@ -19,6 +19,8 @@ export interface MemberRole {
 export interface Member {
   id: string;
   fullName: string;
+  firstName: string;
+  lastName: string;
   phoneNumber: string;
   email: string;
   bio: string;
@@ -73,6 +75,8 @@ function fromWire(w: WireMember): Member {
   return {
     id: w.id,
     fullName: w.full_name ?? w.display_name ?? '',
+    firstName: w.first_name ?? '',
+    lastName: w.last_name ?? '',
     phoneNumber: w.phone_number,
     email: w.email ?? '',
     bio: w.bio ?? '',
@@ -112,6 +116,7 @@ export interface CreateUserResult {
   id: string;
   phoneNumber: string;
   fullName: string;
+  firstName: string;
   magicLinkToken: string;
 }
 
@@ -138,6 +143,7 @@ export function useCreateUser() {
         id: data.id,
         phoneNumber: data.phone_number,
         fullName: data.full_name ?? data.display_name ?? '',
+        firstName: data.first_name ?? '',
         magicLinkToken: data.magic_link_token,
       };
     },

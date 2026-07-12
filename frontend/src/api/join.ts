@@ -285,6 +285,7 @@ export function useReorderJoinQuestions() {
 export interface JoinRequestDecision {
   id: string;
   fullName: string;
+  firstName: string;
   phoneNumber: string;
   status: JoinRequestStatus;
   /** Present only when the decision created a brand-new user. */
@@ -318,6 +319,7 @@ export function useDecideJoinRequest() {
       return {
         id: data.id,
         fullName: data.full_name ?? data.display_name ?? '',
+        firstName: data.first_name ?? '',
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
@@ -351,6 +353,7 @@ export function useResendMagicLink() {
       return {
         id: data.id,
         fullName: data.full_name ?? data.display_name ?? '',
+        firstName: data.first_name ?? '',
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,

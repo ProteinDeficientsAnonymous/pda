@@ -45,6 +45,7 @@ export default function JoinRequestsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [credsFor, setCredsFor] = useState<{
     fullName: string;
+    firstName: string;
     phoneNumber: string;
     magicLinkToken: string;
   } | null>(null);
@@ -77,6 +78,7 @@ export default function JoinRequestsScreen() {
       if (isApprove && result.magicLinkToken) {
         setCredsFor({
           fullName: result.fullName,
+          firstName: result.firstName,
           phoneNumber: result.phoneNumber,
           magicLinkToken: result.magicLinkToken,
         });
@@ -118,6 +120,7 @@ export default function JoinRequestsScreen() {
       if (result.magicLinkToken) {
         setCredsFor({
           fullName: result.fullName,
+          firstName: result.firstName,
           phoneNumber: result.phoneNumber,
           magicLinkToken: result.magicLinkToken,
         });
@@ -185,6 +188,7 @@ export default function JoinRequestsScreen() {
             setCredsFor(null);
           }}
           fullName={credsFor.fullName}
+          firstName={credsFor.firstName}
           phoneNumber={credsFor.phoneNumber}
           magicLinkToken={credsFor.magicLinkToken}
         />

@@ -214,7 +214,7 @@ function MemberMagicLinkSection({ member }: { member: Member }) {
     }, 2000);
   }
 
-  const welcomeMessage = url ? buildWelcomeMessage(member.fullName, url) : '';
+  const welcomeMessage = url ? buildWelcomeMessage(member.firstName, url) : '';
   const smsHref = url ? buildSmsHref(member.phoneNumber, welcomeMessage) : '';
 
   return (

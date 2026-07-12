@@ -25,6 +25,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   fullName: string;
+  firstName: string;
   phoneNumber: string;
   magicLinkToken: string | null;
 }
@@ -33,6 +34,7 @@ export function ApprovalCredentialsDialog({
   open,
   onClose,
   fullName,
+  firstName,
   phoneNumber,
   magicLinkToken,
 }: Props) {
@@ -48,12 +50,12 @@ export function ApprovalCredentialsDialog({
   // vetters can still send a message.
   const welcomeMessage = templateQ.data
     ? renderWelcomeMessage(templateQ.data.body, {
-        name: fullName,
+        name: firstName,
         fullName,
         senderName,
         magicLink: magicLinkUrl,
       })
-    : buildWelcomeMessage(fullName, magicLinkUrl);
+    : buildWelcomeMessage(firstName, magicLinkUrl);
   const smsHref = buildSmsHref(phoneNumber, welcomeMessage);
   const whatsappHref = buildWhatsAppHref(phoneNumber, welcomeMessage);
   const sendButtonsDisabled = templateQ.isPending;

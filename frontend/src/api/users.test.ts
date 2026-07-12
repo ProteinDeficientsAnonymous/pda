@@ -52,6 +52,7 @@ describe('useUsers', () => {
         {
           id: 'u1',
           display_name: 'Ada',
+          first_name: 'Ada',
           full_name: 'Ada',
           phone_number: '+15551230001',
           email: 'ada@example.com',
@@ -84,6 +85,7 @@ describe('useUsers', () => {
     expect(result.current.data).toHaveLength(1);
     const [member] = result.current.data!;
     expect(member?.fullName).toBe('Ada');
+    expect(member?.firstName).toBe('Ada');
     expect(member?.phoneNumber).toBe('+15551230001');
     expect(member?.email).toBe('ada@example.com');
     expect(member?.showPhone).toBe(true);
@@ -127,6 +129,7 @@ describe('useCreateUser', () => {
         id: 'u2',
         phone_number: '+15551230002',
         display_name: 'Grace',
+        first_name: 'Grace',
         full_name: 'Grace',
         magic_link_token: 'magic-abc',
       },
@@ -153,6 +156,7 @@ describe('useCreateUser', () => {
       id: 'u2',
       phoneNumber: '+15551230002',
       fullName: 'Grace',
+      firstName: 'Grace',
       magicLinkToken: 'magic-abc',
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));

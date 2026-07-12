@@ -120,7 +120,7 @@ function CredentialsView({
 }) {
   const magicLinkUrl = buildMagicLinkUrl(result.magicLinkToken);
   const greeting = result.fullName || formatPhone(result.phoneNumber);
-  const welcomeMessage = buildWelcomeMessage(result.fullName, magicLinkUrl);
+  const welcomeMessage = buildWelcomeMessage(result.firstName, magicLinkUrl);
   const smsHref = buildSmsHref(result.phoneNumber, welcomeMessage);
 
   async function copy() {
