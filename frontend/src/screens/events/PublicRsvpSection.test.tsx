@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  canPublicRsvp,
   type Event,
   EventStatus,
   EventType,
@@ -14,7 +15,7 @@ vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
-import { canPublicRsvp, PublicRsvpSection } from './PublicRsvpSection';
+import { PublicRsvpSection } from './PublicRsvpSection';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {

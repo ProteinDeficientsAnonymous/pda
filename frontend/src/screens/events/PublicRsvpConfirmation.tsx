@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { PublicRsvpOut } from '@/api/publicRsvp';
 import type { Event } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
+import { ensureHttps } from '@/utils/url';
 
 interface Props {
   event: Event;
@@ -11,9 +12,10 @@ interface Props {
 
 function eventLinks(event: Event): { label: string; url: string }[] {
   const links: { label: string; url: string }[] = [];
-  if (event.whatsappLink) links.push({ label: 'whatsapp group', url: event.whatsappLink });
-  if (event.partifulLink) links.push({ label: 'partiful', url: event.partifulLink });
-  if (event.otherLink) links.push({ label: 'event link', url: event.otherLink });
+  if (event.whatsappLink)
+    links.push({ label: 'whatsapp group', url: ensureHttps(event.whatsappLink) });
+  if (event.partifulLink) links.push({ label: 'partiful', url: ensureHttps(event.partifulLink) });
+  if (event.otherLink) links.push({ label: 'event link', url: ensureHttps(event.otherLink) });
   return links;
 }
 

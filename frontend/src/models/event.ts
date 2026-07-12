@@ -155,6 +155,16 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   return hasPermission(user, Permission.ManageEvents);
 }
 
+export function canPublicRsvp(event: Event): boolean {
+  return (
+    event.eventType === EventType.Official &&
+    event.visibility === EventVisibility.Public &&
+    event.rsvpEnabled &&
+    event.status !== EventStatus.Cancelled &&
+    !event.isPast
+  );
+}
+
 export function eventClass(e: Event): string {
   if (e.status === EventStatus.Cancelled) return 'pda-evt pda-evt-cancelled';
   if (e.eventType === EventType.Official) return 'pda-evt pda-evt-official';
