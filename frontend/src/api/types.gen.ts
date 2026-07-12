@@ -1275,7 +1275,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit Public Rsvp */
-        post: operations["community__public_rsvp_submit_public_rsvp"];
+        post: operations["community__public_rsvp_submit_submit_public_rsvp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1290,7 +1290,7 @@ export interface paths {
             cookie?: never;
         };
         /** List My Rsvps */
-        get: operations["community__my_rsvps_list_my_rsvps"];
+        get: operations["community__public_rsvp_manage_list_my_rsvps"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1309,9 +1309,9 @@ export interface paths {
         get?: never;
         put?: never;
         /** Update My Rsvp */
-        post: operations["community__my_rsvps_update_my_rsvp"];
+        post: operations["community__public_rsvp_manage_update_my_rsvp"];
         /** Delete My Rsvp */
-        delete: operations["community__my_rsvps_delete_my_rsvp"];
+        delete: operations["community__public_rsvp_manage_delete_my_rsvp"];
         options?: never;
         head?: never;
         patch?: never;
@@ -7643,7 +7643,7 @@ export interface operations {
             };
         };
     };
-    community__public_rsvp_submit_public_rsvp: {
+    community__public_rsvp_submit_submit_public_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -7705,7 +7705,7 @@ export interface operations {
             };
         };
     };
-    community__my_rsvps_list_my_rsvps: {
+    community__public_rsvp_manage_list_my_rsvps: {
         parameters: {
             query?: {
                 token?: string;
@@ -7745,7 +7745,7 @@ export interface operations {
             };
         };
     };
-    community__my_rsvps_update_my_rsvp: {
+    community__public_rsvp_manage_update_my_rsvp: {
         parameters: {
             query?: {
                 token?: string;
@@ -7800,7 +7800,7 @@ export interface operations {
             };
         };
     };
-    community__my_rsvps_delete_my_rsvp: {
+    community__public_rsvp_manage_delete_my_rsvp: {
         parameters: {
             query?: {
                 token?: string;

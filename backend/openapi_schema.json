@@ -10343,7 +10343,7 @@
     },
     "/api/community/public/events/{event_id}/rsvp/": {
       "post": {
-        "operationId": "community__public_rsvp_submit_public_rsvp",
+        "operationId": "community__public_rsvp_submit_submit_public_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -10425,7 +10425,7 @@
     },
     "/api/community/public/my-rsvps/": {
       "get": {
-        "operationId": "community__my_rsvps_list_my_rsvps",
+        "operationId": "community__public_rsvp_manage_list_my_rsvps",
         "parameters": [
           {
             "in": "query",
@@ -10478,7 +10478,7 @@
     },
     "/api/community/public/my-rsvps/{event_id}/": {
       "delete": {
-        "operationId": "community__my_rsvps_delete_my_rsvp",
+        "operationId": "community__public_rsvp_manage_delete_my_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -10531,7 +10531,7 @@
         ]
       },
       "post": {
-        "operationId": "community__my_rsvps_update_my_rsvp",
+        "operationId": "community__public_rsvp_manage_update_my_rsvp",
         "parameters": [
           {
             "in": "path",
