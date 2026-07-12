@@ -11,8 +11,14 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { type Event, RsvpServerStatus, RsvpStatus, spotsLeft } from '@/models/event';
-import { cn } from '@/utils/cn';
+import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
+import {
+  type Event,
+  type RsvpInputStatus,
+  RsvpServerStatus,
+  RsvpStatus,
+  spotsLeft,
+} from '@/models/event';
 
 import { RsvpGuestList } from './RsvpGuestList';
 
@@ -20,14 +26,6 @@ interface Props {
   event: Event;
   canSeeInvited: boolean;
 }
-
-type InputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
-
-const PILLS: { status: InputStatus; label: string }[] = [
-  { status: RsvpStatus.Attending, label: "i'm going" },
-  { status: RsvpStatus.Maybe, label: 'maybe' },
-  { status: RsvpStatus.CantGo, label: "can't go" },
-];
 
 export function RsvpSection({ event, canSeeInvited }: Props) {
   const setRsvp = useSetRsvp();
@@ -44,7 +42,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
 
-  async function apply(next: InputStatus) {
+  async function apply(next: RsvpInputStatus) {
     setError(null);
     try {
       if (next === myRsvp) {
@@ -75,7 +73,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     try {
       await setRsvp.mutateAsync({
         eventId: event.id,
-        status: myRsvp as InputStatus,
+        status: myRsvp as RsvpInputStatus,
         hasPlusOne: !hasPlusOne,
       });
     } catch (err) {
@@ -91,23 +89,16 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
         <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
       ) : (
         <>
-          <div className="flex flex-wrap justify-center gap-2">
-            {PILLS.map((p) => {
-              const waitlistAttending =
-                p.status === RsvpStatus.Attending &&
-                atCapacity &&
-                myRsvp !== RsvpServerStatus.Attending;
-              return (
-                <RsvpPill
-                  key={p.status}
-                  label={waitlistAttending ? 'join the waitlist' : p.label}
-                  active={myRsvp === p.status}
-                  disabled={busy}
-                  onClick={() => void apply(p.status)}
-                />
-              );
-            })}
-          </div>
+          <RsvpStatusPicker
+            value={myRsvp}
+            disabled={busy}
+            onSelect={(status) => void apply(status)}
+            labelFor={(status, def) =>
+              status === RsvpStatus.Attending && atCapacity && myRsvp !== RsvpServerStatus.Attending
+                ? 'join the waitlist'
+                : def
+            }
+          />
           <SpotsLeft event={event} />
           {event.allowPlusOnes &&
           (myRsvp === RsvpServerStatus.Attending || myRsvp === RsvpServerStatus.Maybe) ? (
@@ -131,36 +122,6 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
         <RsvpGuestList event={event} canSeeInvited={canSeeInvited} />
       </div>
     </section>
-  );
-}
-
-function RsvpPill({
-  label,
-  active,
-  disabled,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'inline-flex h-10 items-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
-        active
-          ? 'bg-brand-600 text-brand-on'
-          : 'border-border-strong text-foreground-secondary hover:bg-background border',
-        disabled && 'opacity-60',
-      )}
-    >
-      {label}
-    </button>
   );
 }
 

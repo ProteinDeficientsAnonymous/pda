@@ -8,6 +8,7 @@ import type { JoinQuestion } from '@/api/join';
 import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { Honeypot } from '@/components/ui/Honeypot';
 import { PhoneField } from '@/components/ui/PhoneField';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
@@ -148,20 +149,7 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
       </p>
 
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
-        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
-          <label htmlFor="website-hp">website (leave blank)</label>
-          <input
-            id="website-hp"
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-            value={website}
-            onChange={(e) => {
-              setWebsite(e.target.value);
-            }}
-          />
-        </div>
+        <Honeypot value={website} onChange={setWebsite} />
         <TextField
           label="display name"
           value={displayName}
