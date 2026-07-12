@@ -45,25 +45,20 @@ describe('passwordSetupRedirect', () => {
     );
   });
 
-  it('uses fullName presence for the name check, not firstName', () => {
-    const noName = makeUser({
+  it('uses firstName presence for the name check', () => {
+    const noFirstName = makeUser({
       firstName: '',
-      lastName: '',
-      fullName: '',
       email: 'a@b.c',
       needsOnboarding: true,
     });
-    expect(passwordSetupRedirect(noName)).toBe('/onboarding'); // no name → onboarding
-    // last-name-only record: fullName is populated but firstName is empty → still counts as named
-    const lastNameOnly = makeUser({
-      firstName: '',
-      lastName: 'Smith',
-      fullName: 'Smith',
+    expect(passwordSetupRedirect(noFirstName)).toBe('/onboarding'); // no first name → onboarding
+    const named = makeUser({
+      firstName: 'Ada',
       email: 'a@b.c',
       needsOnboarding: true,
       needsPasswordReset: false,
     });
-    expect(passwordSetupRedirect(lastNameOnly)).toBe('/new-password'); // has name + email
+    expect(passwordSetupRedirect(named)).toBe('/new-password'); // has name + email
   });
 });
 
@@ -109,13 +104,7 @@ describe('postAuthRedirect', () => {
 
   it('prioritises password setup over consent when both are pending', () => {
     const target = postAuthRedirect(
-      makeUser({
-        needsOnboarding: true,
-        firstName: '',
-        lastName: '',
-        fullName: '',
-        needsGuidelinesConsent: true,
-      }),
+      makeUser({ needsOnboarding: true, firstName: '', needsGuidelinesConsent: true }),
     );
     expect(target).toBe('/onboarding');
   });
