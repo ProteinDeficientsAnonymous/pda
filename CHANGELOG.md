@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.6.0...v0.7.0) (2026-07-12)
+
+
+### Features
+
+* **profile:** optional nickname beneath the name — PR3 (Issue 532) ([#730](https://github.com/ProteinDeficientsAnonymous/pda/issues/730)) ([a393b85](https://github.com/ProteinDeficientsAnonymous/pda/commit/a393b85e4aa74ff10a55e94a10a1c867abeb3385))
+
 # [0.6.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.5.0...v0.6.0) (2026-07-12)
 
 
