@@ -8936,7 +8936,7 @@
     },
     "/api/community/events/{event_id}/poll/options/": {
       "post": {
-        "operationId": "community__polls_add_poll_option",
+        "operationId": "community__poll_options_add_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -9024,7 +9024,7 @@
     },
     "/api/community/events/{event_id}/poll/options/{option_id}/": {
       "delete": {
-        "operationId": "community__polls_delete_poll_option",
+        "operationId": "community__poll_options_delete_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -9110,7 +9110,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__polls_update_poll_option",
+        "operationId": "community__poll_options_update_poll_option",
         "parameters": [
           {
             "in": "path",

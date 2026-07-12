@@ -904,7 +904,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add Poll Option */
-        post: operations["community__polls_add_poll_option"];
+        post: operations["community__poll_options_add_poll_option"];
         delete?: never;
         options?: never;
         head?: never;
@@ -922,11 +922,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Poll Option */
-        delete: operations["community__polls_delete_poll_option"];
+        delete: operations["community__poll_options_delete_poll_option"];
         options?: never;
         head?: never;
         /** Update Poll Option */
-        patch: operations["community__polls_update_poll_option"];
+        patch: operations["community__poll_options_update_poll_option"];
         trace?: never;
     };
     "/api/community/events/{event_id}/poll/vote/": {
@@ -6640,7 +6640,7 @@ export interface operations {
             };
         };
     };
-    community__polls_add_poll_option: {
+    community__poll_options_add_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -6702,7 +6702,7 @@ export interface operations {
             };
         };
     };
-    community__polls_delete_poll_option: {
+    community__poll_options_delete_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -6761,7 +6761,7 @@ export interface operations {
             };
         };
     };
-    community__polls_update_poll_option: {
+    community__poll_options_update_poll_option: {
         parameters: {
             query?: never;
             header?: never;
