@@ -9,24 +9,28 @@ _PYPROJECT = _ROOT / "pyproject.toml"
 _PACKAGE_JSON = _ROOT / "frontend" / "package.json"
 
 
+_PROJECT_TABLE = re.compile(r"(?ms)^\[project\]\s*$.*?(?=^\[|\Z)")
+_VERSION_LINE = re.compile(r"""(?m)^(version\s*=\s*)(["']).*?\2""")
+
+
 def set_pyproject_version(path: Path, version: str) -> None:
     """Rewrite [project].version, leaving every other table untouched.
     param path(Path): path to pyproject.toml
     param version(str): new semver string, e.g. "1.2.3"
     """
     text = path.read_text()
-    current = tomllib.loads(text).get("project", {}).get("version")
-    if current is None:
+    if tomllib.loads(text).get("project", {}).get("version") is None:
         raise ValueError(f"no [project].version in {path}")
-    # Scope by the known value; a replacement function inserts `version` literally
-    # so a value with regex-replacement syntax (\g<1>, \1) can't corrupt the output.
-    line = re.compile(rf"""(?m)^(version\s*=\s*)(["']){re.escape(current)}\2""")
-    new_text, count = line.subn(lambda m: f'{m.group(1)}"{version}"', text)
+    section = _PROJECT_TABLE.search(text)
+    if section is None:
+        raise ValueError(f"no [project] table in {path}")
+    # Rewrite only within the [project] table so a version= line in any other
+    # table can't match. A replacement function inserts `version` literally, so a
+    # value containing regex-replacement syntax (\g<1>, \1) can't corrupt output.
+    new_section, count = _VERSION_LINE.subn(lambda m: f'{m.group(1)}"{version}"', section.group())
     if count != 1:
-        raise ValueError(
-            f"expected exactly one version = {current!r} line in {path}, found {count}"
-        )
-    path.write_text(new_text)
+        raise ValueError(f"expected exactly one version line in [project], found {count}")
+    path.write_text(text[: section.start()] + new_section + text[section.end() :])
 
 
 def set_package_json_version(path: Path, version: str) -> None:

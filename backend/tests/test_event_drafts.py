@@ -384,6 +384,22 @@ class TestPublishDraft:
         draft.refresh_from_db()
         assert draft.status == EventStatus.ACTIVE
 
+    def test_field_edit_rolls_back_when_transition_rejects(
+        self, api_client, future_active_event, creator_headers
+    ):
+        # A field edit paired with a status transition that fails must not persist
+        # (update_event wraps both in one transaction).
+        response = api_client.patch(
+            f"/api/community/events/{future_active_event.id}/",
+            data=json.dumps({"title": "Edited Title", "status": "draft"}),
+            content_type="application/json",
+            **creator_headers,
+        )
+        assert response.status_code == 400
+        future_active_event.refresh_from_db()
+        assert future_active_event.title == "Active BBQ"
+        assert future_active_event.status == EventStatus.ACTIVE
+
     def test_publish_dateless_draft_rejected(self, api_client, creator_headers, creator):
         """A draft with no start_datetime and datetime_tbd=False can't be published.
         Drafts may be saved incomplete, but publishing requires a real date or tbd."""

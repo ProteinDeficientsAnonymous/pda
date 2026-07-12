@@ -44,23 +44,23 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
 
-  async function apply(next: InputStatus) {
+  async function removeMyRsvp() {
     setError(null);
     try {
-      if (next === myRsvp) {
-        await removeRsvp.mutateAsync(event.id);
-      } else {
-        await setRsvp.mutateAsync({ eventId: event.id, status: next });
-      }
+      await removeRsvp.mutateAsync(event.id);
     } catch (err) {
       setError(extractError(err));
     }
   }
 
-  async function leaveWaitlist() {
+  async function apply(next: InputStatus) {
+    if (next === myRsvp) {
+      await removeMyRsvp();
+      return;
+    }
     setError(null);
     try {
-      await removeRsvp.mutateAsync(event.id);
+      await setRsvp.mutateAsync({ eventId: event.id, status: next });
     } catch (err) {
       setError(extractError(err));
     }
@@ -88,7 +88,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {onWaitlist ? (
-        <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
+        <WaitlistView onLeave={() => void removeMyRsvp()} busy={busy} />
       ) : (
         <>
           <div className="flex flex-wrap justify-center gap-2">

@@ -7,6 +7,7 @@ from config.audit import audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
+from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
@@ -430,13 +431,15 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     new_status = updates.pop("status", None)
     notify_attendees = updates.pop("notify_attendees", False) or False
 
-    # Field edits before the transition so publish validates the corrected date.
-    _apply_field_updates(request, event, event_id, updates)
+    # Field edits before the transition so publish validates the corrected date,
+    # both inside one transaction so a rejected transition rolls back the edits.
+    with transaction.atomic():
+        _apply_field_updates(request, event, event_id, updates)
 
-    if new_status is not None:
-        early = _handle_status_update(request, event, new_status, notify_attendees)
-        if early is not None:
-            return early
+        if new_status is not None:
+            early = _handle_status_update(request, event, new_status, notify_attendees)
+            if early is not None:
+                return early
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

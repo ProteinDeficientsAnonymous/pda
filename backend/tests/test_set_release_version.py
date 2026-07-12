@@ -1,8 +1,7 @@
 import importlib.util
 import json
+import tomllib
 from pathlib import Path
-
-import pytest
 
 _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "set_release_version.py"
 _spec = importlib.util.spec_from_file_location("set_release_version", _SCRIPT)
@@ -62,8 +61,6 @@ def test_package_json_preserves_trailing_newline(tmp_path):
 
 
 def test_pyproject_version_handles_single_quotes_and_no_spaces(tmp_path):
-    import tomllib
-
     p = tmp_path / "pyproject.toml"
     p.write_text("[project]\nname = 'pda'\nversion='0.1.0'\n")
     srv.set_pyproject_version(p, "1.2.3")
@@ -79,17 +76,19 @@ def test_pyproject_version_inserts_literally_not_as_regex_template(tmp_path):
     assert r'version = "9.9.9\g<1>x"' in p.read_text()
 
 
-def test_pyproject_version_raises_when_value_is_ambiguous(tmp_path):
+def test_pyproject_version_updates_project_when_another_table_shares_the_value(tmp_path):
     p = tmp_path / "pyproject.toml"
     p.write_text(
         "[project]\n"
         'version = "0.1.0"\n'
         "\n"
         "[tool.foo]\n"
-        'version = "0.1.0"\n'  # same value as [project] → ambiguous, must refuse
+        'version = "0.1.0"\n'  # same value as [project], different table → left alone
     )
-    with pytest.raises(ValueError, match="found 2"):
-        srv.set_pyproject_version(p, "1.2.3")
+    srv.set_pyproject_version(p, "1.2.3")
+    out = p.read_text()
+    assert tomllib.loads(out)["project"]["version"] == "1.2.3"
+    assert tomllib.loads(out)["tool"]["foo"]["version"] == "0.1.0"
 
 
 def test_package_json_preserves_non_ascii(tmp_path):
