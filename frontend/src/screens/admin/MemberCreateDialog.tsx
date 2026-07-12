@@ -70,7 +70,7 @@ export function MemberCreateDialog({ open, onClose }: Props) {
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
         <TextField
           label="phone number"
-          hint="they'll set their display name during onboarding"
+          hint="they'll set their name during onboarding"
           value={phone}
           maxLength={20}
           onChange={(e) => {

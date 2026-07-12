@@ -1,6 +1,6 @@
 // Admin detail view for a single member. Pulls the member out of the cached
 // list (no dedicated detail endpoint exists on the backend) and lets admins
-// edit display name / email / phone + pause/unpause the account.
+// edit first/last name / email / phone + pause/unpause the account.
 
 import { type SyntheticEvent, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -282,7 +282,8 @@ function MemberEditForm({
   onSaved: () => void;
 }) {
   const update = useUpdateUser(member.id);
-  const [displayName, setDisplayName] = useState(member.fullName);
+  const [firstName, setFirstName] = useState(member.firstName);
+  const [lastName, setLastName] = useState(member.lastName);
   const [phoneNumber, setPhoneNumber] = useState(member.phoneNumber);
   const [email, setEmail] = useState(member.email);
   const [isPaused, setIsPaused] = useState(member.isPaused);
@@ -293,7 +294,8 @@ function MemberEditForm({
     e.preventDefault();
     setError(null);
     const patch: Parameters<typeof update.mutateAsync>[0] = {};
-    if (displayName !== member.fullName) patch.displayName = displayName.trim();
+    if (firstName !== member.firstName) patch.firstName = firstName.trim();
+    if (lastName !== member.lastName) patch.lastName = lastName.trim();
     if (phoneNumber !== member.phoneNumber) patch.phoneNumber = phoneNumber.trim();
     if (email !== member.email) patch.email = email.trim();
     if (isPaused !== member.isPaused) patch.isPaused = isPaused;
@@ -320,11 +322,20 @@ function MemberEditForm({
       className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-4"
     >
       <TextField
-        label="display name"
-        value={displayName}
+        label="first name"
+        value={firstName}
+        maxLength={64}
+        required
+        onChange={(e) => {
+          setFirstName(e.target.value);
+        }}
+      />
+      <TextField
+        label="last name (optional)"
+        value={lastName}
         maxLength={64}
         onChange={(e) => {
-          setDisplayName(e.target.value);
+          setLastName(e.target.value);
         }}
       />
       <TextField

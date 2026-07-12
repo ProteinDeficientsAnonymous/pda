@@ -155,7 +155,8 @@ export function useCreateUser() {
 
 export interface UpdateUserInput {
   phoneNumber?: string;
-  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   isPaused?: boolean;
 }
@@ -166,7 +167,8 @@ export function useUpdateUser(userId: string) {
     mutationFn: async (input: UpdateUserInput): Promise<Member> => {
       const body: Record<string, unknown> = {};
       if (input.phoneNumber !== undefined) body.phone_number = input.phoneNumber;
-      if (input.displayName !== undefined) body.display_name = input.displayName;
+      if (input.firstName !== undefined) body.first_name = input.firstName;
+      if (input.lastName !== undefined) body.last_name = input.lastName;
       if (input.email !== undefined) body.email = input.email;
       if (input.isPaused !== undefined) body.is_paused = input.isPaused;
       const { data } = await apiClient.patch<WireMember>(`/api/auth/users/${userId}/`, body);
