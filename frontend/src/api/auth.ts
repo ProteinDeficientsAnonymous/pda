@@ -20,6 +20,7 @@ interface WireUser {
   id: string;
   phone_number: string;
   display_name: string;
+  nickname?: string;
   email?: string;
   bio?: string;
   pronouns?: string;
@@ -63,6 +64,7 @@ function mapUser(u: WireUser): User {
     id: u.id,
     phoneNumber: u.phone_number,
     displayName: u.display_name,
+    nickname: u.nickname ?? '',
     email: u.email ?? '',
     bio: u.bio ?? '',
     pronouns: u.pronouns ?? '',
@@ -174,6 +176,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
 export interface ProfileUpdate {
   displayName?: string;
+  nickname?: string;
   email?: string;
   bio?: string;
   pronouns?: string;
@@ -187,6 +190,7 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   // Omit undefined so PATCH doesn't clobber fields that weren't explicitly set.
   const body: Record<string, unknown> = {};
   if (patch.displayName !== undefined) body.display_name = patch.displayName;
+  if (patch.nickname !== undefined) body.nickname = patch.nickname;
   if (patch.email !== undefined) body.email = patch.email;
   if (patch.bio !== undefined) body.bio = patch.bio;
   if (patch.pronouns !== undefined) body.pronouns = patch.pronouns;

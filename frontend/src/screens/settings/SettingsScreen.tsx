@@ -55,6 +55,12 @@ export default function SettingsScreen() {
           onSave={(v) => updateProfile({ pronouns: v })}
           placeholder="add your pronouns"
         />
+        <InlineText
+          label="nickname"
+          value={user.nickname}
+          onSave={(v) => updateProfile({ nickname: v })}
+          placeholder="add a nickname"
+        />
       </Section>
 
       <Section label="security">

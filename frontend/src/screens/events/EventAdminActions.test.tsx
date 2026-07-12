@@ -28,6 +28,7 @@ function makeUser(id: string, permissions: string[] = []): User {
     id,
     phoneNumber: '+12125550001',
     displayName: 'Test User',
+    nickname: '',
     email: '',
     bio: '',
     pronouns: '',

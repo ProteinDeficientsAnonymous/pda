@@ -281,6 +281,7 @@ export function useUpdateMemberRoles(userId: string) {
 export interface MemberProfile {
   id: string;
   displayName: string;
+  nickname: string;
   phoneNumber: string;
   email: string;
   bio: string;
@@ -292,6 +293,7 @@ export interface MemberProfile {
 interface WireMemberProfile {
   id: string;
   display_name: string;
+  nickname?: string;
   phone_number: string;
   email: string;
   bio: string;
@@ -304,6 +306,7 @@ function fromWireProfile(w: WireMemberProfile): MemberProfile {
   return {
     id: w.id,
     displayName: w.display_name,
+    nickname: w.nickname ?? '',
     phoneNumber: w.phone_number,
     email: w.email,
     bio: w.bio,

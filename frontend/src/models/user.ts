@@ -19,6 +19,7 @@ export interface User {
   id: string;
   phoneNumber: string;
   displayName: string;
+  nickname: string;
   email: string;
   bio: string;
   pronouns: string;

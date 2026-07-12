@@ -20,6 +20,7 @@ export default function MemberProfileScreen() {
       <header className="flex flex-col items-center gap-3 text-center">
         <Avatar member={data} />
         <h1 className="text-2xl font-medium tracking-tight">{data.displayName || 'member'}</h1>
+        {data.nickname ? <p className="text-muted text-sm">"{data.nickname}"</p> : null}
         {data.pronouns ? <p className="text-muted text-sm">{data.pronouns}</p> : null}
         <ContactLines member={data} />
       </header>

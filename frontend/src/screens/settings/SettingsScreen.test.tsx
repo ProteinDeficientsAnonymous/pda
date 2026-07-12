@@ -70,6 +70,7 @@ const TEST_USER: User = {
   id: 'u1',
   phoneNumber: '+12125550001',
   displayName: 'Test User',
+  nickname: '',
   email: 'test@example.com',
   bio: '',
   pronouns: '',
@@ -146,6 +147,21 @@ describe('SettingsScreen', () => {
 
     await waitFor(() => {
       expect(authApi.updateProfile).toHaveBeenCalledWith({ pronouns: 'they/them' });
+    });
+  });
+
+  it('saves an edited nickname value via updateProfile', async () => {
+    const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit nickname/i }));
+    const field = screen.getByLabelText(/^nickname$/i);
+    await user.type(field, 'Birdie');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ nickname: 'Birdie' });
     });
   });
 
