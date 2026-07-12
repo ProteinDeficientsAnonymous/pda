@@ -90,6 +90,8 @@ class TestSchemeStripping:
             "/\r/evil.com",  # embedded CR (html5ever folds to \n, still stripped)
             "///evil.com",  # 3+ leading slashes — browsers read authority
             "////evil.com",  # 4 leading slashes
+            "//[evil.com",  # malformed IPv6 — urlsplit raises, must fail closed
+            "//[::1",  # unterminated IPv6 literal
         ],
     )
     def test_protocol_relative_bypass_variants_dropped(self, raw_href):

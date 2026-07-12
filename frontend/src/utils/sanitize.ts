@@ -96,7 +96,13 @@ DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
   // relative paths ("/media/...") stay.
   if (data.attrName === 'href' || data.attrName === 'src') {
     const normalized = normalizeUrl(data.attrValue);
-    if (isProtocolRelative(normalized)) {
+    // Image src is http/https/relative only, matching the backend's scheme guard
+    // (rejects data:, mailto:, etc. that DOMPurify would otherwise keep on <img>).
+    const badImgScheme =
+      data.attrName === 'src' &&
+      URL_SCHEME_RE.test(normalized) &&
+      !/^https?:/i.test(normalized);
+    if (isProtocolRelative(normalized) || badImgScheme) {
       data.attrValue = '';
       data.keepAttr = false;
     } else {

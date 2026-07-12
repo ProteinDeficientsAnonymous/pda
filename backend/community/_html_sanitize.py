@@ -134,7 +134,10 @@ def _is_protocol_relative(value: str) -> bool:
     is actually present, so genuine relative paths (`/media/...`, `#frag`, `?q`)
     and scheme-bearing absolute URLs (which nh3's allowlist already vetted) pass.
     """
-    parts = urlsplit(value)
+    try:
+        parts = urlsplit(value)
+    except ValueError:
+        return True
     return bool(parts.netloc) and not parts.scheme
 
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { sanitizeHtml } from './sanitize';
 
 describe('sanitizeHtml', () => {
@@ -66,6 +67,25 @@ describe('sanitizeHtml', () => {
   it('keeps https links', () => {
     const out = sanitizeHtml('<a href="https://x.test/path">x</a>');
     expect(out).toContain('href="https://x.test/path"');
+  });
+
+  it.each([
+    '<img src="data:image/svg+xml,<svg onload=alert(1)>">',
+    '<img src="data:image/png;base64,AAAA">',
+    '<img src="mailto:a@b.test">',
+  ])('drops non-http(s) image src %j', (html) => {
+    // Image src is http/https/relative only, matching the backend; DOMPurify
+    // would otherwise keep data:/mailto: on <img>.
+    const out = sanitizeHtml(html);
+    expect(out).not.toContain('data:');
+    expect(out).not.toContain('mailto:');
+    expect(out).not.toContain('src=');
+  });
+
+  it('keeps https and relative image src', () => {
+    const out = sanitizeHtml('<img src="https://x.test/a.png"><img src="/media/b.jpg">');
+    expect(out).toContain('src="https://x.test/a.png"');
+    expect(out).toContain('src="/media/b.jpg"');
   });
 
   describe('style attribute', () => {
