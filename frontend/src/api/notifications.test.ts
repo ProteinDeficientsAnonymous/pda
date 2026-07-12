@@ -20,6 +20,7 @@ vi.mock('@/auth/store', () => ({
 import { apiClient } from '@/api/client';
 
 import {
+  notificationKeys,
   useMarkAllNotificationsRead,
   useNotificationHistory,
   useNotifications,
@@ -185,5 +186,25 @@ describe('useMarkAllNotificationsRead', () => {
 
     expect(mockedPost).toHaveBeenCalledWith('/api/notifications/read-all/');
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it('rolls the optimistic caches back when the request fails (issue #635)', async () => {
+    mockedPost.mockRejectedValueOnce(new Error('boom'));
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    qc.setQueryData(notificationKeys.unread, 3);
+    qc.setQueryData(notificationKeys.bell, [{ id: 'n1', isRead: false }]);
+
+    const localWrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+    const { result } = renderHook(() => useMarkAllNotificationsRead(), {
+      wrapper: localWrapper,
+    });
+
+    result.current.mutate();
+
+    // Optimistic write lands first, then rolls back to the snapshot on error.
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(qc.getQueryData(notificationKeys.unread)).toBe(3);
+    expect(qc.getQueryData(notificationKeys.bell)).toEqual([{ id: 'n1', isRead: false }]);
   });
 });
