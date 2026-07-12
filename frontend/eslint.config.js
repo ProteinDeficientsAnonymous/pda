@@ -85,6 +85,14 @@ export default defineConfig([
     },
   },
   {
+    // Exports an eligibility predicate alongside its component; Fast Refresh
+    // doesn't apply here either.
+    files: ['src/screens/events/PublicRsvpSection.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     files: ['vite.config.ts', 'vitest.config.ts', 'eslint.config.js'],
     languageOptions: {
       parserOptions: {
