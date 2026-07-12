@@ -47,12 +47,7 @@ if TYPE_CHECKING:
 
 
 def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | None = None) -> None:
-    """Ping every stakeholder's SSE channel so their capacity UI refreshes live.
-
-    Deferred to on_commit so it reads committed state and never fires for a
-    rolled-back RSVP; safe to call inside or outside a transaction. Any RSVP or
-    attendance mutation that changes the headcount should route through here.
-    """
+    """Post-commit, silently refresh stakeholders' cached event so capacity shows live (no notification)."""
     excluded = exclude_user_ids or set()
 
     def _run() -> None:
