@@ -329,7 +329,7 @@ def create_event(request, payload: EventIn):
         title=payload.title,
         description=payload.description,
         start_datetime=payload.start_datetime,
-        end_datetime=payload.end_datetime,
+        end_datetime=Event.default_end(payload.start_datetime, payload.end_datetime),
         location=payload.location,
         latitude=payload.latitude,
         longitude=payload.longitude,

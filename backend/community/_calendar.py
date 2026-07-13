@@ -174,7 +174,7 @@ def _build_vevent(event, request: HttpRequest, is_authed: bool):
         vevent.add("dtstart", event.start_datetime)
         vevent.add(
             "dtend",
-            event.end_datetime or event.start_datetime + timedelta(hours=2),
+            Event.default_end(event.start_datetime, event.end_datetime),
         )
     vevent.add("summary", event.title)
     target_url = request.build_absolute_uri(f"/events/{event.id}")

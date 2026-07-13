@@ -126,6 +126,7 @@ export function EventFormBasics({
                 }}
                 error={errors.endDatetime}
                 optional
+                hint="defaults to 2 hours after start if left blank"
               />
             </div>
           ) : null}

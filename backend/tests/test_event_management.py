@@ -1,5 +1,7 @@
 """Tests for event create/update/delete management endpoints."""
 
+from datetime import timedelta
+
 import pytest
 from community._validation import Code
 from community.api import EventPatchIn
@@ -229,7 +231,9 @@ class TestEventManagement:
         assert data["title"] == "Community Meetup"
         assert data["location"] == "The Vegan Cafe"
 
-    def test_create_event_without_end_datetime(self, api_client, manage_events_headers):
+    def test_create_event_without_end_datetime_defaults_to_start_plus_two_hours(
+        self, api_client, manage_events_headers
+    ):
         response = api_client.post(
             "/api/community/events/",
             {
@@ -240,7 +244,8 @@ class TestEventManagement:
             **manage_events_headers,
         )
         assert response.status_code == 201
-        assert response.json()["end_datetime"] is None
+        event = Event.objects.get(id=response.json()["id"])
+        assert event.end_datetime == event.start_datetime + timedelta(hours=2)
 
     def test_create_event_end_before_start_returns_400(self, api_client, manage_events_headers):
         response = api_client.post(

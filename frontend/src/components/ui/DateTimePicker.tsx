@@ -14,6 +14,8 @@ interface Props {
   disabled?: boolean;
   error?: string | undefined;
   optional?: boolean;
+  /** Helper text shown below the field when there's no error. */
+  hint?: string;
   /** Disable calendar days before today (inclusive). For event start times. */
   disablePast?: boolean;
 }
@@ -37,6 +39,7 @@ export function DateTimePicker({
   disabled,
   error,
   optional,
+  hint,
   disablePast,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -150,6 +153,7 @@ export function DateTimePicker({
       )}
 
       {error ? <p className="text-destructive text-xs">{error}</p> : null}
+      {!error && hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
     </div>
   );
 }

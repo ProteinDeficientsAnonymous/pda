@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 from django.db import models
@@ -21,6 +22,9 @@ if TYPE_CHECKING:
     from community.models.comment import EventComment
     from community.models.poll import EventPoll
     from community.models.survey import Survey
+
+
+DEFAULT_EVENT_DURATION = timedelta(hours=2)
 
 
 class Event(models.Model):
@@ -100,6 +104,13 @@ class Event(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["start_datetime"]
+
+    @staticmethod
+    def default_end(start: datetime | None, end: datetime | None) -> datetime | None:
+        """End time falling back to start + DEFAULT_EVENT_DURATION when unset."""
+        if end is not None or start is None:
+            return end
+        return start + DEFAULT_EVENT_DURATION
 
     @property
     def is_past(self) -> bool:
