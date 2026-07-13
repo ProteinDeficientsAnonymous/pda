@@ -27,6 +27,7 @@ export interface Member {
   profilePhotoUrl: string;
   showPhone: boolean;
   showEmail: boolean;
+  isMember: boolean;
   isSuperuser: boolean;
   isPaused: boolean;
   needsOnboarding: boolean;
@@ -56,6 +57,7 @@ interface WireMember {
   profile_photo_url?: string;
   show_phone?: boolean;
   show_email?: boolean;
+  is_member?: boolean;
   is_superuser?: boolean;
   is_paused?: boolean;
   needs_onboarding?: boolean;
@@ -85,6 +87,7 @@ function fromWire(w: WireMember): Member {
     profilePhotoUrl: w.profile_photo_url ?? '',
     showPhone: w.show_phone ?? true,
     showEmail: w.show_email ?? true,
+    isMember: w.is_member ?? true,
     isSuperuser: w.is_superuser ?? false,
     isPaused: w.is_paused ?? false,
     needsOnboarding: w.needs_onboarding ?? false,
@@ -98,11 +101,12 @@ function fromWire(w: WireMember): Member {
 
 export const USERS_KEY = ['users'] as const;
 
-export function useUsers() {
+export function useUsers(includeNonMembers = false) {
   return useQuery({
-    queryKey: USERS_KEY,
+    queryKey: [...USERS_KEY, { includeNonMembers }] as const,
     queryFn: async () => {
-      const { data } = await apiClient.get<WireMember[]>('/api/auth/users/');
+      const config = includeNonMembers ? { params: { include_non_members: true } } : undefined;
+      const { data } = await apiClient.get<WireMember[]>('/api/auth/users/', config);
       return data.map(fromWire);
     },
   });

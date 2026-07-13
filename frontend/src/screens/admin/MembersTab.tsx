@@ -10,6 +10,7 @@ import { type Member, useUsers } from '@/api/users';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 
@@ -25,7 +26,8 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 export function MembersTab() {
-  const { data = [], isPending, isError } = useUsers();
+  const [showNonMembers, setShowNonMembers] = useState(false);
+  const { data = [], isPending, isError } = useUsers(showNonMembers);
   const { data: allRoles = [] } = useRoles();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('name');
@@ -96,9 +98,17 @@ export function MembersTab() {
         ) : null}
       </div>
 
+      <div className="mb-4 sm:w-64">
+        <Toggle
+          label="show non-members"
+          checked={showNonMembers}
+          onChange={setShowNonMembers}
+        />
+      </div>
+
       {data.length > 0 ? (
         <p className="text-foreground-tertiary mb-3 text-sm">
-          {data.length === 1 ? '1 member' : `${String(data.length)} members`}
+          {data.length === 1 ? '1 user' : `${String(data.length)} users`}
         </p>
       ) : null}
 
@@ -334,12 +344,30 @@ function sortMembers(members: Member[], sort: SortKey): Member[] {
 
 function MemberRow({ member }: { member: Member }) {
   const initials = (member.fullName || member.phoneNumber).slice(0, 2).toLowerCase();
-  const hasTags = member.roles.length > 0 || member.isPaused;
+
+  // Non-members have no detail page, so the row is a plain div, not a link.
+  if (!member.isMember) {
+    return (
+      <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3">
+        <MemberRowBody member={member} initials={initials} />
+      </div>
+    );
+  }
+
   return (
     <Link
       to={`/admin/members/${member.id}`}
       className="border-border bg-surface hover:bg-surface-dim flex flex-col gap-2 rounded-lg border p-3 transition-colors"
     >
+      <MemberRowBody member={member} initials={initials} />
+    </Link>
+  );
+}
+
+function MemberRowBody({ member, initials }: { member: Member; initials: string }) {
+  const hasTags = !member.isMember || member.roles.length > 0 || member.isPaused;
+  return (
+    <>
       <div className="flex items-center gap-3">
         {member.profilePhotoUrl ? (
           <img
@@ -391,8 +419,13 @@ function MemberRow({ member }: { member: Member }) {
               paused
             </span>
           ) : null}
+          {!member.isMember ? (
+            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+              non-member
+            </span>
+          ) : null}
         </div>
       ) : null}
-    </Link>
+    </>
   );
 }

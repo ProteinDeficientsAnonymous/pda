@@ -3760,6 +3760,11 @@ export interface components {
             /** Id */
             id: string;
             /**
+             * Is Member
+             * @default true
+             */
+            is_member: boolean;
+            /**
              * Is Paused
              * @default false
              */
@@ -4573,7 +4578,9 @@ export interface operations {
     };
     users__management_list_users: {
         parameters: {
-            query?: never;
+            query?: {
+                include_non_members?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;

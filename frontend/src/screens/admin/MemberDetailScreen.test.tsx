@@ -38,6 +38,7 @@ const member: Member = {
   profilePhotoUrl: '',
   showPhone: true,
   showEmail: true,
+  isMember: true,
   isSuperuser: false,
   isPaused: false,
   needsOnboarding: false,
