@@ -19,7 +19,7 @@ export interface WelcomeMessageVars {
 
 export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars): string {
   return template
-    .replaceAll('${NAME}', vars.name)
+    .replaceAll('${FIRST_NAME}', vars.name)
     .replaceAll('${SENDER_NAME}', vars.senderName)
     .replaceAll('${MAGIC_LINK}', vars.magicLink);
 }
