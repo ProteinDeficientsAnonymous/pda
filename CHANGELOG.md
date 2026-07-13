@@ -1,3 +1,10 @@
+# [0.12.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.11.0...v0.12.0) (2026-07-13)
+
+
+### Features
+
+* **join-requests:** sort approved list by approved date, newest first (Issue 698) ([#756](https://github.com/ProteinDeficientsAnonymous/pda/issues/756)) ([a037ce8](https://github.com/ProteinDeficientsAnonymous/pda/commit/a037ce8a15a3a20cb68c61fb365bbb1ab5b0cdbc))
+
 # [0.11.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.10.0...v0.11.0) (2026-07-13)
 
 
