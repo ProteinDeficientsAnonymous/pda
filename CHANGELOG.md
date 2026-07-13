@@ -1,3 +1,10 @@
+# [0.15.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.14.1...v0.15.0) (2026-07-13)
+
+
+### Features
+
+* **events:** record cancelled_at + checked_in_at on RSVPs (Issue 564) ([#774](https://github.com/ProteinDeficientsAnonymous/pda/issues/774)) ([a8991ba](https://github.com/ProteinDeficientsAnonymous/pda/commit/a8991ba3486e6643ad8f44950e8f22b4db9f4184))
+
 ## [0.14.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.14.0...v0.14.1) (2026-07-13)
 
 
