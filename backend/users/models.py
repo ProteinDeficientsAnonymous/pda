@@ -149,6 +149,14 @@ class User(AbstractUser):
         return False
 
 
+class MagicLoginTokenSource(models.TextChoices):
+    # SELF_SERVICE tokens are the only ones the self-service login-link cooldown
+    # counts; every other mint path (admin generation, onboarding, resend) is ADMIN
+    # so it never suppresses a user's own login-link email.
+    SELF_SERVICE = "self_service", "Self-service"
+    ADMIN = "admin", "Admin"
+
+
 class MagicLoginToken(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="magic_tokens")
@@ -161,6 +169,11 @@ class MagicLoginToken(models.Model):
     # token carries which it is; consuming a token with this set flips the user's
     # persistent User.needs_password_reset. Admin onboarding links leave this False.
     requires_password_reset = models.BooleanField(default=False)
+    source = models.CharField(
+        max_length=20,
+        choices=MagicLoginTokenSource.choices,
+        default=MagicLoginTokenSource.ADMIN,
+    )
 
     @property
     def is_expired(self) -> bool:
@@ -168,12 +181,17 @@ class MagicLoginToken(models.Model):
 
     @classmethod
     def create_for_user(
-        cls, user: "User", *, requires_password_reset: bool = False
+        cls,
+        user: "User",
+        *,
+        requires_password_reset: bool = False,
+        source: str = MagicLoginTokenSource.ADMIN,
     ) -> "MagicLoginToken":
         return cls.objects.create(
             user=user,
             expires_at=timezone.now() + timedelta(days=7),
             requires_password_reset=requires_password_reset,
+            source=source,
         )
 
 
