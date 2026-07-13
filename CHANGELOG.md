@@ -1,3 +1,10 @@
+## [0.17.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.17.0...v0.17.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **users:** scope login-link cooldown to self-service tokens (Issue 683) ([#764](https://github.com/ProteinDeficientsAnonymous/pda/issues/764)) ([98f2de8](https://github.com/ProteinDeficientsAnonymous/pda/commit/98f2de8001d17ac7bef67e3b5f1778c79d41eead)), closes [#683](https://github.com/ProteinDeficientsAnonymous/pda/issues/683)
+
 # [0.17.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.16.0...v0.17.0) (2026-07-13)
 
 
