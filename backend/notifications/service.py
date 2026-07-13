@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 
 from community.models import RSVPStatus
 from django.db import DatabaseError, connection
-from django.db.models import Q
 from users._helpers import visible_display_name
 from users.models import User
 from users.permissions import PermissionKey
+from users.roles import Role
 
 from notifications.models import Notification, NotificationType
 
@@ -105,10 +105,7 @@ def broadcast_event_update(
 def create_join_request_notifications(display_name: str) -> None:
     recipients = (
         User.objects.members()
-        .filter(
-            Q(roles__name="admin", roles__is_default=True)
-            | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
-        )
+        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
         .distinct()
     )
 
@@ -129,10 +126,7 @@ def create_event_flag_notifications(event: Event, flagger: User) -> None:
     flagger_name = flagger.display_name or flagger.phone_number
     recipients = (
         User.objects.members()
-        .filter(
-            Q(roles__name="admin", roles__is_default=True)
-            | Q(roles__permissions__contains=PermissionKey.MANAGE_EVENTS)
-        )
+        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.MANAGE_EVENTS))
         .distinct()
     )
 
@@ -154,10 +148,7 @@ def create_magic_link_request_notifications(user: User) -> None:
     display = user.display_name or user.phone_number
     recipients = (
         User.objects.members()
-        .filter(
-            Q(roles__name="admin", roles__is_default=True)
-            | Q(roles__permissions__contains=PermissionKey.MANAGE_USERS)
-        )
+        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.MANAGE_USERS))
         .distinct()
     )
 
