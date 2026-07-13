@@ -27,6 +27,19 @@ describe('RsvpStatusPicker', () => {
     expect(onSelect).toHaveBeenCalledWith('attending');
   });
 
+  it('lays the pills out in a single horizontally scrollable row', () => {
+    render(<RsvpStatusPicker value={null} onSelect={vi.fn()} />);
+    const row = screen.getByRole('button', { name: 'maybe' }).parentElement;
+    expect(row).toHaveClass('overflow-x-auto');
+    expect(row).not.toHaveClass('flex-wrap');
+    expect(row).toHaveClass('justify-center-safe');
+  });
+
+  it('keeps each pill from shrinking so labels are never truncated', () => {
+    render(<RsvpStatusPicker value={null} onSelect={vi.fn()} />);
+    expect(screen.getByRole('button', { name: "i'm going" })).toHaveClass('shrink-0');
+  });
+
   it('applies labelFor overrides', () => {
     render(
       <RsvpStatusPicker
