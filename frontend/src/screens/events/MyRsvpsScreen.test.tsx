@@ -40,7 +40,7 @@ function renderAt(token: string | null) {
 
 function successData(overrides: Partial<ManageRsvps> = {}): ManageRsvps {
   return {
-    user: { displayName: 'sam green', email: 's@x.com', phoneNumber: '+14155550001' },
+    user: { name: 'sam green', email: 's@x.com', phoneNumber: '+14155550001' },
     rsvps: [
       {
         event: makeEvent({ id: 'ev1', title: 'potluck', allowPlusOnes: true }),

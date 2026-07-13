@@ -27,7 +27,7 @@ export function useSubmitPublicRsvp() {
 }
 
 export interface ManageRsvps {
-  user: { displayName: string; email: string; phoneNumber: string };
+  user: { name: string; email: string; phoneNumber: string };
   rsvps: { event: Event; status: string; hasPlusOne: boolean }[];
 }
 
@@ -46,7 +46,7 @@ async function fetchMyRsvps(token: string): Promise<ManageRsvps> {
   const { data } = await apiClient.get<WireManageOut>(MANAGE_BASE, { params: { token } });
   const u = data.user;
   return {
-    user: { displayName: u.display_name, email: u.email, phoneNumber: u.phone_number },
+    user: { name: u.display_name, email: u.email, phoneNumber: u.phone_number },
     rsvps: data.rsvps.map((r) => ({
       event: mapEvent(r.event),
       status: r.status,

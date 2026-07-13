@@ -28,7 +28,7 @@ export default function MyRsvpsScreen() {
   return (
     <ContentContainer>
       <h1 className="text-foreground mb-1 text-2xl font-semibold">your rsvps</h1>
-      <p className="text-foreground-secondary mb-6 text-sm">{data.user.displayName}</p>
+      <p className="text-foreground-secondary mb-6 text-sm">{data.user.name}</p>
 
       {data.rsvps.length === 0 ? (
         <p className="text-foreground-secondary text-sm">
