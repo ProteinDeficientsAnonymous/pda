@@ -44,7 +44,6 @@ class TestBuildGuestList:
             user_id=user_id,
             user=SimpleNamespace(
                 id=user_id,
-                display_name=name,
                 first_name=name or "",
                 last_name="",
                 full_name=name or "",

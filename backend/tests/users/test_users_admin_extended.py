@@ -15,7 +15,7 @@ class TestUpdateUser:
     def test_update_user_not_found(self, api_client, manage_users_headers):
         response = api_client.patch(
             "/api/auth/users/00000000-0000-0000-0000-000000000000/",
-            {"display_name": "Ghost"},
+            {"first_name": "Ghost"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -58,7 +58,7 @@ class TestUpdateUser:
     def test_update_user_requires_auth(self, api_client, other_user):
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"display_name": "Hacker"},
+            {"first_name": "Hacker"},
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -66,7 +66,7 @@ class TestUpdateUser:
     def test_update_user_requires_permission(self, api_client, auth_headers, other_user):
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"display_name": "Blocked"},
+            {"first_name": "Blocked"},
             content_type="application/json",
             **auth_headers,
         )
@@ -118,7 +118,7 @@ class TestUpdateUser:
         other_user.save(update_fields=["is_member"])
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"display_name": "Renamed"},
+            {"first_name": "Renamed"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -338,14 +338,10 @@ class TestSearchUsersRespectsShowPhone:
         # Field stays present (callers depend on the key) but is blanked.
         assert match["phone_number"] == ""
 
-    def test_display_name_does_not_leak_phone_when_show_phone_false(
-        self, api_client, manage_users_headers
-    ):
+    def test_name_does_not_leak_phone_when_show_phone_false(self, api_client, manage_users_headers):
         # A genuinely nameless member (e.g. pre-onboarding) must not leak the
-        # private phone via the display_name fallback. Built with blank names
-        # from creation — save()'s display_name sync guard means a name once
-        # set is never blanked back out, so this can't be simulated by
-        # blanking an already-named user.
+        # private phone via the name fields — full_name stays empty rather than
+        # falling back to the phone number.
         nameless_user = User.objects.create_user(
             phone_number="+12025550999",
             password="namelesspass123",
@@ -356,8 +352,8 @@ class TestSearchUsersRespectsShowPhone:
         response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
         assert response.status_code == 200
         match = self._find(response, nameless_user.pk)
-        assert nameless_user.phone_number not in match["display_name"]
-        assert match["display_name"] == "member"
+        assert nameless_user.phone_number not in match["full_name"]
+        assert match["full_name"] == ""
 
 
 @pytest.mark.django_db

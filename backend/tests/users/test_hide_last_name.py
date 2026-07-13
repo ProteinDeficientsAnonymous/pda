@@ -55,7 +55,6 @@ class TestDirectoryHidesLastName:
         entry = next(u for u in response.json() if u["id"] == str(hidden_user.pk))
         assert entry["last_name"] == ""
         assert entry["full_name"] == "Hidden"
-        assert entry["display_name"] == "Hidden"
 
     def test_admin_sees_full_name(self, api_client, admin_headers, hidden_user):
         response = api_client.get("/api/auth/users/directory/", **admin_headers)
@@ -63,7 +62,6 @@ class TestDirectoryHidesLastName:
         entry = next(u for u in response.json() if u["id"] == str(hidden_user.pk))
         assert entry["last_name"] == "Lastname"
         assert entry["full_name"] == "Hidden Lastname"
-        assert entry["display_name"] == "Hidden Lastname"
 
 
 @pytest.mark.django_db
@@ -74,7 +72,6 @@ class TestProfileHidesLastName:
         body = response.json()
         assert body["last_name"] == ""
         assert body["full_name"] == "Hidden"
-        assert body["display_name"] == "Hidden"
 
     def test_admin_sees_full_name(self, api_client, admin_headers, hidden_user):
         response = api_client.get(f"/api/auth/users/{hidden_user.pk}/profile/", **admin_headers)
@@ -82,7 +79,6 @@ class TestProfileHidesLastName:
         body = response.json()
         assert body["last_name"] == "Lastname"
         assert body["full_name"] == "Hidden Lastname"
-        assert body["display_name"] == "Hidden Lastname"
 
     def test_self_sees_own_full_name(self, api_client, hidden_user):
         from ninja_jwt.tokens import RefreshToken
@@ -114,7 +110,6 @@ class TestSearchHidesLastName:
         entry = next(u for u in response.json() if u["id"] == str(hidden_user.pk))
         assert entry["last_name"] == ""
         assert entry["full_name"] == "Hidden"
-        assert entry["display_name"] == "Hidden"
 
     def test_admin_search_by_last_name_matches_with_full_name(
         self, api_client, admin_headers, hidden_user

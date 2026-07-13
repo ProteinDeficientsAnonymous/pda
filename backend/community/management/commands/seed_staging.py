@@ -105,7 +105,7 @@ class Command(BaseCommand):
                 user.save(update_fields=["password"])
             user.roles.set([roles[key]])
             users.append(user)
-            self.stdout.write(f"  {'created' if created else 'exists'} user: {user.display_name}")
+            self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
 
     def _member_role(self) -> Role:
@@ -148,7 +148,7 @@ class Command(BaseCommand):
                 user.save(update_fields=["password"])
             user.roles.set([member_role])
             users.append(user)
-            self.stdout.write(f"  {'created' if created else 'exists'} user: {user.display_name}")
+            self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
 
     def _seed_events(self, created_by) -> list[Event]:
@@ -176,7 +176,7 @@ class Command(BaseCommand):
         user, created = User.objects.get_or_create(
             phone_number=nonmember_phone(index),
             defaults={
-                "display_name": spec.label,
+                "first_name": spec.label,
                 "email": nonmember_email(index),
                 "is_member": False,
             },
@@ -220,7 +220,7 @@ class Command(BaseCommand):
             self.stdout.write(f"  {user.phone_number} -> {names}")
         self.stdout.write("profile-condition users (phone -> pattern):")
         for user in cond_users:
-            self.stdout.write(f"  {user.phone_number} -> {user.display_name}")
+            self.stdout.write(f"  {user.phone_number} -> {user.full_name}")
         self.stdout.write("non-member users (phone -> manage link):")
         for user in non_members:
             token = NonMemberRsvpToken.objects.filter(user=user).first()

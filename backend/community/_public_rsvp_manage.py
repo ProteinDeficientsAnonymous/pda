@@ -112,7 +112,7 @@ def list_my_rsvps(request, token: str = ""):
         )
     return 200, PublicRsvpManageOut(
         user=PublicRsvpManageUserOut(
-            display_name=user.display_name,
+            display_name=user.full_name,
             email=user.email or "",
             phone_number=user.phone_number,
         ),

@@ -1708,8 +1708,16 @@ export interface components {
         };
         /** ApproveJoinRequestOut */
         ApproveJoinRequestOut: {
-            /** Display Name */
-            display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
             /** Magic Link Token */
@@ -2939,11 +2947,6 @@ export interface components {
                 [key: string]: string;
             };
             /**
-             * Display Name
-             * @default
-             */
-            display_name: string;
-            /**
              * Email
              * Format: email
              */
@@ -2992,10 +2995,23 @@ export interface components {
              * @default 0
              */
             attached_user_official_rsvp_count: number;
-            /** Display Name */
-            display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Onboarded At */
             onboarded_at?: string | null;
             /** Phone Number */
@@ -3042,8 +3058,6 @@ export interface components {
             bio?: string | null;
             /** Calendar Feed Scope */
             calendar_feed_scope?: ("all" | "mine") | null;
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3067,8 +3081,6 @@ export interface components {
         };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3109,8 +3121,6 @@ export interface components {
              * @default
              */
             bio: string;
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3180,8 +3190,6 @@ export interface components {
         OnboardingIn: {
             /** Consent Types */
             consent_types?: components["schemas"]["ConsentType"][];
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3674,11 +3682,6 @@ export interface components {
         };
         /** UserCreateIn */
         UserCreateIn: {
-            /**
-             * Display Name
-             * @default
-             */
-            display_name: string;
             /** Email */
             email?: string | null;
             /**
@@ -3698,8 +3701,6 @@ export interface components {
         };
         /** UserCreateOut */
         UserCreateOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * First Name
              * @default
@@ -3734,8 +3735,6 @@ export interface components {
              * @default all
              */
             calendar_feed_scope: string;
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3839,8 +3838,6 @@ export interface components {
         };
         /** UserPatchIn */
         UserPatchIn: {
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3859,8 +3856,6 @@ export interface components {
         };
         /** UserSearchOut */
         UserSearchOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * First Name
              * @default

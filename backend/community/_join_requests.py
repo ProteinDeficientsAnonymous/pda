@@ -39,7 +39,9 @@ class JoinRequestAnswerOut(BaseModel):
 
 class JoinRequestOut(BaseModel):
     id: str
-    display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     phone_number: str
     answers: list[JoinRequestAnswerOut] = []
     submitted_at: datetime
@@ -62,7 +64,8 @@ class JoinRequestStatusIn(BaseModel):
 
 class ApproveJoinRequestOut(BaseModel):
     id: str
-    display_name: str
+    first_name: str = ""
+    full_name: str = ""
     phone_number: str
     status: str
     magic_link_token: str | None = None
@@ -93,7 +96,9 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     official_rsvp_count = _official_rsvp_count(jr)
     return JoinRequestOut(
         id=str(jr.id),
-        display_name=jr.display_name,
+        first_name=jr.first_name,
+        last_name=jr.last_name,
+        full_name=jr.full_name,
         phone_number=jr.phone_number,
         answers=answers,
         submitted_at=jr.submitted_at,
@@ -101,9 +106,9 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         user_id=str(user.id) if user else None,
         previously_archived=previously_archived,
         approved_at=jr.approved_at,
-        approved_by_name=jr.approved_by.display_name if jr.approved_by else None,
+        approved_by_name=jr.approved_by.full_name if jr.approved_by else None,
         rejected_at=jr.rejected_at,
-        rejected_by_name=jr.rejected_by.display_name if jr.rejected_by else None,
+        rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         onboarded_at=user.onboarded_at if user else None,
         attached_user_official_rsvp_count=official_rsvp_count,
     )
@@ -222,7 +227,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         request,
         target_type="join_request",
         target_id=str(join_request.id),
-        details={"display_name": join_request.display_name, "user_created": user_created},
+        details={"full_name": join_request.full_name, "user_created": user_created},
     )
 
     # A promoted non-member is the linked User itself (which may have been
@@ -235,7 +240,8 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         200,
         ApproveJoinRequestOut(
             id=str(join_request.id),
-            display_name=join_request.display_name,
+            first_name=join_request.first_name,
+            full_name=join_request.full_name,
             phone_number=join_request.phone_number,
             status=join_request.status,
             magic_link_token=magic_token,
@@ -281,7 +287,7 @@ def unreject_join_request(request, id: UUID):
         request,
         target_type="join_request",
         target_id=str(join_request.id),
-        details={"display_name": join_request.display_name},
+        details={"full_name": join_request.full_name},
     )
 
     return Status(200, _join_request_out(join_request))

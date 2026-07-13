@@ -28,7 +28,8 @@ def manage_events_headers(db):
     user = User.objects.create_user(
         phone_number="+14155559010",
         password="validationcodepass123",
-        display_name="Validation Codes Manager",
+        first_name="Validation Codes",
+        last_name="Manager",
     )
     role = Role.objects.create(name="val_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
     user.roles.add(role)

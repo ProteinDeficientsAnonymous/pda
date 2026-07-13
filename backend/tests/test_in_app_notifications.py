@@ -21,7 +21,7 @@ from tests.conftest import future_iso
 
 
 def _make_user(phone: str, name: str = "") -> User:
-    return User.objects.create_user(phone_number=phone, password="pass", display_name=name)
+    return User.objects.create_user(phone_number=phone, password="pass", first_name=name)
 
 
 def _auth_headers(user: User) -> dict:

@@ -13,7 +13,8 @@ def edit_welcome_user(db):
     user = User.objects.create_user(
         phone_number="+15550003001",
         password="vetterpass123",
-        display_name="Welcome Editor",
+        first_name="Welcome",
+        last_name="Editor",
     )
     role = Role.objects.create(
         name="welcome_editor", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS]

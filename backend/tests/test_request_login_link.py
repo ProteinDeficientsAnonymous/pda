@@ -15,7 +15,7 @@ from users.roles import Role
 def _make_user_manager():
     """Create a user with MANAGE_USERS permission and return them."""
     manager = User.objects.create_user(
-        phone_number="+12025559001", password="pass", display_name="Manager"
+        phone_number="+12025559001", password="pass", first_name="Manager"
     )
     role = Role.objects.create(name="user-manager", permissions=[PermissionKey.MANAGE_USERS])
     manager.roles.add(role)
@@ -36,7 +36,7 @@ def _clear_rate_limit_cache():
 @pytest.mark.django_db
 class TestRequestLoginLink:
     def test_returns_200_for_existing_user(self, api_client):
-        User.objects.create_user(phone_number=_PHONE, password="pass", display_name="Invited")
+        User.objects.create_user(phone_number=_PHONE, password="pass", first_name="Invited")
         response = api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
         assert response.status_code == 200
 
@@ -76,7 +76,7 @@ class TestRequestLoginLink:
 
     def test_creates_notification_for_user_managers(self, api_client):
         user = User.objects.create_user(
-            phone_number=_PHONE, password="pass", display_name="Invited Person"
+            phone_number=_PHONE, password="pass", first_name="Invited", last_name="Person"
         )
         manager = _make_user_manager()
 
@@ -84,7 +84,7 @@ class TestRequestLoginLink:
 
         notif = Notification.objects.get(recipient=manager)
         assert notif.notification_type == NotificationType.MAGIC_LINK_REQUEST
-        assert user.display_name in notif.message
+        assert user.full_name in notif.message
         assert notif.related_user_id == user.pk  # ty: ignore[unresolved-attribute]
         assert "token" not in notif.message.lower()
 
@@ -92,10 +92,10 @@ class TestRequestLoginLink:
         """A user who can only approve join requests must NOT be notified — they cannot
         grant the login link (that needs manage_users)."""
         User.objects.create_user(
-            phone_number=_PHONE, password="pass", display_name="Invited Person"
+            phone_number=_PHONE, password="pass", first_name="Invited", last_name="Person"
         )
         approver = User.objects.create_user(
-            phone_number="+12025559002", password="pass", display_name="Approver"
+            phone_number="+12025559002", password="pass", first_name="Approver"
         )
         role = Role.objects.create(name="vetter", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
         approver.roles.add(role)
@@ -195,7 +195,7 @@ class TestRequestLoginLinkEmailDelivery:
     def test_user_with_email_send_succeeds(self, api_client, fake_email_sender):
         User.objects.create_user(
             phone_number="+12025550101",
-            display_name="Sam",
+            first_name="Sam",
             email="sam@example.com",
         )
         resp = api_client.post(
@@ -214,7 +214,7 @@ class TestRequestLoginLinkEmailDelivery:
         """Email success must leave login_link_requested False so re-requests stay open."""
         user = User.objects.create_user(
             phone_number="+12025550101",
-            display_name="Sam",
+            first_name="Sam",
             email="sam@example.com",
         )
         api_client.post(
@@ -230,7 +230,7 @@ class TestRequestLoginLinkEmailDelivery:
         _make_user_manager()
         user = User.objects.create_user(
             phone_number="+12025550102",
-            display_name="NoEmail",
+            first_name="NoEmail",
             email=None,
         )
         api_client.post(
@@ -247,7 +247,7 @@ class TestRequestLoginLinkEmailDelivery:
         manager = _make_user_manager()
         user = User.objects.create_user(
             phone_number="+12025550101",
-            display_name="Sam",
+            first_name="Sam",
             email="sam@example.com",
         )
         api_client.post(
@@ -268,7 +268,7 @@ class TestRequestLoginLinkEmailDelivery:
         manager = _make_user_manager()
         user = User.objects.create_user(
             phone_number="+12025550101",
-            display_name="Sam",
+            first_name="Sam",
             email="bad@example.com",
         )
         resp = api_client.post(
@@ -288,7 +288,7 @@ class TestRequestLoginLinkEmailDelivery:
         manager = _make_user_manager()
         user = User.objects.create_user(
             phone_number="+12025550101",
-            display_name="Sam",
+            first_name="Sam",
             email=None,
         )
         resp = api_client.post(
@@ -314,7 +314,7 @@ class TestRequestLoginLinkEmailDelivery:
         manager = _make_user_manager()
         user = User.objects.create_user(
             phone_number="+12025550101",
-            display_name="Sam",
+            first_name="Sam",
             email="sam@example.com",
         )
         resp = api_client.post(

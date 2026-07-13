@@ -27,7 +27,8 @@ def manage_guidelines_user(db):
     user = User.objects.create_user(
         phone_number="+15550002001",
         password="editorpass123",
-        display_name="Guidelines Editor",
+        first_name="Guidelines",
+        last_name="Editor",
     )
     role = Role.objects.create(
         name="guidelines_editor", permissions=[PermissionKey.EDIT_GUIDELINES]

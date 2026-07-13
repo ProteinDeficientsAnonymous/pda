@@ -51,7 +51,6 @@ describe('useUsers', () => {
       data: [
         {
           id: 'u1',
-          display_name: 'Ada',
           first_name: 'Ada',
           full_name: 'Ada',
           phone_number: '+15551230001',
@@ -128,7 +127,6 @@ describe('useCreateUser', () => {
       data: {
         id: 'u2',
         phone_number: '+15551230002',
-        display_name: 'Grace',
         first_name: 'Grace',
         full_name: 'Grace',
         magic_link_token: 'magic-abc',
@@ -165,7 +163,7 @@ describe('useCreateUser', () => {
       data: {
         id: 'u3',
         phone_number: '+15551230003',
-        display_name: '',
+        full_name: '',
         magic_link_token: 'magic-xyz',
       },
     });
@@ -192,7 +190,7 @@ describe('useUpdateUser', () => {
     mockedPatch.mockResolvedValueOnce({
       data: {
         id: 'u1',
-        display_name: 'Ada Lovelace',
+        full_name: 'Ada Lovelace',
         phone_number: '+15551230001',
         roles: [],
       },
@@ -295,7 +293,7 @@ describe('useUpdateMemberRoles', () => {
     mockedPatch.mockResolvedValueOnce({
       data: {
         id: 'u9',
-        display_name: 'Ada',
+        full_name: 'Ada',
         phone_number: '+1',
         roles: [
           { id: 'r2', name: 'vet', is_default: false, permissions: ['approve_join_requests'] },

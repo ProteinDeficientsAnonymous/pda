@@ -11,7 +11,6 @@ import phonenumbers
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 
-from users._name_parsing import parse_display_name
 from users.models import MagicLoginToken, User
 from users.roles import Role
 
@@ -32,29 +31,23 @@ def _generate_temp_password(length: int = 16) -> str:
 class NamePatchPayload(Protocol):
     first_name: str | None
     last_name: str | None
-    display_name: str | None
 
 
 def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     """Apply first/last name from a patch payload to user (in memory).
 
-    first/last win when provided; a bare legacy display_name is parsed as a
-    fallback. Returns True if any name field was set.
+    Returns True if any name field was set.
     """
-    if payload.first_name is not None or payload.last_name is not None:
-        if payload.first_name is not None:
-            validate_display_name(payload.first_name, field="first_name")
-            user.first_name = payload.first_name.strip()
-        if payload.last_name is not None:
-            if payload.last_name.strip():
-                validate_display_name(payload.last_name, field="last_name")
-            user.last_name = payload.last_name.strip()
-        return True
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.first_name, user.last_name = parse_display_name(payload.display_name.strip())
-        return True
-    return False
+    if payload.first_name is None and payload.last_name is None:
+        return False
+    if payload.first_name is not None:
+        validate_display_name(payload.first_name, field="first_name")
+        user.first_name = payload.first_name.strip()
+    if payload.last_name is not None:
+        if payload.last_name.strip():
+            validate_display_name(payload.last_name, field="last_name")
+        user.last_name = payload.last_name.strip()
+    return True
 
 
 def _create_magic_token(user: User, *, requires_password_reset: bool = False) -> str:
@@ -100,17 +93,15 @@ def visible_display_name(target: User, viewer: User | None) -> str:
     """Member-facing name honoring hide_last_name, falling back to phone.
 
     viewer=None (anonymous/optional-auth) is treated as non-admin, non-self.
-    When the last name is hidden we can only show first_name — display_name is
-    the concatenated full name and would leak the last name. When not hidden we
-    prefer full_name, then the display_name column (covers legacy accounts whose
-    name lives only there). The phone fallback is suppressed when show_phone is
+    When the last name is hidden we can only show first_name — full_name would
+    leak the last name. The phone fallback is suppressed when show_phone is
     false so a nameless member's private number is never surfaced as their name.
     """
     is_privileged = viewer is not None and (target.id == viewer.id or _is_admin(viewer))
     if target.hide_last_name and not is_privileged:
         name = target.first_name.strip()
     else:
-        name = target.full_name or target.display_name or ""
+        name = target.full_name
     if name:
         return name
     return target.phone_number if target.show_phone else "member"

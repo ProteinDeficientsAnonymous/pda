@@ -1,6 +1,6 @@
 // Join-request API: fetch the dynamic question list + submit. The static
-// fields (display_name, phone_number) are NOT in the question list — the form
-// composes them with the server questions.
+// fields (first_name, last_name, phone_number) are NOT in the question list —
+// the form composes them with the server questions.
 //
 // The submit endpoint has these notable error shapes:
 //   400 { detail }                                   — validation (bad name, duplicate pending, etc.)
@@ -147,8 +147,7 @@ interface WireAnswer {
 
 interface WireJoinRequest {
   id: string;
-  display_name: string;
-  full_name?: string;
+  full_name: string;
   phone_number: string;
   answers: WireAnswer[];
   submitted_at: string;
@@ -165,7 +164,7 @@ interface WireJoinRequest {
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
   return {
     id: w.id,
-    fullName: w.full_name ?? w.display_name,
+    fullName: w.full_name,
     phoneNumber: w.phone_number,
     answers: w.answers.map((a) => ({
       questionId: a.question_id,
@@ -295,9 +294,8 @@ export interface JoinRequestDecision {
 
 interface WireDecision {
   id: string;
-  display_name: string;
-  first_name?: string;
-  full_name?: string;
+  first_name: string;
+  full_name: string;
   phone_number: string;
   status: JoinRequestStatus;
   magic_link_token: string | null;
@@ -317,8 +315,8 @@ export function useDecideJoinRequest() {
       );
       return {
         id: data.id,
-        fullName: data.full_name ?? data.display_name,
-        firstName: data.first_name ?? '',
+        fullName: data.full_name,
+        firstName: data.first_name,
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
@@ -351,8 +349,8 @@ export function useResendMagicLink() {
       );
       return {
         id: data.id,
-        fullName: data.full_name ?? data.display_name,
-        firstName: data.first_name ?? '',
+        fullName: data.full_name,
+        firstName: data.first_name,
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
