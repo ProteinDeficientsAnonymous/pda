@@ -1,3 +1,10 @@
+## [0.19.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.0...v0.19.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **notifications:** use portable role-permission filter for sqlite (Issue 737) ([#745](https://github.com/ProteinDeficientsAnonymous/pda/issues/745)) ([3205523](https://github.com/ProteinDeficientsAnonymous/pda/commit/32055235b30d996343454b103561f94c735b1012))
+
 # [0.19.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.18.0...v0.19.0) (2026-07-13)
 
 
