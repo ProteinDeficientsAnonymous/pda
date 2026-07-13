@@ -1,3 +1,10 @@
+# [0.20.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.2...v0.20.0) (2026-07-13)
+
+
+### Features
+
+* **community:** 689 - event tag create/delete endpoints ([#772](https://github.com/ProteinDeficientsAnonymous/pda/issues/772)) ([bae509f](https://github.com/ProteinDeficientsAnonymous/pda/commit/bae509fbdfb5621be1f33cad8f52337b6d64119c)), closes [#773](https://github.com/ProteinDeficientsAnonymous/pda/issues/773)
+
 ## [0.19.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.1...v0.19.2) (2026-07-13)
 
 
