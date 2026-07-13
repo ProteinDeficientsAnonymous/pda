@@ -153,7 +153,9 @@ class EventRSVP(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.display_name or self.user.phone_number} → {self.event.title}: {self.status}"
+        return (
+            f"{self.user.full_name or self.user.phone_number} → {self.event.title}: {self.status}"
+        )
 
 
 class EventFlag(models.Model):

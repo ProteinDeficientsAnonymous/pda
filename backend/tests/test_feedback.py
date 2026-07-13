@@ -158,7 +158,8 @@ class TestFeedback:
         user = User.objects.create_user(
             phone_number="+15551239999",
             password="pw12345678",
-            display_name="alice smith",
+            first_name="alice",
+            last_name="smith",
         )
         refresh = RefreshToken.for_user(user)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore

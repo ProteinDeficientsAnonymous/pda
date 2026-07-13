@@ -50,7 +50,7 @@ class TestPublicRsvpHappyPath:
         user = User.objects.get(phone_number="+14155550123")
         assert user.is_member is False
         assert user.email == "sam@example.com"
-        assert user.display_name == "Sam Green"
+        assert user.full_name == "Sam Green"
         assert not user.has_usable_password()
         assert EventRSVP.objects.filter(event=official_event, user=user).count() == 1
         assert NonMemberRsvpToken.objects.filter(user=user).count() == 1
@@ -188,7 +188,7 @@ class TestPublicRsvpDedup:
 class TestPublicRsvpMemberCollision:
     def test_phone_belongs_to_member(self, api_client, official_event, fake_email_sender):
         User.objects.create_user(
-            phone_number="+14155550123", display_name="A Member", is_member=True
+            phone_number="+14155550123", first_name="A", last_name="Member", is_member=True
         )
 
         response = post(api_client, official_event)
@@ -201,7 +201,8 @@ class TestPublicRsvpMemberCollision:
     def test_email_belongs_to_member(self, api_client, official_event, fake_email_sender):
         User.objects.create_user(
             phone_number="+14155550555",
-            display_name="A Member",
+            first_name="A",
+            last_name="Member",
             email="sam@example.com",
             is_member=True,
         )
@@ -219,7 +220,8 @@ class TestPublicRsvpMemberCollision:
         # the RSVP submits the same address in different case.
         User.objects.create_user(
             phone_number="+14155550555",
-            display_name="A Member",
+            first_name="A",
+            last_name="Member",
             email="Sam@Example.COM",
             is_member=True,
         )

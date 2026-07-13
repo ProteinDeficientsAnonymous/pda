@@ -29,8 +29,14 @@
       },
       "ApproveJoinRequestOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
@@ -70,7 +76,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "status"
         ],
@@ -2852,12 +2857,6 @@
             "title": "Answers",
             "type": "object"
           },
-          "display_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "format": "email",
             "title": "Email",
@@ -2942,12 +2941,23 @@
             "title": "Attached User Official Rsvp Count",
             "type": "integer"
           },
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "onboarded_at": {
@@ -3017,7 +3027,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "submitted_at",
           "status"
@@ -3100,18 +3109,6 @@
               }
             ],
             "title": "Calendar Feed Scope"
-          },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
           },
           "email": {
             "anyOf": [
@@ -3238,10 +3235,6 @@
       },
       "MemberDirectoryOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "default": "",
             "title": "Email",
@@ -3278,8 +3271,7 @@
           }
         },
         "required": [
-          "id",
-          "display_name"
+          "id"
         ],
         "title": "MemberDirectoryOut",
         "type": "object"
@@ -3289,10 +3281,6 @@
           "bio": {
             "default": "",
             "title": "Bio",
-            "type": "string"
-          },
-          "display_name": {
-            "title": "Display Name",
             "type": "string"
           },
           "email": {
@@ -3346,7 +3334,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "MemberProfileOut",
@@ -3418,18 +3405,6 @@
             },
             "title": "Consent Types",
             "type": "array"
-          },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
           },
           "email": {
             "anyOf": [
@@ -4611,12 +4586,6 @@
       },
       "UserCreateIn": {
         "properties": {
-          "display_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "anyOf": [
               {
@@ -4666,10 +4635,6 @@
       },
       "UserCreateOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "first_name": {
             "default": "",
             "title": "First Name",
@@ -4701,7 +4666,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "magic_link_token"
         ],
         "title": "UserCreateOut",
@@ -4717,10 +4681,6 @@
           "calendar_feed_scope": {
             "default": "all",
             "title": "Calendar Feed Scope",
-            "type": "string"
-          },
-          "display_name": {
-            "title": "Display Name",
             "type": "string"
           },
           "email": {
@@ -4855,7 +4815,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "roles"
         ],
         "title": "UserOut",
@@ -4863,18 +4822,6 @@
       },
       "UserPatchIn": {
         "properties": {
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -4956,10 +4903,6 @@
       },
       "UserSearchOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "first_name": {
             "default": "",
             "title": "First Name",
@@ -4986,7 +4929,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "UserSearchOut",

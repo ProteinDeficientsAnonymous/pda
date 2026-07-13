@@ -23,7 +23,8 @@ def survey_owner(db):
     return User.objects.create_user(
         phone_number="+12025557001",
         password="ownerpass",
-        display_name="Survey Owner",
+        first_name="Survey",
+        last_name="Owner",
     )
 
 
@@ -71,7 +72,7 @@ class TestSurveyTalliesAuthz:
 
     def test_manage_surveys_can_read_tallies(self, api_client, db, poll_survey):
         admin = User.objects.create_user(
-            phone_number="+12025557010", password="x", display_name="Surveys Admin"
+            phone_number="+12025557010", password="x", first_name="Surveys", last_name="Admin"
         )
         role = Role.objects.create(name="surveys_mgr", permissions=[PermissionKey.MANAGE_SURVEYS])
         admin.roles.add(role)

@@ -23,7 +23,7 @@ def _accept(api_client, user, consent_types):
 class TestAcceptConsents:
     def test_stamps_consent_and_clears_flag(self, api_client):
         user = User.objects.create_user(
-            phone_number="+12025550401", password="pass", display_name="Consenter"
+            phone_number="+12025550401", password="pass", first_name="Consenter", last_name=""
         )
         user.guidelines_consent_at = None
         user.save(update_fields=["guidelines_consent_at"])
@@ -37,7 +37,7 @@ class TestAcceptConsents:
 
     def test_after_consent_protected_endpoints_unblock(self, api_client):
         user = User.objects.create_user(
-            phone_number="+12025550402", password="pass", display_name="Consenter"
+            phone_number="+12025550402", password="pass", first_name="Consenter", last_name=""
         )
         user.guidelines_consent_at = None
         user.save(update_fields=["guidelines_consent_at"])
@@ -52,7 +52,7 @@ class TestAcceptConsents:
 
     def test_already_consented_is_noop_and_preserves_timestamp(self, api_client):
         user = User.objects.create_user(
-            phone_number="+12025550403", password="pass", display_name="Consenter"
+            phone_number="+12025550403", password="pass", first_name="Consenter", last_name=""
         )
         first = user.guidelines_consent_at  # stamped by conftest default
         assert first is not None
@@ -67,7 +67,7 @@ class TestAcceptConsents:
         from users.models import User
 
         user = User.objects.create_user(
-            phone_number="+12025550405", password="pass", display_name="SmsConsenter"
+            phone_number="+12025550405", password="pass", first_name="SmsConsenter", last_name=""
         )
         user.guidelines_consent_at = None
         user.sms_consent_at = None
@@ -87,7 +87,7 @@ class TestAcceptConsents:
         from users.models import User
 
         user = User.objects.create_user(
-            phone_number="+12025550406", password="pass", display_name="GuidelinesOnly"
+            phone_number="+12025550406", password="pass", first_name="GuidelinesOnly", last_name=""
         )
         user.guidelines_consent_at = None
         user.sms_consent_at = None
@@ -105,7 +105,7 @@ class TestAcceptConsents:
         from users.models import User
 
         user = User.objects.create_user(
-            phone_number="+12025550407", password="pass", display_name="AlreadySms"
+            phone_number="+12025550407", password="pass", first_name="AlreadySms", last_name=""
         )
         original = timezone.now() - timezone.timedelta(days=10)
         user.guidelines_consent_at = None
@@ -122,7 +122,7 @@ class TestAcceptConsents:
         from users.models import User
 
         user = User.objects.create_user(
-            phone_number="+12025550408", password="pass", display_name="BadType"
+            phone_number="+12025550408", password="pass", first_name="BadType", last_name=""
         )
 
         resp = _accept(api_client, user, ["nonsense"])
@@ -139,7 +139,7 @@ class TestAcceptConsents:
     def test_admin_is_not_grandfathered(self, api_client):
         """Admins are gated too — a fresh admin with null consent is blocked."""
         admin = User.objects.create_user(
-            phone_number="+12025550404", password="pass", display_name="Admin"
+            phone_number="+12025550404", password="pass", first_name="Admin", last_name=""
         )
         admin_role, _ = Role.objects.get_or_create(name="admin", defaults={"is_default": True})
         admin.roles.add(admin_role)

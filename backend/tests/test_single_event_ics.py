@@ -71,7 +71,7 @@ class TestSingleEventIcs:
         creator = User.objects.create_user(
             phone_number="+12025559999",
             password="testpass123",
-            display_name="Creator",
+            first_name="Creator",
         )
         event = Event.objects.create(
             title="Secret Invite Only",
@@ -89,7 +89,7 @@ class TestSingleEventIcs:
         creator = User.objects.create_user(
             phone_number="+12025558888",
             password="testpass123",
-            display_name="Creator",
+            first_name="Creator",
         )
         event = Event.objects.create(
             title="Members Only Potluck",
@@ -129,7 +129,7 @@ class TestSingleEventIcs:
         creator = User.objects.create_user(
             phone_number="+12025557777",
             password="testpass123",
-            display_name="Creator",
+            first_name="Creator",
         )
         event = Event.objects.create(
             title="Unpublished Draft",

@@ -9,7 +9,7 @@ def _non_member(phone, email=""):
 
     return User.objects.create_user(
         phone_number=phone,
-        display_name="Rsvper",
+        first_name="Rsvper",
         email=email or None,
         is_member=False,
     )
@@ -39,7 +39,8 @@ def _submit(api_client, why_join_id, phone, email):
     return api_client.post(
         "/api/community/join-request/",
         {
-            "display_name": "New Applicant",
+            "first_name": "New",
+            "last_name": "Applicant",
             "phone_number": phone,
             "email": email,
             "answers": {why_join_id: "Liberation."},
@@ -55,7 +56,7 @@ class TestSubmissionMemberMatch:
     def test_member_phone_match_returns_already_member(self, api_client, why_join_id):
         from users.models import User
 
-        User.objects.create_user(phone_number="+12025551401", display_name="Member", is_member=True)
+        User.objects.create_user(phone_number="+12025551401", first_name="Member", is_member=True)
         resp = _submit(api_client, why_join_id, "+12025551401", "fresh@example.com")
         assert resp.status_code == 409
         assert resp.json()["detail"][0]["code"] == "join_request.already_member"
@@ -65,7 +66,7 @@ class TestSubmissionMemberMatch:
 
         User.objects.create_user(
             phone_number="+12025551402",
-            display_name="Member",
+            first_name="Member",
             email="member@example.com",
             is_member=True,
         )
@@ -156,7 +157,8 @@ class TestApprovalPromotesNonMember:
 
         existing = _non_member("+12025551420", email="promote@example.com")
         jr = JoinRequest.objects.create(
-            display_name="Promote Me",
+            first_name="Promote",
+            last_name="Me",
             phone_number="+12025551420",
             email="promote@example.com",
             user=existing,
@@ -180,7 +182,8 @@ class TestApprovalPromotesNonMember:
         existing = _non_member("+12025551421", email="tokens@example.com")
         token = NonMemberRsvpToken.issue(existing)
         jr = JoinRequest.objects.create(
-            display_name="Token Holder",
+            first_name="Token",
+            last_name="Holder",
             phone_number="+12025551421",
             email="tokens@example.com",
             user=existing,
@@ -197,7 +200,8 @@ class TestApprovalPromotesNonMember:
         event = _official_event()
         rsvp = EventRSVP.objects.create(event=event, user=existing, status=RSVPStatus.ATTENDING)
         jr = JoinRequest.objects.create(
-            display_name="Has RSVPs",
+            first_name="Has",
+            last_name="RSVPs",
             phone_number="+12025551422",
             email="rsvps@example.com",
             user=existing,
@@ -213,7 +217,7 @@ class TestApprovalPromotesNonMember:
 
         existing = _non_member("+12025551423", email="ghost@example.com")
         jr = JoinRequest.objects.create(
-            display_name="Ghost",
+            first_name="Ghost",
             phone_number="+12025551423",
             email="ghost@example.com",
             user=existing,
@@ -242,7 +246,7 @@ class TestOfficialRsvpCount:
             event=_community_event(), user=existing, status=RSVPStatus.ATTENDING
         )
         jr = JoinRequest.objects.create(
-            display_name="Counter",
+            first_name="Counter",
             phone_number="+12025551430",
             email="counter@example.com",
             user=existing,
@@ -256,7 +260,7 @@ class TestOfficialRsvpCount:
         from community.models import JoinRequest, JoinRequestStatus
 
         jr = JoinRequest.objects.create(
-            display_name="Unlinked",
+            first_name="Unlinked",
             phone_number="+12025551431",
             status=JoinRequestStatus.PENDING,
         )
@@ -274,7 +278,8 @@ class TestOfficialRsvpCount:
             event=_official_event(), user=existing, status=RSVPStatus.ATTENDING
         )
         jr = JoinRequest.objects.create(
-            display_name="Email Match",
+            first_name="Email",
+            last_name="Match",
             phone_number="+12025559999",  # differs from existing.phone_number
             email="emailmatch@example.com",
             user=existing,

@@ -170,7 +170,7 @@ class TestSearchUsers:
         )
         assert response.status_code == 200
         data = response.json()
-        assert any(u["display_name"] == "Other User" for u in data)
+        assert any(u["full_name"] == "Other User" for u in data)
 
     def test_search_excludes_self(self, api_client, auth_headers, test_user):
         response = api_client.get(
@@ -195,7 +195,7 @@ class TestSearchUsers:
             User.objects.create_user(
                 phone_number=f"+1555001{i:04d}",
                 password="pass",
-                display_name=f"Searchable User {i}",
+                first_name=f"Searchable User {i}",
             )
         response = api_client.get("/api/auth/users/search/?q=Searchable", **auth_headers)
         assert response.status_code == 200

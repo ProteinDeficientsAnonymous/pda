@@ -21,7 +21,8 @@ def members(db):
         User.objects.create_user(
             phone_number=f"+1202555190{i}",
             password="x",
-            display_name=f"Member {i}",
+            first_name=f"Member {i}",
+            last_name="",
         )
         for i in range(1, 4)
     ]
@@ -34,7 +35,8 @@ def host_user(db):
     return User.objects.create_user(
         phone_number="+12025551800",
         password="x",
-        display_name="Host",
+        first_name="Host",
+        last_name="",
     )
 
 
@@ -46,7 +48,8 @@ def events_admin(db):
     admin = User.objects.create_user(
         phone_number="+12025551801",
         password="x",
-        display_name="Events Admin",
+        first_name="Events",
+        last_name="Admin",
     )
     role = Role.objects.create(name="events_admin", permissions=[PermissionKey.MANAGE_EVENTS])
     admin.roles.add(role)

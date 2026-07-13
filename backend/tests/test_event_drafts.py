@@ -18,7 +18,8 @@ def creator(db):
     return User.objects.create_user(
         phone_number="+14155550201",
         password="creatorpass123",
-        display_name="Draft Creator",
+        first_name="Draft",
+        last_name="Creator",
     )
 
 
@@ -33,7 +34,8 @@ def other_member(db):
     return User.objects.create_user(
         phone_number="+14155550202",
         password="otherpass123",
-        display_name="Other Member",
+        first_name="Other",
+        last_name="Member",
     )
 
 
@@ -48,7 +50,8 @@ def cohost(db):
     return User.objects.create_user(
         phone_number="+14155550203",
         password="cohostpass123",
-        display_name="Draft Cohost",
+        first_name="Draft",
+        last_name="Cohost",
     )
 
 
@@ -63,7 +66,8 @@ def invitee(db):
     return User.objects.create_user(
         phone_number="+14155550204",
         password="inviteepass123",
-        display_name="Draft Invitee",
+        first_name="Draft",
+        last_name="Invitee",
     )
 
 

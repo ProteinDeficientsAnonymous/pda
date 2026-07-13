@@ -22,7 +22,6 @@ from users._consents import stamp_consents
 from users._helpers import (
     _check_and_set_email,
     _resolve_name_fields,
-    visible_display_name,
     visible_name,
 )
 from users._password_validation import validate_password
@@ -269,7 +268,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """
     changed: list[str] = []
     if _resolve_name_fields(user, payload):
-        changed.extend(["first_name", "last_name", "display_name"])
+        changed.extend(["first_name", "last_name"])
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
@@ -357,7 +356,7 @@ def list_member_directory(request):
     users = (
         User.objects.active_members()
         .filter(needs_onboarding=False)
-        .order_by("display_name", "phone_number")
+        .order_by("first_name", "last_name", "phone_number")
     )
     results = []
     for u in users:
@@ -365,7 +364,6 @@ def list_member_directory(request):
         results.append(
             MemberDirectoryOut(
                 id=str(u.id),
-                display_name=visible_display_name(u, request.auth),
                 first_name=u.first_name,
                 last_name=last_name,
                 full_name=full_name,
@@ -394,7 +392,6 @@ def get_member_profile(request, user_id: str):
         200,
         MemberProfileOut(
             id=str(user.id),
-            display_name=visible_display_name(user, request.auth),
             first_name=user.first_name,
             last_name=last_name,
             full_name=full_name,
