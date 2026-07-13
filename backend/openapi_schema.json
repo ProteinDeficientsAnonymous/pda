@@ -3918,6 +3918,45 @@
         "title": "RequestLoginLinkOut",
         "type": "object"
       },
+      "ResendManageLinkIn": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "phone_number": {
+            "maxLength": 20,
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "website": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Website",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "phone_number"
+        ],
+        "title": "ResendManageLinkIn",
+        "type": "object"
+      },
+      "ResendManageLinkOut": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ResendManageLinkOut",
+        "type": "object"
+      },
       "ResetPasswordOut": {
         "properties": {
           "detail": {
@@ -10806,6 +10845,49 @@
           }
         },
         "summary": "List My Rsvps",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/my-rsvps/resend/": {
+      "post": {
+        "description": "Public recovery path: re-send a non-member's manage-rsvp link by phone + email.\n\nHoneypot trips, bad phones, unknown contacts, and member contacts all\nresolve to the same neutral 200 body; only a matching non-member with an\nemail on file is actually sent a link. The response body never reveals\nwhether an account exists \u2014 the one residual signal is that the match+email\npath sends synchronously, so it's marginally slower; the 3/h IP rate limit\nkeeps that timing side channel impractical to exploit.",
+        "operationId": "community__public_rsvp_resend_resend_manage_link",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendManageLinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResendManageLinkOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Resend Manage Link",
         "tags": [
           "community"
         ]
