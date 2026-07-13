@@ -137,7 +137,7 @@ export interface paths {
             cookie?: never;
         };
         /** Magic Login */
-        get: operations["users__auth_magic_login"];
+        get: operations["users__magic_login_magic_login"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1708,8 +1708,16 @@ export interface components {
         };
         /** ApproveJoinRequestOut */
         ApproveJoinRequestOut: {
-            /** Display Name */
-            display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
             /** Magic Link Token */
@@ -2939,11 +2947,6 @@ export interface components {
                 [key: string]: string;
             };
             /**
-             * Display Name
-             * @default
-             */
-            display_name: string;
-            /**
              * Email
              * Format: email
              */
@@ -2999,8 +3002,24 @@ export interface components {
             attended_official_count: number;
             /** Display Name */
             display_name: string;
+            attached_user_official_rsvp_count: number;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Onboarded At */
             onboarded_at?: string | null;
             /** Phone Number */
@@ -3057,8 +3076,6 @@ export interface components {
             bio?: string | null;
             /** Calendar Feed Scope */
             calendar_feed_scope?: ("all" | "mine") | null;
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3082,8 +3099,6 @@ export interface components {
         };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3124,8 +3139,6 @@ export interface components {
              * @default
              */
             bio: string;
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3195,8 +3208,6 @@ export interface components {
         OnboardingIn: {
             /** Consent Types */
             consent_types?: components["schemas"]["ConsentType"][];
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3353,6 +3364,8 @@ export interface components {
              * @default unknown
              */
             attendance: string;
+            /** Checked In At */
+            checked_in_at?: string | null;
             /**
              * Has Plus One
              * @default false
@@ -3689,11 +3702,6 @@ export interface components {
         };
         /** UserCreateIn */
         UserCreateIn: {
-            /**
-             * Display Name
-             * @default
-             */
-            display_name: string;
             /** Email */
             email?: string | null;
             /**
@@ -3713,8 +3721,6 @@ export interface components {
         };
         /** UserCreateOut */
         UserCreateOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * First Name
              * @default
@@ -3749,8 +3755,6 @@ export interface components {
              * @default all
              */
             calendar_feed_scope: string;
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3773,6 +3777,11 @@ export interface components {
             hide_last_name: boolean;
             /** Id */
             id: string;
+            /**
+             * Is Member
+             * @default true
+             */
+            is_member: boolean;
             /**
              * Is Paused
              * @default false
@@ -3854,8 +3863,6 @@ export interface components {
         };
         /** UserPatchIn */
         UserPatchIn: {
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3874,8 +3881,6 @@ export interface components {
         };
         /** UserSearchOut */
         UserSearchOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * First Name
              * @default
@@ -4201,7 +4206,7 @@ export interface operations {
             };
         };
     };
-    users__auth_magic_login: {
+    users__magic_login_magic_login: {
         parameters: {
             query?: never;
             header?: never;
@@ -4591,7 +4596,9 @@ export interface operations {
     };
     users__management_list_users: {
         parameters: {
-            query?: never;
+            query?: {
+                include_non_members?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;

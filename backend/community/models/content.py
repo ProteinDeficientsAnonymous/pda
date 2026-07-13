@@ -110,7 +110,7 @@ class WelcomeMessageTemplate(models.Model):
     """Singleton — only one row ever exists (pk=1).
 
     Plain-text template for the welcome SMS/WhatsApp message vetters send
-    after approving a join request. Placeholders ${NAME}, ${SENDER_NAME},
+    after approving a join request. Placeholders ${FIRST_NAME}, ${SENDER_NAME},
     ${MAGIC_LINK} are substituted client-side at render time.
     """
 

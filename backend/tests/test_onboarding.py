@@ -13,7 +13,7 @@ class TestOnboardingEmail:
     def test_missing_email_rejected(self, api_client, needs_onboarding_auth_headers):
         resp = api_client.post(
             "/api/auth/complete-onboarding/",
-            data={"new_password": "abcd1234ABCD!", "display_name": "Newby"},
+            data={"new_password": "abcd1234ABCD!", "first_name": "Newby"},
             content_type="application/json",
             **needs_onboarding_auth_headers,
         )
@@ -25,7 +25,7 @@ class TestOnboardingEmail:
             "/api/auth/complete-onboarding/",
             data={
                 "new_password": "abcd1234ABCD!",
-                "display_name": "Newby",
+                "first_name": "Newby",
                 "email": "not-an-email",
             },
             content_type="application/json",
@@ -40,7 +40,7 @@ class TestOnboardingEmail:
             "/api/auth/complete-onboarding/",
             data={
                 "new_password": "abcd1234ABCD!",
-                "display_name": "Newby",
+                "first_name": "Newby",
                 "email": "Newby@Example.com",
             },
             content_type="application/json",
@@ -54,13 +54,13 @@ class TestOnboardingEmail:
         self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
     ):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", email="taken@example.com"
         )
         resp = api_client.post(
             "/api/auth/complete-onboarding/",
             data={
                 "new_password": "abcd1234ABCD!",
-                "display_name": "Newby",
+                "first_name": "Newby",
                 "email": "Taken@Example.com",
             },
             content_type="application/json",
@@ -73,7 +73,7 @@ class TestOnboardingEmail:
         user = User.objects.create_user(
             phone_number="+12025550111",
             password="x",
-            display_name="Existing",
+            first_name="Existing",
             email="existing@example.com",
             needs_onboarding=True,
         )
@@ -94,7 +94,8 @@ class TestOnboardingEmail:
         user = User.objects.create_user(
             phone_number="+12025550112",
             password="x",
-            display_name="Reset Me",
+            first_name="Reset",
+            last_name="Me",
             email="resetme@example.com",
         )
         user.needs_password_reset = True
@@ -120,7 +121,7 @@ class TestOnboardingEmail:
         user = User.objects.create_user(
             phone_number="+12025550113",
             password="SamePass123!",
-            display_name="Reuser",
+            first_name="Reuser",
             email="reuser@example.com",
         )
         user.needs_password_reset = True  # has a usable password AND a pending reset
@@ -141,7 +142,8 @@ class TestOnboardingEmail:
         user = User.objects.create_user(
             phone_number="+12025550114",
             password="x",
-            display_name="Fresh Start",
+            first_name="Fresh",
+            last_name="Start",
             email="fresh@example.com",
         )
         user.needs_password_reset = True
@@ -180,7 +182,7 @@ class TestOnboardingConsent:
             "/api/auth/complete-onboarding/",
             data={
                 "new_password": "abcd1234ABCD!",
-                "display_name": "Newby",
+                "first_name": "Newby",
                 "email": "newby@example.com",
                 "consent_types": ["guidelines", "sms"],
             },
@@ -205,7 +207,7 @@ class TestOnboardingConsent:
             "/api/auth/complete-onboarding/",
             data={
                 "new_password": "abcd1234ABCD!",
-                "display_name": "Newby",
+                "first_name": "Newby",
                 "email": "newby@example.com",
             },
             content_type="application/json",
@@ -226,7 +228,7 @@ class TestOnboardingConsent:
             "/api/auth/complete-onboarding/",
             data={
                 "new_password": "abcd1234ABCD!",
-                "display_name": "Newby",
+                "first_name": "Newby",
                 "email": "newby@example.com",
                 "consent_types": ["guidelines"],
             },

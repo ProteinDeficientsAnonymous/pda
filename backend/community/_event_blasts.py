@@ -66,7 +66,7 @@ def _collect_recipients(event: Event, statuses: list[str]) -> tuple[list, int]:
         if not email:
             skipped_no_email += 1
             continue
-        recipients.append((email, user.display_name or ""))
+        recipients.append((email, user.full_name or ""))
     return recipients, skipped_no_email
 
 

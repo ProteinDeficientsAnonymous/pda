@@ -51,7 +51,6 @@ describe('useUsers', () => {
       data: [
         {
           id: 'u1',
-          display_name: 'Ada',
           first_name: 'Ada',
           full_name: 'Ada',
           phone_number: '+15551230001',
@@ -81,7 +80,7 @@ describe('useUsers', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/');
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/', undefined);
     expect(result.current.data).toHaveLength(1);
     const [member] = result.current.data!;
     expect(member?.fullName).toBe('Ada');
@@ -96,6 +95,32 @@ describe('useUsers', () => {
       isDefault: true,
       permissions: [],
     });
+  });
+
+  it('requests non-members and maps is_member when opted in', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'u2',
+          display_name: 'Guest',
+          full_name: 'Guest',
+          phone_number: '+15551230002',
+          email: 'guest@example.com',
+          is_member: false,
+          roles: [],
+        },
+      ],
+    });
+
+    const qc = makeQc();
+    const { result } = renderHook(() => useUsers(true), { wrapper: makeWrapper(qc) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/', {
+      params: { include_non_members: true },
+    });
+    expect(result.current.data?.[0]?.isMember).toBe(false);
   });
 
   it('propagates errors from the API', async () => {
@@ -128,7 +153,6 @@ describe('useCreateUser', () => {
       data: {
         id: 'u2',
         phone_number: '+15551230002',
-        display_name: 'Grace',
         first_name: 'Grace',
         full_name: 'Grace',
         magic_link_token: 'magic-abc',
@@ -141,12 +165,16 @@ describe('useCreateUser', () => {
 
     const created = await result.current.mutateAsync({
       phoneNumber: '+15551230002',
+      firstName: 'Grace',
+      lastName: 'Hopper',
       email: 'grace@example.com',
       roleId: 'role-xyz',
     });
 
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/create-user/', {
       phone_number: '+15551230002',
+      first_name: 'Grace',
+      last_name: 'Hopper',
       email: 'grace@example.com',
       role_id: 'role-xyz',
     });
@@ -165,7 +193,7 @@ describe('useCreateUser', () => {
       data: {
         id: 'u3',
         phone_number: '+15551230003',
-        display_name: '',
+        full_name: '',
         magic_link_token: 'magic-xyz',
       },
     });
@@ -192,7 +220,7 @@ describe('useUpdateUser', () => {
     mockedPatch.mockResolvedValueOnce({
       data: {
         id: 'u1',
-        display_name: 'Ada Lovelace',
+        full_name: 'Ada Lovelace',
         phone_number: '+15551230001',
         roles: [],
       },
@@ -295,7 +323,7 @@ describe('useUpdateMemberRoles', () => {
     mockedPatch.mockResolvedValueOnce({
       data: {
         id: 'u9',
-        display_name: 'Ada',
+        full_name: 'Ada',
         phone_number: '+1',
         roles: [
           { id: 'r2', name: 'vet', is_default: false, permissions: ['approve_join_requests'] },

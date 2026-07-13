@@ -23,7 +23,6 @@ def _reactivate_archived_user(existing_user, join_request):
             "needs_onboarding",
             "first_name",
             "last_name",
-            "display_name",
             "guidelines_consent_at",
             "sms_consent_at",
         ]
@@ -52,7 +51,6 @@ def _promote_non_member(user, join_request):
             "needs_onboarding",
             "first_name",
             "last_name",
-            "display_name",
             "guidelines_consent_at",
             "sms_consent_at",
         ]

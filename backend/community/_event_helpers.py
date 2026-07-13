@@ -87,6 +87,7 @@ def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGues
             phone=r.user.phone_number if can_see_phones else None,
             photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
+            checked_in_at=r.checked_in_at,
         )
         for r in rsvps
     ]
@@ -103,23 +104,27 @@ def _find_my_rsvp(rsvps, user) -> str | None:
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
-    """Return currently-CANT_GO RSVPs with inferred lead time (days before start).
+    """Return currently-CANT_GO RSVPs with lead time (days before start).
 
-    Lossy for users who flipped between statuses — uses updated_at as proxy.
+    Lead time is derived from the recorded cancelled_at transition timestamp,
+    falling back to updated_at for legacy rows that predate the column.
     Returns [] if the event has no start_datetime.
     """
     if event.start_datetime is None:
         return []
-    rows = [
-        CancellationOut(
-            user_id=str(r.user_id),
-            name=visible_display_name(r.user, viewer),
-            cancelled_at=r.updated_at,
-            days_before_event=(event.start_datetime - r.updated_at).days,
+    rows = []
+    for r in event.rsvps.all():
+        if r.status != RSVPStatus.CANT_GO:
+            continue
+        cancelled_at = r.cancelled_at or r.updated_at
+        rows.append(
+            CancellationOut(
+                user_id=str(r.user_id),
+                name=visible_display_name(r.user, viewer),
+                cancelled_at=cancelled_at,
+                days_before_event=(event.start_datetime - cancelled_at).days,
+            )
         )
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.CANT_GO
-    ]
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)
     return rows
 

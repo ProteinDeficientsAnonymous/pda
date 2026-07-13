@@ -154,7 +154,7 @@ def _try_email_delivery(*, request, user, magic_token) -> bool:
         send_result = send_magic_login_email(
             sender=get_email_sender(),
             to=user.email,
-            display_name=user.display_name or "",
+            display_name=user.full_name or "",
             magic_link_url=magic_link_url,
         )
         if send_result.success:

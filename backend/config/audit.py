@@ -28,7 +28,7 @@ def audit_log(  # noqa: PLR0913
     user = getattr(request, "auth", None)
     if user and hasattr(user, "pk"):
         actor_id = str(user.pk)
-        actor_name = getattr(user, "display_name", None) or str(user)
+        actor_name = getattr(user, "full_name", None) or str(user)
     else:
         actor_id = "anonymous"
         actor_name = "anonymous"

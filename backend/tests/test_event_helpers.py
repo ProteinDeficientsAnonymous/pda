@@ -44,7 +44,6 @@ class TestBuildGuestList:
             user_id=user_id,
             user=SimpleNamespace(
                 id=user_id,
-                display_name=name,
                 first_name=name or "",
                 last_name="",
                 full_name=name or "",
@@ -56,6 +55,7 @@ class TestBuildGuestList:
             status=status,
             has_plus_one=False,
             attendance=AttendanceStatus.UNKNOWN,
+            checked_in_at=None,
         )
 
     def test_empty_rsvps(self):

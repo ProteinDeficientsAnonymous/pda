@@ -12,7 +12,8 @@ def edit_homepage_headers(db):
     user = User.objects.create_user(
         phone_number="+12025550999",
         password="testpass",
-        display_name="PM Editor",
+        first_name="PM",
+        last_name="Editor",
     )
     role = Role.objects.create(
         name="pm_homepage_editor",

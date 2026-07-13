@@ -7,6 +7,8 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications._email_helpers import send_rsvp_updated_email
+from notifications.email_sender import get_email_sender
 from pydantic import BaseModel
 from users.models import NonMemberRsvpToken, User
 
@@ -16,8 +18,10 @@ from community._event_schemas import EventOut
 from community._public_rsvp_shared import (
     PublicRsvpOut,
     PublicRsvpStateOut,
+    _email_details,
     _email_promoted_non_members,
     _load_public_rsvp_event,
+    _log_email_failure,
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -91,6 +95,21 @@ def _eligible_event_rsvps(user):
     )
 
 
+def _send_updated_email(request, event: Event, user: User, token_str: str) -> None:
+    """Best-effort "rsvp updated" email. A send failure must NOT roll back the RSVP."""
+    if not user.email:
+        return
+    try:
+        result = send_rsvp_updated_email(
+            sender=get_email_sender(),
+            details=_email_details(event, user, token_str),
+        )
+        if not result.success:
+            raise RuntimeError(result.error or "send returned failure")
+    except Exception as exc:
+        _log_email_failure(request, event, user, exc)
+
+
 @router.get(
     "/public/my-rsvps/",
     response={200: PublicRsvpManageOut, 404: ErrorOut, 429: ErrorOut},
@@ -112,7 +131,7 @@ def list_my_rsvps(request, token: str = ""):
         )
     return 200, PublicRsvpManageOut(
         user=PublicRsvpManageUserOut(
-            display_name=user.display_name,
+            display_name=user.full_name,
             email=user.email or "",
             phone_number=user.phone_number,
         ),
@@ -135,7 +154,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event.id, user, payload.status, payload.has_plus_one
         )
-        NonMemberRsvpToken.issue_or_extend(user)
+        rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
 
     audit_log(
         logging.INFO,
@@ -145,6 +164,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         target_id=str(event.id),
         details={"user_id": str(user.pk), "status": final_status},
     )
+    _send_updated_email(request, event, user, rsvp_token.token)
     _email_promoted_non_members(request, event, promoted_user_ids)
 
     fresh_event = (

@@ -146,6 +146,7 @@ class RSVPGuestOut(BaseModel):
     phone: str | None = None
     photo_url: str = ""
     attendance: str = AttendanceStatus.UNKNOWN
+    checked_in_at: datetime | None = None
 
 
 class PendingCoHostInviteOut(BaseModel):

@@ -17,7 +17,8 @@ def member_headers(db):
     member = User.objects.create_user(
         phone_number="+14155550111",
         password="memberpass123",
-        display_name="Tag Member",
+        first_name="Tag",
+        last_name="Member",
     )
     return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"}  # type: ignore
 

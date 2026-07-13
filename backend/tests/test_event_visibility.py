@@ -21,7 +21,8 @@ def official_event_user(db):
     user = User.objects.create_user(
         phone_number="+14155559999",
         password="officialpass123",
-        display_name="Official Tagger",
+        first_name="Official",
+        last_name="Tagger",
     )
     role = Role.objects.create(
         name="official_tagger", permissions=[PermissionKey.TAG_OFFICIAL_EVENT]
@@ -42,7 +43,8 @@ def manage_events_user(db):
     user = User.objects.create_user(
         phone_number="+14155551234",
         password="eventmanagerpass123",
-        display_name="Event Manager",
+        first_name="Event",
+        last_name="Manager",
     )
     role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
     user.roles.add(role)
@@ -110,7 +112,7 @@ class TestInviteOnlyVisibility:
         return event
 
     def _make_user(self, phone, name):
-        return User.objects.create_user(phone_number=phone, password="pass123", display_name=name)
+        return User.objects.create_user(phone_number=phone, password="pass123", first_name=name)
 
     def _auth_headers(self, user):
         refresh = RefreshToken.for_user(user)
@@ -265,7 +267,7 @@ class TestInviteOnlyVisibility:
 
     def test_calendar_feed_excludes_invite_only_for_non_invited(self, api_client):
         owner = User.objects.create_user(
-            phone_number="+12025550214", password="pass123", display_name="Feed Owner"
+            phone_number="+12025550214", password="pass123", first_name="Feed", last_name="Owner"
         )
         owner.calendar_token = secrets.token_urlsafe(32)
         owner.save(update_fields=["calendar_token"])
@@ -285,7 +287,7 @@ class TestInviteOnlyVisibility:
 
     def test_calendar_feed_includes_invite_only_for_invited(self, api_client):
         owner = User.objects.create_user(
-            phone_number="+12025550216", password="pass123", display_name="Invited Owner"
+            phone_number="+12025550216", password="pass123", first_name="Invited", last_name="Owner"
         )
         owner.calendar_token = secrets.token_urlsafe(32)
         owner.save(update_fields=["calendar_token"])
@@ -314,7 +316,7 @@ class TestTextRecipients:
     def _make_user(self, phone, name):
         from users.models import User
 
-        return User.objects.create_user(phone_number=phone, password="pass123", display_name=name)
+        return User.objects.create_user(phone_number=phone, password="pass123", first_name=name)
 
     def _auth_headers(self, user):
         from ninja_jwt.tokens import RefreshToken

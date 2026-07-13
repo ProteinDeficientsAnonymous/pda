@@ -102,7 +102,7 @@ def broadcast_event_update(
         _ping_event_update(recipients, str(event.pk))
 
 
-def create_join_request_notifications(display_name: str) -> None:
+def create_join_request_notifications(full_name: str) -> None:
     recipients = (
         User.objects.members()
         .filter(
@@ -117,7 +117,7 @@ def create_join_request_notifications(display_name: str) -> None:
             Notification(
                 recipient=user,
                 notification_type=NotificationType.JOIN_REQUEST,
-                message=f"new join request from {display_name}",
+                message=f"new join request from {full_name}",
             )
             for user in recipients
         ]
@@ -126,7 +126,7 @@ def create_join_request_notifications(display_name: str) -> None:
 
 
 def create_event_flag_notifications(event: Event, flagger: User) -> None:
-    flagger_name = flagger.display_name or flagger.phone_number
+    flagger_name = flagger.full_name or flagger.phone_number
     recipients = (
         User.objects.members()
         .filter(
@@ -151,7 +151,7 @@ def create_event_flag_notifications(event: Event, flagger: User) -> None:
 
 
 def create_magic_link_request_notifications(user: User) -> None:
-    display = user.display_name or user.phone_number
+    display = user.full_name or user.phone_number
     recipients = (
         User.objects.members()
         .filter(
