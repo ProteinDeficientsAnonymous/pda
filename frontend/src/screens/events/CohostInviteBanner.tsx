@@ -1,7 +1,7 @@
 // Accept/decline banner shown to a user with a pending co-host invite for
-// this event. Hidden once the invite is resolved or the event is past — the
-// banner relies on `myPendingCohostInviteId` from EventOut, which the backend
-// clears via lazy expiration once the event ends.
+// this event. The `event.isPast` guard below hides it once the event ends —
+// the backend no longer expires invites on read (a scheduled sweep does that
+// nightly), so `myPendingCohostInviteId` can stay set on a just-ended event.
 
 import { toast } from 'sonner';
 

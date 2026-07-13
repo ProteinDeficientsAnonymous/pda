@@ -22,7 +22,6 @@ from notifications.service import (
     create_cohost_removed_notification,
 )
 
-from community._cohost_invite_helpers import expire_stale_cohost_invites
 from community._event_helpers import _can_manage_cohost_invites, _event_out
 from community._event_schemas import EventOut
 from community._shared import ErrorOut
@@ -57,12 +56,10 @@ def accept_cohost_invite(request, event_id: UUID, invite_id: UUID):
     invite = _get_invite_or_404(event_id, invite_id)
     if invite.event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    expire_stale_cohost_invites(invite.event)
-    invite.refresh_from_db()
 
     if invite.user_id != request.auth.pk:
         raise_validation(Code.CoHostInvite.NOT_INVITEE, status_code=403)
-    if invite.status != CoHostInviteStatus.PENDING:
+    if invite.status != CoHostInviteStatus.PENDING or invite.event.is_past:
         raise_validation(Code.CoHostInvite.NOT_PENDING, status_code=400)
 
     inviter_id = str(invite.invited_by_id) if invite.invited_by_id else None
@@ -88,12 +85,10 @@ def decline_cohost_invite(request, event_id: UUID, invite_id: UUID):
     invite = _get_invite_or_404(event_id, invite_id)
     if invite.event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    expire_stale_cohost_invites(invite.event)
-    invite.refresh_from_db()
 
     if invite.user_id != request.auth.pk:
         raise_validation(Code.CoHostInvite.NOT_INVITEE, status_code=403)
-    if invite.status != CoHostInviteStatus.PENDING:
+    if invite.status != CoHostInviteStatus.PENDING or invite.event.is_past:
         raise_validation(Code.CoHostInvite.NOT_PENDING, status_code=400)
 
     inviter_id = str(invite.invited_by_id) if invite.invited_by_id else None

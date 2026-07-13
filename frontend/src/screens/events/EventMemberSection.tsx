@@ -157,8 +157,10 @@ function HostSection({
     });
   });
   // Backend only includes pending invites for the creator + accepted co-hosts.
-  // Other viewers always get an empty list, so the chips never leak.
-  const pending = event.pendingCohostInvites;
+  // Other viewers always get an empty list, so the chips never leak. Past
+  // events are dropped here: the backend sweeps them to EXPIRED nightly, but
+  // until it runs they'd otherwise show as actionable pending chips.
+  const pending = event.isPast ? [] : event.pendingCohostInvites;
   if (hosts.length === 0 && pending.length === 0 && !canEdit) return null;
   const totalChips = hosts.length + pending.length;
   const label = totalChips > 1 ? 'hosts' : 'host';
