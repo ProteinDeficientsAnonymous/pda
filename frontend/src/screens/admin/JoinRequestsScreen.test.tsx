@@ -39,6 +39,7 @@ function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRequestSu
     rejectedAt: null,
     rejectedByName: null,
     onboardedAt: null,
+    attachedUserOfficialRsvpCount: 0,
     ...overrides,
   };
 }
@@ -111,6 +112,36 @@ describe('JoinRequestsScreen', () => {
     renderScreen();
 
     expect(screen.queryByText(/sorted newest first/)).not.toBeInTheDocument();
+  });
+
+  it('notes prior official rsvps when the linked user has them', () => {
+    mockResult([
+      makeRequest({ status: JoinRequestStatus.PENDING, attachedUserOfficialRsvpCount: 3 }),
+    ]);
+
+    renderScreen();
+
+    expect(screen.getByText('rsvp’d to 3 official events')).toBeInTheDocument();
+  });
+
+  it('uses the singular noun for a single prior official rsvp', () => {
+    mockResult([
+      makeRequest({ status: JoinRequestStatus.PENDING, attachedUserOfficialRsvpCount: 1 }),
+    ]);
+
+    renderScreen();
+
+    expect(screen.getByText('rsvp’d to 1 official event')).toBeInTheDocument();
+  });
+
+  it('omits the note when there are no prior official rsvps', () => {
+    mockResult([
+      makeRequest({ status: JoinRequestStatus.PENDING, attachedUserOfficialRsvpCount: 0 }),
+    ]);
+
+    renderScreen();
+
+    expect(screen.queryByText(/rsvp’d to/)).not.toBeInTheDocument();
   });
 
   it('falls back to submitted date when no decision timestamp exists', async () => {

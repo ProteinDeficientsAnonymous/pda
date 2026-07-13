@@ -74,10 +74,35 @@ describe('useJoinRequests', () => {
         rejectedAt: null,
         rejectedByName: null,
         onboardedAt: null,
+        attachedUserOfficialRsvpCount: 0,
       },
     ]);
 
     expect(mockedGet).toHaveBeenCalledWith('/api/community/join-requests/');
+  });
+
+  it('maps the attached user official rsvp count from the wire', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'jr-2',
+          display_name: 'Kim Rivera',
+          phone_number: '+12125550000',
+          answers: [],
+          submitted_at: '2024-04-01T09:00:00Z',
+          status: 'pending',
+          user_id: 'user-9',
+          attached_user_official_rsvp_count: 4,
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data?.[0]?.attachedUserOfficialRsvpCount).toBe(4);
   });
 
   it('surfaces a 403 error distinctly when the user lacks permission', async () => {

@@ -218,6 +218,7 @@ function JoinRequestCard({
             {formatPhone(request.phoneNumber)} · submitted{' '}
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
           </p>
+          <OfficialRsvpNote count={request.attachedUserOfficialRsvpCount} />
         </div>
         <div className="flex flex-wrap items-center gap-1">
           {request.previouslyArchived ? (
@@ -283,6 +284,16 @@ function JoinRequestCard({
         </>
       )}
     </article>
+  );
+}
+
+function OfficialRsvpNote({ count }: { count: number }) {
+  if (count <= 0) return null;
+  const noun = count === 1 ? 'event' : 'events';
+  return (
+    <p className="text-muted mt-1 text-xs">
+      rsvp&rsquo;d to {count} official {noun}
+    </p>
   );
 }
 
