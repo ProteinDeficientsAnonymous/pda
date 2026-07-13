@@ -14,7 +14,11 @@ from users.models import User
 from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
-from community._join_request_approval import _provision_approved_user
+from community._join_request_approval import (
+    _provision_approved_user,
+    _provision_tentative_user,
+    send_join_approval,
+)
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import (
@@ -159,10 +163,47 @@ def _stamp_decision(join_request: JoinRequest, status: str, actor) -> None:
     if status == JoinRequestStatus.APPROVED:
         join_request.approved_at = now
         join_request.approved_by = actor
-    else:
+    elif status == JoinRequestStatus.REJECTED:
         join_request.rejected_at = now
         join_request.rejected_by = actor
     join_request.save()
+
+
+_DECISION_ACTIONS = {
+    JoinRequestStatus.TENTATIVE: "join_request_tentative",
+    JoinRequestStatus.APPROVED: "join_request_approved",
+    JoinRequestStatus.REJECTED: "join_request_rejected",
+}
+
+
+def _apply_status_transition(
+    id: UUID, status: str, actor
+) -> tuple[JoinRequest, str | None, bool, bool]:
+    """Stamp + provision inside one locked transaction.
+
+    Returns ``(join_request, magic_token, user_created, promoted_from_tentative)``.
+    select_for_update() serializes concurrent approvals so only one provisions.
+    """
+    with transaction.atomic():
+        try:
+            join_request = JoinRequest.objects.select_for_update().get(id=id)
+        except JoinRequest.DoesNotExist:
+            raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
+
+        # TENTATIVE is not a final decision — it may still transition to
+        # approved/rejected, so only the two terminal states are locked.
+        if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
+            raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
+
+        was_tentative = join_request.status == JoinRequestStatus.TENTATIVE
+        _stamp_decision(join_request, status, actor)
+        if status == JoinRequestStatus.TENTATIVE:
+            _provision_tentative_user(join_request, actor)
+            return join_request, None, False, False
+        if status == JoinRequestStatus.APPROVED:
+            magic_token, user_created = _provision_approved_user(join_request, actor)
+            return join_request, magic_token, user_created, was_tentative
+    return join_request, None, False, False
 
 
 @router.patch(
@@ -191,7 +232,11 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_join_request_status")
 
-    valid_statuses = [JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED]
+    valid_statuses = [
+        JoinRequestStatus.TENTATIVE,
+        JoinRequestStatus.APPROVED,
+        JoinRequestStatus.REJECTED,
+    ]
     if payload.status not in valid_statuses:
         raise_validation(
             Code.JoinRequest.INVALID_STATUS,
@@ -200,27 +245,14 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             allowed=valid_statuses,
         )
 
-    # select_for_update() serializes concurrent approvals so only one provisions.
-    magic_token = None
-    user_created = False
-    with transaction.atomic():
-        try:
-            join_request = JoinRequest.objects.select_for_update().get(id=id)
-        except JoinRequest.DoesNotExist:
-            raise_validation(Code.JoinRequest.NOT_FOUND, status_code=404)
-
-        if join_request.status in (JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED):
-            raise_validation(Code.JoinRequest.ALREADY_DECIDED, status_code=400)
-
-        _stamp_decision(join_request, payload.status, request.auth)
-        if payload.status == JoinRequestStatus.APPROVED:
-            magic_token, user_created = _provision_approved_user(join_request, request.auth)
-
-    action = (
-        "join_request_approved"
-        if payload.status == JoinRequestStatus.APPROVED
-        else "join_request_rejected"
+    join_request, magic_token, user_created, promoted = _apply_status_transition(
+        id, payload.status, request.auth
     )
+
+    if promoted:
+        send_join_approval(to=join_request.email, display_name=join_request.full_name)
+
+    action = _DECISION_ACTIONS[payload.status]
     audit_log(
         logging.INFO,
         action,

@@ -105,6 +105,24 @@ def send_magic_login_email(
     )
 
 
+def send_join_approval_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+) -> SendResult:
+    """Render and send the "you're a full member now" join-approval email."""
+    context = {"display_name": display_name or ""}
+    html = render_to_string("emails/join_approval.html", context)
+    text = render_to_string("emails/join_approval.txt", context)
+    return sender.send(
+        to=to,
+        subject="you're fully approved — welcome to pda",
+        html=html,
+        text=text,
+    )
+
+
 def send_event_blast_email(
     *,
     sender: EmailSender,
