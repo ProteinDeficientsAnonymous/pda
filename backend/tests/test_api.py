@@ -172,7 +172,7 @@ class TestUserManagementAPI:
     def test_create_user_requires_permission(self, api_client, auth_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550999"},
+            {"phone_number": "+12025550999", "first_name": "Denied"},
             content_type="application/json",
             **auth_headers,
         )
@@ -194,7 +194,7 @@ class TestUserManagementAPI:
     def test_create_user_duplicate_phone(self, api_client, admin_headers, test_user):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550101"},
+            {"phone_number": "+12025550101", "first_name": "Dupe"},
             content_type="application/json",
             **admin_headers,
         )
@@ -204,7 +204,7 @@ class TestUserManagementAPI:
     def test_create_user_assigns_member_role_by_default(self, api_client, admin_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12125551234"},
+            {"phone_number": "+12125551234", "first_name": "Defaultrole"},
             content_type="application/json",
             **admin_headers,
         )

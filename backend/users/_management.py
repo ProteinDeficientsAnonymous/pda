@@ -60,15 +60,16 @@ def create_user(request, payload: UserCreateIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
-    if payload.first_name:
-        validate_display_name(payload.first_name, field="first_name")
     if payload.last_name:
         validate_display_name(payload.last_name, field="last_name")
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    validate_display_name(first_name, field="first_name")
 
     user, magic_token = _create_user_with_role(
         payload.phone_number,
-        payload.first_name,
-        payload.last_name,
+        first_name,
+        last_name,
         payload.email,
         payload.role_id,
         requesting_user=request.auth,
