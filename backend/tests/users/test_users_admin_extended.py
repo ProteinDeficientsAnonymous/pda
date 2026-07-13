@@ -1,5 +1,7 @@
 """Tests for user update, profile, delete, and magic link."""
 
+import logging
+
 import pytest
 from community._validation import Code
 from django.utils import timezone
@@ -8,6 +10,17 @@ from notifications.models import Notification, NotificationType
 from tests._asserts import assert_error_code
 from users.models import MagicLoginToken, User
 from users.roles import Role
+
+
+def _capture_audit(caplog):
+    """Attach caplog's handler to the non-propagating pda.audit logger.
+
+    pda.audit has propagate=False (see settings LOGGING), so caplog's root
+    handler never sees its records. Attaching the handler directly captures them.
+    """
+    audit_logger = logging.getLogger("pda.audit")
+    audit_logger.addHandler(caplog.handler)
+    return audit_logger
 
 
 @pytest.mark.django_db
@@ -54,6 +67,72 @@ class TestUpdateUser:
         assert response.status_code == 200
         other_user.refresh_from_db()
         assert other_user.is_paused is True
+
+    def test_pause_strips_non_member_roles(
+        self, api_client, manage_users_headers, other_user, caplog
+    ):
+        member_role = Role.objects.get(name="member", is_default=True)
+        extra_role = Role.objects.create(name="organizer")
+        other_user.roles.add(member_role, extra_role)
+        audit_logger = _capture_audit(caplog)
+        try:
+            with caplog.at_level(logging.WARNING, logger="pda.audit"):
+                response = api_client.patch(
+                    f"/api/auth/users/{other_user.pk}/",
+                    {"is_paused": True},
+                    content_type="application/json",
+                    **manage_users_headers,
+                )
+        finally:
+            audit_logger.removeHandler(caplog.handler)
+        assert response.status_code == 200
+        role_names = set(other_user.roles.values_list("name", flat=True))
+        assert role_names == {"member"}
+        paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
+        assert len(paused_logs) == 1
+        assert paused_logs[0].details == {"removed_role_ids": [str(extra_role.id)]}
+
+    def test_pause_member_only_is_noop_for_roles(
+        self, api_client, manage_users_headers, other_user, caplog
+    ):
+        member_role = Role.objects.get(name="member", is_default=True)
+        other_user.roles.add(member_role)
+        audit_logger = _capture_audit(caplog)
+        try:
+            with caplog.at_level(logging.WARNING, logger="pda.audit"):
+                response = api_client.patch(
+                    f"/api/auth/users/{other_user.pk}/",
+                    {"is_paused": True},
+                    content_type="application/json",
+                    **manage_users_headers,
+                )
+        finally:
+            audit_logger.removeHandler(caplog.handler)
+        assert response.status_code == 200
+        role_names = set(other_user.roles.values_list("name", flat=True))
+        assert role_names == {"member"}
+        paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
+        assert len(paused_logs) == 1
+        assert paused_logs[0].details == {"removed_role_ids": []}
+
+    def test_unpause_does_not_restore_roles(self, api_client, manage_users_headers, other_user):
+        member_role = Role.objects.get(name="member", is_default=True)
+        extra_role = Role.objects.create(name="organizer")
+        other_user.roles.add(member_role, extra_role)
+        other_user.is_paused = True
+        other_user.roles.remove(extra_role)
+        other_user.save(update_fields=["is_paused"])
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/",
+            {"is_paused": False},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 200
+        other_user.refresh_from_db()
+        assert other_user.is_paused is False
+        role_names = set(other_user.roles.values_list("name", flat=True))
+        assert role_names == {"member"}
 
     def test_update_user_requires_auth(self, api_client, other_user):
         response = api_client.patch(
