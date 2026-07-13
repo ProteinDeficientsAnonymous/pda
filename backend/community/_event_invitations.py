@@ -36,10 +36,13 @@ class InviteIn(BaseModel):
 
 
 def _can_invite_to_event(user, event: Event) -> bool:
-    """Mirror the frontend canInvite gate.
+    """Authorize an invite (permission gate only).
 
     Hosts (creator / co-host) can always invite; managers can always invite;
-    other authed members can invite when invite_permission == ALL_MEMBERS.
+    other authed members can invite when invite_permission == ALL_MEMBERS. The
+    frontend additionally hides the button for all_members until the viewer has
+    RSVP'd (Issue 688) — that's a UX nudge only and is intentionally not
+    enforced here.
     """
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True

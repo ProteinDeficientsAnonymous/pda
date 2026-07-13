@@ -9,7 +9,7 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event, PendingCohostInvite } from '@/models/event';
-import { EventStatus, InvitePermission } from '@/models/event';
+import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
 import { hasPermission } from '@/models/permissions';
 import { Permission } from '@/models/permissions';
 import { buildEventLinks } from '@/utils/eventLinks';
@@ -38,11 +38,17 @@ export function EventMemberSection({ event }: Props) {
   const canSeeInvited = isCoHost || canManageEvents;
   const isCancelled = event.status === EventStatus.Cancelled;
   const rsvpDisabled = !event.rsvpEnabled;
+  // Ordinary members may invite others only once they've committed to going —
+  // attending/maybe count (matches MyEventsScreen's "engaged" bar); cant_go,
+  // waitlisted, and null don't. Cohosts/managers bypass this entirely.
+  const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
   const canInvite =
     !isCancelled &&
     !event.isPast &&
     !rsvpDisabled &&
-    (isCoHost || event.invitePermission === InvitePermission.AllMembers);
+    (isCoHost ||
+      canManageEvents ||
+      (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
   const showStandaloneInvited = !showRsvp && canSeeInvited && event.invitedCount > 0;
 
