@@ -1,3 +1,10 @@
+# [0.16.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.15.0...v0.16.0) (2026-07-13)
+
+
+### Features
+
+* **events:** serve open graph link previews for event pages (Issue 652) ([#763](https://github.com/ProteinDeficientsAnonymous/pda/issues/763)) ([2576e63](https://github.com/ProteinDeficientsAnonymous/pda/commit/2576e638fd584fb7e26d4d97f86be2dee83202cd))
+
 # [0.15.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.14.1...v0.15.0) (2026-07-13)
 
 
