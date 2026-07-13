@@ -1,3 +1,10 @@
+## [0.12.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.12.0...v0.12.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **members:** wrap role tags to their own line so member info stays legible (Issue 724) ([#746](https://github.com/ProteinDeficientsAnonymous/pda/issues/746)) ([b0ce834](https://github.com/ProteinDeficientsAnonymous/pda/commit/b0ce834c93f9fc725242d61848fa7de2459bf7eb))
+
 # [0.12.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.11.0...v0.12.0) (2026-07-13)
 
 
