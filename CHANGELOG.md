@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.10.0...v0.11.0) (2026-07-13)
+
+
+### Features
+
+* **events:** gate date-poll button on "date & time tbd" (Issue 696) ([#758](https://github.com/ProteinDeficientsAnonymous/pda/issues/758)) ([90bc69f](https://github.com/ProteinDeficientsAnonymous/pda/commit/90bc69fff50e4ea5f7418845de758445dd270cfb))
+
 # [0.10.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.9.0...v0.10.0) (2026-07-13)
 
 
