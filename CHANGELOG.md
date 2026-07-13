@@ -1,3 +1,10 @@
+# [0.18.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.17.1...v0.18.0) (2026-07-13)
+
+
+### Features
+
+* **events:** show visibility as locked read-out for official/club (Issue 695) ([#761](https://github.com/ProteinDeficientsAnonymous/pda/issues/761)) ([3a02abf](https://github.com/ProteinDeficientsAnonymous/pda/commit/3a02abf4529f7ef8b079e7824db07e0d0dcc066a))
+
 ## [0.17.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.17.0...v0.17.1) (2026-07-13)
 
 
