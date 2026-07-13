@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("users", "0033_backfill_user_names"),
+        ("users", "0034_user_nickname"),
     ]
 
     operations = [
