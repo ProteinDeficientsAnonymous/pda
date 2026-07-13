@@ -1,3 +1,11 @@
+# [0.14.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.13.0...v0.14.0) (2026-07-13)
+
+
+### Features
+
+* **members:** collect first/last name in add-member dialog — PR1 (Issue 694) ([#760](https://github.com/ProteinDeficientsAnonymous/pda/issues/760)) ([e33ec24](https://github.com/ProteinDeficientsAnonymous/pda/commit/e33ec24f731e5e7452ce85a4be0df7c2af32e701))
+* **rsvp:** send "rsvp updated" email on public manage-RSVP update (Issue 705) ([#754](https://github.com/ProteinDeficientsAnonymous/pda/issues/754)) ([6f833f7](https://github.com/ProteinDeficientsAnonymous/pda/commit/6f833f7191445d6e619003e1209b3741596018f2))
+
 # [0.13.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.12.1...v0.13.0) (2026-07-13)
 
 
