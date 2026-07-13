@@ -39,7 +39,12 @@ function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRequestSu
     rejectedAt: null,
     rejectedByName: null,
     onboardedAt: null,
-    attachedUserOfficialRsvpCount: 0,
+    rsvpBreakdown: {
+      attendedOfficial: 0,
+      attendedClub: 0,
+      upcomingOfficial: 0,
+      upcomingClub: 0,
+    },
     ...overrides,
   };
 }
@@ -114,34 +119,54 @@ describe('JoinRequestsScreen', () => {
     expect(screen.queryByText(/sorted newest first/)).not.toBeInTheDocument();
   });
 
-  it('notes prior official rsvps when the linked user has them', () => {
+  it('notes attended and upcoming rsvps split by event type', () => {
     mockResult([
-      makeRequest({ status: JoinRequestStatus.PENDING, attachedUserOfficialRsvpCount: 3 }),
+      makeRequest({
+        status: JoinRequestStatus.PENDING,
+        rsvpBreakdown: {
+          attendedOfficial: 3,
+          attendedClub: 1,
+          upcomingOfficial: 2,
+          upcomingClub: 1,
+        },
+      }),
     ]);
 
     renderScreen();
 
-    expect(screen.getByText('rsvp’d to 3 official events')).toBeInTheDocument();
+    expect(screen.getByText('attended 3 official events')).toBeInTheDocument();
+    expect(screen.getByText('attended 1 club event')).toBeInTheDocument();
+    expect(screen.getByText("rsvp'd for 2 upcoming official events")).toBeInTheDocument();
+    expect(screen.getByText("rsvp'd for 1 upcoming club event")).toBeInTheDocument();
   });
 
-  it('uses the singular noun for a single prior official rsvp', () => {
+  it('omits buckets whose count is zero', () => {
     mockResult([
-      makeRequest({ status: JoinRequestStatus.PENDING, attachedUserOfficialRsvpCount: 1 }),
+      makeRequest({
+        status: JoinRequestStatus.PENDING,
+        rsvpBreakdown: {
+          attendedOfficial: 2,
+          attendedClub: 0,
+          upcomingOfficial: 0,
+          upcomingClub: 0,
+        },
+      }),
     ]);
 
     renderScreen();
 
-    expect(screen.getByText('rsvp’d to 1 official event')).toBeInTheDocument();
+    expect(screen.getByText('attended 2 official events')).toBeInTheDocument();
+    expect(screen.queryByText(/club/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/upcoming/)).not.toBeInTheDocument();
   });
 
-  it('omits the note when there are no prior official rsvps', () => {
-    mockResult([
-      makeRequest({ status: JoinRequestStatus.PENDING, attachedUserOfficialRsvpCount: 0 }),
-    ]);
+  it('omits the note entirely when every bucket is zero', () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING })]);
 
     renderScreen();
 
-    expect(screen.queryByText(/rsvp’d to/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/attended/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/rsvp'd for/)).not.toBeInTheDocument();
   });
 
   it('falls back to submitted date when no decision timestamp exists', async () => {

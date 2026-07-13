@@ -5,6 +5,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   JoinRequestStatus,
   type JoinRequestSummary,
+  type RsvpBreakdown,
   useDecideJoinRequest,
   useJoinRequests,
   useResendMagicLink,
@@ -218,7 +219,7 @@ function JoinRequestCard({
             {formatPhone(request.phoneNumber)} · submitted{' '}
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
           </p>
-          <OfficialRsvpNote count={request.attachedUserOfficialRsvpCount} />
+          <RsvpBreakdownNote breakdown={request.rsvpBreakdown} />
         </div>
         <div className="flex flex-wrap items-center gap-1">
           {request.previouslyArchived ? (
@@ -287,13 +288,36 @@ function JoinRequestCard({
   );
 }
 
-function OfficialRsvpNote({ count }: { count: number }) {
-  if (count <= 0) return null;
+function attendedLine(count: number, eventType: string): string {
   const noun = count === 1 ? 'event' : 'events';
+  return `attended ${String(count)} ${eventType} ${noun}`;
+}
+
+function upcomingLine(count: number, eventType: string): string {
+  const noun = count === 1 ? 'event' : 'events';
+  return `rsvp'd for ${String(count)} upcoming ${eventType} ${noun}`;
+}
+
+function RsvpBreakdownNote({ breakdown }: { breakdown: RsvpBreakdown }) {
+  const lines = [
+    {
+      count: breakdown.attendedOfficial,
+      text: attendedLine(breakdown.attendedOfficial, 'official'),
+    },
+    { count: breakdown.attendedClub, text: attendedLine(breakdown.attendedClub, 'club') },
+    {
+      count: breakdown.upcomingOfficial,
+      text: upcomingLine(breakdown.upcomingOfficial, 'official'),
+    },
+    { count: breakdown.upcomingClub, text: upcomingLine(breakdown.upcomingClub, 'club') },
+  ].filter((line) => line.count > 0);
+  if (lines.length === 0) return null;
   return (
-    <p className="text-muted mt-1 text-xs">
-      rsvp&rsquo;d to {count} official {noun}
-    </p>
+    <div className="text-muted mt-1 text-xs">
+      {lines.map((line) => (
+        <p key={line.text}>{line.text}</p>
+      ))}
+    </div>
   );
 }
 

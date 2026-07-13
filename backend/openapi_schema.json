@@ -2937,9 +2937,14 @@
             ],
             "title": "Approved By Name"
           },
-          "attached_user_official_rsvp_count": {
+          "attended_club_count": {
             "default": 0,
-            "title": "Attached User Official Rsvp Count",
+            "title": "Attended Club Count",
+            "type": "integer"
+          },
+          "attended_official_count": {
+            "default": 0,
+            "title": "Attended Official Count",
             "type": "integer"
           },
           "display_name": {
@@ -3002,6 +3007,16 @@
             "format": "date-time",
             "title": "Submitted At",
             "type": "string"
+          },
+          "upcoming_club_count": {
+            "default": 0,
+            "title": "Upcoming Club Count",
+            "type": "integer"
+          },
+          "upcoming_official_count": {
+            "default": 0,
+            "title": "Upcoming Official Count",
+            "type": "integer"
           },
           "user_id": {
             "anyOf": [

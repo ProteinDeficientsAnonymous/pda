@@ -35,6 +35,17 @@ def _community_event():
     )
 
 
+def _event(event_type, *, past=False):
+    from community.models import Event
+
+    offset = timedelta(days=-7 if past else 7)
+    return Event.objects.create(
+        title="Event",
+        event_type=event_type,
+        start_datetime=timezone.now() + offset,
+    )
+
+
 def _submit(api_client, why_join_id, phone, email):
     return api_client.post(
         "/api/community/join-request/",
@@ -229,18 +240,38 @@ class TestApprovalPromotesNonMember:
 
 
 @pytest.mark.django_db
-class TestOfficialRsvpCount:
-    def test_counts_only_official_events(self, api_client, vettor_headers):
-        from community.models import EventRSVP, JoinRequest, JoinRequestStatus, RSVPStatus
+class TestRsvpBreakdown:
+    def _row(self, api_client, vettor_headers, jr_id):
+        resp = api_client.get("/api/community/join-requests/", **vettor_headers)
+        return {r["id"]: r for r in resp.json()}[str(jr_id)]
+
+    def _rsvp(self, event, user, *, attendance=None):
+        from community.models import AttendanceStatus, EventRSVP, RSVPStatus
+
+        return EventRSVP.objects.create(
+            event=event,
+            user=user,
+            status=RSVPStatus.ATTENDING,
+            attendance=attendance or AttendanceStatus.UNKNOWN,
+        )
+
+    def test_buckets_split_by_attendance_and_type(self, api_client, vettor_headers):
+        from community.models import AttendanceStatus, EventType, JoinRequest, JoinRequestStatus
 
         existing = _non_member("+12025551430", email="counter@example.com")
-        EventRSVP.objects.create(
-            event=_official_event(), user=existing, status=RSVPStatus.ATTENDING
+        # attended = host-marked ATTENDED, regardless of time.
+        self._rsvp(
+            _event(EventType.OFFICIAL, past=True),
+            existing,
+            attendance=AttendanceStatus.ATTENDED,
         )
-        EventRSVP.objects.create(event=_official_event(), user=existing, status=RSVPStatus.MAYBE)
-        EventRSVP.objects.create(
-            event=_community_event(), user=existing, status=RSVPStatus.ATTENDING
+        self._rsvp(
+            _event(EventType.CLUB, past=True), existing, attendance=AttendanceStatus.ATTENDED
         )
+        # upcoming = ATTENDING on a future event, not yet marked.
+        self._rsvp(_event(EventType.OFFICIAL), existing)
+        self._rsvp(_event(EventType.CLUB), existing)
+        self._rsvp(_event(EventType.CLUB), existing)
         jr = JoinRequest.objects.create(
             display_name="Counter",
             phone_number="+12025551430",
@@ -248,9 +279,41 @@ class TestOfficialRsvpCount:
             user=existing,
             status=JoinRequestStatus.PENDING,
         )
-        resp = api_client.get("/api/community/join-requests/", **vettor_headers)
-        items = {r["id"]: r for r in resp.json()}
-        assert items[str(jr.id)]["attached_user_official_rsvp_count"] == 2
+        row = self._row(api_client, vettor_headers, jr.id)
+        assert row["attended_official_count"] == 1
+        assert row["attended_club_count"] == 1
+        assert row["upcoming_official_count"] == 1
+        assert row["upcoming_club_count"] == 2
+
+    def test_community_and_non_attending_excluded(self, api_client, vettor_headers):
+        from community.models import (
+            EventRSVP,
+            EventType,
+            JoinRequest,
+            JoinRequestStatus,
+            RSVPStatus,
+        )
+
+        existing = _non_member("+12025551433", email="excl@example.com")
+        # community type isn't a bucket; MAYBE isn't ATTENDING; a past unmarked
+        # official rsvp is neither attended nor upcoming.
+        self._rsvp(_community_event(), existing)
+        EventRSVP.objects.create(
+            event=_event(EventType.OFFICIAL), user=existing, status=RSVPStatus.MAYBE
+        )
+        self._rsvp(_event(EventType.OFFICIAL, past=True), existing)
+        jr = JoinRequest.objects.create(
+            display_name="Excluded",
+            phone_number="+12025551433",
+            email="excl@example.com",
+            user=existing,
+            status=JoinRequestStatus.PENDING,
+        )
+        row = self._row(api_client, vettor_headers, jr.id)
+        assert row["attended_official_count"] == 0
+        assert row["attended_club_count"] == 0
+        assert row["upcoming_official_count"] == 0
+        assert row["upcoming_club_count"] == 0
 
     def test_zero_when_no_attached_user(self, api_client, vettor_headers):
         from community.models import JoinRequest, JoinRequestStatus
@@ -260,19 +323,17 @@ class TestOfficialRsvpCount:
             phone_number="+12025551431",
             status=JoinRequestStatus.PENDING,
         )
-        resp = api_client.get("/api/community/join-requests/", **vettor_headers)
-        items = {r["id"]: r for r in resp.json()}
-        assert items[str(jr.id)]["attached_user_official_rsvp_count"] == 0
+        row = self._row(api_client, vettor_headers, jr.id)
+        assert row["upcoming_official_count"] == 0
+        assert row["attended_official_count"] == 0
 
-    def test_email_matched_link_reports_user_id_and_count(self, api_client, vettor_headers):
+    def test_email_matched_link_reports_user_id_and_counts(self, api_client, vettor_headers):
         # Linked by email, so the user's phone differs from the request's. user_id
-        # and the rsvp count must both resolve to the linked user (consistency).
-        from community.models import EventRSVP, JoinRequest, JoinRequestStatus, RSVPStatus
+        # and the rsvp counts must both resolve to the linked user (consistency).
+        from community.models import EventType, JoinRequest, JoinRequestStatus
 
         existing = _non_member("+12025551432", email="emailmatch@example.com")
-        EventRSVP.objects.create(
-            event=_official_event(), user=existing, status=RSVPStatus.ATTENDING
-        )
+        self._rsvp(_event(EventType.OFFICIAL), existing)
         jr = JoinRequest.objects.create(
             display_name="Email Match",
             phone_number="+12025559999",  # differs from existing.phone_number
@@ -280,7 +341,6 @@ class TestOfficialRsvpCount:
             user=existing,
             status=JoinRequestStatus.PENDING,
         )
-        resp = api_client.get("/api/community/join-requests/", **vettor_headers)
-        row = {r["id"]: r for r in resp.json()}[str(jr.id)]
+        row = self._row(api_client, vettor_headers, jr.id)
         assert row["user_id"] == str(existing.id)
-        assert row["attached_user_official_rsvp_count"] == 1
+        assert row["upcoming_official_count"] == 1

@@ -74,14 +74,19 @@ describe('useJoinRequests', () => {
         rejectedAt: null,
         rejectedByName: null,
         onboardedAt: null,
-        attachedUserOfficialRsvpCount: 0,
+        rsvpBreakdown: {
+          attendedOfficial: 0,
+          attendedClub: 0,
+          upcomingOfficial: 0,
+          upcomingClub: 0,
+        },
       },
     ]);
 
     expect(mockedGet).toHaveBeenCalledWith('/api/community/join-requests/');
   });
 
-  it('maps the attached user official rsvp count from the wire', async () => {
+  it('maps the rsvp breakdown buckets from the wire', async () => {
     mockedGet.mockResolvedValueOnce({
       data: [
         {
@@ -92,7 +97,10 @@ describe('useJoinRequests', () => {
           submitted_at: '2024-04-01T09:00:00Z',
           status: 'pending',
           user_id: 'user-9',
-          attached_user_official_rsvp_count: 4,
+          attended_official_count: 4,
+          attended_club_count: 2,
+          upcoming_official_count: 1,
+          upcoming_club_count: 3,
         },
       ],
     });
@@ -102,7 +110,12 @@ describe('useJoinRequests', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toHaveLength(1);
-    expect(result.current.data?.[0]?.attachedUserOfficialRsvpCount).toBe(4);
+    expect(result.current.data?.[0]?.rsvpBreakdown).toEqual({
+      attendedOfficial: 4,
+      attendedClub: 2,
+      upcomingOfficial: 1,
+      upcomingClub: 3,
+    });
   });
 
   it('surfaces a 403 error distinctly when the user lacks permission', async () => {

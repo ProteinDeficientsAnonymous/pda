@@ -123,6 +123,13 @@ export interface JoinRequestAnswer {
   answer: string;
 }
 
+export interface RsvpBreakdown {
+  attendedOfficial: number;
+  attendedClub: number;
+  upcomingOfficial: number;
+  upcomingClub: number;
+}
+
 export interface JoinRequestSummary {
   id: string;
   fullName: string;
@@ -137,7 +144,7 @@ export interface JoinRequestSummary {
   rejectedAt: string | null;
   rejectedByName: string | null;
   onboardedAt: string | null;
-  attachedUserOfficialRsvpCount: number;
+  rsvpBreakdown: RsvpBreakdown;
 }
 
 interface WireAnswer {
@@ -161,7 +168,10 @@ interface WireJoinRequest {
   rejected_at?: string | null;
   rejected_by_name?: string | null;
   onboarded_at?: string | null;
-  attached_user_official_rsvp_count?: number;
+  attended_official_count?: number;
+  attended_club_count?: number;
+  upcoming_official_count?: number;
+  upcoming_club_count?: number;
 }
 
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
@@ -183,7 +193,12 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     rejectedAt: w.rejected_at ?? null,
     rejectedByName: w.rejected_by_name ?? null,
     onboardedAt: w.onboarded_at ?? null,
-    attachedUserOfficialRsvpCount: w.attached_user_official_rsvp_count ?? 0,
+    rsvpBreakdown: {
+      attendedOfficial: w.attended_official_count ?? 0,
+      attendedClub: w.attended_club_count ?? 0,
+      upcomingOfficial: w.upcoming_official_count ?? 0,
+      upcomingClub: w.upcoming_club_count ?? 0,
+    },
   };
 }
 
