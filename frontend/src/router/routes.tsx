@@ -3,7 +3,7 @@
 //   authed (RequireAuth)     : settings, profile, ...
 //   permissioned             : admin/*, members, etc.
 //
-// All screens are lazy-loaded (React.lazy) — 1:1 replacement for DeferredScreen.
+// All screens are lazy-loaded (lazy) — 1:1 replacement for DeferredScreen.
 
 import { createBrowserRouter } from 'react-router-dom';
 
