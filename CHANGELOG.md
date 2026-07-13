@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.9.0...v0.10.0) (2026-07-13)
+
+
+### Features
+
+* **users:** hide last name from other members — PR2 (Issue 532) ([#729](https://github.com/ProteinDeficientsAnonymous/pda/issues/729)) ([75994cf](https://github.com/ProteinDeficientsAnonymous/pda/commit/75994cff9ba0098811801fd9b85e0b6631b3f6e1))
+
 # [0.9.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.8.2...v0.9.0) (2026-07-12)
 
 
