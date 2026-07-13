@@ -259,3 +259,16 @@ def _validate_member_role_required(new_roles: list[Role]) -> None:
         return
     if member_role not in new_roles:
         raise_validation(Code.Role.MEMBER_ROLE_REQUIRED, status_code=400)
+
+
+def _strip_non_member_roles(user: User) -> list[str]:
+    """Remove every role from user except the built-in member role.
+
+    Called on the pause transition so a paused member holds no elevated role.
+    Returns the ids of the removed roles (for audit logging).
+    """
+    removed = list(user.roles.exclude(name="member", is_default=True))
+    if not removed:
+        return []
+    user.roles.remove(*removed)
+    return [str(r.id) for r in removed]

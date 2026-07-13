@@ -21,6 +21,7 @@ from users._helpers import (
     _is_admin,
     _is_last_admin,
     _resolve_name_fields,
+    _strip_non_member_roles,
     _validate_admin_role_change,
     _validate_member_role_required,
     _validate_phone,
@@ -288,26 +289,41 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     user.save()
 
-    if payload.is_paused is not None and payload.is_paused != old_is_paused:
-        action = "user_paused" if payload.is_paused else "user_unpaused"
-        audit_log(logging.WARNING, action, request, target_type="user", target_id=user_id)
-    else:
-        changed = [
-            f
-            for f in ("phone_number", "first_name", "last_name", "email")
-            if getattr(payload, f, None) is not None
-        ]
-        if changed:
-            audit_log(
-                logging.INFO,
-                "user_updated",
-                request,
-                target_type="user",
-                target_id=user_id,
-                details={"fields_changed": changed},
-            )
-
+    _audit_user_update(request, user, user_id, payload, old_is_paused)
     return Status(200, UserOut.from_user(user))
+
+
+def _audit_user_update(
+    request, user: User, user_id: str, payload: UserPatchIn, old_is_paused: bool
+) -> None:
+    """Emit the audit entry for an update_user PATCH.
+
+    A pause transition takes priority — pausing also strips non-member roles and
+    records the removed ids. Otherwise a plain field change logs user_updated.
+    """
+    is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
+    if is_pause_transition:
+        action = "user_paused" if payload.is_paused else "user_unpaused"
+        details = {"removed_role_ids": _strip_non_member_roles(user)} if payload.is_paused else None
+        audit_log(
+            logging.WARNING, action, request, target_type="user", target_id=user_id, details=details
+        )
+        return
+
+    changed = [
+        f
+        for f in ("phone_number", "first_name", "last_name", "email")
+        if getattr(payload, f, None) is not None
+    ]
+    if changed:
+        audit_log(
+            logging.INFO,
+            "user_updated",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={"fields_changed": changed},
+        )
 
 
 def _patch_phone(user: User, user_id: str, phone_number: str) -> None:
