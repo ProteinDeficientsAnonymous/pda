@@ -63,6 +63,7 @@ describe('useJoinRequests', () => {
         id: 'jr-1',
         fullName: 'Alex Smith',
         phoneNumber: '+12125551234',
+        email: '',
         answers: [{ questionId: 'q-1', label: 'Why join?', answer: 'Community' }],
         submittedAt: '2024-04-01T09:00:00Z',
         status: 'pending',

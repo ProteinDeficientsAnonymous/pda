@@ -32,6 +32,18 @@ class TestJoinRequestManagement:
         assert data[0]["full_name"] == "Sprout Seedling"
         assert data[0]["status"] == JoinRequestStatus.PENDING
 
+    def test_list_includes_email(self, api_client, vettor_headers, db):
+        JoinRequest.objects.create(
+            first_name="Fern",
+            last_name="Frond",
+            phone_number="+16505559999",
+            email="fern@example.com",
+        )
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data[0]["email"] == "fern@example.com"
+
     def test_admin_can_access_list(self, api_client, db):
         admin = User.objects.create_superuser(
             phone_number="+12025550001",

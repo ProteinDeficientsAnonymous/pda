@@ -127,6 +127,7 @@ export interface JoinRequestSummary {
   id: string;
   fullName: string;
   phoneNumber: string;
+  email: string;
   answers: JoinRequestAnswer[];
   submittedAt: string;
   status: JoinRequestStatus;
@@ -149,6 +150,7 @@ interface WireJoinRequest {
   id: string;
   full_name: string;
   phone_number: string;
+  email?: string;
   answers: WireAnswer[];
   submitted_at: string;
   status: JoinRequestStatus;
@@ -166,6 +168,7 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     id: w.id,
     fullName: w.full_name,
     phoneNumber: w.phone_number,
+    email: w.email ?? '',
     answers: w.answers.map((a) => ({
       questionId: a.question_id,
       label: a.label,

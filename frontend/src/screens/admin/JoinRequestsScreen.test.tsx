@@ -7,8 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as JoinApi from '@/api/join';
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
 
-vi.mock('@/api/join', async (importActual) => {
-  const actual = await importActual<typeof JoinApi>();
+vi.mock('@/api/join', async (importOriginal) => {
+  const actual = await importOriginal<typeof JoinApi>();
   return {
     ...actual,
     useJoinRequests: vi.fn(),
@@ -28,10 +28,11 @@ function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRequestSu
   return {
     id: 'jr-1',
     fullName: 'Ada Lovelace',
-    phoneNumber: '+15551230001',
+    phoneNumber: '+16505550001',
+    email: 'ada@example.com',
     answers: [],
     submittedAt: '2026-01-01T00:00:00Z',
-    status: JoinRequestStatus.APPROVED,
+    status: JoinRequestStatus.PENDING,
     userId: null,
     previouslyArchived: false,
     approvedAt: null,
@@ -66,17 +67,19 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('JoinRequestsScreen', () => {
+describe('JoinRequestsScreen sort', () => {
   it('sorts approved requests by approved date, most recent first', async () => {
     mockResult([
       makeRequest({
         id: 'older',
         fullName: 'Older Approval',
+        status: JoinRequestStatus.APPROVED,
         approvedAt: '2026-01-10T00:00:00Z',
       }),
       makeRequest({
         id: 'newer',
         fullName: 'Newer Approval',
+        status: JoinRequestStatus.APPROVED,
         approvedAt: '2026-02-10T00:00:00Z',
       }),
     ]);
@@ -97,7 +100,7 @@ describe('JoinRequestsScreen', () => {
   });
 
   it('shows the sort hint within the approved-tab explainer', async () => {
-    mockResult([makeRequest({ approvedAt: '2026-01-10T00:00:00Z' })]);
+    mockResult([makeRequest({ status: JoinRequestStatus.APPROVED, approvedAt: '2026-01-10T00:00:00Z' })]);
 
     renderScreen();
     await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
@@ -136,5 +139,45 @@ describe('JoinRequestsScreen', () => {
       .getAllByRole('heading', { level: 2 })
       .map((h) => h.textContent);
     expect(headings).toEqual(['Second Pending', 'First Pending']);
+  });
+});
+
+describe('JoinRequestsScreen search', () => {
+  it('filters by name', async () => {
+    mockResult([
+      makeRequest({ id: 'a', fullName: 'Ada Lovelace', email: 'ada@example.com' }),
+      makeRequest({ id: 'g', fullName: 'Grace Hopper', email: 'grace@example.com' }),
+    ]);
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/^search$/i), 'grace');
+
+    expect(screen.getByText('Grace Hopper')).toBeInTheDocument();
+    expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument();
+  });
+
+  it('filters by email', async () => {
+    mockResult([
+      makeRequest({ id: 'a', fullName: 'Ada Lovelace', email: 'ada@example.com' }),
+      makeRequest({ id: 'g', fullName: 'Grace Hopper', email: 'grace@example.com' }),
+    ]);
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/^search$/i), 'grace@');
+
+    expect(screen.getByText('Grace Hopper')).toBeInTheDocument();
+    expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument();
+  });
+
+  it('shows a no-match message when the search matches nothing', async () => {
+    mockResult([makeRequest({ fullName: 'Ada Lovelace' })]);
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/^search$/i), 'zzz');
+
+    expect(screen.getByText(/nothing matches/i)).toBeInTheDocument();
   });
 });

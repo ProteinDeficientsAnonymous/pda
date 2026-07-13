@@ -12,6 +12,7 @@ import {
 } from '@/api/join';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { TextField } from '@/components/ui/TextField';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
@@ -42,6 +43,7 @@ export default function JoinRequestsScreen() {
   const { confirm, element: confirmElement } = useConfirm();
 
   const [filter, setFilter] = useState<Filter>(Filter.PENDING);
+  const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [credsFor, setCredsFor] = useState<{
     fullName: string;
@@ -51,9 +53,12 @@ export default function JoinRequestsScreen() {
   } | null>(null);
 
   const visible = useMemo(() => {
-    const rows = filter === Filter.ALL ? data : data.filter((r) => r.status === filter);
+    const q = query.trim().toLowerCase();
+    const rows = data.filter(
+      (r) => (filter === Filter.ALL || r.status === filter) && matchesQuery(r, q),
+    );
     return [...rows].sort((a, b) => sortKey(b) - sortKey(a));
-  }, [data, filter]);
+  }, [data, filter, query]);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load join requests — try refreshing" />;
@@ -144,6 +149,18 @@ export default function JoinRequestsScreen() {
         />
       </div>
 
+      <div className="mb-4">
+        <TextField
+          label="search"
+          placeholder="name, phone, or email"
+          value={query}
+          maxLength={100}
+          onChange={(e) => {
+            setQuery(e.target.value);
+          }}
+        />
+      </div>
+
       <SortHint filter={filter} hasRows={visible.length > 0} />
 
       {error ? (
@@ -153,7 +170,9 @@ export default function JoinRequestsScreen() {
       ) : null}
 
       {visible.length === 0 ? (
-        <p className="text-muted text-sm">nothing here 🌿</p>
+        <p className="text-muted text-sm">
+          {query.trim() ? 'nothing matches — try a different search' : 'nothing here 🌿'}
+        </p>
       ) : (
         <ul className="flex flex-col gap-3">
           {visible.map((r) => (
@@ -346,6 +365,15 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
 function sortKey(request: JoinRequestSummary): number {
   const stamp = request.approvedAt ?? request.rejectedAt ?? request.submittedAt;
   return new Date(stamp).getTime();
+}
+
+function matchesQuery(request: JoinRequestSummary, q: string): boolean {
+  if (!q) return true;
+  return (
+    request.fullName.toLowerCase().includes(q) ||
+    request.phoneNumber.toLowerCase().includes(q) ||
+    request.email.toLowerCase().includes(q)
+  );
 }
 
 function extractError(err: unknown): string {

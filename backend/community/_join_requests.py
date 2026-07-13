@@ -43,6 +43,7 @@ class JoinRequestOut(BaseModel):
     last_name: str = ""
     full_name: str = ""
     phone_number: str
+    email: str = ""
     answers: list[JoinRequestAnswerOut] = []
     submitted_at: datetime
     status: str
@@ -100,6 +101,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         last_name=jr.last_name,
         full_name=jr.full_name,
         phone_number=jr.phone_number,
+        email=jr.email,
         answers=answers,
         submitted_at=jr.submitted_at,
         status=jr.status,

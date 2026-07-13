@@ -2996,6 +2996,11 @@ export interface components {
              */
             attached_user_official_rsvp_count: number;
             /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
              * First Name
              * @default
              */
