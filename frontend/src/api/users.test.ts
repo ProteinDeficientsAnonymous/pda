@@ -139,12 +139,16 @@ describe('useCreateUser', () => {
 
     const created = await result.current.mutateAsync({
       phoneNumber: '+15551230002',
+      firstName: 'Grace',
+      lastName: 'Hopper',
       email: 'grace@example.com',
       roleId: 'role-xyz',
     });
 
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/create-user/', {
       phone_number: '+15551230002',
+      first_name: 'Grace',
+      last_name: 'Hopper',
       email: 'grace@example.com',
       role_id: 'role-xyz',
     });
