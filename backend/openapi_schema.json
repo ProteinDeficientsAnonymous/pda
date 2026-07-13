@@ -5405,7 +5405,7 @@
     },
     "/api/auth/magic-login/{token}/": {
       "get": {
-        "operationId": "users__auth_magic_login",
+        "operationId": "users__magic_login_magic_login",
         "parameters": [
           {
             "in": "path",

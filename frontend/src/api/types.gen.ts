@@ -137,7 +137,7 @@ export interface paths {
             cookie?: never;
         };
         /** Magic Login */
-        get: operations["users__auth_magic_login"];
+        get: operations["users__magic_login_magic_login"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4188,7 +4188,7 @@ export interface operations {
             };
         };
     };
-    users__auth_magic_login: {
+    users__magic_login_magic_login: {
         parameters: {
             query?: never;
             header?: never;
