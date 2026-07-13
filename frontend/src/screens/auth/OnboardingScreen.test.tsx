@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import OnboardingScreen from './OnboardingScreen';
 
@@ -23,32 +24,14 @@ vi.mock('@/screens/settings/AvatarUpload', () => ({
 }));
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'u1',
-    phoneNumber: '+12125550001',
     firstName: '',
     lastName: '',
     fullName: '',
-    nickname: '',
-    email: '',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
     needsOnboarding: true,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    hideLastName: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 describe('OnboardingScreen', () => {

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 
@@ -23,32 +24,14 @@ vi.mock('@/api/content', () => ({
 }));
 
 function makeUser(overrides?: Partial<User>): User {
-  return {
+  return makeSharedUser({
     id: 'u1',
     phoneNumber: '+12125550000',
     firstName: 'Vetter',
     lastName: 'Vee',
     fullName: 'Vetter Vee',
-    nickname: '',
-    email: '',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    hideLastName: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 beforeEach(() => {
