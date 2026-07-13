@@ -3763,6 +3763,18 @@
             "title": "Attendance",
             "type": "string"
           },
+          "checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked In At"
+          },
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",

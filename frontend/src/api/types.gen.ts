@@ -3346,6 +3346,8 @@ export interface components {
              * @default unknown
              */
             attendance: string;
+            /** Checked In At */
+            checked_in_at?: string | null;
             /**
              * Has Plus One
              * @default false
