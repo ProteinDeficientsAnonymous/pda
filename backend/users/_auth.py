@@ -21,6 +21,7 @@ from ninja_jwt.tokens import RefreshToken
 from users._consents import stamp_consents
 from users._helpers import (
     _check_and_set_email,
+    _require_first_name,
     _resolve_name_fields,
     visible_name,
 )
@@ -424,6 +425,9 @@ def complete_onboarding(request, payload: OnboardingIn):
     if user.has_usable_password() and user.check_password(payload.new_password):
         raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
     _resolve_name_fields(user, payload)
+    # Bulk/phone-only accounts reach onboarding with no name; a name-less
+    # payload must not let them complete with an empty first_name (Issue 733).
+    _require_first_name(user)
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:

@@ -33,13 +33,14 @@ class NamePatchPayload(Protocol):
     last_name: str | None
 
 
-def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
-    """Apply first/last name from a patch payload to user (in memory).
+def _require_first_name(user: User) -> None:
+    """Raise REQUIRED if user.first_name is empty after a name patch (Issue 733)."""
+    if not user.first_name.strip():
+        raise_validation(Code.DisplayName.REQUIRED, field="first_name")
 
-    Returns True if any name field was set.
-    """
-    if payload.first_name is None and payload.last_name is None:
-        return False
+
+def _apply_split_names(user: User, payload: NamePatchPayload) -> None:
+    """Apply provided first/last name fields to user (in memory)."""
     if payload.first_name is not None:
         validate_display_name(payload.first_name, field="first_name")
         user.first_name = payload.first_name.strip()
@@ -47,6 +48,19 @@ def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
         if payload.last_name.strip():
             validate_display_name(payload.last_name, field="last_name")
         user.last_name = payload.last_name.strip()
+
+
+def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
+    """Apply first/last name from a patch payload to user (in memory).
+
+    Returns True if any name field was set. Raises REQUIRED when the resulting
+    first_name would be empty — a last-name-only patch may not clear (or leave
+    empty) the required first name.
+    """
+    if payload.first_name is None and payload.last_name is None:
+        return False
+    _apply_split_names(user, payload)
+    _require_first_name(user)
     return True
 
 

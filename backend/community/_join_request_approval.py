@@ -6,13 +6,24 @@ from users.api import _create_user_with_role
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
+from community._shared import validate_display_name
+
+
+def _resolve_names(join_request) -> tuple[str, str]:
+    """Return validated (first_name, last_name) for an approved join request.
+
+    Raises REQUIRED when first_name is empty, so no approval path (create,
+    promote, reactivate) can produce a member with an empty first_name (Issue 733).
+    """
+    validate_display_name(join_request.first_name, field="first_name")
+    return join_request.first_name, join_request.last_name
+
 
 def _reactivate_archived_user(existing_user, join_request):
     """Un-archive an existing user on re-approval, carrying any new consents."""
     existing_user.archived_at = None
     existing_user.needs_onboarding = True
-    existing_user.first_name = join_request.first_name
-    existing_user.last_name = join_request.last_name
+    existing_user.first_name, existing_user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None:
         existing_user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
@@ -39,8 +50,7 @@ def _promote_non_member(user, join_request):
     """
     user.is_member = True
     user.needs_onboarding = True
-    user.first_name = join_request.first_name
-    user.last_name = join_request.last_name
+    user.first_name, user.last_name = _resolve_names(join_request)
     if join_request.guidelines_consent_at is not None:
         user.guidelines_consent_at = join_request.guidelines_consent_at
     if join_request.sms_consent_at is not None:
@@ -81,10 +91,11 @@ def _provision_approved_user(join_request, requesting_user) -> tuple[str | None,
 
     existing_user = User.objects.filter(phone_number=join_request.phone_number).first()
     if existing_user is None:
+        first_name, last_name = _resolve_names(join_request)
         _, magic_token = _create_user_with_role(
             join_request.phone_number,
-            join_request.first_name,
-            join_request.last_name,
+            first_name,
+            last_name,
             join_request.email,
             None,
             requesting_user=requesting_user,
