@@ -99,11 +99,7 @@ export function MembersTab() {
       </div>
 
       <div className="mb-4 sm:w-64">
-        <Toggle
-          label="show non-members"
-          checked={showNonMembers}
-          onChange={setShowNonMembers}
-        />
+        <Toggle label="show non-members" checked={showNonMembers} onChange={setShowNonMembers} />
       </div>
 
       {data.length > 0 ? (
