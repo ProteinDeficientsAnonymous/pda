@@ -138,6 +138,10 @@ class TagOut(BaseModel):
     slug: str
 
 
+class TagIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+
+
 class RSVPGuestOut(BaseModel):
     user_id: str
     name: str

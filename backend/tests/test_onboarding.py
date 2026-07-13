@@ -9,6 +9,25 @@ from users.models import User
 
 
 @pytest.mark.django_db
+class TestOnboardingFirstNameRequired:
+    def test_name_less_payload_rejected_when_first_name_empty(
+        self, api_client, needs_onboarding_user, needs_onboarding_auth_headers
+    ):
+        # A phone-only/bulk-created user reaches onboarding with an empty
+        # first_name; a payload omitting every name field must be rejected.
+        resp = api_client.post(
+            "/api/auth/complete-onboarding/",
+            data={"new_password": "abcd1234ABCD!", "email": "nameless@example.com"},
+            content_type="application/json",
+            **needs_onboarding_auth_headers,
+        )
+        assert resp.status_code == 422
+        assert any(e["field"] == "first_name" for e in resp.json()["detail"])
+        needs_onboarding_user.refresh_from_db()
+        assert needs_onboarding_user.needs_onboarding is True
+
+
+@pytest.mark.django_db
 class TestOnboardingEmail:
     def test_missing_email_rejected(self, api_client, needs_onboarding_auth_headers):
         resp = api_client.post(

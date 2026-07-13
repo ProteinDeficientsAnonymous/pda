@@ -1,3 +1,17 @@
+# [0.20.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.2...v0.20.0) (2026-07-13)
+
+
+### Features
+
+* **community:** 689 - event tag create/delete endpoints ([#772](https://github.com/ProteinDeficientsAnonymous/pda/issues/772)) ([bae509f](https://github.com/ProteinDeficientsAnonymous/pda/commit/bae509fbdfb5621be1f33cad8f52337b6d64119c)), closes [#773](https://github.com/ProteinDeficientsAnonymous/pda/issues/773)
+
+## [0.19.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.1...v0.19.2) (2026-07-13)
+
+
+### Bug Fixes
+
+* **users:** enforce first_name required server-side + backfill (Issue 733) ([#743](https://github.com/ProteinDeficientsAnonymous/pda/issues/743)) ([89303e8](https://github.com/ProteinDeficientsAnonymous/pda/commit/89303e87d8fbe2cf7adc3819a5b4a5c722296ba6))
+
 ## [0.19.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.0...v0.19.1) (2026-07-13)
 
 
