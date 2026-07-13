@@ -49,6 +49,11 @@ export const Code = {
     MinTwoOptions: 'poll.min_two_options',
     InvalidAvailability: 'poll.invalid_availability',
   },
+  Tag: {
+    NotFound: 'tag.not_found',
+    NameRequired: 'tag.name_required',
+    NameAlreadyExists: 'tag.name_already_exists',
+  },
   Comment: {
     NotFound: 'comment.not_found',
     ReplyDepthExceeded: 'comment.reply_depth_exceeded',
@@ -240,6 +245,9 @@ export type ValidationCode =
   | 'poll.winning_option_not_found'
   | 'poll.min_two_options'
   | 'poll.invalid_availability'
+  | 'tag.not_found'
+  | 'tag.name_required'
+  | 'tag.name_already_exists'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
   | 'comment.invalid_emoji'
@@ -384,6 +392,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'poll.winning_option_not_found': [],
   'poll.min_two_options': [],
   'poll.invalid_availability': [],
+  'tag.not_found': [],
+  'tag.name_required': [],
+  'tag.name_already_exists': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],
   'comment.invalid_emoji': [],
