@@ -80,7 +80,7 @@ describe('useUsers', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/');
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/', undefined);
     expect(result.current.data).toHaveLength(1);
     const [member] = result.current.data!;
     expect(member?.fullName).toBe('Ada');
@@ -95,6 +95,32 @@ describe('useUsers', () => {
       isDefault: true,
       permissions: [],
     });
+  });
+
+  it('requests non-members and maps is_member when opted in', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'u2',
+          display_name: 'Guest',
+          full_name: 'Guest',
+          phone_number: '+15551230002',
+          email: 'guest@example.com',
+          is_member: false,
+          roles: [],
+        },
+      ],
+    });
+
+    const qc = makeQc();
+    const { result } = renderHook(() => useUsers(true), { wrapper: makeWrapper(qc) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/', {
+      params: { include_non_members: true },
+    });
+    expect(result.current.data?.[0]?.isMember).toBe(false);
   });
 
   it('propagates errors from the API', async () => {

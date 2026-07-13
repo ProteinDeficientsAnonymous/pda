@@ -4719,6 +4719,11 @@
             "title": "Id",
             "type": "string"
           },
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
+          },
           "is_paused": {
             "default": false,
             "title": "Is Paused",
@@ -5911,7 +5916,18 @@
     "/api/auth/users/": {
       "get": {
         "operationId": "users__management_list_users",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_non_members",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Non Members",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {

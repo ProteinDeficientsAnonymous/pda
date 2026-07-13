@@ -111,6 +111,19 @@ class TestUpdateUser:
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
 
+    def test_admin_list_includes_non_members_when_opted_in(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
+        response = api_client.get(
+            "/api/auth/users/?include_non_members=true", **manage_users_headers
+        )
+        assert response.status_code == 200
+        rows = {u["id"]: u for u in response.json()}
+        assert str(other_user.pk) in rows
+        assert rows[str(other_user.pk)]["is_member"] is False
+
     def test_admin_update_non_member_returns_404(
         self, api_client, manage_users_headers, other_user
     ):

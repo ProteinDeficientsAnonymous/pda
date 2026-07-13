@@ -237,7 +237,7 @@ def search_users(request, q: str = ""):
     response={200: list[UserOut], 403: ErrorOut},
     auth=gated_jwt,
 )
-def list_users(request):
+def list_users(request, include_non_members: bool = False):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
         audit_log(
             logging.WARNING,
@@ -249,9 +249,10 @@ def list_users(request):
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
+    # Default stays members-only; the opt-in adds non-members (public-RSVP users).
+    base = User.objects.all() if include_non_members else User.objects.members()
     users = (
-        User.objects.members()
-        .filter(archived_at__isnull=True)
+        base.filter(archived_at__isnull=True)
         .prefetch_related("roles")
         .annotate(
             last_attended=dj_models.Max(

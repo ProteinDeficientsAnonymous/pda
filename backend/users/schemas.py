@@ -79,6 +79,7 @@ class UserOut(BaseModel):
     email: str = ""
     bio: str = ""
     pronouns: str = ""
+    is_member: bool = True
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False
@@ -109,6 +110,7 @@ class UserOut(BaseModel):
             email=user.email or "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
+            is_member=user.is_member,
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
