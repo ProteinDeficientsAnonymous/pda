@@ -21,14 +21,8 @@ from community._public_rsvp_shared import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import (
-    Event,
-    EventRSVP,
-    EventStatus,
-    EventType,
-    PageVisibility,
-    RSVPStatus,
-)
+from community.models import Event, EventRSVP, RSVPStatus
+from community.models.event import public_rsvp_eligible_q
 
 router = Router()
 
@@ -66,19 +60,8 @@ def _resolve_token_user(token: str) -> User:
 def _eligible_event_rsvps(user):
     """The user's RSVPs on events still public-RSVP-eligible, matching _load_public_rsvp_event."""
     # Ineligible events must drop out, else their member-only details leak to the token holder.
-    now = timezone.now()
-    past = Q(event__datetime_tbd=False) & (
-        Q(event__end_datetime__lt=now)
-        | Q(event__end_datetime__isnull=True, event__start_datetime__lt=now)
-    )
     return (
-        user.event_rsvps.filter(
-            event__event_type=EventType.OFFICIAL,
-            event__status=EventStatus.ACTIVE,
-            event__visibility=PageVisibility.PUBLIC,
-            event__rsvp_enabled=True,
-        )
-        .exclude(past)
+        user.event_rsvps.filter(public_rsvp_eligible_q(timezone.now(), prefix="event__"))
         .annotate(
             event_comment_count=Count(
                 "event__comments",

@@ -14,7 +14,7 @@ from users.models import NonMemberRsvpToken, User
 from community._event_schemas import EventOut
 from community._shared import logger
 from community._validation import Code, raise_validation
-from community.models import Event, EventStatus, EventType, PageVisibility
+from community.models import Event
 
 
 class PublicRsvpStateOut(BaseModel):
@@ -30,14 +30,7 @@ class PublicRsvpOut(BaseModel):
 def _load_public_rsvp_event(event_id) -> Event:
     """Fetch a public-RSVP-eligible event, else 404 (every ineligible state hides as NOT_FOUND)."""
     event = Event.objects.prefetch_related("co_hosts", "invited_users").filter(id=event_id).first()
-    if (
-        event is None
-        or event.event_type != EventType.OFFICIAL
-        or event.status != EventStatus.ACTIVE
-        or event.visibility != PageVisibility.PUBLIC
-        or not event.rsvp_enabled
-        or event.is_past
-    ):
+    if event is None or not event.is_public_rsvp_eligible:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     return event
 
