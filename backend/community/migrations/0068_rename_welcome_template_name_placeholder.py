@@ -22,6 +22,6 @@ def revert_token(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0066_backfill_joinrequest_names"),
+        ("community", "0067_remove_joinrequest_display_name"),
     ]
     operations = [migrations.RunPython(rename_token, revert_token)]
