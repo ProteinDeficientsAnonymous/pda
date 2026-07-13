@@ -82,6 +82,40 @@ def _is_admin(user: User) -> bool:
     return user.roles.filter(name="admin", is_default=True).exists()
 
 
+def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
+    """Return (last_name, full_name) as they should appear to viewer.
+
+    Admins and the target themself always see the full name. Everyone else
+    sees first-name-only when target.hide_last_name is set. A None viewer
+    (anonymous/optional-auth) is treated as non-admin, non-self.
+    """
+    if viewer is not None and (target.id == viewer.id or _is_admin(viewer)):
+        return target.last_name, target.full_name
+    if target.hide_last_name:
+        return "", target.first_name.strip()
+    return target.last_name, target.full_name
+
+
+def visible_display_name(target: User, viewer: User | None) -> str:
+    """Member-facing name honoring hide_last_name, falling back to phone.
+
+    viewer=None (anonymous/optional-auth) is treated as non-admin, non-self.
+    When the last name is hidden we can only show first_name — display_name is
+    the concatenated full name and would leak the last name. When not hidden we
+    prefer full_name, then the display_name column (covers legacy accounts whose
+    name lives only there). The phone fallback is suppressed when show_phone is
+    false so a nameless member's private number is never surfaced as their name.
+    """
+    is_privileged = viewer is not None and (target.id == viewer.id or _is_admin(viewer))
+    if target.hide_last_name and not is_privileged:
+        name = target.first_name.strip()
+    else:
+        name = target.full_name or target.display_name or ""
+    if name:
+        return name
+    return target.phone_number if target.show_phone else "member"
+
+
 def _normalize_email(raw: str | None) -> str | None:
     """Lowercase + strip an email. Returns None for blank input.
 

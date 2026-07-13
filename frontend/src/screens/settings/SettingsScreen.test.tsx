@@ -64,6 +64,8 @@ vi.mock('@/api/auth', () => ({
   deleteProfilePhoto: vi.fn(),
 }));
 
+import * as authApi from '@/api/auth';
+
 import SettingsScreen from './SettingsScreen';
 
 const TEST_USER: User = {
@@ -84,6 +86,7 @@ const TEST_USER: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',
@@ -110,6 +113,9 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'authed', user: TEST_USER, accessToken: 'tok' });
   useAccessibilityStore.setState({ themeMode: 'system', dyslexiaFont: false, textScale: 1.0 });
   vi.clearAllMocks();
+  // The store's updateProfile reads .id off the resolved user; resolve a real one
+  // so toggles that call it directly don't hit an undefined-deref.
+  vi.mocked(authApi.updateProfile).mockResolvedValue(TEST_USER);
 });
 
 describe('SettingsScreen', () => {
@@ -137,8 +143,20 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('toggling "hide my last name" calls updateProfile with hideLastName true', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(
+      screen.getByRole('checkbox', { name: /hide my last name from other members/i }),
+    );
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ hideLastName: true });
+    });
+  });
+
   it('saves an edited pronouns value via updateProfile', async () => {
-    const authApi = await import('@/api/auth');
     const user = userEvent.setup();
     renderSettings();
 
@@ -200,7 +218,6 @@ describe('SettingsScreen', () => {
   });
 
   it('surfaces the error when saving an email that is already in use', async () => {
-    const authApi = await import('@/api/auth');
     vi.mocked(authApi.updateProfile).mockRejectedValueOnce({
       isAxiosError: true,
       response: {

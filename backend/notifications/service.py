@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from community.models import RSVPStatus
 from django.db import DatabaseError, connection
 from django.db.models import Q
+from users._helpers import visible_display_name
 from users.models import User
 from users.permissions import PermissionKey
 
@@ -181,7 +182,7 @@ def create_cohost_invite_notifications(
 ) -> None:
     """Notify users who just received a co-host invite for this event."""
     invited_by_id = str(invited_by.pk)
-    invited_by_name = invited_by.display_name or invited_by.phone_number
+    invited_by_name = visible_display_name(invited_by, None)
     notified_ids = [str(uid) for uid in new_user_ids if str(uid) != invited_by_id]
     if not notified_ids:
         return
@@ -210,7 +211,7 @@ def create_cohost_invite_accepted_notification(
     """Notify the inviter that an invitee accepted their co-host invite."""
     if inviter_id is None or str(inviter_id) == str(invitee.pk):
         return
-    invitee_name = invitee.display_name or invitee.phone_number
+    invitee_name = visible_display_name(invitee, None)
     Notification.objects.create(
         recipient_id=str(inviter_id),
         notification_type=NotificationType.COHOST_INVITE_ACCEPTED,
@@ -229,7 +230,7 @@ def create_cohost_invite_declined_notification(
     """Notify the inviter that an invitee declined their co-host invite."""
     if inviter_id is None or str(inviter_id) == str(invitee.pk):
         return
-    invitee_name = invitee.display_name or invitee.phone_number
+    invitee_name = visible_display_name(invitee, None)
     Notification.objects.create(
         recipient_id=str(inviter_id),
         notification_type=NotificationType.COHOST_INVITE_DECLINED,
@@ -248,7 +249,7 @@ def create_cohost_removed_notification(event: Event, removed_user: User, remover
     """
     if str(remover.pk) == str(removed_user.pk):
         return
-    remover_name = remover.display_name or remover.phone_number
+    remover_name = visible_display_name(remover, None)
     Notification.objects.create(
         recipient_id=str(removed_user.pk),
         notification_type=NotificationType.COHOST_REMOVED,
@@ -290,7 +291,7 @@ def create_event_invite_notifications(
     inviter: User,
 ) -> None:
     inviter_id = str(inviter.pk)
-    inviter_name = inviter.display_name or inviter.phone_number
+    inviter_name = visible_display_name(inviter, None)
     notified_ids = [uid for uid in new_user_ids if str(uid) != inviter_id]
     Notification.objects.bulk_create(
         [
@@ -338,7 +339,7 @@ def notify_comment_reply(reply) -> None:
     parent_author_id = reply.parent.author_id
     if str(parent_author_id) == str(reply.author_id):
         return
-    replier_name = reply.author.display_name or reply.author.phone_number
+    replier_name = visible_display_name(reply.author, None)
     event_title = reply.event.title
     Notification.objects.create(
         recipient_id=parent_author_id,
@@ -368,7 +369,7 @@ def notify_event_comment(comment) -> None:
     recipient_ids.discard(author_id_str)
     if not recipient_ids:
         return
-    commenter_name = comment.author.display_name or comment.author.phone_number
+    commenter_name = visible_display_name(comment.author, None)
     event_title = event.title
     message = f"{commenter_name} commented on {event_title}"
     recipient_id_list = sorted(recipient_ids)

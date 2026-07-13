@@ -92,6 +92,11 @@ export default function SettingsScreen() {
           checked={user.showEmail}
           onChange={(v) => updateProfile({ showEmail: v })}
         />
+        <Toggle
+          label="hide my last name from other members"
+          checked={user.hideLastName}
+          onChange={(v) => updateProfile({ hideLastName: v })}
+        />
       </Section>
 
       <Section label="calendar">

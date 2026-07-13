@@ -223,7 +223,7 @@ def get_event_stats(request, event_id: UUID):
             attended_count=_attended_count(event),
             no_show_count=_no_show_count(event),
             not_marked_count=_not_marked_count(event),
-            cancellations=_cancellations(event),
+            cancellations=_cancellations(event, request.auth),
         ),
     )
 
