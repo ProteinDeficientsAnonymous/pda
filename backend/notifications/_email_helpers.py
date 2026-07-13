@@ -62,6 +62,32 @@ def send_rsvp_waitlist_promoted_email(
     )
 
 
+def send_rsvp_manage_link_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    manage_url: str,
+) -> SendResult:
+    """Render and send the standalone "here's your manage-rsvp link" email.
+
+    Not tied to a single event — used by the resend-link recovery flow so a
+    non-member who lost their emailed link can get a fresh one.
+    """
+    context = {
+        "display_name": display_name or "",
+        "manage_url": manage_url,
+    }
+    html = render_to_string("emails/rsvp_manage_link.html", context)
+    text = render_to_string("emails/rsvp_manage_link.txt", context)
+    return sender.send(
+        to=to,
+        subject="your pda rsvp link",
+        html=html,
+        text=text,
+    )
+
+
 def send_magic_login_email(
     *,
     sender: EmailSender,

@@ -34,6 +34,7 @@ from community._pages import router as pages_router
 from community._poll_options import router as poll_options_router
 from community._polls import router as polls_router
 from community._public_rsvp_manage import router as public_rsvp_manage_router
+from community._public_rsvp_resend import router as public_rsvp_resend_router
 from community._public_rsvp_submit import router as public_rsvp_submit_router
 from community._surveys import router as surveys_router
 from community._surveys_public import router as surveys_public_router
@@ -57,6 +58,9 @@ router.add_router("", events_router)
 router.add_router("", event_tags_router)
 router.add_router("", event_rsvps_router)
 router.add_router("", public_rsvp_submit_router)
+# Mount resend before manage so the literal `/public/my-rsvps/resend/` route
+# resolves before that router's `/public/my-rsvps/{event_id}/` parameterized route.
+router.add_router("", public_rsvp_resend_router)
 router.add_router("", public_rsvp_manage_router)
 router.add_router("", event_actions_router)
 router.add_router("", event_blasts_router)
