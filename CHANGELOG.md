@@ -1,3 +1,10 @@
+# [0.19.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.18.0...v0.19.0) (2026-07-13)
+
+
+### Features
+
+* **users:** strip non-member roles when a user is paused (Issue 708) ([#752](https://github.com/ProteinDeficientsAnonymous/pda/issues/752)) ([b730525](https://github.com/ProteinDeficientsAnonymous/pda/commit/b730525f8d25f192f7f4094c4ec6c9a1c07f5c63))
+
 # [0.18.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.17.1...v0.18.0) (2026-07-13)
 
 
