@@ -9,9 +9,10 @@ from django.utils.text import slugify
 class EventTag(models.Model):
     """A curated tag an event can carry (e.g. "walk", "restaurant meetup").
 
-    The set is admin-managed via Django admin — there's no member-facing CRUD.
-    Events reference tags through the ``Event.tags`` M2M; assigning tags to an
-    event reuses the existing event-edit gate (creators / co-hosts / managers).
+    The set is curated via Django admin or in-app by users with the
+    ``manage_events`` permission. Events reference tags through the
+    ``Event.tags`` M2M; assigning tags to an event reuses the existing
+    event-edit gate (creators / co-hosts / managers).
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

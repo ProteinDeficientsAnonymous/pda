@@ -5,15 +5,16 @@ import pytest
 from community.models import Event, EventTag
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
+from ninja_jwt.tokens import RefreshToken
 from users.models import User
+from users.permissions import PermissionKey
+from users.roles import Role
 
 from tests.conftest import future_iso
 
 
 @pytest.fixture
 def member_headers(db):
-    from ninja_jwt.tokens import RefreshToken
-
     member = User.objects.create_user(
         phone_number="+14155550111",
         password="memberpass123",
@@ -21,6 +22,19 @@ def member_headers(db):
         last_name="Member",
     )
     return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def manage_tags_headers(db):
+    admin = User.objects.create_user(
+        phone_number="+14155550222",
+        password="adminpass123",
+        first_name="Tag",
+        last_name="Admin",
+    )
+    role = Role.objects.create(name="tag_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
+    admin.roles.add(role)
+    return {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"}  # type: ignore
 
 
 @pytest.fixture
@@ -54,6 +68,104 @@ class TestListEventTags:
         response = api_client.get("/api/community/event-tags/")
         first = response.json()[0]
         assert set(first.keys()) == {"id", "name", "slug"}
+
+
+@pytest.mark.django_db
+class TestCreateEventTag:
+    def test_create_requires_permission(self, api_client, member_headers):
+        response = api_client.post(
+            "/api/community/event-tags/",
+            {"name": "walk"},
+            content_type="application/json",
+            **member_headers,
+        )
+        assert response.status_code == 403
+        assert not EventTag.objects.exists()
+
+    def test_create_with_permission_trims_whitespace(self, api_client, manage_tags_headers):
+        response = api_client.post(
+            "/api/community/event-tags/",
+            {"name": "  walk  "},
+            content_type="application/json",
+            **manage_tags_headers,
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["name"] == "walk"
+        assert body["slug"] == "walk"
+        assert EventTag.objects.filter(name="walk").exists()
+
+    @pytest.mark.parametrize("name", ["   ", "🌿"])
+    def test_create_rejects_names_without_a_usable_slug(
+        self, api_client, manage_tags_headers, name
+    ):
+        # blank (empty after strip) and slug-less names (emoji → "") are both rejected
+        response = api_client.post(
+            "/api/community/event-tags/",
+            {"name": name},
+            content_type="application/json",
+            **manage_tags_headers,
+        )
+        assert response.status_code == 400
+        assert not EventTag.objects.exists()
+
+    def test_create_rejects_duplicate_case_insensitive(self, api_client, manage_tags_headers, tags):
+        response = api_client.post(
+            "/api/community/event-tags/",
+            {"name": "WALK"},
+            content_type="application/json",
+            **manage_tags_headers,
+        )
+        assert response.status_code == 400
+        assert EventTag.objects.filter(name__iexact="walk").count() == 1
+
+    def test_create_rejects_slug_collision(self, api_client, manage_tags_headers, tags):
+        # distinct name but slugifies to the same "walk" as the existing tag
+        response = api_client.post(
+            "/api/community/event-tags/",
+            {"name": "walk!"},
+            content_type="application/json",
+            **manage_tags_headers,
+        )
+        assert response.status_code == 400
+        assert EventTag.objects.filter(slug="walk").count() == 1
+
+
+@pytest.mark.django_db
+class TestDeleteEventTag:
+    def test_delete_requires_permission(self, api_client, member_headers, tags):
+        walk, _ = tags
+        response = api_client.delete(
+            f"/api/community/event-tags/{walk.id}/",
+            **member_headers,
+        )
+        assert response.status_code == 403
+        assert EventTag.objects.filter(id=walk.id).exists()
+
+    def test_delete_with_permission(self, api_client, manage_tags_headers, tags):
+        walk, _ = tags
+        response = api_client.delete(
+            f"/api/community/event-tags/{walk.id}/",
+            **manage_tags_headers,
+        )
+        assert response.status_code == 204
+        assert not EventTag.objects.filter(id=walk.id).exists()
+
+    def test_delete_missing_tag_returns_404(self, api_client, manage_tags_headers):
+        unknown = "00000000-0000-0000-0000-000000000000"
+        response = api_client.delete(
+            f"/api/community/event-tags/{unknown}/",
+            **manage_tags_headers,
+        )
+        assert response.status_code == 404
+
+    def test_delete_malformed_id_does_not_500(self, api_client, manage_tags_headers):
+        # UUID-typed path param → Ninja rejects with 422 before the handler runs
+        response = api_client.delete(
+            "/api/community/event-tags/not-a-uuid/",
+            **manage_tags_headers,
+        )
+        assert response.status_code == 422
 
 
 @pytest.mark.django_db
