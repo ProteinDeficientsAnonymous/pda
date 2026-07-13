@@ -1,3 +1,10 @@
+## [0.14.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.14.0...v0.14.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **users:** require first_name on admin create-user (Issue 718) ([#751](https://github.com/ProteinDeficientsAnonymous/pda/issues/751)) ([5a083fe](https://github.com/ProteinDeficientsAnonymous/pda/commit/5a083fe6a7e150af27b52d95da199c179bfd032f))
+
 # [0.14.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.13.0...v0.14.0) (2026-07-13)
 
 
