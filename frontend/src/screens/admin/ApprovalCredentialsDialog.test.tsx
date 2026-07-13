@@ -16,7 +16,7 @@ vi.mock('@/api/client', () => ({
 
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({
-    data: { body: 'hi ${NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
+    data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
     isPending: false,
     isError: false,
   }),

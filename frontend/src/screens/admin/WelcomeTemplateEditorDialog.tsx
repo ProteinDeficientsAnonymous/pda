@@ -1,6 +1,6 @@
 // Sub-modal opened from ApprovalCredentialsDialog. Lets users with
 // APPROVE_JOIN_REQUESTS edit the shared template. Plain-text only —
-// placeholders ${NAME}, ${SENDER_NAME}, ${MAGIC_LINK} are substituted at
+// placeholders ${FIRST_NAME}, ${SENDER_NAME}, ${MAGIC_LINK} are substituted at
 // render time by renderWelcomeMessage().
 
 import { type SyntheticEvent, useState } from 'react';
@@ -61,7 +61,7 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
         this text is shared with all vetters. changes apply everywhere.
       </p>
       <p className="text-muted text-xs">
-        available placeholders: <code className="bg-surface-dim rounded px-1">{'${NAME}'}</code>{' '}
+        available placeholders: <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code>{' '}
         (recipient's first name),{' '}
         <code className="bg-surface-dim rounded px-1">{'${SENDER_NAME}'}</code>,{' '}
         <code className="bg-surface-dim rounded px-1">{'${MAGIC_LINK}'}</code>

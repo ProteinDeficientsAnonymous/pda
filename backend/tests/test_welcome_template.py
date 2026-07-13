@@ -36,7 +36,7 @@ class TestGetWelcomeTemplate:
         assert response.status_code == 200
         data = response.json()
         # Migration 0050 seeds the verbose template from issue #375
-        assert "${NAME}" in data["body"]
+        assert "${FIRST_NAME}" in data["body"]
         assert "${SENDER_NAME}" in data["body"]
         assert "${MAGIC_LINK}" in data["body"]
         assert "updated_at" in data
@@ -51,13 +51,16 @@ class TestUpdateWelcomeTemplate:
     def test_with_permission_updates_body(self, api_client, edit_welcome_headers):
         response = api_client.patch(
             "/api/community/welcome-template/",
-            data={"body": "hi ${NAME}, welcome — sign in: ${MAGIC_LINK}"},
+            data={"body": "hi ${FIRST_NAME}, welcome — sign in: ${MAGIC_LINK}"},
             content_type="application/json",
             **edit_welcome_headers,
         )
         assert response.status_code == 200
-        assert "${NAME}" in response.json()["body"]
-        assert WelcomeMessageTemplate.get().body == "hi ${NAME}, welcome — sign in: ${MAGIC_LINK}"
+        assert "${FIRST_NAME}" in response.json()["body"]
+        assert (
+            WelcomeMessageTemplate.get().body
+            == "hi ${FIRST_NAME}, welcome — sign in: ${MAGIC_LINK}"
+        )
 
     def test_without_permission_returns_403(self, api_client, auth_headers):
         response = api_client.patch(
