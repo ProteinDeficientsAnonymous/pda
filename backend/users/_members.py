@@ -11,6 +11,7 @@ from users.schemas import (
     ErrorOut,
     MemberDirectoryOut,
     MemberProfileOut,
+    serialize_birthday,
 )
 
 router = Router()
@@ -70,6 +71,7 @@ def get_member_profile(request, user_id: str):
             email=(user.email or "") if (user.show_email or is_own_profile) else "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
+            birthday=serialize_birthday(user.birthday),
             profile_photo_url=media_path(user.profile_photo),
             login_link_requested=user.login_link_requested if can_manage_users else False,
         ),

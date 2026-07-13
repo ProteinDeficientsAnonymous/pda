@@ -20,6 +20,7 @@ const BASE: MemberProfile = {
   email: '',
   bio: '',
   pronouns: '',
+  birthday: null,
   profilePhotoUrl: '',
   loginLinkRequested: false,
 };

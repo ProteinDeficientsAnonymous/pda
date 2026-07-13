@@ -25,6 +25,8 @@ export interface User {
   email: string;
   bio: string;
   pronouns: string;
+  // ISO date string (yyyy-mm-dd), or null if unset.
+  birthday: string | null;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;

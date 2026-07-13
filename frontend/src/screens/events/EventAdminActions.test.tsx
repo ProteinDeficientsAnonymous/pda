@@ -34,6 +34,7 @@ function makeUser(id: string, permissions: string[] = []): User {
     email: '',
     bio: '',
     pronouns: '',
+    birthday: null,
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,
