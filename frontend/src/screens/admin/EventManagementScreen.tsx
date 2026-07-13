@@ -92,7 +92,9 @@ export default function EventManagementScreen() {
         <div className="border-border bg-surface mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
           <div className="min-w-0">
             <p className="text-foreground text-sm font-medium">event tags</p>
-            <p className="text-muted text-xs">create or remove the tags events can be filtered by</p>
+            <p className="text-muted text-xs">
+              create or remove the tags events can be filtered by
+            </p>
           </div>
           <Button
             variant="secondary"
