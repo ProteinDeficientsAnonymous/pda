@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 from community._event_helpers import _cancellations
+from community._event_rsvps import _resolve_cancelled_at
 from community._rsvp_counts import (
     _attended_count,
     _no_response_count,
@@ -118,13 +119,15 @@ class TestNoResponseCount:
 
 @pytest.mark.django_db
 class TestCancellations:
-    def test_lead_time_inferred_from_updated_at(self, stats_event, members):
+    def test_lead_time_derived_from_cancelled_at(self, stats_event, members):
         rsvp = EventRSVP.objects.create(
             event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
         )
-        # Force updated_at to 3 days before start.
+        cancelled_at = stats_event.start_datetime - timedelta(days=3)
+        # updated_at later than cancelled_at: lead-time must track the cancel time.
         EventRSVP.objects.filter(pk=rsvp.pk).update(
-            updated_at=stats_event.start_datetime - timedelta(days=3)
+            cancelled_at=cancelled_at,
+            updated_at=stats_event.start_datetime - timedelta(hours=1),
         )
         stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
             pk=stats_event.pk
@@ -132,7 +135,24 @@ class TestCancellations:
         rows = _cancellations(stats_event)
         assert len(rows) == 1
         assert rows[0].user_id == str(members[0].pk)
+        assert rows[0].cancelled_at == cancelled_at
         assert rows[0].days_before_event == 3
+
+    def test_lead_time_falls_back_to_updated_at_when_cancelled_at_missing(
+        self, stats_event, members
+    ):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.CANT_GO
+        )
+        EventRSVP.objects.filter(pk=rsvp.pk).update(
+            cancelled_at=None,
+            updated_at=stats_event.start_datetime - timedelta(days=2),
+        )
+        stats_event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(
+            pk=stats_event.pk
+        )
+        rows = _cancellations(stats_event)
+        assert rows[0].days_before_event == 2
 
     def test_excludes_attending_users(self, stats_event, members):
         EventRSVP.objects.create(event=stats_event, user=members[0], status=RSVPStatus.ATTENDING)
@@ -154,6 +174,38 @@ class TestCancellations:
         EventRSVP.objects.create(event=event, user=members[0], status=RSVPStatus.CANT_GO)
         event = Event.objects.prefetch_related("invited_users", "rsvps__user").get(pk=event.pk)
         assert _cancellations(event) == []
+
+
+@pytest.mark.django_db
+class TestResolveCancelledAt:
+    def test_stamps_on_transition_into_cant_go(self, stats_event, members):
+        rsvp = EventRSVP.objects.create(
+            event=stats_event, user=members[0], status=RSVPStatus.ATTENDING
+        )
+        assert _resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) is not None
+
+    def test_stamps_for_brand_new_cant_go(self):
+        assert _resolve_cancelled_at(None, RSVPStatus.CANT_GO) is not None
+
+    def test_clears_when_leaving_cant_go(self, stats_event, members):
+        cancelled = stats_event.start_datetime - timedelta(days=1)
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            cancelled_at=cancelled,
+        )
+        assert _resolve_cancelled_at(rsvp, RSVPStatus.ATTENDING) is None
+
+    def test_preserves_original_cancel_time_when_still_cant_go(self, stats_event, members):
+        cancelled = stats_event.start_datetime - timedelta(days=5)
+        rsvp = EventRSVP.objects.create(
+            event=stats_event,
+            user=members[0],
+            status=RSVPStatus.CANT_GO,
+            cancelled_at=cancelled,
+        )
+        assert _resolve_cancelled_at(rsvp, RSVPStatus.CANT_GO) == cancelled
 
 
 @pytest.mark.django_db
@@ -249,6 +301,53 @@ class TestSetAttendance:
         assert response.status_code == 200
         rsvp.refresh_from_db()
         assert rsvp.attendance == AttendanceStatus.ATTENDED
+        assert rsvp.checked_in_at is not None
+
+    def test_no_show_does_not_stamp_checked_in_at(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
+        )
+        response = api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/",
+            {"attendance": AttendanceStatus.NO_SHOW},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        assert response.status_code == 200
+        rsvp.refresh_from_db()
+        assert rsvp.checked_in_at is None
+
+    def test_checked_in_at_preserved_on_re_mark(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        rsvp = EventRSVP.objects.create(
+            event=open_check_in_event, user=members[0], status=RSVPStatus.ATTENDING
+        )
+        url = f"/api/community/events/{open_check_in_event.id}/rsvps/{members[0].pk}/attendance/"
+        api_client.post(
+            url,
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        rsvp.refresh_from_db()
+        first_check_in = rsvp.checked_in_at
+        api_client.post(
+            url,
+            {"attendance": AttendanceStatus.NO_SHOW},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        api_client.post(
+            url,
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+        rsvp.refresh_from_db()
+        assert rsvp.checked_in_at == first_check_in
 
     def test_cohost_can_mark(self, api_client, open_check_in_event, cohost_user, members):
         EventRSVP.objects.create(

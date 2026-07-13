@@ -143,6 +143,11 @@ class EventRSVP(models.Model):
         choices=AttendanceStatus.choices,
         default=AttendanceStatus.UNKNOWN,
     )
+    checked_in_at = models.DateTimeField(null=True, blank=True)
+    # Timestamp of the most recent transition into CANT_GO; cleared when the
+    # member re-RSVPs going/maybe. Accurate cancellation lead-time (unlike the
+    # lossy updated_at proxy, which any later save would overwrite).
+    cancelled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
