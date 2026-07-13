@@ -8,11 +8,14 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useEvents } from '@/api/events';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { type Event, EventType } from '@/models/event';
+import { hasPermission, Permission } from '@/models/permissions';
+import { TagManagerDialog } from '@/screens/events/TagManagerDialog';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 type Bucket = 'upcoming' | 'past' | 'drafts' | 'cancelled';
@@ -55,6 +58,9 @@ function sortEvents(events: readonly Event[], sort: Sort): Event[] {
 
 export default function EventManagementScreen() {
   const { data = [], isPending, isError } = useEvents();
+  const user = useAuthStore((s) => s.user);
+  const canManageTags = hasPermission(user, Permission.ManageEvents);
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [bucket, setBucket] = useState<Bucket>('upcoming');
   const [sort, setSort] = useState<Sort>('date');
   const [search, setSearch] = useState('');
@@ -81,6 +87,32 @@ export default function EventManagementScreen() {
           new event
         </Link>
       </header>
+
+      {canManageTags ? (
+        <div className="border-border bg-surface mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
+          <div className="min-w-0">
+            <p className="text-foreground text-sm font-medium">event tags</p>
+            <p className="text-muted text-xs">create or remove the tags events can be filtered by</p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setTagDialogOpen(true);
+            }}
+          >
+            manage tags
+          </Button>
+        </div>
+      ) : null}
+
+      {canManageTags ? (
+        <TagManagerDialog
+          open={tagDialogOpen}
+          onClose={() => {
+            setTagDialogOpen(false);
+          }}
+        />
+      ) : null}
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="min-w-[180px] flex-1">
