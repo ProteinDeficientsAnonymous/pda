@@ -1,3 +1,10 @@
+# [0.17.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.16.0...v0.17.0) (2026-07-13)
+
+
+### Features
+
+* **users:** add show non-members toggle to members directory (Issue 706) ([#755](https://github.com/ProteinDeficientsAnonymous/pda/issues/755)) ([de600b3](https://github.com/ProteinDeficientsAnonymous/pda/commit/de600b380b23a68134ea9a3945b87c482358282d))
+
 # [0.16.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.15.0...v0.16.0) (2026-07-13)
 
 
