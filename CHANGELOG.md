@@ -1,3 +1,10 @@
+# [0.13.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.12.1...v0.13.0) (2026-07-13)
+
+
+### Features
+
+* **events:** gate invite button on member rsvp (Issue 688) ([#762](https://github.com/ProteinDeficientsAnonymous/pda/issues/762)) ([5cef6f8](https://github.com/ProteinDeficientsAnonymous/pda/commit/5cef6f8d99a8c842d506f9c342c2171cddf10048))
+
 ## [0.12.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.12.0...v0.12.1) (2026-07-13)
 
 
