@@ -91,10 +91,7 @@ function LockIcon({ className }: { className?: string }) {
   );
 }
 
-// When the event type forces public, we replace the dropdown with a locked
-// read-out so the constraint reads visually (lock icon + badge), not just as
-// helper text. The greyed non-public options are shown struck to make the
-// forced choice obvious.
+// Forced-public event types show a locked read-out instead of the dropdown so the constraint reads visually.
 function LockedVisibility({ helper }: { helper: string }) {
   return (
     <div
