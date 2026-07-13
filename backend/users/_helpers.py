@@ -11,7 +11,7 @@ import phonenumbers
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 
-from users.models import MagicLoginToken, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, User
 from users.roles import Role
 
 
@@ -50,13 +50,22 @@ def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     return True
 
 
-def _create_magic_token(user: User, *, requires_password_reset: bool = False) -> str:
+def _create_magic_token(
+    user: User,
+    *,
+    requires_password_reset: bool = False,
+    source: str = MagicLoginTokenSource.ADMIN,
+) -> str:
     """Create a one-time magic login token. Returns the token UUID string.
 
     Pass requires_password_reset=True for self-service login links so consuming
     the token forces a password reset (admin onboarding links leave it False).
+    Pass source=SELF_SERVICE only for the user's own login-link request — that is
+    the only source the self-service cooldown counts.
     """
-    magic = MagicLoginToken.create_for_user(user, requires_password_reset=requires_password_reset)
+    magic = MagicLoginToken.create_for_user(
+        user, requires_password_reset=requires_password_reset, source=source
+    )
     return str(magic.token)
 
 

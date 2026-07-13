@@ -14,7 +14,7 @@ from notifications.email_sender import get_email_sender
 from notifications.service import create_magic_link_request_notifications
 from pydantic import BaseModel, Field
 from users._helpers import _create_magic_token
-from users.models import MagicLoginToken, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, User
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut, _validate_phone, logger  # noqa: F401
@@ -93,6 +93,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     # and tell the user to check their inbox or wait.
     recent_token_exists = MagicLoginToken.objects.filter(
         user=user,
+        source=MagicLoginTokenSource.SELF_SERVICE,
         created_at__gte=timezone.now() - timedelta(minutes=2),
     ).exists()
     if recent_token_exists:
@@ -110,7 +111,11 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     # Invalidate any prior unused links so only the newest one works — avoids
     # multiple valid links floating around the user's inbox.
     MagicLoginToken.objects.filter(user=user, used=False).update(used=True)
-    magic_token = _create_magic_token(user, requires_password_reset=True)
+    magic_token = _create_magic_token(
+        user,
+        requires_password_reset=True,
+        source=MagicLoginTokenSource.SELF_SERVICE,
+    )
 
     email_success = _try_email_delivery(request=request, user=user, magic_token=magic_token)
     if email_success:

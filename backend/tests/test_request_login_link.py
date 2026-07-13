@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from notifications.email_sender import SendResult
 from notifications.models import Notification, NotificationType
-from users.models import MagicLoginToken, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
@@ -144,6 +144,30 @@ class TestRequestLoginLink:
         assert resp.json()["delivery"] == "cooldown"
         # No second token created during the cooldown window.
         assert MagicLoginToken.objects.filter(user=user).count() == 1
+
+    def test_self_service_token_stamped_source(self, api_client):
+        """Self-service login-link tokens record source=self_service."""
+        user = User.objects.create_user(phone_number=_PHONE, password="pass")
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+        token = MagicLoginToken.objects.filter(user=user).latest("created_at")
+        assert token.source == MagicLoginTokenSource.SELF_SERVICE
+
+    def test_admin_token_does_not_trigger_cooldown(self, api_client):
+        """An admin-generated token must not suppress the user's own login-link email."""
+        user = User.objects.create_user(phone_number=_PHONE, password="pass")
+        MagicLoginToken.create_for_user(user, source=MagicLoginTokenSource.ADMIN)
+
+        resp = api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+
+        assert resp.status_code == 200
+        assert resp.json()["delivery"] != "cooldown"
+        # The self-service request minted its own token despite the admin one.
+        assert (
+            MagicLoginToken.objects.filter(
+                user=user, source=MagicLoginTokenSource.SELF_SERVICE
+            ).count()
+            == 1
+        )
 
     def test_new_request_invalidates_prior_unused_token(self, api_client):
         """Outside the cooldown, a fresh request invalidates the previous unused link."""
