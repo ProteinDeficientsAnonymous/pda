@@ -38,9 +38,6 @@ export function EventMemberSection({ event }: Props) {
   const canSeeInvited = isCoHost || canManageEvents;
   const isCancelled = event.status === EventStatus.Cancelled;
   const rsvpDisabled = !event.rsvpEnabled;
-  // Ordinary members may invite others only once they've committed to going —
-  // attending/maybe count (matches MyEventsScreen's "engaged" bar); cant_go,
-  // waitlisted, and null don't. Cohosts/managers bypass this entirely.
   const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
   const canInvite =
     !isCancelled &&
