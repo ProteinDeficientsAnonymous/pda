@@ -27,6 +27,7 @@ interface WireUser {
   email?: string;
   bio?: string;
   pronouns?: string;
+  birthday?: string | null;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -74,6 +75,7 @@ function mapUser(u: WireUser): User {
     email: u.email ?? '',
     bio: u.bio ?? '',
     pronouns: u.pronouns ?? '',
+    birthday: u.birthday ?? null,
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
@@ -190,6 +192,8 @@ export interface ProfileUpdate {
   email?: string;
   bio?: string;
   pronouns?: string;
+  // Empty string clears the stored birthday; an ISO date (yyyy-mm-dd) sets it.
+  birthday?: string;
   showPhone?: boolean;
   showEmail?: boolean;
   hideLastName?: boolean;
@@ -206,6 +210,7 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.email !== undefined) body.email = patch.email;
   if (patch.bio !== undefined) body.bio = patch.bio;
   if (patch.pronouns !== undefined) body.pronouns = patch.pronouns;
+  if (patch.birthday !== undefined) body.birthday = patch.birthday;
   if (patch.showPhone !== undefined) body.show_phone = patch.showPhone;
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;

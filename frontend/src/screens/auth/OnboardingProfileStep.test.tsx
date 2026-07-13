@@ -26,6 +26,7 @@ const baseUser: User = {
   email: 'tester@example.com',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,

@@ -277,6 +277,11 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
         if value is not None:
             setattr(user, attr, value)
             changed.append(attr)
+    # birthday is nullable: a sent-but-null value is an explicit clear, so key on
+    # whether the field was present in the payload rather than on it being None.
+    if "birthday" in payload.model_fields_set:
+        user.birthday = payload.birthday
+        changed.append("birthday")
     return changed
 
 

@@ -96,6 +96,7 @@ const AUTHED_USER: User = {
   email: 'test@example.com',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,

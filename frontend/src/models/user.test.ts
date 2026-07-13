@@ -13,6 +13,7 @@ function makeUser(overrides: Partial<User> = {}): User {
     email: 'alice@example.com',
     bio: '',
     pronouns: '',
+    birthday: null,
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,

@@ -39,6 +39,7 @@ const ME: User = {
   email: '',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
