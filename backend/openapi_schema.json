@@ -117,6 +117,70 @@
         "title": "AttendanceStatus",
         "type": "string"
       },
+      "BirthdayIn": {
+        "properties": {
+          "day": {
+            "maximum": 31,
+            "minimum": 1,
+            "title": "Day",
+            "type": "integer"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "maximum": 2026,
+                "minimum": 1900,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "month",
+          "day"
+        ],
+        "title": "BirthdayIn",
+        "type": "object"
+      },
+      "BirthdayOut": {
+        "properties": {
+          "day": {
+            "title": "Day",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "month",
+          "day"
+        ],
+        "title": "BirthdayOut",
+        "type": "object"
+      },
       "BulkUserCreateIn": {
         "properties": {
           "phone_numbers": {
@@ -3118,14 +3182,12 @@
           "birthday": {
             "anyOf": [
               {
-                "format": "date",
-                "type": "string"
+                "$ref": "#/components/schemas/BirthdayIn"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Birthday"
+            ]
           },
           "calendar_feed_scope": {
             "anyOf": [
@@ -3329,13 +3391,12 @@
           "birthday": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/BirthdayOut"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Birthday"
+            ]
           },
           "email": {
             "default": "",
@@ -4801,13 +4862,12 @@
           "birthday": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/BirthdayOut"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Birthday"
+            ]
           },
           "calendar_feed_scope": {
             "default": "all",

@@ -129,6 +129,7 @@ export const Code = {
     CannotPauseSelf: 'user.cannot_pause_self',
     CannotPauseAdmin: 'user.cannot_pause_admin',
     RoleIdsNotFound: 'user.role_ids_not_found',
+    InvalidBirthday: 'user.invalid_birthday',
   },
   Survey: {
     NotFound: 'survey.not_found',
@@ -303,6 +304,7 @@ export type ValidationCode =
   | 'user.cannot_pause_self'
   | 'user.cannot_pause_admin'
   | 'user.role_ids_not_found'
+  | 'user.invalid_birthday'
   | 'survey.not_found'
   | 'survey.slug_already_exists'
   | 'survey.question_not_found'
@@ -451,6 +453,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_pause_self': [],
   'user.cannot_pause_admin': [],
   'user.role_ids_not_found': [],
+  'user.invalid_birthday': [],
   'survey.not_found': [],
   'survey.slug_already_exists': [],
   'survey.question_not_found': [],

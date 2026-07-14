@@ -23,7 +23,7 @@ const storageMock = vi.hoisted(() => {
 });
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -190,12 +190,31 @@ describe('SettingsScreen', () => {
     renderSettings();
 
     await user.click(screen.getByRole('button', { name: /edit birthday/i }));
-    const field = screen.getByLabelText(/^birthday$/i);
-    fireEvent.change(field, { target: { value: '1990-06-15' } });
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^day$/i), '15');
+    await user.selectOptions(screen.getByLabelText(/^year$/i), '1990');
     await user.click(screen.getByRole('button', { name: /^save$/i }));
 
     await waitFor(() => {
-      expect(authApi.updateProfile).toHaveBeenCalledWith({ birthday: '1990-06-15' });
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        birthday: { month: 6, day: 15, year: 1990 },
+      });
+    });
+  });
+
+  it('saves a birthday without a year via updateProfile', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit birthday/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^day$/i), '15');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        birthday: { month: 6, day: 15, year: null },
+      });
     });
   });
 

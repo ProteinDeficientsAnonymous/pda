@@ -1815,6 +1815,24 @@ export interface components {
          * @enum {string}
          */
         AttendanceStatus: "unknown" | "attended" | "no_show";
+        /** BirthdayIn */
+        BirthdayIn: {
+            /** Day */
+            day: number;
+            /** Month */
+            month: number;
+            /** Year */
+            year?: number | null;
+        };
+        /** BirthdayOut */
+        BirthdayOut: {
+            /** Day */
+            day: number;
+            /** Month */
+            month: number;
+            /** Year */
+            year?: number | null;
+        };
         /** BulkUserCreateIn */
         BulkUserCreateIn: {
             /** Phone Numbers */
@@ -3145,8 +3163,7 @@ export interface components {
         MePatchIn: {
             /** Bio */
             bio?: string | null;
-            /** Birthday */
-            birthday?: string | null;
+            birthday?: components["schemas"]["BirthdayIn"] | null;
             /** Calendar Feed Scope */
             calendar_feed_scope?: ("all" | "mine") | null;
             /** Email */
@@ -3214,8 +3231,7 @@ export interface components {
              * @default
              */
             bio: string;
-            /** Birthday */
-            birthday?: string | null;
+            birthday?: components["schemas"]["BirthdayOut"] | null;
             /**
              * Email
              * @default
@@ -3852,8 +3868,7 @@ export interface components {
              * @default
              */
             bio: string;
-            /** Birthday */
-            birthday?: string | null;
+            birthday?: components["schemas"]["BirthdayOut"] | null;
             /**
              * Calendar Feed Scope
              * @default all

@@ -37,19 +37,48 @@ def _empty_str_to_none(v: str | None) -> str | None:
 OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
 
 
-def _empty_str_to_none_date(v: date | str | None) -> date | str | None:
-    # A sent-but-blank string is an explicit clear (None); non-blank strings fall
-    # through to Pydantic's date parsing, which 422s on malformed input.
-    if isinstance(v, str) and v.strip() == "":
-        return None
-    return v
+_DAYS_IN_MONTH = {
+    1: 31,
+    2: 29,  # allow Feb 29 regardless of year, since the year may be unknown
+    3: 31,
+    4: 30,
+    5: 31,
+    6: 30,
+    7: 31,
+    8: 31,
+    9: 30,
+    10: 31,
+    11: 30,
+    12: 31,
+}
 
 
-OptionalBirthday = Annotated[date | None, BeforeValidator(_empty_str_to_none_date)]
+class BirthdayOut(BaseModel):
+    month: int
+    day: int
+    year: int | None = None
+
+    @staticmethod
+    def from_user(user: User) -> "BirthdayOut | None":
+        if user.birthday_month is None or user.birthday_day is None:
+            return None
+        return BirthdayOut(
+            month=user.birthday_month, day=user.birthday_day, year=user.birthday_year
+        )
 
 
-def serialize_birthday(value: date | None) -> str | None:
-    return value.isoformat() if value else None
+class BirthdayIn(BaseModel):
+    month: int = Field(ge=1, le=12)
+    day: int = Field(ge=1, le=31)
+    year: int | None = Field(default=None, ge=1900, le=date.today().year)
+
+    @field_validator("day")
+    @classmethod
+    def _validate_day(cls, day: int, info) -> int:
+        month = info.data.get("month")
+        if month is not None and day > _DAYS_IN_MONTH[month]:
+            raise_validation(Code.User.INVALID_BIRTHDAY, field="day")
+        return day
 
 
 class LoginIn(BaseModel):
@@ -94,7 +123,7 @@ class UserOut(BaseModel):
     email: str = ""
     bio: str = ""
     pronouns: str = ""
-    birthday: str | None = None
+    birthday: BirthdayOut | None = None
     is_member: bool = True
     is_superuser: bool = False
     needs_onboarding: bool = False
@@ -130,7 +159,7 @@ class UserOut(BaseModel):
             email=user.email or "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
-            birthday=serialize_birthday(user.birthday),
+            birthday=BirthdayOut.from_user(user),
             is_member=user.is_member,
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
@@ -171,7 +200,7 @@ class MemberProfileOut(BaseModel):
     email: str = ""
     bio: str = ""
     pronouns: str = ""
-    birthday: str | None = None
+    birthday: BirthdayOut | None = None
     profile_photo_url: str = ""
     login_link_requested: bool = False
 
@@ -236,7 +265,7 @@ class MePatchIn(BaseModel):
     bio: str | None = Field(default=None, max_length=FieldLimit.BIO)
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     nickname: str | None = Field(default=None, max_length=FieldLimit.NICKNAME)
-    birthday: OptionalBirthday = None
+    birthday: BirthdayIn | None = None
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None

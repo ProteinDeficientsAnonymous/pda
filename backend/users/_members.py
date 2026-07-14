@@ -8,10 +8,10 @@ from users._helpers import visible_name
 from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import (
+    BirthdayOut,
     ErrorOut,
     MemberDirectoryOut,
     MemberProfileOut,
-    serialize_birthday,
 )
 
 router = Router()
@@ -75,7 +75,7 @@ def get_member_profile(request, user_id: str):
             email=(user.email or "") if user.show_email else "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
-            birthday=serialize_birthday(user.birthday) if user.show_birthday else None,
+            birthday=BirthdayOut.from_user(user) if user.show_birthday else None,
             profile_photo_url=media_path(user.profile_photo),
             login_link_requested=user.login_link_requested if can_manage_users else False,
         ),
