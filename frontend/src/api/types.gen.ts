@@ -261,7 +261,7 @@ export interface paths {
         };
         /**
          * List Member Directory
-         * @description Authed-only member directory. Respects each user's show_phone/show_email flags.
+         * @description Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags.
          */
         get: operations["users__members_list_member_directory"];
         put?: never;
@@ -3139,6 +3139,8 @@ export interface components {
             nickname?: string | null;
             /** Pronouns */
             pronouns?: string | null;
+            /** Show Birthday */
+            show_birthday?: boolean | null;
             /** Show Email */
             show_email?: boolean | null;
             /** Show Phone */
@@ -3923,6 +3925,11 @@ export interface components {
             pronouns: string;
             /** Roles */
             roles: components["schemas"]["RoleOut"][];
+            /**
+             * Show Birthday
+             * @default true
+             */
+            show_birthday: boolean;
             /**
              * Show Email
              * @default true

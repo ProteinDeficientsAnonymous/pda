@@ -87,6 +87,7 @@ const TEST_USER: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  showBirthday: false,
   hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
@@ -144,13 +145,11 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('toggling "hide my last name" calls updateProfile with hideLastName true', async () => {
+  it('toggling "show my last name" off calls updateProfile with hideLastName true', async () => {
     const user = userEvent.setup();
     renderSettings();
 
-    await user.click(
-      screen.getByRole('checkbox', { name: /hide my last name from other members/i }),
-    );
+    await user.click(screen.getByRole('checkbox', { name: /show my last name to other members/i }));
 
     await waitFor(() => {
       expect(authApi.updateProfile).toHaveBeenCalledWith({ hideLastName: true });

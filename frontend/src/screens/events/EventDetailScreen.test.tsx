@@ -105,6 +105,7 @@ const AUTHED_USER: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  showBirthday: false,
   hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',

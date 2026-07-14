@@ -23,7 +23,7 @@ router = Router()
     auth=gated_jwt,
 )
 def list_member_directory(request):
-    """Authed-only member directory. Respects each user's show_phone/show_email flags."""
+    """Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags."""
     users = (
         User.objects.active_members()
         .filter(needs_onboarding=False)
@@ -75,7 +75,7 @@ def get_member_profile(request, user_id: str):
             email=(user.email or "") if user.show_email else "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
-            birthday=serialize_birthday(user.birthday),
+            birthday=serialize_birthday(user.birthday) if user.show_birthday else None,
             profile_photo_url=media_path(user.profile_photo),
             login_link_requested=user.login_link_requested if can_manage_users else False,
         ),

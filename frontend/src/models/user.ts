@@ -40,6 +40,7 @@ export interface User {
   needsSmsConsent: boolean;
   showPhone: boolean;
   showEmail: boolean;
+  showBirthday: boolean;
   hideLastName: boolean;
   weekStart: 'sunday' | 'monday';
   calendarFeedScope: CalendarFeedScopeValue;
