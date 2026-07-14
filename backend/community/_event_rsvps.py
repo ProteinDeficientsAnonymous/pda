@@ -36,7 +36,8 @@ from community._event_schemas import (
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventComment, EventRSVP, RSVPStatus
+from notifications.service import notify_event_comment, notify_rsvp_declined_note
 
 router = Router()
 
@@ -137,12 +138,18 @@ def _apply_rsvp_in_transaction(
     had_plus_one = existing is not None and existing.has_plus_one
 
     defaults = {"status": final_status, "has_plus_one": final_plus_one}
-    # note=None means the caller left it untouched (e.g. a status-only change),
-    # so we don't overwrite a previously saved note.
-    if note is not None:
-        defaults["note"] = note.strip()
 
     EventRSVP.objects.update_or_create(event=event, user=user, defaults=defaults)
+
+    cleaned_note = (note or "").strip()
+    if cleaned_note:
+        if final_status == RSVPStatus.CANT_GO:
+            notify_rsvp_declined_note(event=event, author=user, note=cleaned_note)
+        else:
+            comment = EventComment.objects.create(
+                event=event, author=user, body=cleaned_note[:500]
+            )
+            notify_event_comment(comment)
 
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
         was_attending and had_plus_one and not final_plus_one

@@ -1,7 +1,9 @@
-"""Tests for the optional message/note on an event RSVP (issue #297)."""
+"""Tests: an optional RSVP note routes to a comment (going/maybe) or a
+host-only notification (can't-go), and is not persisted on the RSVP (issue #297)."""
 
 import pytest
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventComment, RSVPStatus
+from notifications.models import Notification, NotificationType
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
@@ -22,138 +24,80 @@ def rsvp_event(db, test_user):
 
 
 @pytest.fixture
-def other_user(db):
+def member(db):
     return User.objects.create_user(
-        phone_number="+12025550302",
-        password="otherpass",
-        display_name="Other Member",
+        phone_number="+12025550302", password="pw", display_name="Member"
     )
 
 
 @pytest.fixture
-def other_headers(other_user):
-    refresh = RefreshToken.for_user(other_user)
+def member_headers(member):
+    refresh = RefreshToken.for_user(member)
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
+def _rsvp(api_client, headers, event, status, note=None):
+    payload = {"status": status}
+    if note is not None:
+        payload["note"] = note
+    return api_client.post(
+        f"/api/community/events/{event.id}/rsvp/",
+        payload,
+        content_type="application/json",
+        **headers,
+    )
+
+
 @pytest.mark.django_db
-class TestRSVPNote:
-    def test_rsvp_with_note(self, api_client, auth_headers, rsvp_event, test_user):
-        response = api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "bringing snacks"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["my_rsvp_note"] == "bringing snacks"
-        rsvp = EventRSVP.objects.get(event=rsvp_event, user=test_user)
-        assert rsvp.note == "bringing snacks"
+class TestRSVPNoteRouting:
+    def test_going_note_creates_comment(self, api_client, member_headers, member, rsvp_event):
+        resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks")
+        assert resp.status_code == 200
+        comments = EventComment.objects.filter(event=rsvp_event, author=member)
+        assert comments.count() == 1
+        assert comments.first().body == "bringing snacks"
 
-    def test_rsvp_note_defaults_empty(self, api_client, auth_headers, rsvp_event):
-        response = api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["my_rsvp_note"] == ""
+    def test_maybe_note_creates_comment(self, api_client, member_headers, member, rsvp_event):
+        resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE, "might be late")
+        assert resp.status_code == 200
+        assert EventComment.objects.filter(event=rsvp_event, author=member, body="might be late").count() == 1
 
-    def test_rsvp_note_updated_on_upsert(self, api_client, auth_headers, rsvp_event):
-        api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "running 10 mins late"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        response = api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.MAYBE, "note": "actually can't make it"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["my_rsvp_note"] == "actually can't make it"
+    def test_going_note_notifies_host(self, api_client, member_headers, member, rsvp_event, test_user):
+        _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "yo")
+        assert Notification.objects.filter(
+            recipient=test_user, notification_type=NotificationType.EVENT_COMMENT
+        ).count() == 1
 
-    def test_rsvp_note_preserved_when_omitted(self, api_client, auth_headers, rsvp_event):
-        # A status-only change (no note key) must not wipe an existing note.
-        api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "bringing hummus"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        response = api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.MAYBE},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["my_rsvp_note"] == "bringing hummus"
-
-    def test_rsvp_note_cleared_when_empty_string(self, api_client, auth_headers, rsvp_event):
-        # An explicit empty string clears the note (distinct from omitting it).
-        api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "bringing hummus"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        response = api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": ""},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["my_rsvp_note"] == ""
-
-    def test_rsvp_note_stripped(self, api_client, auth_headers, rsvp_event):
-        response = api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "  bringing snacks  "},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 200
-        assert response.json()["my_rsvp_note"] == "bringing snacks"
-
-    def test_rsvp_note_too_long_rejected(self, api_client, auth_headers, rsvp_event):
-        response = api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "x" * 301},
-            content_type="application/json",
-            **auth_headers,
-        )
-        assert response.status_code == 422
-
-    def test_guest_note_visible_to_members(
-        self, api_client, auth_headers, rsvp_event, other_headers
+    def test_cant_go_note_creates_no_comment_but_notifies_host(
+        self, api_client, member_headers, member, rsvp_event, test_user
     ):
-        api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "vegan cupcakes incoming"},
-            content_type="application/json",
-            **other_headers,
+        resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.CANT_GO, "out of town")
+        assert resp.status_code == 200
+        assert not EventComment.objects.filter(event=rsvp_event, author=member).exists()
+        notifs = Notification.objects.filter(
+            recipient=test_user, notification_type=NotificationType.RSVP_DECLINED_NOTE
         )
-        response = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers)
-        assert response.status_code == 200
-        guests = response.json()["guests"]
-        assert len(guests) == 1
-        assert guests[0]["note"] == "vegan cupcakes incoming"
+        assert notifs.count() == 1
+        assert "out of town" in notifs.first().message
 
-    def test_my_rsvp_note_empty_for_other_viewer(
-        self, api_client, auth_headers, rsvp_event, other_headers
+    def test_no_note_creates_nothing(self, api_client, member_headers, member, rsvp_event):
+        resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING)
+        assert resp.status_code == 200
+        assert not EventComment.objects.filter(event=rsvp_event, author=member).exists()
+        assert not Notification.objects.filter(
+            notification_type=NotificationType.RSVP_DECLINED_NOTE
+        ).exists()
+
+    def test_empty_note_creates_nothing(self, api_client, member_headers, member, rsvp_event):
+        resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "   ")
+        assert resp.status_code == 200
+        assert not EventComment.objects.filter(event=rsvp_event, author=member).exists()
+
+    def test_status_only_edit_creates_no_new_comment(
+        self, api_client, member_headers, member, rsvp_event
     ):
-        # my_rsvp_note reflects only the requesting user's own note.
-        api_client.post(
-            f"/api/community/events/{rsvp_event.id}/rsvp/",
-            {"status": RSVPStatus.ATTENDING, "note": "my private reminder"},
-            content_type="application/json",
-            **auth_headers,
-        )
-        response = api_client.get(f"/api/community/events/{rsvp_event.id}/", **other_headers)
-        assert response.status_code == 200
-        assert response.json()["my_rsvp_note"] == ""
+        _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "first note")
+        assert EventComment.objects.filter(event=rsvp_event, author=member).count() == 1
+        # Re-RSVP with no note key (an edit) — must not post another comment.
+        _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE)
+        assert EventComment.objects.filter(event=rsvp_event, author=member).count() == 1
