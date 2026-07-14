@@ -21,13 +21,12 @@ from users._helpers import (
     _is_admin,
     _is_last_admin,
     _resolve_name_fields,
+    _strip_non_member_roles,
     _validate_admin_role_change,
     _validate_member_role_required,
     _validate_phone,
-    visible_display_name,
     visible_name,
 )
-from users._name_parsing import parse_display_name
 from users.models import User
 from users.permissions import PermissionKey
 from users.roles import Role
@@ -62,15 +61,11 @@ def create_user(request, payload: UserCreateIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
-    if payload.first_name:
-        validate_display_name(payload.first_name, field="first_name")
     if payload.last_name:
         validate_display_name(payload.last_name, field="last_name")
-    first_name = payload.first_name
-    last_name = payload.last_name
-    if not first_name and payload.display_name:
-        validate_display_name(payload.display_name)
-        first_name, last_name = parse_display_name(payload.display_name)
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    validate_display_name(first_name, field="first_name")
 
     user, magic_token = _create_user_with_role(
         payload.phone_number,
@@ -88,7 +83,7 @@ def create_user(request, payload: UserCreateIn):
         target_type="user",
         target_id=str(user.id),
         details={
-            "display_name": user.display_name,
+            "full_name": user.full_name,
             "role_id": str(payload.role_id) if payload.role_id else None,
         },
     )
@@ -97,7 +92,6 @@ def create_user(request, payload: UserCreateIn):
         UserCreateOut(
             id=str(user.id),
             phone_number=user.phone_number,
-            display_name=user.display_name,
             first_name=user.first_name,
             last_name=user.last_name,
             full_name=user.full_name,
@@ -190,11 +184,10 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
 def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
     """Whether a search hit is legitimate for a non-admin viewer.
 
-    display_name is one concatenated string, so the DB-level icontains match
-    can't tell "matched on last name" from "matched on first name" — a
-    hide_last_name user would otherwise leak via search even though their
-    last name is suppressed in the response. Re-check the match here against
-    only the fields a non-admin can actually see (first name, phone).
+    The DB query matches on last_name too, so a hide_last_name user would
+    otherwise leak via search even though their last name is suppressed in the
+    response. Re-check the match here against only the fields a non-admin can
+    actually see (first name, phone).
     """
     if not u.hide_last_name:
         return True
@@ -212,12 +205,13 @@ def search_users(request, q: str = ""):
         phone_q = dj_models.Q(phone_number__icontains=q)
         if digits and digits != q:
             phone_q = phone_q | dj_models.Q(phone_number__icontains=digits)
-        qs = qs.filter(dj_models.Q(display_name__icontains=q) | phone_q)
-    qs = qs.order_by("display_name")
+        name_q = dj_models.Q(first_name__icontains=q) | dj_models.Q(last_name__icontains=q)
+        qs = qs.filter(name_q | phone_q)
+    qs = qs.order_by("first_name", "last_name")
     needs_non_admin_filter = bool(q) and not _is_admin(request.auth)
-    # Non-admins post-filter in Python (the DB icontains can't tell a first-name
-    # from a last-name match), so fetch some headroom before capping to 10.
-    # Admins take the top 10 straight from the DB.
+    # Non-admins post-filter in Python (the DB can match a hidden last name),
+    # so fetch some headroom before capping to 10. Admins take the top 10
+    # straight from the DB.
     users = list(qs[:200]) if needs_non_admin_filter else list(qs[:10])
     if needs_non_admin_filter:
         users = [u for u in users if _matches_for_non_admin(u, q, digits)][:10]
@@ -227,7 +221,6 @@ def search_users(request, q: str = ""):
         results.append(
             UserSearchOut(
                 id=str(u.id),
-                display_name=visible_display_name(u, request.auth),
                 first_name=u.first_name,
                 last_name=last_name,
                 full_name=full_name,
@@ -245,7 +238,7 @@ def search_users(request, q: str = ""):
     response={200: list[UserOut], 403: ErrorOut},
     auth=gated_jwt,
 )
-def list_users(request):
+def list_users(request, include_non_members: bool = False):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
         audit_log(
             logging.WARNING,
@@ -257,9 +250,10 @@ def list_users(request):
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
     attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
     reportable = reportable_events_q(prefix="event_rsvps__event")
+    # Default stays members-only; the opt-in adds non-members (public-RSVP users).
+    base = User.objects.all() if include_non_members else User.objects.members()
     users = (
-        User.objects.members()
-        .filter(archived_at__isnull=True)
+        base.filter(archived_at__isnull=True)
         .prefetch_related("roles")
         .annotate(
             last_attended=dj_models.Max(
@@ -297,26 +291,41 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     user.save()
 
-    if payload.is_paused is not None and payload.is_paused != old_is_paused:
-        action = "user_paused" if payload.is_paused else "user_unpaused"
-        audit_log(logging.WARNING, action, request, target_type="user", target_id=user_id)
-    else:
-        changed = [
-            f
-            for f in ("phone_number", "display_name", "email")
-            if getattr(payload, f, None) is not None
-        ]
-        if changed:
-            audit_log(
-                logging.INFO,
-                "user_updated",
-                request,
-                target_type="user",
-                target_id=user_id,
-                details={"fields_changed": changed},
-            )
-
+    _audit_user_update(request, user, user_id, payload, old_is_paused)
     return Status(200, UserOut.from_user(user))
+
+
+def _audit_user_update(
+    request, user: User, user_id: str, payload: UserPatchIn, old_is_paused: bool
+) -> None:
+    """Emit the audit entry for an update_user PATCH.
+
+    A pause transition takes priority — pausing also strips non-member roles and
+    records the removed ids. Otherwise a plain field change logs user_updated.
+    """
+    is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
+    if is_pause_transition:
+        action = "user_paused" if payload.is_paused else "user_unpaused"
+        details = {"removed_role_ids": _strip_non_member_roles(user)} if payload.is_paused else None
+        audit_log(
+            logging.WARNING, action, request, target_type="user", target_id=user_id, details=details
+        )
+        return
+
+    changed = [
+        f
+        for f in ("phone_number", "first_name", "last_name", "email")
+        if getattr(payload, f, None) is not None
+    ]
+    if changed:
+        audit_log(
+            logging.INFO,
+            "user_updated",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={"fields_changed": changed},
+        )
 
 
 def _patch_phone(user: User, user_id: str, phone_number: str) -> None:
@@ -373,7 +382,7 @@ def delete_user(request, user_id: str):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.archived_at is not None:
         raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
-    display_name = user.display_name
+    full_name = user.full_name
     user.archived_at = timezone.now()
     user.save(update_fields=["archived_at"])
     audit_log(
@@ -382,7 +391,7 @@ def delete_user(request, user_id: str):
         request,
         target_type="user",
         target_id=user_id,
-        details={"display_name": display_name},
+        details={"full_name": full_name},
     )
     return Status(204, None)
 

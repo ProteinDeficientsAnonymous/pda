@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import { EmailGate, OnboardingGate, RequireAuth, RequirePermission } from './guards';
 import { useAuthStore } from './store';
@@ -35,32 +36,15 @@ vi.mock('@/api/auth', () => ({
 // ---------------------------------------------------------------------------
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'user-1',
     phoneNumber: '+12125551234',
     firstName: 'Alice',
     lastName: '',
     fullName: 'Alice',
-    nickname: '',
     email: 'alice@example.com',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    hideLastName: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 beforeEach(() => {

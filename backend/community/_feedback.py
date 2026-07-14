@@ -160,7 +160,7 @@ _FEEDBACK_TYPE_LABELS: dict[FeedbackType, str] = {
 
 
 def _issue_labels(feedback_types: list[FeedbackType]) -> list[str]:
-    labels = ["feedback"]
+    labels = ["auto", "feedback"]
     for t in feedback_types:
         label = _FEEDBACK_TYPE_LABELS.get(t)
         if label:

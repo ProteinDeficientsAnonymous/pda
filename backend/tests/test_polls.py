@@ -30,7 +30,8 @@ def other_user(db):
     return User.objects.create_user(
         phone_number="+12025550202",
         password="otherpass",
-        display_name="Other Member",
+        first_name="Other",
+        last_name="Member",
     )
 
 

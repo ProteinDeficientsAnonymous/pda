@@ -18,7 +18,8 @@ def manage_events_user(db):
     user = User.objects.create_user(
         phone_number="+14155551235",
         password="eventmanagerpass123",
-        display_name="Event Manager 2",
+        first_name="Event",
+        last_name="Manager 2",
     )
     role = Role.objects.create(
         name="event_manager_cancel", permissions=[PermissionKey.MANAGE_EVENTS]
@@ -144,16 +145,16 @@ class TestCancelEvent:
         notification. The canceller themselves must be excluded even if they'd RSVP'd.
         """
         attendee_two = User.objects.create_user(
-            phone_number="+12025550102", password="pass123", display_name="Attendee Two"
+            phone_number="+12025550102", password="pass123", first_name="Attendee", last_name="Two"
         )
         invitee_only = User.objects.create_user(
-            phone_number="+12025550103", password="pass123", display_name="Invitee Only"
+            phone_number="+12025550103", password="pass123", first_name="Invitee", last_name="Only"
         )
         maybe_rsvper = User.objects.create_user(
-            phone_number="+12025550104", password="pass123", display_name="Maybe Rsvper"
+            phone_number="+12025550104", password="pass123", first_name="Maybe", last_name="Rsvper"
         )
         no_rsvper = User.objects.create_user(
-            phone_number="+12025550105", password="pass123", display_name="No Rsvper"
+            phone_number="+12025550105", password="pass123", first_name="No", last_name="Rsvper"
         )
         EventRSVP.objects.create(
             event=upcoming_event_with_rsvp, user=attendee_two, status=RSVPStatus.ATTENDING

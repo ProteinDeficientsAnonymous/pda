@@ -9,7 +9,6 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from users._name_parsing import sync_display_name
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
 
@@ -76,7 +75,6 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
-    display_name = models.CharField(max_length=64, blank=True)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
     # Defaults False; non-members are excluded via objects.members().
@@ -133,10 +131,6 @@ class User(AbstractUser):
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
 
-    def save(self, *args, **kwargs):
-        sync_display_name(self, kwargs)
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return self.full_name or self.phone_number
 
@@ -155,6 +149,14 @@ class User(AbstractUser):
         return False
 
 
+class MagicLoginTokenSource(models.TextChoices):
+    # SELF_SERVICE tokens are the only ones the self-service login-link cooldown
+    # counts; every other mint path (admin generation, onboarding, resend) is ADMIN
+    # so it never suppresses a user's own login-link email.
+    SELF_SERVICE = "self_service", "Self-service"
+    ADMIN = "admin", "Admin"
+
+
 class MagicLoginToken(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="magic_tokens")
@@ -167,6 +169,11 @@ class MagicLoginToken(models.Model):
     # token carries which it is; consuming a token with this set flips the user's
     # persistent User.needs_password_reset. Admin onboarding links leave this False.
     requires_password_reset = models.BooleanField(default=False)
+    source = models.CharField(
+        max_length=20,
+        choices=MagicLoginTokenSource.choices,
+        default=MagicLoginTokenSource.ADMIN,
+    )
 
     @property
     def is_expired(self) -> bool:
@@ -174,12 +181,17 @@ class MagicLoginToken(models.Model):
 
     @classmethod
     def create_for_user(
-        cls, user: "User", *, requires_password_reset: bool = False
+        cls,
+        user: "User",
+        *,
+        requires_password_reset: bool = False,
+        source: str = MagicLoginTokenSource.ADMIN,
     ) -> "MagicLoginToken":
         return cls.objects.create(
             user=user,
             expires_at=timezone.now() + timedelta(days=7),
             requires_password_reset=requires_password_reset,
+            source=source,
         )
 
 

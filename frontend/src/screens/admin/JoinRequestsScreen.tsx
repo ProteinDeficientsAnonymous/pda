@@ -5,6 +5,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   JoinRequestStatus,
   type JoinRequestSummary,
+  type RsvpBreakdown,
   useDecideJoinRequest,
   useJoinRequests,
   useResendMagicLink,
@@ -51,8 +52,8 @@ export default function JoinRequestsScreen() {
   } | null>(null);
 
   const visible = useMemo(() => {
-    if (filter === Filter.ALL) return data;
-    return data.filter((r) => r.status === filter);
+    const rows = filter === Filter.ALL ? data : data.filter((r) => r.status === filter);
+    return [...rows].sort((a, b) => sortKey(b) - sortKey(a));
   }, [data, filter]);
 
   if (isPending) return <ContentLoading />;
@@ -144,12 +145,7 @@ export default function JoinRequestsScreen() {
         />
       </div>
 
-      {filter === Filter.APPROVED ? (
-        <p className="text-muted mb-3 text-xs">
-          approved members show here until 3 days after their first login — this tab clears them out
-          automatically once they're settled in
-        </p>
-      ) : null}
+      <SortHint filter={filter} hasRows={visible.length > 0} />
 
       {error ? (
         <p role="alert" className="text-destructive mb-3 text-sm">
@@ -223,6 +219,7 @@ function JoinRequestCard({
             {formatPhone(request.phoneNumber)} · submitted{' '}
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
           </p>
+          <RsvpBreakdownNote breakdown={request.rsvpBreakdown} />
         </div>
         <div className="flex flex-wrap items-center gap-1">
           {request.previouslyArchived ? (
@@ -291,6 +288,39 @@ function JoinRequestCard({
   );
 }
 
+function attendedLine(count: number, eventType: string): string {
+  const noun = count === 1 ? 'event' : 'events';
+  return `attended ${String(count)} ${eventType} ${noun}`;
+}
+
+function upcomingLine(count: number, eventType: string): string {
+  const noun = count === 1 ? 'event' : 'events';
+  return `rsvp'd for ${String(count)} upcoming ${eventType} ${noun}`;
+}
+
+function RsvpBreakdownNote({ breakdown }: { breakdown: RsvpBreakdown }) {
+  const lines = [
+    {
+      count: breakdown.attendedOfficial,
+      text: attendedLine(breakdown.attendedOfficial, 'official'),
+    },
+    { count: breakdown.attendedClub, text: attendedLine(breakdown.attendedClub, 'club') },
+    {
+      count: breakdown.upcomingOfficial,
+      text: upcomingLine(breakdown.upcomingOfficial, 'official'),
+    },
+    { count: breakdown.upcomingClub, text: upcomingLine(breakdown.upcomingClub, 'club') },
+  ].filter((line) => line.count > 0);
+  if (lines.length === 0) return null;
+  return (
+    <div className="text-muted mt-1 text-xs">
+      {lines.map((line) => (
+        <p key={line.text}>{line.text}</p>
+      ))}
+    </div>
+  );
+}
+
 function DecisionAttribution({ request }: { request: JoinRequestSummary }) {
   if (request.status === JoinRequestStatus.APPROVED && request.approvedAt) {
     const who = request.approvedByName ?? 'an admin';
@@ -334,6 +364,24 @@ const STATUS_TONES: Record<JoinRequestStatus, string> = {
   [JoinRequestStatus.APPROVED]: 'bg-success-subtle text-success',
   [JoinRequestStatus.REJECTED]: 'bg-surface-raised text-foreground-secondary',
 };
+
+function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
+  if (filter === Filter.APPROVED) {
+    return (
+      <p className="text-muted mb-3 text-xs">
+        sorted newest first — approved members show here until 3 days after their first login, then
+        this tab clears them out automatically
+      </p>
+    );
+  }
+  if (!hasRows) return null;
+  return <p className="text-muted mb-3 text-xs">sorted newest first</p>;
+}
+
+function sortKey(request: JoinRequestSummary): number {
+  const stamp = request.approvedAt ?? request.rejectedAt ?? request.submittedAt;
+  return new Date(stamp).getTime();
+}
 
 function extractError(err: unknown): string {
   return extractApiErrorOr(err, "couldn't complete that action — try again");

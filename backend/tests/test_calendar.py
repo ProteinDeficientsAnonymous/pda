@@ -139,7 +139,8 @@ class TestCalendarFeedScope:
         return User.objects.create_user(
             phone_number=f"+1202555{suffix}",
             password="testpass123",
-            display_name=f"Other {suffix}",
+            first_name=f"Other {suffix}",
+            last_name="",
         )
 
     def test_all_mode_excludes_drafts(self, api_client, auth_headers, test_user):

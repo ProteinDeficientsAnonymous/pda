@@ -1,4 +1,4 @@
-"""Authentication endpoints (login, magic login, token refresh, me)."""
+"""Authentication endpoints (login, token refresh, me)."""
 
 import logging
 
@@ -8,21 +8,19 @@ from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
-from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import stamp_consents
 from users._helpers import (
     _check_and_set_email,
+    _require_first_name,
     _resolve_name_fields,
-    visible_display_name,
     visible_name,
 )
 from users._password_validation import validate_password
@@ -31,7 +29,7 @@ from users._refresh_cookie import (
     read_refresh_cookie,
     set_refresh_cookie,
 )
-from users.models import MagicLoginToken, User
+from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import (
     AcceptConsentsIn,
@@ -93,129 +91,6 @@ def login(request, payload: LoginIn, response: HttpResponse):
     return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
 
-def _current_jwt_user(request) -> User | None:
-    """Best-effort JWT read for endpoints declared with auth=None.
-
-    Returns the authenticated user if the request carries a valid access token,
-    else None. Any auth error (missing/invalid/expired token) is treated as
-    anonymous — the calling endpoint decides whether that matters.
-    """
-    try:
-        user = JWTAuth()(request)
-    except Exception:
-        return None
-    if isinstance(user, User):
-        return user
-    return None
-
-
-def _validate_magic_user(request, magic: MagicLoginToken) -> None:
-    """Run the non-consuming guards for a magic token. Raises on failure."""
-    # Reject cross-user magic links: if the caller is already authenticated as a
-    # different user, a silent session swap would let them complete onboarding /
-    # password-set on behalf of the link's target. Force explicit logout first.
-    current_user = _current_jwt_user(request)
-    if current_user is not None and current_user.pk != magic.user.pk:
-        audit_log(
-            logging.WARNING,
-            "magic_login_cross_user_blocked",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-            details={"current_user_id": str(current_user.pk)},
-        )
-        raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
-    if magic.user.archived_at is not None:
-        audit_log(
-            logging.WARNING,
-            "magic_login_archived",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-        )
-        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
-    if magic.user.is_paused:
-        audit_log(
-            logging.WARNING,
-            "magic_login_paused",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-        )
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
-
-
-def _consume_magic_token(request, token: str) -> MagicLoginToken:
-    """Atomically fetch, validate, and mark a magic token used.
-
-    Row-locked (select_for_update) so two concurrent requests can't both pass
-    the used-check and replay the link (TOCTOU). Raises on any guard failure.
-    """
-    with transaction.atomic():
-        try:
-            magic = (
-                MagicLoginToken.objects.select_for_update().select_related("user").get(token=token)
-            )
-        except MagicLoginToken.DoesNotExist:
-            audit_log(
-                logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
-            )
-            raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
-        _validate_magic_user(request, magic)
-        if magic.used or magic.is_expired:
-            audit_log(
-                logging.WARNING,
-                "magic_login_failed",
-                request,
-                target_type="user",
-                target_id=str(magic.user.pk),
-                details={"reason": "used_or_expired"},
-            )
-            raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
-        magic.used = True
-        magic.save(update_fields=["used"])
-        if magic.requires_password_reset:
-            # Self-service login link: the user got in without a password, so force a
-            # reset before normal use. set_unusable_password() ensures the old password
-            # can't be used until they pick a new one (cleared by complete_onboarding).
-            # Also clear login_link_requested so future link requests aren't skipped.
-            magic.user.needs_password_reset = True
-            magic.user.login_link_requested = False
-            magic.user.set_unusable_password()
-            magic.user.save(
-                update_fields=["needs_password_reset", "login_link_requested", "password"]
-            )
-            audit_log(
-                logging.INFO,
-                "magic_login_requires_password_reset",
-                request,
-                target_type="user",
-                target_id=str(magic.user.pk),
-            )
-    return magic
-
-
-@router.get(
-    "/magic-login/{token}/",
-    response={200: TokenOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
-    auth=None,
-)
-@rate_limit(key_func=client_ip, rate="5/m")
-def magic_login(request, token: str, response: HttpResponse):
-    magic = _consume_magic_token(request, token)
-    refresh = RefreshToken.for_user(magic.user)
-    request.auth = magic.user
-    set_refresh_cookie(response, str(refresh))
-    audit_log(
-        logging.INFO,
-        "magic_login_success",
-        request,
-        target_type="user",
-        target_id=str(magic.user.pk),
-    )
-    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
-
-
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
 def refresh_token(request, response: HttpResponse):
     token = read_refresh_cookie(request)
@@ -269,7 +144,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """
     changed: list[str] = []
     if _resolve_name_fields(user, payload):
-        changed.extend(["first_name", "last_name", "display_name"])
+        changed.extend(["first_name", "last_name"])
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
@@ -357,7 +232,7 @@ def list_member_directory(request):
     users = (
         User.objects.active_members()
         .filter(needs_onboarding=False)
-        .order_by("display_name", "phone_number")
+        .order_by("first_name", "last_name", "phone_number")
     )
     results = []
     for u in users:
@@ -365,7 +240,6 @@ def list_member_directory(request):
         results.append(
             MemberDirectoryOut(
                 id=str(u.id),
-                display_name=visible_display_name(u, request.auth),
                 first_name=u.first_name,
                 last_name=last_name,
                 full_name=full_name,
@@ -394,7 +268,6 @@ def get_member_profile(request, user_id: str):
         200,
         MemberProfileOut(
             id=str(user.id),
-            display_name=visible_display_name(user, request.auth),
             first_name=user.first_name,
             last_name=last_name,
             full_name=full_name,
@@ -427,6 +300,9 @@ def complete_onboarding(request, payload: OnboardingIn):
     if user.has_usable_password() and user.check_password(payload.new_password):
         raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
     _resolve_name_fields(user, payload)
+    # Bulk/phone-only accounts reach onboarding with no name; a name-less
+    # payload must not let them complete with an empty first_name (Issue 733).
+    _require_first_name(user)
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:

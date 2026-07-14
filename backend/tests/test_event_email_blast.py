@@ -19,7 +19,8 @@ def host_user(db):
     return User.objects.create_user(
         phone_number="+14155550199",
         password="hostpass123",
-        display_name="Event Host",
+        first_name="Event",
+        last_name="Host",
         email="host@example.com",
     )
 
@@ -39,7 +40,8 @@ def other_user(db):
     return User.objects.create_user(
         phone_number="+14155550200",
         password="otherpass123",
-        display_name="Random Member",
+        first_name="Random",
+        last_name="Member",
         email="other@example.com",
     )
 
@@ -73,16 +75,30 @@ def event_with_attendees(db, host_user):
         rsvp_enabled=True,
     )
     attending_one = User.objects.create_user(
-        phone_number="+14155550301", password="x", display_name="Attend One", email="a1@example.com"
+        phone_number="+14155550301",
+        password="x",
+        first_name="Attend",
+        last_name="One",
+        email="a1@example.com",
     )
     attending_two = User.objects.create_user(
-        phone_number="+14155550302", password="x", display_name="Attend Two", email=""
+        phone_number="+14155550302",
+        password="x",
+        first_name="Attend",
+        last_name="Two",
+        email="",
     )
     maybe_member = User.objects.create_user(
-        phone_number="+14155550303", password="x", display_name="Maybe", email="maybe@example.com"
+        phone_number="+14155550303",
+        password="x",
+        first_name="Maybe",
+        email="maybe@example.com",
     )
     cant_go_member = User.objects.create_user(
-        phone_number="+14155550304", password="x", display_name="CantGo", email="cant@example.com"
+        phone_number="+14155550304",
+        password="x",
+        first_name="CantGo",
+        email="cant@example.com",
     )
     EventRSVP.objects.create(event=event, user=attending_one, status=RSVPStatus.ATTENDING)
     EventRSVP.objects.create(event=event, user=attending_two, status=RSVPStatus.ATTENDING)
@@ -148,7 +164,7 @@ class TestEmailBlastAuth:
         manager = User.objects.create_user(
             phone_number="+14155550400",
             password="x",
-            display_name="Manager",
+            first_name="Manager",
             email="mgr@example.com",
         )
         role = Role.objects.create(name="blast_mgr", permissions=[PermissionKey.MANAGE_EVENTS])

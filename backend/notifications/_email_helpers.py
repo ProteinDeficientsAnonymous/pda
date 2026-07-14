@@ -45,6 +45,23 @@ def send_rsvp_confirmation_email(
     return sender.send(to=details.to, subject=subject, html=html, text=text)
 
 
+def send_rsvp_updated_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+) -> SendResult:
+    """Render and send the non-member "your rsvp was updated" email."""
+    context = details.template_context()
+    html = render_to_string("emails/rsvp_updated.html", context)
+    text = render_to_string("emails/rsvp_updated.txt", context)
+    return sender.send(
+        to=details.to,
+        subject="your rsvp was updated",
+        html=html,
+        text=text,
+    )
+
+
 def send_rsvp_waitlist_promoted_email(
     *,
     sender: EmailSender,
@@ -109,6 +126,24 @@ def send_magic_login_email(
     return sender.send(
         to=to,
         subject="your pda login link",
+        html=html,
+        text=text,
+    )
+
+
+def send_join_approval_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+) -> SendResult:
+    """Render and send the "you're a full member now" join-approval email."""
+    context = {"display_name": display_name or ""}
+    html = render_to_string("emails/join_approval.html", context)
+    text = render_to_string("emails/join_approval.txt", context)
+    return sender.send(
+        to=to,
+        subject="you're fully approved — welcome to pda",
         html=html,
         text=text,
     )

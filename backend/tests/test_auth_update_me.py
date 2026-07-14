@@ -102,7 +102,7 @@ class TestPatchMeEmail:
 
     def test_duplicate_email_rejected(self, api_client, auth_headers, db):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", last_name="", email="taken@example.com"
         )
         resp = api_client.patch(
             "/api/auth/me/",
@@ -116,7 +116,7 @@ class TestPatchMeEmail:
 
     def test_duplicate_email_case_insensitive(self, api_client, auth_headers, db):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", last_name="", email="taken@example.com"
         )
         resp = api_client.patch(
             "/api/auth/me/",

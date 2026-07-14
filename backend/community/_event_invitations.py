@@ -36,11 +36,8 @@ class InviteIn(BaseModel):
 
 
 def _can_invite_to_event(user, event: Event) -> bool:
-    """Mirror the frontend canInvite gate.
-
-    Hosts (creator / co-host) can always invite; managers can always invite;
-    other authed members can invite when invite_permission == ALL_MEMBERS.
-    """
+    """Permission gate only — the RSVP nudge for all_members is frontend UX,
+    intentionally not enforced here (Issue 688)."""
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
     if event.created_by_id == user.pk:

@@ -45,7 +45,8 @@ def rsvp_user(db):
     return User.objects.create_user(
         phone_number="+12025550303",
         password="rsvppass123",
-        display_name="RSVP Member",
+        first_name="RSVP",
+        last_name="Member",
     )
 
 
@@ -77,7 +78,7 @@ class TestPostComment:
         bystander = User.objects.create_user(
             phone_number="+12025550909",
             password="bystanderpass",
-            display_name="Bystander",
+            first_name="Bystander",
         )
         refresh = RefreshToken.for_user(bystander)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
@@ -185,7 +186,7 @@ def admin_user(db):
     user = User.objects.create_user(
         phone_number="+12025550404",
         password="adminpass123",
-        display_name="Admin",
+        first_name="Admin",
     )
     admin_role, _ = Role.objects.get_or_create(name="admin", defaults={"is_default": True})
     if not admin_role.is_default:
@@ -218,7 +219,7 @@ class TestDeleteComment:
         bystander = User.objects.create_user(
             phone_number="+12025550606",
             password="bystanderpass",
-            display_name="Bystander",
+            first_name="Bystander",
         )
         EventRSVP.objects.create(event=event_with_rsvp, user=bystander, status=RSVPStatus.ATTENDING)
         bystander_headers = {
@@ -228,7 +229,7 @@ class TestDeleteComment:
         author = User.objects.create_user(
             phone_number="+12025550505",
             password="authorpass",
-            display_name="Author",
+            first_name="Author",
         )
         EventRSVP.objects.create(event=event_with_rsvp, user=author, status=RSVPStatus.ATTENDING)
         comment = EventComment.objects.create(event=event_with_rsvp, author=author, body="theirs")
@@ -342,7 +343,7 @@ class TestReactionToggle:
         bystander = User.objects.create_user(
             phone_number="+12025551010",
             password="bystanderpass",
-            display_name="Bystander",
+            first_name="Bystander",
         )
         refresh = RefreshToken.for_user(bystander)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
@@ -387,7 +388,7 @@ class TestCommentVisibility:
         stranger = User.objects.create_user(
             phone_number="+12025550606",
             password="strangerpass",
-            display_name="Stranger",
+            first_name="Stranger",
         )
         refresh = RefreshToken.for_user(stranger)
         stranger_headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore

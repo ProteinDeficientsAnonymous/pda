@@ -13,7 +13,8 @@ def club_event_user(db):
     user = User.objects.create_user(
         phone_number="+14155558888",
         password="clubpass123",
-        display_name="Club Tagger",
+        first_name="Club",
+        last_name="Tagger",
     )
     role = Role.objects.create(name="club_tagger", permissions=[PermissionKey.TAG_CLUB_EVENT])
     user.roles.add(role)

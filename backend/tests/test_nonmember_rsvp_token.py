@@ -15,7 +15,8 @@ from users.models import (
 def non_member(db):
     user = User.objects.create_user(
         phone_number="+12025559001",
-        display_name="Non Member",
+        first_name="Non",
+        last_name="Member",
         email="nonmember@example.com",
         is_member=False,
     )
@@ -48,7 +49,7 @@ class TestIssue:
     def test_issue_rejects_member(self, db):
         member = User.objects.create_user(
             phone_number="+12025559002",
-            display_name="Member",
+            first_name="Member",
             is_member=True,
         )
         with pytest.raises(ValidationError):
@@ -119,7 +120,7 @@ class TestIssueOrExtend:
     def test_rejects_member(self, db):
         member = User.objects.create_user(
             phone_number="+12025559003",
-            display_name="Member",
+            first_name="Member",
             is_member=True,
         )
         with pytest.raises(ValidationError):

@@ -22,7 +22,8 @@ def admin_user(db):
     user = User.objects.create_superuser(
         phone_number="+12025550001",
         password="adminpass123",
-        display_name="Admin User",
+        first_name="Admin",
+        last_name="User",
     )
     return user
 
@@ -39,7 +40,8 @@ def manage_users_user(db):
     user = User.objects.create_user(
         phone_number="+12025550002",
         password="managerpass123",
-        display_name="Manager",
+        first_name="Manager",
+        last_name="",
     )
     role = Role.objects.create(
         name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES]
@@ -93,7 +95,7 @@ class TestAuth:
         assert response.status_code == 200
         data = response.json()
         assert data["phone_number"] == "+12025550101"
-        assert data["display_name"] == "Test Member"
+        assert data["full_name"] == "Test Member"
         assert data["first_name"] == "Test"
         assert data["last_name"] == "Member"
         assert "roles" in data
@@ -170,7 +172,7 @@ class TestUserManagementAPI:
     def test_create_user_requires_permission(self, api_client, auth_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550999"},
+            {"phone_number": "+12025550999", "first_name": "Denied"},
             content_type="application/json",
             **auth_headers,
         )
@@ -179,7 +181,7 @@ class TestUserManagementAPI:
     def test_create_user_success(self, api_client, admin_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025551234", "display_name": "New Member"},
+            {"phone_number": "+12025551234", "first_name": "New", "last_name": "Member"},
             content_type="application/json",
             **admin_headers,
         )
@@ -192,7 +194,7 @@ class TestUserManagementAPI:
     def test_create_user_duplicate_phone(self, api_client, admin_headers, test_user):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550101"},
+            {"phone_number": "+12025550101", "first_name": "Dupe"},
             content_type="application/json",
             **admin_headers,
         )
@@ -202,7 +204,7 @@ class TestUserManagementAPI:
     def test_create_user_assigns_member_role_by_default(self, api_client, admin_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12125551234"},
+            {"phone_number": "+12125551234", "first_name": "Defaultrole"},
             content_type="application/json",
             **admin_headers,
         )
@@ -222,12 +224,12 @@ class TestUserManagementAPI:
     def test_update_user(self, api_client, admin_headers, test_user):
         response = api_client.patch(
             f"/api/auth/users/{test_user.id}/",
-            {"display_name": "Updated Name"},
+            {"first_name": "Updated", "last_name": "Name"},
             content_type="application/json",
             **admin_headers,
         )
         assert response.status_code == 200
-        assert response.json()["display_name"] == "Updated Name"
+        assert response.json()["full_name"] == "Updated Name"
 
     def test_delete_user_cannot_delete_self(self, api_client, admin_headers, admin_user):
         response = api_client.delete(

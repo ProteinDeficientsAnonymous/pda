@@ -15,7 +15,8 @@ def form_admin_user(db):
     user = User.objects.create_user(
         phone_number="+12025550555",
         password="adminpass123",
-        display_name="Form Admin",
+        first_name="Form",
+        last_name="Admin",
     )
     role = Role.objects.create(
         name="form_admin",

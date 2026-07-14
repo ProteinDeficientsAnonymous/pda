@@ -71,12 +71,10 @@ class TestMemberDirectory:
         entry = next(u for u in response.json() if u["id"] == str(other_user.pk))
         assert entry["phone_number"] == other_user.phone_number
 
-    def test_display_name_does_not_leak_phone_when_show_phone_false(self, api_client, auth_headers):
+    def test_name_does_not_leak_phone_when_show_phone_false(self, api_client, auth_headers):
         # A genuinely nameless member (e.g. pre-onboarding) must not leak the
-        # private phone via the display_name fallback. Built with blank names
-        # from creation — save()'s display_name sync guard means a name once
-        # set is never blanked back out, so this can't be simulated by
-        # blanking an already-named user.
+        # private phone via the name fields — full_name stays empty rather than
+        # falling back to the phone number.
         nameless_user = User.objects.create_user(
             phone_number="+12025550998",
             password="namelesspass123",
@@ -88,5 +86,5 @@ class TestMemberDirectory:
         response = api_client.get("/api/auth/users/directory/", **auth_headers)
         assert response.status_code == 200
         entry = next(u for u in response.json() if u["id"] == str(nameless_user.pk))
-        assert nameless_user.phone_number not in entry["display_name"]
-        assert entry["display_name"] == "member"
+        assert nameless_user.phone_number not in entry["full_name"]
+        assert entry["full_name"] == ""

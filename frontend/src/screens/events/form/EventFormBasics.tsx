@@ -1,10 +1,10 @@
-// Always-visible zone: title, type toggle, tbd toggle, start + end, poll
+// Always-visible zone: title, type toggle, tbd toggle, start + end / poll
 // button, location. Description / visibility live in the details section.
 //
-// Layout order (when no poll/buffered dates): tbd toggle → start/end pickers
-// → centered "poll for dates" button. The tbd toggle stays above the pickers
-// so checking it cleanly hides the picker row without making any control
-// below shift in place.
+// Layout order (when no poll/buffered dates): tbd toggle → either the
+// start/end pickers (fixed time) or the "poll for dates" button (tbd). The
+// button shares the pickers' slot and is gated on tbd — a poll only makes
+// sense when the date isn't fixed.
 //
 // Poll integration: the "poll for dates" button has two modes:
 //   - create-flow (no existing event): opens PollCreateDialog in buffer
@@ -57,10 +57,12 @@ export function EventFormBasics({
   const isCreateFlow = !existingEventId;
   const bufferedDates =
     bufferedPollOptions && bufferedPollOptions.length > 0 ? bufferedPollOptions : null;
-  // Show the "propose dates" button when:
+  // Show the "poll for dates" button only when the time is tbd — a poll
+  // only makes sense when the date isn't fixed. Beyond that, show it when:
   //   - edit flow, no poll yet (live mode), OR
   //   - create flow, nothing buffered yet (buffer mode).
-  const canShowProposeButton = !timeLocked && (isCreateFlow ? !bufferedDates : !existingHasPoll);
+  const canShowProposeButton =
+    values.datetimeTbd && !timeLocked && (isCreateFlow ? !bufferedDates : !existingHasPoll);
 
   return (
     <div className="border-brand-100 bg-surface flex flex-col gap-4 rounded-[var(--radius-md)] border p-4 shadow-(--shadow-sm)">
@@ -136,7 +138,7 @@ export function EventFormBasics({
               onClick={() => {
                 setPollOpen(true);
               }}
-              className="self-center"
+              className="self-start"
             >
               poll for dates
             </Button>
