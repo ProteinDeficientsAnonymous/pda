@@ -45,7 +45,7 @@ export function ApprovalCredentialsDialog({
 
   if (!magicLinkToken) return null;
   const magicLinkUrl = buildMagicLinkUrl(magicLinkToken);
-  const senderName = currentUser?.fullName ?? '';
+  const senderName = currentUser?.firstName ?? '';
   // If the template fetch fails, fall back to the legacy hardcoded body so
   // vetters can still send a message.
   const welcomeMessage = templateQ.data
