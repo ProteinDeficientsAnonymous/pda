@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notifications', '0013_alter_notification_notification_type'),
-        ('notifications', '0013_sseticket'),
+        ("notifications", "0013_alter_notification_notification_type"),
+        ("notifications", "0013_sseticket"),
     ]
 
-    operations = [
-    ]
+    operations = []

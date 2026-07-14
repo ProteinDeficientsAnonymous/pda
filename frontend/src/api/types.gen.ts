@@ -3445,7 +3445,6 @@ export interface components {
             has_plus_one: boolean;
             /** Note */
             note?: string | null;
-            /** Status */
             status: components["schemas"]["RSVPStatus"];
         };
         /**

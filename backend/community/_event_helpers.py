@@ -7,7 +7,6 @@ from uuid import UUID
 
 from config.media_proxy import media_path
 from django.db import transaction
-from django.db.models import Case, IntegerField, Sum, Value, When
 from notifications.service import (
     broadcast_cohost_change,
     broadcast_event_update,
@@ -104,43 +103,10 @@ def _find_my_rsvp(rsvps, user) -> str | None:
     return None
 
 
-def _attending_headcount(event: Event) -> int:
-    """Count attending spots from prefetched RSVPs (each attendee + their +1)."""
-    return sum(
-        1 + (1 if r.has_plus_one else 0)
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING
-    )
-
-
-def _attending_headcount_db(event: Event, exclude_user=None) -> int:
-    """Count attending spots via DB query (use inside select_for_update transactions)."""
-    qs = EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
-    if exclude_user is not None:
-        qs = qs.exclude(user=exclude_user)
-    result = qs.aggregate(
-        total=Sum(
-            Case(
-                When(has_plus_one=True, then=Value(2)),
-                default=Value(1),
-                output_field=IntegerField(),
-            )
-        )
-    )
-    return result["total"] or 0
-
-
-def _waitlisted_count(event: Event) -> int:
-    """Count waitlisted RSVPs from prefetched data."""
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.WAITLISTED)
-
-
-def _maybe_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.MAYBE)
-
-
 def _cant_go_count(event: Event) -> int:
     return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.CANT_GO)
+
+
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Return currently-CANT_GO RSVPs with lead time (days before start).
 
