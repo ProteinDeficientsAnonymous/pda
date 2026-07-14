@@ -45,6 +45,12 @@ class JoinRequestAnswerOut(BaseModel):
     answer: str
 
 
+class JoinRequestRsvpOut(BaseModel):
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+
+
 class JoinRequestOut(BaseModel):
     id: str
     first_name: str = ""
@@ -69,6 +75,7 @@ class JoinRequestOut(BaseModel):
     attended_club_count: int = 0
     upcoming_official_count: int = 0
     upcoming_club_count: int = 0
+    rsvp_events: list[JoinRequestRsvpOut] = []
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -143,6 +150,29 @@ def _rsvp_breakdown(user: User | None) -> RsvpBreakdown:
     )
 
 
+def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
+    """Events (past and future) a tentative applicant has RSVP'd ATTENDING to, oldest first."""
+    if user is None:
+        return []
+    prefetched = getattr(user, "_prefetched_objects_cache", {})
+    rsvps = (
+        user.event_rsvps.all()
+        if "event_rsvps" in prefetched
+        else EventRSVP.objects.filter(user_id=user.id).select_related("event")
+    )
+    events = [
+        rsvp.event
+        for rsvp in rsvps
+        if rsvp.status == RSVPStatus.ATTENDING
+        and rsvp.event.status not in NON_REPORTABLE_EVENT_STATUSES
+    ]
+    events.sort(key=lambda e: e.start_datetime or timezone.now())
+    return [
+        JoinRequestRsvpOut(event_id=str(e.id), title=e.title, start_datetime=e.start_datetime)
+        for e in events
+    ]
+
+
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
@@ -173,6 +203,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         attended_club_count=breakdown.attended_club,
         upcoming_official_count=breakdown.upcoming_official,
         upcoming_club_count=breakdown.upcoming_club,
+        rsvp_events=_rsvp_events(user),
     )
 
 

@@ -3122,6 +3122,11 @@ export interface components {
             rejected_at?: string | null;
             /** Rejected By Name */
             rejected_by_name?: string | null;
+            /**
+             * Rsvp Events
+             * @default []
+             */
+            rsvp_events: components["schemas"]["JoinRequestRsvpOut"][];
             /** Status */
             status: string;
             /**
@@ -3141,6 +3146,15 @@ export interface components {
             upcoming_official_count: number;
             /** User Id */
             user_id?: string | null;
+        };
+        /** JoinRequestRsvpOut */
+        JoinRequestRsvpOut: {
+            /** Event Id */
+            event_id: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
         };
         /** JoinRequestStatusIn */
         JoinRequestStatusIn: {

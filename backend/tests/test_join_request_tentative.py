@@ -328,3 +328,47 @@ class TestJoinApprovalEmail:
         )
         recipients = [c.kwargs["to"] for c in fake_email_sender.send.call_args_list]
         assert "checkin@example.com" in recipients
+
+
+@pytest.mark.django_db
+class TestTentativeRsvpEvents:
+    def test_list_includes_rsvpd_events(
+        self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
+    ):
+        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        row = next(r for r in response.json() if r["user_id"] == str(user.id))
+        assert [e["title"] for e in row["rsvp_events"]] == ["Official Meetup"]
+
+    def test_list_includes_future_events(
+        self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
+    ):
+        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        row = next(r for r in response.json() if r["user_id"] == str(user.id))
+        assert row["rsvp_events"][0]["start_datetime"] is not None
+        assert open_official_event.start_datetime > timezone.now()
+
+    def test_list_excludes_non_attending_rsvps(
+        self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
+    ):
+        from community._join_request_approval import _provision_tentative_user
+
+        _provision_tentative_user(sample_join_request, vettor_user)
+        sample_join_request.status = JoinRequestStatus.TENTATIVE
+        sample_join_request.save(update_fields=["status"])
+        sample_join_request.refresh_from_db()
+        EventRSVP.objects.create(
+            event=open_official_event,
+            user=sample_join_request.user,
+            status=RSVPStatus.CANT_GO,
+        )
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        row = next(r for r in response.json() if r["user_id"] == str(sample_join_request.user.id))
+        assert row["rsvp_events"] == []
+
+    def test_list_empty_when_no_rsvps(self, api_client, vettor_headers, sample_join_request):
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        row = next(r for r in response.json() if r["id"] == str(sample_join_request.id))
+        assert row["rsvp_events"] == []

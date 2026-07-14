@@ -80,10 +80,38 @@ describe('useJoinRequests', () => {
           upcomingOfficial: 0,
           upcomingClub: 0,
         },
+        rsvpEvents: [],
       },
     ]);
 
     expect(mockedGet).toHaveBeenCalledWith('/api/community/join-requests/');
+  });
+
+  it('maps rsvp_events from the wire', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'jr-3',
+          full_name: 'Sam Rivera',
+          phone_number: '+12125550111',
+          answers: [],
+          submitted_at: '2024-04-01T09:00:00Z',
+          status: 'tentative',
+          user_id: 'user-3',
+          rsvp_events: [
+            { event_id: 'evt-1', title: 'Potluck', start_datetime: '2026-03-01T18:00:00Z' },
+          ],
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.rsvpEvents).toEqual([
+      { eventId: 'evt-1', title: 'Potluck', startDatetime: '2026-03-01T18:00:00Z' },
+    ]);
   });
 
   it('maps the rsvp breakdown buckets from the wire', async () => {

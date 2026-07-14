@@ -20,6 +20,7 @@ import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
+import { TentativeActions } from './JoinRequestTentativeSection';
 
 const Filter = {
   ALL: 'all',
@@ -32,6 +33,7 @@ type Decision = typeof JoinRequestStatus.APPROVED | typeof JoinRequestStatus.REJ
 const FILTERS: { value: Filter; label: string }[] = [
   { value: Filter.ALL, label: 'all' },
   { value: Filter.PENDING, label: 'pending' },
+  { value: Filter.TENTATIVE, label: 'tentative' },
   { value: Filter.APPROVED, label: 'approved' },
   { value: Filter.REJECTED, label: 'rejected' },
 ];
@@ -227,6 +229,7 @@ function JoinRequestCard({
   onResend: () => void;
 }) {
   const isPending = request.status === JoinRequestStatus.PENDING;
+  const isTentative = request.status === JoinRequestStatus.TENTATIVE;
   const isRejected = request.status === JoinRequestStatus.REJECTED;
   const canResend = request.status === JoinRequestStatus.APPROVED && request.onboardedAt === null;
   return (
@@ -284,6 +287,14 @@ function JoinRequestCard({
             reject
           </Button>
         </div>
+      ) : isTentative ? (
+        <TentativeActions
+          request={request}
+          busy={busy}
+          onApprove={() => {
+            onDecide(JoinRequestStatus.APPROVED);
+          }}
+        />
       ) : (
         <>
           <DecisionAttribution request={request} />
@@ -380,6 +391,7 @@ function StatusBadge({ status }: { status: JoinRequestStatus }) {
 
 const STATUS_TONES: Record<JoinRequestStatus, string> = {
   [JoinRequestStatus.PENDING]: 'bg-warning-subtle text-warning',
+  [JoinRequestStatus.TENTATIVE]: 'bg-highlight-subtle text-highlight',
   [JoinRequestStatus.APPROVED]: 'bg-success-subtle text-success',
   [JoinRequestStatus.REJECTED]: 'bg-surface-raised text-foreground-secondary',
 };
@@ -390,6 +402,14 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
       <p className="text-muted mb-3 text-xs">
         sorted newest first — approved members show here until 3 days after their first login, then
         this tab clears them out automatically
+      </p>
+    );
+  }
+  if (filter === Filter.TENTATIVE) {
+    return (
+      <p className="text-muted mb-3 text-xs">
+        approved once they come to an event — they&rsquo;ll be promoted automatically when checked
+        in, or you can approve them manually below
       </p>
     );
   }
