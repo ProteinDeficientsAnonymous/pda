@@ -104,6 +104,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     needsSmsConsent: false,
     showPhone: false,
     showEmail: false,
+    showBirthday: false,
     hideLastName: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
