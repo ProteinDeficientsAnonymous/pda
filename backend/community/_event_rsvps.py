@@ -135,6 +135,18 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
+def _notify_rsvp_note(event: Event, user, final_status: str, note: str | None) -> None:
+    """Post a decline note or event comment for a non-empty RSVP note."""
+    cleaned_note = (note or "").strip()
+    if not cleaned_note:
+        return
+    if final_status == RSVPStatus.CANT_GO:
+        notify_rsvp_declined_note(event=event, author=user, note=cleaned_note)
+    else:
+        comment = EventComment.objects.create(event=event, author=user, body=cleaned_note[:500])
+        notify_event_comment(comment)
+
+
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool, note: str | None = None
 ) -> tuple[str, list[str]]:
@@ -173,13 +185,7 @@ def _apply_rsvp_in_transaction(
         },
     )
 
-    cleaned_note = (note or "").strip()
-    if cleaned_note:
-        if final_status == RSVPStatus.CANT_GO:
-            notify_rsvp_declined_note(event=event, author=user, note=cleaned_note)
-        else:
-            comment = EventComment.objects.create(event=event, author=user, body=cleaned_note[:500])
-            notify_event_comment(comment)
+    _notify_rsvp_note(event, user, final_status, note)
 
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
         was_attending and had_plus_one and not final_plus_one
