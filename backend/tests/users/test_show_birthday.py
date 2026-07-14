@@ -11,7 +11,9 @@ class TestProfileRespectsShowBirthday:
             password="hiddenpass123",
             first_name="Quiet",
             last_name="Member",
-            birthday="1990-06-15",
+            birthday_month=6,
+            birthday_day=15,
+            birthday_year=1990,
             show_birthday=False,
         )
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
@@ -24,12 +26,28 @@ class TestProfileRespectsShowBirthday:
             password="visiblepass123",
             first_name="Open",
             last_name="Member",
-            birthday="1990-06-15",
+            birthday_month=6,
+            birthday_day=15,
+            birthday_year=1990,
             show_birthday=True,
         )
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 200
-        assert response.json()["birthday"] == "1990-06-15"
+        assert response.json()["birthday"] == {"month": 6, "day": 15, "year": 1990}
+
+    def test_shows_yearless_birthday_when_user_opted_in(self, api_client, auth_headers):
+        other_user = User.objects.create_user(
+            phone_number="+12025550780",
+            password="visiblepass123",
+            first_name="Open",
+            last_name="Member",
+            birthday_month=6,
+            birthday_day=15,
+            show_birthday=True,
+        )
+        response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
+        assert response.status_code == 200
+        assert response.json()["birthday"] == {"month": 6, "day": 15, "year": None}
 
     def test_self_preview_hides_own_birthday(self, api_client):
         user = User.objects.create_user(
@@ -37,7 +55,9 @@ class TestProfileRespectsShowBirthday:
             password="hiddenpass123",
             first_name="Quiet",
             last_name="Member",
-            birthday="1990-06-15",
+            birthday_month=6,
+            birthday_day=15,
+            birthday_year=1990,
             show_birthday=False,
         )
         refresh = RefreshToken.for_user(user)
@@ -50,14 +70,18 @@ class TestProfileRespectsShowBirthday:
 @pytest.mark.django_db
 class TestMeShowBirthday:
     def test_me_always_shows_own_birthday(self, api_client, test_user):
-        test_user.birthday = "1990-06-15"
+        test_user.birthday_month = 6
+        test_user.birthday_day = 15
+        test_user.birthday_year = 1990
         test_user.show_birthday = False
-        test_user.save(update_fields=["birthday", "show_birthday"])
+        test_user.save(
+            update_fields=["birthday_month", "birthday_day", "birthday_year", "show_birthday"]
+        )
         refresh = RefreshToken.for_user(test_user)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
         response = api_client.get("/api/auth/me/", **headers)
         assert response.status_code == 200
-        assert response.json()["birthday"] == "1990-06-15"
+        assert response.json()["birthday"] == {"month": 6, "day": 15, "year": 1990}
         assert response.json()["show_birthday"] is False
 
     def test_patch_me_persists_show_birthday(self, api_client, auth_headers, test_user):

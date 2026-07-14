@@ -31,6 +31,7 @@ from users.models import User
 from users.schemas import (
     AcceptConsentsIn,
     AccessOut,
+    BirthdayIn,
     ChangePasswordIn,
     ErrorOut,
     LoginIn,
@@ -132,6 +133,12 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
 _ME_PATCH_STRIPPED_FIELDS = ("bio", "pronouns", "nickname")
 
 
+def _apply_birthday(user, birthday: BirthdayIn | None) -> None:
+    user.birthday_month = birthday.month if birthday else None
+    user.birthday_day = birthday.day if birthday else None
+    user.birthday_year = birthday.year if birthday else None
+
+
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """Apply MePatchIn fields to user. Returns the list of changed fields.
 
@@ -157,7 +164,7 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     # birthday is nullable: a sent-but-null value is an explicit clear, so key on
     # whether the field was present in the payload rather than on it being None.
     if "birthday" in payload.model_fields_set:
-        user.birthday = payload.birthday
+        _apply_birthday(user, payload.birthday)
         changed.append("birthday")
     return changed
 

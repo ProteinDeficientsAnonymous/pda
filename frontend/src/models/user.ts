@@ -15,6 +15,13 @@ export interface Role {
   permissions: string[];
 }
 
+export interface Birthday {
+  month: number;
+  day: number;
+  // null when the person chose not to share their birth year.
+  year: number | null;
+}
+
 export interface User {
   id: string;
   phoneNumber: string;
@@ -25,8 +32,7 @@ export interface User {
   email: string;
   bio: string;
   pronouns: string;
-  // ISO date string (yyyy-mm-dd), or null if unset.
-  birthday: string | null;
+  birthday: Birthday | null;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;

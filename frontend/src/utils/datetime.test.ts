@@ -12,17 +12,16 @@ describe('parseIsoDate', () => {
 });
 
 describe('formatBirthday', () => {
-  it('formats a plain date as lowercase month day, year', () => {
-    expect(formatBirthday('1990-06-15')).toBe('june 15, 1990');
+  it('formats a birthday with a year as lowercase month day, year', () => {
+    expect(formatBirthday({ month: 6, day: 15, year: 1990 })).toBe('june 15, 1990');
   });
 
-  it('does not shift the day across timezones', () => {
-    // A UTC-parsed '2000-01-01' would render as dec 31, 1999 in negative offsets.
-    expect(formatBirthday('2000-01-01')).toBe('january 1, 2000');
+  it('formats a birthday without a year as lowercase month day', () => {
+    expect(formatBirthday({ month: 1, day: 1, year: null })).toBe('january 1');
   });
 
-  it('returns empty string for a malformed date', () => {
-    expect(formatBirthday('not-a-date')).toBe('');
+  it('formats a leap day without a year', () => {
+    expect(formatBirthday({ month: 2, day: 29, year: null })).toBe('february 29');
   });
 });
 

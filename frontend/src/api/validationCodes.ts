@@ -286,6 +286,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "admins can't be paused";
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
+    case Code.User.InvalidBirthday:
+      return "that's not a valid birthday";
 
     // Survey
     case Code.Survey.NotFound:

@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import type { ConsentTypeValue } from '@/models/consent';
 import { normalizePermissions } from '@/models/permissions';
-import type { Role, User } from '@/models/user';
+import type { Birthday, Role, User } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 
 import { apiClient, authClient, getCurrentAccessToken } from './client';
@@ -16,6 +16,12 @@ interface WireRole {
   permissions: string[];
 }
 
+interface WireBirthday {
+  month: number;
+  day: number;
+  year: number | null;
+}
+
 interface WireUser {
   id: string;
   phone_number: string;
@@ -26,7 +32,7 @@ interface WireUser {
   email?: string;
   bio?: string;
   pronouns?: string;
-  birthday?: string | null;
+  birthday?: WireBirthday | null;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -64,6 +70,11 @@ function mapRole(r: WireRole): Role {
   };
 }
 
+function mapBirthday(b: WireBirthday | null | undefined): Birthday | null {
+  if (!b) return null;
+  return { month: b.month, day: b.day, year: b.year };
+}
+
 function mapUser(u: WireUser): User {
   return {
     id: u.id,
@@ -75,7 +86,7 @@ function mapUser(u: WireUser): User {
     email: u.email ?? '',
     bio: u.bio ?? '',
     pronouns: u.pronouns ?? '',
-    birthday: u.birthday ?? null,
+    birthday: mapBirthday(u.birthday),
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
@@ -193,8 +204,8 @@ export interface ProfileUpdate {
   email?: string;
   bio?: string;
   pronouns?: string;
-  // Empty string clears the stored birthday; an ISO date (yyyy-mm-dd) sets it.
-  birthday?: string;
+  // null clears the stored birthday; a Birthday sets it (year is optional).
+  birthday?: Birthday | null;
   showPhone?: boolean;
   showEmail?: boolean;
   showBirthday?: boolean;
@@ -212,7 +223,11 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.email !== undefined) body.email = patch.email;
   if (patch.bio !== undefined) body.bio = patch.bio;
   if (patch.pronouns !== undefined) body.pronouns = patch.pronouns;
-  if (patch.birthday !== undefined) body.birthday = patch.birthday;
+  if (patch.birthday !== undefined) {
+    body.birthday = patch.birthday
+      ? { month: patch.birthday.month, day: patch.birthday.day, year: patch.birthday.year }
+      : null;
+  }
   if (patch.showPhone !== undefined) body.show_phone = patch.showPhone;
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
   if (patch.showBirthday !== undefined) body.show_birthday = patch.showBirthday;

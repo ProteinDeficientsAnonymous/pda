@@ -1,3 +1,4 @@
+import { getDaysInMonth } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
@@ -6,8 +7,9 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
+import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
+import { type Birthday, CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 import { formatBirthday } from '@/utils/datetime';
@@ -68,7 +70,7 @@ export default function SettingsScreen() {
           onSave={(v) => updateProfile({ nickname: v })}
           placeholder="add a nickname"
         />
-        <InlineDate
+        <InlineBirthday
           label="birthday"
           value={user.birthday}
           onSave={(v) => updateProfile({ birthday: v })}
@@ -244,29 +246,63 @@ function InlineText({
   );
 }
 
-function InlineDate({
+const MONTH_OPTIONS = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+].map((name, i) => ({ value: String(i + 1), label: name }));
+
+const NO_YEAR = '';
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = [
+  { value: NO_YEAR, label: 'prefer not to say' },
+  ...Array.from({ length: 120 }, (_, i) => {
+    const year = CURRENT_YEAR - i;
+    return { value: String(year), label: String(year) };
+  }),
+];
+
+function dayOptions(month: number | null) {
+  const count = month ? getDaysInMonth(new Date(2000, month - 1)) : 31;
+  return Array.from({ length: count }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+}
+
+function InlineBirthday({
   label,
   value,
   onSave,
   placeholder,
 }: {
   label: string;
-  value: string | null;
-  onSave: (v: string) => Promise<void>;
+  value: Birthday | null;
+  onSave: (v: Birthday | null) => Promise<void>;
   placeholder?: string;
 }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value ?? '');
+  const [month, setMonth] = useState(value?.month ?? null);
+  const [day, setDay] = useState(value?.day ?? null);
+  const [year, setYear] = useState(value?.year ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Discourage picking a future birthday in the picker UI (not enforced server-side).
-  const today = new Date().toISOString().slice(0, 10);
 
-  async function save(next: string) {
-    if (next === (value ?? '')) {
-      setEditing(false);
-      return;
-    }
+  function startEditing() {
+    setMonth(value?.month ?? null);
+    setDay(value?.day ?? null);
+    setYear(value?.year ?? null);
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save(next: Birthday | null) {
     setSaving(true);
     setError(null);
     try {
@@ -288,54 +324,78 @@ function InlineDate({
             {value ? formatBirthday(value) : placeholder}
           </div>
         </div>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setDraft(value ?? '');
-            setError(null);
-            setEditing(true);
-          }}
-          aria-label={`edit ${label}`}
-        >
+        <Button variant="ghost" onClick={startEditing} aria-label={`edit ${label}`}>
           edit
         </Button>
       </div>
     );
   }
 
+  const canSave = month !== null && day !== null;
+
   return (
-    <div className="flex items-end gap-2">
-      <div className="flex-1">
-        <TextField
-          type="date"
-          max={today}
-          label={label}
-          value={draft}
-          error={error ?? undefined}
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <Select
+          label="month"
+          options={MONTH_OPTIONS}
+          value={month ? String(month) : ''}
+          placeholder="month"
           onChange={(e) => {
-            setDraft(e.target.value);
+            const nextMonth = e.target.value ? Number(e.target.value) : null;
+            setMonth(nextMonth);
+            if (nextMonth && day && day > getDaysInMonth(new Date(2000, nextMonth - 1))) {
+              setDay(null);
+            }
+            if (error) setError(null);
+          }}
+        />
+        <Select
+          label="day"
+          options={dayOptions(month)}
+          value={day ? String(day) : ''}
+          placeholder="day"
+          onChange={(e) => {
+            setDay(e.target.value ? Number(e.target.value) : null);
+            if (error) setError(null);
+          }}
+        />
+        <Select
+          label="year"
+          options={YEAR_OPTIONS}
+          value={year ? String(year) : NO_YEAR}
+          onChange={(e) => {
+            setYear(e.target.value ? Number(e.target.value) : null);
             if (error) setError(null);
           }}
         />
       </div>
-      {value ? (
-        <Button variant="ghost" onClick={() => void save('')} disabled={saving}>
-          clear
+      {error ? <p className="text-destructive text-xs">{error}</p> : null}
+      <div className="flex items-center justify-end gap-2">
+        {value ? (
+          <Button variant="ghost" onClick={() => void save(null)} disabled={saving}>
+            clear
+          </Button>
+        ) : null}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setError(null);
+            setEditing(false);
+          }}
+          disabled={saving}
+        >
+          cancel
         </Button>
-      ) : null}
-      <Button
-        variant="ghost"
-        onClick={() => {
-          setError(null);
-          setEditing(false);
-        }}
-        disabled={saving}
-      >
-        cancel
-      </Button>
-      <Button onClick={() => void save(draft)} disabled={saving}>
-        save
-      </Button>
+        <Button
+          onClick={() => {
+            if (canSave) void save({ month, day, year });
+          }}
+          disabled={saving || !canSave}
+        >
+          save
+        </Button>
+      </div>
     </div>
   );
 }

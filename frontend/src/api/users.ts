@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { normalizePermissions } from '@/models/permissions';
+import type { Birthday } from '@/models/user';
 
 import { apiClient } from './client';
 
@@ -307,7 +308,7 @@ export interface MemberProfile {
   email: string;
   bio: string;
   pronouns: string;
-  birthday: string | null;
+  birthday: Birthday | null;
   profilePhotoUrl: string;
   loginLinkRequested: boolean;
 }
@@ -320,7 +321,7 @@ interface WireMemberProfile {
   email: string;
   bio: string;
   pronouns: string;
-  birthday?: string | null;
+  birthday?: Birthday | null;
   profile_photo_url: string;
   login_link_requested: boolean;
 }

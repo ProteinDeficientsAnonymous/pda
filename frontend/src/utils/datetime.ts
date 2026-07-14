@@ -3,6 +3,8 @@
 
 import { format, isSameDay } from 'date-fns';
 
+import type { Birthday } from '@/models/user';
+
 export function formatEventDateTime(
   start: Date | null,
   end: Date | null,
@@ -27,11 +29,7 @@ export function parseIsoDate(iso: string): Date {
   return new Date(iso);
 }
 
-export function formatBirthday(isoDate: string): string {
-  // A birthday is a plain yyyy-mm-dd with no timezone. `new Date('yyyy-mm-dd')`
-  // parses as UTC midnight, which shifts the day in negative-offset zones, so
-  // build a local date from the parts instead.
-  const [year, month, day] = isoDate.split('-').map(Number);
-  if (!year || !month || !day) return '';
-  return format(new Date(year, month - 1, day), 'MMMM d, yyyy').toLowerCase();
+export function formatBirthday(birthday: Birthday): string {
+  const monthDay = format(new Date(2000, birthday.month - 1, birthday.day), 'MMMM d').toLowerCase();
+  return birthday.year ? `${monthDay}, ${String(birthday.year)}` : monthDay;
 }
