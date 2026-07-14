@@ -123,6 +123,7 @@ class Code:
         CANNOT_DELETE_SELF = "user.cannot_delete_self"
         CANNOT_DELETE_LAST_ADMIN = "user.cannot_delete_last_admin"
         ALREADY_ARCHIVED = "user.already_archived"
+        CANNOT_HARD_DELETE_LOGGED_IN = "user.cannot_hard_delete_logged_in"
         CANNOT_PAUSE_SELF = "user.cannot_pause_self"
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"

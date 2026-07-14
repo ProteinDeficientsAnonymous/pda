@@ -107,6 +107,9 @@ class UserOut(BaseModel):
     show_email: bool = True
     hide_last_name: bool = False
     is_paused: bool = False
+    # False until the user's first successful login (Django's last_login is null).
+    # Admins use this to spot approved entries that were never actually claimed.
+    has_logged_in: bool = True
     login_link_requested: bool = False
     week_start: str = "sunday"
     calendar_feed_scope: str = "all"
@@ -139,6 +142,7 @@ class UserOut(BaseModel):
             show_email=user.show_email,
             hide_last_name=user.hide_last_name,
             is_paused=user.is_paused,
+            has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,

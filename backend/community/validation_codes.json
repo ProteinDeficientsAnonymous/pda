@@ -496,6 +496,11 @@
         "params": []
       },
       {
+        "name": "CANNOT_HARD_DELETE_LOGGED_IN",
+        "value": "user.cannot_hard_delete_logged_in",
+        "params": []
+      },
+      {
         "name": "CANNOT_PAUSE_SELF",
         "value": "user.cannot_pause_self",
         "params": []

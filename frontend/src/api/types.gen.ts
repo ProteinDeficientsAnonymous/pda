@@ -307,6 +307,30 @@ export interface paths {
         patch: operations["users__management_update_user"];
         trace?: never;
     };
+    "/api/auth/users/{user_id}/hard/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Hard Delete User
+         * @description Permanently remove a member who has never logged in.
+         *
+         *     Unlike ``delete_user`` (which soft-archives via ``archived_at``), this row is
+         *     gone for good. Restricted to never-logged-in accounts — an approved entry the
+         *     person never actually claimed — so a real member's data is never destroyed.
+         */
+        delete: operations["users__management_hard_delete_user"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/users/{user_id}/magic-link/": {
         parameters: {
             query?: never;
@@ -3844,6 +3868,11 @@ export interface components {
              */
             full_name: string;
             /**
+             * Has Logged In
+             * @default true
+             */
+            has_logged_in: boolean;
+            /**
              * Hide Last Name
              * @default false
              */
@@ -4840,6 +4869,53 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    users__management_hard_delete_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
