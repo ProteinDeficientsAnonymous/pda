@@ -2,7 +2,7 @@ from datetime import timedelta
 from unittest.mock import MagicMock
 
 import pytest
-from community.models import JoinFormQuestion, JoinRequest
+from community.models import Event, EventStatus, JoinFormQuestion, JoinRequest
 from django.conf import settings as django_settings
 from django.core.cache import cache
 from django.test import Client
@@ -187,3 +187,81 @@ def fake_email_sender(monkeypatch):
     monkeypatch.setattr(email_sender_module, "_cached_sender", fake)
     yield fake
     # monkeypatch auto-cleans up.
+
+
+@pytest.fixture
+def creator(db):
+    return User.objects.create_user(
+        phone_number="+14155550201",
+        password="creatorpass123",
+        first_name="Draft",
+        last_name="Creator",
+    )
+
+
+@pytest.fixture
+def creator_headers(creator):
+    refresh = RefreshToken.for_user(creator)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def other_member(db):
+    return User.objects.create_user(
+        phone_number="+14155550202",
+        password="otherpass123",
+        first_name="Other",
+        last_name="Member",
+    )
+
+
+@pytest.fixture
+def other_headers(other_member):
+    refresh = RefreshToken.for_user(other_member)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def cohost(db):
+    return User.objects.create_user(
+        phone_number="+14155550203",
+        password="cohostpass123",
+        first_name="Draft",
+        last_name="Cohost",
+    )
+
+
+@pytest.fixture
+def cohost_headers(cohost):
+    refresh = RefreshToken.for_user(cohost)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
+def invitee(db):
+    return User.objects.create_user(
+        phone_number="+14155550204",
+        password="inviteepass123",
+        first_name="Draft",
+        last_name="Invitee",
+    )
+
+
+@pytest.fixture
+def sample_draft(db, creator):
+    return Event.objects.create(
+        title="Draft BBQ",
+        start_datetime=future_iso(days=180),
+        created_by=creator,
+        status=EventStatus.DRAFT,
+    )
+
+
+@pytest.fixture
+def future_active_event(db, creator):
+    return Event.objects.create(
+        title="Active BBQ",
+        start_datetime=future_iso(days=180),
+        created_by=creator,
+        status=EventStatus.ACTIVE,
+    )
