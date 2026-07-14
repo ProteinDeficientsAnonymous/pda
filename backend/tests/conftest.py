@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from community.models import JoinFormQuestion, JoinRequest
+from django.conf import settings as django_settings
 from django.core.cache import cache
 from django.test import Client
 from django.utils import timezone
@@ -28,6 +29,11 @@ def past_iso(days: int = 1) -> str:
     """ISO 8601 string N days in the past. Use for testing stale-draft scenarios,
     retroactive data, etc. — never for normal create/edit flows (those are rejected)."""
     return (timezone.now() - timedelta(days=days)).isoformat()
+
+
+def pytest_configure() -> None:
+    # Fast MD5 hasher for tests only — default PBKDF2 is ~600k iterations per create_user.
+    django_settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 
 @pytest.fixture(autouse=True)

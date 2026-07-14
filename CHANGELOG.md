@@ -1,3 +1,17 @@
+# [0.21.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.20.1...v0.21.0) (2026-07-14)
+
+
+### Features
+
+* **join-requests:** note prior official rsvps on admin rows (Issue 498) ([#771](https://github.com/ProteinDeficientsAnonymous/pda/issues/771)) ([11aec58](https://github.com/ProteinDeficientsAnonymous/pda/commit/11aec58f486060df1db7339b5db35b781eae5de1))
+
+## [0.20.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.20.0...v0.20.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **nginx:** quote event-preview regex + fail loud on nginx death (Issue 652) ([#786](https://github.com/ProteinDeficientsAnonymous/pda/issues/786)) ([8d6a6fd](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d6a6fdf0dc8595cfc949067114d58086f599a28)), closes [#763](https://github.com/ProteinDeficientsAnonymous/pda/issues/763)
+
 # [0.20.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.2...v0.20.0) (2026-07-13)
 
 

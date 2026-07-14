@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime, timedelta
+from typing import NamedTuple
 from uuid import UUID
 
 from config.audit import audit_log
 from config.auth import gated_jwt
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Prefetch
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
@@ -19,13 +20,16 @@ from community._join_request_approval import (
     _provision_tentative_user,
     send_join_approval,
 )
+from community._rsvp_counts import NON_REPORTABLE_EVENT_STATUSES
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import (
+    AttendanceStatus,
     EventRSVP,
     EventType,
     JoinRequest,
     JoinRequestStatus,
+    RSVPStatus,
 )
 
 router = Router()
@@ -57,9 +61,13 @@ class JoinRequestOut(BaseModel):
     rejected_at: datetime | None = None
     rejected_by_name: str | None = None
     onboarded_at: datetime | None = None
-    # RSVPs the linked (non-member) user holds on official events. Lets admins
-    # see prior engagement before approving; 0 when no user is attached.
-    attached_user_official_rsvp_count: int = 0
+    # Prior engagement of the linked (non-member) user, so admins can gauge
+    # involvement before approving. "attended" = host-marked ATTENDED;
+    # "upcoming" = ATTENDING on a future event. All 0 when no user is attached.
+    attended_official_count: int = 0
+    attended_club_count: int = 0
+    upcoming_official_count: int = 0
+    upcoming_club_count: int = 0
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -76,17 +84,62 @@ class ApproveJoinRequestOut(BaseModel):
     user_id: str | None = None
 
 
-def _official_rsvp_count(jr: JoinRequest) -> int:
-    # The list endpoint annotates this to avoid an N+1; single-row callers have
-    # no annotation and fall back to a direct count.
-    annotated = getattr(jr, "official_rsvp_count", None)
-    if annotated is not None:
-        return annotated
-    if not jr.user_id:
-        return 0
-    return EventRSVP.objects.filter(
-        user_id=jr.user_id, event__event_type=EventType.OFFICIAL
-    ).count()
+BUCKETED_EVENT_TYPES = (EventType.OFFICIAL, EventType.CLUB)
+
+
+class RsvpBreakdown(NamedTuple):
+    attended_official: int = 0
+    attended_club: int = 0
+    upcoming_official: int = 0
+    upcoming_club: int = 0
+
+
+def _rsvp_bucket(rsvp: EventRSVP) -> tuple[str, str] | None:
+    """(state, event_type) bucket for a linked user's rsvp, or None if it counts nowhere.
+
+    state is "attended" (host-marked ATTENDED) or "upcoming" (ATTENDING on a
+    future, time-decided event). Non-bucketed types, non-reportable events, and
+    non-ATTENDING rsvps fall through to None.
+    """
+    event = rsvp.event
+    if event.event_type not in BUCKETED_EVENT_TYPES:
+        return None
+    if event.status in NON_REPORTABLE_EVENT_STATUSES:
+        return None
+    if rsvp.status != RSVPStatus.ATTENDING:
+        return None
+    if rsvp.attendance == AttendanceStatus.ATTENDED:
+        return ("attended", event.event_type)
+    if not event.is_past and not event.datetime_tbd:
+        return ("upcoming", event.event_type)
+    return None
+
+
+def _rsvp_breakdown(user: User | None) -> RsvpBreakdown:
+    """attended (host-marked) vs upcoming ATTENDING rsvps, split by event type.
+
+    Reads prefetched rsvps when the list endpoint supplied them, else queries
+    the linked user directly.
+    """
+    if user is None:
+        return RsvpBreakdown()
+    prefetched = getattr(user, "_prefetched_objects_cache", {})
+    rsvps = (
+        user.event_rsvps.all()
+        if "event_rsvps" in prefetched
+        else EventRSVP.objects.filter(user_id=user.id).select_related("event")
+    )
+    counts: dict[tuple[str, str], int] = {}
+    for rsvp in rsvps:
+        bucket = _rsvp_bucket(rsvp)
+        if bucket is not None:
+            counts[bucket] = counts.get(bucket, 0) + 1
+    return RsvpBreakdown(
+        attended_official=counts.get(("attended", EventType.OFFICIAL), 0),
+        attended_club=counts.get(("attended", EventType.CLUB), 0),
+        upcoming_official=counts.get(("upcoming", EventType.OFFICIAL), 0),
+        upcoming_club=counts.get(("upcoming", EventType.CLUB), 0),
+    )
 
 
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
@@ -97,7 +150,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     phone_user = User.objects.filter(phone_number=jr.phone_number).first()
     user = jr.user or phone_user
     previously_archived = phone_user is not None and phone_user.archived_at is not None
-    official_rsvp_count = _official_rsvp_count(jr)
+    breakdown = _rsvp_breakdown(user)
     return JoinRequestOut(
         id=str(jr.id),
         first_name=jr.first_name,
@@ -114,7 +167,10 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         rejected_at=jr.rejected_at,
         rejected_by_name=jr.rejected_by.full_name if jr.rejected_by else None,
         onboarded_at=user.onboarded_at if user else None,
-        attached_user_official_rsvp_count=official_rsvp_count,
+        attended_official_count=breakdown.attended_official,
+        attended_club_count=breakdown.attended_club,
+        upcoming_official_count=breakdown.upcoming_official,
+        upcoming_club_count=breakdown.upcoming_club,
     )
 
 
@@ -147,11 +203,8 @@ def list_join_requests(request):
             phone_number__in=list(expired_phones) + list(legacy_onboarded_phones),
         )
         .select_related("user", "approved_by", "rejected_by")
-        .annotate(
-            official_rsvp_count=Count(
-                "user__event_rsvps",
-                filter=Q(user__event_rsvps__event__event_type=EventType.OFFICIAL),
-            )
+        .prefetch_related(
+            Prefetch("user__event_rsvps", queryset=EventRSVP.objects.select_related("event"))
         )
     )
     return Status(200, [_join_request_out(jr) for jr in join_requests])
