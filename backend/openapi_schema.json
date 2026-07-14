@@ -2946,6 +2946,11 @@
             "title": "Attended Official Count",
             "type": "integer"
           },
+          "email": {
+            "default": "",
+            "title": "Email",
+            "type": "string"
+          },
           "first_name": {
             "default": "",
             "title": "First Name",

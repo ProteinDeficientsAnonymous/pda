@@ -3046,6 +3046,11 @@ export interface components {
              */
             attended_official_count: number;
             /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
              * First Name
              * @default
              */
