@@ -288,6 +288,39 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
+  it('keeps a first-time join-request user on /new-password while the profile step is active', () => {
+    // Once account setup clears needsOnboarding, this user's setupTarget becomes
+    // null — same as a fully-onboarded user — so the gate must check
+    // profileStepActive before bouncing them off /new-password, same as it
+    // already does for /onboarding.
+    const user = makeUser({
+      needsOnboarding: false,
+      firstName: 'Jamie',
+      fullName: 'Jamie',
+      email: 'jamie@example.com',
+    });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/new-password']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/new-password" element={<div>new password page</div>} />
+            <Route path="/calendar" element={<div>calendar page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('new password page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
   it('redirects a needsGuidelinesConsent user to /consent', () => {
     const user = makeUser({ needsGuidelinesConsent: true });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });

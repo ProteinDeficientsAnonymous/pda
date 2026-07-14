@@ -92,10 +92,11 @@ export function OnboardingGate() {
     }
   } else if (user) {
     // Authed user with nothing pending shouldn't sit on onboarding/consent screens.
-    // Exception: the optional profile step runs on /onboarding *after* account
-    // setup clears needs_onboarding — keep them here until they finish or skip it.
+    // Exception: the optional profile step runs on /onboarding OR /new-password
+    // *after* account setup clears needs_onboarding — keep them here until they
+    // finish or skip it.
     if (path === '/onboarding' && !profileStepActive) return <Navigate to="/guidelines" replace />;
-    if (path === '/new-password') return <Navigate to="/calendar" replace />;
+    if (path === '/new-password' && !profileStepActive) return <Navigate to="/calendar" replace />;
     if (path === '/consent') return <Navigate to="/calendar" replace />;
     if (path === '/login') return <Navigate to="/calendar" replace />;
   }
