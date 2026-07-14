@@ -1,3 +1,10 @@
+# [0.31.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.30.0...v0.31.0) (2026-07-14)
+
+
+### Features
+
+* **community:** editable tentative-approval confirmation message (Issue 778) ([#832](https://github.com/ProteinDeficientsAnonymous/pda/issues/832)) ([8125766](https://github.com/ProteinDeficientsAnonymous/pda/commit/81257665123b29e91d8ae2128d3375d56a91d6dd)), closes [#x27](https://github.com/ProteinDeficientsAnonymous/pda/issues/x27)
+
 # [0.30.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.29.0...v0.30.0) (2026-07-14)
 
 
