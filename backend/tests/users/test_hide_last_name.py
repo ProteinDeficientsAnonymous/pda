@@ -80,16 +80,36 @@ class TestProfileHidesLastName:
         assert body["last_name"] == "Lastname"
         assert body["full_name"] == "Hidden Lastname"
 
-    def test_self_sees_own_full_name(self, api_client, hidden_user):
-        from ninja_jwt.tokens import RefreshToken
-
+    def test_self_preview_hides_own_last_name(self, api_client, hidden_user):
+        """view-my-profile is the peer-facing preview, so the owner's own
+        hide_last_name applies to their own view (Issue 791)."""
         refresh = RefreshToken.for_user(hidden_user)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
         response = api_client.get(f"/api/auth/users/{hidden_user.pk}/profile/", **headers)
         assert response.status_code == 200
         body = response.json()
-        assert body["last_name"] == "Lastname"
-        assert body["full_name"] == "Hidden Lastname"
+        assert body["last_name"] == ""
+        assert body["full_name"] == "Hidden"
+
+    def test_self_preview_hides_own_contact_info(self, api_client, db):
+        """view-my-profile suppresses the owner's own hidden phone/email so the
+        preview matches what peers see (Issue 791)."""
+        user = User.objects.create_user(
+            phone_number="+12025550599",
+            password="hiddenpass123",
+            first_name="Quiet",
+            last_name="Member",
+            email="quiet@example.com",
+            show_phone=False,
+            show_email=False,
+        )
+        refresh = RefreshToken.for_user(user)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        response = api_client.get(f"/api/auth/users/{user.pk}/profile/", **headers)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["phone_number"] == ""
+        assert body["email"] == ""
 
 
 @pytest.mark.django_db
