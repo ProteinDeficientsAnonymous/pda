@@ -73,13 +73,8 @@ export function OnboardingGate() {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
-  // The optional profile step runs on /onboarding or /new-password right after
-  // completeOnboarding clears needs_onboarding — before consent is even checked,
-  // since setup (including the profile step) always finishes before consent.
-  // Check this first: otherwise the moment needs_onboarding clears, setupTarget
-  // goes null and this render would fall through to the consent branch (or the
-  // "nothing pending" branch) and bounce the user away mid-step.
-  if ((path === '/onboarding' || path === '/new-password') && profileStepActive) {
+  // Checked before setupTarget goes null post-completeOnboarding, or this would bounce the user mid-step.
+  if (user && (path === '/onboarding' || path === '/new-password') && profileStepActive) {
     return <Outlet />;
   }
 

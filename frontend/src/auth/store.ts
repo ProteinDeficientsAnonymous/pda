@@ -41,10 +41,7 @@ interface AuthState {
     email?: string | undefined;
     pronouns?: string | undefined;
     consentTypes?: ConsentTypeValue[] | undefined;
-    // Set alongside `user` in the same store update — a separate
-    // startProfileStep() call afterward leaves a render in between where
-    // needsOnboarding and profileStepActive are both false, which
-    // OnboardingGate would act on and bounce the user away mid-setup.
+    // Set atomically with `user` — a separate follow-up call would leave a render gap.
     startProfileStep?: boolean;
   }) => Promise<void>;
   finishProfileStep: () => void;

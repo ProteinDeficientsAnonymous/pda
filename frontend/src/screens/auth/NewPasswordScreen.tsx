@@ -56,9 +56,8 @@ export default function NewPasswordScreen() {
         newPassword: values.newPassword,
         startProfileStep: needsOnboarding,
       });
-      if (!needsOnboarding) {
-        void navigate('/calendar', { replace: true });
-      }
+      if (needsOnboarding) return;
+      void navigate('/calendar', { replace: true });
     } catch (err) {
       setServerError(extractApiError(err, "couldn't save password — try again"));
     }
