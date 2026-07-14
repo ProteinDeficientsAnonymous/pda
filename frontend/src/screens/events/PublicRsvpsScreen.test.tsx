@@ -19,21 +19,21 @@ vi.mock('sonner', () => ({
 
 const updateAsync = vi.fn();
 const cancelAsync = vi.fn();
-const useMyRsvps = vi.fn();
+const usePublicMyRsvps = vi.fn();
 
 vi.mock('@/api/publicRsvp', () => ({
-  useMyRsvps: (token: string) => useMyRsvps(token) as unknown,
-  useUpdateMyRsvp: () => ({ mutateAsync: updateAsync, isPending: false }),
-  useCancelMyRsvp: () => ({ mutateAsync: cancelAsync, isPending: false }),
+  usePublicMyRsvps: (token: string) => usePublicMyRsvps(token) as unknown,
+  useUpdatePublicMyRsvp: () => ({ mutateAsync: updateAsync, isPending: false }),
+  useCancelPublicMyRsvp: () => ({ mutateAsync: cancelAsync, isPending: false }),
 }));
 
-import MyRsvpsScreen from './MyRsvpsScreen';
+import PublicRsvpsScreen from './PublicRsvpsScreen';
 
 function renderAt(token: string | null) {
   const path = token === null ? '/my-rsvps' : `/my-rsvps?token=${token}`;
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <MyRsvpsScreen />
+      <PublicRsvpsScreen />
     </MemoryRouter>,
   );
 }
@@ -58,9 +58,9 @@ beforeEach(() => {
   cancelAsync.mockResolvedValue(undefined);
 });
 
-describe('MyRsvpsScreen', () => {
+describe('PublicRsvpsScreen', () => {
   it('renders the rsvp list when the token is valid', () => {
-    useMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
     renderAt('good-token');
     expect(screen.getByRole('heading', { name: 'your rsvps' })).toBeInTheDocument();
     expect(screen.getByText('sam green')).toBeInTheDocument();
@@ -68,13 +68,13 @@ describe('MyRsvpsScreen', () => {
   });
 
   it('shows the invalid-token empty state when the token is missing', () => {
-    useMyRsvps.mockReturnValue({ data: undefined, isPending: false, isError: false });
+    usePublicMyRsvps.mockReturnValue({ data: undefined, isPending: false, isError: false });
     renderAt(null);
     expect(screen.getByText(/this link's expired or invalid/)).toBeInTheDocument();
   });
 
   it('shows the invalid-token empty state on a 404 (expired or revoked)', () => {
-    useMyRsvps.mockReturnValue({
+    usePublicMyRsvps.mockReturnValue({
       data: undefined,
       isPending: false,
       isError: true,
@@ -85,7 +85,7 @@ describe('MyRsvpsScreen', () => {
   });
 
   it('shows a retry message (not the invalid-token state) on a transient error', () => {
-    useMyRsvps.mockReturnValue({
+    usePublicMyRsvps.mockReturnValue({
       data: undefined,
       isPending: false,
       isError: true,
@@ -97,7 +97,7 @@ describe('MyRsvpsScreen', () => {
   });
 
   it('posts to the manage endpoint and shows the update toast when editing status', async () => {
-    useMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
     renderAt('good-token');
 
     fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
@@ -115,7 +115,7 @@ describe('MyRsvpsScreen', () => {
   });
 
   it('cancels the rsvp via the delete endpoint', async () => {
-    useMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
     renderAt('good-token');
 
     fireEvent.click(screen.getByRole('button', { name: 'cancel rsvp' }));
@@ -126,7 +126,7 @@ describe('MyRsvpsScreen', () => {
   });
 
   it('has no axe violations', async () => {
-    useMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
     const { container } = renderAt('good-token');
     const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
     expect(results).toHaveNoViolations();

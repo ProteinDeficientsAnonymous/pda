@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
-import { useCancelMyRsvp, useUpdateMyRsvp } from '@/api/publicRsvp';
+import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { Toggle } from '@/components/ui/Toggle';
@@ -34,9 +34,9 @@ interface Props {
   hasPlusOne: boolean;
 }
 
-export function MyRsvpCard({ token, event, status, hasPlusOne }: Props) {
-  const update = useUpdateMyRsvp(token);
-  const cancel = useCancelMyRsvp(token);
+export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
+  const update = useUpdatePublicMyRsvp(token);
+  const cancel = useCancelPublicMyRsvp(token);
   const [error, setError] = useState<string | null>(null);
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;

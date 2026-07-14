@@ -56,7 +56,7 @@ async function fetchMyRsvps(token: string): Promise<ManageRsvps> {
   };
 }
 
-export function useMyRsvps(token: string) {
+export function usePublicMyRsvps(token: string) {
   return useQuery({
     queryKey: manageQueryKey(token),
     queryFn: () => fetchMyRsvps(token),
@@ -78,7 +78,7 @@ function useManageInvalidate(token: string) {
   };
 }
 
-export function useUpdateMyRsvp(token: string) {
+export function useUpdatePublicMyRsvp(token: string) {
   return useMutation({
     mutationFn: async ({ eventId, status, hasPlusOne }: UpdateArgs) => {
       const body: PublicRsvpManageIn = { status, has_plus_one: hasPlusOne };
@@ -91,7 +91,7 @@ export function useUpdateMyRsvp(token: string) {
   });
 }
 
-export function useCancelMyRsvp(token: string) {
+export function useCancelPublicMyRsvp(token: string) {
   return useMutation({
     mutationFn: async (eventId: string) => {
       await apiClient.delete(`${MANAGE_BASE}${eventId}/`, { params: { token } });

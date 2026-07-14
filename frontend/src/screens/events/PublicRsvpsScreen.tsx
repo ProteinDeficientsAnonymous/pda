@@ -1,17 +1,17 @@
 import { useSearchParams } from 'react-router-dom';
 
 import { getApiStatus } from '@/api/apiErrors';
-import { useMyRsvps } from '@/api/publicRsvp';
+import { usePublicMyRsvps } from '@/api/publicRsvp';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
-import { MyRsvpCard } from './MyRsvpCard';
+import { PublicRsvpCard } from './PublicRsvpCard';
 
 const INVALID_TOKEN_COPY = "this link's expired or invalid — rsvp again to get a new one";
 
-export default function MyRsvpsScreen() {
+export default function PublicRsvpsScreen() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
-  const { data, isPending, isError, error } = useMyRsvps(token);
+  const { data, isPending, isError, error } = usePublicMyRsvps(token);
 
   // only a 404 means the link is bad; transient failures must not tell the holder to re-rsvp.
   if (!token || (isError && getApiStatus(error) === 404)) {
@@ -36,7 +36,7 @@ export default function MyRsvpsScreen() {
       ) : (
         <div className="flex flex-col gap-4">
           {data.rsvps.map((r) => (
-            <MyRsvpCard
+            <PublicRsvpCard
               key={r.event.id}
               token={token}
               event={r.event}
