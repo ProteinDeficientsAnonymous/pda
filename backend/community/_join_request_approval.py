@@ -10,7 +10,7 @@ from users.api import _create_user_with_role
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
-from community._shared import validate_display_name
+from community._shared import render_template_placeholders, validate_display_name
 from community.models import EventType, JoinRequestStatus, TentativeApprovalMessageTemplate
 
 
@@ -86,13 +86,13 @@ _DEFAULT_TENTATIVE_APPROVAL_MESSAGE = (
 )
 
 
-def send_join_approval(*, to: str, display_name: str, first_name: str = "") -> None:
+def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
     """Best-effort full-approval email. A send failure must not roll back approval."""
     if not to:
         return
     template = TentativeApprovalMessageTemplate.get()
     body = template.body.strip() or _DEFAULT_TENTATIVE_APPROVAL_MESSAGE
-    message_body = body.replace("${FIRST_NAME}", first_name or "")
+    message_body = render_template_placeholders(body, {"FIRST_NAME": first_name})
     try:
         send_join_approval_email(
             sender=get_email_sender(),

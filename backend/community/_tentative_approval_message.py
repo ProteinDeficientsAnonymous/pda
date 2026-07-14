@@ -18,7 +18,7 @@ from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
-from community._validation import Code, raise_validation
+from community._validation import Code, raise_validation, validate_template_body
 from community.models import TentativeApprovalMessageTemplate
 
 router = Router()
@@ -66,15 +66,12 @@ def update_tentative_approval_message(request, payload: TentativeApprovalMessage
             Code.Perm.DENIED, status_code=403, action="edit_tentative_approval_message"
         )
 
-    if payload.body is None or not payload.body.strip():
-        raise_validation(Code.TentativeApprovalMessage.BODY_REQUIRED, field="body")
-
-    if len(payload.body) > FieldLimit.TENTATIVE_APPROVAL_MESSAGE:
-        raise_validation(
-            Code.TentativeApprovalMessage.BODY_TOO_LONG,
-            field="body",
-            max_length=FieldLimit.TENTATIVE_APPROVAL_MESSAGE,
-        )
+    validate_template_body(
+        payload.body,
+        required_code=Code.TentativeApprovalMessage.BODY_REQUIRED,
+        too_long_code=Code.TentativeApprovalMessage.BODY_TOO_LONG,
+        max_length=FieldLimit.TENTATIVE_APPROVAL_MESSAGE,
+    )
 
     template = TentativeApprovalMessageTemplate.get()
     template.body = payload.body

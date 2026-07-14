@@ -272,3 +272,13 @@ def raise_validation(
         status_code=status_code,
         clear_refresh_cookie=clear_refresh_cookie,
     )
+
+
+def validate_template_body(
+    body: str | None, *, required_code: str, too_long_code: str, max_length: int
+) -> None:
+    """Shared required/max-length check for singleton editable-text templates."""
+    if body is None or not body.strip():
+        raise_validation(required_code, field="body")
+    if len(body) > max_length:
+        raise_validation(too_long_code, field="body", max_length=max_length)

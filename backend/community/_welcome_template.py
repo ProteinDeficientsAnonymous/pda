@@ -18,7 +18,7 @@ from users.permissions import PermissionKey
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
-from community._validation import Code, raise_validation
+from community._validation import Code, raise_validation, validate_template_body
 from community.models import WelcomeMessageTemplate
 
 router = Router()
@@ -63,15 +63,12 @@ def update_welcome_template(request, payload: WelcomeTemplatePatchIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="edit_welcome_message")
 
-    if payload.body is None or not payload.body.strip():
-        raise_validation(Code.WelcomeTemplate.BODY_REQUIRED, field="body")
-
-    if len(payload.body) > FieldLimit.WELCOME_TEMPLATE:
-        raise_validation(
-            Code.WelcomeTemplate.BODY_TOO_LONG,
-            field="body",
-            max_length=FieldLimit.WELCOME_TEMPLATE,
-        )
+    validate_template_body(
+        payload.body,
+        required_code=Code.WelcomeTemplate.BODY_REQUIRED,
+        too_long_code=Code.WelcomeTemplate.BODY_TOO_LONG,
+        max_length=FieldLimit.WELCOME_TEMPLATE,
+    )
 
     template = WelcomeMessageTemplate.get()
     template.body = payload.body

@@ -84,6 +84,13 @@ def _validate_phone(raw: str, field: str = "phone_number") -> str:
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
+def render_template_placeholders(body: str, placeholders: dict[str, str]) -> str:
+    """Substitute ``${NAME}``-style placeholders in an admin-editable template body."""
+    for name, value in placeholders.items():
+        body = body.replace(f"${{{name}}}", value)
+    return body
+
+
 def flatten_to_single_line(value: str) -> str:
     r"""Collapse every line-break in untrusted text into a single space.
 
