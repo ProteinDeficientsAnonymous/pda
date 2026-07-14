@@ -189,9 +189,9 @@ def list_join_requests(request):
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
     cutoff = timezone.now() - timedelta(days=APPROVED_GRACE_DAYS)
-    expired_phones = User.objects.filter(
-        needs_onboarding=False, onboarded_at__lt=cutoff
-    ).values_list("phone_number", flat=True)
+    expired_phones = User.objects.filter(onboarded_at__lt=cutoff).values_list(
+        "phone_number", flat=True
+    )
     # Legacy users onboarded before onboarded_at existed have it as null;
     # treat them as already-expired so they don't linger in the list forever.
     legacy_onboarded_phones = User.objects.filter(
