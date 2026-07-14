@@ -235,7 +235,7 @@ function JoinRequestCard({
         <div>
           <h2 className="text-base font-medium">{request.fullName}</h2>
           <p className="text-muted text-xs">
-            {formatPhone(request.phoneNumber)} · submitted{' '}
+            {formatPhone(request.phoneNumber)} · {request.email} · submitted{' '}
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
           </p>
           <RsvpBreakdownNote breakdown={request.rsvpBreakdown} />
