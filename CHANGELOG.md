@@ -1,3 +1,10 @@
+## [0.25.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.0...v0.25.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **settings:** remove build info from user-facing settings screen (Issue 790) ([#801](https://github.com/ProteinDeficientsAnonymous/pda/issues/801)) ([b1d4f36](https://github.com/ProteinDeficientsAnonymous/pda/commit/b1d4f36178590843e55e3738222bae13cff7aa79))
+
 # [0.25.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.24.0...v0.25.0) (2026-07-14)
 
 
