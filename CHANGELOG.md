@@ -1,3 +1,10 @@
+## [0.25.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.1...v0.25.2) (2026-07-14)
+
+
+### Bug Fixes
+
+* **events:** move invite members button into the rsvp section (Issue 788) ([#803](https://github.com/ProteinDeficientsAnonymous/pda/issues/803)) ([400cd6c](https://github.com/ProteinDeficientsAnonymous/pda/commit/400cd6cee60221dc010c822845bfb7adf13ab4d5))
+
 ## [0.25.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.0...v0.25.1) (2026-07-14)
 
 
