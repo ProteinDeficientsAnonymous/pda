@@ -125,6 +125,7 @@ export const Code = {
     CannotDeleteSelf: 'user.cannot_delete_self',
     CannotDeleteLastAdmin: 'user.cannot_delete_last_admin',
     AlreadyArchived: 'user.already_archived',
+    CannotHardDeleteLoggedIn: 'user.cannot_hard_delete_logged_in',
     CannotPauseSelf: 'user.cannot_pause_self',
     CannotPauseAdmin: 'user.cannot_pause_admin',
     RoleIdsNotFound: 'user.role_ids_not_found',
@@ -298,6 +299,7 @@ export type ValidationCode =
   | 'user.cannot_delete_self'
   | 'user.cannot_delete_last_admin'
   | 'user.already_archived'
+  | 'user.cannot_hard_delete_logged_in'
   | 'user.cannot_pause_self'
   | 'user.cannot_pause_admin'
   | 'user.role_ids_not_found'
@@ -445,6 +447,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_delete_self': [],
   'user.cannot_delete_last_admin': [],
   'user.already_archived': [],
+  'user.cannot_hard_delete_logged_in': [],
   'user.cannot_pause_self': [],
   'user.cannot_pause_admin': [],
   'user.role_ids_not_found': [],

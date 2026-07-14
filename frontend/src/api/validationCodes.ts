@@ -278,6 +278,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "can't delete the last admin — promote someone else first";
     case Code.User.AlreadyArchived:
       return 'this user is already archived';
+    case Code.User.CannotHardDeleteLoggedIn:
+      return 'this member has logged in — archive them instead of deleting';
     case Code.User.CannotPauseSelf:
       return "you can't pause your own account";
     case Code.User.CannotPauseAdmin:

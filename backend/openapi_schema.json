@@ -4829,6 +4829,11 @@
             "title": "Full Name",
             "type": "string"
           },
+          "has_logged_in": {
+            "default": true,
+            "title": "Has Logged In",
+            "type": "boolean"
+          },
           "hide_last_name": {
             "default": false,
             "title": "Hide Last Name",
@@ -6303,6 +6308,67 @@
           }
         ],
         "summary": "Update User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/users/{user_id}/hard/": {
+      "delete": {
+        "description": "Permanently remove a member who has never logged in.\n\nUnlike ``delete_user`` (which soft-archives via ``archived_at``), this row is\ngone for good. Restricted to never-logged-in accounts \u2014 an approved entry the\nperson never actually claimed \u2014 so a real member's data is never destroyed.",
+        "operationId": "users__management_hard_delete_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Hard Delete User",
         "tags": [
           "auth"
         ]
