@@ -1,3 +1,10 @@
+## [0.27.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.0...v0.27.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **calendar:** theme the "x more" popover for dark mode (Issue 810) ([#814](https://github.com/ProteinDeficientsAnonymous/pda/issues/814)) ([9724bf9](https://github.com/ProteinDeficientsAnonymous/pda/commit/9724bf987dcf4a111925daf95bac66a9b2764db1))
+
 # [0.27.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.26.0...v0.27.0) (2026-07-14)
 
 
