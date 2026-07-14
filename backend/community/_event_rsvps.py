@@ -5,7 +5,6 @@ from uuid import UUID
 from config.audit import audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
-from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router
@@ -136,25 +135,6 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
-RSVP_COMMENT_RATE = (10, 60)  # matches post_comment's 10/m — same underlying action
-
-
-def _rsvp_comment_rate_limited(user) -> bool:
-    """True if this user has posted RSVP comments/decline-notifications too often.
-
-    A separate cache-backed counter from @rate_limit on upsert_rsvp: RSVP status
-    changes (no comment) shouldn't count against the comment-posting budget, and
-    exceeding it should silently skip the comment rather than fail the RSVP write.
-    """
-    count, period = RSVP_COMMENT_RATE
-    cache_key = f"rl:rsvp_comment:{user.pk}"
-    current = cache.get(cache_key, 0)
-    if current >= count:
-        return True
-    cache.set(cache_key, current + 1, period)
-    return False
-
-
 def _post_rsvp_comment(event: Event, user, final_status: str, comment: str | None) -> None:
     """Post a non-empty RSVP comment: a public EventComment (going/maybe) or a
     host-only decline notification (can't go) — never both, never persisted
@@ -166,8 +146,6 @@ def _post_rsvp_comment(event: Event, user, final_status: str, comment: str | Non
     """
     cleaned_comment = (comment or "").strip()
     if not cleaned_comment:
-        return
-    if _rsvp_comment_rate_limited(user):
         return
     if final_status == RSVPStatus.CANT_GO:
         notify_rsvp_declined_note(event=event, author=user, note=cleaned_comment)
@@ -231,7 +209,7 @@ def _apply_rsvp_in_transaction(
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=gated_jwt,
 )
-@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     try:
         Event.objects.get(id=event_id)
