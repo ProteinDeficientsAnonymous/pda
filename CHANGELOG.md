@@ -1,3 +1,10 @@
+## [0.27.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.1...v0.27.2) (2026-07-14)
+
+
+### Bug Fixes
+
+* **sms:** use vetter first name for ${SENDER_NAME} (Issue 817) ([#818](https://github.com/ProteinDeficientsAnonymous/pda/issues/818)) ([729a47f](https://github.com/ProteinDeficientsAnonymous/pda/commit/729a47f440cf88fdc56914ebd7ed16831f9c5abc))
+
 ## [0.27.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.0...v0.27.1) (2026-07-14)
 
 
