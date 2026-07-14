@@ -224,7 +224,7 @@ describe('MembersScreen', () => {
     expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
   });
 
-  it('renders the Members/Roles tab switcher for users with manage_roles', () => {
+  it('renders the members/non-members/roles tab switcher for users with manage_roles', () => {
     useAuthStore.setState({
       status: 'authed',
       user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
@@ -234,13 +234,14 @@ describe('MembersScreen', () => {
 
     renderScreen();
 
-    const group = screen.getByRole('radiogroup', { name: /members or roles/i });
+    const group = screen.getByRole('radiogroup', { name: /members, non-members, or roles/i });
     expect(group).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'members' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'non-members' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'roles' })).toBeInTheDocument();
   });
 
-  it('hides the tab switcher when the user lacks manage_roles', () => {
+  it('hides only the roles tab when the user lacks manage_roles', () => {
     useAuthStore.setState({
       status: 'authed',
       user: {
@@ -260,7 +261,39 @@ describe('MembersScreen', () => {
 
     renderScreen();
 
-    expect(screen.queryByRole('radiogroup', { name: /members or roles/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'members' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'non-members' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'roles' })).not.toBeInTheDocument();
+  });
+
+  it('switches to the non-members tab and shows only non-members', async () => {
+    mockUsersResult({
+      data: [
+        makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
+        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+      ],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('radio', { name: 'non-members' }));
+
+    expect(screen.getByText('Guest Rsvp')).toBeInTheDocument();
+    expect(screen.queryByText('Ada Member')).not.toBeInTheDocument();
+    // The non-members tab has no add-member controls.
+    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the non-members empty state when there are no non-members', async () => {
+    mockUsersResult({
+      data: [makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true })],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('radio', { name: 'non-members' }));
+
+    expect(screen.getByText(/no non-members yet/i)).toBeInTheDocument();
   });
 
   it('shows last-attended date for a member who has attended', () => {
