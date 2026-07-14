@@ -257,10 +257,14 @@ class TestFeedbackLabels:
         return json.loads(captured["calls"][-1].data.decode())["labels"]
 
     def test_no_types_only_feedback_label(self, api_client, settings, monkeypatch):
-        assert self._labels_for(api_client, settings, monkeypatch, []) == ["feedback"]
+        assert self._labels_for(api_client, settings, monkeypatch, []) == [
+            "auto",
+            "feedback",
+        ]
 
     def test_bug_adds_bug_label(self, api_client, settings, monkeypatch):
         assert self._labels_for(api_client, settings, monkeypatch, ["bug"]) == [
+            "auto",
             "feedback",
             "bug",
         ]
@@ -268,12 +272,12 @@ class TestFeedbackLabels:
     def test_feature_request_adds_feature_label(self, api_client, settings, monkeypatch):
         # Issue: feature requests must be tagged "feature", not "enhancement".
         labels = self._labels_for(api_client, settings, monkeypatch, ["feature request"])
-        assert labels == ["feedback", "feature"]
+        assert labels == ["auto", "feedback", "feature"]
         assert "enhancement" not in labels
 
     def test_both_types_add_both_labels(self, api_client, settings, monkeypatch):
         labels = self._labels_for(api_client, settings, monkeypatch, ["bug", "feature request"])
-        assert labels == ["feedback", "bug", "feature"]
+        assert labels == ["auto", "feedback", "bug", "feature"]
 
     def test_unknown_type_is_rejected(self, api_client, settings, monkeypatch):
         for k, v in _APP_SETTINGS.items():
