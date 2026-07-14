@@ -73,6 +73,11 @@ export function OnboardingGate() {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
+  // Checked before setupTarget goes null post-completeOnboarding, or this would bounce the user mid-step.
+  if (user && (path === '/onboarding' || path === '/new-password') && profileStepActive) {
+    return <Outlet />;
+  }
+
   // passwordSetupRedirect is the shared source of truth (also used by
   // MagicLoginScreen) for where a setup-pending user must go. Password setup
   // takes priority over the consent gate — a brand-new user sets their name +
@@ -92,9 +97,7 @@ export function OnboardingGate() {
     }
   } else if (user) {
     // Authed user with nothing pending shouldn't sit on onboarding/consent screens.
-    // Exception: the optional profile step runs on /onboarding *after* account
-    // setup clears needs_onboarding — keep them here until they finish or skip it.
-    if (path === '/onboarding' && !profileStepActive) return <Navigate to="/guidelines" replace />;
+    if (path === '/onboarding') return <Navigate to="/guidelines" replace />;
     if (path === '/new-password') return <Navigate to="/calendar" replace />;
     if (path === '/consent') return <Navigate to="/calendar" replace />;
     if (path === '/login') return <Navigate to="/calendar" replace />;

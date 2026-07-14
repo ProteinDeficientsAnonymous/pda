@@ -167,6 +167,37 @@ describe('useAuthStore', () => {
     });
   });
 
+  describe('completeOnboarding', () => {
+    it('sets user without touching profileStepActive by default', async () => {
+      useAuthStore.setState({ status: 'authed', user: mockUser, profileStepActive: false });
+      const updated: User = { ...mockUser, needsOnboarding: false };
+      vi.mocked(authApi.completeOnboarding).mockResolvedValueOnce(updated);
+
+      await useAuthStore.getState().completeOnboarding({ newPassword: 'abcd1234ABCD!' });
+
+      expect(useAuthStore.getState().user).toEqual(updated);
+      expect(useAuthStore.getState().profileStepActive).toBe(false);
+    });
+
+    it('sets user and profileStepActive atomically in one update when startProfileStep is requested', async () => {
+      // Regression: completeOnboarding() and startProfileStep() as two separate
+      // store updates left a render in between with needsOnboarding=false AND
+      // profileStepActive=false, which OnboardingGate would act on and bounce
+      // the user away (to /guidelines or /consent) before the second update
+      // landed. Setting both in the same set() call closes that gap.
+      useAuthStore.setState({ status: 'authed', user: mockUser, profileStepActive: false });
+      const updated: User = { ...mockUser, needsOnboarding: false };
+      vi.mocked(authApi.completeOnboarding).mockResolvedValueOnce(updated);
+
+      await useAuthStore
+        .getState()
+        .completeOnboarding({ newPassword: 'abcd1234ABCD!', startProfileStep: true });
+
+      expect(useAuthStore.getState().user).toEqual(updated);
+      expect(useAuthStore.getState().profileStepActive).toBe(true);
+    });
+  });
+
   describe('logout', () => {
     it('sets status to unauthed and clears user and accessToken', async () => {
       // Start in an authed state.

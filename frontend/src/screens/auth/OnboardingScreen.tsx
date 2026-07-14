@@ -30,7 +30,6 @@ type FormValues = z.infer<typeof schema>;
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
-  const startProfileStep = useAuthStore((s) => s.startProfileStep);
   const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
   const profileStepActive = useAuthStore((s) => s.profileStepActive);
   // prefill name for legacy users approved before email was required
@@ -70,8 +69,8 @@ export default function OnboardingScreen() {
         ...(pronouns ? { pronouns } : {}),
         newPassword: values.newPassword,
         consentTypes: acceptedTypes,
+        startProfileStep: true,
       });
-      startProfileStep();
     } catch (err) {
       setServerError(extractApiError(err, "couldn't finish onboarding — try again"));
     }
