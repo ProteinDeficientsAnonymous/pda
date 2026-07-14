@@ -2,6 +2,7 @@
 
 import pytest
 from django.utils import timezone
+from users.models import User
 
 
 @pytest.mark.django_db
@@ -70,16 +71,20 @@ class TestMemberDirectory:
         entry = next(u for u in response.json() if u["id"] == str(other_user.pk))
         assert entry["phone_number"] == other_user.phone_number
 
-    def test_display_name_does_not_leak_phone_when_show_phone_false(
-        self, api_client, auth_headers, other_user
-    ):
-        # Member with no display_name must not leak their private phone via the
-        # display_name fallback.
-        other_user.display_name = ""
-        other_user.show_phone = False
-        other_user.save(update_fields=["display_name", "show_phone"])
+    def test_name_does_not_leak_phone_when_show_phone_false(self, api_client, auth_headers):
+        # A genuinely nameless member (e.g. pre-onboarding) must not leak the
+        # private phone via the name fields — full_name stays empty rather than
+        # falling back to the phone number.
+        nameless_user = User.objects.create_user(
+            phone_number="+12025550998",
+            password="namelesspass123",
+            first_name="",
+            last_name="",
+            is_member=True,
+            show_phone=False,
+        )
         response = api_client.get("/api/auth/users/directory/", **auth_headers)
         assert response.status_code == 200
-        entry = next(u for u in response.json() if u["id"] == str(other_user.pk))
-        assert other_user.phone_number not in entry["display_name"]
-        assert entry["display_name"] == "member"
+        entry = next(u for u in response.json() if u["id"] == str(nameless_user.pk))
+        assert nameless_user.phone_number not in entry["full_name"]
+        assert entry["full_name"] == ""

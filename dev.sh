@@ -7,7 +7,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "🚀 Starting backend..."
-make run &
+make "${RUN_TARGET:-run}" &
 
 sleep 2
 

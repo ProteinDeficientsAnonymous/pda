@@ -132,4 +132,37 @@ describe('GroupTextDialog', () => {
     render(<GroupTextDialog eventId="e1" open onClose={noop} />);
     expect(screen.getByText(/no one has a number/i)).toBeInTheDocument();
   });
+
+  it('resets the selection to defaults when reopened', () => {
+    mockLoaded(recipients());
+    const { rerender } = render(<GroupTextDialog eventId="e1" open onClose={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /^maybe/i }));
+    expect(screen.getAllByRole('button', { pressed: true }).map((el) => el.textContent)).toEqual([
+      'going1',
+    ]);
+
+    rerender(<GroupTextDialog eventId="e1" open={false} onClose={noop} />);
+    rerender(<GroupTextDialog eventId="e1" open onClose={noop} />);
+
+    expect(screen.getAllByRole('button', { pressed: true }).map((el) => el.textContent)).toEqual([
+      'going1',
+      'maybe1',
+    ]);
+  });
+
+  it('resets the selection to defaults when the event changes', () => {
+    mockLoaded(recipients());
+    const { rerender } = render(<GroupTextDialog eventId="e1" open onClose={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /^maybe/i }));
+    expect(screen.getAllByRole('button', { pressed: true }).map((el) => el.textContent)).toEqual([
+      'going1',
+    ]);
+
+    rerender(<GroupTextDialog eventId="e2" open onClose={noop} />);
+
+    expect(screen.getAllByRole('button', { pressed: true }).map((el) => el.textContent)).toEqual([
+      'going1',
+      'maybe1',
+    ]);
+  });
 });

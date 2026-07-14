@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,7 +18,8 @@ describe('MemberCreateDialog', () => {
     mutateAsync.mockResolvedValue({
       id: '1',
       phoneNumber: '+12025550101',
-      displayName: '',
+      fullName: '',
+      firstName: '',
       magicLinkToken: 'tok',
     });
     vi.mocked(useCreateUser).mockReturnValue({
@@ -33,20 +34,35 @@ describe('MemberCreateDialog', () => {
     expect(screen.getByText(/asked for one at first login/i)).toBeInTheDocument();
   });
 
-  it('submits with no email when left blank', async () => {
+  it('does not submit when first name is blank', async () => {
     render(<MemberCreateDialog open onClose={() => {}} />);
-    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+12025550101' } });
     await userEvent.click(screen.getByRole('button', { name: /^create$/i }));
-    expect(mutateAsync).toHaveBeenCalledWith({ phoneNumber: '+12025550101' });
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 
-  it('submits with email when filled', async () => {
+  it('submits with first name and no last name / email when left blank', async () => {
     render(<MemberCreateDialog open onClose={() => {}} />);
-    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Ada');
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+12025550101' } });
+    await userEvent.click(screen.getByRole('button', { name: /^create$/i }));
+    expect(mutateAsync).toHaveBeenCalledWith({
+      phoneNumber: '+12025550101',
+      firstName: 'Ada',
+    });
+  });
+
+  it('submits with last name and email when filled', async () => {
+    render(<MemberCreateDialog open onClose={() => {}} />);
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Ada');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'Lovelace');
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+12025550101' } });
     await userEvent.type(screen.getByLabelText(/email/i), 'new@example.com');
     await userEvent.click(screen.getByRole('button', { name: /^create$/i }));
     expect(mutateAsync).toHaveBeenCalledWith({
       phoneNumber: '+12025550101',
+      firstName: 'Ada',
+      lastName: 'Lovelace',
       email: 'new@example.com',
     });
   });

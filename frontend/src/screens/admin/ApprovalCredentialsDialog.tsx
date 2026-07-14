@@ -24,7 +24,8 @@ import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 interface Props {
   open: boolean;
   onClose: () => void;
-  displayName: string;
+  fullName: string;
+  firstName: string;
   phoneNumber: string;
   magicLinkToken: string | null;
 }
@@ -32,7 +33,8 @@ interface Props {
 export function ApprovalCredentialsDialog({
   open,
   onClose,
-  displayName,
+  fullName,
+  firstName,
   phoneNumber,
   magicLinkToken,
 }: Props) {
@@ -43,16 +45,16 @@ export function ApprovalCredentialsDialog({
 
   if (!magicLinkToken) return null;
   const magicLinkUrl = buildMagicLinkUrl(magicLinkToken);
-  const senderName = currentUser?.displayName ?? '';
+  const senderName = currentUser?.firstName ?? '';
   // If the template fetch fails, fall back to the legacy hardcoded body so
   // vetters can still send a message.
   const welcomeMessage = templateQ.data
     ? renderWelcomeMessage(templateQ.data.body, {
-        name: displayName,
+        name: firstName,
         senderName,
         magicLink: magicLinkUrl,
       })
-    : buildWelcomeMessage(displayName, magicLinkUrl);
+    : buildWelcomeMessage(firstName, magicLinkUrl);
   const smsHref = buildSmsHref(phoneNumber, welcomeMessage);
   const whatsappHref = buildWhatsAppHref(phoneNumber, welcomeMessage);
   const sendButtonsDisabled = templateQ.isPending;
@@ -68,7 +70,7 @@ export function ApprovalCredentialsDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} title={`welcome ${displayName}`}>
+      <Dialog open={open} onClose={onClose} title={`welcome ${fullName}`}>
         <p className="text-foreground-secondary text-sm">
           share this one-time login link with {formatPhone(phoneNumber)}. it won't be shown again.
         </p>
@@ -121,7 +123,7 @@ function SendLink({ href, label, disabled }: { href: string; label: string; disa
     );
   }
   return (
-    <a href={href} className={className}>
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
       {label}
     </a>
   );

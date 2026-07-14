@@ -17,9 +17,10 @@ import {
 import type { User } from '@/models/user';
 
 const setRsvpMutate = vi.fn();
+const removeRsvpMutate = vi.fn();
 vi.mock('@/api/rsvp', () => ({
   useSetRsvp: () => ({ mutateAsync: setRsvpMutate, isPending: false }),
-  useRemoveRsvp: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRemoveRsvp: () => ({ mutateAsync: removeRsvpMutate, isPending: false }),
 }));
 
 vi.mock('./RsvpGuestList', () => ({
@@ -37,9 +38,14 @@ import { RsvpSection } from './RsvpSection';
 const ME: User = {
   id: 'user-me',
   phoneNumber: '+12125550001',
-  displayName: 'Me',
+  firstName: 'Me',
+  lastName: '',
+  fullName: 'Me',
+  nickname: '',
   email: '',
   bio: '',
+  pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -48,6 +54,7 @@ const ME: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',
@@ -115,6 +122,7 @@ function makeEvent(overrides: Partial<Event>): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    photoUpdatedAt: null,
     tags: [],
     isPast: false,
     status: EventStatus.Active,
@@ -136,6 +144,8 @@ function renderSection(event: Event) {
 beforeEach(() => {
   setRsvpMutate.mockReset();
   setRsvpMutate.mockResolvedValue(undefined);
+  removeRsvpMutate.mockReset();
+  removeRsvpMutate.mockResolvedValue(undefined);
   useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'tok' });
 });
 
@@ -256,5 +266,38 @@ describe('RsvpSection — waitlist label at capacity (issue #584)', () => {
       eventId: 'ev1',
       status: RsvpServerStatus.Attending,
     });
+  });
+});
+
+describe('RsvpSection — spots left', () => {
+  it('shows "x spots left" for a capacity-limited event with room', () => {
+    renderSection(makeEvent({ maxAttendees: 10, attendingCount: 7, myRsvp: null }));
+    expect(screen.getByText('3 spots left')).toBeInTheDocument();
+  });
+
+  it('singularizes "1 spot left"', () => {
+    renderSection(makeEvent({ maxAttendees: 10, attendingCount: 9, myRsvp: null }));
+    expect(screen.getByText('1 spot left')).toBeInTheDocument();
+  });
+
+  it('shows no spots-left text for unlimited-capacity events', () => {
+    renderSection(makeEvent({ maxAttendees: null, attendingCount: 7, myRsvp: null }));
+    expect(screen.queryByText(/spots? left/)).not.toBeInTheDocument();
+  });
+
+  it('shows no spots-left text at capacity', () => {
+    renderSection(makeEvent({ maxAttendees: 10, attendingCount: 10, myRsvp: null }));
+    expect(screen.queryByText(/spots? left/)).not.toBeInTheDocument();
+  });
+});
+
+describe('RsvpSection — leave waitlist error handling (issue #633)', () => {
+  it('surfaces an error when leaving the waitlist fails', async () => {
+    removeRsvpMutate.mockRejectedValue(new Error('boom'));
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'leave waitlist' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't update your rsvp/i);
   });
 });

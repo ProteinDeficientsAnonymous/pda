@@ -3,7 +3,7 @@
 //   authed (RequireAuth)     : settings, profile, ...
 //   permissioned             : admin/*, members, etc.
 //
-// All screens are lazy-loaded (React.lazy) — 1:1 replacement for DeferredScreen.
+// All screens are lazy-loaded (lazy) — 1:1 replacement for DeferredScreen.
 
 import { createBrowserRouter } from 'react-router-dom';
 
@@ -32,7 +32,9 @@ const Calendar = lazyWithRetry(() => import('@/screens/calendar/CalendarScreen')
 const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScreen'));
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
+const EventAttendance = lazyWithRetry(() => import('@/screens/events/EventAttendanceScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
+const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
 const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
 const Profile = lazyWithRetry(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen'));
@@ -45,6 +47,7 @@ const AdminHub = lazyWithRetry(() => import('@/screens/admin/AdminHubScreen'));
 const JoinRequestsAdmin = lazyWithRetry(() => import('@/screens/admin/JoinRequestsScreen'));
 const EventManagement = lazyWithRetry(() => import('@/screens/admin/EventManagementScreen'));
 const FlaggedEvents = lazyWithRetry(() => import('@/screens/admin/FlaggedEventsScreen'));
+const AttendanceReport = lazyWithRetry(() => import('@/screens/admin/AttendanceReportScreen'));
 const JoinFormAdmin = lazyWithRetry(() => import('@/screens/admin/JoinFormAdminScreen'));
 const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
@@ -85,6 +88,7 @@ export const router = createBrowserRouter([
               { path: '/join/success', element: el(<JoinSuccess />) },
               { path: '/calendar', element: el(<Calendar />) },
               { path: '/events/:id', element: el(<EventDetail />) },
+              { path: '/my-rsvps', element: el(<PublicRsvps />) },
               { path: '/surveys/:slug', element: el(<Survey />) },
               { path: '/donate', element: el(<Donate />) },
               { path: '/install', element: el(<Install />) },
@@ -104,6 +108,7 @@ export const router = createBrowserRouter([
                   { path: '/events/mine', element: el(<MyEvents />) },
                   { path: '/events/add', element: el(<EventCreate />) },
                   { path: '/events/:id/edit', element: el(<EventEdit />) },
+                  { path: '/events/:id/attendance', element: el(<EventAttendance />) },
                   { path: '/members', element: el(<MembersDirectory />) },
                   { path: '/members/:userId', element: el(<MemberProfile />) },
                 ],
@@ -133,6 +138,7 @@ export const router = createBrowserRouter([
                 children: [
                   { path: '/events/manage', element: el(<EventManagement />) },
                   { path: '/admin/flagged-events', element: el(<FlaggedEvents />) },
+                  { path: '/admin/attendance', element: el(<AttendanceReport />) },
                 ],
               },
               {

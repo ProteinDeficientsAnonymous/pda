@@ -6,6 +6,7 @@
 import { format, isSameDay } from 'date-fns';
 
 import { type Event as PdaEvent, eventClass } from '@/models/event';
+import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
 
 interface Props {
@@ -108,6 +109,7 @@ function DayEventCard({ event, onSelect }: CardProps) {
       {event.description ? (
         <p className="mt-1 line-clamp-2 text-xs opacity-90">{event.description}</p>
       ) : null}
+      <EventCardBadges event={event} variant="card" className="mt-1.5" />
     </button>
   );
 }

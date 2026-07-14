@@ -22,16 +22,6 @@ interface Props {
 
 export function GroupTextDialog({ eventId, open, onClose }: Props) {
   const recipientsQ = useTextRecipients(eventId, open);
-  const [selected, setSelected] = useState<Set<RecipientGroupValue>>(() => new Set(DEFAULT_GROUPS));
-
-  function toggle(value: RecipientGroupValue) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(value)) next.delete(value);
-      else next.add(value);
-      return next;
-    });
-  }
 
   return (
     <Dialog open={open} onClose={onClose} title="group text">
@@ -40,12 +30,9 @@ export function GroupTextDialog({ eventId, open, onClose }: Props) {
       ) : recipientsQ.isError ? (
         <p className="text-muted text-sm">couldn't load numbers — try again</p>
       ) : (
-        <RecipientPicker
-          recipients={recipientsQ.data}
-          selected={selected}
-          onToggle={toggle}
-          onClose={onClose}
-        />
+        // key by eventId so the selection resets to defaults for a different
+        // event; the picker also unmounts on close, so each open starts fresh.
+        <RecipientPicker key={eventId} recipients={recipientsQ.data} onClose={onClose} />
       )}
     </Dialog>
   );
@@ -53,15 +40,22 @@ export function GroupTextDialog({ eventId, open, onClose }: Props) {
 
 function RecipientPicker({
   recipients,
-  selected,
-  onToggle,
   onClose,
 }: {
   recipients: TextRecipients;
-  selected: Set<RecipientGroupValue>;
-  onToggle: (value: RecipientGroupValue) => void;
   onClose: () => void;
 }) {
+  const [selected, setSelected] = useState<Set<RecipientGroupValue>>(() => new Set(DEFAULT_GROUPS));
+
+  function onToggle(value: RecipientGroupValue) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
+
   const options = availableGroups(recipients);
   const phones = collectPhones(recipients, selected);
   const smsUri = buildSmsUri(phones);

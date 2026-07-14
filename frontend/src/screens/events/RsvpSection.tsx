@@ -11,8 +11,14 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
-import { cn } from '@/utils/cn';
+import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
+import {
+  type Event,
+  type RsvpInputStatus,
+  RsvpServerStatus,
+  RsvpStatus,
+  spotsLeft,
+} from '@/models/event';
 
 import { RsvpGuestList } from './RsvpGuestList';
 import { RsvpNoteField } from './RsvpNoteField';
@@ -50,9 +56,9 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   // toggle reflects the wrong user (issue #368).
   const myGuest = event.guests.find((g) => g.userId === myUserId);
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
-  const atCapacity = event.maxAttendees !== null && event.attendingCount >= event.maxAttendees;
+  const atCapacity = spotsLeft(event) === 0;
 
-  async function apply(next: InputStatus) {
+  async function apply(next: RsvpInputStatus) {
     setError(null);
     try {
       if (next === myRsvp) {
@@ -60,6 +66,15 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
       } else {
         await setRsvp.mutateAsync({ eventId: event.id, status: next });
       }
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
+  async function leaveWaitlist() {
+    setError(null);
+    try {
+      await removeRsvp.mutateAsync(event.id);
     } catch (err) {
       setError(extractError(err));
     }
@@ -76,7 +91,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     try {
       await setRsvp.mutateAsync({
         eventId: event.id,
-        status,
+        status: myRsvp as RsvpInputStatus,
         hasPlusOne: !hasPlusOne,
       });
     } catch (err) {
@@ -102,31 +117,20 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {onWaitlist ? (
-        <WaitlistView
-          onLeave={() => {
-            void removeRsvp.mutateAsync(event.id);
-          }}
-          busy={busy}
-        />
+        <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
       ) : (
         <>
-          <div className="flex flex-wrap justify-center gap-2">
-            {PILLS.map((p) => {
-              const waitlistAttending =
-                p.status === RsvpStatus.Attending &&
-                atCapacity &&
-                myRsvp !== RsvpServerStatus.Attending;
-              return (
-                <RsvpPill
-                  key={p.status}
-                  label={waitlistAttending ? 'join the waitlist' : p.label}
-                  active={myRsvp === p.status}
-                  disabled={busy}
-                  onClick={() => void apply(p.status)}
-                />
-              );
-            })}
-          </div>
+          <RsvpStatusPicker
+            value={myRsvp}
+            disabled={busy}
+            onSelect={(status) => void apply(status)}
+            labelFor={(status, def) =>
+              status === RsvpStatus.Attending && atCapacity && myRsvp !== RsvpServerStatus.Attending
+                ? 'join the waitlist'
+                : def
+            }
+          />
+          <SpotsLeft event={event} />
           {event.allowPlusOnes &&
           (myRsvp === RsvpServerStatus.Attending || myRsvp === RsvpServerStatus.Maybe) ? (
             <div className="flex justify-center">
@@ -159,36 +163,6 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   );
 }
 
-function RsvpPill({
-  label,
-  active,
-  disabled,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'inline-flex h-10 items-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
-        active
-          ? 'bg-brand-600 text-brand-on'
-          : 'border-border-strong text-foreground-secondary hover:bg-background border',
-        disabled && 'opacity-60',
-      )}
-    >
-      {label}
-    </button>
-  );
-}
-
 function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean }) {
   return (
     <div className="flex items-center gap-3 rounded-md bg-amber-50 px-3 py-2">
@@ -197,6 +171,16 @@ function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean })
         leave waitlist
       </Button>
     </div>
+  );
+}
+
+function SpotsLeft({ event }: { event: Event }) {
+  const left = spotsLeft(event);
+  if (left === null || left === 0) return null;
+  return (
+    <p className="text-warning text-center text-xs">
+      {left === 1 ? '1 spot left' : `${String(left)} spots left`}
+    </p>
   );
 }
 

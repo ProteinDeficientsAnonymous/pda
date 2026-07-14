@@ -17,6 +17,7 @@ from ._seed_data import (
     SEED_HOME_PAGE,
     SEED_JOIN_FORM_QUESTIONS,
     SEED_JOIN_REQUESTS,
+    SEED_NON_MEMBERS,
     SEED_RSVPS,
     SEED_USERS,
     SeedUser,
@@ -40,6 +41,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         admin_user = self._seed_users()
+        self._seed_non_members()
         questions = self._seed_join_form_questions()
         self._seed_event_tags()
         events = self._seed_events(admin_user)
@@ -56,17 +58,18 @@ class Command(BaseCommand):
         if data.bio and not user.bio:
             updates["bio"] = data.bio
         if not updates:
-            self.stdout.write(f"  Already exists: {user.display_name}")
+            self.stdout.write(f"  Already exists: {user.full_name}")
             return
         for k, v in updates.items():
             setattr(user, k, v)
         user.save(update_fields=list(updates.keys()))
-        self.stdout.write(f"  Backfilled {', '.join(updates)}: {user.display_name}")
+        self.stdout.write(f"  Backfilled {', '.join(updates)}: {user.full_name}")
 
     def _create_or_skip_user(self, data, admin_role, member_role) -> tuple[User, bool]:
         """Create user from seed data or return existing. Returns (user, created)."""
         defaults: dict[str, object] = {
-            "display_name": data.display_name,
+            "first_name": data.first_name,
+            "last_name": data.last_name,
             "email": data.email,
             "bio": data.bio,
             "is_member": True,
@@ -81,7 +84,7 @@ class Command(BaseCommand):
             user.set_password(PASSWORD)
             user.save()
             user.roles.add(admin_role if data.is_superuser else member_role)
-            self.stdout.write(f"  Created user: {user.display_name}")
+            self.stdout.write(f"  Created user: {user.full_name}")
         else:
             self._backfill_user(user, data)
         return user, created
@@ -99,6 +102,25 @@ class Command(BaseCommand):
 
         assert admin_user is not None, "SEED_USERS must contain a superuser entry"
         return admin_user
+
+    def _seed_non_members(self) -> None:
+        """Non-member users (e.g. join-request applicants) referenced by SEED_RSVPS."""
+        for data in SEED_NON_MEMBERS:
+            user, created = User.objects.get_or_create(
+                phone_number=data.phone_number,
+                defaults={
+                    "first_name": data.first_name,
+                    "last_name": data.last_name,
+                    "email": data.email,
+                    "is_member": False,
+                },
+            )
+            if created:
+                user.set_unusable_password()
+                user.save(update_fields=["password"])
+            self.stdout.write(
+                f"  {'Created' if created else 'Already exists'} non-member: {user.full_name}"
+            )
 
     def _seed_join_form_questions(self) -> dict[str, JoinFormQuestion]:
         """Seed default join form questions. Returns a label→question mapping."""
@@ -178,7 +200,7 @@ class Command(BaseCommand):
                 },
             )
             label = "Created" if created else "Already exists"
-            self.stdout.write(f"  {label} RSVP: {user.display_name} → {data.event_title}")
+            self.stdout.write(f"  {label} RSVP: {user.full_name} → {data.event_title}")
 
     def _seed_join_requests(self, questions: dict[str, JoinFormQuestion], admin_user: User) -> None:
         now = timezone.now()
@@ -201,12 +223,13 @@ class Command(BaseCommand):
                     defaults["rejected_at"] = decided_at
                     defaults["rejected_by"] = admin_user
             _, created = JoinRequest.objects.get_or_create(
-                display_name=data.display_name,
+                first_name=data.first_name,
+                last_name=data.last_name,
                 phone_number=data.phone_number,
                 defaults=defaults,
             )
             label = "Created" if created else "Already exists"
-            self.stdout.write(f"  {label} join request: {data.display_name}")
+            self.stdout.write(f"  {label} join request: {data.full_name}")
 
     def _seed_content(self) -> None:
         _seed_singleton(HomePage, SEED_HOME_PAGE, ("content_html",), self)
@@ -226,4 +249,4 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write("Credentials (all seed users):")
         for data in SEED_USERS:
-            self.stdout.write(f"  {data.display_name}: {data.phone_number} / {PASSWORD}")
+            self.stdout.write(f"  {data.full_name}: {data.phone_number} / {PASSWORD}")

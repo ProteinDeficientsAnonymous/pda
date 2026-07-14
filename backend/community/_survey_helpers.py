@@ -1,6 +1,7 @@
 """Helper functions for survey output serialization and tally logic."""
 
 from config.media_proxy import media_path
+from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._survey_schemas import (
@@ -107,10 +108,10 @@ def _response_out(response: SurveyResponse, user_name: str | None) -> SurveyResp
     )
 
 
-def _voter_out(user) -> VoterOut:
+def _voter_out(user, viewer=None) -> VoterOut:
     return VoterOut(
         user_id=str(user.pk),
-        name=user.display_name or user.phone_number,
+        name=visible_display_name(user, viewer),
         photo_url=media_path(user.profile_photo),
     )
 
@@ -142,7 +143,9 @@ def _tally_str_answer(
                 voters[val].append(voter)
 
 
-def _tally_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> PollResultsOut:
+def _tally_question(
+    q: SurveyQuestion, responses: list[SurveyResponse], viewer=None
+) -> PollResultsOut:
     options = q.options or []
     counts: dict[str, dict[str, int]] = {
         opt: {PollAvailability.YES: 0, PollAvailability.MAYBE: 0} for opt in options
@@ -153,7 +156,7 @@ def _tally_question(q: SurveyQuestion, responses: list[SurveyResponse]) -> PollR
         if not answer_data:
             continue
         answer = answer_data.get("answer")
-        voter = _voter_out(r.user) if r.user else None
+        voter = _voter_out(r.user, viewer) if r.user else None
         if isinstance(answer, dict):
             _tally_dict_answer(answer, counts, voters, voter)
         elif isinstance(answer, str):

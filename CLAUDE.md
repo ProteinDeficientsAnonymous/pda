@@ -21,8 +21,18 @@ make run              # Run Django dev server on localhost:8000
 make dev              # Run Django + Vite concurrently
 make db-start         # Start local PostgreSQL via Docker
 make db-stop          # Stop local PostgreSQL
+make dev-sqlite       # Run Django (SQLite) + Vite — default for local dev (no Docker, per-worktree dev.db)
+make run-sqlite       # Run Django against SQLite dev.db (auto-migrates + seeds)
+make dev-db-init      # Migrate + seed the per-worktree SQLite dev.db
+make dev-db-reset     # Delete and re-init the SQLite dev.db
+make dev-pg           # Postgres + Vite — per-worktree DB; only when SQLite cannot verify Postgres features
+make run-pg           # Run Django against per-worktree Postgres (auto-migrates + seeds)
+make dev-pg-db-init   # Create + migrate + seed the per-worktree Postgres DB
+make dev-pg-db-reset  # Drop and re-init the per-worktree Postgres DB
 make migrate          # makemigrations + migrate
 make seed             # Seed database with sample data (local dev)
+# seed staging demo data on demand (roles/users/events); never prod:
+#   railway run --environment staging python backend/manage.py seed_staging
 make agent-test       # Run pytest (quiet)
 make agent-test-since # Run pytest subset from git diff
 make agent-lint       # Run ruff (lint + format; minimal output)
@@ -74,7 +84,7 @@ Routes: see `.claude/docs/routes.md`
 
 ## Environment
 
-- **Dev database**: PostgreSQL via Docker (`make db-start`)
+- **Dev database**: Prefer Docker-free per-worktree SQLite via `make dev-sqlite` / `make run-sqlite` (gitignored `dev.db` at the worktree root). Use per-worktree Postgres via `make dev-pg` / `make run-pg` **only when local verification depends on actual Postgres features** that SQLite cannot exercise — e.g. SSE live notifications (`/api/notifications/stream/` uses `pg_notify`; returns 503 on SQLite). One shared Docker Postgres container; each worktree gets its own database (name in gitignored `.dev-pg-db-name`). `make dev` / `make run` still use the shared `DATABASE_URL` from `.env` (typically `pda` on localhost:5432).
 - **Prod database**: PostgreSQL via `DATABASE_URL`
 - **Deployed on**: Railway (`railway.json`)
 - **Deploy flow:** `main` is the default branch. Pushes to `main` auto-deploy to Railway **staging** (Railway's GitHub integration watches `main` on the staging environment). Production deploys are **manual only** via GitHub Actions `workflow_dispatch` — Railway auto-deploy is disconnected on the production environment.
@@ -84,7 +94,7 @@ Routes: see `.claude/docs/routes.md`
 
 ## Standards
 
-**Agents:** Run **`make agent-ci`** (or matching `make agent-*` step) before claiming work complete or committing.
+**Agents:** Run the full **`make agent-ci`** suite once as a **pre-PR gate** — before opening/updating a PR or claiming work complete — not on every commit (GitHub re-runs CI on every push). While iterating, run the cheap `make agent-*` steps for what you touched (typecheck + relevant tests).
 
 References: `~/.claude/rules/standards-django-ninja.md`
 

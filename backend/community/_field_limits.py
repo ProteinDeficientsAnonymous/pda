@@ -12,6 +12,8 @@ class FieldLimit:
     CONTENT_HTML = 100000  # HTML is more verbose than Delta JSON
     URL = 200
     DISPLAY_NAME = 64
+    FIRST_NAME = 64
+    LAST_NAME = 64
     PHONE = 20
     PASSWORD = 128
     SLUG = 100
@@ -20,4 +22,6 @@ class FieldLimit:
     CHOICE = 20
     PAYMENT_HANDLE = 100
     BIO = 500
+    PRONOUNS = 100
+    NICKNAME = 64
     WELCOME_TEMPLATE = 4000

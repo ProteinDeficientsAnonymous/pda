@@ -7,6 +7,7 @@ from config.audit import audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
+from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._shared import ErrorOut
@@ -414,7 +415,7 @@ def list_survey_responses(request, survey_id: UUID):
             SurveyResponseOut(
                 id=str(r.id),
                 user_id=str(r.user_id) if r.user_id else None,
-                user_name=(r.user.display_name or r.user.phone_number) if r.user else None,
+                user_name=visible_display_name(r.user, request.auth) if r.user else None,
                 answers=r.answers,
                 submitted_at=r.submitted_at,
             )

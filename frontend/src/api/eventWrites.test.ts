@@ -1,6 +1,10 @@
 // Pure-helper tests for the event write layer: enum-coercion on the inbound
 // side (eventToFormValues) and per-field PATCH body building (toPartialWireBody).
-import { describe, expect, it } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type Event,
@@ -10,7 +14,27 @@ import {
   InvitePermission,
 } from '@/models/event';
 
-import { eventToFormValues, toPartialWireBody } from './eventWrites';
+vi.mock('@/api/client', () => ({
+  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+}));
+
+vi.mock('@/auth/store', () => {
+  const state = { status: 'authed', user: { id: 'u-me' } };
+  const useAuthStore = vi.fn((selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state,
+  );
+  return { useAuthStore };
+});
+
+import { apiClient } from '@/api/client';
+
+import {
+  eventToFormValues,
+  toPartialWireBody,
+  useInviteToEvent,
+  useUploadEventPhoto,
+} from './eventWrites';
+import { textRecipientsKeys } from './textRecipients';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -58,6 +82,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    photoUpdatedAt: null,
     tags: [],
     isPast: false,
     status: EventStatus.Active,
@@ -96,10 +121,10 @@ describe('eventToFormValues enum validation', () => {
     expect(form.status).toBe(EventStatus.Active);
   });
 
-  it('derives visibilityChoice from the coerced (not raw) values', () => {
+  it('coerces type and visibility independently', () => {
     const form = eventToFormValues(makeEvent({ eventType: 'bogus', visibility: 'bogus' }));
-    // community + public → 'public'
-    expect(form.visibilityChoice).toBe('public');
+    expect(form.eventType).toBe('community');
+    expect(form.visibility).toBe('public');
   });
 
   it('maps tags to tagIds', () => {
@@ -131,14 +156,13 @@ describe('toPartialWireBody', () => {
     expect(body).toEqual({ title: 'x' });
   });
 
-  it('expands visibilityChoice into visibility + event_type', () => {
-    expect(toPartialWireBody({ visibilityChoice: 'official' })).toEqual({
-      visibility: 'public',
+  it('sends event_type and visibility as independent wire fields', () => {
+    expect(toPartialWireBody({ eventType: 'official', visibility: 'public' })).toEqual({
       event_type: 'official',
+      visibility: 'public',
     });
-    expect(toPartialWireBody({ visibilityChoice: 'invite_only' })).toEqual({
+    expect(toPartialWireBody({ visibility: 'invite_only' })).toEqual({
       visibility: 'invite_only',
-      event_type: 'community',
     });
   });
 
@@ -153,5 +177,71 @@ describe('toPartialWireBody', () => {
   it('maps tagIds to tag_ids, including an empty list (clears tags)', () => {
     expect(toPartialWireBody({ tagIds: ['t1', 't2'] })).toEqual({ tag_ids: ['t1', 't2'] });
     expect(toPartialWireBody({ tagIds: [] })).toEqual({ tag_ids: [] });
+  });
+});
+
+describe('useInviteToEvent', () => {
+  const EVENT_ID = '11111111-1111-1111-1111-111111111111';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function buildWrapper() {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+    return { qc, Wrapper };
+  }
+
+  it('invalidates the text-recipients query so the group-text count refreshes (issue 612)', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: { id: EVENT_ID } });
+    const { qc, Wrapper } = buildWrapper();
+    const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
+
+    const { result } = renderHook(() => useInviteToEvent(EVENT_ID), { wrapper: Wrapper });
+    result.current.mutate(['user-a']);
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: textRecipientsKeys.detail(EVENT_ID),
+    });
+  });
+});
+
+describe('useUploadEventPhoto', () => {
+  const EVENT_ID = '22222222-2222-2222-2222-222222222222';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function buildWrapper() {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+    return { qc, Wrapper };
+  }
+
+  // Regression for issue 668: on create the id isn't known until create-event
+  // resolves, so the upload must use the id from the mutation variables — not
+  // an id captured at hook-call time (which was '' on create → 404).
+  it('posts to the event id passed at call-time', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: makeEvent({ id: EVENT_ID }) });
+    const { Wrapper } = buildWrapper();
+
+    const { result } = renderHook(() => useUploadEventPhoto(), { wrapper: Wrapper });
+    result.current.mutate({ eventId: EVENT_ID, blob: new Blob(['x'], { type: 'image/png' }) });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(apiClient.post).toHaveBeenCalledWith(
+      `/api/community/events/${EVENT_ID}/photo/`,
+      expect.any(FormData),
+      expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
+    );
   });
 });

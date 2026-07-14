@@ -1,20 +1,3 @@
-// UI copy for machine-readable validation errors.
-//
-// Backend raises ValidationException(code, field, params?) and a global Ninja
-// handler reshapes those (plus Pydantic errors) into
-// { detail: [{ code, field, params? }, ...] }.
-//
-// The `Code` tree and `ValidationCode` union are generated from the backend
-// (see validationCodes.gen.ts). This file owns the UI copy for each code and
-// re-exports `Code` with an added FE-only `Generic` namespace for the
-// Pydantic-shape codes the handler emits.
-//
-// Adding a code:
-//   1. Add the constant in backend/community/_validation.py.
-//   2. Run `make generate-codes` (regenerates validationCodes.gen.ts).
-//   3. Add a `case` in messageForKnownCode() below — TS will fail the build
-//      until every generated code has a case.
-
 import { Code as GeneratedCode, type ValidationCode } from './validationCodes.gen';
 
 /**
@@ -75,16 +58,12 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'start date must be in the future';
     case Code.Event.EndBeforeStart:
       return 'end time must be after the start time';
-    case Code.Event.AttendanceInvalidChoice:
-      return 'pick a valid attendance option';
     case Code.Event.OfficialMustBePublic:
       return 'official events must be public';
     case Code.Event.InvalidCreateStatus:
       return 'new events can only be saved as active or draft';
     case Code.Event.DateLockedByPoll:
       return "can't edit the date while a poll is active — finalize the poll first";
-    case Code.Event.InviteOnly:
-      return 'this event is invite only';
     case Code.Event.PermDenied:
       return "you don't have permission to see this event";
     case Code.Event.AuthRequired:
@@ -121,6 +100,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'check-in opens an hour before the event starts';
     case Code.Event.AttendanceOnlyForGoingRsvps:
       return 'attendance can only be marked on going rsvps';
+    case Code.Event.BlastInvalidAudience:
+      return 'that audience choice is not valid';
+    case Code.Event.BlastNoRecipients:
+      return 'no attendees in that audience have an email — nothing to send';
 
     // Poll
     case Code.Poll.NotFound:
@@ -159,6 +142,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "you don't have permission to do that";
     case Code.Comment.EventMismatch:
       return "that reply target isn't in this event";
+
+    // Tag
+    case Code.Tag.NotFound:
+      return 'tag not found';
+    case Code.Tag.NameRequired:
+      return 'enter a tag name';
+    case Code.Tag.NameAlreadyExists:
+      return 'a tag with that name already exists';
 
     // URL
     case Code.Url.Invalid:

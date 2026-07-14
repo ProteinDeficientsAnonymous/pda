@@ -26,3 +26,12 @@ export function parseIsoDate(iso: string): Date {
   // parses that natively.
   return new Date(iso);
 }
+
+export function formatBirthday(isoDate: string): string {
+  // A birthday is a plain yyyy-mm-dd with no timezone. `new Date('yyyy-mm-dd')`
+  // parses as UTC midnight, which shifts the day in negative-offset zones, so
+  // build a local date from the parts instead.
+  const [year, month, day] = isoDate.split('-').map(Number);
+  if (!year || !month || !day) return '';
+  return format(new Date(year, month - 1, day), 'MMMM d, yyyy').toLowerCase();
+}

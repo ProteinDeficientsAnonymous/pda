@@ -15,6 +15,7 @@ from community.models import (
     EventType,
     InvitePermission,
     PageVisibility,
+    RSVPStatus,
 )
 
 # Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
@@ -137,6 +138,10 @@ class TagOut(BaseModel):
     slug: str
 
 
+class TagIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+
+
 class RSVPGuestOut(BaseModel):
     user_id: str
     name: str
@@ -146,6 +151,7 @@ class RSVPGuestOut(BaseModel):
     photo_url: str = ""
     attendance: str = AttendanceStatus.UNKNOWN
     note: str = ""
+    checked_in_at: datetime | None = None
 
 
 class PendingCoHostInviteOut(BaseModel):
@@ -168,6 +174,7 @@ class EventListOut(BaseModel):
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
+    photo_updated_at: str | None = None
     whatsapp_link: str = ""
     partiful_link: str = ""
     other_link: str = ""
@@ -189,6 +196,7 @@ class EventListOut(BaseModel):
     waitlisted_count: int = 0
     invited_count: int = 0
     comment_count: int = 0
+    my_rsvp: str | None = None
     is_past: bool = False
     status: str = "active"
     tags: list[TagOut] = []
@@ -228,6 +236,7 @@ class EventOut(BaseModel):
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
+    photo_updated_at: str | None = None
     datetime_tbd: bool = False
     allow_plus_ones: bool = False
     max_attendees: int | None = None
@@ -250,7 +259,7 @@ class EventOut(BaseModel):
 
 
 class RSVPIn(BaseModel):
-    status: str = Field(max_length=FieldLimit.CHOICE)
+    status: RSVPStatus
     has_plus_one: bool = False
     # None = leave any existing note untouched (e.g. a status-only change);
     # a string (empty included) explicitly sets/clears it.
@@ -284,20 +293,23 @@ class EventStatsOut(BaseModel):
     cancellations: list[CancellationOut] = []
 
 
-class AttendanceIn(BaseModel):
-    attendance: str = Field(max_length=FieldLimit.CHOICE)
+class EventAttendanceRowOut(BaseModel):
+    """One event's attendance summary for the admin attendance report."""
 
-    @field_validator("attendance")
-    @classmethod
-    def validate_attendance(cls, v: str) -> str:
-        valid = {AttendanceStatus.UNKNOWN, AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW}
-        if v not in valid:
-            raise_validation(
-                Code.Event.ATTENDANCE_INVALID_CHOICE,
-                field="attendance",
-                allowed=sorted(valid),
-            )
-        return v
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+    attended_count: int = 0
+    no_show_count: int = 0
+    going_count: int = 0
+
+
+class AttendanceReportOut(BaseModel):
+    events: list[EventAttendanceRowOut] = []
+
+
+class AttendanceIn(BaseModel):
+    attendance: AttendanceStatus
 
 
 class EventIn(BaseModel):

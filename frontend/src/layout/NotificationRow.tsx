@@ -17,9 +17,12 @@ export function NotificationRow({
   const navigate = useNavigate();
   function onClick() {
     onMarkRead();
-    onActivate?.();
+    // Navigate before onActivate closes the menu. Closing first unmounts this
+    // row mid-click, which on mobile Safari can drop the queued navigation so
+    // the tap appears to do nothing (Issue 436).
     const target = notificationTarget(n);
     if (target) void navigate(target);
+    onActivate?.();
   }
   return (
     <button

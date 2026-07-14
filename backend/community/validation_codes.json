@@ -27,11 +27,6 @@
         "params": []
       },
       {
-        "name": "ATTENDANCE_INVALID_CHOICE",
-        "value": "event.attendance_invalid_choice",
-        "params": []
-      },
-      {
         "name": "OFFICIAL_MUST_BE_PUBLIC",
         "value": "event.official_must_be_public",
         "params": []
@@ -44,11 +39,6 @@
       {
         "name": "DATE_LOCKED_BY_POLL",
         "value": "event.date_locked_by_poll",
-        "params": []
-      },
-      {
-        "name": "INVITE_ONLY",
-        "value": "event.invite_only",
         "params": []
       },
       {
@@ -142,6 +132,16 @@
         "params": [
           "action?"
         ]
+      },
+      {
+        "name": "BLAST_INVALID_AUDIENCE",
+        "value": "event.blast_invalid_audience",
+        "params": []
+      },
+      {
+        "name": "BLAST_NO_RECIPIENTS",
+        "value": "event.blast_no_recipients",
+        "params": []
       }
     ],
     "Poll": [
@@ -198,6 +198,23 @@
       {
         "name": "INVALID_AVAILABILITY",
         "value": "poll.invalid_availability",
+        "params": []
+      }
+    ],
+    "Tag": [
+      {
+        "name": "NOT_FOUND",
+        "value": "tag.not_found",
+        "params": []
+      },
+      {
+        "name": "NAME_REQUIRED",
+        "value": "tag.name_required",
+        "params": []
+      },
+      {
+        "name": "NAME_ALREADY_EXISTS",
+        "value": "tag.name_already_exists",
         "params": []
       }
     ],

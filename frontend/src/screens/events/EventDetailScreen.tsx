@@ -5,20 +5,34 @@ import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility } from '@/models/event';
+import {
+  canManageEvent,
+  canPublicRsvp,
+  EventStatus,
+  EventType,
+  EventVisibility,
+} from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
 
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
+import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { EventMemberSection } from './EventMemberSection';
 import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
+import { PublicRsvpSection } from './PublicRsvpSection';
+
+function photoSrc(url: string, updatedAt: string | null): string {
+  if (!updatedAt) return url;
+  return `${url}?v=${encodeURIComponent(updatedAt)}`;
+}
 
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
+  const user = useAuthStore((s) => s.user);
   const { data: event, isPending, isError, error } = useEvent(id);
 
   if (isPending) return <ContentLoading />;
@@ -30,11 +44,13 @@ export default function EventDetailScreen() {
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
 
+  const showKebab = isAuthed && event.rsvpEnabled && canManageEvent(event, user);
+
   return (
     <ContentContainer>
       {event.photoUrl ? (
         <img
-          src={event.photoUrl}
+          src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
           alt=""
           className="mx-auto mb-4 block max-h-[70vh] w-auto max-w-full rounded-lg"
           loading="lazy"
@@ -42,8 +58,15 @@ export default function EventDetailScreen() {
       ) : null}
 
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-medium tracking-tight">{event.title}</h1>
+        <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
+          {event.title}
+        </h1>
         <VisibilityBadge event={event} />
+        {showKebab ? (
+          <div className="ml-auto">
+            <EventDetailKebabMenu eventId={event.id} />
+          </div>
+        ) : null}
       </div>
 
       <WhenLine event={event} />
@@ -55,11 +78,13 @@ export default function EventDetailScreen() {
       {event.description ? (
         <section className="mt-6">
           <h2 className="text-muted mb-2 text-sm font-medium">about</h2>
-          <p className="text-foreground whitespace-pre-wrap">{linkifyText(event.description)}</p>
+          <p className="text-foreground [overflow-wrap:anywhere] break-words whitespace-pre-wrap">
+            {linkifyText(event.description)}
+          </p>
         </section>
       ) : null}
 
-      {isAuthed ? <EventMemberSection event={event} /> : <LoginOrJoinSection />}
+      {isAuthed ? <EventMemberSection event={event} /> : <AnonSection event={event} />}
     </ContentContainer>
   );
 }
@@ -85,6 +110,9 @@ function VisibilityBadge({ event }: { event: Event }) {
   if (event.eventType === EventType.Official) {
     return <Badge tone="blue">official</Badge>;
   }
+  if (event.eventType === EventType.Club) {
+    return <Badge tone="rose">pda club</Badge>;
+  }
   if (event.visibility === EventVisibility.InviteOnly) {
     return <Badge tone="lavender">invite only</Badge>;
   }
@@ -98,7 +126,7 @@ function Badge({
   tone,
   children,
 }: {
-  tone: 'neutral' | 'blue' | 'amber' | 'lavender';
+  tone: 'neutral' | 'blue' | 'amber' | 'lavender' | 'rose';
   children: ReactNode;
 }) {
   const tones = {
@@ -106,8 +134,17 @@ function Badge({
     blue: 'bg-info-subtle text-info',
     amber: 'bg-warning-subtle text-warning',
     lavender: 'bg-highlight-subtle text-highlight',
+    rose: '',
   };
-  return <span className={`rounded-full px-2 py-0.5 text-xs ${tones[tone]}`}>{children}</span>;
+  const style =
+    tone === 'rose'
+      ? { background: 'var(--color-evt-club-bg)', color: 'var(--color-evt-club-fg)' }
+      : undefined;
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs ${tones[tone]}`} style={style}>
+      {children}
+    </span>
+  );
 }
 
 function ForbiddenNotice({ message }: { message: string }) {
@@ -127,6 +164,11 @@ function ForbiddenNotice({ message }: { message: string }) {
       </section>
     </ContentContainer>
   );
+}
+
+function AnonSection({ event }: { event: Event }) {
+  if (canPublicRsvp(event)) return <PublicRsvpSection event={event} />;
+  return <LoginOrJoinSection />;
 }
 
 function LoginOrJoinSection() {

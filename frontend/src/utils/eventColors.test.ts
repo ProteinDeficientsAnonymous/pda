@@ -15,34 +15,28 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } {
 }
 
 describe('getEventColors', () => {
-  it('all four visibility choices produce distinct light colors', () => {
+  const CATEGORIES: [EventType, Visibility][] = [
+    ['official', 'public'],
+    ['club', 'public'],
+    ['community', 'public'],
+    ['community', 'members_only'],
+    ['community', 'invite_only'],
+  ];
+
+  it('all five categories produce distinct light colors', () => {
     const colors = new Set<string>();
-    const combinations: [EventType, Visibility][] = [
-      ['official', 'public'],
-      ['community', 'public'],
-      ['community', 'members_only'],
-      ['community', 'invite_only'],
-    ];
-    for (const [eventType, visibility] of combinations) {
-      const { bg } = getEventColors(eventType, visibility, 'light');
-      colors.add(bg);
+    for (const [eventType, visibility] of CATEGORIES) {
+      colors.add(getEventColors(eventType, visibility, 'light').bg);
     }
-    expect(colors.size).toBe(4);
+    expect(colors.size).toBe(5);
   });
 
-  it('all four visibility choices produce distinct dark colors', () => {
+  it('all five categories produce distinct dark colors', () => {
     const colors = new Set<string>();
-    const combinations: [EventType, Visibility][] = [
-      ['official', 'public'],
-      ['community', 'public'],
-      ['community', 'members_only'],
-      ['community', 'invite_only'],
-    ];
-    for (const [eventType, visibility] of combinations) {
-      const { bg } = getEventColors(eventType, visibility, 'dark');
-      colors.add(bg);
+    for (const [eventType, visibility] of CATEGORIES) {
+      colors.add(getEventColors(eventType, visibility, 'dark').bg);
     }
-    expect(colors.size).toBe(4);
+    expect(colors.size).toBe(5);
   });
 
   it('light mode has lighter backgrounds', () => {

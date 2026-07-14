@@ -1,22 +1,3 @@
-"""Machine-readable validation errors.
-
-Validators raise ``ValidationException(code, field, params?)`` instead of
-``ValueError("free text")``. The global Ninja handler (see
-``config/validation_handlers.py``) catches both ``ValidationException`` and
-Ninja's wrapped Pydantic errors and reshapes them to
-``{ detail: [{code, field, params?}, ...] }`` so the frontend owns UI copy.
-
-Code strings are part of the API contract — **never rename** once shipped.
-Organize codes under ``Code.<Domain>.<NAME>``; the frontend mirrors this.
-
-Adding a new code:
-  1. Add a constant under the right ``Code.<Domain>`` class.
-  2. ``raise_validation(Code.Domain.NAME, field="foo")`` (or
-     ``raise ValidationException(...)`` if you need custom args).
-  3. Add a ``case`` in the frontend's ``validationCodes.ts``
-     ``messageForCode()``.
-"""
-
 from typing import Any, NoReturn
 
 
@@ -29,11 +10,9 @@ class Code:
         MAX_ATTENDEES_MUST_BE_AT_LEAST_ONE = "event.max_attendees_must_be_at_least_one"
         START_DATETIME_MUST_BE_FUTURE = "event.start_datetime_must_be_future"
         END_BEFORE_START = "event.end_before_start"
-        ATTENDANCE_INVALID_CHOICE = "event.attendance_invalid_choice"
         OFFICIAL_MUST_BE_PUBLIC = "event.official_must_be_public"
         INVALID_CREATE_STATUS = "event.invalid_create_status"
         DATE_LOCKED_BY_POLL = "event.date_locked_by_poll"
-        INVITE_ONLY = "event.invite_only"
         AUTH_REQUIRED = "event.auth_required"
         CANCELLED_CANNOT_BE_EDITED = "event.cancelled_cannot_be_edited"
         PAST_CANNOT_BE_CANCELLED = "event.past_cannot_be_cancelled"
@@ -52,6 +31,8 @@ class Code:
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
+        BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
+        BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
 
     class Poll:
         NOT_FOUND = "poll.not_found"
@@ -65,6 +46,11 @@ class Code:
         WINNING_OPTION_NOT_FOUND = "poll.winning_option_not_found"
         MIN_TWO_OPTIONS = "poll.min_two_options"
         INVALID_AVAILABILITY = "poll.invalid_availability"
+
+    class Tag:
+        NOT_FOUND = "tag.not_found"
+        NAME_REQUIRED = "tag.name_required"
+        NAME_ALREADY_EXISTS = "tag.name_already_exists"
 
     class Comment:
         NOT_FOUND = "comment.not_found"

@@ -10,6 +10,7 @@ import {
   InvitePermission,
   RsvpServerStatus,
 } from '@/models/event';
+import type { User } from '@/models/user';
 
 export function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -78,9 +79,40 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    photoUpdatedAt: null,
     tags: [],
     isPast: false,
     status: EventStatus.Active,
+    ...overrides,
+  };
+}
+
+export function makeUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 'user1',
+    phoneNumber: '+12125550001',
+    firstName: 'Test',
+    lastName: 'User',
+    fullName: 'Test User',
+    nickname: '',
+    email: '',
+    bio: '',
+    pronouns: '',
+    birthday: null,
+    isSuperuser: false,
+    isStaff: false,
+    needsOnboarding: false,
+    needsPasswordReset: false,
+    needsGuidelinesConsent: false,
+    needsSmsConsent: false,
+    showPhone: false,
+    showEmail: false,
+    hideLastName: false,
+    weekStart: 'sunday',
+    calendarFeedScope: 'all',
+    profilePhotoUrl: '',
+    photoUpdatedAt: null,
+    roles: [],
     ...overrides,
   };
 }

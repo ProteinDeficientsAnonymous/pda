@@ -12,7 +12,7 @@ class TestCreateUser:
     def test_create_user_invalid_phone(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "not-a-phone"},
+            {"phone_number": "not-a-phone", "first_name": "Test"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -23,7 +23,7 @@ class TestCreateUser:
         role = Role.objects.create(name="custom_role", permissions=[])
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550901", "role_id": str(role.id)},
+            {"phone_number": "+12025550901", "first_name": "Roled", "role_id": str(role.id)},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -33,7 +33,7 @@ class TestCreateUser:
         admin_role = Role.objects.get(name="admin")
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550950", "role_id": str(admin_role.id)},
+            {"phone_number": "+12025550950", "first_name": "Nope", "role_id": str(admin_role.id)},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -46,6 +46,7 @@ class TestCreateUser:
             "/api/auth/create-user/",
             {
                 "phone_number": "+12025550902",
+                "first_name": "Badrole",
                 "role_id": "00000000-0000-0000-0000-000000000000",
             },
             content_type="application/json",
@@ -57,7 +58,7 @@ class TestCreateUser:
     def test_create_user_sets_needs_onboarding(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550903"},
+            {"phone_number": "+12025550903", "first_name": "Onboard"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -72,6 +73,52 @@ class TestCreateUser:
             content_type="application/json",
         )
         assert response.status_code == 401
+
+    def test_create_user_rejects_blank_name(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {
+                "phone_number": "+12025550905",
+                "first_name": "",
+                "last_name": "",
+            },
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert_error_code(response, Code.DisplayName.REQUIRED, "first_name")
+        assert not User.objects.filter(phone_number="+12025550905").exists()
+
+    def test_create_user_rejects_omitted_name(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"phone_number": "+12025550906"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert_error_code(response, Code.DisplayName.REQUIRED, "first_name")
+        assert not User.objects.filter(phone_number="+12025550906").exists()
+
+    def test_create_user_rejects_whitespace_only_name(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"phone_number": "+12025550908", "first_name": "   "},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert_error_code(response, Code.DisplayName.REQUIRED, "first_name")
+        assert not User.objects.filter(phone_number="+12025550908").exists()
+
+    def test_create_user_strips_name_whitespace(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"phone_number": "+12025550909", "first_name": "  Jamie  ", "last_name": "  Rivera  "},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 201, response.content
+        user = User.objects.get(phone_number="+12025550909")
+        assert user.first_name == "Jamie"
+        assert user.last_name == "Rivera"
 
 
 @pytest.mark.django_db
@@ -170,7 +217,7 @@ class TestSearchUsers:
         )
         assert response.status_code == 200
         data = response.json()
-        assert any(u["display_name"] == "Other User" for u in data)
+        assert any(u["full_name"] == "Other User" for u in data)
 
     def test_search_excludes_self(self, api_client, auth_headers, test_user):
         response = api_client.get(
@@ -195,7 +242,7 @@ class TestSearchUsers:
             User.objects.create_user(
                 phone_number=f"+1555001{i:04d}",
                 password="pass",
-                display_name=f"Searchable User {i}",
+                first_name=f"Searchable User {i}",
             )
         response = api_client.get("/api/auth/users/search/?q=Searchable", **auth_headers)
         assert response.status_code == 200

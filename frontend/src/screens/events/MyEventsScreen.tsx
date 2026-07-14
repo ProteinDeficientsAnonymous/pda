@@ -1,9 +1,3 @@
-// Member-facing "my events" list — events the current user created or
-// co-hosts. Active events come from the same flat `useEvents()` feed as the
-// calendar (client-split by start time into upcoming/past). Drafts and
-// cancelled events come from dedicated `?status=` queries; backend already
-// scopes those to events the user created or co-hosts.
-
 import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -14,6 +8,8 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, RsvpStatus } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+
+import { EventCardBadges } from './EventCardBadges';
 
 type Filter = 'upcoming' | 'past' | 'drafts' | 'cancelled';
 type Scope = 'all' | 'hosting';
@@ -159,6 +155,7 @@ function EventRow({ event }: { event: Event }) {
             : format(event.startDatetime, 'EEE MMM d, h:mm a').toLowerCase()}
           {event.location ? ` · ${event.location}` : ''}
         </p>
+        <EventCardBadges event={event} variant="row" className="mt-1.5" />
       </div>
       <div className="flex items-center gap-2 text-xs">
         {event.status === EventStatus.Cancelled ? (

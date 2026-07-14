@@ -46,4 +46,15 @@ describe('safeRedirect', () => {
     expect(safeRedirect('%')).toBe(DEFAULT);
     expect(safeRedirect('%E0%A4%A')).toBe(DEFAULT);
   });
+
+  it('does not preserve /members or its subpaths', () => {
+    expect(safeRedirect('/members')).toBe(DEFAULT);
+    expect(safeRedirect('/members/abc123')).toBe(DEFAULT);
+    expect(safeRedirect('/members?tab=all')).toBe(DEFAULT);
+    expect(safeRedirect(encodeURIComponent('/members/abc123'))).toBe(DEFAULT);
+  });
+
+  it('still preserves /admin/members (a different route)', () => {
+    expect(safeRedirect('/admin/members')).toBe('/admin/members');
+  });
 });

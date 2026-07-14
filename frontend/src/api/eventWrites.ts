@@ -21,28 +21,11 @@ import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
 import { eventKeys } from './events';
+import { textRecipientsKeys } from './textRecipients';
 
 const ROUTE = '/events';
 
 export type EventStatus = (typeof EventStatusEnum)[keyof typeof EventStatusEnum];
-
-export type VisibilityChoice = 'official' | 'public' | 'members_only' | 'invite_only';
-
-export function visibilityChoiceToFields(choice: VisibilityChoice): {
-  visibility: EventFormValues['visibility'];
-  eventType: EventFormValues['eventType'];
-} {
-  if (choice === 'official') return { visibility: 'public', eventType: 'official' };
-  return { visibility: choice, eventType: 'community' };
-}
-
-export function fieldsToVisibilityChoice(
-  visibility: EventFormValues['visibility'],
-  eventType: EventFormValues['eventType'],
-): VisibilityChoice {
-  if (eventType === 'official') return 'official';
-  return visibility as VisibilityChoice;
-}
 
 export interface EventFormValues {
   title: string;
@@ -53,9 +36,8 @@ export interface EventFormValues {
   startDatetime: string | null; // null when datetimeTbd
   endDatetime: string | null;
   datetimeTbd: boolean;
-  eventType: 'community' | 'official';
+  eventType: 'community' | 'official' | 'club';
   visibility: 'public' | 'members_only' | 'invite_only';
-  visibilityChoice: VisibilityChoice;
   invitePermission: 'all_members' | 'co_hosts_only';
   rsvpEnabled: boolean;
   allowPlusOnes: boolean;
@@ -78,8 +60,6 @@ type WireBody = Record<string, unknown>;
 // Each encoder receives *only its own field's value*, so the same map drives
 // both the full-body and partial-body builders without ever casting a
 // `Partial<EventFormValues>` to the full type.
-// `visibilityChoice` is virtual on the wire — it expands into `visibility` +
-// `event_type` — so it's handled separately rather than living in this map.
 type WireField<K extends keyof EventFormValues> = readonly [
   wireKey: string,
   encode: (value: EventFormValues[K]) => unknown,
@@ -90,6 +70,8 @@ type WireFieldMap = { [K in keyof EventFormValues]?: WireField<K> };
 const FIELD_TO_WIRE: WireFieldMap = {
   title: ['title', (v) => v],
   description: ['description', (v) => v],
+  eventType: ['event_type', (v) => v],
+  visibility: ['visibility', (v) => v],
   location: ['location', (v) => v],
   latitude: ['latitude', (v) => v],
   longitude: ['longitude', (v) => v],
@@ -126,8 +108,7 @@ function encodeField<K extends keyof EventFormValues>(
 }
 
 function toWireBody(values: EventFormValues): WireBody {
-  const { visibility, eventType } = visibilityChoiceToFields(values.visibilityChoice);
-  const body: WireBody = { visibility, event_type: eventType };
+  const body: WireBody = {};
   for (const key of Object.keys(FIELD_TO_WIRE) as (keyof EventFormValues)[]) {
     const encoded = encodeField(key, values[key]);
     if (!encoded) continue;
@@ -138,19 +119,10 @@ function toWireBody(values: EventFormValues): WireBody {
 
 // Build a PATCH body from only the keys present in the Partial. Each encoder
 // reads only its own field's value, so no `Partial → full` cast is needed.
-// `visibilityChoice` (if present) expands into `visibility` + `event_type`.
 export function toPartialWireBody(values: Partial<EventFormValues>): WireBody {
   const body: WireBody = {};
   for (const key of Object.keys(values) as (keyof EventFormValues)[]) {
     if (values[key] === undefined) continue;
-    if (key === 'visibilityChoice') {
-      const choice = values.visibilityChoice;
-      if (choice === undefined) continue;
-      const { visibility, eventType } = visibilityChoiceToFields(choice);
-      body.visibility = visibility;
-      body.event_type = eventType;
-      continue;
-    }
     const encoded = encodeField(key, values[key]);
     if (!encoded) continue;
     body[encoded[0]] = encoded[1];
@@ -197,6 +169,7 @@ export function useInviteToEvent(eventId: string) {
     onSuccess: (event) => {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
+      void qc.invalidateQueries({ queryKey: textRecipientsKeys.detail(event.id) });
     },
     onError: (err) => {
       void reportError(err, ROUTE, { action: 'invite-to-event', eventId });
@@ -270,11 +243,15 @@ export function useDeleteEvent(eventId: string) {
   });
 }
 
-export function useUploadEventPhoto(eventId: string) {
+// The event id is a mutation variable, not a hook argument: on the create
+// flow the id doesn't exist until create-event resolves, so binding it at
+// hook-call time (when it's still '') POSTed to a route with no id → 404 and
+// the photo was silently dropped (Issue 668).
+export function useUploadEventPhoto() {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async (blob: Blob) => {
+    mutationFn: async ({ eventId, blob }: { eventId: string; blob: Blob }) => {
       const formData = new FormData();
       formData.append('photo', blob, 'event.png');
       const { data } = await apiClient.post<WireEvent>(
@@ -288,7 +265,7 @@ export function useUploadEventPhoto(eventId: string) {
       qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
-    onError: (err) => {
+    onError: (err, { eventId }) => {
       void reportError(err, ROUTE, { action: 'upload-event-photo', eventId });
     },
   });
@@ -332,7 +309,6 @@ export function emptyEventFormValues(): EventFormValues {
     datetimeTbd: false,
     eventType: 'community',
     visibility: 'public',
-    visibilityChoice: 'public',
     invitePermission: 'all_members',
     rsvpEnabled: true,
     allowPlusOnes: true,
@@ -357,7 +333,11 @@ function coerceEnum<T extends string>(value: string, allowed: readonly T[], fall
   return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
 }
 
-const FORM_EVENT_TYPES = [EventTypeEnum.Community, EventTypeEnum.Official] as const;
+const FORM_EVENT_TYPES = [
+  EventTypeEnum.Community,
+  EventTypeEnum.Official,
+  EventTypeEnum.Club,
+] as const;
 const FORM_VISIBILITIES = [
   EventVisibility.Public,
   EventVisibility.MembersOnly,
@@ -388,7 +368,6 @@ export function eventToFormValues(e: Event): EventFormValues {
     datetimeTbd: e.datetimeTbd,
     eventType,
     visibility,
-    visibilityChoice: fieldsToVisibilityChoice(visibility, eventType),
     invitePermission: coerceEnum(
       e.invitePermission,
       FORM_INVITE_PERMISSIONS,

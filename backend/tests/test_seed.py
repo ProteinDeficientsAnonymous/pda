@@ -11,7 +11,7 @@ def test_seed_creates_expected_data():
 
     assert User.objects.filter(phone_number="+17025550001").exists()
     assert User.objects.filter(phone_number="+17025550002").exists()
-    assert Event.objects.count() == 4
+    assert Event.objects.count() == 5
     assert JoinRequest.objects.count() == 8
 
 
@@ -21,8 +21,8 @@ def test_seed_is_idempotent():
     rsvp_count = EventRSVP.objects.count()
     call_command("seed")
 
-    assert User.objects.filter(phone_number__startswith="+1702555").count() == 5
-    assert Event.objects.count() == 4
+    assert User.objects.filter(phone_number__startswith="+1702555").count() == 8
+    assert Event.objects.count() == 5
     assert JoinRequest.objects.count() == 8
     assert EventRSVP.objects.count() == rsvp_count
 

@@ -12,12 +12,24 @@ from tests._asserts import assert_error_code
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    # /login/ is rate-limited (5/m keyed on client IP). Tests share the same
+    # REMOTE_ADDR, so clear the cache around each test to keep counts isolated.
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.fixture
 def onboarding_user(db):
     return User.objects.create_user(
         phone_number="+12025550901",
         password="temppass123",
-        display_name="",
+        first_name="",
+        last_name="",
         needs_onboarding=True,
     )
 
@@ -159,7 +171,7 @@ class TestMe:
         assert response.status_code == 200
         data = response.json()
         assert data["phone_number"] == test_user.phone_number
-        assert data["display_name"] == "Test Member"
+        assert data["full_name"] == "Test Member"
         assert data["week_start"] == "sunday"
         assert "roles" in data
         assert isinstance(data["roles"], list)
@@ -218,7 +230,7 @@ class TestChangePassword:
     def test_change_password_rejects_reuse(self, api_client, db):
         """New password must differ from the current one."""
         user = User.objects.create_user(
-            phone_number="+12025550401", password="ReusedPass123!", display_name="Reuse"
+            phone_number="+12025550401", password="ReusedPass123!", first_name="Reuse", last_name=""
         )
         headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(user).access_token}"}
         response = api_client.post(
@@ -233,7 +245,7 @@ class TestChangePassword:
     def test_change_password_clears_needs_password_reset(self, api_client, db):
         """Setting a password via change-password satisfies a pending forced reset."""
         user = User.objects.create_user(
-            phone_number="+12025550402", password="OldPass123!", display_name="Pending"
+            phone_number="+12025550402", password="OldPass123!", first_name="Pending", last_name=""
         )
         user.needs_password_reset = True
         user.save(update_fields=["needs_password_reset"])
@@ -327,7 +339,8 @@ class TestCompleteOnboarding:
         response = api_client.post(
             "/api/auth/complete-onboarding/",
             {
-                "display_name": "New Name",
+                "first_name": "New",
+                "last_name": "Name",
                 "new_password": "SecurePass99!",
                 "email": "newname@example.com",
             },
@@ -336,7 +349,7 @@ class TestCompleteOnboarding:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["display_name"] == "New Name"
+        assert data["full_name"] == "New Name"
         assert data["needs_onboarding"] is False
         onboarding_user.refresh_from_db()
         assert onboarding_user.needs_onboarding is False
@@ -346,7 +359,12 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_with_email(self, api_client, onboarding_headers, onboarding_user):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "SecurePass99!", "email": "user@example.com"},
+            {
+                "first_name": "Named",
+                "last_name": "",
+                "new_password": "SecurePass99!",
+                "email": "user@example.com",
+            },
             content_type="application/json",
             **onboarding_headers,
         )
@@ -354,10 +372,30 @@ class TestCompleteOnboarding:
         onboarding_user.refresh_from_db()
         assert onboarding_user.email == "user@example.com"
 
+    def test_complete_onboarding_with_pronouns(
+        self, api_client, onboarding_headers, onboarding_user
+    ):
+        response = api_client.post(
+            "/api/auth/complete-onboarding/",
+            {
+                "first_name": "Named",
+                "last_name": "",
+                "new_password": "SecurePass99!",
+                "email": "user@example.com",
+                "pronouns": "  she/they  ",
+            },
+            content_type="application/json",
+            **onboarding_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["pronouns"] == "she/they"
+        onboarding_user.refresh_from_db()
+        assert onboarding_user.pronouns == "she/they"
+
     def test_complete_onboarding_password_too_short(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "short"},
+            {"first_name": "Named", "last_name": "", "new_password": "short"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -368,7 +406,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_missing_uppercase(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "nouppercase123!"},
+            {"first_name": "Named", "last_name": "", "new_password": "nouppercase123!"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -379,7 +417,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_missing_number(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "NoNumberHere!!!"},
+            {"first_name": "Named", "last_name": "", "new_password": "NoNumberHere!!!"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -390,7 +428,7 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_missing_special_char(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "NoSpecialChar1X"},
+            {"first_name": "Named", "last_name": "", "new_password": "NoSpecialChar1X"},
             content_type="application/json",
             **onboarding_headers,
         )
@@ -401,18 +439,19 @@ class TestCompleteOnboarding:
     def test_complete_onboarding_requires_auth(self, api_client):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "SecurePass99!"},
+            {"first_name": "Named", "last_name": "", "new_password": "SecurePass99!"},
             content_type="application/json",
         )
         assert response.status_code == 401
 
-    def test_complete_onboarding_strips_display_name_whitespace(
+    def test_complete_onboarding_strips_name_whitespace(
         self, api_client, onboarding_headers, onboarding_user
     ):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
             {
-                "display_name": "  Padded Name  ",
+                "first_name": "  Padded  ",
+                "last_name": "  Name  ",
                 "new_password": "SecurePass99!",
                 "email": "padded@example.com",
             },
@@ -420,12 +459,17 @@ class TestCompleteOnboarding:
             **onboarding_headers,
         )
         assert response.status_code == 200
-        assert response.json()["display_name"] == "Padded Name"
+        assert response.json()["full_name"] == "Padded Name"
 
     def test_complete_onboarding_invalid_email_rejected(self, api_client, onboarding_headers):
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "SecurePass99!", "email": "notanemail"},
+            {
+                "first_name": "Named",
+                "last_name": "",
+                "new_password": "SecurePass99!",
+                "email": "notanemail",
+            },
             content_type="application/json",
             **onboarding_headers,
         )
@@ -435,7 +479,7 @@ class TestCompleteOnboarding:
         # email is now required; empty string is invalid
         response = api_client.post(
             "/api/auth/complete-onboarding/",
-            {"display_name": "Named", "new_password": "SecurePass99!", "email": ""},
+            {"first_name": "Named", "last_name": "", "new_password": "SecurePass99!", "email": ""},
             content_type="application/json",
             **onboarding_headers,
         )

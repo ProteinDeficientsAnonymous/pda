@@ -8,6 +8,7 @@ from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
 from ninja import Router
 from ninja.responses import Status
+from users._helpers import visible_display_name
 
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._survey_helpers import (
@@ -75,7 +76,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
     questions = {str(q.id): q for q in survey.questions.all()}
     _validate_survey_answers(payload.answers, questions)
     answers = _build_survey_answers(payload.answers, questions)
-    user_name = (auth_user.display_name or auth_user.phone_number) if auth_user else None
+    user_name = visible_display_name(auth_user, auth_user) if auth_user else None
     if survey.one_response_per_user and auth_user is not None:
         existing = SurveyResponse.objects.filter(survey=survey, user=auth_user).first()
         if existing:
@@ -138,7 +139,7 @@ def get_survey_tallies(request, survey_id: UUID):
         q for q in survey.questions.all() if q.field_type == SurveyQuestionType.DATETIME_POLL
     ]
     responses = list(survey.responses.select_related("user").all())
-    tallies = [_tally_question(q, responses) for q in poll_questions]
+    tallies = [_tally_question(q, responses, request.auth) for q in poll_questions]
     return Status(200, tallies)
 
 

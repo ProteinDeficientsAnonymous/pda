@@ -19,7 +19,8 @@ class TestJoinRequestEmail:
         resp = api_client.post(
             "/api/community/join-request/",
             data={
-                "display_name": "Test",
+                "first_name": "Test",
+                "last_name": "",
                 "phone_number": "+12025550101",
                 "answers": {},
                 "sms_consent": True,
@@ -33,7 +34,8 @@ class TestJoinRequestEmail:
         resp = api_client.post(
             "/api/community/join-request/",
             data={
-                "display_name": "Test",
+                "first_name": "Test",
+                "last_name": "",
                 "phone_number": "+12025550101",
                 "answers": {},
                 "sms_consent": True,
@@ -48,7 +50,8 @@ class TestJoinRequestEmail:
         resp = api_client.post(
             "/api/community/join-request/",
             data={
-                "display_name": "Test Person",
+                "first_name": "Test",
+                "last_name": "Person",
                 "phone_number": "+12025550101",
                 "answers": {why_join_id: "Collective liberation."},
                 "sms_consent": True,
@@ -78,7 +81,7 @@ class TestVettingEmailHeaderInjection:
         mail.outbox = []
 
         _send_join_request_email(
-            display_name="Mallory\r\nSubject: spoofed",
+            full_name="Mallory\r\nSubject: spoofed",
             phone="+12025550101",
             custom_answers={},
         )

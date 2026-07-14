@@ -71,6 +71,7 @@ export interface WireEvent {
   event_type?: string;
   visibility?: string;
   photo_url?: string;
+  photo_updated_at?: string | null;
 
   tags?: WireTag[];
 
@@ -179,6 +180,7 @@ export function mapEvent(e: WireEvent): Event {
     eventType: e.event_type ?? 'community',
     visibility: e.visibility ?? 'public',
     photoUrl: e.photo_url ?? '',
+    photoUpdatedAt: e.photo_updated_at ?? null,
 
     tags: (e.tags ?? []).map(mapTag),
 

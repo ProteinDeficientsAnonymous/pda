@@ -1,10 +1,3 @@
-// Notifications API + the query hooks that keep them fresh.
-//
-// The notification bell relies on unread-count polling (cheap), deferring the
-// full list fetch until the sheet opens. When SSE is connected we poll every
-// 5 min as a safety net; when disconnected we poll every 30 s. Tab visibility
-// is handled by TanStack Query's refetchIntervalInBackground: false.
-
 import {
   type InfiniteData,
   useInfiniteQuery,
@@ -44,6 +37,14 @@ function mapNotification(n: WireNotification): AppNotification {
 export const BELL_NOTIFICATION_LIMIT = 10;
 // Page size the full notifications screen requests per "load more".
 export const NOTIFICATIONS_PAGE_SIZE = 30;
+
+// EventSource can't send an Authorization header, so the SSE stream is opened
+// with a short-lived single-use ticket instead of the JWT. Fetch one here (the
+// access token rides the apiClient interceptor), then open the stream with it.
+export async function fetchSseTicket(): Promise<string> {
+  const { data } = await apiClient.post<{ ticket: string }>('/api/notifications/sse-ticket/');
+  return data.ticket;
+}
 
 export const notificationKeys = {
   all: ['notifications'] as const,
@@ -128,6 +129,10 @@ export function useMarkAllNotificationsRead() {
       await apiClient.post('/api/notifications/read-all/');
     },
     onMutate: () => {
+      // Snapshot for onError rollback so a failed mark-all doesn't leave the badge stuck at 0.
+      const prevUnread = qc.getQueryData<number>(notificationKeys.unread);
+      const prevBell = qc.getQueryData<AppNotification[]>(notificationKeys.bell);
+      const prevPage = qc.getQueryData<InfiniteData<AppNotification[]>>(notificationKeys.page);
       qc.setQueryData<number>(notificationKeys.unread, 0);
       qc.setQueryData<AppNotification[]>(notificationKeys.bell, (prev) =>
         prev ? prev.map((n) => ({ ...n, isRead: true })) : prev,
@@ -140,6 +145,13 @@ export function useMarkAllNotificationsRead() {
             }
           : prev,
       );
+      return { prevUnread, prevBell, prevPage };
+    },
+    onError: (_err, _vars, context) => {
+      if (!context) return;
+      qc.setQueryData(notificationKeys.unread, context.prevUnread);
+      qc.setQueryData(notificationKeys.bell, context.prevBell);
+      qc.setQueryData(notificationKeys.page, context.prevPage);
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: notificationKeys.all });

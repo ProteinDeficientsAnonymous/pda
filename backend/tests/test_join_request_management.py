@@ -29,14 +29,27 @@ class TestJoinRequestManagement:
         data = response.json()
         assert isinstance(data, list)
         assert len(data) == 1
-        assert data[0]["display_name"] == "Sprout Seedling"
+        assert data[0]["full_name"] == "Sprout Seedling"
         assert data[0]["status"] == JoinRequestStatus.PENDING
+
+    def test_list_includes_email(self, api_client, vettor_headers, db):
+        JoinRequest.objects.create(
+            first_name="Fern",
+            last_name="Frond",
+            phone_number="+16505559999",
+            email="fern@example.com",
+        )
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data[0]["email"] == "fern@example.com"
 
     def test_admin_can_access_list(self, api_client, db):
         admin = User.objects.create_superuser(
             phone_number="+12025550001",
             password="adminpass123",
-            display_name="Admin User",
+            first_name="Admin",
+            last_name="User",
         )
         admin_headers = {
             "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(admin).access_token}"  # type: ignore
@@ -68,7 +81,7 @@ class TestJoinRequestManagement:
         assert data["magic_link_token"] is not None
         assert len(data["magic_link_token"]) == 36  # UUID format
         user = User.objects.get(phone_number=sample_join_request.phone_number)
-        assert user.display_name == "Sprout Seedling"
+        assert user.full_name == "Sprout Seedling"
         assert user.needs_onboarding is True
         assert user.roles.filter(name="member").exists()
 
@@ -142,6 +155,31 @@ class TestJoinRequestManagement:
         )
         assert response.status_code == 400
         assert_error_code(response, Code.JoinRequest.ALREADY_DECIDED)
+
+    def test_approve_locks_row_for_update(
+        self, api_client, vettor_headers, sample_join_request, monkeypatch
+    ):
+        # The already-decided guard only closes the concurrent-approval race if
+        # the row is locked before the check. Assert select_for_update() is used.
+        from community import _join_requests
+
+        original = JoinRequest.objects.select_for_update
+        called = False
+
+        def spy(*args, **kwargs):
+            nonlocal called
+            called = True
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(_join_requests.JoinRequest.objects, "select_for_update", spy)
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": "approved"},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.status_code == 200
+        assert called
 
     def test_reject_after_reject_fails(self, api_client, vettor_headers, sample_join_request):
         api_client.patch(
@@ -294,12 +332,13 @@ class TestJoinRequestManagement:
 
     def test_list_flags_previously_archived(self, api_client, vettor_headers, db):
         archived = User.objects.create_user(
-            phone_number="+12025550150", display_name="Comeback Kid"
+            phone_number="+12025550150", first_name="Comeback", last_name="Kid"
         )
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])
         jr = JoinRequest.objects.create(
-            display_name="Comeback Kid",
+            first_name="Comeback",
+            last_name="Kid",
             phone_number="+12025550150",
             status=JoinRequestStatus.PENDING,
         )
@@ -312,13 +351,13 @@ class TestJoinRequestManagement:
     def test_approve_archived_user_unarchives_and_issues_magic_link(
         self, api_client, vettor_headers, db
     ):
-        archived = User.objects.create_user(phone_number="+12025550151", display_name="Phoenix")
+        archived = User.objects.create_user(phone_number="+12025550151", first_name="Phoenix")
         archived.archived_at = timezone.now()
         archived.needs_onboarding = False
         archived.save(update_fields=["archived_at", "needs_onboarding"])
 
         jr = JoinRequest.objects.create(
-            display_name="Phoenix",
+            first_name="Phoenix",
             phone_number="+12025550151",
             status=JoinRequestStatus.PENDING,
         )
@@ -336,23 +375,27 @@ class TestJoinRequestManagement:
 
     def test_list_keeps_pending_and_rejected_unaffected(self, api_client, vettor_headers, db):
         pending = JoinRequest.objects.create(
-            display_name="Pending Person",
+            first_name="Pending",
+            last_name="Person",
             phone_number="+12025550101",
             status=JoinRequestStatus.PENDING,
         )
         rejected = JoinRequest.objects.create(
-            display_name="Rejected Person",
+            first_name="Rejected",
+            last_name="Person",
             phone_number="+12025550102",
             status=JoinRequestStatus.REJECTED,
         )
         approved = JoinRequest.objects.create(
-            display_name="Onboarded Person",
+            first_name="Onboarded",
+            last_name="Person",
             phone_number="+12025550103",
             status=JoinRequestStatus.APPROVED,
         )
         User.objects.create_user(
             phone_number="+12025550103",
-            display_name="Onboarded Person",
+            first_name="Onboarded",
+            last_name="Person",
             needs_onboarding=False,
         )
 
@@ -368,7 +411,7 @@ class TestJoinRequestManagement:
 class TestApprovalEmail:
     def test_approval_copies_email_to_new_user(self, api_client, vettor_headers):
         jr = JoinRequest.objects.create(
-            display_name="Applicant",
+            first_name="Applicant",
             phone_number="+12025550101",
             email="applicant@example.com",
             status=JoinRequestStatus.PENDING,
@@ -385,10 +428,10 @@ class TestApprovalEmail:
 
     def test_approval_conflict_when_email_taken(self, api_client, vettor_headers):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", email="taken@example.com"
         )
         jr = JoinRequest.objects.create(
-            display_name="Applicant",
+            first_name="Applicant",
             phone_number="+12025550101",
             email="taken@example.com",
             status=JoinRequestStatus.PENDING,
@@ -407,7 +450,7 @@ class TestApprovalEmail:
 class TestApprovalCarriesConsent:
     def test_new_user_inherits_join_request_consent(self, api_client, vettor_headers):
         jr = JoinRequest.objects.create(
-            display_name="Consenter",
+            first_name="Consenter",
             phone_number="+12025550701",
             email="consenter@example.com",
             sms_consent_at=timezone.now(),
@@ -427,7 +470,8 @@ class TestApprovalCarriesConsent:
     def test_unarchived_user_inherits_join_request_consent(self, api_client, vettor_headers):
         archived = User.objects.create_user(
             phone_number="+12025550702",
-            display_name="Old Member",
+            first_name="Old",
+            last_name="Member",
         )
         archived.archived_at = timezone.now()
         archived.guidelines_consent_at = None
@@ -435,7 +479,8 @@ class TestApprovalCarriesConsent:
         archived.save(update_fields=["archived_at", "guidelines_consent_at", "sms_consent_at"])
 
         jr = JoinRequest.objects.create(
-            display_name="Old Member",
+            first_name="Old",
+            last_name="Member",
             phone_number="+12025550702",
             email="oldmember@example.com",
             sms_consent_at=timezone.now(),
