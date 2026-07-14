@@ -9,7 +9,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 
-import { MembersTab, type MembersMode } from './MembersTab';
+import { type MembersMode, MembersTab } from './MembersTab';
 import { RolesTab } from './RolesTab';
 
 type TabKey = MembersMode | 'roles';
