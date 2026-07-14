@@ -1,3 +1,10 @@
+# [0.24.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.23.0...v0.24.0) (2026-07-14)
+
+
+### Features
+
+* **public-rsvp:** frontend /my-rsvps manage screen (Issue 497) ([#770](https://github.com/ProteinDeficientsAnonymous/pda/issues/770)) ([5183468](https://github.com/ProteinDeficientsAnonymous/pda/commit/5183468958a40682afa1b8e951930e8428f42c43)), closes [#739](https://github.com/ProteinDeficientsAnonymous/pda/issues/739) [#739](https://github.com/ProteinDeficientsAnonymous/pda/issues/739)
+
 # [0.23.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.22.0...v0.23.0) (2026-07-14)
 
 
