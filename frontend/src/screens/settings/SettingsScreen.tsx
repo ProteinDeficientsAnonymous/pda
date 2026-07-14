@@ -3,7 +3,6 @@ import { useState } from 'react';
 
 import { type TextScale, type ThemeMode, useAccessibilityStore } from '@/accessibility/store';
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useVersion } from '@/api/version';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
@@ -11,6 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
+import { formatBirthday } from '@/utils/datetime';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AvatarUpload } from './AvatarUpload';
@@ -38,9 +38,16 @@ export default function SettingsScreen() {
       <Section label="profile">
         <AvatarUpload />
         <InlineText
-          label="display name"
-          value={user.displayName}
-          onSave={(v) => updateProfile({ displayName: v })}
+          label="first name"
+          value={user.firstName}
+          onSave={(v) => updateProfile({ firstName: v })}
+          required
+        />
+        <InlineText
+          label="last name"
+          value={user.lastName}
+          onSave={(v) => updateProfile({ lastName: v })}
+          placeholder="add a last name"
         />
         <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
         <InlineText
@@ -54,6 +61,18 @@ export default function SettingsScreen() {
           value={user.pronouns}
           onSave={(v) => updateProfile({ pronouns: v })}
           placeholder="add your pronouns"
+        />
+        <InlineText
+          label="nickname"
+          value={user.nickname}
+          onSave={(v) => updateProfile({ nickname: v })}
+          placeholder="add a nickname"
+        />
+        <InlineDate
+          label="birthday"
+          value={user.birthday}
+          onSave={(v) => updateProfile({ birthday: v })}
+          placeholder="add your birthday"
         />
       </Section>
 
@@ -79,6 +98,11 @@ export default function SettingsScreen() {
           checked={user.showEmail}
           onChange={(v) => updateProfile({ showEmail: v })}
         />
+        <Toggle
+          label="hide my last name from other members"
+          checked={user.hideLastName}
+          onChange={(v) => updateProfile({ hideLastName: v })}
+        />
       </Section>
 
       <Section label="calendar">
@@ -96,8 +120,6 @@ export default function SettingsScreen() {
         <TextScaleToggle value={textScale} onChange={setTextScale} />
       </Section>
 
-      <BuildInfo />
-
       <ChangePasswordDialog
         open={pwOpen}
         onClose={() => {
@@ -105,17 +127,6 @@ export default function SettingsScreen() {
         }}
       />
     </ContentContainer>
-  );
-}
-
-function BuildInfo() {
-  const versionQ = useVersion();
-  if (!versionQ.data) return null;
-  const { commitShaShort, environment } = versionQ.data;
-  return (
-    <p className="text-muted mb-6 text-center text-xs">
-      build {commitShaShort} · {environment}
-    </p>
   );
 }
 
@@ -142,11 +153,13 @@ function InlineText({
   value,
   onSave,
   placeholder,
+  required = false,
 }: {
   label: string;
   value: string;
   onSave: (v: string) => Promise<void>;
   placeholder?: string;
+  required?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -154,6 +167,10 @@ function InlineText({
   const [error, setError] = useState<string | null>(null);
 
   async function commit() {
+    if (required && !draft.trim()) {
+      setError(`${label} required`);
+      return;
+    }
     if (draft.trim() === value) {
       setEditing(false);
       return;
@@ -216,6 +233,102 @@ function InlineText({
         cancel
       </Button>
       <Button onClick={() => void commit()} disabled={saving}>
+        save
+      </Button>
+    </div>
+  );
+}
+
+function InlineDate({
+  label,
+  value,
+  onSave,
+  placeholder,
+}: {
+  label: string;
+  value: string | null;
+  onSave: (v: string) => Promise<void>;
+  placeholder?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Discourage picking a future birthday in the picker UI (not enforced server-side).
+  const today = new Date().toISOString().slice(0, 10);
+
+  async function save(next: string) {
+    if (next === (value ?? '')) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(next);
+      setEditing(false);
+    } catch (err) {
+      setError(extractApiErrorOr(err, "couldn't save — try again"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-muted text-xs">{label}</div>
+          <div className="text-foreground text-sm">
+            {value ? formatBirthday(value) : placeholder}
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setDraft(value ?? '');
+            setError(null);
+            setEditing(true);
+          }}
+          aria-label={`edit ${label}`}
+        >
+          edit
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex-1">
+        <TextField
+          type="date"
+          max={today}
+          label={label}
+          value={draft}
+          error={error ?? undefined}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (error) setError(null);
+          }}
+        />
+      </div>
+      {value ? (
+        <Button variant="ghost" onClick={() => void save('')} disabled={saving}>
+          clear
+        </Button>
+      ) : null}
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setError(null);
+          setEditing(false);
+        }}
+        disabled={saving}
+      >
+        cancel
+      </Button>
+      <Button onClick={() => void save(draft)} disabled={saving}>
         save
       </Button>
     </div>

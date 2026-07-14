@@ -138,6 +138,10 @@ class TagOut(BaseModel):
     slug: str
 
 
+class TagIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+
+
 class RSVPGuestOut(BaseModel):
     user_id: str
     name: str
@@ -146,6 +150,7 @@ class RSVPGuestOut(BaseModel):
     phone: str | None = None
     photo_url: str = ""
     attendance: str = AttendanceStatus.UNKNOWN
+    checked_in_at: datetime | None = None
 
 
 class PendingCoHostInviteOut(BaseModel):
@@ -281,6 +286,21 @@ class EventStatsOut(BaseModel):
     no_show_count: int = 0
     not_marked_count: int = 0
     cancellations: list[CancellationOut] = []
+
+
+class EventAttendanceRowOut(BaseModel):
+    """One event's attendance summary for the admin attendance report."""
+
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+    attended_count: int = 0
+    no_show_count: int = 0
+    going_count: int = 0
+
+
+class AttendanceReportOut(BaseModel):
+    events: list[EventAttendanceRowOut] = []
 
 
 class AttendanceIn(BaseModel):

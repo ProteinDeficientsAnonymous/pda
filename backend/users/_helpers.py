@@ -11,8 +11,7 @@ import phonenumbers
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 
-from users._name_parsing import parse_display_name
-from users.models import MagicLoginToken, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, User
 from users.roles import Role
 
 
@@ -32,38 +31,55 @@ def _generate_temp_password(length: int = 16) -> str:
 class NamePatchPayload(Protocol):
     first_name: str | None
     last_name: str | None
-    display_name: str | None
+
+
+def _require_first_name(user: User) -> None:
+    """Raise REQUIRED if user.first_name is empty after a name patch (Issue 733)."""
+    if not user.first_name.strip():
+        raise_validation(Code.DisplayName.REQUIRED, field="first_name")
+
+
+def _apply_split_names(user: User, payload: NamePatchPayload) -> None:
+    """Apply provided first/last name fields to user (in memory)."""
+    if payload.first_name is not None:
+        validate_display_name(payload.first_name, field="first_name")
+        user.first_name = payload.first_name.strip()
+    if payload.last_name is not None:
+        if payload.last_name.strip():
+            validate_display_name(payload.last_name, field="last_name")
+        user.last_name = payload.last_name.strip()
 
 
 def _resolve_name_fields(user: User, payload: NamePatchPayload) -> bool:
     """Apply first/last name from a patch payload to user (in memory).
 
-    first/last win when provided; a bare legacy display_name is parsed as a
-    fallback. Returns True if any name field was set.
+    Returns True if any name field was set. Raises REQUIRED when the resulting
+    first_name would be empty — a last-name-only patch may not clear (or leave
+    empty) the required first name.
     """
-    if payload.first_name is not None or payload.last_name is not None:
-        if payload.first_name is not None:
-            validate_display_name(payload.first_name, field="first_name")
-            user.first_name = payload.first_name.strip()
-        if payload.last_name is not None:
-            if payload.last_name.strip():
-                validate_display_name(payload.last_name, field="last_name")
-            user.last_name = payload.last_name.strip()
-        return True
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.first_name, user.last_name = parse_display_name(payload.display_name.strip())
-        return True
-    return False
+    if payload.first_name is None and payload.last_name is None:
+        return False
+    _apply_split_names(user, payload)
+    _require_first_name(user)
+    return True
 
 
-def _create_magic_token(user: User, *, requires_password_reset: bool = False) -> str:
+def _create_magic_token(
+    user: User,
+    *,
+    requires_password_reset: bool = False,
+    source: str = MagicLoginTokenSource.ADMIN,
+) -> str:
     """Create a one-time magic login token. Returns the token UUID string.
 
     Pass requires_password_reset=True for self-service login links so consuming
     the token forces a password reset (admin onboarding links leave it False).
+    Pass source=SELF_SERVICE only for the user's own login-link request — that is
+    the only source the self-service cooldown counts.
     """
-    magic = MagicLoginToken.create_for_user(user, requires_password_reset=requires_password_reset)
+    magic = MagicLoginToken.create_for_user(
+        user, requires_password_reset=requires_password_reset, source=source
+    )
     return str(magic.token)
 
 
@@ -80,6 +96,38 @@ def _is_last_admin(user: User) -> bool:
 def _is_admin(user: User) -> bool:
     """True if the user holds the built-in admin role."""
     return user.roles.filter(name="admin", is_default=True).exists()
+
+
+def visible_name(target: User, viewer: User | None) -> tuple[str, str]:
+    """Return (last_name, full_name) as they should appear to viewer.
+
+    Admins and the target themself always see the full name. Everyone else
+    sees first-name-only when target.hide_last_name is set. A None viewer
+    (anonymous/optional-auth) is treated as non-admin, non-self.
+    """
+    if viewer is not None and (target.id == viewer.id or _is_admin(viewer)):
+        return target.last_name, target.full_name
+    if target.hide_last_name:
+        return "", target.first_name.strip()
+    return target.last_name, target.full_name
+
+
+def visible_display_name(target: User, viewer: User | None) -> str:
+    """Member-facing name honoring hide_last_name, falling back to phone.
+
+    viewer=None (anonymous/optional-auth) is treated as non-admin, non-self.
+    When the last name is hidden we can only show first_name — full_name would
+    leak the last name. The phone fallback is suppressed when show_phone is
+    false so a nameless member's private number is never surfaced as their name.
+    """
+    is_privileged = viewer is not None and (target.id == viewer.id or _is_admin(viewer))
+    if target.hide_last_name and not is_privileged:
+        name = target.first_name.strip()
+    else:
+        name = target.full_name
+    if name:
+        return name
+    return target.phone_number if target.show_phone else "member"
 
 
 def _normalize_email(raw: str | None) -> str | None:
@@ -234,3 +282,16 @@ def _validate_member_role_required(new_roles: list[Role]) -> None:
         return
     if member_role not in new_roles:
         raise_validation(Code.Role.MEMBER_ROLE_REQUIRED, status_code=400)
+
+
+def _strip_non_member_roles(user: User) -> list[str]:
+    """Remove every role from user except the built-in member role.
+
+    Called on the pause transition so a paused member holds no elevated role.
+    Returns the ids of the removed roles (for audit logging).
+    """
+    removed = list(user.roles.exclude(name="member", is_default=True))
+    if not removed:
+        return []
+    user.roles.remove(*removed)
+    return [str(r.id) for r in removed]

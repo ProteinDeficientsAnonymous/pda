@@ -137,7 +137,7 @@ export interface paths {
             cookie?: never;
         };
         /** Magic Login */
-        get: operations["users__auth_magic_login"];
+        get: operations["users__magic_login_magic_login"];
         put?: never;
         post?: never;
         delete?: never;
@@ -263,7 +263,7 @@ export interface paths {
          * List Member Directory
          * @description Authed-only member directory. Respects each user's show_phone/show_email flags.
          */
-        get: operations["users__auth_list_member_directory"];
+        get: operations["users__members_list_member_directory"];
         put?: never;
         post?: never;
         delete?: never;
@@ -332,7 +332,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Member Profile */
-        get: operations["users__auth_get_member_profile"];
+        get: operations["users__members_get_member_profile"];
         put?: never;
         post?: never;
         delete?: never;
@@ -577,8 +577,26 @@ export interface paths {
         /** List Event Tags */
         get: operations["community__event_tags_list_event_tags"];
         put?: never;
-        post?: never;
+        /** Create Event Tag */
+        post: operations["community__event_tags_create_event_tag"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/event-tags/{tag_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Event Tag */
+        delete: operations["community__event_tags_delete_event_tag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -596,6 +614,26 @@ export interface paths {
         put?: never;
         /** Create Event */
         post: operations["community__events_create_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/attendance-report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attendance Report
+         * @description Per-event attendance summary, newest first, for events with any mark.
+         */
+        get: operations["community__attendance_report_attendance_report"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -884,7 +922,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Add Poll Option */
-        post: operations["community__polls_add_poll_option"];
+        post: operations["community__poll_options_add_poll_option"];
         delete?: never;
         options?: never;
         head?: never;
@@ -902,11 +940,11 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete Poll Option */
-        delete: operations["community__polls_delete_poll_option"];
+        delete: operations["community__poll_options_delete_poll_option"];
         options?: never;
         head?: never;
         /** Update Poll Option */
-        patch: operations["community__polls_update_poll_option"];
+        patch: operations["community__poll_options_update_poll_option"];
         trace?: never;
     };
     "/api/community/events/{event_id}/poll/vote/": {
@@ -1293,6 +1331,33 @@ export interface paths {
         get: operations["community__public_rsvp_manage_list_my_rsvps"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/public/my-rsvps/resend/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend Manage Link
+         * @description Public recovery path: re-send a non-member's manage-rsvp link by phone + email.
+         *
+         *     Honeypot trips, bad phones, unknown contacts, and member contacts all
+         *     resolve to the same neutral 200 body; only a matching non-member with an
+         *     email on file is actually sent a link. The response body never reveals
+         *     whether an account exists — the one residual signal is that the match+email
+         *     path sends synchronously, so it's marginally slower; the 3/h IP rate limit
+         *     keeps that timing side channel impractical to exploit.
+         */
+        post: operations["community__public_rsvp_resend_resend_manage_link"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1688,8 +1753,16 @@ export interface components {
         };
         /** ApproveJoinRequestOut */
         ApproveJoinRequestOut: {
-            /** Display Name */
-            display_name: string;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
             /** Magic Link Token */
@@ -1704,6 +1777,14 @@ export interface components {
         /** AttendanceIn */
         AttendanceIn: {
             attendance: components["schemas"]["AttendanceStatus"];
+        };
+        /** AttendanceReportOut */
+        AttendanceReportOut: {
+            /**
+             * Events
+             * @default []
+             */
+            events: components["schemas"]["EventAttendanceRowOut"][];
         };
         /**
          * AttendanceStatus
@@ -1964,6 +2045,33 @@ export interface components {
         ErrorReportOut: {
             /** Detail */
             detail: string;
+        };
+        /**
+         * EventAttendanceRowOut
+         * @description One event's attendance summary for the admin attendance report.
+         */
+        EventAttendanceRowOut: {
+            /**
+             * Attended Count
+             * @default 0
+             */
+            attended_count: number;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Going Count
+             * @default 0
+             */
+            going_count: number;
+            /**
+             * No Show Count
+             * @default 0
+             */
+            no_show_count: number;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
         };
         /** EventCommentListOut */
         EventCommentListOut: {
@@ -2884,11 +2992,6 @@ export interface components {
                 [key: string]: string;
             };
             /**
-             * Display Name
-             * @default
-             */
-            display_name: string;
-            /**
              * Email
              * Format: email
              */
@@ -2933,14 +3036,32 @@ export interface components {
             /** Approved By Name */
             approved_by_name?: string | null;
             /**
-             * Attached User Official Rsvp Count
+             * Attended Club Count
              * @default 0
              */
-            attached_user_official_rsvp_count: number;
-            /** Display Name */
-            display_name: string;
+            attended_club_count: number;
+            /**
+             * Attended Official Count
+             * @default 0
+             */
+            attended_official_count: number;
+            /**
+             * First Name
+             * @default
+             */
+            first_name: string;
+            /**
+             * Full Name
+             * @default
+             */
+            full_name: string;
             /** Id */
             id: string;
+            /**
+             * Last Name
+             * @default
+             */
+            last_name: string;
             /** Onboarded At */
             onboarded_at?: string | null;
             /** Phone Number */
@@ -2961,6 +3082,16 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+            /**
+             * Upcoming Club Count
+             * @default 0
+             */
+            upcoming_club_count: number;
+            /**
+             * Upcoming Official Count
+             * @default 0
+             */
+            upcoming_official_count: number;
             /** User Id */
             user_id?: string | null;
         };
@@ -2985,18 +3116,22 @@ export interface components {
         MePatchIn: {
             /** Bio */
             bio?: string | null;
+            /** Birthday */
+            birthday?: string | null;
             /** Calendar Feed Scope */
             calendar_feed_scope?: ("all" | "mine") | null;
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
             first_name?: string | null;
+            /** Hide Last Name */
+            hide_last_name?: boolean | null;
             /** Last Name */
             last_name?: string | null;
             /** Needs Onboarding */
             needs_onboarding?: boolean | null;
+            /** Nickname */
+            nickname?: string | null;
             /** Pronouns */
             pronouns?: string | null;
             /** Show Email */
@@ -3008,8 +3143,6 @@ export interface components {
         };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3050,8 +3183,8 @@ export interface components {
              * @default
              */
             bio: string;
-            /** Display Name */
-            display_name: string;
+            /** Birthday */
+            birthday?: string | null;
             /**
              * Email
              * @default
@@ -3079,6 +3212,11 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /**
+             * Nickname
+             * @default
+             */
+            nickname: string;
             /** Phone Number */
             phone_number: string;
             /**
@@ -3116,8 +3254,6 @@ export interface components {
         OnboardingIn: {
             /** Consent Types */
             consent_types?: components["schemas"]["ConsentType"][];
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3274,6 +3410,8 @@ export interface components {
              * @default unknown
              */
             attendance: string;
+            /** Checked In At */
+            checked_in_at?: string | null;
             /**
              * Has Plus One
              * @default false
@@ -3326,6 +3464,26 @@ export interface components {
         RequestLoginLinkOut: {
             /** Delivery */
             delivery: string;
+            /** Detail */
+            detail: string;
+        };
+        /** ResendManageLinkIn */
+        ResendManageLinkIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Phone Number */
+            phone_number: string;
+            /**
+             * Website
+             * @default
+             */
+            website: string;
+        };
+        /** ResendManageLinkOut */
+        ResendManageLinkOut: {
             /** Detail */
             detail: string;
         };
@@ -3561,6 +3719,11 @@ export interface components {
             /** User Name */
             user_name?: string | null;
         };
+        /** TagIn */
+        TagIn: {
+            /** Name */
+            name: string;
+        };
         /** TagOut */
         TagOut: {
             /** Id */
@@ -3610,11 +3773,6 @@ export interface components {
         };
         /** UserCreateIn */
         UserCreateIn: {
-            /**
-             * Display Name
-             * @default
-             */
-            display_name: string;
             /** Email */
             email?: string | null;
             /**
@@ -3634,8 +3792,6 @@ export interface components {
         };
         /** UserCreateOut */
         UserCreateOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * First Name
              * @default
@@ -3665,13 +3821,13 @@ export interface components {
              * @default
              */
             bio: string;
+            /** Birthday */
+            birthday?: string | null;
             /**
              * Calendar Feed Scope
              * @default all
              */
             calendar_feed_scope: string;
-            /** Display Name */
-            display_name: string;
             /**
              * Email
              * @default
@@ -3687,8 +3843,18 @@ export interface components {
              * @default
              */
             full_name: string;
+            /**
+             * Hide Last Name
+             * @default false
+             */
+            hide_last_name: boolean;
             /** Id */
             id: string;
+            /**
+             * Is Member
+             * @default true
+             */
+            is_member: boolean;
             /**
              * Is Paused
              * @default false
@@ -3699,6 +3865,8 @@ export interface components {
              * @default false
              */
             is_superuser: boolean;
+            /** Last Attended */
+            last_attended?: string | null;
             /**
              * Last Name
              * @default
@@ -3729,6 +3897,11 @@ export interface components {
              * @default false
              */
             needs_sms_consent: boolean;
+            /**
+             * Nickname
+             * @default
+             */
+            nickname: string;
             /** Phone Number */
             phone_number: string;
             /** Photo Updated At */
@@ -3763,8 +3936,6 @@ export interface components {
         };
         /** UserPatchIn */
         UserPatchIn: {
-            /** Display Name */
-            display_name?: string | null;
             /** Email */
             email?: string | null;
             /** First Name */
@@ -3783,8 +3954,6 @@ export interface components {
         };
         /** UserSearchOut */
         UserSearchOut: {
-            /** Display Name */
-            display_name: string;
             /**
              * First Name
              * @default
@@ -4110,7 +4279,7 @@ export interface operations {
             };
         };
     };
-    users__auth_magic_login: {
+    users__magic_login_magic_login: {
         parameters: {
             query?: never;
             header?: never;
@@ -4500,7 +4669,9 @@ export interface operations {
     };
     users__management_list_users: {
         parameters: {
-            query?: never;
+            query?: {
+                include_non_members?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4527,7 +4698,7 @@ export interface operations {
             };
         };
     };
-    users__auth_list_member_directory: {
+    users__members_list_member_directory: {
         parameters: {
             query?: never;
             header?: never;
@@ -4718,7 +4889,7 @@ export interface operations {
             };
         };
     };
-    users__auth_get_member_profile: {
+    users__members_get_member_profile: {
         parameters: {
             query?: never;
             header?: never;
@@ -5418,6 +5589,95 @@ export interface operations {
             };
         };
     };
+    community__event_tags_create_event_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_tags_delete_event_tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__events_list_events: {
         parameters: {
             query?: {
@@ -5491,6 +5751,35 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_report_attendance_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceReportOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6535,7 +6824,7 @@ export interface operations {
             };
         };
     };
-    community__polls_add_poll_option: {
+    community__poll_options_add_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -6597,7 +6886,7 @@ export interface operations {
             };
         };
     };
-    community__polls_delete_poll_option: {
+    community__poll_options_delete_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -6656,7 +6945,7 @@ export interface operations {
             };
         };
     };
-    community__polls_update_poll_option: {
+    community__poll_options_update_poll_option: {
         parameters: {
             query?: never;
             header?: never;
@@ -7856,6 +8145,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__public_rsvp_resend_resend_manage_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendManageLinkIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResendManageLinkOut"];
                 };
             };
             /** @description Too Many Requests */

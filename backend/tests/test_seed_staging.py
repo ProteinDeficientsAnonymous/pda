@@ -174,7 +174,7 @@ def test_seed_staging_is_idempotent():
 @pytest.mark.django_db
 def test_seed_staging_reset_removes_only_scoped_rows():
     User.objects.create_user(
-        phone_number="+17025559999", display_name="real person", is_member=True
+        phone_number="+17025559999", first_name="real", last_name="person", is_member=True
     )
     call_command("seed_staging")
     call_command("seed_staging", "--reset")

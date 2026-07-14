@@ -11,17 +11,8 @@ from ninja import Router
 from ninja.responses import Status
 
 from community._event_helpers import (
-    _attended_count,
-    _attending_headcount,
-    _attending_headcount_db,
     _cancellations,
-    _cant_go_count,
     _event_out,
-    _maybe_count,
-    _no_response_count,
-    _no_show_count,
-    _not_marked_count,
-    _waitlisted_count,
     broadcast_capacity_change,
     promote_from_waitlist,
 )
@@ -33,10 +24,22 @@ from community._event_schemas import (
     TextRecipientsOut,
 )
 from community._events import _can_edit_event, _enforce_event_read_visibility
+from community._join_request_approval import _maybe_promote_tentative, send_join_approval
 from community._public_rsvp_shared import _email_promoted_non_members
+from community._rsvp_counts import (
+    _attended_count,
+    _attending_headcount,
+    _attending_headcount_db,
+    _cant_go_count,
+    _maybe_count,
+    _no_response_count,
+    _no_show_count,
+    _not_marked_count,
+    _waitlisted_count,
+)
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 
 router = Router()
 
@@ -112,6 +115,19 @@ def _validate_rsvp_status(status: str) -> None:
         )
 
 
+def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
+    """Timestamp the transition into CANT_GO; clear it on any other status.
+
+    Preserves the original cancel time when a member re-saves while already
+    CANT_GO (e.g. toggling +1), so lead-time reflects the first cancellation.
+    """
+    if final_status != RSVPStatus.CANT_GO:
+        return None
+    if existing is not None and existing.status == RSVPStatus.CANT_GO:
+        return existing.cancelled_at
+    return timezone.now()
+
+
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool
 ) -> tuple[str, list[str]]:
@@ -143,7 +159,11 @@ def _apply_rsvp_in_transaction(
     EventRSVP.objects.update_or_create(
         event=event,
         user=user,
-        defaults={"status": final_status, "has_plus_one": final_plus_one},
+        defaults={
+            "status": final_status,
+            "has_plus_one": final_plus_one,
+            "cancelled_at": _resolve_cancelled_at(existing, final_status),
+        },
     )
 
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
@@ -221,7 +241,7 @@ def get_event_stats(request, event_id: UUID):
             attended_count=_attended_count(event),
             no_show_count=_no_show_count(event),
             not_marked_count=_not_marked_count(event),
-            cancellations=_cancellations(event),
+            cancellations=_cancellations(event, request.auth),
         ),
     )
 
@@ -287,8 +307,22 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
     if rsvp.status != RSVPStatus.ATTENDING:
         raise_validation(Code.Event.ATTENDANCE_ONLY_FOR_GOING_RSVPS, status_code=400)
 
-    rsvp.attendance = payload.attendance
-    rsvp.save(update_fields=["attendance", "updated_at"])
+    # The mark and any tentative promotion it triggers commit as a unit, so a
+    # mid-promotion failure can't leave a member flagged without their request
+    # stamped approved.
+    with transaction.atomic():
+        rsvp.attendance = payload.attendance
+        # Stamp the first time a guest is marked ATTENDED; keep the original
+        # check-in time if attendance is later flipped and re-marked.
+        if payload.attendance == AttendanceStatus.ATTENDED and rsvp.checked_in_at is None:
+            rsvp.checked_in_at = timezone.now()
+        rsvp.save(update_fields=["attendance", "checked_in_at", "updated_at"])
+        promoted = payload.attendance == AttendanceStatus.ATTENDED and _maybe_promote_tentative(
+            rsvp.user, event, request.auth
+        )
+
+    if promoted:
+        send_join_approval(to=rsvp.user.email, display_name=rsvp.user.full_name)
 
     audit_log(
         logging.INFO,

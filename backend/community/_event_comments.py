@@ -10,6 +10,7 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.service import notify_comment_reply, notify_event_comment
+from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._event_comment_schemas import (
@@ -122,7 +123,7 @@ def _comment_reply_out(
     return EventCommentReplyOut(
         id=str(comment.id),
         author_id=str(comment.author_id),
-        author_display_name=comment.author.display_name or comment.author.phone_number,
+        author_display_name=visible_display_name(comment.author, viewer),
         author_photo_url=_safe_photo_url(comment.author),
         body="" if is_deleted else comment.body,
         is_deleted=is_deleted,

@@ -67,7 +67,7 @@ class TestMagicLogin:
     def test_magic_login_cross_user_blocked(self, api_client, test_user):
         """A logged-in user clicking another user's magic link must be rejected."""
         other = User.objects.create_user(
-            phone_number="+12025550202", password="otherpass123", display_name="other"
+            phone_number="+12025550202", password="otherpass123", first_name="other"
         )
         magic = MagicLoginToken.create_for_user(other)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(test_user).access_token}"}  # type: ignore

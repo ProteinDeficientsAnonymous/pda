@@ -1,11 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import {
+  EventStatus,
+  EventType,
+  EventVisibility,
+  InvitePermission,
+  RsvpStatus,
+} from '@/models/event';
+import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
 const rescindMutate = vi.fn();
@@ -82,10 +89,14 @@ const BASE_EVENT: Event = {
 const CREATOR: User = {
   id: 'user-creator',
   phoneNumber: '+12125550001',
-  displayName: 'Alice',
+  firstName: 'Alice',
+  lastName: '',
+  fullName: 'Alice',
+  nickname: '',
   email: '',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -94,6 +105,7 @@ const CREATOR: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',
@@ -101,7 +113,27 @@ const CREATOR: User = {
   roles: [],
 };
 
-const STRANGER: User = { ...CREATOR, id: 'user-stranger', displayName: 'Stranger' };
+const STRANGER: User = {
+  ...CREATOR,
+  id: 'user-stranger',
+  firstName: 'Stranger',
+  fullName: 'Stranger',
+};
+
+const MANAGER: User = {
+  ...STRANGER,
+  id: 'user-manager',
+  firstName: 'Manager',
+  fullName: 'Manager',
+  roles: [
+    {
+      id: 'role-events',
+      name: 'events team',
+      isDefault: false,
+      permissions: [Permission.ManageEvents],
+    },
+  ],
+};
 
 function renderSection(event: Event) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -126,7 +158,7 @@ const ACCEPTED_COHOST_EVENT: Event = {
   coHostInviteIds: ['inv-accepted-1'],
 };
 
-const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', displayName: 'Bob' };
+const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
 
 describe('EventMemberSection — accepted host row', () => {
   it('renders × on accepted co-host chip for host viewer', () => {
@@ -250,7 +282,84 @@ describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
 
   it('shows the invite members button when rsvp is enabled and the viewer may invite', () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
-    renderSection(RSVP_ENABLED_EVENT);
+    renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
+    expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+
+  it('renders the invite members button inside the rsvp section (#788)', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
+    const rsvpCard = screen.getByRole('heading', { name: 'rsvp' }).closest('section');
+    expect(rsvpCard).not.toBeNull();
+    expect(within(rsvpCard!).getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+});
+
+describe('EventMemberSection — invite gating on member rsvp (#688)', () => {
+  const ALL_MEMBERS_EVENT: Event = {
+    ...BASE_EVENT,
+    rsvpEnabled: true,
+    invitePermission: InvitePermission.AllMembers,
+  };
+
+  it('hides invite for a non-cohost who has NOT rsvpd', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: null });
+    expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
+  });
+
+  it('shows invite for a non-cohost who rsvpd attending', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: RsvpStatus.Attending });
+    expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+
+  it('shows invite for a non-cohost who rsvpd maybe', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: RsvpStatus.Maybe });
+    expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+
+  it('hides invite for a non-cohost who rsvpd cant_go', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: RsvpStatus.CantGo });
+    expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
+  });
+
+  it('never shows invite to a non-cohost when invitePermission is co_hosts_only', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({
+      ...ALL_MEMBERS_EVENT,
+      invitePermission: InvitePermission.CoHostsOnly,
+      myRsvp: RsvpStatus.Attending,
+    });
+    expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
+  });
+
+  it('shows invite to the creator regardless of their own rsvp', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...ALL_MEMBERS_EVENT, myRsvp: null });
+    expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+
+  it('shows invite to a non-cohost event manager regardless of their own rsvp', () => {
+    useAuthStore.setState({ status: 'authed', user: MANAGER, accessToken: 'tok' });
+    renderSection({
+      ...ALL_MEMBERS_EVENT,
+      invitePermission: InvitePermission.CoHostsOnly,
+      myRsvp: null,
+    });
+    expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+
+  it('shows invite to a co-host regardless of their own rsvp, even when co_hosts_only', () => {
+    useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
+    renderSection({
+      ...ACCEPTED_COHOST_EVENT,
+      rsvpEnabled: true,
+      invitePermission: InvitePermission.CoHostsOnly,
+      myRsvp: null,
+    });
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 });

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import OnboardingScreen from './OnboardingScreen';
 
@@ -18,36 +19,36 @@ vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
 }));
 
+vi.mock('@/screens/settings/AvatarUpload', () => ({
+  AvatarUpload: () => <div data-testid="avatar-upload" />,
+}));
+
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'u1',
-    phoneNumber: '+12125550001',
-    displayName: '',
-    email: '',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
+    firstName: '',
+    lastName: '',
+    fullName: '',
     needsOnboarding: true,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 describe('OnboardingScreen', () => {
   const completeOnboarding = vi.fn();
+  const updateProfile = vi.fn();
+  const startProfileStep = vi.fn();
+  const finishProfileStep = vi.fn();
 
-  function setupMock(user: User) {
-    const storeState = { completeOnboarding, user };
+  function setupMock(user: User, profileStepActive = false) {
+    const storeState = {
+      completeOnboarding,
+      updateProfile,
+      startProfileStep,
+      finishProfileStep,
+      user,
+      profileStepActive,
+    };
     // Cast via `as never` so partial state satisfies the full AuthState type.
     vi.mocked(useAuthStore).mockImplementation(
       Object.assign((selector: (s: typeof storeState) => unknown) => selector(storeState), {
@@ -58,6 +59,11 @@ describe('OnboardingScreen', () => {
 
   beforeEach(() => {
     completeOnboarding.mockReset();
+    updateProfile.mockReset();
+    startProfileStep.mockReset();
+    finishProfileStep.mockReset();
+    updateProfile.mockResolvedValue(undefined);
+    setupMock(makeUser());
   });
 
   it('shows email-required error when email is empty', async () => {
@@ -67,7 +73,7 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText(/email required/i)).toBeInTheDocument();
@@ -82,12 +88,14 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'McTest');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledWith({
-      displayName: 'Tester',
+      firstName: 'Tester',
+      lastName: 'McTest',
       email: 'tester@example.com',
       newPassword: 'abcd1234ABCD!',
       consentTypes: [],
@@ -102,13 +110,14 @@ describe('OnboardingScreen', () => {
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/pronouns/i), 'they/them');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledWith({
-      displayName: 'Tester',
+      firstName: 'Tester',
+      lastName: '',
       email: 'tester@example.com',
       pronouns: 'they/them',
       newPassword: 'abcd1234ABCD!',
@@ -140,7 +149,7 @@ describe('OnboardingScreen', () => {
     const [guidelinesBox, smsBox] = screen.getAllByRole('checkbox') as [HTMLElement, HTMLElement];
 
     // Fill in the text fields
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
     await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
     await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
 
@@ -158,10 +167,54 @@ describe('OnboardingScreen', () => {
     // Submit and verify both consent types passed through
     await userEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(completeOnboarding).toHaveBeenCalledWith({
-      displayName: 'Tester',
+      firstName: 'Tester',
+      lastName: '',
       email: 'tester@example.com',
       newPassword: 'abcd1234ABCD!',
       consentTypes: ['guidelines', 'sms'],
     });
+  });
+
+  it('starts the profile step after successful account setup', async () => {
+    completeOnboarding.mockResolvedValue(undefined);
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(completeOnboarding).toHaveBeenCalledTimes(1);
+    expect(startProfileStep).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/couldn't finish onboarding/i)).not.toBeInTheDocument();
+  });
+
+  it('renders the profile step when profileStepActive is set', () => {
+    setupMock(makeUser({ needsOnboarding: false }), true);
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: /^done$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /do this later/i })).toBeInTheDocument();
+  });
+
+  it('stays on the account step when account setup fails', async () => {
+    completeOnboarding.mockRejectedValue(new Error('nope'));
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Tester');
+    await userEvent.type(screen.getByLabelText(/^email$/i), 'tester@example.com');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'abcd1234ABCD!');
+    await userEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(await screen.findByText(/couldn't finish onboarding/i)).toBeInTheDocument();
+    expect(startProfileStep).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /^done$/i })).not.toBeInTheDocument();
   });
 });

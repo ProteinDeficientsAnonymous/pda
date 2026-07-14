@@ -4,7 +4,6 @@ import uuid
 
 from django.conf import settings
 from django.db import models
-from users._name_parsing import sync_display_name
 
 from community.models.choices import JoinFormQuestionType, JoinRequestStatus
 
@@ -31,7 +30,6 @@ class JoinFormQuestion(models.Model):
 
 class JoinRequest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    display_name = models.CharField(max_length=64)
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
     phone_number = models.CharField(max_length=20)
@@ -86,9 +84,5 @@ class JoinRequest(models.Model):
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
 
-    def save(self, *args, **kwargs):
-        sync_display_name(self, kwargs)
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return f"{self.display_name} ({self.phone_number}) — {self.submitted_at:%Y-%m-%d}"
+        return f"{self.full_name} ({self.phone_number}) — {self.submitted_at:%Y-%m-%d}"

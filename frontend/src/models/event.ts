@@ -31,6 +31,8 @@ export const RsvpStatus = {
   CantGo: 'cant_go',
 } as const;
 
+export type RsvpInputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
+
 export const RsvpServerStatus = {
   ...RsvpStatus,
   Waitlisted: 'waitlisted',
@@ -153,6 +155,16 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   if (user.id === event.createdById) return true;
   if (event.coHostIds.includes(user.id)) return true;
   return hasPermission(user, Permission.ManageEvents);
+}
+
+export function canPublicRsvp(event: Event): boolean {
+  return (
+    event.eventType === EventType.Official &&
+    event.visibility === EventVisibility.Public &&
+    event.rsvpEnabled &&
+    event.status !== EventStatus.Cancelled &&
+    !event.isPast
+  );
 }
 
 export function eventClass(e: Event): string {

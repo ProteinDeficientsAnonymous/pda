@@ -12,11 +12,11 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
-    _attending_headcount,
     _can_see_invite_only,
     _event_out,
     _find_my_rsvp,
@@ -24,7 +24,6 @@ from community._event_helpers import (
     _set_event_tags,
     _tags_out,
     _update_co_hosts,
-    _waitlisted_count,
 )
 from community._event_schemas import (
     EventIn,
@@ -36,6 +35,7 @@ from community._event_transitions import (
     _handle_status_update,
     _set_event_participants,
 )
+from community._rsvp_counts import _attending_headcount, _waitlisted_count
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
@@ -222,7 +222,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 cashapp_link=_members_only(e.cashapp_link, "", is_authed),
                 zelle_info=_members_only(e.zelle_info, "", is_authed),
                 created_by_id=str(e.created_by_id) if e.created_by_id else None,
-                created_by_name=_get_creator_name(e.created_by),
+                created_by_name=_get_creator_name(e.created_by, auth_user),
                 created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
                 co_host_photo_urls=[media_path(c.profile_photo) for c in e.co_hosts.all()],
                 datetime_tbd=e.datetime_tbd,
@@ -235,7 +235,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 comment_count=e.comment_count,
                 my_rsvp=_find_my_rsvp(e.rsvps.all(), auth_user),
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
-                co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
+                co_host_names=[visible_display_name(c, auth_user) for c in e.co_hosts.all()],
                 is_past=e.is_past,
                 status=e.status,
                 tags=_tags_out(e),

@@ -19,10 +19,14 @@ interface WireRole {
 interface WireUser {
   id: string;
   phone_number: string;
-  display_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name: string;
+  nickname?: string;
   email?: string;
   bio?: string;
   pronouns?: string;
+  birthday?: string | null;
   is_superuser?: boolean;
   is_staff?: boolean;
   needs_onboarding: boolean;
@@ -31,6 +35,7 @@ interface WireUser {
   needs_sms_consent?: boolean;
   show_phone?: boolean;
   show_email?: boolean;
+  hide_last_name?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
   profile_photo_url?: string;
@@ -62,10 +67,14 @@ function mapUser(u: WireUser): User {
   return {
     id: u.id,
     phoneNumber: u.phone_number,
-    displayName: u.display_name,
+    firstName: u.first_name ?? '',
+    lastName: u.last_name ?? '',
+    fullName: u.full_name,
+    nickname: u.nickname ?? '',
     email: u.email ?? '',
     bio: u.bio ?? '',
     pronouns: u.pronouns ?? '',
+    birthday: u.birthday ?? null,
     isSuperuser: u.is_superuser ?? false,
     isStaff: u.is_staff ?? false,
     needsOnboarding: u.needs_onboarding,
@@ -74,6 +83,7 @@ function mapUser(u: WireUser): User {
     needsSmsConsent: u.needs_sms_consent ?? false,
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
+    hideLastName: u.hide_last_name ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
     profilePhotoUrl: u.profile_photo_url ?? '',
@@ -142,14 +152,16 @@ async function fetchMeWithToken(access: string): Promise<User> {
 
 export async function completeOnboarding(payload: {
   newPassword: string;
-  displayName?: string | undefined;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
   email?: string | undefined;
   pronouns?: string | undefined;
   consentTypes?: ConsentTypeValue[] | undefined;
 }): Promise<User> {
   const { data } = await apiClient.post<WireUser>('/api/auth/complete-onboarding/', {
     new_password: payload.newPassword,
-    display_name: payload.displayName,
+    first_name: payload.firstName,
+    last_name: payload.lastName,
     email: payload.email,
     pronouns: payload.pronouns,
     consent_types: payload.consentTypes ?? [],
@@ -173,12 +185,17 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 export interface ProfileUpdate {
-  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  nickname?: string;
   email?: string;
   bio?: string;
   pronouns?: string;
+  // Empty string clears the stored birthday; an ISO date (yyyy-mm-dd) sets it.
+  birthday?: string;
   showPhone?: boolean;
   showEmail?: boolean;
+  hideLastName?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
 }
@@ -186,12 +203,16 @@ export interface ProfileUpdate {
 export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   // Omit undefined so PATCH doesn't clobber fields that weren't explicitly set.
   const body: Record<string, unknown> = {};
-  if (patch.displayName !== undefined) body.display_name = patch.displayName;
+  if (patch.firstName !== undefined) body.first_name = patch.firstName;
+  if (patch.lastName !== undefined) body.last_name = patch.lastName;
+  if (patch.nickname !== undefined) body.nickname = patch.nickname;
   if (patch.email !== undefined) body.email = patch.email;
   if (patch.bio !== undefined) body.bio = patch.bio;
   if (patch.pronouns !== undefined) body.pronouns = patch.pronouns;
+  if (patch.birthday !== undefined) body.birthday = patch.birthday;
   if (patch.showPhone !== undefined) body.show_phone = patch.showPhone;
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
+  if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
   const { data } = await apiClient.patch<WireUser>('/api/auth/me/', body);

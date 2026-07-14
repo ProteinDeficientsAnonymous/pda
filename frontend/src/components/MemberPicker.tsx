@@ -56,7 +56,7 @@ export function MemberPicker({ label, selected, onChange, hint, excludeIds = [] 
                 }}
                 className="hover:bg-background flex w-full items-center justify-between px-3 py-2 text-start text-sm"
               >
-                <span>{m.displayName}</span>
+                <span>{m.fullName}</span>
                 <span className="text-muted text-xs">{formatPhone(m.phoneNumber)}</span>
               </button>
             </li>
@@ -72,13 +72,13 @@ export function MemberPicker({ label, selected, onChange, hint, excludeIds = [] 
                 'bg-surface-dim inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs',
               )}
             >
-              {m.displayName}
+              {m.fullName}
               <button
                 type="button"
                 onClick={() => {
                   remove(m.id);
                 }}
-                aria-label={`remove ${m.displayName}`}
+                aria-label={`remove ${m.fullName}`}
                 className="text-muted hover:text-foreground ms-1"
               >
                 ×

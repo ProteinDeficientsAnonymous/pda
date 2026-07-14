@@ -20,7 +20,8 @@ class TestJoinRequestConflicts:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Already Here",
+                "first_name": "Already",
+                "last_name": "Here",
                 "phone_number": "+12025551299",
                 "email": "alreadyhere@example.com",
                 "answers": {why_join_id: "Liberation."},
@@ -37,7 +38,8 @@ class TestJoinRequestConflicts:
         api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Already Here",
+                "first_name": "Already",
+                "last_name": "Here",
                 "phone_number": "+12025551298",
                 "email": "alreadyhere@example.com",
                 "answers": {why_join_id: "Liberation."},
@@ -58,7 +60,8 @@ class TestJoinRequestConflicts:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Different Person",
+                "first_name": "Different",
+                "last_name": "Person",
                 "phone_number": "+12025551301",
                 "email": "TAKEN@example.com",
                 "answers": {why_join_id: "Liberation."},
@@ -80,7 +83,8 @@ class TestJoinRequestConflicts:
         api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Different Person",
+                "first_name": "Different",
+                "last_name": "Person",
                 "phone_number": "+12025551303",
                 "email": "dupe@example.com",
                 "answers": {why_join_id: "Liberation."},
@@ -101,7 +105,8 @@ class TestJoinRequestConflicts:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Coming Back",
+                "first_name": "Coming",
+                "last_name": "Back",
                 "phone_number": "+12025551305",
                 "email": "returning@example.com",
                 "answers": {why_join_id: "i want to return"},
@@ -121,7 +126,8 @@ class TestJoinRequestConflicts:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Coming Back",
+                "first_name": "Coming",
+                "last_name": "Back",
                 "phone_number": "+12025551297",
                 "email": "comingback@example.com",
                 "answers": {why_join_id: "i want to return"},

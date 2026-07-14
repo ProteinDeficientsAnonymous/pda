@@ -11,7 +11,8 @@ def manage_docs_user(db):
     user = User.objects.create_user(
         phone_number="+15550003001",
         password="docspass123",
-        display_name="Docs Manager",
+        first_name="Docs",
+        last_name="Manager",
     )
     role = Role.objects.create(name="docs_manager", permissions=[PermissionKey.MANAGE_DOCUMENTS])
     user.roles.add(role)

@@ -1,5 +1,7 @@
 """Tests for PATCH /api/auth/me/ (update profile)."""
 
+from datetime import date
+
 import pytest
 from users.models import User
 
@@ -88,6 +90,57 @@ class TestUpdateMe:
 
 
 @pytest.mark.django_db
+class TestUpdateBirthday:
+    def test_set_birthday_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": "1990-06-15"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["birthday"] == "1990-06-15"
+        test_user.refresh_from_db()
+        assert test_user.birthday.isoformat() == "1990-06-15"
+
+    def test_birthday_can_be_cleared(self, api_client, auth_headers, test_user):
+        test_user.birthday = date(1990, 6, 15)
+        test_user.save(update_fields=["birthday"])
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": ""},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["birthday"] is None
+        test_user.refresh_from_db()
+        assert test_user.birthday is None
+
+    def test_birthday_omitted_leaves_value_untouched(self, api_client, auth_headers, test_user):
+        test_user.birthday = date(1990, 6, 15)
+        test_user.save(update_fields=["birthday"])
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"pronouns": "they/them"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        test_user.refresh_from_db()
+        assert test_user.birthday == date(1990, 6, 15)
+
+    def test_malformed_birthday_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": "not-a-date"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+
+@pytest.mark.django_db
 class TestPatchMeEmail:
     def test_update_email_lowercases(self, api_client, auth_headers, test_user):
         resp = api_client.patch(
@@ -102,7 +155,7 @@ class TestPatchMeEmail:
 
     def test_duplicate_email_rejected(self, api_client, auth_headers, db):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", last_name="", email="taken@example.com"
         )
         resp = api_client.patch(
             "/api/auth/me/",
@@ -116,7 +169,7 @@ class TestPatchMeEmail:
 
     def test_duplicate_email_case_insensitive(self, api_client, auth_headers, db):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", last_name="", email="taken@example.com"
         )
         resp = api_client.patch(
             "/api/auth/me/",

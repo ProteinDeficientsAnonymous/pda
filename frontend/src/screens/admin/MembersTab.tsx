@@ -1,6 +1,7 @@
 // Members tab body — the actual list/filter/sort/create UI. The outer
 // MembersScreen shell just switches between this and the RolesTab.
 
+import { format } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -9,21 +10,24 @@ import { type Member, useUsers } from '@/api/users';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
 
-type SortKey = 'name' | 'newest';
+type SortKey = 'name' | 'newest' | 'lastAttended';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'name', label: 'name (a–z)' },
   { value: 'newest', label: 'newest first' },
+  { value: 'lastAttended', label: 'last attended' },
 ];
 
 export function MembersTab() {
-  const { data = [], isPending, isError } = useUsers();
+  const [showNonMembers, setShowNonMembers] = useState(false);
+  const { data = [], isPending, isError } = useUsers(showNonMembers);
   const { data: allRoles = [] } = useRoles();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('name');
@@ -94,9 +98,13 @@ export function MembersTab() {
         ) : null}
       </div>
 
+      <div className="mb-4 sm:w-64">
+        <Toggle label="show non-members" checked={showNonMembers} onChange={setShowNonMembers} />
+      </div>
+
       {data.length > 0 ? (
         <p className="text-foreground-tertiary mb-3 text-sm">
-          {data.length === 1 ? '1 member' : `${String(data.length)} members`}
+          {data.length === 1 ? '1 user' : `${String(data.length)} users`}
         </p>
       ) : null}
 
@@ -298,7 +306,7 @@ function filterAndSort(
   if (q) {
     result = result.filter(
       (m) =>
-        m.displayName.toLowerCase().includes(q) ||
+        m.fullName.toLowerCase().includes(q) ||
         m.phoneNumber.toLowerCase().includes(q) ||
         m.email.toLowerCase().includes(q) ||
         m.id.toLowerCase().startsWith(q),
@@ -307,68 +315,113 @@ function filterAndSort(
   if (selectedRoles.size > 0) {
     result = result.filter((m) => m.roles.some((r) => selectedRoles.has(r.name)));
   }
-  const sorted = [...result];
+  return sortMembers(result, sort);
+}
+
+function sortMembers(members: Member[], sort: SortKey): Member[] {
+  const sorted = [...members];
   if (sort === 'name') {
     sorted.sort((a, b) =>
-      (a.displayName || a.phoneNumber)
+      (a.fullName || a.phoneNumber)
         .toLowerCase()
-        .localeCompare((b.displayName || b.phoneNumber).toLowerCase()),
+        .localeCompare((b.fullName || b.phoneNumber).toLowerCase()),
     );
-  } else {
-    sorted.reverse();
+    return sorted;
   }
-  return sorted;
+  if (sort === 'lastAttended') {
+    // Most recent attendance first; members who never attended sink to the bottom.
+    sorted.sort((a, b) => (b.lastAttendedAt?.getTime() ?? 0) - (a.lastAttendedAt?.getTime() ?? 0));
+    return sorted;
+  }
+  // 'newest' — the list arrives oldest-first (phone_number order ≈ creation),
+  // so reverse approximates newest-first, matching the prior behavior.
+  return sorted.reverse();
 }
 
 function MemberRow({ member }: { member: Member }) {
-  const initials = (member.displayName || member.phoneNumber).slice(0, 2).toLowerCase();
+  const initials = (member.fullName || member.phoneNumber).slice(0, 2).toLowerCase();
+
+  // Non-members have no detail page, so the row is a plain div, not a link.
+  if (!member.isMember) {
+    return (
+      <div className="border-border bg-surface flex flex-col gap-2 rounded-lg border p-3">
+        <MemberRowBody member={member} initials={initials} />
+      </div>
+    );
+  }
+
   return (
     <Link
       to={`/admin/members/${member.id}`}
-      className="border-border bg-surface hover:bg-surface-dim flex items-center gap-3 rounded-lg border p-3 transition-colors"
+      className="border-border bg-surface hover:bg-surface-dim flex flex-col gap-2 rounded-lg border p-3 transition-colors"
     >
-      {member.profilePhotoUrl ? (
-        <img
-          src={member.profilePhotoUrl}
-          alt=""
-          className="h-10 w-10 shrink-0 rounded-full object-cover"
-        />
-      ) : (
-        <span
-          aria-hidden="true"
-          className="bg-surface-dim text-foreground-secondary flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm"
-        >
-          {initials || '?'}
-        </span>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate text-sm font-medium">
-          {member.displayName || formatPhone(member.phoneNumber)}
-        </p>
-        <p className="text-foreground-tertiary truncate text-xs">
-          {formatPhone(member.phoneNumber)}
-        </p>
-        {member.email ? (
-          <p className="text-foreground-tertiary truncate text-xs">{member.email.toLowerCase()}</p>
-        ) : (
-          <p className="text-foreground-tertiary/60 truncate text-xs italic">no email</p>
-        )}
-      </div>
-      <div className="flex shrink-0 flex-wrap justify-end gap-1">
-        {member.roles.map((role) => (
-          <span
-            key={role.id}
-            className="bg-surface-dim text-foreground-secondary rounded-full px-2 py-0.5 text-xs"
-          >
-            {role.name}
-          </span>
-        ))}
-        {member.isPaused ? (
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-            paused
-          </span>
-        ) : null}
-      </div>
+      <MemberRowBody member={member} initials={initials} />
     </Link>
+  );
+}
+
+function MemberRowBody({ member, initials }: { member: Member; initials: string }) {
+  const hasTags = !member.isMember || member.roles.length > 0 || member.isPaused;
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        {member.profilePhotoUrl ? (
+          <img
+            src={member.profilePhotoUrl}
+            alt=""
+            className="h-10 w-10 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="bg-surface-dim text-foreground-secondary flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm"
+          >
+            {initials || '?'}
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-foreground truncate text-sm font-medium">
+            {member.fullName || formatPhone(member.phoneNumber)}
+          </p>
+          <p className="text-foreground-tertiary truncate text-xs">
+            {formatPhone(member.phoneNumber)}
+          </p>
+          {member.email ? (
+            <p className="text-foreground-tertiary truncate text-xs">
+              {member.email.toLowerCase()}
+            </p>
+          ) : (
+            <p className="text-foreground-tertiary/60 truncate text-xs italic">no email</p>
+          )}
+          <p className="text-foreground-tertiary/80 truncate text-xs">
+            {member.lastAttendedAt
+              ? `last attended ${format(member.lastAttendedAt, 'MMM d, yyyy').toLowerCase()}`
+              : 'never attended'}
+          </p>
+        </div>
+      </div>
+      {hasTags ? (
+        <div className="flex flex-wrap gap-1 pl-13">
+          {member.roles.map((role) => (
+            <span
+              key={role.id}
+              className="bg-surface-dim text-foreground-secondary rounded-full px-2 py-0.5 text-xs"
+            >
+              {role.name}
+            </span>
+          ))}
+          {member.isPaused ? (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+              paused
+            </span>
+          ) : null}
+          {!member.isMember ? (
+            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+              non-member
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </>
   );
 }

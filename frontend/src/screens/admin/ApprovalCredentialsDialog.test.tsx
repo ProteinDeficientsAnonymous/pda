@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 
@@ -15,7 +16,7 @@ vi.mock('@/api/client', () => ({
 
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({
-    data: { body: 'hi ${NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
+    data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
     isPending: false,
     isError: false,
   }),
@@ -23,28 +24,14 @@ vi.mock('@/api/content', () => ({
 }));
 
 function makeUser(overrides?: Partial<User>): User {
-  return {
+  return makeSharedUser({
     id: 'u1',
     phoneNumber: '+12125550000',
-    displayName: 'Vetter Vee',
-    email: '',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
+    firstName: 'Vetter',
+    lastName: 'Vee',
+    fullName: 'Vetter Vee',
     ...overrides,
-  };
+  });
 }
 
 beforeEach(() => {
@@ -63,7 +50,8 @@ function renderDialog(user: User | null) {
       <ApprovalCredentialsDialog
         open
         onClose={() => {}}
-        displayName="Sam"
+        fullName="Sam Vetterson"
+        firstName="Sam"
         phoneNumber="+12025551234"
         magicLinkToken="abc123"
       />

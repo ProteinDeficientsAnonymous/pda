@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ title }}</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="pda" />
+    <meta property="og:title" content="{{ title }}" />
+    {% if description %}<meta property="og:description" content="{{ description }}" />{% endif %}
+    <meta property="og:url" content="{{ url }}" />
+    {% if image %}<meta property="og:image" content="{{ image }}" />{% endif %}
+    <meta name="twitter:card" content="{% if image %}summary_large_image{% else %}summary{% endif %}" />
+    <meta name="twitter:title" content="{{ title }}" />
+    {% if description %}<meta name="twitter:description" content="{{ description }}" />{% endif %}
+    {% if image %}<meta name="twitter:image" content="{{ image }}" />{% endif %}
+    <meta http-equiv="refresh" content="0; url={{ url }}" />
+  </head>
+  <body>
+    <a href="{{ url }}">{{ title }}</a>
+  </body>
+</html>

@@ -7,7 +7,6 @@ from uuid import UUID
 
 from config.media_proxy import media_path
 from django.db import transaction
-from django.db.models import Case, IntegerField, Sum, Value, When
 from notifications.service import (
     broadcast_cohost_change,
     broadcast_event_update,
@@ -15,6 +14,7 @@ from notifications.service import (
     create_event_invite_notifications,
     create_waitlist_promoted_notifications,
 )
+from users._helpers import visible_display_name
 from users.models import User as UserModel
 from users.permissions import PermissionKey
 
@@ -30,9 +30,13 @@ from community._event_schemas import (
     RSVPGuestOut,
     TagOut,
 )
+from community._rsvp_counts import (
+    _attending_headcount,
+    _attending_headcount_db,
+    _waitlisted_count,
+)
 from community._shared import _authenticated_user, _members_only
 from community.models import (
-    AttendanceStatus,
     CoHostInviteStatus,
     Event,
     EventCoHostInvite,
@@ -72,17 +76,18 @@ def _can_see_phones(requesting_user, creator, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 
-def _build_guest_list(rsvps, can_see_phones: bool) -> list[RSVPGuestOut]:
+def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGuestOut]:
     """Build guest list with optional phone visibility."""
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
-            name=r.user.display_name or r.user.phone_number,
+            name=visible_display_name(r.user, viewer),
             status=r.status,
             has_plus_one=r.has_plus_one,
             phone=r.user.phone_number if can_see_phones else None,
             photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
+            checked_in_at=r.checked_in_at,
         )
         for r in rsvps
     ]
@@ -98,93 +103,28 @@ def _find_my_rsvp(rsvps, user) -> str | None:
     return None
 
 
-def _attending_headcount(event: Event) -> int:
-    """Count attending spots from prefetched RSVPs (each attendee + their +1)."""
-    return sum(
-        1 + (1 if r.has_plus_one else 0)
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING
-    )
+def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
+    """Return currently-CANT_GO RSVPs with lead time (days before start).
 
-
-def _attending_headcount_db(event: Event, exclude_user=None) -> int:
-    """Count attending spots via DB query (use inside select_for_update transactions)."""
-    qs = EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
-    if exclude_user is not None:
-        qs = qs.exclude(user=exclude_user)
-    result = qs.aggregate(
-        total=Sum(
-            Case(
-                When(has_plus_one=True, then=Value(2)),
-                default=Value(1),
-                output_field=IntegerField(),
-            )
-        )
-    )
-    return result["total"] or 0
-
-
-def _waitlisted_count(event: Event) -> int:
-    """Count waitlisted RSVPs from prefetched data."""
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.WAITLISTED)
-
-
-def _maybe_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.MAYBE)
-
-
-def _cant_go_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.CANT_GO)
-
-
-def _no_response_count(event: Event) -> int:
-    """Invited users who have no RSVP row."""
-    responded = {r.user_id for r in event.rsvps.all()}
-    return sum(1 for u in event.invited_users.all() if u.pk not in responded)
-
-
-def _attended_count(event: Event) -> int:
-    return sum(
-        1
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.ATTENDED
-    )
-
-
-def _no_show_count(event: Event) -> int:
-    return sum(
-        1
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.NO_SHOW
-    )
-
-
-def _not_marked_count(event: Event) -> int:
-    return sum(
-        1
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.ATTENDING and r.attendance == AttendanceStatus.UNKNOWN
-    )
-
-
-def _cancellations(event: Event) -> list[CancellationOut]:
-    """Return currently-CANT_GO RSVPs with inferred lead time (days before start).
-
-    Lossy for users who flipped between statuses — uses updated_at as proxy.
+    Lead time is derived from the recorded cancelled_at transition timestamp,
+    falling back to updated_at for legacy rows that predate the column.
     Returns [] if the event has no start_datetime.
     """
     if event.start_datetime is None:
         return []
-    rows = [
-        CancellationOut(
-            user_id=str(r.user_id),
-            name=r.user.display_name or r.user.phone_number,
-            cancelled_at=r.updated_at,
-            days_before_event=(event.start_datetime - r.updated_at).days,
+    rows = []
+    for r in event.rsvps.all():
+        if r.status != RSVPStatus.CANT_GO:
+            continue
+        cancelled_at = r.cancelled_at or r.updated_at
+        rows.append(
+            CancellationOut(
+                user_id=str(r.user_id),
+                name=visible_display_name(r.user, viewer),
+                cancelled_at=cancelled_at,
+                days_before_event=(event.start_datetime - cancelled_at).days,
+            )
         )
-        for r in event.rsvps.all()
-        if r.status == RSVPStatus.CANT_GO
-    ]
     rows.sort(key=lambda x: x.cancelled_at, reverse=True)
     return rows
 
@@ -276,10 +216,10 @@ def _can_see_invite_only(
     return user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
-def _get_creator_name(creator) -> str | None:
+def _get_creator_name(creator, viewer=None) -> str | None:
     if creator is None:
         return None
-    return creator.display_name or creator.phone_number
+    return visible_display_name(creator, viewer)
 
 
 def _tags_out(event: Event) -> list[TagOut]:
@@ -319,7 +259,7 @@ def _pending_cohost_invites_out(
         PendingCoHostInviteOut(
             id=str(inv.id),
             user_id=str(inv.user_id),
-            user_name=inv.user.display_name or inv.user.phone_number,
+            user_name=visible_display_name(inv.user, auth_user),
             user_photo_url=media_path(inv.user.profile_photo),
             invited_at=inv.invited_at,
         )
@@ -395,13 +335,13 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         invited_count=len(all_invited),
         comment_count=comment_count,
         created_by_id=str(event.created_by_id) if event.created_by_id else None,
-        created_by_name=_get_creator_name(creator),
+        created_by_name=_get_creator_name(creator, auth_user),
         created_by_photo_url=media_path(creator.profile_photo) if creator else "",
         co_host_ids=[str(u.id) for u in co_hosts],
-        co_host_names=[u.display_name or u.phone_number for u in co_hosts],
+        co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         co_host_invite_ids=co_host_invite_ids,
-        guests=_members_only(_build_guest_list(rsvps, phones_visible), [], is_authed),
+        guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
         event_type=event.event_type,
         visibility=event.visibility,
@@ -411,7 +351,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         datetime_poll_slug=_get_datetime_poll_slug(event),
         has_poll=hasattr(event, "poll"),
         invited_user_ids=[str(u.id) for u in invited],
-        invited_user_names=[u.display_name or u.phone_number for u in invited],
+        invited_user_names=[visible_display_name(u, auth_user) for u in invited],
         invited_user_photo_urls=[media_path(u.profile_photo) for u in invited],
         invite_permission=event.invite_permission,
         is_past=event.is_past,

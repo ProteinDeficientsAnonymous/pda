@@ -81,7 +81,7 @@ def resend_magic_link(request, id: UUID):
         target_type="join_request",
         target_id=str(join_request.id),
         details={
-            "display_name": join_request.display_name,
+            "full_name": join_request.full_name,
             "first_name": join_request.first_name,
             "last_name": join_request.last_name,
             "user_id": str(user.id),
@@ -92,7 +92,8 @@ def resend_magic_link(request, id: UUID):
         200,
         ApproveJoinRequestOut(
             id=str(join_request.id),
-            display_name=join_request.display_name,
+            first_name=join_request.first_name,
+            full_name=join_request.full_name,
             phone_number=join_request.phone_number,
             status=join_request.status,
             magic_link_token=magic_token,

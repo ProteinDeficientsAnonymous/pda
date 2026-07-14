@@ -19,6 +19,8 @@ interface Props {
 
 export function MemberCreateDialog({ open, onClose }: Props) {
   const createUser = useCreateUser();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -28,15 +30,22 @@ export function MemberCreateDialog({ open, onClose }: Props) {
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setFormError(null);
+    if (!firstName.trim()) {
+      setFormError('first name is required');
+      return;
+    }
     if (!phone.trim()) {
       setFormError('phone number is required');
       return;
     }
     try {
-      const trimmed = email.trim();
+      const trimmedLast = lastName.trim();
+      const trimmedEmail = email.trim();
       const created = await createUser.mutateAsync({
         phoneNumber: phone.trim(),
-        ...(trimmed ? { email: trimmed } : {}),
+        firstName: firstName.trim(),
+        ...(trimmedLast ? { lastName: trimmedLast } : {}),
+        ...(trimmedEmail ? { email: trimmedEmail } : {}),
       });
       setResult(created);
     } catch (err) {
@@ -45,6 +54,8 @@ export function MemberCreateDialog({ open, onClose }: Props) {
   }
 
   function handleClose() {
+    setFirstName('');
+    setLastName('');
     setPhone('');
     setEmail('');
     setFormError(null);
@@ -69,8 +80,24 @@ export function MemberCreateDialog({ open, onClose }: Props) {
     <Dialog open={open} onClose={handleClose} title="add member">
       <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
         <TextField
+          label="first name"
+          value={firstName}
+          maxLength={64}
+          onChange={(e) => {
+            setFirstName(e.target.value);
+          }}
+          required
+        />
+        <TextField
+          label="last name (optional)"
+          value={lastName}
+          maxLength={64}
+          onChange={(e) => {
+            setLastName(e.target.value);
+          }}
+        />
+        <TextField
           label="phone number"
-          hint="they'll set their display name during onboarding"
           value={phone}
           maxLength={20}
           onChange={(e) => {
@@ -119,8 +146,8 @@ function CredentialsView({
   onClose: () => void;
 }) {
   const magicLinkUrl = buildMagicLinkUrl(result.magicLinkToken);
-  const greeting = result.displayName || formatPhone(result.phoneNumber);
-  const welcomeMessage = buildWelcomeMessage(result.displayName, magicLinkUrl);
+  const greeting = result.fullName || formatPhone(result.phoneNumber);
+  const welcomeMessage = buildWelcomeMessage(result.firstName, magicLinkUrl);
   const smsHref = buildSmsHref(result.phoneNumber, welcomeMessage);
 
   async function copy() {

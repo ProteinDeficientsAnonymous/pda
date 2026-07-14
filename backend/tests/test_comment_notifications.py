@@ -24,7 +24,8 @@ class TestNotifyCommentReply:
         replier = User.objects.create_user(
             phone_number="+12025550707",
             password="replierpass",
-            display_name="Replier",
+            first_name="Replier",
+            last_name="",
         )
         event = Event.objects.create(
             title="E",
@@ -89,12 +90,14 @@ class TestReplyEndpointTriggersNotification:
         author = User.objects.create_user(
             phone_number="+12025550808",
             password="authorpass",
-            display_name="Author",
+            first_name="Author",
+            last_name="",
         )
         replier = User.objects.create_user(
             phone_number="+12025550303",
             password="replierpass",
-            display_name="Replier",
+            first_name="Replier",
+            last_name="",
         )
         EventRSVP.objects.create(event=event, user=author, status=RSVPStatus.ATTENDING)
         EventRSVP.objects.create(event=event, user=replier, status=RSVPStatus.ATTENDING)
@@ -121,12 +124,14 @@ class TestNotifyEventComment:
         cohost = User.objects.create_user(
             phone_number="+12025551111",
             password="cohostpass",
-            display_name="Cohost",
+            first_name="Cohost",
+            last_name="",
         )
         commenter = User.objects.create_user(
             phone_number="+12025552222",
             password="commenterpass",
-            display_name="Commenter",
+            first_name="Commenter",
+            last_name="",
         )
         event = Event.objects.create(
             title="E",
@@ -171,7 +176,8 @@ class TestNotifyEventComment:
         cohost = User.objects.create_user(
             phone_number="+12025553333",
             password="cohostpass",
-            display_name="Cohost",
+            first_name="Cohost",
+            last_name="",
         )
         event = Event.objects.create(
             title="E",
@@ -190,7 +196,8 @@ class TestNotifyEventComment:
         replier = User.objects.create_user(
             phone_number="+12025554444",
             password="pass",
-            display_name="Replier",
+            first_name="Replier",
+            last_name="",
         )
         event = Event.objects.create(
             title="E",
@@ -215,7 +222,8 @@ class TestPostCommentEndpointTriggersNotification:
         commenter = User.objects.create_user(
             phone_number="+12025555555",
             password="pass",
-            display_name="Commenter",
+            first_name="Commenter",
+            last_name="",
         )
         event = Event.objects.create(
             title="E",

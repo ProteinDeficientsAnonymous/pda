@@ -5,7 +5,11 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, expect } from 'vitest';
 import * as axeMatchers from 'vitest-axe/matchers';
 
+import { setPhoneCountriesForTesting } from '@/components/ui/phoneCountries';
+
 expect.extend(axeMatchers);
+
+setPhoneCountriesForTesting(['US', 'CA', 'GB', 'AU']);
 
 afterEach(() => {
   cleanup();

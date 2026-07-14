@@ -28,7 +28,8 @@ def manage_events_headers(db):
     user = User.objects.create_user(
         phone_number="+14155559001",
         password="eventmanagerpass123",
-        display_name="Link Test Manager",
+        first_name="Link Test",
+        last_name="Manager",
     )
     role = Role.objects.create(name="link_event_mgr", permissions=[PermissionKey.MANAGE_EVENTS])
     user.roles.add(role)

@@ -186,10 +186,10 @@ export function useVotePoll(eventId: string) {
 function applyOptimisticVotes(
   poll: EventPoll,
   nextVotes: Record<string, VoteChoice>,
-  user: { id: string; displayName: string; profilePhotoUrl?: string | null } | null,
+  user: { id: string; fullName: string; profilePhotoUrl?: string | null } | null,
 ): EventPoll {
   const voter = user
-    ? { userId: user.id, name: user.displayName, photoUrl: user.profilePhotoUrl ?? '' }
+    ? { userId: user.id, name: user.fullName, photoUrl: user.profilePhotoUrl ?? '' }
     : null;
   const options = poll.options.map((opt) => {
     const prev = poll.myVotes[opt.id];

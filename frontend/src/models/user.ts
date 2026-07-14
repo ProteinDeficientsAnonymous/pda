@@ -18,10 +18,15 @@ export interface Role {
 export interface User {
   id: string;
   phoneNumber: string;
-  displayName: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  nickname: string;
   email: string;
   bio: string;
   pronouns: string;
+  // ISO date string (yyyy-mm-dd), or null if unset.
+  birthday: string | null;
   isSuperuser: boolean;
   isStaff: boolean;
   needsOnboarding: boolean;
@@ -35,6 +40,7 @@ export interface User {
   needsSmsConsent: boolean;
   showPhone: boolean;
   showEmail: boolean;
+  hideLastName: boolean;
   weekStart: 'sunday' | 'monday';
   calendarFeedScope: CalendarFeedScopeValue;
   profilePhotoUrl: string;
@@ -57,7 +63,7 @@ export interface User {
 export function passwordSetupRedirect(user: User | null): '/new-password' | '/onboarding' | null {
   if (!user) return null;
   if (!user.needsOnboarding && !user.needsPasswordReset) return null;
-  const hasNameAndEmail = user.displayName.length > 0 && !!user.email;
+  const hasNameAndEmail = user.firstName.length > 0 && !!user.email;
   return hasNameAndEmail ? '/new-password' : '/onboarding';
 }
 

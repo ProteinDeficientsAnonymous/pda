@@ -45,7 +45,7 @@ class EventFlagOut(BaseModel):
             event_id=str(flag.event_id),
             event_title=flag.event.title,
             flagged_by_id=str(flagger.pk),
-            flagged_by_name=flagger.display_name or flagger.phone_number,
+            flagged_by_name=flagger.full_name or flagger.phone_number,
             reason=flag.reason,
             status=flag.status,
             created_at=flag.created_at,

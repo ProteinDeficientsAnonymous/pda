@@ -81,7 +81,7 @@ class TestApplicationEventLogging:
             client.post(
                 "/api/community/join-request/",
                 data={
-                    "display_name": "Alice",
+                    "first_name": "Alice",
                     "email": "applicant@example.com",
                     "phone_number": "+12025551234",
                     "answers": answers,
@@ -131,7 +131,7 @@ class TestApplicationEventLogging:
             response = client.post(
                 "/api/community/join-request/",
                 data={
-                    "display_name": "Bob",
+                    "first_name": "Bob",
                     "email": "applicant@example.com",
                     "phone_number": "+13105551234",
                     "answers": answers,

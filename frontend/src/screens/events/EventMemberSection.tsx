@@ -9,9 +9,10 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event, PendingCohostInvite } from '@/models/event';
-import { EventStatus, InvitePermission } from '@/models/event';
+import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
 import { hasPermission } from '@/models/permissions';
 import { Permission } from '@/models/permissions';
+import { buildEventLinks } from '@/utils/eventLinks';
 import { ensureHttps } from '@/utils/url';
 
 import { AddCoHostDialog } from './AddCoHostDialog';
@@ -37,11 +38,14 @@ export function EventMemberSection({ event }: Props) {
   const canSeeInvited = isCoHost || canManageEvents;
   const isCancelled = event.status === EventStatus.Cancelled;
   const rsvpDisabled = !event.rsvpEnabled;
+  const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
   const canInvite =
     !isCancelled &&
     !event.isPast &&
     !rsvpDisabled &&
-    (isCoHost || event.invitePermission === InvitePermission.AllMembers);
+    (isCoHost ||
+      canManageEvents ||
+      (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
   const showStandaloneInvited = !showRsvp && canSeeInvited && event.invitedCount > 0;
 
@@ -59,10 +63,15 @@ export function EventMemberSection({ event }: Props) {
       {showRsvp ? (
         <Card label="rsvp">
           <RsvpSection event={event} canSeeInvited={canSeeInvited} />
-          {isCoHost ? (
-            <div className="mt-4 flex justify-end gap-2">
-              <EmailBlastButton event={event} />
-              <GroupTextButton event={event} />
+          {canInvite || isCoHost ? (
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              {canInvite ? <InviteSection event={event} /> : null}
+              {isCoHost ? (
+                <>
+                  <EmailBlastButton event={event} />
+                  <GroupTextButton event={event} />
+                </>
+              ) : null}
             </div>
           ) : null}
         </Card>
@@ -72,7 +81,6 @@ export function EventMemberSection({ event }: Props) {
           <InvitedList event={event} />
         </Card>
       ) : null}
-      {canInvite ? <InviteSection event={event} /> : null}
       {rsvpDisabled ? null : <EventCommentsCard eventId={event.id} />}
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
@@ -371,14 +379,7 @@ function LocationSection({ event }: { event: Event }) {
 }
 
 function LinksSection({ event }: { event: Event }) {
-  const links: { label: string; url: string }[] = [];
-  if (event.whatsappLink) {
-    links.push({ label: 'whatsapp group', url: ensureHttps(event.whatsappLink) });
-  }
-  if (event.partifulLink) links.push({ label: 'partiful', url: ensureHttps(event.partifulLink) });
-  if (event.otherLink) {
-    links.push({ label: prettyUrl(event.otherLink), url: ensureHttps(event.otherLink) });
-  }
+  const links = buildEventLinks(event);
   const feedbackSurveys = event.surveySlugs.filter((s) => s !== event.datetimePollSlug);
 
   if (links.length === 0 && feedbackSurveys.length === 0) return null;
@@ -454,7 +455,7 @@ function formatPrice(price: string): string {
 function InviteSection({ event }: { event: Event }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex justify-center">
+    <>
       <Button
         variant="secondary"
         onClick={() => {
@@ -470,15 +471,6 @@ function InviteSection({ event }: { event: Event }) {
           setOpen(false);
         }}
       />
-    </div>
+    </>
   );
-}
-
-// Strip scheme + optional www. and trailing slash for display. `href` should
-// still get the full URL (via ensureHttps).
-function prettyUrl(url: string): string {
-  return url
-    .replace(/^https?:\/\//i, '')
-    .replace(/^www\./i, '')
-    .replace(/\/$/, '');
 }

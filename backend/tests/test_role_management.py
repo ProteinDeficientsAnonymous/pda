@@ -14,7 +14,7 @@ def manage_users_user(db):
     user = User.objects.create_user(
         phone_number="+12025550002",
         password="managerpass123",
-        display_name="Manager",
+        first_name="Manager",
     )
     role = Role.objects.create(
         name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES]
@@ -187,7 +187,8 @@ class TestNonMemberCannotHoldRole:
         # is_member=False overrides the conftest autouse default (is_member=True).
         return User.objects.create_user(
             phone_number="+12025559001",
-            display_name="Non Member",
+            first_name="Non",
+            last_name="Member",
             is_member=False,
         )
 

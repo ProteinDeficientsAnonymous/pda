@@ -18,17 +18,22 @@ export interface MemberRole {
 
 export interface Member {
   id: string;
-  displayName: string;
+  fullName: string;
+  firstName: string;
+  lastName: string;
   phoneNumber: string;
   email: string;
   bio: string;
   profilePhotoUrl: string;
   showPhone: boolean;
   showEmail: boolean;
+  isMember: boolean;
   isSuperuser: boolean;
   isPaused: boolean;
   needsOnboarding: boolean;
   loginLinkRequested: boolean;
+  // Most recent event the member was checked in as attended. null if never.
+  lastAttendedAt: Date | null;
   roles: MemberRole[];
 }
 
@@ -43,17 +48,21 @@ interface WireRole {
 
 interface WireMember {
   id: string;
-  display_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name: string;
   phone_number: string;
   email?: string;
   bio?: string;
   profile_photo_url?: string;
   show_phone?: boolean;
   show_email?: boolean;
+  is_member?: boolean;
   is_superuser?: boolean;
   is_paused?: boolean;
   needs_onboarding?: boolean;
   login_link_requested?: boolean;
+  last_attended?: string | null;
   roles: WireRole[];
 }
 
@@ -69,30 +78,35 @@ function mapRole(r: WireRole): MemberRole {
 function fromWire(w: WireMember): Member {
   return {
     id: w.id,
-    displayName: w.display_name,
+    fullName: w.full_name,
+    firstName: w.first_name ?? '',
+    lastName: w.last_name ?? '',
     phoneNumber: w.phone_number,
     email: w.email ?? '',
     bio: w.bio ?? '',
     profilePhotoUrl: w.profile_photo_url ?? '',
     showPhone: w.show_phone ?? true,
     showEmail: w.show_email ?? true,
+    isMember: w.is_member ?? true,
     isSuperuser: w.is_superuser ?? false,
     isPaused: w.is_paused ?? false,
     needsOnboarding: w.needs_onboarding ?? false,
     loginLinkRequested: w.login_link_requested ?? false,
+    lastAttendedAt: w.last_attended ? new Date(w.last_attended) : null,
     roles: w.roles.map(mapRole),
   };
 }
 
 // --- Queries / mutations -----------------------------------------------------
 
-const USERS_KEY = ['users'] as const;
+export const USERS_KEY = ['users'] as const;
 
-export function useUsers() {
+export function useUsers(includeNonMembers = false) {
   return useQuery({
-    queryKey: USERS_KEY,
+    queryKey: [...USERS_KEY, { includeNonMembers }] as const,
     queryFn: async () => {
-      const { data } = await apiClient.get<WireMember[]>('/api/auth/users/');
+      const config = includeNonMembers ? { params: { include_non_members: true } } : undefined;
+      const { data } = await apiClient.get<WireMember[]>('/api/auth/users/', config);
       return data.map(fromWire);
     },
   });
@@ -100,7 +114,8 @@ export function useUsers() {
 
 export interface CreateUserInput {
   phoneNumber: string;
-  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   roleId?: string;
 }
@@ -108,14 +123,16 @@ export interface CreateUserInput {
 export interface CreateUserResult {
   id: string;
   phoneNumber: string;
-  displayName: string;
+  fullName: string;
+  firstName: string;
   magicLinkToken: string;
 }
 
 interface WireCreateResult {
   id: string;
   phone_number: string;
-  display_name: string;
+  first_name?: string;
+  full_name: string;
   magic_link_token: string;
 }
 
@@ -124,14 +141,16 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: async (input: CreateUserInput): Promise<CreateUserResult> => {
       const body: Record<string, unknown> = { phone_number: input.phoneNumber };
-      if (input.displayName !== undefined) body.display_name = input.displayName;
+      if (input.firstName !== undefined) body.first_name = input.firstName;
+      if (input.lastName !== undefined) body.last_name = input.lastName;
       if (input.email !== undefined) body.email = input.email;
       if (input.roleId !== undefined) body.role_id = input.roleId;
       const { data } = await apiClient.post<WireCreateResult>('/api/auth/create-user/', body);
       return {
         id: data.id,
         phoneNumber: data.phone_number,
-        displayName: data.display_name,
+        fullName: data.full_name,
+        firstName: data.first_name ?? '',
         magicLinkToken: data.magic_link_token,
       };
     },
@@ -143,7 +162,8 @@ export function useCreateUser() {
 
 export interface UpdateUserInput {
   phoneNumber?: string;
-  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   isPaused?: boolean;
 }
@@ -154,7 +174,8 @@ export function useUpdateUser(userId: string) {
     mutationFn: async (input: UpdateUserInput): Promise<Member> => {
       const body: Record<string, unknown> = {};
       if (input.phoneNumber !== undefined) body.phone_number = input.phoneNumber;
-      if (input.displayName !== undefined) body.display_name = input.displayName;
+      if (input.firstName !== undefined) body.first_name = input.firstName;
+      if (input.lastName !== undefined) body.last_name = input.lastName;
       if (input.email !== undefined) body.email = input.email;
       if (input.isPaused !== undefined) body.is_paused = input.isPaused;
       const { data } = await apiClient.patch<WireMember>(`/api/auth/users/${userId}/`, body);
@@ -280,22 +301,26 @@ export function useUpdateMemberRoles(userId: string) {
 
 export interface MemberProfile {
   id: string;
-  displayName: string;
+  fullName: string;
+  nickname: string;
   phoneNumber: string;
   email: string;
   bio: string;
   pronouns: string;
+  birthday: string | null;
   profilePhotoUrl: string;
   loginLinkRequested: boolean;
 }
 
 interface WireMemberProfile {
   id: string;
-  display_name: string;
+  full_name: string;
+  nickname?: string;
   phone_number: string;
   email: string;
   bio: string;
   pronouns: string;
+  birthday?: string | null;
   profile_photo_url: string;
   login_link_requested: boolean;
 }
@@ -303,11 +328,13 @@ interface WireMemberProfile {
 function fromWireProfile(w: WireMemberProfile): MemberProfile {
   return {
     id: w.id,
-    displayName: w.display_name,
+    fullName: w.full_name,
+    nickname: w.nickname ?? '',
     phoneNumber: w.phone_number,
     email: w.email,
     bio: w.bio,
     pronouns: w.pronouns,
+    birthday: w.birthday ?? null,
     profilePhotoUrl: w.profile_photo_url,
     loginLinkRequested: w.login_link_requested,
   };
@@ -318,7 +345,7 @@ function fromWireProfile(w: WireMemberProfile): MemberProfile {
 
 export interface DirectoryMember {
   id: string;
-  displayName: string;
+  fullName: string;
   phoneNumber: string;
   email: string;
   profilePhotoUrl: string;
@@ -326,7 +353,7 @@ export interface DirectoryMember {
 
 interface WireDirectoryMember {
   id: string;
-  display_name: string;
+  full_name: string;
   phone_number: string;
   email: string;
   profile_photo_url: string;
@@ -339,7 +366,7 @@ export function useMembersDirectory() {
       const { data } = await apiClient.get<WireDirectoryMember[]>('/api/auth/users/directory/');
       return data.map<DirectoryMember>((w) => ({
         id: w.id,
-        displayName: w.display_name,
+        fullName: w.full_name,
         phoneNumber: w.phone_number,
         email: w.email,
         profilePhotoUrl: w.profile_photo_url,

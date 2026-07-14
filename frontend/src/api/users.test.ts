@@ -51,7 +51,8 @@ describe('useUsers', () => {
       data: [
         {
           id: 'u1',
-          display_name: 'Ada',
+          first_name: 'Ada',
+          full_name: 'Ada',
           phone_number: '+15551230001',
           email: 'ada@example.com',
           bio: '',
@@ -79,10 +80,11 @@ describe('useUsers', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/');
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/', undefined);
     expect(result.current.data).toHaveLength(1);
     const [member] = result.current.data!;
-    expect(member?.displayName).toBe('Ada');
+    expect(member?.fullName).toBe('Ada');
+    expect(member?.firstName).toBe('Ada');
     expect(member?.phoneNumber).toBe('+15551230001');
     expect(member?.email).toBe('ada@example.com');
     expect(member?.showPhone).toBe(true);
@@ -93,6 +95,32 @@ describe('useUsers', () => {
       isDefault: true,
       permissions: [],
     });
+  });
+
+  it('requests non-members and maps is_member when opted in', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'u2',
+          display_name: 'Guest',
+          full_name: 'Guest',
+          phone_number: '+15551230002',
+          email: 'guest@example.com',
+          is_member: false,
+          roles: [],
+        },
+      ],
+    });
+
+    const qc = makeQc();
+    const { result } = renderHook(() => useUsers(true), { wrapper: makeWrapper(qc) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/users/', {
+      params: { include_non_members: true },
+    });
+    expect(result.current.data?.[0]?.isMember).toBe(false);
   });
 
   it('propagates errors from the API', async () => {
@@ -125,7 +153,8 @@ describe('useCreateUser', () => {
       data: {
         id: 'u2',
         phone_number: '+15551230002',
-        display_name: 'Grace',
+        first_name: 'Grace',
+        full_name: 'Grace',
         magic_link_token: 'magic-abc',
       },
     });
@@ -136,21 +165,24 @@ describe('useCreateUser', () => {
 
     const created = await result.current.mutateAsync({
       phoneNumber: '+15551230002',
-      displayName: 'Grace',
+      firstName: 'Grace',
+      lastName: 'Hopper',
       email: 'grace@example.com',
       roleId: 'role-xyz',
     });
 
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/create-user/', {
       phone_number: '+15551230002',
-      display_name: 'Grace',
+      first_name: 'Grace',
+      last_name: 'Hopper',
       email: 'grace@example.com',
       role_id: 'role-xyz',
     });
     expect(created).toEqual({
       id: 'u2',
       phoneNumber: '+15551230002',
-      displayName: 'Grace',
+      fullName: 'Grace',
+      firstName: 'Grace',
       magicLinkToken: 'magic-abc',
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
@@ -161,7 +193,7 @@ describe('useCreateUser', () => {
       data: {
         id: 'u3',
         phone_number: '+15551230003',
-        display_name: '',
+        full_name: '',
         magic_link_token: 'magic-xyz',
       },
     });
@@ -188,7 +220,7 @@ describe('useUpdateUser', () => {
     mockedPatch.mockResolvedValueOnce({
       data: {
         id: 'u1',
-        display_name: 'Ada Lovelace',
+        full_name: 'Ada Lovelace',
         phone_number: '+15551230001',
         roles: [],
       },
@@ -198,10 +230,11 @@ describe('useUpdateUser', () => {
     const invalidateSpy = vi.spyOn(qc, 'invalidateQueries');
     const { result } = renderHook(() => useUpdateUser('u1'), { wrapper: makeWrapper(qc) });
 
-    await result.current.mutateAsync({ displayName: 'Ada Lovelace', isPaused: false });
+    await result.current.mutateAsync({ firstName: 'Ada', lastName: 'Lovelace', isPaused: false });
 
     expect(mockedPatch).toHaveBeenCalledWith('/api/auth/users/u1/', {
-      display_name: 'Ada Lovelace',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
       is_paused: false,
     });
     await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] }));
@@ -290,7 +323,7 @@ describe('useUpdateMemberRoles', () => {
     mockedPatch.mockResolvedValueOnce({
       data: {
         id: 'u9',
-        display_name: 'Ada',
+        full_name: 'Ada',
         phone_number: '+1',
         roles: [
           { id: 'r2', name: 'vet', is_default: false, permissions: ['approve_join_requests'] },
