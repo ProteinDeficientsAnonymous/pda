@@ -1,3 +1,10 @@
+## [0.27.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.3...v0.27.4) (2026-07-14)
+
+
+### Bug Fixes
+
+* **auth:** show profile step after first-time password setup (Issue 824) ([#828](https://github.com/ProteinDeficientsAnonymous/pda/issues/828)) ([17ad13b](https://github.com/ProteinDeficientsAnonymous/pda/commit/17ad13b64957e9cfbeacb904e1bd6391d25ca3ee))
+
 ## [0.27.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.2...v0.27.3) (2026-07-14)
 
 
