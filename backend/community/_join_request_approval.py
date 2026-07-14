@@ -11,7 +11,7 @@ from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
 from community._shared import validate_display_name
-from community.models import EventType, JoinRequestStatus
+from community.models import EventType, JoinRequestStatus, TentativeApprovalMessageTemplate
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
@@ -81,12 +81,25 @@ def _promote_non_member(user, join_request):
     return _create_magic_token(user)
 
 
-def send_join_approval(*, to: str, display_name: str) -> None:
+_DEFAULT_TENTATIVE_APPROVAL_MESSAGE = (
+    "you now have full member access. you'll receive a separate login link to set up your account."
+)
+
+
+def send_join_approval(*, to: str, display_name: str, first_name: str = "") -> None:
     """Best-effort full-approval email. A send failure must not roll back approval."""
     if not to:
         return
+    template = TentativeApprovalMessageTemplate.get()
+    body = template.body.strip() or _DEFAULT_TENTATIVE_APPROVAL_MESSAGE
+    message_body = body.replace("${FIRST_NAME}", first_name or "")
     try:
-        send_join_approval_email(sender=get_email_sender(), to=to, display_name=display_name)
+        send_join_approval_email(
+            sender=get_email_sender(),
+            to=to,
+            display_name=display_name,
+            message_body=message_body,
+        )
     except Exception:
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 

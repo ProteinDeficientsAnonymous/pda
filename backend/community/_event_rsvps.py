@@ -322,7 +322,11 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         )
 
     if promoted:
-        send_join_approval(to=rsvp.user.email, display_name=rsvp.user.full_name)
+        send_join_approval(
+            to=rsvp.user.email,
+            display_name=rsvp.user.full_name,
+            first_name=rsvp.user.first_name,
+        )
 
     audit_log(
         logging.INFO,

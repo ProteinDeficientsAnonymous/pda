@@ -1635,6 +1635,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/tentative-approval-message/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tentative Approval Message */
+        get: operations["community__tentative_approval_message_get_tentative_approval_message"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Tentative Approval Message */
+        patch: operations["community__tentative_approval_message_update_tentative_approval_message"];
+        trace?: never;
+    };
     "/api/community/version/": {
         parameters: {
             query?: never;
@@ -3793,6 +3811,21 @@ export interface components {
             name: string;
             /** Slug */
             slug: string;
+        };
+        /** TentativeApprovalMessageOut */
+        TentativeApprovalMessageOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** TentativeApprovalMessagePatchIn */
+        TentativeApprovalMessagePatchIn: {
+            /** Body */
+            body?: string | null;
         };
         /** TextRecipientsOut */
         TextRecipientsOut: {
@@ -9027,6 +9060,68 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__tentative_approval_message_get_tentative_approval_message: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TentativeApprovalMessageOut"];
+                };
+            };
+        };
+    };
+    community__tentative_approval_message_update_tentative_approval_message: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TentativeApprovalMessagePatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TentativeApprovalMessageOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

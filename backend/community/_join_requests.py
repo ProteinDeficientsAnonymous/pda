@@ -336,7 +336,11 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
     )
 
     if promoted:
-        send_join_approval(to=join_request.email, display_name=join_request.full_name)
+        send_join_approval(
+            to=join_request.email,
+            display_name=join_request.full_name,
+            first_name=join_request.first_name,
+        )
 
     action = _DECISION_ACTIONS[payload.status]
     audit_log(

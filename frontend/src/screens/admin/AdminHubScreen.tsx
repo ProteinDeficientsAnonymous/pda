@@ -58,6 +58,12 @@ const TILES: Tile[] = [
     perm: Permission.EditJoinQuestions,
   },
   {
+    to: '/admin/tentative-approval-message',
+    label: 'approval message',
+    description: 'edit the confirmation message sent on full approval',
+    perm: Permission.ApproveJoinRequests,
+  },
+  {
     to: '/docs',
     label: 'docs',
     description: 'manage the shared document library',

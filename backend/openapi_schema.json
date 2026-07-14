@@ -4731,6 +4731,42 @@
         "title": "TagOut",
         "type": "object"
       },
+      "TentativeApprovalMessageOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "TentativeApprovalMessageOut",
+        "type": "object"
+      },
+      "TentativeApprovalMessagePatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "TentativeApprovalMessagePatchIn",
+        "type": "object"
+      },
       "TextRecipientsOut": {
         "properties": {
           "attending": {
@@ -12297,6 +12333,88 @@
           }
         ],
         "summary": "Get Survey Tallies",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/tentative-approval-message/": {
+      "get": {
+        "operationId": "community__tentative_approval_message_get_tentative_approval_message",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TentativeApprovalMessageOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Tentative Approval Message",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__tentative_approval_message_update_tentative_approval_message",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TentativeApprovalMessagePatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TentativeApprovalMessageOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Tentative Approval Message",
         "tags": [
           "community"
         ]

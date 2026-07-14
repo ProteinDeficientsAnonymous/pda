@@ -136,9 +136,14 @@ def send_join_approval_email(
     sender: EmailSender,
     to: str,
     display_name: str,
+    message_body: str,
 ) -> SendResult:
-    """Render and send the "you're a full member now" join-approval email."""
-    context = {"display_name": display_name or ""}
+    """Render and send the "you're a full member now" join-approval email.
+
+    ``message_body`` is the UI-editable confirmation text (tentative-approval
+    message template) with ``${FIRST_NAME}`` substituted by the caller.
+    """
+    context = {"display_name": display_name or "", "message_body": message_body}
     html = render_to_string("emails/join_approval.html", context)
     text = render_to_string("emails/join_approval.txt", context)
     return sender.send(

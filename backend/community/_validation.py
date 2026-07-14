@@ -207,6 +207,10 @@ class Code:
         BODY_REQUIRED = "welcome_template.body_required"
         BODY_TOO_LONG = "welcome_template.body_too_long"  # params: { max_length: int }
 
+    class TentativeApprovalMessage:
+        BODY_REQUIRED = "tentative_approval_message.body_required"
+        BODY_TOO_LONG = "tentative_approval_message.body_too_long"  # params: { max_length: int }
+
 
 class ValidationException(Exception):
     """Raised by validators and route handlers to signal a structured error.

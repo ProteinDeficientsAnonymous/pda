@@ -38,6 +38,9 @@ from community._public_rsvp_resend import router as public_rsvp_resend_router
 from community._public_rsvp_submit import router as public_rsvp_submit_router
 from community._surveys import router as surveys_router
 from community._surveys_public import router as surveys_public_router
+from community._tentative_approval_message import (
+    router as tentative_approval_message_router,
+)
 from community._version import router as version_router
 from community._welcome_template import router as welcome_template_router
 
@@ -69,6 +72,7 @@ router.add_router("", event_invitations_router)
 router.add_router("", event_flags_router)
 router.add_router("", calendar_router)
 router.add_router("", welcome_template_router)
+router.add_router("", tentative_approval_message_router)
 router.add_router("", polls_router)
 router.add_router("", poll_options_router)
 router.add_router("", event_comments_router)

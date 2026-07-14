@@ -241,3 +241,49 @@ export function useUpdateWelcomeTemplate() {
     },
   });
 }
+
+// --- Tentative approval confirmation message (plain text, feeds an email). --
+
+export interface TentativeApprovalMessage {
+  body: string;
+  updatedAt: string;
+}
+
+interface WireTentativeApprovalMessage {
+  body: string;
+  updated_at: string;
+}
+
+function mapTentativeApprovalMessage(data: WireTentativeApprovalMessage): TentativeApprovalMessage {
+  return { body: data.body, updatedAt: data.updated_at };
+}
+
+export function useTentativeApprovalMessage() {
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useQuery({
+    queryKey: ['tentative-approval-message'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireTentativeApprovalMessage>(
+        '/api/community/tentative-approval-message/',
+      );
+      return mapTentativeApprovalMessage(data);
+    },
+    enabled: isAuthed,
+  });
+}
+
+export function useUpdateTentativeApprovalMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: string) => {
+      const { data } = await apiClient.patch<WireTentativeApprovalMessage>(
+        '/api/community/tentative-approval-message/',
+        { body },
+      );
+      return mapTentativeApprovalMessage(data);
+    },
+    onSuccess: (template) => {
+      qc.setQueryData(['tentative-approval-message'], template);
+    },
+  });
+}

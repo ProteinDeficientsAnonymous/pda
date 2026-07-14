@@ -205,6 +205,10 @@ export const Code = {
     BodyRequired: 'welcome_template.body_required',
     BodyTooLong: 'welcome_template.body_too_long',
   },
+  TentativeApprovalMessage: {
+    BodyRequired: 'tentative_approval_message.body_required',
+    BodyTooLong: 'tentative_approval_message.body_too_long',
+  },
 } as const;
 
 export type ValidationCode =
@@ -354,7 +358,9 @@ export type ValidationCode =
   | 'cohost_invite.would_leave_hostless'
   | 'cohost_invite.event_is_past'
   | 'welcome_template.body_required'
-  | 'welcome_template.body_too_long';
+  | 'welcome_template.body_too_long'
+  | 'tentative_approval_message.body_required'
+  | 'tentative_approval_message.body_too_long';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -504,4 +510,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'cohost_invite.event_is_past': [],
   'welcome_template.body_required': [],
   'welcome_template.body_too_long': ['max_length'],
+  'tentative_approval_message.body_required': [],
+  'tentative_approval_message.body_too_long': ['max_length'],
 };
