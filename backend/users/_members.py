@@ -58,7 +58,11 @@ def get_member_profile(request, user_id: str):
         raise_validation(Code.Member.NOT_FOUND, status_code=404)
     is_own_profile = str(request.auth.pk) == user_id
     can_manage_users = request.auth.has_permission(PermissionKey.MANAGE_USERS)
-    last_name, full_name = visible_name(user, request.auth)
+    # This is the "view my profile as others see it" preview, so the owner's own
+    # visibility settings must apply to their own view — treat self as a
+    # non-privileged peer (viewer=None) instead of unmasking hidden fields.
+    viewer = None if is_own_profile else request.auth
+    last_name, full_name = visible_name(user, viewer)
     return Status(
         200,
         MemberProfileOut(
@@ -67,8 +71,8 @@ def get_member_profile(request, user_id: str):
             last_name=last_name,
             full_name=full_name,
             nickname=user.nickname or "",
-            phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
-            email=(user.email or "") if (user.show_email or is_own_profile) else "",
+            phone_number=user.phone_number if user.show_phone else "",
+            email=(user.email or "") if user.show_email else "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
             birthday=serialize_birthday(user.birthday),
