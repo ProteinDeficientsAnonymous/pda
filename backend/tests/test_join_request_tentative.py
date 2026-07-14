@@ -372,3 +372,32 @@ class TestTentativeRsvpEvents:
         response = api_client.get("/api/community/join-requests/", **vettor_headers)
         row = next(r for r in response.json() if r["id"] == str(sample_join_request.id))
         assert row["rsvp_events"] == []
+
+    def test_list_excludes_non_bucketed_event_types(
+        self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
+    ):
+        open_official_event.event_type = EventType.COMMUNITY
+        open_official_event.save(update_fields=["event_type"])
+        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        row = next(r for r in response.json() if r["user_id"] == str(user.id))
+        assert row["rsvp_events"] == []
+
+    def test_list_orders_tbd_events_last(
+        self, api_client, vettor_headers, vettor_user, sample_join_request, open_official_event
+    ):
+        host = open_official_event.created_by
+        tbd_event = Event.objects.create(
+            title="TBD Meetup",
+            start_datetime=None,
+            end_datetime=None,
+            datetime_tbd=True,
+            rsvp_enabled=True,
+            event_type=EventType.OFFICIAL,
+            created_by=host,
+        )
+        user = _tentative_user_with_rsvp(sample_join_request, open_official_event, vettor_user)
+        EventRSVP.objects.create(event=tbd_event, user=user, status=RSVPStatus.ATTENDING)
+        response = api_client.get("/api/community/join-requests/", **vettor_headers)
+        row = next(r for r in response.json() if r["user_id"] == str(user.id))
+        assert [e["title"] for e in row["rsvp_events"]] == ["Official Meetup", "TBD Meetup"]
