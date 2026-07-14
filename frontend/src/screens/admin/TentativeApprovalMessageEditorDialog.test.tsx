@@ -6,14 +6,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { TentativeApprovalMessage } from '@/api/content';
 
-import TentativeApprovalMessageScreen from './TentativeApprovalMessageScreen';
+import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 
 const mutateAsyncMock = vi.fn();
-let queryResult: {
-  data: TentativeApprovalMessage | undefined;
-  isPending: boolean;
-  isError: boolean;
-} = { data: { body: 'original', updatedAt: '2026-01-01' }, isPending: false, isError: false };
 
 vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
@@ -22,43 +17,29 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/api/content', () => ({
-  useTentativeApprovalMessage: () => queryResult,
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
 }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-function renderScreen() {
+function renderEditor(
+  template: TentativeApprovalMessage | null = { body: 'hi', updatedAt: '2026-01-01' },
+) {
+  const onClose = vi.fn();
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const utils = render(
     <QueryClientProvider client={qc}>
-      <TentativeApprovalMessageScreen />
+      <TentativeApprovalMessageEditorDialog open onClose={onClose} template={template} />
     </QueryClientProvider>,
   );
+  return { ...utils, onClose };
 }
 
-describe('TentativeApprovalMessageScreen', () => {
-  it('shows a loading state', () => {
-    queryResult = { data: undefined, isPending: true, isError: false };
-    renderScreen();
-    expect(screen.getByText('loading…')).toBeInTheDocument();
-  });
-
-  it('shows an error state', () => {
-    queryResult = { data: undefined, isPending: false, isError: true };
-    renderScreen();
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-  });
-
+describe('TentativeApprovalMessageEditorDialog', () => {
   it('seeds the textarea from the loaded message and saves edits', async () => {
-    queryResult = {
-      data: { body: 'original', updatedAt: '2026-01-01' },
-      isPending: false,
-      isError: false,
-    };
     mutateAsyncMock.mockReset();
     mutateAsyncMock.mockResolvedValue({ body: 'updated', updatedAt: '2026-01-02' });
-    renderScreen();
+    const { onClose } = renderEditor({ body: 'original', updatedAt: '2026-01-01' });
     const textarea = screen.getByLabelText(
       'tentative approval message body',
     ) as HTMLTextAreaElement;
@@ -69,24 +50,10 @@ describe('TentativeApprovalMessageScreen', () => {
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith('updated');
     });
-  });
-
-  it('blocks save when body is empty', async () => {
-    queryResult = { data: { body: '', updatedAt: '2026-01-01' }, isPending: false, isError: false };
-    mutateAsyncMock.mockReset();
-    renderScreen();
-    await userEvent.click(screen.getByRole('button', { name: /save/i }));
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('message body is required');
-    expect(mutateAsyncMock).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('shows the FE-rendered too-long error from a structured 422', async () => {
-    queryResult = {
-      data: { body: 'hi', updatedAt: '2026-01-01' },
-      isPending: false,
-      isError: false,
-    };
     mutateAsyncMock.mockReset();
     const axiosErr = new AxiosError('Request failed', 'ERR', undefined, undefined, {
       status: 422,
@@ -101,9 +68,18 @@ describe('TentativeApprovalMessageScreen', () => {
       },
     } as AxiosResponse);
     mutateAsyncMock.mockRejectedValue(axiosErr);
-    renderScreen();
+    renderEditor({ body: 'hi', updatedAt: '2026-01-01' });
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('approval message must be at most 4000 characters');
+  });
+
+  it('blocks save when body is empty', async () => {
+    mutateAsyncMock.mockReset();
+    renderEditor({ body: '', updatedAt: '2026-01-01' });
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('message body is required');
+    expect(mutateAsyncMock).not.toHaveBeenCalled();
   });
 });

@@ -49,9 +49,6 @@ const EventManagement = lazyWithRetry(() => import('@/screens/admin/EventManagem
 const FlaggedEvents = lazyWithRetry(() => import('@/screens/admin/FlaggedEventsScreen'));
 const AttendanceReport = lazyWithRetry(() => import('@/screens/admin/AttendanceReportScreen'));
 const JoinFormAdmin = lazyWithRetry(() => import('@/screens/admin/JoinFormAdminScreen'));
-const TentativeApprovalMessage = lazyWithRetry(
-  () => import('@/screens/admin/TentativeApprovalMessageScreen'),
-);
 const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
@@ -134,13 +131,7 @@ export const router = createBrowserRouter([
               },
               {
                 element: <RequirePermission perm={Permission.ApproveJoinRequests} />,
-                children: [
-                  { path: '/join-requests', element: el(<JoinRequestsAdmin />) },
-                  {
-                    path: '/admin/tentative-approval-message',
-                    element: el(<TentativeApprovalMessage />),
-                  },
-                ],
+                children: [{ path: '/join-requests', element: el(<JoinRequestsAdmin />) }],
               },
               {
                 element: <RequirePermission perm={Permission.ManageEvents} />,

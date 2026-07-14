@@ -2,32 +2,31 @@ import { type SyntheticEvent, useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useTentativeApprovalMessage, useUpdateTentativeApprovalMessage } from '@/api/content';
+import { type TentativeApprovalMessage, useUpdateTentativeApprovalMessage } from '@/api/content';
 import { Button } from '@/components/ui/Button';
-import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
+import { Dialog } from '@/components/ui/Dialog';
 import { cn } from '@/utils/cn';
 
 const MAX_LENGTH = 4000;
 
-export default function TentativeApprovalMessageScreen() {
-  const { data, isPending, isError } = useTentativeApprovalMessage();
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  template: TentativeApprovalMessage | null;
+}
 
-  if (isPending) return <ContentLoading />;
-  if (isError) return <ContentError message="couldn't load the message — try refreshing" />;
-
+export function TentativeApprovalMessageEditorDialog({ open, onClose, template }: Props) {
+  if (!open) return null;
+  // Inner form is keyed on the template body so each open seeds fresh state
+  // without an effect.
   return (
-    <ContentContainer>
-      <h1 className="mb-2 text-2xl font-medium tracking-tight">tentative approval message</h1>
-      <p className="text-foreground-secondary mb-6 text-sm">
-        sent when someone who came in person gets fully approved — this replaces the default
-        confirmation text.
-      </p>
-      <EditorForm key={data.body} initialBody={data.body} />
-    </ContentContainer>
+    <Dialog open onClose={onClose} title="edit tentative approval message">
+      <EditorForm key={template?.body ?? ''} initialBody={template?.body ?? ''} onClose={onClose} />
+    </Dialog>
   );
 }
 
-function EditorForm({ initialBody }: { initialBody: string }) {
+function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: () => void }) {
   const update = useUpdateTentativeApprovalMessage();
   const [body, setBody] = useState(initialBody);
   const [formError, setFormError] = useState<string | null>(null);
@@ -42,6 +41,7 @@ function EditorForm({ initialBody }: { initialBody: string }) {
     try {
       await update.mutateAsync(body);
       toast.success('message saved 🌱');
+      onClose();
     } catch (err) {
       setFormError(extractApiErrorOr(err, "couldn't save the message — try again"));
     }
@@ -52,6 +52,10 @@ function EditorForm({ initialBody }: { initialBody: string }) {
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
+      <p className="text-foreground-secondary text-sm">
+        sent when someone who came in person gets fully approved — this replaces the default
+        confirmation text.
+      </p>
       <p className="text-muted text-xs">
         available placeholder:{' '}
         <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code> (recipient's first
@@ -80,6 +84,9 @@ function EditorForm({ initialBody }: { initialBody: string }) {
         </p>
       ) : null}
       <div className="mt-2 flex justify-end gap-2">
+        <Button type="button" variant="secondary" onClick={onClose}>
+          cancel
+        </Button>
         <Button type="submit" disabled={update.isPending || overLimit}>
           {update.isPending ? 'saving…' : 'save'}
         </Button>
