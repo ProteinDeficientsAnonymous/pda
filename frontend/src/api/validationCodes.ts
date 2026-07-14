@@ -433,6 +433,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'welcome message is too long';
     }
 
+    // Tentative approval message
+    case Code.TentativeApprovalMessage.BodyRequired:
+      return 'approval message body is required';
+    case Code.TentativeApprovalMessage.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `approval message must be at most ${String(max)} characters`
+        : 'approval message is too long';
+    }
+
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)
     case Code.Generic.FieldRequired:
       return err.field ? `${err.field.replace(/_/g, ' ')} is required` : 'this field is required';

@@ -4,7 +4,7 @@
   <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
     <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
     <p style="margin: 0 0 16px;">you're fully approved — welcome to pda!</p>
-    <p style="margin: 0 0 8px; font-size: 13px; color: #666;">you now have full member access. you'll receive a separate login link to set up your account.</p>
+    <div style="margin: 0 0 8px; font-size: 13px; color: #666;">{{ message_body|linebreaks }}</div>
   </div>
   <p style="text-align: center; margin: 16px 0 0; font-size: 12px; color: #888;">— pda</p>
 </body>

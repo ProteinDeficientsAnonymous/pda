@@ -21,6 +21,12 @@ vi.mock('@/api/content', () => ({
     isError: false,
   }),
   useUpdateWelcomeTemplate: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useTentativeApprovalMessage: () => ({
+    data: { body: 'hi ${FIRST_NAME}, welcome', updatedAt: '2026-01-01' },
+    isPending: false,
+    isError: false,
+  }),
+  useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 function makeUser(overrides?: Partial<User>): User {
@@ -78,12 +84,13 @@ describe('ApprovalCredentialsDialog', () => {
     expect(wa?.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
-  it('hides edit-template trigger without permission', () => {
+  it('hides edit-template triggers without permission', () => {
     renderDialog(makeUser());
     expect(screen.queryByRole('button', { name: /edit shared welcome template/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit tentative approval message/i })).toBeNull();
   });
 
-  it('shows edit-template trigger with permission', () => {
+  it('shows edit-template triggers with permission', () => {
     const user = makeUser({
       roles: [
         {
@@ -97,6 +104,9 @@ describe('ApprovalCredentialsDialog', () => {
     renderDialog(user);
     expect(
       screen.getByRole('button', { name: /edit shared welcome template/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /edit tentative approval message/i }),
     ).toBeInTheDocument();
   });
 });

@@ -21,6 +21,7 @@ from community.models.content import (
     CommunityGuidelines,
     EditablePage,
     HomePage,
+    TentativeApprovalMessageTemplate,
     WelcomeMessageTemplate,
 )
 from community.models.document import DocFolder, Document
@@ -58,6 +59,7 @@ __all__ = [
     "EditablePage",
     "FAQ",
     "HomePage",
+    "TentativeApprovalMessageTemplate",
     "WelcomeMessageTemplate",
     # document
     "DocFolder",

@@ -1,5 +1,3 @@
-"""Tests for tentative approval of join requests and check-in promotion."""
-
 from datetime import timedelta
 
 import pytest
@@ -328,6 +326,65 @@ class TestJoinApprovalEmail:
         )
         recipients = [c.kwargs["to"] for c in fake_email_sender.send.call_args_list]
         assert "checkin@example.com" in recipients
+
+    def test_uses_editable_message_with_first_name_substitution(
+        self, api_client, vettor_headers, sample_join_request, fake_email_sender
+    ):
+        from community.models import TentativeApprovalMessageTemplate
+
+        template = TentativeApprovalMessageTemplate.get()
+        template.body = "hey ${FIRST_NAME} — you came through, you're in for real now"
+        template.save()
+        sample_join_request.email = "custom@example.com"
+        sample_join_request.save(update_fields=["email"])
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.TENTATIVE},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
+        matching = [c for c in sends if c["to"] == "custom@example.com"]
+        assert len(matching) == 1
+        assert "you came through, you're in for real now" in matching[0]["text"]
+        assert sample_join_request.first_name in matching[0]["text"]
+        assert "${FIRST_NAME}" not in matching[0]["text"]
+
+    def test_html_email_escapes_editable_message_body(
+        self, api_client, vettor_headers, sample_join_request, fake_email_sender
+    ):
+        from community.models import TentativeApprovalMessageTemplate
+
+        template = TentativeApprovalMessageTemplate.get()
+        template.body = "hi <script>alert(1)</script> & welcome"
+        template.save()
+        sample_join_request.email = "html-check@example.com"
+        sample_join_request.save(update_fields=["email"])
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.TENTATIVE},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
+        matching = [c for c in sends if c["to"] == "html-check@example.com"]
+        assert len(matching) == 1
+        html = matching[0]["html"]
+        assert "<script>" not in html
+        assert "&lt;script&gt;" in html
+        assert "&amp; welcome" in html
 
 
 @pytest.mark.django_db

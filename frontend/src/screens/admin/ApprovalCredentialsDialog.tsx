@@ -1,11 +1,6 @@
-// Shown after approving a join request that created a new user. The magic
-// link token is single-use and only returned on that one response — if the
-// admin closes this dialog without copying it, they'll need to generate a
-// new link from the members screen.
-
 import { useState } from 'react';
 
-import { useWelcomeTemplate } from '@/api/content';
+import { useTentativeApprovalMessage, useWelcomeTemplate } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -19,6 +14,7 @@ import {
   renderWelcomeMessage,
 } from '@/utils/welcomeMessage';
 
+import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 
 interface Props {
@@ -40,8 +36,10 @@ export function ApprovalCredentialsDialog({
 }: Props) {
   const [copied, setCopied] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [tentativeEditorOpen, setTentativeEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const templateQ = useWelcomeTemplate();
+  const tentativeMessageQ = useTentativeApprovalMessage();
 
   if (!magicLinkToken) return null;
   const magicLinkUrl = buildMagicLinkUrl(magicLinkToken);
@@ -85,15 +83,24 @@ export function ApprovalCredentialsDialog({
           <SendLink href={whatsappHref} label="send via whatsapp" disabled={sendButtonsDisabled} />
         </div>
         {canEditTemplate ? (
-          <div className="mt-3">
+          <div className="mt-3 flex flex-col gap-1">
             <button
               type="button"
               onClick={() => {
                 setEditorOpen(true);
               }}
-              className="text-muted hover:text-foreground text-xs underline"
+              className="text-muted hover:text-foreground text-left text-xs underline"
             >
               edit shared welcome template
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTentativeEditorOpen(true);
+              }}
+              className="text-muted hover:text-foreground text-left text-xs underline"
+            >
+              edit tentative approval message
             </button>
           </div>
         ) : null}
@@ -107,6 +114,13 @@ export function ApprovalCredentialsDialog({
           setEditorOpen(false);
         }}
         template={templateQ.data ?? null}
+      />
+      <TentativeApprovalMessageEditorDialog
+        open={tentativeEditorOpen}
+        onClose={() => {
+          setTentativeEditorOpen(false);
+        }}
+        template={tentativeMessageQ.data ?? null}
       />
     </>
   );

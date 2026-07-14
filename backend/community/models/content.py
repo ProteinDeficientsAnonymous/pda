@@ -1,5 +1,3 @@
-"""Content models: EditablePage, HomePage, CommunityGuidelines, FAQ, WelcomeMessageTemplate."""
-
 from django.db import models
 
 from community.models.choices import PageVisibility
@@ -127,5 +125,30 @@ class WelcomeMessageTemplate(models.Model):
 
     @classmethod
     def get(cls) -> "WelcomeMessageTemplate":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class TentativeApprovalMessageTemplate(models.Model):
+    """Singleton — only one row ever exists (pk=1).
+
+    Plain-text body for the confirmation email sent when a tentatively-approved
+    applicant is promoted to full member. Placeholder ${FIRST_NAME} is
+    substituted server-side when the email is rendered.
+    """
+
+    body = models.TextField(default="", max_length=4000)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+        verbose_name = "Tentative Approval Message Template"
+        verbose_name_plural = "Tentative Approval Message Template"
+
+    def __str__(self) -> str:
+        return "Tentative Approval Message Template"
+
+    @classmethod
+    def get(cls) -> "TentativeApprovalMessageTemplate":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
