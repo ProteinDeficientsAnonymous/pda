@@ -11,6 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications.service import notify_event_comment, notify_rsvp_declined_note
 
 from community._event_helpers import (
     _attended_count,
@@ -37,7 +38,6 @@ from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventComment, EventRSVP, RSVPStatus
-from notifications.service import notify_event_comment, notify_rsvp_declined_note
 
 router = Router()
 
@@ -146,9 +146,7 @@ def _apply_rsvp_in_transaction(
         if final_status == RSVPStatus.CANT_GO:
             notify_rsvp_declined_note(event=event, author=user, note=cleaned_note)
         else:
-            comment = EventComment.objects.create(
-                event=event, author=user, body=cleaned_note[:500]
-            )
+            comment = EventComment.objects.create(event=event, author=user, body=cleaned_note[:500])
             notify_event_comment(comment)
 
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (

@@ -4,15 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notifications', '0012_alter_notification_notification_type'),
+        ("notifications", "0012_alter_notification_notification_type"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='notification',
-            name='notification_type',
-            field=models.CharField(choices=[('event_invite', 'Event Invite'), ('event_cancelled', 'Event Cancelled'), ('join_request', 'Join Request'), ('cohost_added', 'Co-host Added'), ('cohost_invite', 'Co-host Invite'), ('cohost_invite_accepted', 'Co-host Invite Accepted'), ('cohost_invite_declined', 'Co-host Invite Declined'), ('cohost_removed', 'Co-host Removed'), ('magic_link_request', 'Magic Link Request'), ('waitlist_promoted', 'Waitlist Promoted'), ('event_flagged', 'Event Flagged'), ('comment_reply', 'Comment Reply'), ('event_comment', 'Event Comment'), ('rsvp_declined_note', 'RSVP Declined Note')], default='event_invite', max_length=32),
+            model_name="notification",
+            name="notification_type",
+            field=models.CharField(
+                choices=[
+                    ("event_invite", "Event Invite"),
+                    ("event_cancelled", "Event Cancelled"),
+                    ("join_request", "Join Request"),
+                    ("cohost_added", "Co-host Added"),
+                    ("cohost_invite", "Co-host Invite"),
+                    ("cohost_invite_accepted", "Co-host Invite Accepted"),
+                    ("cohost_invite_declined", "Co-host Invite Declined"),
+                    ("cohost_removed", "Co-host Removed"),
+                    ("magic_link_request", "Magic Link Request"),
+                    ("waitlist_promoted", "Waitlist Promoted"),
+                    ("event_flagged", "Event Flagged"),
+                    ("comment_reply", "Comment Reply"),
+                    ("event_comment", "Event Comment"),
+                    ("rsvp_declined_note", "RSVP Declined Note"),
+                ],
+                default="event_invite",
+                max_length=32,
+            ),
         ),
     ]

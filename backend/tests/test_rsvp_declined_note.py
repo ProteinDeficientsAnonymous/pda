@@ -47,6 +47,9 @@ class TestNotifyRsvpDeclinedNote:
         assert not Notification.objects.filter(
             recipient=test_user, notification_type=NotificationType.RSVP_DECLINED_NOTE
         ).exists()
-        assert Notification.objects.filter(
-            recipient=cohost, notification_type=NotificationType.RSVP_DECLINED_NOTE
-        ).count() == 1
+        assert (
+            Notification.objects.filter(
+                recipient=cohost, notification_type=NotificationType.RSVP_DECLINED_NOTE
+            ).count()
+            == 1
+        )

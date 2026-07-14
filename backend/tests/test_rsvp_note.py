@@ -3,8 +3,8 @@ host-only notification (can't-go), and is not persisted on the RSVP (issue #297)
 
 import pytest
 from community.models import Event, EventComment, RSVPStatus
-from notifications.models import Notification, NotificationType
 from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification, NotificationType
 from users.models import User
 
 from tests.conftest import future_iso
@@ -51,7 +51,9 @@ def _rsvp(api_client, headers, event, status, note=None):
 @pytest.mark.django_db
 class TestRSVPNoteRouting:
     def test_going_note_creates_comment(self, api_client, member_headers, member, rsvp_event):
-        resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks")
+        resp = _rsvp(
+            api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
+        )
         assert resp.status_code == 200
         comments = EventComment.objects.filter(event=rsvp_event, author=member)
         assert comments.count() == 1
@@ -60,13 +62,23 @@ class TestRSVPNoteRouting:
     def test_maybe_note_creates_comment(self, api_client, member_headers, member, rsvp_event):
         resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE, "might be late")
         assert resp.status_code == 200
-        assert EventComment.objects.filter(event=rsvp_event, author=member, body="might be late").count() == 1
+        assert (
+            EventComment.objects.filter(
+                event=rsvp_event, author=member, body="might be late"
+            ).count()
+            == 1
+        )
 
-    def test_going_note_notifies_host(self, api_client, member_headers, member, rsvp_event, test_user):
+    def test_going_note_notifies_host(
+        self, api_client, member_headers, member, rsvp_event, test_user
+    ):
         _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "yo")
-        assert Notification.objects.filter(
-            recipient=test_user, notification_type=NotificationType.EVENT_COMMENT
-        ).count() == 1
+        assert (
+            Notification.objects.filter(
+                recipient=test_user, notification_type=NotificationType.EVENT_COMMENT
+            ).count()
+            == 1
+        )
 
     def test_cant_go_note_creates_no_comment_but_notifies_host(
         self, api_client, member_headers, member, rsvp_event, test_user
