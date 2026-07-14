@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
+from users.contact_group import ContactGroup
 from users.models import User
 from users.roles import PROTECTED_ROLE_NAMES, Role
 
@@ -54,3 +55,12 @@ class RoleAdmin(admin.ModelAdmin):
         if obj and obj.name in PROTECTED_ROLE_NAMES:
             return False
         return super().has_delete_permission(request, obj)
+
+
+@admin.register(ContactGroup)
+class ContactGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "owner", "created_at")
+    search_fields = ("name", "owner__phone_number", "owner__display_name")
+    raw_id_fields = ("owner",)
+    filter_horizontal = ("members",)
+    readonly_fields = ("id", "created_at", "updated_at")

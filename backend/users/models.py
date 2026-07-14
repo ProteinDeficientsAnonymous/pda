@@ -10,6 +10,9 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from users._name_parsing import sync_display_name
+from users.contact_group import (
+    ContactGroup,  # noqa: F401 — re-exported so Django discovers it in the users app
+)
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
 
