@@ -1,3 +1,10 @@
+## [0.27.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.2...v0.27.3) (2026-07-14)
+
+
+### Bug Fixes
+
+* **join-requests:** show email address in join request list (Issue 813) ([#820](https://github.com/ProteinDeficientsAnonymous/pda/issues/820)) ([4692113](https://github.com/ProteinDeficientsAnonymous/pda/commit/4692113867c378cc0a9ccce2eb1ea4c5c2f4f3db))
+
 ## [0.27.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.1...v0.27.2) (2026-07-14)
 
 
