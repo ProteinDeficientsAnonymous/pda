@@ -1,5 +1,3 @@
-"""User provisioning for approved join requests (create / reactivate / promote)."""
-
 import logging
 
 from django.utils import timezone

@@ -1,11 +1,3 @@
-"""Tentative-approval confirmation message endpoints.
-
-Plain-text body for the email sent when a tentatively-approved applicant is
-promoted to full member. Stored as a singleton (pk=1), same shape as
-WelcomeMessageTemplate. Read and edited by users with APPROVE_JOIN_REQUESTS —
-the message is part of the approval workflow.
-"""
-
 import logging
 from datetime import datetime
 

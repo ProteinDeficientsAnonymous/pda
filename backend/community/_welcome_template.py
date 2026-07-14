@@ -1,11 +1,3 @@
-"""Welcome message template endpoints.
-
-Plain-text template stored as a singleton (pk=1). Read by any authed user
-(vetters need it to render the message); edited by users with
-APPROVE_JOIN_REQUESTS — the welcome template is part of the approval
-workflow, so anyone who can approve requests can also tune the copy.
-"""
-
 import logging
 from datetime import datetime
 

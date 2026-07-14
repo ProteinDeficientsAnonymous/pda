@@ -1,6 +1,3 @@
-"""Content models: EditablePage, HomePage, CommunityGuidelines, FAQ, WelcomeMessageTemplate,
-TentativeApprovalMessageTemplate."""
-
 from django.db import models
 
 from community.models.choices import PageVisibility

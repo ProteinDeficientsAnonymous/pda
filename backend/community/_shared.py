@@ -1,5 +1,3 @@
-"""Shared utilities, schemas, and auth used across community API modules."""
-
 import logging
 import re
 

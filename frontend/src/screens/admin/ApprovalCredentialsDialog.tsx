@@ -1,8 +1,3 @@
-// Shown after approving a join request that created a new user. The magic
-// link token is single-use and only returned on that one response — if the
-// admin closes this dialog without copying it, they'll need to generate a
-// new link from the members screen.
-
 import { useState } from 'react';
 
 import { useTentativeApprovalMessage, useWelcomeTemplate } from '@/api/content';

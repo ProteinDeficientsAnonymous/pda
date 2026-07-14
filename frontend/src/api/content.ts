@@ -1,7 +1,3 @@
-// Content API: home, faq, guidelines, and the slug-based "editable pages"
-// (donate, volunteer, ...). Writes send ProseMirror JSON (TipTap); reads use
-// server-rendered content_html.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';

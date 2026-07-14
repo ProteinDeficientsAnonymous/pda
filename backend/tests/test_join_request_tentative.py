@@ -1,5 +1,3 @@
-"""Tests for tentative approval of join requests and check-in promotion."""
-
 from datetime import timedelta
 
 import pytest

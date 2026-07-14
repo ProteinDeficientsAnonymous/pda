@@ -1,9 +1,3 @@
-"""Shared field length constants for Pydantic schema validation.
-
-Keep in sync with frontend/lib/config/constants.dart (FieldLimit class).
-"""
-
-
 class FieldLimit:
     TITLE = 200
     SHORT_TEXT = 300
