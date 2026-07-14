@@ -1,11 +1,3 @@
-// RSVP mutations. The backend returns the full updated Event on POST/DELETE,
-// so we setQueryData instead of invalidating — one fewer round-trip than the
-// Flutter app does and the UI updates in the same tick as the mutation.
-//
-// Input statuses: attending | maybe | cant_go. `waitlisted` is never a valid
-// input — the server assigns it automatically when an attending request lands
-// over capacity.
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';

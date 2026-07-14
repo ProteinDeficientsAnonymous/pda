@@ -1,8 +1,3 @@
-// Partiful-style RSVP confirmation box (issue #297): status selection, an
-// optional note (create mode only), and a +1 toggle for attending guests.
-// In edit mode the note field is hidden — the note is a one-time post, not
-// something you go back and revise (see RsvpNoteField).
-
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/Button';

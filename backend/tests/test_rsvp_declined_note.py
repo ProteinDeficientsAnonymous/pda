@@ -1,5 +1,3 @@
-"""Tests for the can't-go RSVP note → host-only notification path (issue #297)."""
-
 import pytest
 from community.models import Event
 from notifications.models import Notification, NotificationType

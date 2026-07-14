@@ -1,11 +1,3 @@
-// RSVP section. Partiful-style flow (issue #297):
-//   - before RSVPing: three pills (going / maybe / can't) that open the
-//     RsvpBox in `create` mode
-//   - after RSVPing: a status line + "edit RSVP" button that opens the box
-//     in `edit` mode (status + +1 only; note is a one-time post, not
-//     re-editable — see RsvpNoteField)
-//   - waitlisted state shows only "leave waitlist" (no pills/status line)
-
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';

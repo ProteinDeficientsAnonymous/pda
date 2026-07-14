@@ -1,6 +1,3 @@
-"""Tests: an optional RSVP note routes to a comment (going/maybe) or a
-host-only notification (can't-go), and is not persisted on the RSVP (issue #297)."""
-
 import pytest
 from community.models import Event, EventComment, RSVPStatus
 from ninja_jwt.tokens import RefreshToken

@@ -1,7 +1,3 @@
-// Optional note attached to your RSVP (issue #297) — a controlled textarea
-// used inside the RSVP box. The note is posted once (as a comment for
-// going/maybe, or a host notification for can't-go); it is not editable later.
-
 export const RSVP_NOTE_MAX_LENGTH = 300;
 
 interface Props {
