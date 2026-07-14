@@ -100,7 +100,9 @@ describe('JoinRequestsScreen sort', () => {
   });
 
   it('shows the sort hint within the approved-tab explainer', async () => {
-    mockResult([makeRequest({ status: JoinRequestStatus.APPROVED, approvedAt: '2026-01-10T00:00:00Z' })]);
+    mockResult([
+      makeRequest({ status: JoinRequestStatus.APPROVED, approvedAt: '2026-01-10T00:00:00Z' }),
+    ]);
 
     renderScreen();
     await userEvent.click(screen.getByRole('radio', { name: 'approved' }));
