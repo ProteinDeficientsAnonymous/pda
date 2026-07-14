@@ -1,3 +1,10 @@
+## [0.27.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.4...v0.27.5) (2026-07-14)
+
+
+### Bug Fixes
+
+* **join-requests:** seed non-members across engagement states (Issue 815) ([#825](https://github.com/ProteinDeficientsAnonymous/pda/issues/825)) ([2471355](https://github.com/ProteinDeficientsAnonymous/pda/commit/2471355d0a6cca3878cf684092d8a1e0feec0047))
+
 ## [0.27.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.3...v0.27.4) (2026-07-14)
 
 
