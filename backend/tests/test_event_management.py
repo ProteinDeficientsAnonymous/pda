@@ -88,7 +88,8 @@ class TestEventManagement:
         member = User.objects.create_user(
             phone_number="+12025550199",
             password="memberpass",
-            display_name="Regular Member",
+            first_name="Regular",
+            last_name="Member",
         )
         headers = {
             "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"  # type: ignore

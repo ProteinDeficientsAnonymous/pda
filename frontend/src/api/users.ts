@@ -27,6 +27,7 @@ export interface Member {
   profilePhotoUrl: string;
   showPhone: boolean;
   showEmail: boolean;
+  isMember: boolean;
   isSuperuser: boolean;
   isPaused: boolean;
   needsOnboarding: boolean;
@@ -47,16 +48,16 @@ interface WireRole {
 
 interface WireMember {
   id: string;
-  display_name: string;
   first_name?: string;
   last_name?: string;
-  full_name?: string;
+  full_name: string;
   phone_number: string;
   email?: string;
   bio?: string;
   profile_photo_url?: string;
   show_phone?: boolean;
   show_email?: boolean;
+  is_member?: boolean;
   is_superuser?: boolean;
   is_paused?: boolean;
   needs_onboarding?: boolean;
@@ -77,7 +78,7 @@ function mapRole(r: WireRole): MemberRole {
 function fromWire(w: WireMember): Member {
   return {
     id: w.id,
-    fullName: w.full_name ?? w.display_name,
+    fullName: w.full_name,
     firstName: w.first_name ?? '',
     lastName: w.last_name ?? '',
     phoneNumber: w.phone_number,
@@ -86,6 +87,7 @@ function fromWire(w: WireMember): Member {
     profilePhotoUrl: w.profile_photo_url ?? '',
     showPhone: w.show_phone ?? true,
     showEmail: w.show_email ?? true,
+    isMember: w.is_member ?? true,
     isSuperuser: w.is_superuser ?? false,
     isPaused: w.is_paused ?? false,
     needsOnboarding: w.needs_onboarding ?? false,
@@ -99,11 +101,12 @@ function fromWire(w: WireMember): Member {
 
 export const USERS_KEY = ['users'] as const;
 
-export function useUsers() {
+export function useUsers(includeNonMembers = false) {
   return useQuery({
-    queryKey: USERS_KEY,
+    queryKey: [...USERS_KEY, { includeNonMembers }] as const,
     queryFn: async () => {
-      const { data } = await apiClient.get<WireMember[]>('/api/auth/users/');
+      const config = includeNonMembers ? { params: { include_non_members: true } } : undefined;
+      const { data } = await apiClient.get<WireMember[]>('/api/auth/users/', config);
       return data.map(fromWire);
     },
   });
@@ -111,6 +114,8 @@ export function useUsers() {
 
 export interface CreateUserInput {
   phoneNumber: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   roleId?: string;
 }
@@ -126,9 +131,8 @@ export interface CreateUserResult {
 interface WireCreateResult {
   id: string;
   phone_number: string;
-  display_name: string;
   first_name?: string;
-  full_name?: string;
+  full_name: string;
   magic_link_token: string;
 }
 
@@ -137,13 +141,15 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: async (input: CreateUserInput): Promise<CreateUserResult> => {
       const body: Record<string, unknown> = { phone_number: input.phoneNumber };
+      if (input.firstName !== undefined) body.first_name = input.firstName;
+      if (input.lastName !== undefined) body.last_name = input.lastName;
       if (input.email !== undefined) body.email = input.email;
       if (input.roleId !== undefined) body.role_id = input.roleId;
       const { data } = await apiClient.post<WireCreateResult>('/api/auth/create-user/', body);
       return {
         id: data.id,
         phoneNumber: data.phone_number,
-        fullName: data.full_name ?? data.display_name,
+        fullName: data.full_name,
         firstName: data.first_name ?? '',
         magicLinkToken: data.magic_link_token,
       };
@@ -307,8 +313,7 @@ export interface MemberProfile {
 
 interface WireMemberProfile {
   id: string;
-  display_name: string;
-  full_name?: string;
+  full_name: string;
   nickname?: string;
   phone_number: string;
   email: string;
@@ -321,7 +326,7 @@ interface WireMemberProfile {
 function fromWireProfile(w: WireMemberProfile): MemberProfile {
   return {
     id: w.id,
-    fullName: w.full_name ?? w.display_name,
+    fullName: w.full_name,
     nickname: w.nickname ?? '',
     phoneNumber: w.phone_number,
     email: w.email,
@@ -345,8 +350,7 @@ export interface DirectoryMember {
 
 interface WireDirectoryMember {
   id: string;
-  display_name: string;
-  full_name?: string;
+  full_name: string;
   phone_number: string;
   email: string;
   profile_photo_url: string;
@@ -359,7 +363,7 @@ export function useMembersDirectory() {
       const { data } = await apiClient.get<WireDirectoryMember[]>('/api/auth/users/directory/');
       return data.map<DirectoryMember>((w) => ({
         id: w.id,
-        fullName: w.full_name ?? w.display_name,
+        fullName: w.full_name,
         phoneNumber: w.phone_number,
         email: w.email,
         profilePhotoUrl: w.profile_photo_url,

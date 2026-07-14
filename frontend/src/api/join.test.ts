@@ -43,7 +43,6 @@ describe('useJoinRequests', () => {
       data: [
         {
           id: 'jr-1',
-          display_name: 'Alex Smith',
           full_name: 'Alex Smith',
           phone_number: '+12125551234',
           answers: [{ question_id: 'q-1', label: 'Why join?', answer: 'Community' }],
@@ -91,7 +90,7 @@ describe('useJoinRequests', () => {
       data: [
         {
           id: 'jr-2',
-          display_name: 'Kim Rivera',
+          full_name: 'Kim Rivera',
           phone_number: '+12125550000',
           answers: [],
           submitted_at: '2024-04-01T09:00:00Z',

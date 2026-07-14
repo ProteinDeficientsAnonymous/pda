@@ -45,6 +45,23 @@ def send_rsvp_confirmation_email(
     return sender.send(to=details.to, subject=subject, html=html, text=text)
 
 
+def send_rsvp_updated_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+) -> SendResult:
+    """Render and send the non-member "your rsvp was updated" email."""
+    context = details.template_context()
+    html = render_to_string("emails/rsvp_updated.html", context)
+    text = render_to_string("emails/rsvp_updated.txt", context)
+    return sender.send(
+        to=details.to,
+        subject="your rsvp was updated",
+        html=html,
+        text=text,
+    )
+
+
 def send_rsvp_waitlist_promoted_email(
     *,
     sender: EmailSender,

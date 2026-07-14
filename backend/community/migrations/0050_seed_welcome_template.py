@@ -1,6 +1,6 @@
 from django.db import migrations
 
-DEFAULT_BODY = """Hi, ${NAME}! I’m ${SENDER_NAME}, part of the vetting team at PDA (Protein Deficient Anonymous). We’re excited to have you!
+DEFAULT_BODY = """Hi, ${FIRST_NAME}! I’m ${SENDER_NAME}, part of the vetting team at PDA (Protein Deficient Anonymous). We’re excited to have you!
 
 Just to give you a little rundown: this newly-launched website hosts our PDA community events calendar, while conversations and announcements are in our WhatsApp group. We add people to the group in a batch in the late morning - when you join, I’ll welcome you and direct you to the intros channel, where you can drop a lil' introduction about yourself. Things people tend to share are how long they’ve been vegan, what their hobbies are (sometimes you find connections to others in the group based on that), their jobs, but you can share whatever you like!
 

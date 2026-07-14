@@ -36,3 +36,13 @@ class Role(models.Model):
         if not isinstance(stored, list):
             return []
         return [p for p in stored if isinstance(p, str)]
+
+    @classmethod
+    def ids_with_permission(cls, permission: str) -> list[str]:
+        """Ids of roles granting ``permission``, honoring the admin-default rule.
+
+        Resolved in Python via ``effective_permissions`` rather than a
+        ``permissions__contains`` JSONField lookup, which is unsupported on
+        SQLite. Callers filter users with ``roles__id__in`` for a portable query.
+        """
+        return [str(r.id) for r in cls.objects.all() if permission in r.effective_permissions]

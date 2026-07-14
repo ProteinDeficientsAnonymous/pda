@@ -201,6 +201,23 @@
         "params": []
       }
     ],
+    "Tag": [
+      {
+        "name": "NOT_FOUND",
+        "value": "tag.not_found",
+        "params": []
+      },
+      {
+        "name": "NAME_REQUIRED",
+        "value": "tag.name_required",
+        "params": []
+      },
+      {
+        "name": "NAME_ALREADY_EXISTS",
+        "value": "tag.name_already_exists",
+        "params": []
+      }
+    ],
     "Comment": [
       {
         "name": "NOT_FOUND",

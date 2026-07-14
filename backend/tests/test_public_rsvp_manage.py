@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from community.models import (
     EventRSVP,
@@ -7,6 +9,7 @@ from community.models import (
     RSVPStatus,
 )
 from django.utils import timezone
+from notifications.email_sender import SendResult
 from users.models import NonMemberRsvpToken
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event
@@ -139,6 +142,51 @@ class TestPostMyRsvps:
         # same token string still resolves
         resp = api_client.get(f"{GET_URL}?token={token.token}")
         assert resp.status_code == 200
+
+    def test_update_sends_updated_email_with_manage_link(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        resp = api_client.post(
+            f"{_post_url(official_event)}?token={token.token}",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        fake_email_sender.send.assert_called_once()
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["to"] == nonmember.email
+        assert sent["subject"] == "your rsvp was updated"
+        # The emailed manage link reuses the still-valid token.
+        assert token.token in sent["text"]
+
+    def test_email_failure_does_not_roll_back_update(
+        self, api_client, nonmember, official_event, fake_email_sender, caplog
+    ):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        fake_email_sender.send.return_value = SendResult(success=False, error="boom")
+
+        audit_logger = logging.getLogger("pda.audit")
+        audit_logger.addHandler(caplog.handler)
+        try:
+            with caplog.at_level(logging.WARNING, logger="pda.audit"):
+                resp = api_client.post(
+                    f"{_post_url(official_event)}?token={token.token}",
+                    {"status": RSVPStatus.ATTENDING},
+                    content_type="application/json",
+                )
+        finally:
+            audit_logger.removeHandler(caplog.handler)
+
+        assert resp.status_code == 200
+        rsvp = EventRSVP.objects.get(event=official_event, user=nonmember)
+        assert rsvp.status == RSVPStatus.ATTENDING
+        failures = [
+            r for r in caplog.records if getattr(r, "action", None) == "public_rsvp_email_failed"
+        ]
+        assert len(failures) == 1
 
     def test_invalid_status_400(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)

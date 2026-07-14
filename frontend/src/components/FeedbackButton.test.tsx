@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 const submitFeedbackMock = vi.fn();
 
@@ -32,32 +33,15 @@ import { FeedbackButton } from './FeedbackButton';
 const mockedUseSubmitFeedback = vi.mocked(useSubmitFeedback);
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'user-1',
     phoneNumber: '+12125551234',
     firstName: 'alice',
     lastName: '',
     fullName: 'alice',
-    nickname: '',
     email: 'alice@example.com',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    hideLastName: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 function renderButton(initialPath = '/calendar') {

@@ -22,7 +22,8 @@ def _make_user(phone, name):
     return User.objects.create_user(
         phone_number=phone,
         password="Testpass123!",
-        display_name=name,
+        first_name=name,
+        last_name="",
     )
 
 

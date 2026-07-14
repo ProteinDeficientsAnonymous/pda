@@ -47,6 +47,11 @@ class Code:
         MIN_TWO_OPTIONS = "poll.min_two_options"
         INVALID_AVAILABILITY = "poll.invalid_availability"
 
+    class Tag:
+        NOT_FOUND = "tag.not_found"
+        NAME_REQUIRED = "tag.name_required"
+        NAME_ALREADY_EXISTS = "tag.name_already_exists"
+
     class Comment:
         NOT_FOUND = "comment.not_found"
         REPLY_DEPTH_EXCEEDED = "comment.reply_depth_exceeded"

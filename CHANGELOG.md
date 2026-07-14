@@ -1,3 +1,95 @@
+# [0.20.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.2...v0.20.0) (2026-07-13)
+
+
+### Features
+
+* **community:** 689 - event tag create/delete endpoints ([#772](https://github.com/ProteinDeficientsAnonymous/pda/issues/772)) ([bae509f](https://github.com/ProteinDeficientsAnonymous/pda/commit/bae509fbdfb5621be1f33cad8f52337b6d64119c)), closes [#773](https://github.com/ProteinDeficientsAnonymous/pda/issues/773)
+
+## [0.19.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.1...v0.19.2) (2026-07-13)
+
+
+### Bug Fixes
+
+* **users:** enforce first_name required server-side + backfill (Issue 733) ([#743](https://github.com/ProteinDeficientsAnonymous/pda/issues/743)) ([89303e8](https://github.com/ProteinDeficientsAnonymous/pda/commit/89303e87d8fbe2cf7adc3819a5b4a5c722296ba6))
+
+## [0.19.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.19.0...v0.19.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **notifications:** use portable role-permission filter for sqlite (Issue 737) ([#745](https://github.com/ProteinDeficientsAnonymous/pda/issues/745)) ([3205523](https://github.com/ProteinDeficientsAnonymous/pda/commit/32055235b30d996343454b103561f94c735b1012))
+
+# [0.19.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.18.0...v0.19.0) (2026-07-13)
+
+
+### Features
+
+* **users:** strip non-member roles when a user is paused (Issue 708) ([#752](https://github.com/ProteinDeficientsAnonymous/pda/issues/752)) ([b730525](https://github.com/ProteinDeficientsAnonymous/pda/commit/b730525f8d25f192f7f4094c4ec6c9a1c07f5c63))
+
+# [0.18.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.17.1...v0.18.0) (2026-07-13)
+
+
+### Features
+
+* **events:** show visibility as locked read-out for official/club (Issue 695) ([#761](https://github.com/ProteinDeficientsAnonymous/pda/issues/761)) ([3a02abf](https://github.com/ProteinDeficientsAnonymous/pda/commit/3a02abf4529f7ef8b079e7824db07e0d0dcc066a))
+
+## [0.17.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.17.0...v0.17.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **users:** scope login-link cooldown to self-service tokens (Issue 683) ([#764](https://github.com/ProteinDeficientsAnonymous/pda/issues/764)) ([98f2de8](https://github.com/ProteinDeficientsAnonymous/pda/commit/98f2de8001d17ac7bef67e3b5f1778c79d41eead)), closes [#683](https://github.com/ProteinDeficientsAnonymous/pda/issues/683)
+
+# [0.17.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.16.0...v0.17.0) (2026-07-13)
+
+
+### Features
+
+* **users:** add show non-members toggle to members directory (Issue 706) ([#755](https://github.com/ProteinDeficientsAnonymous/pda/issues/755)) ([de600b3](https://github.com/ProteinDeficientsAnonymous/pda/commit/de600b380b23a68134ea9a3945b87c482358282d))
+
+# [0.16.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.15.0...v0.16.0) (2026-07-13)
+
+
+### Features
+
+* **events:** serve open graph link previews for event pages (Issue 652) ([#763](https://github.com/ProteinDeficientsAnonymous/pda/issues/763)) ([2576e63](https://github.com/ProteinDeficientsAnonymous/pda/commit/2576e638fd584fb7e26d4d97f86be2dee83202cd))
+
+# [0.15.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.14.1...v0.15.0) (2026-07-13)
+
+
+### Features
+
+* **events:** record cancelled_at + checked_in_at on RSVPs (Issue 564) ([#774](https://github.com/ProteinDeficientsAnonymous/pda/issues/774)) ([a8991ba](https://github.com/ProteinDeficientsAnonymous/pda/commit/a8991ba3486e6643ad8f44950e8f22b4db9f4184))
+
+## [0.14.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.14.0...v0.14.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **users:** require first_name on admin create-user (Issue 718) ([#751](https://github.com/ProteinDeficientsAnonymous/pda/issues/751)) ([5a083fe](https://github.com/ProteinDeficientsAnonymous/pda/commit/5a083fe6a7e150af27b52d95da199c179bfd032f))
+
+# [0.14.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.13.0...v0.14.0) (2026-07-13)
+
+
+### Features
+
+* **members:** collect first/last name in add-member dialog — PR1 (Issue 694) ([#760](https://github.com/ProteinDeficientsAnonymous/pda/issues/760)) ([e33ec24](https://github.com/ProteinDeficientsAnonymous/pda/commit/e33ec24f731e5e7452ce85a4be0df7c2af32e701))
+* **rsvp:** send "rsvp updated" email on public manage-RSVP update (Issue 705) ([#754](https://github.com/ProteinDeficientsAnonymous/pda/issues/754)) ([6f833f7](https://github.com/ProteinDeficientsAnonymous/pda/commit/6f833f7191445d6e619003e1209b3741596018f2))
+
+# [0.13.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.12.1...v0.13.0) (2026-07-13)
+
+
+### Features
+
+* **events:** gate invite button on member rsvp (Issue 688) ([#762](https://github.com/ProteinDeficientsAnonymous/pda/issues/762)) ([5cef6f8](https://github.com/ProteinDeficientsAnonymous/pda/commit/5cef6f8d99a8c842d506f9c342c2171cddf10048))
+
+## [0.12.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.12.0...v0.12.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **members:** wrap role tags to their own line so member info stays legible (Issue 724) ([#746](https://github.com/ProteinDeficientsAnonymous/pda/issues/746)) ([b0ce834](https://github.com/ProteinDeficientsAnonymous/pda/commit/b0ce834c93f9fc725242d61848fa7de2459bf7eb))
+
 # [0.12.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.11.0...v0.12.0) (2026-07-13)
 
 

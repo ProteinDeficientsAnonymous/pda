@@ -38,7 +38,7 @@ from community._rsvp_counts import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
 
 router = Router()
 
@@ -114,6 +114,19 @@ def _validate_rsvp_status(status: str) -> None:
         )
 
 
+def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
+    """Timestamp the transition into CANT_GO; clear it on any other status.
+
+    Preserves the original cancel time when a member re-saves while already
+    CANT_GO (e.g. toggling +1), so lead-time reflects the first cancellation.
+    """
+    if final_status != RSVPStatus.CANT_GO:
+        return None
+    if existing is not None and existing.status == RSVPStatus.CANT_GO:
+        return existing.cancelled_at
+    return timezone.now()
+
+
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool
 ) -> tuple[str, list[str]]:
@@ -145,7 +158,11 @@ def _apply_rsvp_in_transaction(
     EventRSVP.objects.update_or_create(
         event=event,
         user=user,
-        defaults={"status": final_status, "has_plus_one": final_plus_one},
+        defaults={
+            "status": final_status,
+            "has_plus_one": final_plus_one,
+            "cancelled_at": _resolve_cancelled_at(existing, final_status),
+        },
     )
 
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
@@ -290,7 +307,11 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         raise_validation(Code.Event.ATTENDANCE_ONLY_FOR_GOING_RSVPS, status_code=400)
 
     rsvp.attendance = payload.attendance
-    rsvp.save(update_fields=["attendance", "updated_at"])
+    # Stamp the first time a guest is marked ATTENDED; keep the original
+    # check-in time if attendance is later flipped and re-marked.
+    if payload.attendance == AttendanceStatus.ATTENDED and rsvp.checked_in_at is None:
+        rsvp.checked_in_at = timezone.now()
+    rsvp.save(update_fields=["attendance", "checked_in_at", "updated_at"])
 
     audit_log(
         logging.INFO,

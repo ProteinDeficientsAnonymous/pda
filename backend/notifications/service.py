@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 
 from community.models import RSVPStatus
 from django.db import DatabaseError, connection
-from django.db.models import Q
 from users._helpers import visible_display_name
 from users.models import User
 from users.permissions import PermissionKey
+from users.roles import Role
 
 from notifications.models import Notification, NotificationType
 
@@ -102,13 +102,10 @@ def broadcast_event_update(
         _ping_event_update(recipients, str(event.pk))
 
 
-def create_join_request_notifications(display_name: str) -> None:
+def create_join_request_notifications(full_name: str) -> None:
     recipients = (
         User.objects.members()
-        .filter(
-            Q(roles__name="admin", roles__is_default=True)
-            | Q(roles__permissions__contains=PermissionKey.APPROVE_JOIN_REQUESTS)
-        )
+        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
         .distinct()
     )
 
@@ -117,7 +114,7 @@ def create_join_request_notifications(display_name: str) -> None:
             Notification(
                 recipient=user,
                 notification_type=NotificationType.JOIN_REQUEST,
-                message=f"new join request from {display_name}",
+                message=f"new join request from {full_name}",
             )
             for user in recipients
         ]
@@ -126,13 +123,10 @@ def create_join_request_notifications(display_name: str) -> None:
 
 
 def create_event_flag_notifications(event: Event, flagger: User) -> None:
-    flagger_name = flagger.display_name or flagger.phone_number
+    flagger_name = flagger.full_name or flagger.phone_number
     recipients = (
         User.objects.members()
-        .filter(
-            Q(roles__name="admin", roles__is_default=True)
-            | Q(roles__permissions__contains=PermissionKey.MANAGE_EVENTS)
-        )
+        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.MANAGE_EVENTS))
         .distinct()
     )
 
@@ -151,13 +145,10 @@ def create_event_flag_notifications(event: Event, flagger: User) -> None:
 
 
 def create_magic_link_request_notifications(user: User) -> None:
-    display = user.display_name or user.phone_number
+    display = user.full_name or user.phone_number
     recipients = (
         User.objects.members()
-        .filter(
-            Q(roles__name="admin", roles__is_default=True)
-            | Q(roles__permissions__contains=PermissionKey.MANAGE_USERS)
-        )
+        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.MANAGE_USERS))
         .distinct()
     )
 

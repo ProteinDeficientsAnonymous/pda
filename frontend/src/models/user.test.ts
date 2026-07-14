@@ -1,34 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
+import { makeUser as makeSharedUser } from '@/test/fixtures';
+
 import { consentRedirect, passwordSetupRedirect, postAuthRedirect, type User } from './user';
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'u1',
-    phoneNumber: '+12125550001',
     firstName: 'Alice',
     lastName: 'Anderson',
     fullName: 'Alice Anderson',
-    nickname: '',
     email: 'alice@example.com',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    hideLastName: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 describe('passwordSetupRedirect', () => {

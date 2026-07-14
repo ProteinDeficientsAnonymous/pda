@@ -143,6 +143,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Comment.EventMismatch:
       return "that reply target isn't in this event";
 
+    // Tag
+    case Code.Tag.NotFound:
+      return 'tag not found';
+    case Code.Tag.NameRequired:
+      return 'enter a tag name';
+    case Code.Tag.NameAlreadyExists:
+      return 'a tag with that name already exists';
+
     // URL
     case Code.Url.Invalid:
       return 'enter a valid url';

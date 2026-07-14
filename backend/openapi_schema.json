@@ -29,8 +29,14 @@
       },
       "ApproveJoinRequestOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
@@ -70,7 +76,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "status"
         ],
@@ -2852,12 +2857,6 @@
             "title": "Answers",
             "type": "object"
           },
-          "display_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "format": "email",
             "title": "Email",
@@ -2947,12 +2946,23 @@
             "title": "Attended Official Count",
             "type": "integer"
           },
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "onboarded_at": {
@@ -3032,7 +3042,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "submitted_at",
           "status"
@@ -3115,18 +3124,6 @@
               }
             ],
             "title": "Calendar Feed Scope"
-          },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
           },
           "email": {
             "anyOf": [
@@ -3253,10 +3250,6 @@
       },
       "MemberDirectoryOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "default": "",
             "title": "Email",
@@ -3293,8 +3286,7 @@
           }
         },
         "required": [
-          "id",
-          "display_name"
+          "id"
         ],
         "title": "MemberDirectoryOut",
         "type": "object"
@@ -3304,10 +3296,6 @@
           "bio": {
             "default": "",
             "title": "Bio",
-            "type": "string"
-          },
-          "display_name": {
-            "title": "Display Name",
             "type": "string"
           },
           "email": {
@@ -3361,7 +3349,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "MemberProfileOut",
@@ -3433,18 +3420,6 @@
             },
             "title": "Consent Types",
             "type": "array"
-          },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
           },
           "email": {
             "anyOf": [
@@ -3802,6 +3777,18 @@
             "default": "unknown",
             "title": "Attendance",
             "type": "string"
+          },
+          "checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked In At"
           },
           "has_plus_one": {
             "default": false,
@@ -4529,6 +4516,21 @@
         "title": "SurveyResponseOut",
         "type": "object"
       },
+      "TagIn": {
+        "properties": {
+          "name": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TagIn",
+        "type": "object"
+      },
       "TagOut": {
         "properties": {
           "id": {
@@ -4626,12 +4628,6 @@
       },
       "UserCreateIn": {
         "properties": {
-          "display_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "anyOf": [
               {
@@ -4681,10 +4677,6 @@
       },
       "UserCreateOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "first_name": {
             "default": "",
             "title": "First Name",
@@ -4716,7 +4708,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "magic_link_token"
         ],
         "title": "UserCreateOut",
@@ -4732,10 +4723,6 @@
           "calendar_feed_scope": {
             "default": "all",
             "title": "Calendar Feed Scope",
-            "type": "string"
-          },
-          "display_name": {
-            "title": "Display Name",
             "type": "string"
           },
           "email": {
@@ -4761,6 +4748,11 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
           },
           "is_paused": {
             "default": false,
@@ -4870,7 +4862,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "roles"
         ],
         "title": "UserOut",
@@ -4878,18 +4869,6 @@
       },
       "UserPatchIn": {
         "properties": {
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -4971,10 +4950,6 @@
       },
       "UserSearchOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "first_name": {
             "default": "",
             "title": "First Name",
@@ -5001,7 +4976,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "UserSearchOut",
@@ -5461,7 +5435,7 @@
     },
     "/api/auth/magic-login/{token}/": {
       "get": {
-        "operationId": "users__auth_magic_login",
+        "operationId": "users__magic_login_magic_login",
         "parameters": [
           {
             "in": "path",
@@ -5972,7 +5946,18 @@
     "/api/auth/users/": {
       "get": {
         "operationId": "users__management_list_users",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_non_members",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Non Members",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -7278,6 +7263,122 @@
           }
         },
         "summary": "List Event Tags",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community__event_tags_create_event_tag",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Event Tag",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-tags/{tag_id}/": {
+      "delete": {
+        "operationId": "community__event_tags_delete_event_tag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tag_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tag Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Event Tag",
         "tags": [
           "community"
         ]

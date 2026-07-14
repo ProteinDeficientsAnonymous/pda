@@ -34,7 +34,8 @@ def manage_guidelines_user(db):
     user = User.objects.create_user(
         phone_number="+12025550401",
         password="guidelinespass",
-        display_name="Guidelines Manager",
+        first_name="Guidelines",
+        last_name="Manager",
     )
     role = Role.objects.create(
         name="content_manager",
@@ -55,7 +56,8 @@ def edit_homepage_user(db):
     user = User.objects.create_user(
         phone_number="+12025550402",
         password="homepagepass",
-        display_name="Homepage Editor",
+        first_name="Homepage",
+        last_name="Editor",
     )
     role = Role.objects.create(
         name="homepage_editor",
@@ -76,7 +78,8 @@ def edit_faq_user(db):
     user = User.objects.create_user(
         phone_number="+12025550403",
         password="faqpass",
-        display_name="FAQ Editor",
+        first_name="FAQ",
+        last_name="Editor",
     )
     role = Role.objects.create(
         name="faq_editor",
@@ -199,7 +202,8 @@ class TestCheckPhone:
     def test_check_phone_non_member_returns_unknown(self, api_client, db):
         User.objects.create_user(
             phone_number="+12025550188",
-            display_name="Public RSVP",
+            first_name="Public",
+            last_name="RSVP",
             is_member=False,
         )
         response = api_client.post(
