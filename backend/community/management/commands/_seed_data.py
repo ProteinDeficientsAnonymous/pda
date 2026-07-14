@@ -41,6 +41,14 @@ class SeedEvent:
 
 
 @dataclass
+class SeedNonMember:
+    phone_number: str
+    first_name: str
+    last_name: str = ""
+    email: str = ""
+
+
+@dataclass
 class SeedRSVP:
     """An RSVP to seed, keyed by event title + seed-user phone number.
 
@@ -185,6 +193,15 @@ SEED_EVENTS = [
         rsvp_enabled=True,
         allow_plus_ones=True,
     ),
+    SeedEvent(
+        title="Past Club Meetup (seed)",
+        description="Last cycle's club meetup.",
+        delta_days=-14,
+        duration_hours=2,
+        location="Back Room",
+        event_type=EventType.CLUB,
+        rsvp_enabled=True,
+    ),
 ]
 
 # Seed-user phone numbers (mirror SEED_USERS) referenced by SEED_RSVPS.
@@ -193,6 +210,35 @@ _MEMBER = "+17025550002"
 _JAMIE = "+17025550003"
 _RIN = "+17025550004"
 _ASH = "+17025550005"
+
+# Non-member (join-request applicant) phone numbers, referenced by SEED_RSVPS
+# and SEED_JOIN_REQUESTS so the join-requests list has applicants across a
+# spread of engagement states — attended, upcoming, and neither — instead of
+# every request looking identically brand-new.
+_PRIYA_NON_MEMBER = "+17025550013"
+_RILEY_NON_MEMBER = "+17025550015"
+_TAYLOR_NON_MEMBER = "+17025550016"
+
+SEED_NON_MEMBERS = [
+    SeedNonMember(
+        phone_number=_PRIYA_NON_MEMBER,
+        first_name="Priya",
+        last_name="Raghavendra-Nakamura",
+        email="priya.rn@example.com",
+    ),
+    SeedNonMember(
+        phone_number=_RILEY_NON_MEMBER,
+        first_name="Riley",
+        last_name="Okonkwo-Vasquez",
+        email="riley.ov@example.com",
+    ),
+    SeedNonMember(
+        phone_number=_TAYLOR_NON_MEMBER,
+        first_name="Taylor",
+        last_name="Kim",
+        email="taylor.kim@example.com",
+    ),
+]
 
 SEED_RSVPS = [
     # Vegan Potluck — max_attendees=3. Admin +1 (2 spots) and Member (1 spot)
@@ -229,6 +275,24 @@ SEED_RSVPS = [
     ),
     SeedRSVP("Past Potluck (seed)", _RIN, RSVPStatus.MAYBE),
     SeedRSVP("Past Potluck (seed)", _ASH, RSVPStatus.CANT_GO),
+    # Non-member applicants (see SEED_NON_MEMBERS, SEED_JOIN_REQUESTS) spread
+    # across engagement states, so the join-requests list isn't uniformly blank:
+    # Priya attended once (community); Riley attended a club meetup and has an
+    # upcoming official rsvp; Taylor has only ever rsvp'd, never attended.
+    SeedRSVP(
+        "Past Potluck (seed)",
+        _PRIYA_NON_MEMBER,
+        RSVPStatus.ATTENDING,
+        attendance=AttendanceStatus.ATTENDED,
+    ),
+    SeedRSVP(
+        "Past Club Meetup (seed)",
+        _RILEY_NON_MEMBER,
+        RSVPStatus.ATTENDING,
+        attendance=AttendanceStatus.ATTENDED,
+    ),
+    SeedRSVP("Plant-Based Cooking Workshop", _RILEY_NON_MEMBER, RSVPStatus.ATTENDING),
+    SeedRSVP("Plant-Based Cooking Workshop", _TAYLOR_NON_MEMBER, RSVPStatus.ATTENDING),
 ]
 
 SEED_HOME_PAGE = {
@@ -278,7 +342,7 @@ SEED_JOIN_REQUESTS = [
     SeedJoinRequest(
         first_name="Priya",
         last_name="Raghavendra-Nakamura",
-        phone_number="+17025550013",
+        phone_number=_PRIYA_NON_MEMBER,
         answers={
             "Why do you want to join?": (
                 "i've been plant-based for about six months and am finally ready to find my people. "
@@ -302,7 +366,7 @@ SEED_JOIN_REQUESTS = [
     SeedJoinRequest(
         first_name="Riley",
         last_name="Okonkwo-Vasquez",
-        phone_number="+17025550015",
+        phone_number=_RILEY_NON_MEMBER,
         answers={
             "Why do you want to join?": "food not bombs volunteer, interested in mutual aid + vegan outreach.",
             "How did you hear about us?": "instagram — pda showed up in a story reshare.",
@@ -312,7 +376,7 @@ SEED_JOIN_REQUESTS = [
     SeedJoinRequest(
         first_name="Taylor",
         last_name="Kim",
-        phone_number="+17025550016",
+        phone_number=_TAYLOR_NON_MEMBER,
         answers={
             "Why do you want to join?": "just curious — not vegan yet but open to learning.",
         },

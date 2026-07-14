@@ -17,6 +17,7 @@ from ._seed_data import (
     SEED_HOME_PAGE,
     SEED_JOIN_FORM_QUESTIONS,
     SEED_JOIN_REQUESTS,
+    SEED_NON_MEMBERS,
     SEED_RSVPS,
     SEED_USERS,
     SeedUser,
@@ -40,6 +41,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         admin_user = self._seed_users()
+        self._seed_non_members()
         questions = self._seed_join_form_questions()
         self._seed_event_tags()
         events = self._seed_events(admin_user)
@@ -100,6 +102,25 @@ class Command(BaseCommand):
 
         assert admin_user is not None, "SEED_USERS must contain a superuser entry"
         return admin_user
+
+    def _seed_non_members(self) -> None:
+        """Non-member users (e.g. join-request applicants) referenced by SEED_RSVPS."""
+        for data in SEED_NON_MEMBERS:
+            user, created = User.objects.get_or_create(
+                phone_number=data.phone_number,
+                defaults={
+                    "first_name": data.first_name,
+                    "last_name": data.last_name,
+                    "email": data.email,
+                    "is_member": False,
+                },
+            )
+            if created:
+                user.set_unusable_password()
+                user.save(update_fields=["password"])
+            self.stdout.write(
+                f"  {'Created' if created else 'Already exists'} non-member: {user.full_name}"
+            )
 
     def _seed_join_form_questions(self) -> dict[str, JoinFormQuestion]:
         """Seed default join form questions. Returns a label→question mapping."""
