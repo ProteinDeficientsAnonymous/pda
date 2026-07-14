@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from community.models.choices import AttendanceStatus, EventType, RSVPStatus
+from community.models.choices import AttendanceStatus, EventType, JoinRequestStatus, RSVPStatus
 
 PASSWORD = "testPassword1@"
 
@@ -41,6 +41,14 @@ def nonmember_phone(index: int) -> str:
 
 def nonmember_email(index: int) -> str:
     return f"nonmember{index:02d}@staging.example"
+
+
+def joinreq_phone(index: int) -> str:
+    return f"+170255504{index:02d}"
+
+
+def joinreq_email(index: int) -> str:
+    return f"joinreq{index:02d}@staging.example"
 
 
 NON_MEMBER_EVENT_TITLE = "[staging] official public rsvp demo"
@@ -268,4 +276,118 @@ NON_MEMBER_SPECS = [
     NonMemberSpec("past no-show (attendance report)", _rsvps((OFFICIAL_PAST_TITLE, _A, _NO_SHOW))),
     NonMemberSpec("waitlisted at capacity", _rsvps((OFFICIAL_FULL_TITLE, _W))),
     NonMemberSpec("no-rsvp (no token)", [], token_state=TOKEN_NONE),
+]
+
+
+@dataclass
+class JoinRequestSpec:
+    first_name: str
+    last_name: str
+    pronouns: str
+    has_email: bool
+    status: str
+    days_ago: int
+    answer: str
+
+
+JOIN_REQUEST_SPECS = [
+    JoinRequestSpec(
+        "Sage",
+        "Blackwood",
+        "they/them",
+        True,
+        JoinRequestStatus.PENDING,
+        0,
+        "I've been vegan for three years and want to connect with a local community.",
+    ),
+    JoinRequestSpec(
+        "Rowan",
+        "Ashfield",
+        "she/her",
+        True,
+        JoinRequestStatus.PENDING,
+        1,
+        "Looking for like-minded folks to organize with on animal liberation.",
+    ),
+    JoinRequestSpec(
+        "Fern",
+        "Whitaker",
+        "he/him",
+        False,
+        JoinRequestStatus.PENDING,
+        2,
+        "A friend recommended this group after I went vegan last month.",
+    ),
+    JoinRequestSpec(
+        "River",
+        "Okafor",
+        "they/them",
+        True,
+        JoinRequestStatus.PENDING,
+        3,
+        "I want to volunteer at events and help with outreach.",
+    ),
+    JoinRequestSpec(
+        "Wren",
+        "Castellano",
+        "she/her",
+        True,
+        JoinRequestStatus.PENDING,
+        5,
+        "Interested in the intersection of veganism and collective liberation.",
+    ),
+    JoinRequestSpec(
+        "Ash",
+        "Delgado",
+        "he/him",
+        False,
+        JoinRequestStatus.PENDING,
+        8,
+        "New to the area and looking for community.",
+    ),
+    JoinRequestSpec(
+        "Juniper",
+        "Osei",
+        "they/them",
+        True,
+        JoinRequestStatus.APPROVED,
+        14,
+        "Been following the group's work for a while and finally ready to join.",
+    ),
+    JoinRequestSpec(
+        "Marlowe",
+        "Fontaine",
+        "she/her",
+        True,
+        JoinRequestStatus.APPROVED,
+        20,
+        "A member invited me after a potluck.",
+    ),
+    JoinRequestSpec(
+        "Briar",
+        "Nakamura",
+        "he/him",
+        True,
+        JoinRequestStatus.APPROVED,
+        30,
+        "I run a plant-based cooking blog and want to get more involved locally.",
+    ),
+    JoinRequestSpec(
+        "Sparrow",
+        "Reyes",
+        "they/them",
+        False,
+        JoinRequestStatus.REJECTED,
+        12,
+        "Just filling out the form to see what happens.",
+    ),
+    JoinRequestSpec(
+        "Indigo",
+        "Marchetti",
+        "she/her",
+        True,
+        JoinRequestStatus.REJECTED,
+        25,
+        "not really sure what this group does but sure",
+    ),
 ]

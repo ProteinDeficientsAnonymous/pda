@@ -14,6 +14,7 @@ from users.roles import Role
 
 from community.models import Event, EventRSVP, EventType, RSVPStatus
 
+from ._seed_join_requests import reset_join_requests, seed_join_requests
 from ._seed_staging_data import (
     MEMBER_RSVP_SPECS,
     NON_MEMBER_EVENT_TITLE,
@@ -63,6 +64,7 @@ class Command(BaseCommand):
             events = self._seed_events(admin)
             self._seed_member_rsvps(cond_users, events)
             non_members = self._seed_non_members(events)
+            join_requests = seed_join_requests(self.stdout, admin)
         self._print_summary(
             {
                 "roles": roles,
@@ -70,6 +72,7 @@ class Command(BaseCommand):
                 "cond_users": cond_users,
                 "events": events,
                 "non_members": non_members,
+                "join_requests": join_requests,
             }
         )
 
@@ -80,6 +83,7 @@ class Command(BaseCommand):
         User.objects.filter(phone_number__startswith="+170255502").delete()
         User.objects.filter(phone_number__startswith="+170255503").delete()
         Role.objects.filter(name__startswith="perm: ").delete()
+        reset_join_requests()
         self.stdout.write("  reset: removed staging-scoped rows")
 
     def _seed_perm_roles(self) -> dict[str, Role]:
@@ -255,7 +259,8 @@ class Command(BaseCommand):
             f"events: {len(result['events'])}  roles: {len(result['roles'])}  "
             f"perm users: {len(result['perm_users'])}  "
             f"condition users: {len(result['cond_users'])}  "
-            f"non-member users: {len(result['non_members'])}"
+            f"non-member users: {len(result['non_members'])}  "
+            f"join requests: {len(result['join_requests'])}"
         )
         self._print_official_events(result["events"])
         self.stdout.write("non-member users (phone -> manage link):")

@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from community.management.commands._seed_staging_data import (
+    JOIN_REQUEST_SPECS,
     NON_MEMBER_EVENT_TITLE,
     NON_MEMBER_SPECS,
     OFFICIAL_FULL_TITLE,
@@ -17,10 +18,19 @@ from community.management.commands._seed_staging_data import (
     condition_combinations,
     condition_label,
     is_seed_allowed,
+    joinreq_phone,
     perm_email,
     perm_phone,
 )
-from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVPStatus
+from community.models import (
+    AttendanceStatus,
+    Event,
+    EventRSVP,
+    EventType,
+    JoinRequest,
+    JoinRequestStatus,
+    RSVPStatus,
+)
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.utils import timezone
@@ -307,3 +317,65 @@ def test_seed_staging_over_capacity_event_fills_and_waitlists():
     rsvps = EventRSVP.objects.filter(event=full)
     assert rsvps.filter(status=RSVPStatus.ATTENDING).count() >= full.max_attendees
     assert rsvps.filter(status=RSVPStatus.WAITLISTED).exists()
+
+
+def test_join_request_specs_span_all_statuses():
+    statuses = {spec.status for spec in JOIN_REQUEST_SPECS}
+    assert statuses == {
+        JoinRequestStatus.PENDING,
+        JoinRequestStatus.APPROVED,
+        JoinRequestStatus.REJECTED,
+    }
+    assert any(not spec.has_email for spec in JOIN_REQUEST_SPECS)
+    assert any(spec.has_email for spec in JOIN_REQUEST_SPECS)
+
+
+@pytest.mark.django_db
+def test_seed_staging_creates_join_requests_matching_specs():
+    call_command("seed_staging")
+    assert JoinRequest.objects.filter(phone_number__startswith="+170255504").count() == len(
+        JOIN_REQUEST_SPECS
+    )
+    for index, spec in enumerate(JOIN_REQUEST_SPECS):
+        jr = JoinRequest.objects.get(phone_number=joinreq_phone(index))
+        assert jr.status == spec.status
+        assert bool(jr.email) is spec.has_email
+        assert jr.sms_consent_at is not None
+        assert jr.guidelines_consent_at is not None
+        if spec.status == JoinRequestStatus.APPROVED:
+            assert jr.approved_at is not None
+            assert jr.approved_by is not None
+            assert jr.rejected_at is None
+        elif spec.status == JoinRequestStatus.REJECTED:
+            assert jr.rejected_at is not None
+            assert jr.rejected_by is not None
+            assert jr.approved_at is None
+        else:
+            assert jr.approved_at is None
+            assert jr.rejected_at is None
+
+
+@pytest.mark.django_db
+def test_seed_staging_join_requests_carry_custom_answers():
+    call_command("seed_staging")
+    for index in range(len(JOIN_REQUEST_SPECS)):
+        jr = JoinRequest.objects.get(phone_number=joinreq_phone(index))
+        assert jr.custom_answers
+
+
+@pytest.mark.django_db
+def test_seed_staging_join_requests_idempotent():
+    call_command("seed_staging")
+    call_command("seed_staging")
+    assert JoinRequest.objects.filter(phone_number__startswith="+170255504").count() == len(
+        JOIN_REQUEST_SPECS
+    )
+
+
+@pytest.mark.django_db
+def test_seed_staging_reset_removes_join_requests():
+    call_command("seed_staging")
+    call_command("seed_staging", "--reset")
+    assert JoinRequest.objects.filter(phone_number__startswith="+170255504").count() == len(
+        JOIN_REQUEST_SPECS
+    )
