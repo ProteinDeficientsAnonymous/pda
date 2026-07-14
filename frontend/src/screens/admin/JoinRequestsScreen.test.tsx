@@ -200,6 +200,16 @@ describe('JoinRequestsScreen sort', () => {
   });
 });
 
+describe('JoinRequestsScreen card', () => {
+  it('shows the email address next to the phone number', () => {
+    mockResult([makeRequest({ fullName: 'Ada Lovelace', email: 'ada@example.com' })]);
+
+    renderScreen();
+
+    expect(screen.getByText(/ada@example\.com/)).toBeInTheDocument();
+  });
+});
+
 describe('JoinRequestsScreen search', () => {
   it('filters by name', async () => {
     mockResult([
