@@ -344,6 +344,38 @@ def notify_comment_reply(reply) -> None:
     _notify_users([str(parent_author_id)])
 
 
+def notify_rsvp_declined_note(event, author, note: str) -> None:
+    """Notify host + co-hosts that someone who can't go left a note.
+
+    Host-only and ephemeral: the note is not stored anywhere else. No-op if
+    the only recipient would be the author (e.g. host declining their own event).
+    """
+    author_id_str = str(author.pk)
+    recipient_ids: set[str] = set()
+    if event.created_by_id is not None:
+        recipient_ids.add(str(event.created_by_id))
+    recipient_ids.update(str(u.pk) for u in event.co_hosts.all())
+    recipient_ids.discard(author_id_str)
+    if not recipient_ids:
+        return
+    name = author.display_name or author.phone_number
+    message = f"{name} can't go: “{note}”"[:255]
+    recipient_id_list = sorted(recipient_ids)
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=rid,
+                notification_type=NotificationType.RSVP_DECLINED_NOTE,
+                event=event,
+                related_user=author,
+                message=message,
+            )
+            for rid in recipient_id_list
+        ]
+    )
+    _notify_users(recipient_id_list)
+
+
 def notify_event_comment(comment) -> None:
     """Notify event creator + co-hosts when someone posts a top-level comment.
 
