@@ -34,6 +34,7 @@ const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScre
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
 const EventAttendance = lazyWithRetry(() => import('@/screens/events/EventAttendanceScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
+const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
 const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
 const Profile = lazyWithRetry(() => import('@/screens/profile/ProfileScreen'));
 const Settings = lazyWithRetry(() => import('@/screens/settings/SettingsScreen'));
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
               { path: '/join/success', element: el(<JoinSuccess />) },
               { path: '/calendar', element: el(<Calendar />) },
               { path: '/events/:id', element: el(<EventDetail />) },
+              { path: '/my-rsvps', element: el(<PublicRsvps />) },
               { path: '/surveys/:slug', element: el(<Survey />) },
               { path: '/donate', element: el(<Donate />) },
               { path: '/install', element: el(<Install />) },
