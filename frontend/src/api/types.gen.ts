@@ -3009,10 +3009,15 @@ export interface components {
             /** Approved By Name */
             approved_by_name?: string | null;
             /**
-             * Attached User Official Rsvp Count
+             * Attended Club Count
              * @default 0
              */
-            attached_user_official_rsvp_count: number;
+            attended_club_count: number;
+            /**
+             * Attended Official Count
+             * @default 0
+             */
+            attended_official_count: number;
             /**
              * First Name
              * @default
@@ -3050,6 +3055,16 @@ export interface components {
              * Format: date-time
              */
             submitted_at: string;
+            /**
+             * Upcoming Club Count
+             * @default 0
+             */
+            upcoming_club_count: number;
+            /**
+             * Upcoming Official Count
+             * @default 0
+             */
+            upcoming_official_count: number;
             /** User Id */
             user_id?: string | null;
         };
