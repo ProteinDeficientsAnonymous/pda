@@ -1,3 +1,10 @@
+# [0.22.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.21.0...v0.22.0) (2026-07-14)
+
+
+### Features
+
+* **join-requests:** tentative approval state + auto-promotion on check-in (Issue 776) ([#785](https://github.com/ProteinDeficientsAnonymous/pda/issues/785)) ([a572e64](https://github.com/ProteinDeficientsAnonymous/pda/commit/a572e643f06d293ff6b8e3c2b416cdb7cd58c45a))
+
 # [0.21.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.20.1...v0.21.0) (2026-07-14)
 
 
