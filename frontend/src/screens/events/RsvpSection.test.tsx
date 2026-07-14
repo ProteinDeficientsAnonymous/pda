@@ -64,7 +64,6 @@ function makeGuest(overrides: Partial<EventGuest>): EventGuest {
     photoUrl: '',
     hasPlusOne: false,
     attendance: AttendanceStatus.Unknown,
-    note: '',
     ...overrides,
   };
 }
@@ -104,7 +103,6 @@ function makeEvent(overrides: Partial<Event>): Event {
     coHostInviteIds: [],
     guests: [],
     myRsvp: null,
-    myRsvpNote: '',
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],

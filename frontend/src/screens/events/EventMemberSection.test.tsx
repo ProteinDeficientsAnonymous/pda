@@ -61,7 +61,6 @@ const BASE_EVENT: Event = {
   coHostInviteIds: [],
   guests: [],
   myRsvp: null,
-  myRsvpNote: '',
   surveySlugs: [],
   invitedUserIds: [],
   invitedUserNames: [],

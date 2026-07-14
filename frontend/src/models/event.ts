@@ -62,7 +62,6 @@ export interface EventGuest {
   photoUrl: string;
   hasPlusOne: boolean;
   attendance: AttendanceStatusValue;
-  note: string;
 }
 
 export interface EventCancellation {
@@ -131,7 +130,6 @@ export interface Event {
   // Detail-only.
   guests: EventGuest[];
   myRsvp: string | null;
-  myRsvpNote: string;
   surveySlugs: string[];
   invitedUserIds: string[];
   invitedUserNames: string[];
