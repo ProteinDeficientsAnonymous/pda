@@ -18,7 +18,7 @@ vi.mock('@/api/join', async (importOriginal) => {
   };
 });
 
-import { useJoinRequests } from '@/api/join';
+import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
 
 import JoinRequestsScreen from './JoinRequestsScreen';
 
@@ -46,6 +46,7 @@ function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRequestSu
       upcomingOfficial: 0,
       upcomingClub: 0,
     },
+    rsvpEvents: [],
     ...overrides,
   };
 }
@@ -247,5 +248,62 @@ describe('JoinRequestsScreen search', () => {
     await user.type(screen.getByLabelText(/^search$/i), 'zzz');
 
     expect(screen.getByText(/nothing matches/i)).toBeInTheDocument();
+  });
+});
+
+describe('JoinRequestsScreen tentative section', () => {
+  it('shows a manually approve button for tentative requests', async () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.TENTATIVE })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+
+    expect(screen.getByRole('button', { name: 'manually approve' })).toBeInTheDocument();
+  });
+
+  it('shows rsvp events for a tentative request', async () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.TENTATIVE,
+        rsvpEvents: [
+          { eventId: 'e1', title: 'Potluck', startDatetime: '2026-03-01T18:00:00Z' },
+          { eventId: 'e2', title: 'Movie Night', startDatetime: null },
+        ],
+      }),
+    ]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+
+    expect(screen.getByText(/Potluck/)).toBeInTheDocument();
+    expect(screen.getByText(/Movie Night/)).toBeInTheDocument();
+  });
+
+  it('hides the rsvp list entirely when there are no rsvps', async () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.TENTATIVE, rsvpEvents: [] })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+
+    expect(screen.queryByText(/rsvp/i)).not.toBeInTheDocument();
+  });
+
+  it('calls decide with approved status when manually approve is clicked', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ magicLinkToken: null });
+    vi.mocked(useDecideJoinRequest).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDecideJoinRequest>);
+    mockResult([makeRequest({ id: 'jr-tentative', status: JoinRequestStatus.TENTATIVE })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+    await userEvent.click(screen.getByRole('button', { name: 'manually approve' }));
+    await userEvent.click(screen.getByRole('button', { name: 'approve' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'jr-tentative',
+      status: JoinRequestStatus.APPROVED,
+    });
   });
 });

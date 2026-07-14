@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 from typing import NamedTuple
 from uuid import UUID
@@ -45,6 +46,12 @@ class JoinRequestAnswerOut(BaseModel):
     answer: str
 
 
+class JoinRequestRsvpOut(BaseModel):
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+
+
 class JoinRequestOut(BaseModel):
     id: str
     first_name: str = ""
@@ -69,6 +76,7 @@ class JoinRequestOut(BaseModel):
     attended_club_count: int = 0
     upcoming_official_count: int = 0
     upcoming_club_count: int = 0
+    rsvp_events: list[JoinRequestRsvpOut] = []
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -95,6 +103,16 @@ class RsvpBreakdown(NamedTuple):
     upcoming_club: int = 0
 
 
+def _is_reportable_attending(rsvp: EventRSVP) -> bool:
+    """Whether an ATTENDING rsvp is for a bucketed, reportable event at all."""
+    event = rsvp.event
+    return (
+        event.event_type in BUCKETED_EVENT_TYPES
+        and event.status not in NON_REPORTABLE_EVENT_STATUSES
+        and rsvp.status == RSVPStatus.ATTENDING
+    )
+
+
 def _rsvp_bucket(rsvp: EventRSVP) -> tuple[str, str] | None:
     """(state, event_type) bucket for a linked user's rsvp, or None if it counts nowhere.
 
@@ -102,18 +120,24 @@ def _rsvp_bucket(rsvp: EventRSVP) -> tuple[str, str] | None:
     future, time-decided event). Non-bucketed types, non-reportable events, and
     non-ATTENDING rsvps fall through to None.
     """
+    if not _is_reportable_attending(rsvp):
+        return None
     event = rsvp.event
-    if event.event_type not in BUCKETED_EVENT_TYPES:
-        return None
-    if event.status in NON_REPORTABLE_EVENT_STATUSES:
-        return None
-    if rsvp.status != RSVPStatus.ATTENDING:
-        return None
     if rsvp.attendance == AttendanceStatus.ATTENDED:
         return ("attended", event.event_type)
     if not event.is_past and not event.datetime_tbd:
         return ("upcoming", event.event_type)
     return None
+
+
+def _user_event_rsvps(user: User) -> Iterable[EventRSVP]:
+    """Rsvps for a user, reading the prefetched list endpoint cache when available."""
+    prefetched = getattr(user, "_prefetched_objects_cache", {})
+    return (
+        user.event_rsvps.all()
+        if "event_rsvps" in prefetched
+        else EventRSVP.objects.filter(user_id=user.id).select_related("event")
+    )
 
 
 def _rsvp_breakdown(user: User | None) -> RsvpBreakdown:
@@ -124,14 +148,8 @@ def _rsvp_breakdown(user: User | None) -> RsvpBreakdown:
     """
     if user is None:
         return RsvpBreakdown()
-    prefetched = getattr(user, "_prefetched_objects_cache", {})
-    rsvps = (
-        user.event_rsvps.all()
-        if "event_rsvps" in prefetched
-        else EventRSVP.objects.filter(user_id=user.id).select_related("event")
-    )
     counts: dict[tuple[str, str], int] = {}
-    for rsvp in rsvps:
+    for rsvp in _user_event_rsvps(user):
         bucket = _rsvp_bucket(rsvp)
         if bucket is not None:
             counts[bucket] = counts.get(bucket, 0) + 1
@@ -141,6 +159,18 @@ def _rsvp_breakdown(user: User | None) -> RsvpBreakdown:
         upcoming_official=counts.get(("upcoming", EventType.OFFICIAL), 0),
         upcoming_club=counts.get(("upcoming", EventType.CLUB), 0),
     )
+
+
+def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
+    """Events (past and future) a tentative applicant has RSVP'd ATTENDING to, oldest first."""
+    if user is None:
+        return []
+    events = [rsvp.event for rsvp in _user_event_rsvps(user) if _is_reportable_attending(rsvp)]
+    events.sort(key=lambda e: (e.start_datetime is None, e.start_datetime))
+    return [
+        JoinRequestRsvpOut(event_id=str(e.id), title=e.title, start_datetime=e.start_datetime)
+        for e in events
+    ]
 
 
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
@@ -173,6 +203,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         attended_club_count=breakdown.attended_club,
         upcoming_official_count=breakdown.upcoming_official,
         upcoming_club_count=breakdown.upcoming_club,
+        rsvp_events=_rsvp_events(user),
     )
 
 

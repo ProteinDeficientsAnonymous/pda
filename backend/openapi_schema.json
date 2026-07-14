@@ -3078,6 +3078,14 @@
             ],
             "title": "Rejected By Name"
           },
+          "rsvp_events": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/JoinRequestRsvpOut"
+            },
+            "title": "Rsvp Events",
+            "type": "array"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -3116,6 +3124,36 @@
           "status"
         ],
         "title": "JoinRequestOut",
+        "type": "object"
+      },
+      "JoinRequestRsvpOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title"
+        ],
+        "title": "JoinRequestRsvpOut",
         "type": "object"
       },
       "JoinRequestStatusIn": {

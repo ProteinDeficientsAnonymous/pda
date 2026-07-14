@@ -112,6 +112,7 @@ export async function checkPhone(phoneNumber: string): Promise<CheckPhoneStatus>
 
 export const JoinRequestStatus = {
   PENDING: 'pending',
+  TENTATIVE: 'tentative',
   APPROVED: 'approved',
   REJECTED: 'rejected',
 } as const;
@@ -130,6 +131,12 @@ export interface RsvpBreakdown {
   upcomingClub: number;
 }
 
+export interface JoinRequestRsvpEvent {
+  eventId: string;
+  title: string;
+  startDatetime: string | null;
+}
+
 export interface JoinRequestSummary {
   id: string;
   fullName: string;
@@ -146,12 +153,19 @@ export interface JoinRequestSummary {
   rejectedByName: string | null;
   onboardedAt: string | null;
   rsvpBreakdown: RsvpBreakdown;
+  rsvpEvents: JoinRequestRsvpEvent[];
 }
 
 interface WireAnswer {
   question_id: string;
   label: string;
   answer: string;
+}
+
+interface WireRsvpEvent {
+  event_id: string;
+  title: string;
+  start_datetime: string | null;
 }
 
 interface WireJoinRequest {
@@ -173,6 +187,7 @@ interface WireJoinRequest {
   attended_club_count?: number;
   upcoming_official_count?: number;
   upcoming_club_count?: number;
+  rsvp_events?: WireRsvpEvent[];
 }
 
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
@@ -201,6 +216,11 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
       upcomingOfficial: w.upcoming_official_count ?? 0,
       upcomingClub: w.upcoming_club_count ?? 0,
     },
+    rsvpEvents: (w.rsvp_events ?? []).map((e) => ({
+      eventId: e.event_id,
+      title: e.title,
+      startDatetime: e.start_datetime,
+    })),
   };
 }
 
