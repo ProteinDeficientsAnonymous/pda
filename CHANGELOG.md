@@ -1,3 +1,10 @@
+## [0.27.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.5...v0.27.6) (2026-07-14)
+
+
+### Bug Fixes
+
+* 821, 823 - align privacy toggle wording, add show-birthday setting ([#827](https://github.com/ProteinDeficientsAnonymous/pda/issues/827)) ([ebe0a5c](https://github.com/ProteinDeficientsAnonymous/pda/commit/ebe0a5c7cda51ef48e664de4d55154c1a4c8f2c4))
+
 ## [0.27.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.4...v0.27.5) (2026-07-14)
 
 
