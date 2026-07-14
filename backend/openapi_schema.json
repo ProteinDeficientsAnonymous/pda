@@ -1590,11 +1590,6 @@
             ],
             "title": "My Rsvp"
           },
-          "my_rsvp_note": {
-            "default": "",
-            "title": "My Rsvp Note",
-            "type": "string"
-          },
           "other_link": {
             "default": "",
             "title": "Other Link",
@@ -3405,11 +3400,6 @@
           },
           "name": {
             "title": "Name",
-            "type": "string"
-          },
-          "note": {
-            "default": "",
-            "title": "Note",
             "type": "string"
           },
           "phone": {

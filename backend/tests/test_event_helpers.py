@@ -46,7 +46,6 @@ class TestBuildGuestList:
             status=status,
             has_plus_one=False,
             attendance=AttendanceStatus.UNKNOWN,
-            note="",
         )
 
     def test_empty_rsvps(self):

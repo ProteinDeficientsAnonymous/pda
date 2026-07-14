@@ -145,7 +145,6 @@ class RSVPGuestOut(BaseModel):
     phone: str | None = None
     photo_url: str = ""
     attendance: str = AttendanceStatus.UNKNOWN
-    note: str = ""
 
 
 class PendingCoHostInviteOut(BaseModel):
@@ -224,7 +223,6 @@ class EventOut(BaseModel):
     co_host_invite_ids: list[str | None] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
-    my_rsvp_note: str = ""
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
