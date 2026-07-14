@@ -105,6 +105,7 @@ class UserOut(BaseModel):
     photo_updated_at: str | None = None
     show_phone: bool = True
     show_email: bool = True
+    show_birthday: bool = True
     hide_last_name: bool = False
     is_paused: bool = False
     login_link_requested: bool = False
@@ -137,6 +138,7 @@ class UserOut(BaseModel):
             photo_updated_at=(user.photo_updated_at.isoformat() if user.photo_updated_at else None),
             show_phone=user.show_phone,
             show_email=user.show_email,
+            show_birthday=user.show_birthday,
             hide_last_name=user.hide_last_name,
             is_paused=user.is_paused,
             login_link_requested=user.login_link_requested,
@@ -234,6 +236,7 @@ class MePatchIn(BaseModel):
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
+    show_birthday: bool | None = None
     hide_last_name: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None

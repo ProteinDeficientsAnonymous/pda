@@ -3224,6 +3224,17 @@
             ],
             "title": "Pronouns"
           },
+          "show_birthday": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Birthday"
+          },
           "show_email": {
             "anyOf": [
               {
@@ -4921,6 +4932,11 @@
             "title": "Roles",
             "type": "array"
           },
+          "show_birthday": {
+            "default": true,
+            "title": "Show Birthday",
+            "type": "boolean"
+          },
           "show_email": {
             "default": true,
             "title": "Show Email",
@@ -6075,7 +6091,7 @@
     },
     "/api/auth/users/directory/": {
       "get": {
-        "description": "Authed-only member directory. Respects each user's show_phone/show_email flags.",
+        "description": "Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags.",
         "operationId": "users__members_list_member_directory",
         "parameters": [],
         "responses": {

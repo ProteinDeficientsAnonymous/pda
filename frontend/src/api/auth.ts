@@ -35,6 +35,7 @@ interface WireUser {
   needs_sms_consent?: boolean;
   show_phone?: boolean;
   show_email?: boolean;
+  show_birthday?: boolean;
   hide_last_name?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
@@ -83,6 +84,7 @@ function mapUser(u: WireUser): User {
     needsSmsConsent: u.needs_sms_consent ?? false,
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
+    showBirthday: u.show_birthday ?? false,
     hideLastName: u.hide_last_name ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
@@ -195,6 +197,7 @@ export interface ProfileUpdate {
   birthday?: string;
   showPhone?: boolean;
   showEmail?: boolean;
+  showBirthday?: boolean;
   hideLastName?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
@@ -212,6 +215,7 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.birthday !== undefined) body.birthday = patch.birthday;
   if (patch.showPhone !== undefined) body.show_phone = patch.showPhone;
   if (patch.showEmail !== undefined) body.show_email = patch.showEmail;
+  if (patch.showBirthday !== undefined) body.show_birthday = patch.showBirthday;
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;

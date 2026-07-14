@@ -123,6 +123,7 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "needs_onboarding",
     "show_phone",
     "show_email",
+    "show_birthday",
     "hide_last_name",
     "week_start",
     "calendar_feed_scope",
