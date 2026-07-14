@@ -393,6 +393,18 @@ body {
 .rbc-time-view .rbc-time-gutter {
   color: var(--color-muted-foreground);
 }
+/* "n more" popover — themed to match the rest of the calendar. */
+.rbc-overlay.rbc-overlay {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-foreground);
+  box-shadow: var(--shadow-lg);
+}
+.rbc-overlay .rbc-overlay-header {
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-foreground);
+}
 
 /* react-day-picker theme — lowercase, brand colors, matching radii/font. */
 .rdp-root {
