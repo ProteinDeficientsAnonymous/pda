@@ -68,7 +68,7 @@ def _send_manage_link(request, user: User) -> None:
         result = send_rsvp_manage_link_email(
             sender=get_email_sender(),
             to=user.email,
-            display_name=user.display_name,
+            display_name=user.full_name,
             manage_url=manage_url,
         )
         if not result.success:
