@@ -13,6 +13,9 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+from users.contact_group import (
+    ContactGroup,  # noqa: F401 — re-exported so Django discovers it in the users app
+)
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
 # Fallback for bare digits only — a number with an explicit country code is unaffected.
