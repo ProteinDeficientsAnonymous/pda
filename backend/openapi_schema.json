@@ -3862,12 +3862,7 @@
       },
       "RSVPIn": {
         "properties": {
-          "has_plus_one": {
-            "default": false,
-            "title": "Has Plus One",
-            "type": "boolean"
-          },
-          "note": {
+          "comment": {
             "anyOf": [
               {
                 "maxLength": 300,
@@ -3877,7 +3872,12 @@
                 "type": "null"
               }
             ],
-            "title": "Note"
+            "title": "Comment"
+          },
+          "has_plus_one": {
+            "default": false,
+            "title": "Has Plus One",
+            "type": "boolean"
           },
           "status": {
             "$ref": "#/components/schemas/RSVPStatus"

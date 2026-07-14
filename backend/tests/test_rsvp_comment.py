@@ -33,10 +33,10 @@ def member_headers(member):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
-def _rsvp(api_client, headers, event, status, note=None):
+def _rsvp(api_client, headers, event, status, comment=None):
     payload = {"status": status}
-    if note is not None:
-        payload["note"] = note
+    if comment is not None:
+        payload["comment"] = comment
     return api_client.post(
         f"/api/community/events/{event.id}/rsvp/",
         payload,
@@ -46,8 +46,8 @@ def _rsvp(api_client, headers, event, status, note=None):
 
 
 @pytest.mark.django_db
-class TestRSVPNoteRouting:
-    def test_going_note_creates_comment(self, api_client, member_headers, member, rsvp_event):
+class TestRSVPCommentRouting:
+    def test_going_comment_creates_comment(self, api_client, member_headers, member, rsvp_event):
         resp = _rsvp(
             api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
         )
@@ -56,7 +56,7 @@ class TestRSVPNoteRouting:
         assert comments.count() == 1
         assert comments.first().body == "bringing snacks"
 
-    def test_maybe_note_creates_comment(self, api_client, member_headers, member, rsvp_event):
+    def test_maybe_comment_creates_comment(self, api_client, member_headers, member, rsvp_event):
         resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE, "might be late")
         assert resp.status_code == 200
         assert (
@@ -66,7 +66,7 @@ class TestRSVPNoteRouting:
             == 1
         )
 
-    def test_going_note_notifies_host(
+    def test_going_comment_notifies_host(
         self, api_client, member_headers, member, rsvp_event, test_user
     ):
         _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "yo")
@@ -77,7 +77,7 @@ class TestRSVPNoteRouting:
             == 1
         )
 
-    def test_cant_go_note_creates_no_comment_but_notifies_host(
+    def test_cant_go_comment_creates_no_comment_but_notifies_host(
         self, api_client, member_headers, member, rsvp_event, test_user
     ):
         resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.CANT_GO, "out of town")
@@ -89,7 +89,7 @@ class TestRSVPNoteRouting:
         assert notifs.count() == 1
         assert "out of town" in notifs.first().message
 
-    def test_no_note_creates_nothing(self, api_client, member_headers, member, rsvp_event):
+    def test_no_comment_creates_nothing(self, api_client, member_headers, member, rsvp_event):
         resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING)
         assert resp.status_code == 200
         assert not EventComment.objects.filter(event=rsvp_event, author=member).exists()
@@ -97,7 +97,7 @@ class TestRSVPNoteRouting:
             notification_type=NotificationType.RSVP_DECLINED_NOTE
         ).exists()
 
-    def test_empty_note_creates_nothing(self, api_client, member_headers, member, rsvp_event):
+    def test_empty_comment_creates_nothing(self, api_client, member_headers, member, rsvp_event):
         resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "   ")
         assert resp.status_code == 200
         assert not EventComment.objects.filter(event=rsvp_event, author=member).exists()
@@ -105,21 +105,23 @@ class TestRSVPNoteRouting:
     def test_status_only_edit_creates_no_new_comment(
         self, api_client, member_headers, member, rsvp_event
     ):
-        _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "first note")
+        _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "first comment")
         assert EventComment.objects.filter(event=rsvp_event, author=member).count() == 1
-        # Re-RSVP with no note key (an edit) — must not post another comment.
+        # Re-RSVP with no comment key (an edit) — must not post another comment.
         _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE)
         assert EventComment.objects.filter(event=rsvp_event, author=member).count() == 1
 
-    def test_repeated_notes_stop_creating_comments_past_the_note_rate_limit(
+    def test_repeated_comments_stop_past_the_comment_rate_limit(
         self, api_client, member_headers, member, rsvp_event
     ):
-        # 10 notes/min matches post_comment's own rate limit (issue: the RSVP
-        # endpoint's higher 30/min limit must not let notes bypass that budget).
+        # 10 comments/min matches post_comment's own rate limit (issue: the RSVP
+        # endpoint's higher 30/min limit must not let comments bypass that budget).
         for i in range(12):
-            resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, f"note {i}")
+            resp = _rsvp(
+                api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, f"comment {i}"
+            )
             # The RSVP status write itself must keep succeeding even once the
-            # note side effect is throttled — only the comment/notification stops.
+            # comment side effect is throttled — only the comment/notification stops.
             assert resp.status_code == 200
 
         assert EventComment.objects.filter(event=rsvp_event, author=member).count() <= 10

@@ -5,7 +5,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { RsvpStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
 
-import { RsvpNoteField } from './RsvpNoteField';
+import { RsvpCommentField } from './RsvpCommentField';
 
 type RsvpInputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 
@@ -17,7 +17,7 @@ const STATUS_LABELS: { status: RsvpInputStatus; label: string }[] = [
 
 interface ConfirmArgs {
   status: RsvpInputStatus;
-  note?: string;
+  comment?: string;
   hasPlusOne: boolean;
 }
 
@@ -45,16 +45,16 @@ export function RsvpBox({
   onClose,
 }: Props) {
   const [status, setStatus] = useState<RsvpInputStatus>(initialStatus);
-  const [note, setNote] = useState('');
+  const [comment, setComment] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(initialHasPlusOne);
 
-  const showNote = mode === 'create';
+  const showComment = mode === 'create';
   const showPlusOne = allowPlusOnes && status === RsvpStatus.Attending;
 
   function confirm() {
-    const trimmed = note.trim();
+    const trimmed = comment.trim();
     const args: ConfirmArgs = { status, hasPlusOne };
-    if (showNote && trimmed) args.note = trimmed;
+    if (showComment && trimmed) args.comment = trimmed;
     onConfirm(args);
   }
 
@@ -95,7 +95,7 @@ export function RsvpBox({
           </label>
         ) : null}
 
-        {showNote ? <RsvpNoteField value={note} onChange={setNote} /> : null}
+        {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
 
         <div className="flex items-center justify-between gap-2">
           {mode === 'edit' && onRemove ? (

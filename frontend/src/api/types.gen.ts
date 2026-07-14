@@ -3438,13 +3438,13 @@ export interface components {
         };
         /** RSVPIn */
         RSVPIn: {
+            /** Comment */
+            comment?: string | null;
             /**
              * Has Plus One
              * @default false
              */
             has_plus_one: boolean;
-            /** Note */
-            note?: string | null;
             status: components["schemas"]["RSVPStatus"];
         };
         /**

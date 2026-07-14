@@ -257,9 +257,9 @@ class EventOut(BaseModel):
 class RSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
-    # None = leave any existing note untouched (e.g. a status-only change);
-    # a string (empty included) explicitly sets/clears it.
-    note: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    # Not persisted on the RSVP — a non-empty value is a one-time post: a
+    # public EventComment (going/maybe) or a host-only notification (can't go).
+    comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
 
 class TextRecipientsOut(BaseModel):

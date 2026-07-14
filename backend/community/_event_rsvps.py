@@ -136,18 +136,18 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
-RSVP_NOTE_RATE = (10, 60)  # matches post_comment's 10/m — same underlying action
+RSVP_COMMENT_RATE = (10, 60)  # matches post_comment's 10/m — same underlying action
 
 
-def _rsvp_note_rate_limited(user) -> bool:
-    """True if this user has posted RSVP-note comments/notifications too often.
+def _rsvp_comment_rate_limited(user) -> bool:
+    """True if this user has posted RSVP comments/decline-notifications too often.
 
     A separate cache-backed counter from @rate_limit on upsert_rsvp: RSVP status
-    changes (no note) shouldn't count against the note-posting budget, and
-    exceeding it should silently skip the note rather than fail the RSVP write.
+    changes (no comment) shouldn't count against the comment-posting budget, and
+    exceeding it should silently skip the comment rather than fail the RSVP write.
     """
-    count, period = RSVP_NOTE_RATE
-    cache_key = f"rl:rsvp_note:{user.pk}"
+    count, period = RSVP_COMMENT_RATE
+    cache_key = f"rl:rsvp_comment:{user.pk}"
     current = cache.get(cache_key, 0)
     if current >= count:
         return True
@@ -155,23 +155,27 @@ def _rsvp_note_rate_limited(user) -> bool:
     return False
 
 
-def _notify_rsvp_note(event: Event, user, final_status: str, note: str | None) -> None:
-    """Post a decline note or event comment for a non-empty RSVP note.
+def _post_rsvp_comment(event: Event, user, final_status: str, comment: str | None) -> None:
+    """Post a non-empty RSVP comment: a public EventComment (going/maybe) or a
+    host-only decline notification (can't go) — never both, never persisted
+    on the RSVP itself.
 
     Called after the RSVP transaction commits — not while the Event row lock
     from select_for_update is held — since the comment/notification writes
     have no correctness dependency on that lock.
     """
-    cleaned_note = (note or "").strip()
-    if not cleaned_note:
+    cleaned_comment = (comment or "").strip()
+    if not cleaned_comment:
         return
-    if _rsvp_note_rate_limited(user):
+    if _rsvp_comment_rate_limited(user):
         return
     if final_status == RSVPStatus.CANT_GO:
-        notify_rsvp_declined_note(event=event, author=user, note=cleaned_note)
+        notify_rsvp_declined_note(event=event, author=user, note=cleaned_comment)
     else:
-        comment = EventComment.objects.create(event=event, author=user, body=cleaned_note[:500])
-        notify_event_comment(comment)
+        posted_comment = EventComment.objects.create(
+            event=event, author=user, body=cleaned_comment[:500]
+        )
+        notify_event_comment(posted_comment)
 
 
 def _apply_rsvp_in_transaction(
@@ -181,9 +185,9 @@ def _apply_rsvp_in_transaction(
 
     Returns (final_status, promoted_user_ids, event). promoted_user_ids is the
     list of users promoted off the waitlist by this change (empty unless a spot
-    freed). The returned event is for the caller to pass to _notify_rsvp_note
+    freed). The returned event is for the caller to pass to _post_rsvp_comment
     after the transaction commits, so that side effect isn't done under the row
-    lock — see _notify_rsvp_note's docstring.
+    lock — see _post_rsvp_comment's docstring.
 
     Raises ValidationException on failure.
     """
@@ -241,7 +245,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
             event_id, request.auth, payload.status, payload.has_plus_one
         )
 
-    _notify_rsvp_note(rsvp_event, request.auth, final_status, payload.note)
+    _post_rsvp_comment(rsvp_event, request.auth, final_status, payload.comment)
 
     audit_log(
         logging.INFO,

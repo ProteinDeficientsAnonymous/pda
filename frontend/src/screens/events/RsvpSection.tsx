@@ -57,14 +57,14 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
 
-  async function confirmRsvp(args: { status: InputStatus; note?: string; hasPlusOne: boolean }) {
+  async function confirmRsvp(args: { status: InputStatus; comment?: string; hasPlusOne: boolean }) {
     setError(null);
     try {
       await setRsvp.mutateAsync({
         eventId: event.id,
         status: args.status,
         hasPlusOne: args.hasPlusOne,
-        ...(args.note === undefined ? {} : { note: args.note }),
+        ...(args.comment === undefined ? {} : { comment: args.comment }),
       });
       setBox(null);
     } catch (err) {

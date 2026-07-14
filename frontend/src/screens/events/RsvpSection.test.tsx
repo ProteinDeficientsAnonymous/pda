@@ -27,10 +27,10 @@ vi.mock('./RsvpGuestList', () => ({
   RsvpGuestList: () => <div data-testid="guest-list" />,
 }));
 
-// Covered by RsvpNoteField.test.tsx — stubbed here so the RsvpBox's textarea
+// Covered by RsvpCommentField.test.tsx — stubbed here so the RsvpBox's textarea
 // isn't a factor in assertions that only care about the dialog/pills.
-vi.mock('./RsvpNoteField', () => ({
-  RsvpNoteField: () => <div data-testid="rsvp-note-field" />,
+vi.mock('./RsvpCommentField', () => ({
+  RsvpCommentField: () => <div data-testid="rsvp-comment-field" />,
 }));
 
 import { RsvpSection } from './RsvpSection';
