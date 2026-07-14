@@ -122,6 +122,12 @@ if os.environ.get("B2_KEY_ID"):
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Number of trusted reverse proxies in front of the app. Used to derive the
+# real client IP from X-Forwarded-For for rate limiting (config/ratelimit.py).
+# Railway adds exactly one hop. This is ONLY sound when the app is unreachable
+# except via the trusted proxy chain.
+TRUSTED_PROXY_COUNT = int(os.environ.get("TRUSTED_PROXY_COUNT", "1"))
+
 # HTTPS / security headers
 if IS_PRODUCTION:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

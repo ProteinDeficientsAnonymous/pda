@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import MagicLoginScreen from './MagicLoginScreen';
 
@@ -15,27 +16,14 @@ const magicLoginMock = vi.fn(async () => {
 });
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'u1',
-    phoneNumber: '+12125550001',
-    displayName: 'Alice',
+    firstName: 'Alice',
+    lastName: '',
+    fullName: 'Alice',
     email: 'alice@example.com',
-    bio: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 vi.mock('@/auth/store', () => ({
@@ -66,8 +54,8 @@ describe('MagicLoginScreen', () => {
     currentUser = null;
   });
 
-  it('routes a needsPasswordReset user (has displayName) to /new-password', async () => {
-    currentUser = makeUser({ needsPasswordReset: true, displayName: 'Alice' });
+  it('routes a needsPasswordReset user (has a name) to /new-password', async () => {
+    currentUser = makeUser({ needsPasswordReset: true, firstName: 'Alice', fullName: 'Alice' });
     renderAt('tok-1');
     expect(await screen.findByText('new password page')).toBeInTheDocument();
   });
@@ -75,7 +63,12 @@ describe('MagicLoginScreen', () => {
   it('routes a needsPasswordReset user with NO email to /onboarding (matches the gate)', async () => {
     // Regression: MagicLoginScreen used to send any named user to /new-password,
     // which the gate then bounced to /onboarding. Both must now agree.
-    currentUser = makeUser({ needsPasswordReset: true, displayName: 'Alice', email: '' });
+    currentUser = makeUser({
+      needsPasswordReset: true,
+      firstName: 'Alice',
+      fullName: 'Alice',
+      email: '',
+    });
     renderAt('tok-noemail');
     expect(await screen.findByText('onboarding page')).toBeInTheDocument();
   });
@@ -89,7 +82,8 @@ describe('MagicLoginScreen', () => {
   it('routes password setup before consent when both are pending', async () => {
     currentUser = makeUser({
       needsOnboarding: true,
-      displayName: '',
+      firstName: '',
+      fullName: '',
       needsGuidelinesConsent: true,
     });
     renderAt('tok-both');
@@ -102,8 +96,8 @@ describe('MagicLoginScreen', () => {
     expect(await screen.findByText('calendar page')).toBeInTheDocument();
   });
 
-  it('routes a first-time user (needsOnboarding, empty displayName) to /onboarding', async () => {
-    currentUser = makeUser({ needsOnboarding: true, displayName: '' });
+  it('routes a first-time user (needsOnboarding, empty name) to /onboarding', async () => {
+    currentUser = makeUser({ needsOnboarding: true, firstName: '', fullName: '' });
     renderAt('tok-3');
     expect(await screen.findByText('onboarding page')).toBeInTheDocument();
   });

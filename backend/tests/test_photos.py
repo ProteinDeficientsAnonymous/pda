@@ -37,7 +37,8 @@ def member(db):
     return User.objects.create_user(
         phone_number="+12025550201",
         password="testpass123",
-        display_name="Photo Tester",
+        first_name="Photo",
+        last_name="Tester",
     )
 
 
@@ -47,7 +48,7 @@ def manager(db):
     user = User.objects.create_user(
         phone_number="+12025550202",
         password="testpass123",
-        display_name="Manager",
+        first_name="Manager",
     )
     user.roles.add(role)
     return user
@@ -137,7 +138,11 @@ class TestEventPhoto:
             **_auth(member),
         )
         assert response.status_code == 200
-        assert response.json()["photo_url"] != ""
+        data = response.json()
+        assert data["photo_url"] != ""
+        assert data["photo_updated_at"] is not None
+        event.refresh_from_db()
+        assert event.photo_updated_at is not None
 
     def test_manager_can_upload(self, api_client, manager, event):
         photo = _make_test_image()
@@ -152,7 +157,7 @@ class TestEventPhoto:
         other = User.objects.create_user(
             phone_number="+12025550203",
             password="testpass123",
-            display_name="Rando",
+            first_name="Rando",
         )
         photo = _make_test_image()
         response = api_client.post(
@@ -193,7 +198,11 @@ class TestEventPhoto:
             **_auth(member),
         )
         assert response.status_code == 200
-        assert response.json()["photo_url"] == ""
+        body = response.json()
+        assert body["photo_url"] == ""
+        assert body["photo_updated_at"] is None
+        event.refresh_from_db()
+        assert event.photo_updated_at is None
 
     def test_photo_url_in_event_detail(self, api_client, member, event):
         photo = _make_test_image()

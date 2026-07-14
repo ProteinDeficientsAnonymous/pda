@@ -22,7 +22,8 @@ class TestNotifyRsvpDeclinedNote:
         decliner = User.objects.create_user(
             phone_number="+12025550808",
             password="pw",
-            display_name="Decliner",
+            first_name="Decliner",
+            last_name="",
         )
         event = self._event(test_user)
         notify_rsvp_declined_note(event=event, author=decliner, note="out of town, sorry!")
@@ -38,7 +39,7 @@ class TestNotifyRsvpDeclinedNote:
 
     def test_notifies_cohosts_excludes_author(self, test_user, db):
         cohost = User.objects.create_user(
-            phone_number="+12025550809", password="pw", display_name="Cohost"
+            phone_number="+12025550809", password="pw", first_name="Cohost", last_name=""
         )
         event = self._event(test_user)
         event.co_hosts.add(cohost)

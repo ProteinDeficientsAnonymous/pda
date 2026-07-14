@@ -12,6 +12,7 @@ class PageVisibility(models.TextChoices):
 class EventType(models.TextChoices):
     OFFICIAL = "official", "Official"
     COMMUNITY = "community", "Community"
+    CLUB = "club", "Club"
 
 
 class EventStatus(models.TextChoices):
@@ -38,6 +39,7 @@ class CoHostInviteStatus(models.TextChoices):
 
 class JoinRequestStatus(models.TextChoices):
     PENDING = "pending", "Pending"
+    TENTATIVE = "tentative", "Tentatively approved"
     APPROVED = "approved", "Approved"
     REJECTED = "rejected", "Rejected"
 

@@ -13,13 +13,16 @@ import { extractApiError } from '@/utils/errors';
 
 import { AuthLayout } from './AuthLayout';
 import { ConsentChecklist } from './ConsentChecklist';
+import { OnboardingProfileStep } from './OnboardingProfileStep';
 import { PasswordChecklist } from './PasswordChecklist';
 import { passwordRule } from './passwordRule';
 import { useConsentChecklist } from './useConsentChecklist';
 
 const schema = z.object({
-  displayName: z.string().min(1, 'name required').max(64),
+  firstName: z.string().min(1, 'first name required').max(64),
+  lastName: z.string().max(64).optional(),
   email: z.string().min(1, 'email required').pipe(z.email('not a valid email')),
+  pronouns: z.string().max(100).optional(),
   newPassword: passwordRule,
 });
 
@@ -27,8 +30,12 @@ type FormValues = z.infer<typeof schema>;
 
 export default function OnboardingScreen() {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+  const startProfileStep = useAuthStore((s) => s.startProfileStep);
+  const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
+  const profileStepActive = useAuthStore((s) => s.profileStepActive);
   // prefill name for legacy users approved before email was required
-  const existingDisplayName = useAuthStore((s) => s.user?.displayName ?? '');
+  const existingFirstName = useAuthStore((s) => s.user?.firstName ?? '');
+  const existingLastName = useAuthStore((s) => s.user?.lastName ?? '');
   // checkboxes render only for users with outstanding consent (admin-created accounts)
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
@@ -42,34 +49,65 @@ export default function OnboardingScreen() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { displayName: existingDisplayName, email: '', newPassword: '' },
+    defaultValues: {
+      firstName: existingFirstName,
+      lastName: existingLastName,
+      email: '',
+      pronouns: '',
+      newPassword: '',
+    },
   });
   const passwordValue = useWatch({ control, name: 'newPassword' });
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
     try {
+      const pronouns = values.pronouns?.trim();
       await completeOnboarding({
-        displayName: values.displayName,
+        firstName: values.firstName,
+        lastName: values.lastName ?? '',
         email: values.email,
+        ...(pronouns ? { pronouns } : {}),
         newPassword: values.newPassword,
         consentTypes: acceptedTypes,
       });
-      const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
-      void navigate(next, { replace: true });
+      startProfileStep();
     } catch (err) {
       setServerError(extractApiError(err, "couldn't finish onboarding — try again"));
     }
   }
 
+  if (profileStepActive) {
+    return (
+      <AuthLayout
+        title="make it yours ✨"
+        subtitle="add a photo and a few words so folks can put a face to your name — you can always do this later"
+      >
+        <OnboardingProfileStep
+          onDone={() => {
+            finishProfileStep();
+            const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
+            void navigate(next, { replace: true });
+          }}
+        />
+      </AuthLayout>
+    );
+  }
+
   return (
-    <AuthLayout title="welcome 🌱" subtitle="set your display name and a password">
+    <AuthLayout title="welcome 🌱" subtitle="set your name and a password">
       <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="flex flex-col gap-4">
         <TextField
-          label="display name"
-          autoComplete="name"
-          {...register('displayName')}
-          error={errors.displayName?.message}
+          label="first name"
+          autoComplete="given-name"
+          {...register('firstName')}
+          error={errors.firstName?.message}
+        />
+        <TextField
+          label="last name (optional)"
+          autoComplete="family-name"
+          {...register('lastName')}
+          error={errors.lastName?.message}
         />
         <TextField
           label="email"
@@ -77,6 +115,12 @@ export default function OnboardingScreen() {
           autoComplete="email"
           {...register('email')}
           error={errors.email?.message}
+        />
+        <TextField
+          label="pronouns (optional)"
+          placeholder="e.g. she/her, they/them"
+          {...register('pronouns')}
+          error={errors.pronouns?.message}
         />
         <PasswordChecklist value={passwordValue} />
         <PasswordField

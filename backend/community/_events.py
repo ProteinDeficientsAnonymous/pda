@@ -11,18 +11,18 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
 from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
-    _attending_headcount,
     _can_see_invite_only,
     _event_out,
+    _find_my_rsvp,
     _get_creator_name,
     _set_event_tags,
     _tags_out,
     _update_co_hosts,
-    _waitlisted_count,
 )
 from community._event_schemas import (
     EventIn,
@@ -34,6 +34,7 @@ from community._event_transitions import (
     _handle_status_update,
     _set_event_participants,
 )
+from community._rsvp_counts import _attending_headcount, _waitlisted_count
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
@@ -55,9 +56,39 @@ def _can_edit_event(user, event: Event) -> bool:
     return event.co_hosts.filter(pk=user.pk).exists()
 
 
-def _is_invalid_official_visibility(event_type: str, visibility: str) -> bool:
-    """Official events must have public visibility."""
-    return event_type == EventType.OFFICIAL and visibility != PageVisibility.PUBLIC
+_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
+
+# Event types that require an explicit permission to tag. Community events need
+# none. Maps type → the permission that gates it.
+_TYPE_TAG_PERMISSIONS = {
+    EventType.OFFICIAL: PermissionKey.TAG_OFFICIAL_EVENT,
+    EventType.CLUB: PermissionKey.TAG_CLUB_EVENT,
+}
+
+
+def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
+    """Public-only event types (official, club) must have public visibility."""
+    return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
+
+
+def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
+    """Raise 403 if the event type requires a tag permission the user lacks."""
+    required = _TYPE_TAG_PERMISSIONS.get(event_type)
+    if required is None or request.auth.has_permission(required):
+        return
+    details = {"endpoint": endpoint, "required_permission": required}
+    if event_id is not None:
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="event",
+            target_id=str(event_id),
+            details=details,
+        )
+    else:
+        audit_log(logging.WARNING, "permission_denied", request, details=details)
+    raise_validation(Code.Perm.DENIED, status_code=403, action=required)
 
 
 def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: bool = True) -> None:
@@ -74,24 +105,11 @@ def _validate_event_datetimes(start, end, datetime_tbd: bool, *, check_past: boo
 
 def _validate_update_payload(request, event: Event, event_id, updates: dict) -> None:
     """Validate PATCH payload fields. Raises ValidationException on failure."""
-    if updates.get("event_type") == EventType.OFFICIAL and not request.auth.has_permission(
-        PermissionKey.TAG_OFFICIAL_EVENT
-    ):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={
-                "endpoint": "update_event",
-                "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
-            },
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
+    if "event_type" in updates:
+        _enforce_type_tag_permission(request, updates["event_type"], "update_event", event_id)
     effective_type = updates.get("event_type", event.event_type)
     effective_visibility = updates.get("visibility", event.visibility)
-    if _is_invalid_official_visibility(effective_type, effective_visibility):
+    if _is_invalid_typed_visibility(effective_type, effective_visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
     # While a poll is active, the poll is the source of truth for when. Block
     # direct edits to start/end so the event time can't drift from the poll.
@@ -147,7 +165,7 @@ def _build_events_queryset(status: str, auth_user, is_authed):
         .filter(status=EventStatus.ACTIVE)
     )
     if not is_authed:
-        qs = qs.filter(Q(visibility=PageVisibility.PUBLIC) | Q(event_type=EventType.OFFICIAL))
+        qs = qs.filter(visibility=PageVisibility.PUBLIC)
     return qs
 
 
@@ -194,6 +212,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 event_type=e.event_type,
                 visibility=e.visibility,
                 photo_url=media_path(e.photo),
+                photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
                 whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
                 partiful_link=_members_only(e.partiful_link, "", is_authed),
                 other_link=_members_only(e.other_link, "", is_authed),
@@ -202,7 +221,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 cashapp_link=_members_only(e.cashapp_link, "", is_authed),
                 zelle_info=_members_only(e.zelle_info, "", is_authed),
                 created_by_id=str(e.created_by_id) if e.created_by_id else None,
-                created_by_name=_get_creator_name(e.created_by),
+                created_by_name=_get_creator_name(e.created_by, auth_user),
                 created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
                 co_host_photo_urls=[media_path(c.profile_photo) for c in e.co_hosts.all()],
                 datetime_tbd=e.datetime_tbd,
@@ -213,8 +232,9 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 waitlisted_count=_waitlisted_count(e),
                 invited_count=e.invited_users.count(),
                 comment_count=e.comment_count,
+                my_rsvp=_find_my_rsvp(e.rsvps.all(), auth_user),
                 co_host_ids=[str(c.id) for c in e.co_hosts.all()],
-                co_host_names=[c.display_name or c.phone_number for c in e.co_hosts.all()],
+                co_host_names=[visible_display_name(c, auth_user) for c in e.co_hosts.all()],
                 is_past=e.is_past,
                 status=e.status,
                 tags=_tags_out(e),
@@ -239,17 +259,15 @@ def _enforce_event_read_visibility(event: Event, auth_user) -> None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.is_draft and not _can_see_draft(event, auth_user):
         raise_validation(Code.Event.PERM_DENIED, status_code=403, action="view_draft_event")
-    if (
-        event.visibility == PageVisibility.MEMBERS_ONLY
-        and auth_user is None
-        and event.event_type != EventType.OFFICIAL
-    ):
+    if event.visibility == PageVisibility.MEMBERS_ONLY and auth_user is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if event.visibility == PageVisibility.INVITE_ONLY:
         co_host_ids = {str(c.id) for c in event.co_hosts.all()}
         invited_user_ids = {str(u.id) for u in event.invited_users.all()}
         if not _can_see_invite_only(auth_user, co_host_ids, invited_user_ids, event.created_by_id):
-            raise_validation(Code.Event.INVITE_ONLY, status_code=403)
+            raise_validation(
+                Code.Event.PERM_DENIED, status_code=403, action="view_invite_only_event"
+            )
 
 
 @router.get(
@@ -286,25 +304,14 @@ def get_event(request, event_id: UUID):
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/d")
 def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
-    # Official events require tag_official_event permission.
+    # Official/club events require their respective tag permission.
     # Subsequent draft saves use PATCH (no rate limit hit).
     if payload.status not in (EventStatus.ACTIVE, EventStatus.DRAFT):
         raise_validation(Code.Event.INVALID_CREATE_STATUS, field="status", status_code=400)
 
-    if payload.event_type == EventType.OFFICIAL:
-        if not request.auth.has_permission(PermissionKey.TAG_OFFICIAL_EVENT):
-            audit_log(
-                logging.WARNING,
-                "permission_denied",
-                request,
-                details={
-                    "endpoint": "create_event",
-                    "required_permission": PermissionKey.TAG_OFFICIAL_EVENT,
-                },
-            )
-            raise_validation(Code.Perm.DENIED, status_code=403, action="tag_official_event")
+    _enforce_type_tag_permission(request, payload.event_type, "create_event")
 
-    if _is_invalid_official_visibility(payload.event_type, payload.visibility):
+    if _is_invalid_typed_visibility(payload.event_type, payload.visibility):
         raise_validation(Code.Event.OFFICIAL_MUST_BE_PUBLIC, status_code=400)
 
     # Drafts can save without a start_datetime (see #357). But if a start IS
@@ -423,14 +430,13 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     new_status = updates.pop("status", None)
     notify_attendees = updates.pop("notify_attendees", False) or False
 
-    # Handle status transition first (may be the only change in the payload)
+    # Field edits before the transition so publish validates the corrected date.
+    _apply_field_updates(request, event, event_id, updates)
+
     if new_status is not None:
         early = _handle_status_update(request, event, new_status, notify_attendees)
         if early is not None:
             return early
-
-    # Field edits are allowed on active, cancelled, or draft events
-    _apply_field_updates(request, event, event_id, updates)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

@@ -1,6 +1,6 @@
 // Join-request API: fetch the dynamic question list + submit. The static
-// fields (display_name, phone_number) are NOT in the question list — the form
-// composes them with the server questions.
+// fields (first_name, last_name, phone_number) are NOT in the question list —
+// the form composes them with the server questions.
 //
 // The submit endpoint has these notable error shapes:
 //   400 { detail }                                   — validation (bad name, duplicate pending, etc.)
@@ -52,7 +52,8 @@ export function useJoinQuestions() {
 }
 
 export interface SubmitJoinRequestPayload {
-  displayName: string;
+  firstName: string;
+  lastName: string;
   phoneNumber: string;
   email: string;
   answers: Record<string, string>;
@@ -73,7 +74,8 @@ export function useSubmitJoinRequest() {
     mutationFn: async (payload: SubmitJoinRequestPayload) => {
       try {
         await apiClient.post('/api/community/join-request/', {
-          display_name: payload.displayName,
+          first_name: payload.firstName,
+          last_name: payload.lastName,
           phone_number: payload.phoneNumber,
           email: payload.email,
           answers: payload.answers,
@@ -121,10 +123,18 @@ export interface JoinRequestAnswer {
   answer: string;
 }
 
+export interface RsvpBreakdown {
+  attendedOfficial: number;
+  attendedClub: number;
+  upcomingOfficial: number;
+  upcomingClub: number;
+}
+
 export interface JoinRequestSummary {
   id: string;
-  displayName: string;
+  fullName: string;
   phoneNumber: string;
+  email: string;
   answers: JoinRequestAnswer[];
   submittedAt: string;
   status: JoinRequestStatus;
@@ -135,6 +145,7 @@ export interface JoinRequestSummary {
   rejectedAt: string | null;
   rejectedByName: string | null;
   onboardedAt: string | null;
+  rsvpBreakdown: RsvpBreakdown;
 }
 
 interface WireAnswer {
@@ -145,8 +156,9 @@ interface WireAnswer {
 
 interface WireJoinRequest {
   id: string;
-  display_name: string;
+  full_name: string;
   phone_number: string;
+  email?: string;
   answers: WireAnswer[];
   submitted_at: string;
   status: JoinRequestStatus;
@@ -157,13 +169,18 @@ interface WireJoinRequest {
   rejected_at?: string | null;
   rejected_by_name?: string | null;
   onboarded_at?: string | null;
+  attended_official_count?: number;
+  attended_club_count?: number;
+  upcoming_official_count?: number;
+  upcoming_club_count?: number;
 }
 
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
   return {
     id: w.id,
-    displayName: w.display_name,
+    fullName: w.full_name,
     phoneNumber: w.phone_number,
+    email: w.email ?? '',
     answers: w.answers.map((a) => ({
       questionId: a.question_id,
       label: a.label,
@@ -178,6 +195,12 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
     rejectedAt: w.rejected_at ?? null,
     rejectedByName: w.rejected_by_name ?? null,
     onboardedAt: w.onboarded_at ?? null,
+    rsvpBreakdown: {
+      attendedOfficial: w.attended_official_count ?? 0,
+      attendedClub: w.attended_club_count ?? 0,
+      upcomingOfficial: w.upcoming_official_count ?? 0,
+      upcomingClub: w.upcoming_club_count ?? 0,
+    },
   };
 }
 
@@ -281,7 +304,8 @@ export function useReorderJoinQuestions() {
 
 export interface JoinRequestDecision {
   id: string;
-  displayName: string;
+  fullName: string;
+  firstName: string;
   phoneNumber: string;
   status: JoinRequestStatus;
   /** Present only when the decision created a brand-new user. */
@@ -291,7 +315,8 @@ export interface JoinRequestDecision {
 
 interface WireDecision {
   id: string;
-  display_name: string;
+  first_name: string;
+  full_name: string;
   phone_number: string;
   status: JoinRequestStatus;
   magic_link_token: string | null;
@@ -311,7 +336,8 @@ export function useDecideJoinRequest() {
       );
       return {
         id: data.id,
-        displayName: data.display_name,
+        fullName: data.full_name,
+        firstName: data.first_name,
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
@@ -344,7 +370,8 @@ export function useResendMagicLink() {
       );
       return {
         id: data.id,
-        displayName: data.display_name,
+        fullName: data.full_name,
+        firstName: data.first_name,
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,

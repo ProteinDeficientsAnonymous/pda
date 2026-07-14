@@ -14,7 +14,7 @@ def manage_users_user(db):
     user = User.objects.create_user(
         phone_number="+12025550002",
         password="managerpass123",
-        display_name="Manager",
+        first_name="Manager",
     )
     role = Role.objects.create(
         name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES]
@@ -112,6 +112,18 @@ class TestRoleManagementAPI:
         assert response.status_code == 200
         assert PermissionKey.MANAGE_EVENTS in response.json()["permissions"]
 
+    def test_patch_role_with_corrupt_stored_permissions(self, api_client, manage_users_headers):
+        role = Role.objects.create(name="corrupt", permissions=[])
+        Role.objects.filter(pk=role.pk).update(permissions=42)
+        response = api_client.patch(
+            f"/api/auth/roles/{role.id}/",
+            {"permissions": [PermissionKey.MANAGE_EVENTS]},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["permissions"] == [PermissionKey.MANAGE_EVENTS]
+
     def test_patch_default_role_blocked(self, api_client, manage_users_headers):
         admin_role = Role.objects.get(name="admin")
         response = api_client.patch(
@@ -175,7 +187,8 @@ class TestNonMemberCannotHoldRole:
         # is_member=False overrides the conftest autouse default (is_member=True).
         return User.objects.create_user(
             phone_number="+12025559001",
-            display_name="Non Member",
+            first_name="Non",
+            last_name="Member",
             is_member=False,
         )
 

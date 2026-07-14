@@ -71,7 +71,7 @@ class TestSingleEventIcs:
         creator = User.objects.create_user(
             phone_number="+12025559999",
             password="testpass123",
-            display_name="Creator",
+            first_name="Creator",
         )
         event = Event.objects.create(
             title="Secret Invite Only",
@@ -82,14 +82,14 @@ class TestSingleEventIcs:
 
         resp = api_client.get(f"/api/community/events/{event.id}/ics/")
         # Matches the canonical get_event gate, which 403s invite-only for
-        # non-invited/anon callers (Code.Event.INVITE_ONLY).
+        # non-invited/anon callers (Code.Event.PERM_DENIED).
         assert resp.status_code == 403
 
     def test_members_only_non_official_event_hidden_from_anon(self, api_client, test_user):
         creator = User.objects.create_user(
             phone_number="+12025558888",
             password="testpass123",
-            display_name="Creator",
+            first_name="Creator",
         )
         event = Event.objects.create(
             title="Members Only Potluck",
@@ -129,7 +129,7 @@ class TestSingleEventIcs:
         creator = User.objects.create_user(
             phone_number="+12025557777",
             password="testpass123",
-            display_name="Creator",
+            first_name="Creator",
         )
         event = Event.objects.create(
             title="Unpublished Draft",

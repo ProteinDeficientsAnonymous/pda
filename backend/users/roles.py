@@ -29,10 +29,20 @@ class Role(models.Model):
 
     @property
     def effective_permissions(self) -> list[str]:
-        """Admin role implicitly grants every permission (see User.has_permission).
-        Return the current PermissionKey set so the UI reflects reality even if
-        the DB row was seeded before newer keys were added.
-        """
+        """Permission keys this role grants: all keys for the default admin role, else the stored keys coerced to a clean list[str] (legacy/corrupt rows may hold non-list or non-string values)."""
         if self.name == "admin" and self.is_default:
             return list(PermissionKey.values)
-        return list(self.permissions)
+        stored = self.permissions
+        if not isinstance(stored, list):
+            return []
+        return [p for p in stored if isinstance(p, str)]
+
+    @classmethod
+    def ids_with_permission(cls, permission: str) -> list[str]:
+        """Ids of roles granting ``permission``, honoring the admin-default rule.
+
+        Resolved in Python via ``effective_permissions`` rather than a
+        ``permissions__contains`` JSONField lookup, which is unsupported on
+        SQLite. Callers filter users with ``roles__id__in`` for a portable query.
+        """
+        return [str(r.id) for r in cls.objects.all() if permission in r.effective_permissions]

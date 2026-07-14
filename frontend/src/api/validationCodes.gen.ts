@@ -12,11 +12,9 @@ export const Code = {
     MaxAttendeesMustBeAtLeastOne: 'event.max_attendees_must_be_at_least_one',
     StartDatetimeMustBeFuture: 'event.start_datetime_must_be_future',
     EndBeforeStart: 'event.end_before_start',
-    AttendanceInvalidChoice: 'event.attendance_invalid_choice',
     OfficialMustBePublic: 'event.official_must_be_public',
     InvalidCreateStatus: 'event.invalid_create_status',
     DateLockedByPoll: 'event.date_locked_by_poll',
-    InviteOnly: 'event.invite_only',
     AuthRequired: 'event.auth_required',
     CancelledCannotBeEdited: 'event.cancelled_cannot_be_edited',
     PastCannotBeCancelled: 'event.past_cannot_be_cancelled',
@@ -35,6 +33,8 @@ export const Code = {
     AttendanceOpensLater: 'event.attendance_opens_later',
     AttendanceOnlyForGoingRsvps: 'event.attendance_only_for_going_rsvps',
     PermDenied: 'event.perm_denied',
+    BlastInvalidAudience: 'event.blast_invalid_audience',
+    BlastNoRecipients: 'event.blast_no_recipients',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -48,6 +48,11 @@ export const Code = {
     WinningOptionNotFound: 'poll.winning_option_not_found',
     MinTwoOptions: 'poll.min_two_options',
     InvalidAvailability: 'poll.invalid_availability',
+  },
+  Tag: {
+    NotFound: 'tag.not_found',
+    NameRequired: 'tag.name_required',
+    NameAlreadyExists: 'tag.name_already_exists',
   },
   Comment: {
     NotFound: 'comment.not_found',
@@ -206,11 +211,9 @@ export type ValidationCode =
   | 'event.max_attendees_must_be_at_least_one'
   | 'event.start_datetime_must_be_future'
   | 'event.end_before_start'
-  | 'event.attendance_invalid_choice'
   | 'event.official_must_be_public'
   | 'event.invalid_create_status'
   | 'event.date_locked_by_poll'
-  | 'event.invite_only'
   | 'event.auth_required'
   | 'event.cancelled_cannot_be_edited'
   | 'event.past_cannot_be_cancelled'
@@ -229,6 +232,8 @@ export type ValidationCode =
   | 'event.attendance_opens_later'
   | 'event.attendance_only_for_going_rsvps'
   | 'event.perm_denied'
+  | 'event.blast_invalid_audience'
+  | 'event.blast_no_recipients'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -240,6 +245,9 @@ export type ValidationCode =
   | 'poll.winning_option_not_found'
   | 'poll.min_two_options'
   | 'poll.invalid_availability'
+  | 'tag.not_found'
+  | 'tag.name_required'
+  | 'tag.name_already_exists'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
   | 'comment.invalid_emoji'
@@ -350,11 +358,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.max_attendees_must_be_at_least_one': [],
   'event.start_datetime_must_be_future': [],
   'event.end_before_start': [],
-  'event.attendance_invalid_choice': [],
   'event.official_must_be_public': [],
   'event.invalid_create_status': [],
   'event.date_locked_by_poll': [],
-  'event.invite_only': [],
   'event.auth_required': [],
   'event.cancelled_cannot_be_edited': [],
   'event.past_cannot_be_cancelled': [],
@@ -373,6 +379,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.attendance_opens_later': [],
   'event.attendance_only_for_going_rsvps': [],
   'event.perm_denied': ['action'],
+  'event.blast_invalid_audience': [],
+  'event.blast_no_recipients': [],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],
@@ -384,6 +392,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'poll.winning_option_not_found': [],
   'poll.min_two_options': [],
   'poll.invalid_availability': [],
+  'tag.not_found': [],
+  'tag.name_required': [],
+  'tag.name_already_exists': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],
   'comment.invalid_emoji': [],

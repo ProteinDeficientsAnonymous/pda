@@ -55,6 +55,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     eventType: EventType.Community,
     visibility: EventVisibility.Public,
     photoUrl: '',
+    photoUpdatedAt: null,
     tags: [],
     isPast: false,
     status: EventStatus.Active,

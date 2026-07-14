@@ -4,8 +4,23 @@
 -include .env
 export
 
+# Per-worktree SQLite dev DB (gitignored via *.db). Absolute path — recipes cd into
+# backend/, so a relative path would land in the wrong place. DATABASE_URL is set
+# inline on manage.py/uvicorn calls (not via sub-make) so it beats .env.
+SQLITE_DB := $(abspath $(CURDIR)/dev.db)
+SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
+
+# pytest-xdist worker count for the AGENT ci ladder (agent-test*). The interactive
+# `test` target keeps `-n auto` (one worker per core — a solo run should own the box).
+# The agent ladder instead honors PYTEST_XDIST_AUTO_NUM_WORKERS, defaulting to 3: when
+# several supervisor-dispatched sessions run CI at once, `-n auto` per session
+# oversubscribes the machine (N × cores test processes on `cores` cores). The skillet
+# supervisor exports this var; a bare local `make agent-test` also benefits from the
+# gentler default. `$$` defers expansion to the recipe shell so the env var is read.
+AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
+
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
@@ -28,6 +43,14 @@ help:
 	@echo "  make complexity       Run Python cognitive complexity check"
 	@echo "  make db-start         Start local PostgreSQL (Docker)"
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
+	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"
+	@echo "  make dev-db-reset     Delete and re-init the SQLite dev.db"
+	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-migrates + seeds)"
+	@echo "  make dev-sqlite       Run Django (SQLite) + Vite concurrently (no Docker)"
+	@echo "  make dev-pg-db-init   Create per-worktree Postgres DB + migrate + seed"
+	@echo "  make dev-pg-db-reset  Drop and re-init the per-worktree Postgres DB"
+	@echo "  make run-pg           Run Django against per-worktree Postgres (auto-migrates + seeds)"
+	@echo "  make dev-pg           Run Django (Postgres) + Vite with per-worktree DB isolation"
 	@echo ""
 	@echo "Frontend commands:"
 	@echo "  make frontend-install   pnpm install (frontend)"
@@ -115,10 +138,48 @@ seed:
 
 # Database
 db-start:
-	docker compose up -d db
+	docker compose -p pda up -d db
 
 db-stop:
-	docker compose down
+	docker compose -p pda down
+
+# Per-worktree SQLite dev DB (no Docker). Init logic: scripts/dev_sqlite_db.sh
+dev-db-ensure:
+	@./scripts/dev_sqlite_db.sh ensure "$(SQLITE_DB)"
+
+dev-db-init: dev-db-ensure
+
+dev-db-reset:
+	@rm -f "$(SQLITE_DB)" "$(SQLITE_DB).stamp"
+	@$(MAKE) dev-db-ensure
+
+# Run the backend against the per-worktree SQLite DB (auto-migrates + seeds).
+run-sqlite: dev-db-ensure
+	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+
+# Concurrent backend (SQLite) + Vite. Same as `make dev` but no Docker/Postgres.
+dev-sqlite: dev-db-ensure
+	DATABASE_URL="$(SQLITE_DATABASE_URL)" RUN_TARGET=run-sqlite ./dev.sh
+
+
+# Per-worktree Postgres on shared Docker — scripts/dev_pg_db.sh
+dev-pg-db-ensure:
+	@./scripts/dev_pg_db.sh ensure
+
+dev-pg-db-init: dev-pg-db-ensure
+
+dev-pg-db-reset:
+	@./scripts/dev_pg_db.sh drop
+	@$(MAKE) dev-pg-db-ensure
+
+run-pg: dev-pg-db-ensure
+	@url=$$(./scripts/dev_pg_db.sh url); \
+	cd backend && DATABASE_URL="$$url" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+
+dev-pg: dev-pg-db-ensure
+	@url=$$(./scripts/dev_pg_db.sh url); \
+	DATABASE_URL="$$url" RUN_TARGET=run-pg ./dev.sh
+
 
 # Frontend (Vite + React)
 frontend-install:
@@ -195,18 +256,18 @@ agent-check:
 
 agent-test:
 	cd backend && uv run python -m pytest tests/ \
-		-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings
+		-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings
 
 agent-test-since:
 	@affected=$$(uv run python "$(CURDIR)/scripts/list_affected_tests.py"); \
 	if [ "$$affected" = "__FULL__" ]; then \
 		cd backend && uv run python -m pytest tests/ \
-			-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings; \
+			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
 	elif [ -z "$$affected" ]; then \
 		echo "No affected backend tests inferred; skipping pytest."; \
 	else \
 		cd backend && uv run python -m pytest $$(echo "$$affected" | tr '\n' ' ') \
-			-o addopts="--strict-markers -n auto --tb=line --reuse-db" -q --disable-warnings; \
+			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
 	fi
 
 agent-typecheck:

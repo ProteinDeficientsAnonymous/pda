@@ -29,8 +29,14 @@
       },
       "ApproveJoinRequestOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
@@ -70,7 +76,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "status"
         ],
@@ -80,9 +85,7 @@
       "AttendanceIn": {
         "properties": {
           "attendance": {
-            "maxLength": 20,
-            "title": "Attendance",
-            "type": "string"
+            "$ref": "#/components/schemas/AttendanceStatus"
           }
         },
         "required": [
@@ -90,6 +93,29 @@
         ],
         "title": "AttendanceIn",
         "type": "object"
+      },
+      "AttendanceReportOut": {
+        "properties": {
+          "events": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventAttendanceRowOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "title": "AttendanceReportOut",
+        "type": "object"
+      },
+      "AttendanceStatus": {
+        "enum": [
+          "unknown",
+          "attended",
+          "no_show"
+        ],
+        "title": "AttendanceStatus",
+        "type": "string"
       },
       "BulkUserCreateIn": {
         "properties": {
@@ -608,6 +634,65 @@
         "title": "EditablePagePatchIn",
         "type": "object"
       },
+      "EmailBlastIn": {
+        "properties": {
+          "audience": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audience"
+          },
+          "message": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "subject": {
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "message"
+        ],
+        "title": "EmailBlastIn",
+        "type": "object"
+      },
+      "EmailBlastOut": {
+        "properties": {
+          "failed_count": {
+            "title": "Failed Count",
+            "type": "integer"
+          },
+          "sent_count": {
+            "title": "Sent Count",
+            "type": "integer"
+          },
+          "skipped_no_email_count": {
+            "title": "Skipped No Email Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sent_count",
+          "skipped_no_email_count",
+          "failed_count"
+        ],
+        "title": "EmailBlastOut",
+        "type": "object"
+      },
       "ErrorOut": {
         "properties": {
           "detail": {
@@ -682,6 +767,52 @@
           "detail"
         ],
         "title": "ErrorReportOut",
+        "type": "object"
+      },
+      "EventAttendanceRowOut": {
+        "description": "One event's attendance summary for the admin attendance report.",
+        "properties": {
+          "attended_count": {
+            "default": 0,
+            "title": "Attended Count",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "going_count": {
+            "default": 0,
+            "title": "Going Count",
+            "type": "integer"
+          },
+          "no_show_count": {
+            "default": 0,
+            "title": "No Show Count",
+            "type": "integer"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title"
+        ],
+        "title": "EventAttendanceRowOut",
         "type": "object"
       },
       "EventCommentListOut": {
@@ -1266,6 +1397,17 @@
             ],
             "title": "Max Attendees"
           },
+          "my_rsvp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Rsvp"
+          },
           "other_link": {
             "default": "",
             "title": "Other Link",
@@ -1275,6 +1417,17 @@
             "default": "",
             "title": "Partiful Link",
             "type": "string"
+          },
+          "photo_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Updated At"
           },
           "photo_url": {
             "default": "",
@@ -1607,6 +1760,17 @@
             },
             "title": "Pending Cohost Invites",
             "type": "array"
+          },
+          "photo_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Updated At"
           },
           "photo_url": {
             "default": "",
@@ -2693,20 +2857,27 @@
             "title": "Answers",
             "type": "object"
           },
-          "display_name": {
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "format": "email",
             "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "First Name",
             "type": "string"
           },
           "guidelines_consent": {
             "default": false,
             "title": "Guidelines Consent",
             "type": "boolean"
+          },
+          "last_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Last Name",
+            "type": "string"
           },
           "phone_number": {
             "maxLength": 20,
@@ -2726,7 +2897,6 @@
           }
         },
         "required": [
-          "display_name",
           "phone_number",
           "email"
         ],
@@ -2766,17 +2936,38 @@
             ],
             "title": "Approved By Name"
           },
-          "attached_user_official_rsvp_count": {
+          "attended_club_count": {
             "default": 0,
-            "title": "Attached User Official Rsvp Count",
+            "title": "Attended Club Count",
             "type": "integer"
           },
-          "display_name": {
-            "title": "Display Name",
+          "attended_official_count": {
+            "default": 0,
+            "title": "Attended Official Count",
+            "type": "integer"
+          },
+          "email": {
+            "default": "",
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "onboarded_at": {
@@ -2832,6 +3023,16 @@
             "title": "Submitted At",
             "type": "string"
           },
+          "upcoming_club_count": {
+            "default": 0,
+            "title": "Upcoming Club Count",
+            "type": "integer"
+          },
+          "upcoming_official_count": {
+            "default": 0,
+            "title": "Upcoming Official Count",
+            "type": "integer"
+          },
           "user_id": {
             "anyOf": [
               {
@@ -2846,7 +3047,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "submitted_at",
           "status"
@@ -2915,6 +3115,18 @@
             ],
             "title": "Bio"
           },
+          "birthday": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
           "calendar_feed_scope": {
             "anyOf": [
               {
@@ -2930,18 +3142,6 @@
             ],
             "title": "Calendar Feed Scope"
           },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -2954,6 +3154,41 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "hide_last_name": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hide Last Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
           "needs_onboarding": {
             "anyOf": [
               {
@@ -2964,6 +3199,30 @@
               }
             ],
             "title": "Needs Onboarding"
+          },
+          "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          },
+          "pronouns": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pronouns"
           },
           "show_email": {
             "anyOf": [
@@ -3008,17 +3267,28 @@
       },
       "MemberDirectoryOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "default": "",
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -3033,8 +3303,7 @@
           }
         },
         "required": [
-          "id",
-          "display_name"
+          "id"
         ],
         "title": "MemberDirectoryOut",
         "type": "object"
@@ -3046,23 +3315,50 @@
             "title": "Bio",
             "type": "string"
           },
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
+          "birthday": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
           },
           "email": {
             "default": "",
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "login_link_requested": {
             "default": false,
             "title": "Login Link Requested",
             "type": "boolean"
+          },
+          "nickname": {
+            "default": "",
+            "title": "Nickname",
+            "type": "string"
           },
           "phone_number": {
             "title": "Phone Number",
@@ -3072,11 +3368,15 @@
             "default": "",
             "title": "Profile Photo Url",
             "type": "string"
+          },
+          "pronouns": {
+            "default": "",
+            "title": "Pronouns",
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "MemberProfileOut",
@@ -3149,18 +3449,6 @@
             "title": "Consent Types",
             "type": "array"
           },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -3173,10 +3461,46 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
           "new_password": {
             "maxLength": 128,
             "title": "New Password",
             "type": "string"
+          },
+          "pronouns": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pronouns"
           }
         },
         "required": [
@@ -3316,14 +3640,20 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "maxLength": 64,
+            "title": "First Name",
+            "type": "string"
+          },
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
             "type": "boolean"
           },
-          "name": {
+          "last_name": {
+            "default": "",
             "maxLength": 64,
-            "title": "Name",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -3344,12 +3674,95 @@
           }
         },
         "required": [
-          "name",
+          "first_name",
           "email",
           "phone_number",
           "status"
         ],
         "title": "PublicRsvpIn",
+        "type": "object"
+      },
+      "PublicRsvpManageIn": {
+        "properties": {
+          "has_plus_one": {
+            "default": false,
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "PublicRsvpManageIn",
+        "type": "object"
+      },
+      "PublicRsvpManageItemOut": {
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/EventOut"
+          },
+          "has_plus_one": {
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event",
+          "status",
+          "has_plus_one"
+        ],
+        "title": "PublicRsvpManageItemOut",
+        "type": "object"
+      },
+      "PublicRsvpManageOut": {
+        "properties": {
+          "rsvps": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRsvpManageItemOut"
+            },
+            "title": "Rsvps",
+            "type": "array"
+          },
+          "user": {
+            "$ref": "#/components/schemas/PublicRsvpManageUserOut"
+          }
+        },
+        "required": [
+          "user",
+          "rsvps"
+        ],
+        "title": "PublicRsvpManageOut",
+        "type": "object"
+      },
+      "PublicRsvpManageUserOut": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "email",
+          "phone_number"
+        ],
+        "title": "PublicRsvpManageUserOut",
         "type": "object"
       },
       "PublicRsvpOut": {
@@ -3392,6 +3805,18 @@
             "default": "unknown",
             "title": "Attendance",
             "type": "string"
+          },
+          "checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked In At"
           },
           "has_plus_one": {
             "default": false,
@@ -3455,9 +3880,7 @@
             "title": "Note"
           },
           "status": {
-            "maxLength": 20,
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/RSVPStatus"
           }
         },
         "required": [
@@ -3465,6 +3888,16 @@
         ],
         "title": "RSVPIn",
         "type": "object"
+      },
+      "RSVPStatus": {
+        "enum": [
+          "attending",
+          "maybe",
+          "cant_go",
+          "waitlisted"
+        ],
+        "title": "RSVPStatus",
+        "type": "string"
       },
       "ReactionToggleIn": {
         "properties": {
@@ -3525,6 +3958,45 @@
           "delivery"
         ],
         "title": "RequestLoginLinkOut",
+        "type": "object"
+      },
+      "ResendManageLinkIn": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "phone_number": {
+            "maxLength": 20,
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "website": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Website",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "phone_number"
+        ],
+        "title": "ResendManageLinkIn",
+        "type": "object"
+      },
+      "ResendManageLinkOut": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ResendManageLinkOut",
         "type": "object"
       },
       "ResetPasswordOut": {
@@ -3633,6 +4105,19 @@
           }
         },
         "title": "RolePatchIn",
+        "type": "object"
+      },
+      "SseTicketOut": {
+        "properties": {
+          "ticket": {
+            "title": "Ticket",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket"
+        ],
+        "title": "SseTicketOut",
         "type": "object"
       },
       "SurveyAnswersIn": {
@@ -4110,6 +4595,21 @@
         "title": "SurveyResponseOut",
         "type": "object"
       },
+      "TagIn": {
+        "properties": {
+          "name": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TagIn",
+        "type": "object"
+      },
       "TagOut": {
         "properties": {
           "id": {
@@ -4207,12 +4707,6 @@
       },
       "UserCreateIn": {
         "properties": {
-          "display_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "anyOf": [
               {
@@ -4224,6 +4718,18 @@
               }
             ],
             "title": "Email"
+          },
+          "first_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Last Name",
+            "type": "string"
           },
           "phone_number": {
             "maxLength": 20,
@@ -4250,12 +4756,23 @@
       },
       "UserCreateOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "magic_link_token": {
@@ -4270,7 +4787,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "magic_link_token"
         ],
         "title": "UserCreateOut",
@@ -4283,13 +4799,20 @@
             "title": "Bio",
             "type": "string"
           },
+          "birthday": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
           "calendar_feed_scope": {
             "default": "all",
             "title": "Calendar Feed Scope",
-            "type": "string"
-          },
-          "display_name": {
-            "title": "Display Name",
             "type": "string"
           },
           "email": {
@@ -4297,9 +4820,29 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "hide_last_name": {
+            "default": false,
+            "title": "Hide Last Name",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
           },
           "is_paused": {
             "default": false,
@@ -4310,6 +4853,23 @@
             "default": false,
             "title": "Is Superuser",
             "type": "boolean"
+          },
+          "last_attended": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attended"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
+            "type": "string"
           },
           "login_link_requested": {
             "default": false,
@@ -4336,6 +4896,11 @@
             "title": "Needs Sms Consent",
             "type": "boolean"
           },
+          "nickname": {
+            "default": "",
+            "title": "Nickname",
+            "type": "string"
+          },
           "phone_number": {
             "title": "Phone Number",
             "type": "string"
@@ -4354,6 +4919,11 @@
           "profile_photo_url": {
             "default": "",
             "title": "Profile Photo Url",
+            "type": "string"
+          },
+          "pronouns": {
+            "default": "",
+            "title": "Pronouns",
             "type": "string"
           },
           "roles": {
@@ -4382,7 +4952,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "roles"
         ],
         "title": "UserOut",
@@ -4390,18 +4959,6 @@
       },
       "UserPatchIn": {
         "properties": {
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -4414,6 +4971,18 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
           "is_paused": {
             "anyOf": [
               {
@@ -4424,6 +4993,18 @@
               }
             ],
             "title": "Is Paused"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "phone_number": {
             "anyOf": [
@@ -4459,12 +5040,23 @@
       },
       "UserSearchOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -4474,7 +5066,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "UserSearchOut",
@@ -4891,6 +5482,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "summary": "Login",
@@ -4924,7 +5525,7 @@
     },
     "/api/auth/magic-login/{token}/": {
       "get": {
-        "operationId": "users__auth_magic_login",
+        "operationId": "users__magic_login_magic_login",
         "parameters": [
           {
             "in": "path",
@@ -4966,6 +5567,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "summary": "Magic Login",
@@ -5425,7 +6036,18 @@
     "/api/auth/users/": {
       "get": {
         "operationId": "users__management_list_users",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_non_members",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Non Members",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -5466,7 +6088,7 @@
     "/api/auth/users/directory/": {
       "get": {
         "description": "Authed-only member directory. Respects each user's show_phone/show_email flags.",
-        "operationId": "users__auth_list_member_directory",
+        "operationId": "users__members_list_member_directory",
         "parameters": [],
         "responses": {
           "200": {
@@ -5741,7 +6363,7 @@
     },
     "/api/auth/users/{user_id}/profile/": {
       "get": {
-        "operationId": "users__auth_get_member_profile",
+        "operationId": "users__members_get_member_profile",
         "parameters": [
           {
             "in": "path",
@@ -6734,6 +7356,122 @@
         "tags": [
           "community"
         ]
+      },
+      "post": {
+        "operationId": "community__event_tags_create_event_tag",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Event Tag",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-tags/{tag_id}/": {
+      "delete": {
+        "operationId": "community__event_tags_delete_event_tag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tag_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tag Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Event Tag",
+        "tags": [
+          "community"
+        ]
       }
     },
     "/api/community/events/": {
@@ -6848,6 +7586,44 @@
           }
         ],
         "summary": "Create Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-report/": {
+      "get": {
+        "description": "Per-event attendance summary, newest first, for events with any mark.",
+        "operationId": "community__attendance_report_attendance_report",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceReportOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Attendance Report",
         "tags": [
           "community"
         ]
@@ -7633,6 +8409,95 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/email-blast/": {
+      "post": {
+        "description": "Email everyone who RSVP'd to this event in the chosen audience. Host/co-host only.",
+        "operationId": "community__event_blasts_send_email_blast",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailBlastIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailBlastOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Send Email Blast",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/flag/": {
       "post": {
         "operationId": "community__event_flags_flag_event",
@@ -8277,7 +9142,7 @@
     },
     "/api/community/events/{event_id}/poll/options/": {
       "post": {
-        "operationId": "community__polls_add_poll_option",
+        "operationId": "community__poll_options_add_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -8365,7 +9230,7 @@
     },
     "/api/community/events/{event_id}/poll/options/{option_id}/": {
       "delete": {
-        "operationId": "community__polls_delete_poll_option",
+        "operationId": "community__poll_options_delete_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -8451,7 +9316,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__polls_update_poll_option",
+        "operationId": "community__poll_options_update_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -8683,6 +9548,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "security": [
@@ -10009,7 +10884,7 @@
     },
     "/api/community/public/events/{event_id}/rsvp/": {
       "post": {
-        "operationId": "community__public_rsvp_submit_public_rsvp",
+        "operationId": "community__public_rsvp_submit_submit_public_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -10084,6 +10959,237 @@
           }
         },
         "summary": "Submit Public Rsvp",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/my-rsvps/": {
+      "get": {
+        "operationId": "community__public_rsvp_manage_list_my_rsvps",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRsvpManageOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "List My Rsvps",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/my-rsvps/resend/": {
+      "post": {
+        "description": "Public recovery path: re-send a non-member's manage-rsvp link by phone + email.\n\nHoneypot trips, bad phones, unknown contacts, and member contacts all\nresolve to the same neutral 200 body; only a matching non-member with an\nemail on file is actually sent a link. The response body never reveals\nwhether an account exists \u2014 the one residual signal is that the match+email\npath sends synchronously, so it's marginally slower; the 3/h IP rate limit\nkeeps that timing side channel impractical to exploit.",
+        "operationId": "community__public_rsvp_resend_resend_manage_link",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendManageLinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResendManageLinkOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Resend Manage Link",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/my-rsvps/{event_id}/": {
+      "delete": {
+        "operationId": "community__public_rsvp_manage_delete_my_rsvp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Delete My Rsvp",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community__public_rsvp_manage_update_my_rsvp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicRsvpManageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRsvpOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Update My Rsvp",
         "tags": [
           "community"
         ]
@@ -11211,6 +12317,44 @@
           }
         ],
         "summary": "Mark All Read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/notifications/sse-ticket/": {
+      "post": {
+        "description": "Mint a short-lived single-use ticket for opening the SSE stream.\n\nLets the client open the stream with ?ticket= instead of the JWT (EventSource\ncan't send an auth header).",
+        "operationId": "notifications_api_create_sse_ticket",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SseTicketOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Sse Ticket",
         "tags": [
           "notifications"
         ]

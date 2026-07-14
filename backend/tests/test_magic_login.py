@@ -11,6 +11,16 @@ from users.models import MagicLoginToken, User
 from tests._asserts import assert_error_code
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    # magic-login is rate-limited (5/m keyed on client IP); isolate counts.
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.mark.django_db
 class TestMagicLogin:
     def test_magic_login_valid_returns_tokens(self, api_client, test_user):
@@ -57,7 +67,7 @@ class TestMagicLogin:
     def test_magic_login_cross_user_blocked(self, api_client, test_user):
         """A logged-in user clicking another user's magic link must be rejected."""
         other = User.objects.create_user(
-            phone_number="+12025550202", password="otherpass123", display_name="other"
+            phone_number="+12025550202", password="otherpass123", first_name="other"
         )
         magic = MagicLoginToken.create_for_user(other)
         headers = {"HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(test_user).access_token}"}  # type: ignore
@@ -97,3 +107,44 @@ class TestMagicLogin:
         test_user.refresh_from_db()
         assert test_user.needs_password_reset is False
         assert test_user.has_usable_password() is True
+
+    def test_replay_after_consume_is_rejected(self, api_client, test_user):
+        """A second consume of an already-consumed token must fail (TOCTOU replay
+        guard: fetch + used-check + mark-used run atomically under a row lock)."""
+        from users.models import MagicLoginToken
+
+        magic = MagicLoginToken.create_for_user(test_user)
+        first = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert first.status_code == 200
+        second = api_client.get(f"/api/auth/magic-login/{magic.token}/")
+        assert second.status_code == 400
+        assert_error_code(second, Code.Auth.MAGIC_LINK_ALREADY_USED)
+
+    def test_magic_login_rate_limited(self, api_client, test_user):
+        from django.core.cache import cache
+
+        cache.clear()
+        # First 5 calls pass the limiter (invalid tokens → 400, but not 429).
+        for _ in range(5):
+            resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
+            assert resp.status_code == 400
+        resp = api_client.get("/api/auth/magic-login/00000000-0000-0000-0000-000000000000/")
+        assert resp.status_code == 429
+        assert resp.json()["detail"][0]["code"] == "rate.limited"
+
+    def test_rate_limit_survives_spoofed_xff(self, api_client, settings):
+        from django.core.cache import cache
+
+        cache.clear()
+        # Railway puts exactly one trusted proxy in front of the app.
+        settings.TRUSTED_PROXY_COUNT = 1
+        url = "/api/auth/magic-login/00000000-0000-0000-0000-000000000000/"
+        # Attacker rotates the spoofed leftmost XFF on every request but always
+        # reaches us through one real proxy (rightmost hop). The limiter must
+        # still bucket them together and trip at the 6th attempt.
+        for i in range(5):
+            resp = api_client.get(url, HTTP_X_FORWARDED_FOR=f"9.9.9.{i}, 198.51.100.7")
+            assert resp.status_code == 400
+        resp = api_client.get(url, HTTP_X_FORWARDED_FOR="123.45.67.89, 198.51.100.7")
+        assert resp.status_code == 429
+        assert resp.json()["detail"][0]["code"] == "rate.limited"

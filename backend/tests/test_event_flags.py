@@ -25,7 +25,7 @@ def _make_user(phone: str, name: str = "Member") -> User:
     return User.objects.create_user(
         phone_number=phone,
         password="testpass123",
-        display_name=name,
+        first_name=name,
     )
 
 

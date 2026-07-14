@@ -22,7 +22,8 @@ def admin_user(db):
     user = User.objects.create_superuser(
         phone_number="+12025550001",
         password="adminpass123",
-        display_name="Admin User",
+        first_name="Admin",
+        last_name="User",
     )
     return user
 
@@ -39,7 +40,8 @@ def manage_users_user(db):
     user = User.objects.create_user(
         phone_number="+12025550002",
         password="managerpass123",
-        display_name="Manager",
+        first_name="Manager",
+        last_name="",
     )
     role = Role.objects.create(
         name="manager", permissions=[PermissionKey.MANAGE_USERS, PermissionKey.MANAGE_ROLES]
@@ -93,9 +95,9 @@ class TestAuth:
         assert response.status_code == 200
         data = response.json()
         assert data["phone_number"] == "+12025550101"
-        assert data["display_name"] == "Test Member"
-        assert "first_name" not in data
-        assert "last_name" not in data
+        assert data["full_name"] == "Test Member"
+        assert data["first_name"] == "Test"
+        assert data["last_name"] == "Member"
         assert "roles" in data
 
     def test_me_unauthenticated(self, api_client):
@@ -140,6 +142,25 @@ class TestRolesAndPermissions:
         user = User.objects.prefetch_related("roles").get(pk=test_user.pk)
         assert not user.has_permission(PermissionKey.MANAGE_USERS)
 
+    @pytest.mark.parametrize("bad_value", ["manage_events", {"manage_events": True}, 42])
+    def test_corrupt_permissions_shape_grants_no_permissions(self, test_user, bad_value):
+        role = Role.objects.get(name="member")
+        Role.objects.filter(pk=role.pk).update(permissions=bad_value)
+        role.refresh_from_db()
+        test_user.roles.add(role)
+        assert role.effective_permissions == []
+        assert not test_user.has_permission(PermissionKey.MANAGE_EVENTS)
+
+    def test_corrupt_permissions_filters_non_string_entries(self, test_user):
+        role = Role.objects.get(name="member")
+        Role.objects.filter(pk=role.pk).update(
+            permissions=[PermissionKey.MANAGE_EVENTS, None, 7, {"x": 1}]
+        )
+        role.refresh_from_db()
+        test_user.roles.add(role)
+        assert role.effective_permissions == [PermissionKey.MANAGE_EVENTS]
+        assert test_user.has_permission(PermissionKey.MANAGE_EVENTS)
+
 
 # ---------------------------------------------------------------------------
 # User management API (#3)
@@ -151,7 +172,7 @@ class TestUserManagementAPI:
     def test_create_user_requires_permission(self, api_client, auth_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550999"},
+            {"phone_number": "+12025550999", "first_name": "Denied"},
             content_type="application/json",
             **auth_headers,
         )
@@ -160,7 +181,7 @@ class TestUserManagementAPI:
     def test_create_user_success(self, api_client, admin_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025551234", "display_name": "New Member"},
+            {"phone_number": "+12025551234", "first_name": "New", "last_name": "Member"},
             content_type="application/json",
             **admin_headers,
         )
@@ -173,7 +194,7 @@ class TestUserManagementAPI:
     def test_create_user_duplicate_phone(self, api_client, admin_headers, test_user):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550101"},
+            {"phone_number": "+12025550101", "first_name": "Dupe"},
             content_type="application/json",
             **admin_headers,
         )
@@ -183,7 +204,7 @@ class TestUserManagementAPI:
     def test_create_user_assigns_member_role_by_default(self, api_client, admin_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12125551234"},
+            {"phone_number": "+12125551234", "first_name": "Defaultrole"},
             content_type="application/json",
             **admin_headers,
         )
@@ -203,12 +224,12 @@ class TestUserManagementAPI:
     def test_update_user(self, api_client, admin_headers, test_user):
         response = api_client.patch(
             f"/api/auth/users/{test_user.id}/",
-            {"display_name": "Updated Name"},
+            {"first_name": "Updated", "last_name": "Name"},
             content_type="application/json",
             **admin_headers,
         )
         assert response.status_code == 200
-        assert response.json()["display_name"] == "Updated Name"
+        assert response.json()["full_name"] == "Updated Name"
 
     def test_delete_user_cannot_delete_self(self, api_client, admin_headers, admin_user):
         response = api_client.delete(
@@ -272,7 +293,7 @@ class TestCreateUserWithRole:
     def test_creates_user_with_default_member_role(self):
         Role.objects.get_or_create(name="member", defaults={"is_default": True})
         user, magic_token = _create_user_with_role(
-            "+12025559999", "Test User", "t@e.com", None, requesting_user=self._requester()
+            "+12025559999", "Test", "User", "t@e.com", None, requesting_user=self._requester()
         )
         assert user.phone_number == "+12025559999"
         assert len(magic_token) == 36  # UUID format
@@ -282,7 +303,8 @@ class TestCreateUserWithRole:
         role = Role.objects.create(name="custom_role")
         user, _ = _create_user_with_role(
             "+12025558888",
-            "Custom User",
+            "Custom",
+            "User",
             "c@e.com",
             str(role.pk),
             requesting_user=self._requester(),
@@ -293,14 +315,14 @@ class TestCreateUserWithRole:
         User.objects.create_user(phone_number="+12025557777", password="pass123")
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
-                "+12025557777", "Dup", None, None, requesting_user=self._requester()
+                "+12025557777", "Dup", "", None, None, requesting_user=self._requester()
             )
         assert exc_info.value.code == Code.Phone.ALREADY_EXISTS
 
     def test_raises_on_invalid_phone(self):
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
-                "not-a-phone", "Bad Phone", None, None, requesting_user=self._requester()
+                "not-a-phone", "Bad", "Phone", None, None, requesting_user=self._requester()
             )
         assert exc_info.value.code == Code.Phone.INVALID
 
@@ -308,7 +330,8 @@ class TestCreateUserWithRole:
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
                 "+12025556666",
-                "Bad Role User",
+                "Bad Role",
+                "User",
                 "b@e.com",
                 "00000000-0000-0000-0000-000000000000",
                 requesting_user=self._requester(),
@@ -322,7 +345,8 @@ class TestCreateUserWithRole:
         with pytest.raises(ValidationException) as exc_info:
             _create_user_with_role(
                 "+12025554444",
-                "Sneaky Admin",
+                "Sneaky",
+                "Admin",
                 None,
                 str(admin_role.pk),
                 requesting_user=non_admin,
@@ -336,7 +360,12 @@ class TestCreateUserWithRole:
         requester = self._requester()
         requester.roles.add(admin_role)
         user, _ = _create_user_with_role(
-            "+12025553333", "New Admin", None, str(admin_role.pk), requesting_user=requester
+            "+12025553333",
+            "New",
+            "Admin",
+            None,
+            str(admin_role.pk),
+            requesting_user=requester,
         )
         assert user.roles.filter(pk=admin_role.pk).exists()
 

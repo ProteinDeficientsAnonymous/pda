@@ -12,7 +12,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
+import { type Event, RsvpServerStatus, RsvpStatus, spotsLeft } from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
 import { RsvpGuestList } from './RsvpGuestList';
@@ -29,11 +29,6 @@ type InputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 function asInputStatus(status: string | null): InputStatus | null {
   const match = Object.values(RsvpStatus).find((s) => s === status);
   return match ?? null;
-}
-
-function spotsLeft(event: Event): number | null {
-  if (event.maxAttendees === null) return null;
-  return Math.max(0, event.maxAttendees - event.attendingCount);
 }
 
 function statusLine(status: InputStatus): string {
@@ -85,17 +80,21 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     }
   }
 
+  async function leaveWaitlist() {
+    setError(null);
+    try {
+      await removeRsvp.mutateAsync(event.id);
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
   const busy = setRsvp.isPending || removeRsvp.isPending;
 
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {onWaitlist ? (
-        <WaitlistView
-          onLeave={() => {
-            void removeRsvp.mutateAsync(event.id);
-          }}
-          busy={busy}
-        />
+        <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
       ) : (
         <RsvpControls
           myInputStatus={myInputStatus}

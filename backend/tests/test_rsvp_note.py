@@ -26,7 +26,7 @@ def rsvp_event(db, test_user):
 @pytest.fixture
 def member(db):
     return User.objects.create_user(
-        phone_number="+12025550302", password="pw", display_name="Member"
+        phone_number="+12025550302", password="pw", first_name="Member", last_name=""
     )
 
 

@@ -34,24 +34,44 @@ function fitToMaxSize(w: number, h: number, maxSize: number): { width: number; h
   return { width: Math.round(w * scale), height: Math.round(h * scale) };
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+// iOS Safari can leave Image.onload / canvas.toBlob callbacks pending forever; bound them (issue 580).
+const IMAGE_OP_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve(img);
-    };
-    img.onerror = () => {
-      reject(new Error('failed to load image'));
-    };
-    img.src = src;
+    const timer = setTimeout(() => {
+      reject(new Error(message));
+    }, IMAGE_OP_TIMEOUT_MS);
+    promise.then(resolve, reject).finally(() => {
+      clearTimeout(timer);
+    });
   });
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return withTimeout(
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve(img);
+      };
+      img.onerror = () => {
+        reject(new Error('failed to load image'));
+      };
+      img.src = src;
+    }),
+    'timed out loading image',
+  );
+}
+
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error('canvas.toBlob returned null'));
-    }, 'image/png');
-  });
+  return withTimeout(
+    new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('canvas.toBlob returned null'));
+      }, 'image/png');
+    }),
+    'timed out processing image',
+  );
 }

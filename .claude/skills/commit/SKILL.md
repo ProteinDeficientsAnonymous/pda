@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Stage and commit changes using conventional commits. Run `make agent-ci` first, then create a properly formatted commit. Use when the user asks to commit, save, or check in changes.
+description: Stage and commit changes using conventional commits. Run cheap local checks first (full CI is a pre-PR gate, not per-commit — GitHub re-runs it on every push), then create a properly formatted commit. Use when the user asks to commit, save, or check in changes.
 ---
 
 # commit
@@ -9,7 +9,7 @@ Stage and create a commit using **conventional commits** format.
 
 ## Steps
 
-1. **Run CI first**: `make agent-ci`. If it fails, surface the errors and stop — do not commit.
+1. **Run cheap checks first**: typecheck + the tests you touched (e.g. `make agent-typecheck`, `make agent-frontend-typecheck`, `make agent-test-since`). If they fail, surface the errors and stop — do not commit. The full `make agent-ci` suite is a **pre-PR gate**, not a per-commit one: GitHub re-runs CI on every push, so run the umbrella once before the PR is review-ready (see `.claude/skills/open-pr`), not on every commit.
 2. **Inspect state** in parallel:
    - `git status` (no `-uall`)
    - `git diff` (staged + unstaged)

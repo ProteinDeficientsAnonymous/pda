@@ -1,8 +1,8 @@
-"""Lightweight rate-limit decorator using Django's cache framework."""
-
+import inspect
 from functools import wraps
 
 from community._validation import Code, raise_validation
+from django.conf import settings
 from django.core.cache import cache
 
 _PERIOD_MAP = {"s": 1, "m": 60, "h": 3600, "d": 86400}
@@ -15,15 +15,30 @@ def _parse_rate(rate: str) -> tuple[int, int]:
 
 
 def client_ip(request) -> str:
-    """Extract the real client IP, honoring X-Forwarded-For for proxy setups.
+    """Client IP for rate-limiting, resistant to X-Forwarded-For spoofing.
 
-    Railway / any reverse proxy hides the original client behind its own IP,
-    so REMOTE_ADDR alone would collapse every caller into a single bucket.
+    Trusting XFF's leftmost value lets an attacker rotate spoofed headers into
+    fresh rate-limit buckets. Instead we count back from the right: the hop at
+    ``len - TRUSTED_PROXY_COUNT`` is the one the innermost trusted proxy
+    observed and can't be forged. Only sound when the app is unreachable except
+    via the trusted proxy chain, so TRUSTED_PROXY_COUNT must match deployment.
     """
+    trusted = getattr(settings, "TRUSTED_PROXY_COUNT", 1)
+    remote_addr = request.META.get("REMOTE_ADDR", "anon")
+
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "anon")
+    if not forwarded:
+        return remote_addr
+
+    hops = [h.strip() for h in forwarded.split(",") if h.strip()]
+    # The innermost trusted proxy appended the IP it observed at this index;
+    # everything to its left is attacker-controlled and ignored.
+    idx = len(hops) - trusted
+    if idx < 0 or idx >= len(hops):
+        # XFF shorter than expected, or trusted <= 0 → can't trust a hop; use
+        # REMOTE_ADDR rather than crashing or trusting attacker input.
+        return remote_addr
+    return hops[idx]
 
 
 def auth_or_ip_key(request) -> str:
@@ -37,17 +52,25 @@ def auth_or_ip_key(request) -> str:
 def rate_limit(*, key_func, rate: str):
     """Rate-limit decorator for Django Ninja endpoints.
 
-    Usage::
+    ``key_func`` may take just the request, or ``(request, **view_kwargs)`` to
+    key on a path param (e.g. per-event)::
 
         @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/d")
         def my_view(request, ...): ...
+
+        @rate_limit(
+            key_func=lambda r, event_id, **_: f"{r.auth.pk}:{event_id}", rate="5/h"
+        )
+        def my_view(request, event_id, ...): ...
     """
     count, period = _parse_rate(rate)
+    wants_kwargs = _key_func_wants_kwargs(key_func)
 
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            cache_key = f"rl:{view_func.__name__}:{key_func(request)}"
+            key = key_func(request, **kwargs) if wants_kwargs else key_func(request)
+            cache_key = f"rl:{view_func.__name__}:{key}"
             current = cache.get(cache_key, 0)
             if current >= count:
                 raise_validation(Code.Rate.LIMITED, status_code=429)
@@ -57,3 +80,19 @@ def rate_limit(*, key_func, rate: str):
         return wrapper
 
     return decorator
+
+
+def _key_func_wants_kwargs(key_func) -> bool:
+    """True if ``key_func`` accepts more than just the request (path-param keys)."""
+    try:
+        params = list(inspect.signature(key_func).parameters.values())
+    except (ValueError, TypeError):
+        return False
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params):
+        return True
+    positional = [
+        p
+        for p in params
+        if p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    ]
+    return len(positional) > 1

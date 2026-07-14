@@ -36,7 +36,8 @@ router = Router()
 
 
 class JoinRequestIn(BaseModel):
-    display_name: str = Field(max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
+    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     email: EmailStr
     answers: dict[str, str] = {}
@@ -112,19 +113,19 @@ def _build_custom_answers(
     return result
 
 
-def _send_join_request_email(display_name: str, phone: str, custom_answers: dict) -> None:
+def _send_join_request_email(full_name: str, phone: str, custom_answers: dict) -> None:
     """Send vetting email for a new join request."""
     if not settings.VETTING_EMAIL:
         return
     try:
-        # Flatten to single-line so a newline in display_name can't forge email headers.
-        safe_subject = flatten_to_single_line(f"New PDA Join Request: {display_name}")
+        # Flatten to single-line so a newline in the name can't forge email headers.
+        safe_subject = flatten_to_single_line(f"New PDA Join Request: {full_name}")
         answer_lines = "\n".join(
             f"{data['label']}: {data['answer']}" for data in custom_answers.values()
         )
         send_mail(
             subject=safe_subject,
-            message=f"Display Name: {display_name}\nPhone: {phone}\n\n{answer_lines}",
+            message=f"Name: {full_name}\nPhone: {phone}\n\n{answer_lines}",
             from_email=settings.DEFAULT_FROM_EMAIL or "noreply@pda.org",
             recipient_list=[settings.VETTING_EMAIL],
         )
@@ -132,11 +133,12 @@ def _send_join_request_email(display_name: str, phone: str, custom_answers: dict
         logger.exception("Failed to send vetting email for join request")
 
 
-def _honeypot_decoy_response(display_name: str, phone_number: str) -> JoinRequestOut:
+def _honeypot_decoy_response(first_name: str, full_name: str, phone_number: str) -> JoinRequestOut:
     """Mimic a real submission's shape so bots register success and stop retrying."""
     return JoinRequestOut(
         id="",
-        display_name=display_name,
+        first_name=first_name,
+        full_name=full_name,
         phone_number=phone_number,
         submitted_at=timezone.now(),
         status=JoinRequestStatus.PENDING,
@@ -199,7 +201,9 @@ def _resolve_submission_user(validated_phone: str, normalized_email: str):
 )
 @rate_limit(key_func=client_ip, rate="3/h")
 def submit_join_request(request, payload: JoinRequestIn):
-    display_name = payload.display_name.strip()
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    full_name = f"{first_name} {last_name}".strip()
 
     # Honeypot trip — silently 201 without persisting so bots don't retry.
     if payload.website.strip():
@@ -207,9 +211,9 @@ def submit_join_request(request, payload: JoinRequestIn):
             logging.WARNING,
             "join_request_honeypot_tripped",
             request,
-            details={"display_name": display_name},
+            details={"full_name": full_name},
         )
-        return Status(201, _honeypot_decoy_response(display_name, payload.phone_number))
+        return Status(201, _honeypot_decoy_response(first_name, full_name, payload.phone_number))
 
     if not payload.sms_consent:
         raise_validation(Code.JoinRequest.SMS_CONSENT_REQUIRED, field="sms_consent")
@@ -217,7 +221,9 @@ def submit_join_request(request, payload: JoinRequestIn):
     if not payload.guidelines_consent:
         raise_validation(Code.JoinRequest.GUIDELINES_CONSENT_REQUIRED, field="guidelines_consent")
 
-    validate_display_name(display_name)
+    validate_display_name(first_name, field="first_name")
+    if last_name:
+        validate_display_name(last_name, field="last_name")
     validated_phone = _validate_phone(payload.phone_number)
     normalized_email = payload.email.strip().lower()
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
@@ -238,7 +244,8 @@ def submit_join_request(request, payload: JoinRequestIn):
             matched_user.save(update_fields=["email"])
 
         join_request = JoinRequest.objects.create(
-            display_name=display_name,
+            first_name=first_name,
+            last_name=last_name,
             phone_number=validated_phone,
             email=normalized_email,
             user=matched_user,
@@ -247,18 +254,18 @@ def submit_join_request(request, payload: JoinRequestIn):
             guidelines_consent_at=timezone.now(),
         )
 
-    logger.info("Join request submitted by %s", display_name)
+    logger.info("Join request submitted by %s", full_name)
     audit_log(
         logging.INFO,
         "join_request_submitted",
         request,
         target_type="join_request",
         target_id=str(join_request.id),
-        details={"display_name": display_name},
+        details={"full_name": full_name},
     )
-    _send_join_request_email(display_name, validated_phone, custom_answers)
+    _send_join_request_email(full_name, validated_phone, custom_answers)
     try:
-        create_join_request_notifications(display_name)
+        create_join_request_notifications(full_name)
     except Exception:
         logger.exception("Failed to create join request notifications")
 
@@ -272,7 +279,9 @@ def check_phone(request, payload: CheckPhoneIn):
         normalized = _validate_phone(payload.phone_number)
     except ValidationException:
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
-    if User.objects.filter(phone_number=normalized, archived_at__isnull=True).exists():
+    if User.objects.filter(
+        phone_number=normalized, is_member=True, archived_at__isnull=True
+    ).exists():
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.MEMBER))
     if JoinRequest.objects.filter(
         phone_number=normalized, status=JoinRequestStatus.PENDING

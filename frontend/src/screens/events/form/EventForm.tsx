@@ -28,7 +28,7 @@ import { useAuthStore } from '@/auth/store';
 import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
-import type { Event } from '@/models/event';
+import { type Event, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { EventFormBasics } from './EventFormBasics';
@@ -49,7 +49,6 @@ interface Props {
 const DETAILS_FIELDS: readonly (keyof EventFormValues)[] = [
   'description',
   'visibility',
-  'visibilityChoice',
   'eventType',
   'invitePermission',
 ];
@@ -82,6 +81,7 @@ export function EventForm({ existing }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const canTagOfficial = hasPermission(user, Permission.TagOfficialEvent);
+  const canTagClub = hasPermission(user, Permission.TagClubEvent);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const [values, setValues] = useState<EventFormValues>(() =>
@@ -123,7 +123,7 @@ export function EventForm({ existing }: Props) {
 
   const create = useCreateEvent();
   const update = useUpdateEvent(existing?.id ?? '');
-  const uploadPhoto = useUploadEventPhoto(existing?.id ?? '');
+  const uploadPhoto = useUploadEventPhoto();
   const deletePhoto = useDeleteEventPhoto(existing?.id ?? '');
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
@@ -178,9 +178,11 @@ export function EventForm({ existing }: Props) {
       const created = await create.mutateAsync(merged);
       if (pendingPhoto) {
         try {
-          await uploadPhoto.mutateAsync(pendingPhoto);
+          await uploadPhoto.mutateAsync({ eventId: created.id, blob: pendingPhoto });
         } catch {
-          // Event saved; only the photo failed. Let the user retry from edit.
+          // Event saved; only the photo failed. Surface it so the host knows
+          // to re-add it from edit instead of the photo silently vanishing.
+          toast.error("event saved, but the photo didn't upload — add it again from edit");
         }
       }
       if (bufferedPollOptions && bufferedPollOptions.length >= 2) {
@@ -201,7 +203,7 @@ export function EventForm({ existing }: Props) {
 
   async function onCropPhoto(blob: Blob) {
     if (existing) {
-      await uploadPhoto.mutateAsync(blob);
+      await uploadPhoto.mutateAsync({ eventId: existing.id, blob });
     } else {
       setPendingPhoto(blob);
     }
@@ -237,7 +239,7 @@ export function EventForm({ existing }: Props) {
     >
       <EventFormPhoto
         photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
-        photoUpdatedAt={null}
+        photoUpdatedAt={existing?.photoUpdatedAt ?? null}
         onCrop={onCropPhoto}
         onDelete={existing || pendingPhoto ? onDeletePhoto : undefined}
         disabled={saving}
@@ -247,6 +249,8 @@ export function EventForm({ existing }: Props) {
         values={values}
         onChange={patch}
         errors={errors}
+        canTagOfficial={canTagOfficial}
+        canTagClub={canTagClub}
         timeLocked={!!existing?.hasPoll && !existing.startDatetime}
         existingEventId={existing?.id}
         existingHasPoll={!!existing?.hasPoll}
@@ -290,7 +294,9 @@ export function EventForm({ existing }: Props) {
           values={values}
           onChange={patch}
           errors={errors}
-          canTagOfficial={canTagOfficial}
+          typeLocked={
+            values.eventType === EventType.Official || values.eventType === EventType.Club
+          }
         />
       </CollapsibleCard>
 

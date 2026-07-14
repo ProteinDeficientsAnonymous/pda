@@ -1,34 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  guidelinesConsentRedirect,
-  passwordSetupRedirect,
-  postAuthRedirect,
-  type User,
-} from './user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
+
+import { consentRedirect, passwordSetupRedirect, postAuthRedirect, type User } from './user';
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'u1',
-    phoneNumber: '+12125550001',
-    displayName: 'Alice',
+    firstName: 'Alice',
+    lastName: 'Anderson',
+    fullName: 'Alice Anderson',
     email: 'alice@example.com',
-    bio: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 describe('passwordSetupRedirect', () => {
@@ -45,15 +29,41 @@ describe('passwordSetupRedirect', () => {
       '/onboarding',
     );
   });
+
+  it('uses firstName presence for the name check', () => {
+    const noFirstName = makeUser({
+      firstName: '',
+      email: 'a@b.c',
+      needsOnboarding: true,
+    });
+    expect(passwordSetupRedirect(noFirstName)).toBe('/onboarding'); // no first name → onboarding
+    const named = makeUser({
+      firstName: 'Ada',
+      email: 'a@b.c',
+      needsOnboarding: true,
+      needsPasswordReset: false,
+    });
+    expect(passwordSetupRedirect(named)).toBe('/new-password'); // has name + email
+  });
 });
 
-describe('guidelinesConsentRedirect', () => {
-  it('returns null when consented', () => {
-    expect(guidelinesConsentRedirect(makeUser())).toBeNull();
+describe('consentRedirect', () => {
+  it('returns null when every consent is on file', () => {
+    expect(consentRedirect(makeUser())).toBeNull();
   });
 
-  it('returns /consent when consent is pending', () => {
-    expect(guidelinesConsentRedirect(makeUser({ needsGuidelinesConsent: true }))).toBe('/consent');
+  it('returns /consent when guidelines consent is pending', () => {
+    expect(consentRedirect(makeUser({ needsGuidelinesConsent: true }))).toBe('/consent');
+  });
+
+  it('returns /consent when only sms consent is pending', () => {
+    expect(consentRedirect(makeUser({ needsSmsConsent: true }))).toBe('/consent');
+  });
+
+  it('returns /consent when both consents are pending', () => {
+    expect(consentRedirect(makeUser({ needsGuidelinesConsent: true, needsSmsConsent: true }))).toBe(
+      '/consent',
+    );
   });
 });
 
@@ -73,9 +83,13 @@ describe('postAuthRedirect', () => {
     expect(postAuthRedirect(makeUser({ needsGuidelinesConsent: true }))).toBe('/consent');
   });
 
+  it('routes an sms-only consent-pending user to /consent', () => {
+    expect(postAuthRedirect(makeUser({ needsSmsConsent: true }))).toBe('/consent');
+  });
+
   it('prioritises password setup over consent when both are pending', () => {
     const target = postAuthRedirect(
-      makeUser({ needsOnboarding: true, displayName: '', needsGuidelinesConsent: true }),
+      makeUser({ needsOnboarding: true, firstName: '', needsGuidelinesConsent: true }),
     );
     expect(target).toBe('/onboarding');
   });

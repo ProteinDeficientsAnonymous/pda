@@ -11,13 +11,18 @@
 // matching the Flutter behavior.
 
 import { type ReactNode, useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { RequireEmail } from '@/components/RequireEmail';
+import { CONSENT_REGISTRY } from '@/models/consent';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
-import { guidelinesConsentRedirect, passwordSetupRedirect } from '@/models/user';
+import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
 import { useAuthStore } from './store';
+
+// Policy pages the consent screen links to must stay reachable while the consent
+// gate is active, otherwise the user can't read what they're agreeing to.
+const CONSENT_POLICY_PATHS = new Set(CONSENT_REGISTRY.map((c) => c.linkTo.toLowerCase()));
 
 // ----------------------------------------------------------------------------
 // AuthBoot — kick off session restore exactly once on mount.
@@ -64,6 +69,7 @@ function BootSpinner() {
 
 export function OnboardingGate() {
   const user = useAuthStore((s) => s.user);
+  const profileStepActive = useAuthStore((s) => s.profileStepActive);
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
@@ -72,25 +78,23 @@ export function OnboardingGate() {
   // takes priority over the consent gate — a brand-new user sets their name +
   // password before being asked to consent.
   const setupTarget = passwordSetupRedirect(user);
-  const consentTarget = guidelinesConsentRedirect(user);
+  const consentTarget = consentRedirect(user);
 
   if (setupTarget) {
     if (path !== setupTarget) {
       return <Navigate to={setupTarget} replace />;
     }
   } else if (consentTarget) {
-    // Guidelines-consent gate. The consent screen blocks login completion, but
-    // the user can either accept (clears needsGuidelinesConsent on /me/) or pick
-    // "not now" on the screen itself to log out. We pin them to /consent EXCEPT
-    // for /guidelines — they must be able to read what they're agreeing to (the
-    // consent screen links there), so trapping that page would make honest
-    // consent impossible.
-    if (path !== consentTarget && path !== '/guidelines') {
+    // Pin to /consent, but leave the policy pages it links to reachable — users
+    // must be able to read what they're agreeing to.
+    if (path !== consentTarget && !CONSENT_POLICY_PATHS.has(path)) {
       return <Navigate to={consentTarget} replace />;
     }
   } else if (user) {
     // Authed user with nothing pending shouldn't sit on onboarding/consent screens.
-    if (path === '/onboarding') return <Navigate to="/guidelines" replace />;
+    // Exception: the optional profile step runs on /onboarding *after* account
+    // setup clears needs_onboarding — keep them here until they finish or skip it.
+    if (path === '/onboarding' && !profileStepActive) return <Navigate to="/guidelines" replace />;
     if (path === '/new-password') return <Navigate to="/calendar" replace />;
     if (path === '/consent') return <Navigate to="/calendar" replace />;
     if (path === '/login') return <Navigate to="/calendar" replace />;
@@ -140,8 +144,23 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
 
 export function EmailGate() {
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+  // You can't stay logged in without an email, but "not now" isn't a dead end:
+  // it drops the session and lands on the public calendar, so the app stays
+  // usable from a logged-out state (an authed-only route would otherwise
+  // bounce to /login). A failed logout is swallowed so RequireEmail can
+  // re-enable its button and let the user retry.
+  async function onSkip() {
+    try {
+      await logout();
+      void navigate('/calendar', { replace: true });
+    } catch {
+      // network/server error — stay on the modal, user can retry
+    }
+  }
   if (user && !user.needsOnboarding && !user.email) {
-    return <RequireEmail />;
+    return <RequireEmail onSkip={onSkip} />;
   }
   return <Outlet />;
 }

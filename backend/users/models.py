@@ -75,7 +75,8 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
-    display_name = models.CharField(max_length=64, blank=True)
+    first_name = models.CharField(max_length=64, blank=True, default="")
+    last_name = models.CharField(max_length=64, blank=True, default="")
     # Defaults False; non-members are excluded via objects.members().
     is_member = models.BooleanField(default=False, db_index=True)
     # Uniqueness enforced by a partial constraint (see Meta) so multiple
@@ -89,10 +90,14 @@ class User(AbstractUser):
     sms_consent_at = models.DateTimeField(null=True, blank=True)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")
+    pronouns = models.CharField(max_length=100, blank=True, default="")
+    nickname = models.CharField(max_length=64, blank=True, default="")
+    birthday = models.DateField(null=True, blank=True)
     profile_photo = models.ImageField(upload_to="profile_photos/", blank=True)
     photo_updated_at = models.DateTimeField(null=True, blank=True)
     show_phone = models.BooleanField(default=True)
     show_email = models.BooleanField(default=True)
+    hide_last_name = models.BooleanField(default=False)
     is_paused = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
     login_link_requested = models.BooleanField(default=False)
@@ -108,11 +113,9 @@ class User(AbstractUser):
 
     # Remove inherited AbstractUser fields
     username = None
-    first_name = None
-    last_name = None
 
     USERNAME_FIELD = "phone_number"
-    REQUIRED_FIELDS = ["display_name"]
+    REQUIRED_FIELDS = ["first_name"]
     objects = UserManager()
 
     class Meta:
@@ -125,8 +128,12 @@ class User(AbstractUser):
             ),
         ]
 
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
     def __str__(self):
-        return self.display_name or self.phone_number
+        return self.full_name or self.phone_number
 
     def has_permission(self, key: str) -> bool:
         """Return True if any of the user's roles grants this permission key.
@@ -137,11 +144,18 @@ class User(AbstractUser):
         cache = getattr(self, "_prefetched_objects_cache", {})
         roles = cache["roles"] if "roles" in cache else self.roles.all()
         for role in roles:
-            if role.name == "admin" and role.is_default:
-                return True
-            if key in (role.permissions or []):
+            # effective_permissions expands the admin role and guards corrupt rows
+            if key in role.effective_permissions:
                 return True
         return False
+
+
+class MagicLoginTokenSource(models.TextChoices):
+    # SELF_SERVICE tokens are the only ones the self-service login-link cooldown
+    # counts; every other mint path (admin generation, onboarding, resend) is ADMIN
+    # so it never suppresses a user's own login-link email.
+    SELF_SERVICE = "self_service", "Self-service"
+    ADMIN = "admin", "Admin"
 
 
 class MagicLoginToken(models.Model):
@@ -156,6 +170,11 @@ class MagicLoginToken(models.Model):
     # token carries which it is; consuming a token with this set flips the user's
     # persistent User.needs_password_reset. Admin onboarding links leave this False.
     requires_password_reset = models.BooleanField(default=False)
+    source = models.CharField(
+        max_length=20,
+        choices=MagicLoginTokenSource.choices,
+        default=MagicLoginTokenSource.ADMIN,
+    )
 
     @property
     def is_expired(self) -> bool:
@@ -163,17 +182,24 @@ class MagicLoginToken(models.Model):
 
     @classmethod
     def create_for_user(
-        cls, user: "User", *, requires_password_reset: bool = False
+        cls,
+        user: "User",
+        *,
+        requires_password_reset: bool = False,
+        source: str = MagicLoginTokenSource.ADMIN,
     ) -> "MagicLoginToken":
         return cls.objects.create(
             user=user,
             expires_at=timezone.now() + timedelta(days=7),
             requires_password_reset=requires_password_reset,
+            source=source,
         )
 
 
 # Number of days a non-member RSVP-management link stays valid from issuance.
 NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
+# Absolute cap on a token's life, even with repeated extension, to bound leak exposure.
+NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
 
 
 class NonMemberRsvpToken(models.Model):
@@ -240,18 +266,14 @@ class NonMemberRsvpToken(models.Model):
     def issue_or_extend(cls, user: "User") -> "NonMemberRsvpToken":
         """Return a usable non-member RSVP token, reusing one when possible.
 
-        Called on each non-member RSVP. If the user already has a valid (not
-        expired, not revoked) token, its expiry is pushed out to 90 days from
-        now and the SAME token string is kept — so a link saved from a previous
-        email keeps resolving. Otherwise a fresh token is issued. Newest token
-        wins when several exist (Meta.ordering is -created_at).
-
-        Rejects members, like issue(): a member must use the member flow.
+        Extends the newest valid token still within its absolute lifetime (so an
+        emailed link keeps resolving), else issues a fresh one. Rejects members.
         """
         if user.is_member:
             raise ValidationError("Cannot issue a non-member RSVP token for a member.")
         existing = user.rsvp_tokens.first()
-        if existing is not None and existing.is_valid:
+        max_age_cutoff = timezone.now() - timedelta(days=NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS)
+        if existing is not None and existing.is_valid and existing.created_at > max_age_cutoff:
             existing.expires_at = timezone.now() + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
             existing.save(update_fields=["expires_at"])
             return existing

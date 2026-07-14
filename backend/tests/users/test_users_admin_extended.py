@@ -1,5 +1,7 @@
 """Tests for user update, profile, delete, and magic link."""
 
+import logging
+
 import pytest
 from community._validation import Code
 from django.utils import timezone
@@ -10,12 +12,23 @@ from users.models import MagicLoginToken, User
 from users.roles import Role
 
 
+def _capture_audit(caplog):
+    """Attach caplog's handler to the non-propagating pda.audit logger.
+
+    pda.audit has propagate=False (see settings LOGGING), so caplog's root
+    handler never sees its records. Attaching the handler directly captures them.
+    """
+    audit_logger = logging.getLogger("pda.audit")
+    audit_logger.addHandler(caplog.handler)
+    return audit_logger
+
+
 @pytest.mark.django_db
 class TestUpdateUser:
     def test_update_user_not_found(self, api_client, manage_users_headers):
         response = api_client.patch(
             "/api/auth/users/00000000-0000-0000-0000-000000000000/",
-            {"display_name": "Ghost"},
+            {"first_name": "Ghost"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -55,10 +68,76 @@ class TestUpdateUser:
         other_user.refresh_from_db()
         assert other_user.is_paused is True
 
+    def test_pause_strips_non_member_roles(
+        self, api_client, manage_users_headers, other_user, caplog
+    ):
+        member_role = Role.objects.get(name="member", is_default=True)
+        extra_role = Role.objects.create(name="organizer")
+        other_user.roles.add(member_role, extra_role)
+        audit_logger = _capture_audit(caplog)
+        try:
+            with caplog.at_level(logging.WARNING, logger="pda.audit"):
+                response = api_client.patch(
+                    f"/api/auth/users/{other_user.pk}/",
+                    {"is_paused": True},
+                    content_type="application/json",
+                    **manage_users_headers,
+                )
+        finally:
+            audit_logger.removeHandler(caplog.handler)
+        assert response.status_code == 200
+        role_names = set(other_user.roles.values_list("name", flat=True))
+        assert role_names == {"member"}
+        paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
+        assert len(paused_logs) == 1
+        assert paused_logs[0].details == {"removed_role_ids": [str(extra_role.id)]}
+
+    def test_pause_member_only_is_noop_for_roles(
+        self, api_client, manage_users_headers, other_user, caplog
+    ):
+        member_role = Role.objects.get(name="member", is_default=True)
+        other_user.roles.add(member_role)
+        audit_logger = _capture_audit(caplog)
+        try:
+            with caplog.at_level(logging.WARNING, logger="pda.audit"):
+                response = api_client.patch(
+                    f"/api/auth/users/{other_user.pk}/",
+                    {"is_paused": True},
+                    content_type="application/json",
+                    **manage_users_headers,
+                )
+        finally:
+            audit_logger.removeHandler(caplog.handler)
+        assert response.status_code == 200
+        role_names = set(other_user.roles.values_list("name", flat=True))
+        assert role_names == {"member"}
+        paused_logs = [r for r in caplog.records if getattr(r, "action", None) == "user_paused"]
+        assert len(paused_logs) == 1
+        assert paused_logs[0].details == {"removed_role_ids": []}
+
+    def test_unpause_does_not_restore_roles(self, api_client, manage_users_headers, other_user):
+        member_role = Role.objects.get(name="member", is_default=True)
+        extra_role = Role.objects.create(name="organizer")
+        other_user.roles.add(member_role, extra_role)
+        other_user.is_paused = True
+        other_user.roles.remove(extra_role)
+        other_user.save(update_fields=["is_paused"])
+        response = api_client.patch(
+            f"/api/auth/users/{other_user.pk}/",
+            {"is_paused": False},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 200
+        other_user.refresh_from_db()
+        assert other_user.is_paused is False
+        role_names = set(other_user.roles.values_list("name", flat=True))
+        assert role_names == {"member"}
+
     def test_update_user_requires_auth(self, api_client, other_user):
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"display_name": "Hacker"},
+            {"first_name": "Hacker"},
             content_type="application/json",
         )
         assert response.status_code == 401
@@ -66,7 +145,7 @@ class TestUpdateUser:
     def test_update_user_requires_permission(self, api_client, auth_headers, other_user):
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"display_name": "Blocked"},
+            {"first_name": "Blocked"},
             content_type="application/json",
             **auth_headers,
         )
@@ -111,6 +190,19 @@ class TestUpdateUser:
         ids = [u["id"] for u in response.json()]
         assert str(other_user.pk) not in ids
 
+    def test_admin_list_includes_non_members_when_opted_in(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.is_member = False
+        other_user.save(update_fields=["is_member"])
+        response = api_client.get(
+            "/api/auth/users/?include_non_members=true", **manage_users_headers
+        )
+        assert response.status_code == 200
+        rows = {u["id"]: u for u in response.json()}
+        assert str(other_user.pk) in rows
+        assert rows[str(other_user.pk)]["is_member"] is False
+
     def test_admin_update_non_member_returns_404(
         self, api_client, manage_users_headers, other_user
     ):
@@ -118,7 +210,7 @@ class TestUpdateUser:
         other_user.save(update_fields=["is_member"])
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/",
-            {"display_name": "Renamed"},
+            {"first_name": "Renamed"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -138,6 +230,13 @@ class TestMemberProfile:
         other_user.save(update_fields=["is_member"])
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
+
+    def test_member_profile_returns_pronouns(self, api_client, auth_headers, other_user):
+        other_user.pronouns = "they/them"
+        other_user.save(update_fields=["pronouns"])
+        response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
+        assert response.status_code == 200
+        assert response.json()["pronouns"] == "they/them"
 
 
 @pytest.mark.django_db
@@ -331,19 +430,22 @@ class TestSearchUsersRespectsShowPhone:
         # Field stays present (callers depend on the key) but is blanked.
         assert match["phone_number"] == ""
 
-    def test_display_name_does_not_leak_phone_when_show_phone_false(
-        self, api_client, manage_users_headers, other_user
-    ):
-        # Member with no display_name (e.g. pre-onboarding) must not leak the
-        # private phone via the display_name fallback.
-        other_user.display_name = ""
-        other_user.show_phone = False
-        other_user.save(update_fields=["display_name", "show_phone"])
+    def test_name_does_not_leak_phone_when_show_phone_false(self, api_client, manage_users_headers):
+        # A genuinely nameless member (e.g. pre-onboarding) must not leak the
+        # private phone via the name fields — full_name stays empty rather than
+        # falling back to the phone number.
+        nameless_user = User.objects.create_user(
+            phone_number="+12025550999",
+            password="namelesspass123",
+            first_name="",
+            last_name="",
+            show_phone=False,
+        )
         response = api_client.get("/api/auth/users/search/?q=", **manage_users_headers)
         assert response.status_code == 200
-        match = self._find(response, other_user.pk)
-        assert other_user.phone_number not in match["display_name"]
-        assert match["display_name"] == "member"
+        match = self._find(response, nameless_user.pk)
+        assert nameless_user.phone_number not in match["full_name"]
+        assert match["full_name"] == ""
 
 
 @pytest.mark.django_db

@@ -2,6 +2,8 @@
 
 import logging
 
+from config.ratelimit import client_ip
+
 _audit_logger = logging.getLogger("pda.audit")
 
 
@@ -26,15 +28,13 @@ def audit_log(  # noqa: PLR0913
     user = getattr(request, "auth", None)
     if user and hasattr(user, "pk"):
         actor_id = str(user.pk)
-        actor_name = getattr(user, "display_name", None) or str(user)
+        actor_name = getattr(user, "full_name", None) or str(user)
     else:
         actor_id = "anonymous"
         actor_name = "anonymous"
 
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    ip_address = (
-        forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR", "")
-    )
+    # Spoof-resistant client IP (rightmost-untrusted hop); see config/ratelimit.py.
+    ip_address = client_ip(request)
 
     _audit_logger.log(
         level,

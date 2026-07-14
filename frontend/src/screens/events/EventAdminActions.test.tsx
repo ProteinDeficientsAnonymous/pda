@@ -15,6 +15,8 @@ vi.mock('@/api/eventWrites', () => ({
   useDeleteEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
 import { EventAdminActions } from './EventAdminActions';
 
 const CREATOR_ID = 'creator-user';
@@ -25,9 +27,14 @@ function makeUser(id: string, permissions: string[] = []): User {
   return {
     id,
     phoneNumber: '+12125550001',
-    displayName: 'Test User',
+    firstName: 'Test',
+    lastName: 'User',
+    fullName: 'Test User',
+    nickname: '',
     email: '',
     bio: '',
+    pronouns: '',
+    birthday: null,
     isSuperuser: false,
     isStaff: false,
     needsOnboarding: false,
@@ -36,6 +43,7 @@ function makeUser(id: string, permissions: string[] = []): User {
     needsSmsConsent: false,
     showPhone: false,
     showEmail: false,
+    hideLastName: false,
     weekStart: 'sunday',
     calendarFeedScope: 'all',
     profilePhotoUrl: '',
@@ -89,6 +97,7 @@ const BASE_EVENT: Event = {
   eventType: EventType.Community,
   visibility: EventVisibility.Public,
   photoUrl: '',
+  photoUpdatedAt: null,
   tags: [],
   isPast: false,
   status: EventStatus.Active,
@@ -126,7 +135,6 @@ describe('EventAdminActions', () => {
     expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
   });
 
-  // With no one RSVP'd, skip the cancel-then-delete two-step: show delete outright.
   it('creator sees delete (no cancel) for active upcoming event with no attendees', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });

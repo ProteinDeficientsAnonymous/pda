@@ -10,6 +10,38 @@ from users._refresh_cookie import REFRESH_COOKIE_NAME
 from users.models import MagicLoginToken
 
 
+@pytest.fixture(autouse=True)
+def _clear_rate_limit_cache():
+    # login / magic-login are rate-limited (5/m keyed on client IP); isolate counts.
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.mark.django_db
+class TestLoginRateLimit:
+    def test_login_rate_limited_after_five_attempts(self, api_client, test_user):
+        from django.core.cache import cache
+
+        cache.clear()
+        for _ in range(5):
+            resp = api_client.post(
+                "/api/auth/login/",
+                {"phone_number": "+12025550101", "password": "testpass123"},
+                content_type="application/json",
+            )
+            assert resp.status_code == 200
+        resp = api_client.post(
+            "/api/auth/login/",
+            {"phone_number": "+12025550101", "password": "testpass123"},
+            content_type="application/json",
+        )
+        assert resp.status_code == 429
+        assert resp.json()["detail"][0]["code"] == "rate.limited"
+
+
 @pytest.mark.django_db
 class TestLoginSetsRefreshCookie:
     def test_login_sets_httponly_refresh_cookie(self, api_client, test_user):
@@ -24,8 +56,8 @@ class TestLoginSetsRefreshCookie:
         assert cookie["httponly"] is True
         assert cookie["samesite"] == "Lax"
         assert cookie["path"] == "/"
-        assert cookie.value != ""
         assert "refresh" not in response.json()
+        assert RefreshToken(cookie.value) is not None
 
     def test_failed_login_does_not_set_cookie(self, api_client, test_user):
         response = api_client.post(
@@ -46,8 +78,8 @@ class TestMagicLoginSetsRefreshCookie:
         cookie = response.cookies.get(REFRESH_COOKIE_NAME)
         assert cookie is not None
         assert cookie["httponly"] is True
-        assert cookie.value != ""
         assert "refresh" not in response.json()
+        assert RefreshToken(cookie.value) is not None
 
 
 @pytest.mark.django_db

@@ -22,7 +22,8 @@ def _make_user(phone, name):
     return User.objects.create_user(
         phone_number=phone,
         password="Testpass123!",
-        display_name=name,
+        first_name=name,
+        last_name="",
     )
 
 
@@ -78,6 +79,7 @@ def capped_event(db, test_user):
         start_datetime=future_iso(days=30),
         rsvp_enabled=True,
         max_attendees=2,
+        allow_plus_ones=True,
         created_by=test_user,
     )
 
@@ -127,6 +129,25 @@ class TestEventCapacity:
         resp = _rsvp(api_client, capped_event, headers2)
         assert resp.status_code == 200
         assert resp.json()["my_rsvp"] == RSVPStatus.WAITLISTED
+
+    def test_plus_one_ignored_when_event_disallows(
+        self, api_client, test_user, headers1, headers2, user1
+    ):
+        event = Event.objects.create(
+            title="No Plus Ones",
+            start_datetime=future_iso(days=30),
+            rsvp_enabled=True,
+            max_attendees=2,
+            allow_plus_ones=False,
+            created_by=test_user,
+        )
+        resp = _rsvp(api_client, event, headers1, has_plus_one=True)
+        assert resp.status_code == 200
+        assert resp.json()["my_rsvp"] == RSVPStatus.ATTENDING
+        assert EventRSVP.objects.get(event=event, user=user1).has_plus_one is False
+        # +1 was dropped, so the second spot is still open (not consumed).
+        resp2 = _rsvp(api_client, event, headers2)
+        assert resp2.json()["my_rsvp"] == RSVPStatus.ATTENDING
 
     def test_plus_one_denied_at_capacity(self, api_client, capped_event, headers1, headers2):
         _rsvp(api_client, capped_event, headers1)
@@ -390,3 +411,38 @@ class TestMaxAttendeesValidation:
             **auth_headers,
         )
         assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+class TestListMyRsvp:
+    """The list endpoint surfaces the viewer's own RSVP so calendar / my-events
+    cards can show RSVP state without a per-card detail fetch (issue #566)."""
+
+    def _list(self, api_client, headers=None):
+        return api_client.get("/api/community/events/", **(headers or {}))
+
+    def _find(self, resp, event):
+        return next(e for e in resp.json() if e["id"] == str(event.id))
+
+    def test_list_includes_viewer_rsvp(self, api_client, unlimited_event, headers1):
+        _rsvp(api_client, unlimited_event, headers1, status=RSVPStatus.MAYBE)
+        resp = self._list(api_client, headers1)
+        assert resp.status_code == 200
+        assert self._find(resp, unlimited_event)["my_rsvp"] == RSVPStatus.MAYBE
+
+    def test_list_my_rsvp_null_without_response(self, api_client, unlimited_event, headers1):
+        resp = self._list(api_client, headers1)
+        assert resp.status_code == 200
+        assert self._find(resp, unlimited_event)["my_rsvp"] is None
+
+    def test_list_my_rsvp_is_per_viewer(self, api_client, unlimited_event, headers1, headers2):
+        _rsvp(api_client, unlimited_event, headers1, status=RSVPStatus.ATTENDING)
+        # user2 hasn't responded — their list view must not see user1's status.
+        resp = self._list(api_client, headers2)
+        assert self._find(resp, unlimited_event)["my_rsvp"] is None
+
+    def test_list_my_rsvp_null_for_unauthed(self, api_client, unlimited_event, headers1):
+        _rsvp(api_client, unlimited_event, headers1, status=RSVPStatus.ATTENDING)
+        resp = self._list(api_client)
+        assert resp.status_code == 200
+        assert self._find(resp, unlimited_event)["my_rsvp"] is None

@@ -40,11 +40,10 @@ export function RootRouteError() {
     void reportError(err, location.pathname, context);
   }, [error, location.pathname]);
 
+  // friendly fallback for js exceptions so we don't leak raw error text; route errors keep their status
   const message = isRouteErrorResponse(error)
     ? `${String(error.status)} ${error.statusText}`.toLowerCase()
-    : error instanceof Error
-      ? error.message.toLowerCase()
-      : 'something went wrong';
+    : 'something went wrong — try again or head back home';
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">

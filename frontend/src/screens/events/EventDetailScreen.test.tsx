@@ -80,6 +80,7 @@ const BASE_EVENT: Event = {
   eventType: EventType.Community,
   visibility: EventVisibility.Public,
   photoUrl: '',
+  photoUpdatedAt: null,
   tags: [],
   isPast: false,
   status: EventStatus.Active,
@@ -88,9 +89,14 @@ const BASE_EVENT: Event = {
 const AUTHED_USER: User = {
   id: 'user-me',
   phoneNumber: '+12125550001',
-  displayName: 'Test Member',
+  firstName: 'Test',
+  lastName: 'Member',
+  fullName: 'Test Member',
+  nickname: '',
   email: 'test@example.com',
   bio: '',
+  pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -99,6 +105,7 @@ const AUTHED_USER: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',
@@ -163,6 +170,24 @@ describe('EventDetailScreen', () => {
     expect(screen.getByText(/a test event description/i)).toBeInTheDocument();
   });
 
+  it('wraps long unbroken description text so it cannot overflow the viewport (issue 611)', () => {
+    const longUrl = `https://example.com/${'x'.repeat(200)}`;
+    mockUseEvent.mockReturnValue({
+      data: { ...BASE_EVENT, description: `join here ${longUrl}` },
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    renderScreen();
+
+    const namePattern = new RegExp(longUrl.slice(8, 40).replace(/\./g, '\\.'));
+    const link = screen.getByRole('link', { name: namePattern });
+    const paragraph = link.closest('p');
+    expect(paragraph).not.toBeNull();
+    // break-words alone doesn't reliably break a spaceless token in WebKit;
+    // overflow-wrap:anywhere is what actually forces the break (see RichEditor).
+    expect(paragraph).toHaveClass('break-words', '[overflow-wrap:anywhere]');
+  });
+
   it('shows WhatsApp link for authenticated member', () => {
     useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
     renderScreen();
@@ -183,5 +208,27 @@ describe('EventDetailScreen', () => {
 
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /request to join/i })).toBeInTheDocument();
+  });
+
+  it('shows event-settings kebab for the creator', () => {
+    const creator: User = { ...AUTHED_USER, id: 'user1' };
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('button', { name: /event settings/i })).toBeInTheDocument();
+  });
+
+  it('hides event-settings kebab from non-host members', () => {
+    useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
+  });
+
+  it('hides event-settings kebab from unauthenticated guests', () => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    renderScreen();
+
+    expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
   });
 });
