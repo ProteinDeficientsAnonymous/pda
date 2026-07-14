@@ -1,3 +1,10 @@
+# [0.29.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.28.0...v0.29.0) (2026-07-14)
+
+
+### Features
+
+* **users:** allow birthday without a year (Issue 822) ([#829](https://github.com/ProteinDeficientsAnonymous/pda/issues/829)) ([277fdf1](https://github.com/ProteinDeficientsAnonymous/pda/commit/277fdf1ea7f43137be311a3bffd19a0e2ded3258))
+
 # [0.28.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.6...v0.28.0) (2026-07-14)
 
 
