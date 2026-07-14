@@ -1,5 +1,6 @@
-// Members tab body — the actual list/filter/sort/create UI. The outer
-// MembersScreen shell just switches between this and the RolesTab.
+// Members tab body — the actual list/filter/sort/create UI. Shared between the
+// members and non-members tabs (parameterized by `mode`); the outer
+// MembersScreen shell switches between this and the RolesTab.
 
 import { format } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -10,12 +11,13 @@ import { type Member, useUsers } from '@/api/users';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { Toggle } from '@/components/ui/Toggle';
 import { ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { BulkCreateDialog } from './BulkCreateDialog';
 import { MemberCreateDialog } from './MemberCreateDialog';
+
+export type MembersMode = 'members' | 'non-members';
 
 type SortKey = 'name' | 'newest' | 'lastAttended';
 
@@ -25,9 +27,15 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'lastAttended', label: 'last attended' },
 ];
 
-export function MembersTab() {
-  const [showNonMembers, setShowNonMembers] = useState(false);
-  const { data = [], isPending, isError } = useUsers(showNonMembers);
+export function MembersTab({ mode }: { mode: MembersMode }) {
+  const isNonMembers = mode === 'non-members';
+  // The list endpoint returns members-only by default and all users when
+  // opted in; the non-members tab keeps only the non-members from that set.
+  const { data: fetched = [], isPending, isError } = useUsers(isNonMembers);
+  const data = useMemo(
+    () => (isNonMembers ? fetched.filter((m) => !m.isMember) : fetched),
+    [fetched, isNonMembers],
+  );
   const { data: allRoles = [] } = useRoles();
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('name');
@@ -43,27 +51,38 @@ export function MembersTab() {
   );
 
   if (isPending) return <ContentLoading />;
-  if (isError) return <ContentError message="couldn't load members — try refreshing" />;
+  if (isError)
+    return (
+      <ContentError
+        message={
+          isNonMembers
+            ? "couldn't load non-members — try refreshing"
+            : "couldn't load members — try refreshing"
+        }
+      />
+    );
 
   return (
     <>
-      <div className="mb-4 flex justify-end gap-2">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setBulkOpen(true);
-          }}
-        >
-          bulk add
-        </Button>
-        <Button
-          onClick={() => {
-            setCreateOpen(true);
-          }}
-        >
-          add member
-        </Button>
-      </div>
+      {isNonMembers ? null : (
+        <div className="mb-4 flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setBulkOpen(true);
+            }}
+          >
+            bulk add
+          </Button>
+          <Button
+            onClick={() => {
+              setCreateOpen(true);
+            }}
+          >
+            add member
+          </Button>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
@@ -98,10 +117,6 @@ export function MembersTab() {
         ) : null}
       </div>
 
-      <div className="mb-4 sm:w-64">
-        <Toggle label="show non-members" checked={showNonMembers} onChange={setShowNonMembers} />
-      </div>
-
       {data.length > 0 ? (
         <p className="text-foreground-tertiary mb-3 text-sm">
           {data.length === 1 ? '1 user' : `${String(data.length)} users`}
@@ -112,6 +127,7 @@ export function MembersTab() {
         members={visible}
         selectedRoles={selectedRoles}
         hasAnyMembers={data.length > 0}
+        mode={mode}
       />
 
       {createOpen ? (
@@ -139,15 +155,18 @@ function MembersList({
   members,
   selectedRoles,
   hasAnyMembers,
+  mode,
 }: {
   members: Member[];
   selectedRoles: Set<string>;
   hasAnyMembers: boolean;
+  mode: MembersMode;
 }) {
   if (members.length === 0) {
+    const emptyLabel = mode === 'non-members' ? 'no non-members yet 🌿' : 'no members yet 🌿';
     return (
       <p className="text-sm text-neutral-500">
-        {!hasAnyMembers ? 'no members yet 🌿' : 'nothing matches — try clearing filters'}
+        {!hasAnyMembers ? emptyLabel : 'nothing matches — try clearing filters'}
       </p>
     );
   }

@@ -1,5 +1,6 @@
-// Admin: /members — two-tab shell switching between the member list and
-// role management. Mirrors the Flutter TabController(length:2) layout.
+// Admin: /members — a tabbed shell switching between the member list, the
+// non-member list (both share MembersTab, parameterized by mode), and role
+// management.
 
 import { useState } from 'react';
 
@@ -8,39 +9,36 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { hasPermission, Permission } from '@/models/permissions';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 
-import { MembersTab } from './MembersTab';
+import { MembersTab, type MembersMode } from './MembersTab';
 import { RolesTab } from './RolesTab';
 
-type TabKey = 'members' | 'roles';
+type TabKey = MembersMode | 'roles';
 
 export default function MembersScreen() {
   const user = useAuthStore((s) => s.user);
   const canManageRoles = hasPermission(user, Permission.ManageRoles);
   const [tab, setTab] = useState<TabKey>('members');
 
-  const tabOptions: { value: TabKey; label: string }[] = canManageRoles
-    ? [
-        { value: 'members', label: 'members' },
-        { value: 'roles', label: 'roles' },
-      ]
-    : [{ value: 'members', label: 'members' }];
+  const tabOptions: { value: TabKey; label: string }[] = [
+    { value: 'members', label: 'members' },
+    { value: 'non-members', label: 'non-members' },
+    ...(canManageRoles ? [{ value: 'roles' as const, label: 'roles' }] : []),
+  ];
 
   return (
     <ContentContainer>
       <header className="mb-4">
         <h1 className="mb-3 text-2xl font-medium tracking-tight">members</h1>
-        {canManageRoles ? (
-          <SegmentedControl
-            name="members-tab"
-            ariaLabel="members or roles"
-            options={tabOptions}
-            value={tab}
-            onChange={setTab}
-          />
-        ) : null}
+        <SegmentedControl
+          name="members-tab"
+          ariaLabel="members, non-members, or roles"
+          options={tabOptions}
+          value={tab}
+          onChange={setTab}
+        />
       </header>
 
-      {tab === 'members' || !canManageRoles ? <MembersTab /> : <RolesTab />}
+      {tab === 'roles' ? <RolesTab /> : <MembersTab key={tab} mode={tab} />}
     </ContentContainer>
   );
 }
