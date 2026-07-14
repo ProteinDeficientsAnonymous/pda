@@ -46,6 +46,7 @@ const baseUser: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  showBirthday: false,
   hideLastName: false,
   weekStart: 'monday',
   calendarFeedScope: 'all',
