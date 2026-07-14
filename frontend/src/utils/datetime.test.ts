@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDayHeader, formatEventDateTime, parseIsoDate } from './datetime';
+import { formatBirthday, formatDayHeader, formatEventDateTime, parseIsoDate } from './datetime';
 
 describe('parseIsoDate', () => {
   it('parses ISO 8601 string', () => {
@@ -8,6 +8,21 @@ describe('parseIsoDate', () => {
     expect(result.getFullYear()).toBe(2026);
     expect(result.getMonth()).toBe(3);
     expect(result.getDate()).toBe(15);
+  });
+});
+
+describe('formatBirthday', () => {
+  it('formats a plain date as lowercase month day, year', () => {
+    expect(formatBirthday('1990-06-15')).toBe('june 15, 1990');
+  });
+
+  it('does not shift the day across timezones', () => {
+    // A UTC-parsed '2000-01-01' would render as dec 31, 1999 in negative offsets.
+    expect(formatBirthday('2000-01-01')).toBe('january 1, 2000');
+  });
+
+  it('returns empty string for a malformed date', () => {
+    expect(formatBirthday('not-a-date')).toBe('');
   });
 });
 

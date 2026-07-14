@@ -23,7 +23,7 @@ const storageMock = vi.hoisted(() => {
 });
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -78,6 +78,7 @@ const TEST_USER: User = {
   email: 'test@example.com',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -182,6 +183,20 @@ describe('SettingsScreen', () => {
 
     await waitFor(() => {
       expect(authApi.updateProfile).toHaveBeenCalledWith({ nickname: 'Birdie' });
+    });
+  });
+
+  it('saves an edited birthday via updateProfile', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit birthday/i }));
+    const field = screen.getByLabelText(/^birthday$/i);
+    fireEvent.change(field, { target: { value: '1990-06-15' } });
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ birthday: '1990-06-15' });
     });
   });
 

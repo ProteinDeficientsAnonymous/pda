@@ -3110,6 +3110,18 @@
             ],
             "title": "Bio"
           },
+          "birthday": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
           "calendar_feed_scope": {
             "anyOf": [
               {
@@ -3297,6 +3309,17 @@
             "default": "",
             "title": "Bio",
             "type": "string"
+          },
+          "birthday": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
           },
           "email": {
             "default": "",
@@ -4759,6 +4782,17 @@
             "title": "Bio",
             "type": "string"
           },
+          "birthday": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
           "calendar_feed_scope": {
             "default": "all",
             "title": "Calendar Feed Scope",
@@ -6037,7 +6071,7 @@
     "/api/auth/users/directory/": {
       "get": {
         "description": "Authed-only member directory. Respects each user's show_phone/show_email flags.",
-        "operationId": "users__auth_list_member_directory",
+        "operationId": "users__members_list_member_directory",
         "parameters": [],
         "responses": {
           "200": {
@@ -6312,7 +6346,7 @@
     },
     "/api/auth/users/{user_id}/profile/": {
       "get": {
-        "operationId": "users__auth_get_member_profile",
+        "operationId": "users__members_get_member_profile",
         "parameters": [
           {
             "in": "path",

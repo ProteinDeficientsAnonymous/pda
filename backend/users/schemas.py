@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
@@ -35,6 +35,21 @@ def _empty_str_to_none(v: str | None) -> str | None:
 
 
 OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
+
+
+def _empty_str_to_none_date(v: date | str | None) -> date | str | None:
+    # A sent-but-blank string is an explicit clear (None); non-blank strings fall
+    # through to Pydantic's date parsing, which 422s on malformed input.
+    if isinstance(v, str) and v.strip() == "":
+        return None
+    return v
+
+
+OptionalBirthday = Annotated[date | None, BeforeValidator(_empty_str_to_none_date)]
+
+
+def serialize_birthday(value: date | None) -> str | None:
+    return value.isoformat() if value else None
 
 
 class LoginIn(BaseModel):
@@ -79,6 +94,7 @@ class UserOut(BaseModel):
     email: str = ""
     bio: str = ""
     pronouns: str = ""
+    birthday: str | None = None
     is_member: bool = True
     is_superuser: bool = False
     needs_onboarding: bool = False
@@ -110,6 +126,7 @@ class UserOut(BaseModel):
             email=user.email or "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
+            birthday=serialize_birthday(user.birthday),
             is_member=user.is_member,
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
@@ -148,6 +165,7 @@ class MemberProfileOut(BaseModel):
     email: str = ""
     bio: str = ""
     pronouns: str = ""
+    birthday: str | None = None
     profile_photo_url: str = ""
     login_link_requested: bool = False
 
@@ -212,6 +230,7 @@ class MePatchIn(BaseModel):
     bio: str | None = Field(default=None, max_length=FieldLimit.BIO)
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     nickname: str | None = Field(default=None, max_length=FieldLimit.NICKNAME)
+    birthday: OptionalBirthday = None
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None

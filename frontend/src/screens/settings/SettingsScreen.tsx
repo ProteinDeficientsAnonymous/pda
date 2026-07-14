@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
+import { formatBirthday } from '@/utils/datetime';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AvatarUpload } from './AvatarUpload';
@@ -66,6 +67,12 @@ export default function SettingsScreen() {
           value={user.nickname}
           onSave={(v) => updateProfile({ nickname: v })}
           placeholder="add a nickname"
+        />
+        <InlineDate
+          label="birthday"
+          value={user.birthday}
+          onSave={(v) => updateProfile({ birthday: v })}
+          placeholder="add your birthday"
         />
       </Section>
 
@@ -226,6 +233,102 @@ function InlineText({
         cancel
       </Button>
       <Button onClick={() => void commit()} disabled={saving}>
+        save
+      </Button>
+    </div>
+  );
+}
+
+function InlineDate({
+  label,
+  value,
+  onSave,
+  placeholder,
+}: {
+  label: string;
+  value: string | null;
+  onSave: (v: string) => Promise<void>;
+  placeholder?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Discourage picking a future birthday in the picker UI (not enforced server-side).
+  const today = new Date().toISOString().slice(0, 10);
+
+  async function save(next: string) {
+    if (next === (value ?? '')) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(next);
+      setEditing(false);
+    } catch (err) {
+      setError(extractApiErrorOr(err, "couldn't save — try again"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-muted text-xs">{label}</div>
+          <div className="text-foreground text-sm">
+            {value ? formatBirthday(value) : placeholder}
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setDraft(value ?? '');
+            setError(null);
+            setEditing(true);
+          }}
+          aria-label={`edit ${label}`}
+        >
+          edit
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex-1">
+        <TextField
+          type="date"
+          max={today}
+          label={label}
+          value={draft}
+          error={error ?? undefined}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (error) setError(null);
+          }}
+        />
+      </div>
+      {value ? (
+        <Button variant="ghost" onClick={() => void save('')} disabled={saving}>
+          clear
+        </Button>
+      ) : null}
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setError(null);
+          setEditing(false);
+        }}
+        disabled={saving}
+      >
+        cancel
+      </Button>
+      <Button onClick={() => void save(draft)} disabled={saving}>
         save
       </Button>
     </div>

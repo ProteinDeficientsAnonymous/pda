@@ -263,7 +263,7 @@ export interface paths {
          * List Member Directory
          * @description Authed-only member directory. Respects each user's show_phone/show_email flags.
          */
-        get: operations["users__auth_list_member_directory"];
+        get: operations["users__members_list_member_directory"];
         put?: never;
         post?: never;
         delete?: never;
@@ -332,7 +332,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Member Profile */
-        get: operations["users__auth_get_member_profile"];
+        get: operations["users__members_get_member_profile"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3116,6 +3116,8 @@ export interface components {
         MePatchIn: {
             /** Bio */
             bio?: string | null;
+            /** Birthday */
+            birthday?: string | null;
             /** Calendar Feed Scope */
             calendar_feed_scope?: ("all" | "mine") | null;
             /** Email */
@@ -3181,6 +3183,8 @@ export interface components {
              * @default
              */
             bio: string;
+            /** Birthday */
+            birthday?: string | null;
             /**
              * Email
              * @default
@@ -3817,6 +3821,8 @@ export interface components {
              * @default
              */
             bio: string;
+            /** Birthday */
+            birthday?: string | null;
             /**
              * Calendar Feed Scope
              * @default all
@@ -4692,7 +4698,7 @@ export interface operations {
             };
         };
     };
-    users__auth_list_member_directory: {
+    users__members_list_member_directory: {
         parameters: {
             query?: never;
             header?: never;
@@ -4883,7 +4889,7 @@ export interface operations {
             };
         };
     };
-    users__auth_get_member_profile: {
+    users__members_get_member_profile: {
         parameters: {
             query?: never;
             header?: never;
