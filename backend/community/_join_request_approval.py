@@ -10,8 +10,8 @@ from users.api import _create_user_with_role
 from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
-from community.models import EventType, JoinRequestStatus
 from community._shared import validate_display_name
+from community.models import EventType, JoinRequestStatus
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
