@@ -1,3 +1,15 @@
+# [0.30.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.29.0...v0.30.0) (2026-07-14)
+
+
+### Bug Fixes
+
+* 824 - fix onboarding-gate race that skipped the profile step ([#833](https://github.com/ProteinDeficientsAnonymous/pda/issues/833)) ([2df0ee5](https://github.com/ProteinDeficientsAnonymous/pda/commit/2df0ee57f492c7e0f63d59055167f69465ade5f8))
+
+
+### Features
+
+* **admin:** tentative approval section, manual-approve, rsvp list ([#831](https://github.com/ProteinDeficientsAnonymous/pda/issues/831)) ([2467799](https://github.com/ProteinDeficientsAnonymous/pda/commit/2467799b0b9d63e66807fbb9ef6d375a54b3cd5b))
+
 # [0.29.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.28.0...v0.29.0) (2026-07-14)
 
 
