@@ -7,6 +7,7 @@ from uuid import UUID
 
 from config.media_proxy import media_path
 from django.db import transaction
+from django.db.models import Case, IntegerField, Sum, Value, When
 from notifications.service import (
     broadcast_cohost_change,
     broadcast_event_update,
