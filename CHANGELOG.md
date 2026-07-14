@@ -1,3 +1,10 @@
+# [0.25.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.24.0...v0.25.0) (2026-07-14)
+
+
+### Features
+
+* **rsvp:** add public resend endpoint for non-member manage link (Issue 716) ([#753](https://github.com/ProteinDeficientsAnonymous/pda/issues/753)) ([f6e81da](https://github.com/ProteinDeficientsAnonymous/pda/commit/f6e81da069f615b7057bf888dcc7b2611341cffd))
+
 # [0.24.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.23.0...v0.24.0) (2026-07-14)
 
 
