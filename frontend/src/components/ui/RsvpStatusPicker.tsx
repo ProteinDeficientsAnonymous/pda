@@ -17,7 +17,7 @@ interface Props {
 
 export function RsvpStatusPicker({ value, onSelect, disabled = false, labelFor }: Props) {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="-mx-1 flex justify-center-safe gap-2 overflow-x-auto px-1 py-1">
       {PILLS.map((p) => {
         const label = labelFor ? labelFor(p.status, p.label) : p.label;
         const active = value === p.status;
@@ -31,7 +31,7 @@ export function RsvpStatusPicker({ value, onSelect, disabled = false, labelFor }
               onSelect(p.status);
             }}
             className={cn(
-              'inline-flex h-10 items-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
+              'inline-flex h-10 shrink-0 items-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
               active
                 ? 'bg-brand-600 text-brand-on'
                 : 'border-border-strong text-foreground-secondary hover:bg-background border',
