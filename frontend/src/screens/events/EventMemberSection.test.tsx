@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -284,6 +284,14 @@ describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
     renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+
+  it('renders the invite members button inside the rsvp section (#788)', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
+    const rsvpCard = screen.getByRole('heading', { name: 'rsvp' }).closest('section');
+    expect(rsvpCard).not.toBeNull();
+    expect(within(rsvpCard!).getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 });
 

@@ -63,10 +63,15 @@ export function EventMemberSection({ event }: Props) {
       {showRsvp ? (
         <Card label="rsvp">
           <RsvpSection event={event} canSeeInvited={canSeeInvited} />
-          {isCoHost ? (
-            <div className="mt-4 flex justify-end gap-2">
-              <EmailBlastButton event={event} />
-              <GroupTextButton event={event} />
+          {canInvite || isCoHost ? (
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              {canInvite ? <InviteSection event={event} /> : null}
+              {isCoHost ? (
+                <>
+                  <EmailBlastButton event={event} />
+                  <GroupTextButton event={event} />
+                </>
+              ) : null}
             </div>
           ) : null}
         </Card>
@@ -76,7 +81,6 @@ export function EventMemberSection({ event }: Props) {
           <InvitedList event={event} />
         </Card>
       ) : null}
-      {canInvite ? <InviteSection event={event} /> : null}
       {rsvpDisabled ? null : <EventCommentsCard eventId={event.id} />}
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
@@ -451,7 +455,7 @@ function formatPrice(price: string): string {
 function InviteSection({ event }: { event: Event }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex justify-center">
+    <>
       <Button
         variant="secondary"
         onClick={() => {
@@ -467,6 +471,6 @@ function InviteSection({ event }: { event: Event }) {
           setOpen(false);
         }}
       />
-    </div>
+    </>
   );
 }
