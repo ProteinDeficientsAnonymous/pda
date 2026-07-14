@@ -26,6 +26,12 @@ vi.mock('./RsvpGuestList', () => ({
   RsvpGuestList: () => <div data-testid="guest-list" />,
 }));
 
+// Covered by RsvpNoteField.test.tsx — stubbed here so the +1/pill assertions
+// aren't competing with its buttons in the accessibility tree.
+vi.mock('./RsvpNoteField', () => ({
+  RsvpNoteField: () => <div data-testid="rsvp-note-field" />,
+}));
+
 import { RsvpSection } from './RsvpSection';
 
 const ME: User = {
@@ -58,6 +64,7 @@ function makeGuest(overrides: Partial<EventGuest>): EventGuest {
     photoUrl: '',
     hasPlusOne: false,
     attendance: AttendanceStatus.Unknown,
+    note: '',
     ...overrides,
   };
 }
@@ -97,6 +104,7 @@ function makeEvent(overrides: Partial<Event>): Event {
     coHostInviteIds: [],
     guests: [],
     myRsvp: RsvpServerStatus.Attending,
+    myRsvpNote: '',
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],

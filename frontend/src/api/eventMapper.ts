@@ -15,6 +15,7 @@ interface WireGuest {
   photo_url?: string;
   has_plus_one?: boolean;
   attendance?: string;
+  note?: string;
 }
 
 export interface WireEvent {
@@ -57,6 +58,7 @@ export interface WireEvent {
 
   guests?: WireGuest[];
   my_rsvp?: string | null;
+  my_rsvp_note?: string;
   survey_slugs?: string[];
   invited_user_ids?: string[];
   invited_user_names?: string[];
@@ -105,6 +107,7 @@ function mapGuest(g: WireGuest): EventGuest {
     photoUrl: g.photo_url ?? '',
     hasPlusOne: g.has_plus_one ?? false,
     attendance: mapAttendance(g.attendance),
+    note: g.note ?? '',
   };
 }
 
@@ -163,6 +166,7 @@ export function mapEvent(e: WireEvent): Event {
 
     guests: (e.guests ?? []).map(mapGuest),
     myRsvp: e.my_rsvp ?? null,
+    myRsvpNote: e.my_rsvp_note ?? '',
     surveySlugs: e.survey_slugs ?? [],
     invitedUserIds: e.invited_user_ids ?? [],
     invitedUserNames: e.invited_user_names ?? [],

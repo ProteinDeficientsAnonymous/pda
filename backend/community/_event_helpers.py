@@ -63,6 +63,7 @@ def _build_guest_list(rsvps, can_see_phones: bool) -> list[RSVPGuestOut]:
             phone=r.user.phone_number if can_see_phones else None,
             photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
+            note=r.note,
         )
         for r in rsvps
     ]
@@ -76,6 +77,16 @@ def _find_my_rsvp(rsvps, user) -> str | None:
         if r.user_id == user.pk:
             return r.status
     return None
+
+
+def _find_my_rsvp_note(rsvps, user) -> str:
+    """Find requesting user's RSVP note."""
+    if user is None:
+        return ""
+    for r in rsvps:
+        if r.user_id == user.pk:
+            return r.note
+    return ""
 
 
 def _attending_headcount(event: Event) -> int:
@@ -379,6 +390,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_invite_ids=co_host_invite_ids,
         guests=_members_only(_build_guest_list(rsvps, phones_visible), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
+        my_rsvp_note=_find_my_rsvp_note(rsvps, auth_user),
         event_type=event.event_type,
         visibility=event.visibility,
         photo_url=media_path(event.photo),

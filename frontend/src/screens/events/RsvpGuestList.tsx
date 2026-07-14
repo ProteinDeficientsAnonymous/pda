@@ -87,9 +87,18 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
         <InvitedList event={event} />
       ) : (
         <div className="flex flex-wrap gap-2">
-          {visible.map((g) => (
-            <GuestChip key={g.userId} guest={g} />
-          ))}
+          {visible.map((g) =>
+            g.note ? (
+              <div key={g.userId} className="flex w-full flex-col gap-1">
+                <div className="flex">
+                  <GuestChip guest={g} />
+                </div>
+                <p className="text-foreground-secondary pl-2 text-xs">“{g.note}”</p>
+              </div>
+            ) : (
+              <GuestChip key={g.userId} guest={g} />
+            ),
+          )}
         </div>
       )}
     </div>
@@ -144,6 +153,7 @@ export function InvitedList({ event }: { event: Event }) {
               photoUrl,
               hasPlusOne: false,
               attendance: AttendanceStatus.Unknown,
+              note: '',
             }}
           />
         );

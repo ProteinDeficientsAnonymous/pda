@@ -2330,6 +2330,11 @@ export interface components {
             /** My Rsvp */
             my_rsvp?: string | null;
             /**
+             * My Rsvp Note
+             * @default
+             */
+            my_rsvp_note: string;
+            /**
              * Other Link
              * @default
              */
@@ -3077,6 +3082,11 @@ export interface components {
             has_plus_one: boolean;
             /** Name */
             name: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
             /** Phone */
             phone?: string | null;
             /**
@@ -3096,6 +3106,8 @@ export interface components {
              * @default false
              */
             has_plus_one: boolean;
+            /** Note */
+            note?: string | null;
             /** Status */
             status: string;
         };

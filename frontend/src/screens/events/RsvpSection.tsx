@@ -15,6 +15,7 @@ import { type Event, RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 import { RsvpGuestList } from './RsvpGuestList';
+import { RsvpNoteField } from './RsvpNoteField';
 
 interface Props {
   event: Event;
@@ -22,6 +23,13 @@ interface Props {
 }
 
 type InputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
+
+// `waitlisted` is server-assigned and not a valid input status, so anything
+// that re-POSTs an existing RSVP (+1 toggle, note edit) needs this narrowing.
+function asInputStatus(status: string | null): InputStatus | null {
+  const match = Object.values(RsvpStatus).find((s) => s === status);
+  return match ?? null;
+}
 
 const PILLS: { status: InputStatus; label: string }[] = [
   { status: RsvpStatus.Attending, label: "i'm going" },
@@ -62,11 +70,13 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     // Only attending/maybe can bring a +1 (server-enforced on attending; UI
     // gate prevents the extra POST in the first place).
     if (myRsvp !== RsvpServerStatus.Attending && myRsvp !== RsvpServerStatus.Maybe) return;
+    const status = asInputStatus(myRsvp);
+    if (!status) return;
     setError(null);
     try {
       await setRsvp.mutateAsync({
         eventId: event.id,
-        status: myRsvp as InputStatus,
+        status,
         hasPlusOne: !hasPlusOne,
       });
     } catch (err) {
@@ -74,7 +84,20 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     }
   }
 
+  async function saveNote(note: string) {
+    const status = asInputStatus(myRsvp);
+    if (!status) return;
+    setError(null);
+    try {
+      // Re-send hasPlusOne: a status-only POST resets it to false server-side.
+      await setRsvp.mutateAsync({ eventId: event.id, status, hasPlusOne, note });
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
   const busy = setRsvp.isPending || removeRsvp.isPending;
+  const noteStatus = asInputStatus(myRsvp);
 
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
@@ -111,6 +134,13 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
                 {hasPlusOne ? 'remove +1' : 'bring a +1'}
               </Button>
             </div>
+          ) : null}
+          {noteStatus ? (
+            <RsvpNoteField
+              note={event.myRsvpNote}
+              disabled={busy}
+              onSave={(note) => void saveNote(note)}
+            />
           ) : null}
         </>
       )}

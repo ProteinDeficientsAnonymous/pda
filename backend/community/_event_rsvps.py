@@ -109,7 +109,7 @@ def _validate_rsvp_status(status: str) -> None:
 
 
 def _apply_rsvp_in_transaction(
-    event_id, user, status: str, has_plus_one: bool
+    event_id, user, status: str, has_plus_one: bool, note: str | None = None
 ) -> tuple[str, list[str]]:
     """Execute RSVP upsert inside a locked transaction.
 
@@ -136,11 +136,13 @@ def _apply_rsvp_in_transaction(
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
 
-    EventRSVP.objects.update_or_create(
-        event=event,
-        user=user,
-        defaults={"status": final_status, "has_plus_one": final_plus_one},
-    )
+    defaults = {"status": final_status, "has_plus_one": final_plus_one}
+    # note=None means the caller left it untouched (e.g. a status-only change),
+    # so we don't overwrite a previously saved note.
+    if note is not None:
+        defaults["note"] = note.strip()
+
+    EventRSVP.objects.update_or_create(event=event, user=user, defaults=defaults)
 
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
         was_attending and had_plus_one and not final_plus_one
@@ -166,7 +168,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
 
     with transaction.atomic():
         final_status, _promoted_user_ids = _apply_rsvp_in_transaction(
-            event_id, request.auth, payload.status, payload.has_plus_one
+            event_id, request.auth, payload.status, payload.has_plus_one, payload.note
         )
 
     audit_log(

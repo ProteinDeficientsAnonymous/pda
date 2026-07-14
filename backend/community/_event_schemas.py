@@ -145,6 +145,7 @@ class RSVPGuestOut(BaseModel):
     phone: str | None = None
     photo_url: str = ""
     attendance: str = AttendanceStatus.UNKNOWN
+    note: str = ""
 
 
 class PendingCoHostInviteOut(BaseModel):
@@ -223,6 +224,7 @@ class EventOut(BaseModel):
     co_host_invite_ids: list[str | None] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
+    my_rsvp_note: str = ""
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""
@@ -250,6 +252,9 @@ class EventOut(BaseModel):
 class RSVPIn(BaseModel):
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
+    # None = leave any existing note untouched (e.g. a status-only change);
+    # a string (empty included) explicitly sets/clears it.
+    note: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
 
 class TextRecipientsOut(BaseModel):

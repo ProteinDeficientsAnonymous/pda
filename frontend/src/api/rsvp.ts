@@ -24,6 +24,9 @@ interface SetRsvpArgs {
   eventId: string;
   status: RsvpInput;
   hasPlusOne?: boolean;
+  // Omitting `note` leaves an existing note untouched — the server only writes
+  // the column when the key is present. Pass '' to clear it.
+  note?: string;
 }
 
 function updateCaches(qc: ReturnType<typeof useQueryClient>, event: Event, isAuthed: boolean) {
@@ -40,10 +43,11 @@ export function useSetRsvp() {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async ({ eventId, status, hasPlusOne = false }: SetRsvpArgs) => {
+    mutationFn: async ({ eventId, status, hasPlusOne = false, note }: SetRsvpArgs) => {
       const { data } = await apiClient.post<WireEvent>(`/api/community/events/${eventId}/rsvp/`, {
         status,
         has_plus_one: hasPlusOne,
+        ...(note === undefined ? {} : { note }),
       });
       return mapEvent(data);
     },

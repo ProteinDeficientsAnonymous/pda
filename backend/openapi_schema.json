@@ -1590,6 +1590,11 @@
             ],
             "title": "My Rsvp"
           },
+          "my_rsvp_note": {
+            "default": "",
+            "title": "My Rsvp Note",
+            "type": "string"
+          },
           "other_link": {
             "default": "",
             "title": "Other Link",
@@ -3402,6 +3407,11 @@
             "title": "Name",
             "type": "string"
           },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
           "phone": {
             "anyOf": [
               {
@@ -3441,6 +3451,18 @@
             "default": false,
             "title": "Has Plus One",
             "type": "boolean"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
           },
           "status": {
             "maxLength": 20,
