@@ -1,3 +1,10 @@
+# [0.27.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.26.0...v0.27.0) (2026-07-14)
+
+
+### Features
+
+* **events:** make rsvp pills horizontally scrollable (Issue 620) ([#767](https://github.com/ProteinDeficientsAnonymous/pda/issues/767)) ([2585500](https://github.com/ProteinDeficientsAnonymous/pda/commit/258550089e4b77267f06f5ecffab81744c549b64))
+
 # [0.26.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.3...v0.26.0) (2026-07-14)
 
 
