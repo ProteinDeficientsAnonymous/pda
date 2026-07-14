@@ -4,8 +4,14 @@ import pytest
 from community.management.commands._seed_staging_data import (
     NON_MEMBER_EVENT_TITLE,
     NON_MEMBER_SPECS,
+    OFFICIAL_FULL_TITLE,
+    OFFICIAL_PAST_TITLE,
+    OFFICIAL_TODAY_TITLE,
     PASSWORD,
     STAGING_EVENTS,
+    TOKEN_EXPIRED,
+    TOKEN_NONE,
+    TOKEN_VALID,
     cond_email,
     cond_phone,
     condition_combinations,
@@ -14,7 +20,7 @@ from community.management.commands._seed_staging_data import (
     perm_email,
     perm_phone,
 )
-from community.models import Event, EventRSVP
+from community.models import AttendanceStatus, Event, EventRSVP, EventType, RSVPStatus
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.utils import timezone
@@ -162,6 +168,7 @@ def test_seed_staging_events_span_past_current_future():
 @pytest.mark.django_db
 def test_seed_staging_is_idempotent():
     call_command("seed_staging")
+    rsvps = EventRSVP.objects.count()
     call_command("seed_staging")
     assert User.objects.filter(phone_number__startswith="+170255501").count() == len(
         PermissionKey.values
@@ -169,6 +176,7 @@ def test_seed_staging_is_idempotent():
     assert User.objects.filter(phone_number__startswith="+170255502").count() == 8
     assert Role.objects.filter(name__startswith="perm: ").count() == len(PermissionKey.values)
     assert Event.objects.filter(title__startswith="[staging] ").count() == len(STAGING_EVENTS)
+    assert EventRSVP.objects.count() == rsvps
 
 
 @pytest.mark.django_db
@@ -194,27 +202,27 @@ def test_seed_staging_refuses_in_production(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_seed_staging_creates_non_members():
+def test_seed_staging_non_member_lifecycle_matches_specs():
     call_command("seed_staging")
-    non_members = User.objects.filter(phone_number__startswith="+170255503")
-    assert non_members.count() == len(NON_MEMBER_SPECS)
-    for u in non_members:
-        assert u.is_member is False
-        assert not u.has_usable_password()
-
-
-@pytest.mark.django_db
-def test_seed_staging_non_members_have_valid_tokens_and_rsvps():
-    call_command("seed_staging")
-    rsvped = User.objects.filter(
-        phone_number__startswith="+170255503", event_rsvps__isnull=False
-    ).distinct()
-    assert rsvped.exists()
-    for u in rsvped:
-        token = NonMemberRsvpToken.objects.filter(user=u).first()
-        assert token is not None and token.is_valid
-    demo = Event.objects.get(title=NON_MEMBER_EVENT_TITLE)
-    assert EventRSVP.objects.filter(event=demo).exists()
+    assert User.objects.filter(phone_number__startswith="+170255503").count() == len(
+        NON_MEMBER_SPECS
+    )
+    states = {TOKEN_VALID: 0, TOKEN_EXPIRED: 0, TOKEN_NONE: 0, "with_email": 0, "no_email": 0}
+    for index, spec in enumerate(NON_MEMBER_SPECS):
+        user = User.objects.get(phone_number=f"+170255503{index:02d}")
+        assert user.is_member is False and not user.has_usable_password()
+        assert bool(user.email) is spec.has_email
+        states["with_email" if spec.has_email else "no_email"] += 1
+        states[spec.token_state] += 1
+        token = NonMemberRsvpToken.objects.filter(user=user).first()
+        if spec.token_state == TOKEN_NONE:
+            assert token is None
+        elif spec.token_state == TOKEN_EXPIRED:
+            assert token is not None and token.is_expired and not token.is_valid
+        elif spec.rsvps:
+            assert token is not None and token.is_valid
+    assert all(v > 0 for v in states.values())
+    assert EventRSVP.objects.filter(event__title=NON_MEMBER_EVENT_TITLE).exists()
 
 
 @pytest.mark.django_db
@@ -241,3 +249,61 @@ def test_seed_staging_non_members_idempotent():
     assert User.objects.filter(phone_number__startswith="+170255503").count() == len(
         NON_MEMBER_SPECS
     )
+
+
+def test_official_events_span_past_today_future_with_capacity_variety():
+    official = [e for e in STAGING_EVENTS if e.event_type == EventType.OFFICIAL and e.rsvp_enabled]
+    assert len(official) >= 3
+    assert any(e.delta_days < 0 for e in official)
+    assert any(e.delta_days == 0 for e in official)
+    assert any(e.delta_days > 0 for e in official)
+    caps = [e.max_attendees for e in official if e.max_attendees is not None]
+    assert min(caps) <= 2  # at/over capacity to exercise the waitlist
+    assert max(caps) >= 20  # well under capacity
+
+
+@pytest.mark.django_db
+def test_seed_staging_official_events_are_rsvp_enabled():
+    call_command("seed_staging")
+    for title in (OFFICIAL_PAST_TITLE, OFFICIAL_TODAY_TITLE, OFFICIAL_FULL_TITLE):
+        event = Event.objects.get(title=title)
+        assert event.event_type == EventType.OFFICIAL
+        assert event.rsvp_enabled is True
+        assert event.max_attendees is not None
+
+
+@pytest.mark.django_db
+def test_seed_staging_members_cover_all_rsvp_states():
+    call_command("seed_staging")
+    states = set(
+        EventRSVP.objects.filter(user__phone_number__startswith="+170255502").values_list(
+            "status", flat=True
+        )
+    )
+    assert {
+        RSVPStatus.ATTENDING,
+        RSVPStatus.MAYBE,
+        RSVPStatus.CANT_GO,
+        RSVPStatus.WAITLISTED,
+    } <= states
+
+
+@pytest.mark.django_db
+def test_seed_staging_past_official_has_member_and_non_member_attendance_marks():
+    call_command("seed_staging")
+    marked = EventRSVP.objects.filter(
+        event__title=OFFICIAL_PAST_TITLE,
+        status=RSVPStatus.ATTENDING,
+        attendance__in=[AttendanceStatus.ATTENDED, AttendanceStatus.NO_SHOW],
+    )
+    assert marked.filter(user__is_member=True).exists()
+    assert marked.filter(user__is_member=False).exists()
+
+
+@pytest.mark.django_db
+def test_seed_staging_over_capacity_event_fills_and_waitlists():
+    call_command("seed_staging")
+    full = Event.objects.get(title=OFFICIAL_FULL_TITLE)
+    rsvps = EventRSVP.objects.filter(event=full)
+    assert rsvps.filter(status=RSVPStatus.ATTENDING).count() >= full.max_attendees
+    assert rsvps.filter(status=RSVPStatus.WAITLISTED).exists()
