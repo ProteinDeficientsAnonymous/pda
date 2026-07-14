@@ -36,8 +36,8 @@ const defaultSubmitResult = {
   mutateAsync: vi.fn(),
 } as unknown as ReturnType<typeof useSubmitJoinRequest>;
 
-// One-shot fill via fireEvent.change: typing key-by-key costs ~350ms per test
-// (245-option country select re-renders each keystroke) and starves the suite under load.
+// One-shot fill via fireEvent.change: key-by-key typing re-renders the country
+// <select> on every keystroke, so a single change event is much cheaper.
 function fillPhone(value = '(555) 123-4567') {
   fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value } });
 }

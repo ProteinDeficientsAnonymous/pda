@@ -14,9 +14,5 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: true,
-    // Heavy renders (245-option country <select>, axe passes) are slow but
-    // correct; under parallel CI load they trip vitest's 5s default and flake.
-    testTimeout: 15000,
-    hookTimeout: 15000,
   },
 });

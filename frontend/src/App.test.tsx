@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -56,6 +56,10 @@ function renderWith(initialEntries: string[] = ['/login']) {
 // PhoneInput accepts national-format input when the country dropdown is US.
 const US_PHONE_NATIONAL = '2125551234';
 
+function fillPhone(value = US_PHONE_NATIONAL) {
+  fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value } });
+}
+
 describe('LoginScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -73,7 +77,7 @@ describe('LoginScreen', () => {
     const user = userEvent.setup();
     renderWith();
 
-    await user.type(screen.getByLabelText(/phone number/i), US_PHONE_NATIONAL);
+    fillPhone();
     await user.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => {
@@ -87,7 +91,7 @@ describe('LoginScreen', () => {
     const user = userEvent.setup();
     renderWith();
 
-    await user.type(screen.getByLabelText(/phone number/i), US_PHONE_NATIONAL);
+    fillPhone();
     await user.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => {
@@ -100,7 +104,7 @@ describe('LoginScreen', () => {
     const user = userEvent.setup();
     renderWith();
 
-    await user.type(screen.getByLabelText(/phone number/i), US_PHONE_NATIONAL);
+    fillPhone();
     await user.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => {
@@ -122,7 +126,7 @@ describe('LoginScreen', () => {
     const user = userEvent.setup();
     renderWith();
 
-    await user.type(screen.getByLabelText(/phone number/i), US_PHONE_NATIONAL);
+    fillPhone();
     await user.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => {

@@ -7,6 +7,8 @@ import flags from 'react-phone-number-input/flags';
 
 import { cn } from '@/utils/cn';
 
+import { getPhoneCountries } from './phoneCountries';
+
 interface Props {
   label: string;
   value: string;
@@ -34,6 +36,7 @@ export function PhoneField({
 }: Props) {
   const inputId = id ?? `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
   const describedBy = error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined;
+  const testCountries = getPhoneCountries();
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={inputId} className="text-foreground text-sm font-medium">
@@ -45,6 +48,7 @@ export function PhoneField({
         flags={flags}
         defaultCountry={defaultCountry}
         countryCallingCodeEditable={false}
+        {...(testCountries !== undefined ? { countries: testCountries } : {})}
         {...(name !== undefined ? { name } : {})}
         {...(autoComplete !== undefined ? { autoComplete } : {})}
         value={value as Value}
