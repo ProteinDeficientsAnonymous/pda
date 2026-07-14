@@ -3,7 +3,6 @@ import { useState } from 'react';
 
 import { type TextScale, type ThemeMode, useAccessibilityStore } from '@/accessibility/store';
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useVersion } from '@/api/version';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
@@ -114,8 +113,6 @@ export default function SettingsScreen() {
         <TextScaleToggle value={textScale} onChange={setTextScale} />
       </Section>
 
-      <BuildInfo />
-
       <ChangePasswordDialog
         open={pwOpen}
         onClose={() => {
@@ -123,17 +120,6 @@ export default function SettingsScreen() {
         }}
       />
     </ContentContainer>
-  );
-}
-
-function BuildInfo() {
-  const versionQ = useVersion();
-  if (!versionQ.data) return null;
-  const { commitShaShort, environment } = versionQ.data;
-  return (
-    <p className="text-muted mb-6 text-center text-xs">
-      build {commitShaShort} · {environment}
-    </p>
   );
 }
 
