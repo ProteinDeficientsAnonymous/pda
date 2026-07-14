@@ -5,6 +5,7 @@ from uuid import UUID
 from config.audit import audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
+from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router
@@ -135,10 +136,36 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
+RSVP_NOTE_RATE = (10, 60)  # matches post_comment's 10/m — same underlying action
+
+
+def _rsvp_note_rate_limited(user) -> bool:
+    """True if this user has posted RSVP-note comments/notifications too often.
+
+    A separate cache-backed counter from @rate_limit on upsert_rsvp: RSVP status
+    changes (no note) shouldn't count against the note-posting budget, and
+    exceeding it should silently skip the note rather than fail the RSVP write.
+    """
+    count, period = RSVP_NOTE_RATE
+    cache_key = f"rl:rsvp_note:{user.pk}"
+    current = cache.get(cache_key, 0)
+    if current >= count:
+        return True
+    cache.set(cache_key, current + 1, period)
+    return False
+
+
 def _notify_rsvp_note(event: Event, user, final_status: str, note: str | None) -> None:
-    """Post a decline note or event comment for a non-empty RSVP note."""
+    """Post a decline note or event comment for a non-empty RSVP note.
+
+    Called after the RSVP transaction commits — not while the Event row lock
+    from select_for_update is held — since the comment/notification writes
+    have no correctness dependency on that lock.
+    """
     cleaned_note = (note or "").strip()
     if not cleaned_note:
+        return
+    if _rsvp_note_rate_limited(user):
         return
     if final_status == RSVPStatus.CANT_GO:
         notify_rsvp_declined_note(event=event, author=user, note=cleaned_note)
@@ -148,13 +175,15 @@ def _notify_rsvp_note(event: Event, user, final_status: str, note: str | None) -
 
 
 def _apply_rsvp_in_transaction(
-    event_id, user, status: str, has_plus_one: bool, note: str | None = None
-) -> tuple[str, list[str]]:
+    event_id, user, status: str, has_plus_one: bool
+) -> tuple[str, list[str], Event]:
     """Execute RSVP upsert inside a locked transaction.
 
-    Returns (final_status, promoted_user_ids). promoted_user_ids is the list of
-    users promoted off the waitlist by this change (empty unless a spot freed),
-    surfaced so callers can follow up per promoted user after commit.
+    Returns (final_status, promoted_user_ids, event). promoted_user_ids is the
+    list of users promoted off the waitlist by this change (empty unless a spot
+    freed). The returned event is for the caller to pass to _notify_rsvp_note
+    after the transaction commits, so that side effect isn't done under the row
+    lock — see _notify_rsvp_note's docstring.
 
     Raises ValidationException on failure.
     """
@@ -185,14 +214,12 @@ def _apply_rsvp_in_transaction(
         },
     )
 
-    _notify_rsvp_note(event, user, final_status, note)
-
     spot_freed = (was_attending and final_status != RSVPStatus.ATTENDING) or (
         was_attending and had_plus_one and not final_plus_one
     )
     promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
-    return final_status, promoted_user_ids
+    return final_status, promoted_user_ids, event
 
 
 @router.post(
@@ -210,9 +237,11 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids = _apply_rsvp_in_transaction(
-            event_id, request.auth, payload.status, payload.has_plus_one, payload.note
+        final_status, promoted_user_ids, rsvp_event = _apply_rsvp_in_transaction(
+            event_id, request.auth, payload.status, payload.has_plus_one
         )
+
+    _notify_rsvp_note(rsvp_event, request.auth, final_status, payload.note)
 
     audit_log(
         logging.INFO,

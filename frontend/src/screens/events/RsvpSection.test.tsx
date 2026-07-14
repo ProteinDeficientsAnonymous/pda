@@ -207,6 +207,15 @@ describe('RsvpSection — after RSVPing', () => {
     expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
   });
 
+  it('removes the RSVP when "remove rsvp" is tapped in the edit box', async () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+    fireEvent.click(screen.getByRole('button', { name: /remove rsvp/i }));
+
+    expect(removeRsvpMutate).toHaveBeenCalledWith('ev1');
+  });
+
   it('shows only "leave waitlist" when on the waitlist (no pills, no status line, no edit button)', () => {
     renderSection(
       makeEvent({

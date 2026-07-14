@@ -81,6 +81,16 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
     }
   }
 
+  async function removeMyRsvp() {
+    setError(null);
+    try {
+      await removeRsvp.mutateAsync(event.id);
+      setBox(null);
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
   const busy = setRsvp.isPending || removeRsvp.isPending;
 
   return (
@@ -122,7 +132,9 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
           initialStatus={box.initialStatus}
           initialHasPlusOne={hasPlusOne}
           allowPlusOnes={event.allowPlusOnes}
+          busy={busy}
           onConfirm={(args) => void confirmRsvp(args)}
+          onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {
             setBox(null);
           }}
@@ -150,7 +162,7 @@ function RsvpControls({
       <div className="flex items-center justify-center gap-3">
         <span className="text-foreground-secondary text-sm">{statusLine(myInputStatus)}</span>
         <Button variant="secondary" onClick={onOpenEdit} disabled={busy}>
-          edit RSVP
+          edit rsvp
         </Button>
       </div>
     );

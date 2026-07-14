@@ -42,4 +42,28 @@ describe('RsvpBox', () => {
       expect.not.objectContaining({ note: expect.anything() }),
     );
   });
+
+  it('shows a remove rsvp button in edit mode when onRemove is provided', () => {
+    render(<RsvpBox {...base} mode="edit" onConfirm={() => {}} onRemove={() => {}} />);
+    expect(screen.getByRole('button', { name: /remove rsvp/i })).toBeInTheDocument();
+  });
+
+  it('hides the remove rsvp button in create mode', () => {
+    render(<RsvpBox {...base} mode="create" onConfirm={() => {}} onRemove={() => {}} />);
+    expect(screen.queryByRole('button', { name: /remove rsvp/i })).not.toBeInTheDocument();
+  });
+
+  it('calls onRemove when the remove rsvp button is tapped', () => {
+    const onRemove = vi.fn();
+    render(<RsvpBox {...base} mode="edit" onConfirm={() => {}} onRemove={onRemove} />);
+    fireEvent.click(screen.getByRole('button', { name: /remove rsvp/i }));
+    expect(onRemove).toHaveBeenCalled();
+  });
+
+  it('disables confirm, cancel, and remove buttons when busy', () => {
+    render(<RsvpBox {...base} mode="edit" busy onConfirm={() => {}} onRemove={() => {}} />);
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /remove rsvp/i })).toBeDisabled();
+  });
 });

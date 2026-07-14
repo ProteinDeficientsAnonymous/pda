@@ -52,3 +52,19 @@ class TestNotifyRsvpDeclinedNote:
             ).count()
             == 1
         )
+
+    def test_long_note_and_name_truncates_without_dangling_quote(self, test_user, db):
+        decliner = User.objects.create_user(
+            phone_number="+12025550810",
+            password="pw",
+            first_name="Alexandra Montgomery-Whitfield",
+            last_name="",
+        )
+        event = self._event(test_user)
+        long_note = "x" * 280
+        notify_rsvp_declined_note(event=event, author=decliner, note=long_note)
+        n = Notification.objects.get(
+            recipient=test_user, notification_type=NotificationType.RSVP_DECLINED_NOTE
+        )
+        assert len(n.message) <= 255
+        assert n.message.endswith("”")

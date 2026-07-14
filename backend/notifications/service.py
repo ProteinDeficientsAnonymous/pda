@@ -357,7 +357,12 @@ def notify_rsvp_declined_note(event, author, note: str) -> None:
     if not recipient_ids:
         return
     name = visible_display_name(author, None)
-    message = f"{name} can't go: “{note}”"[:255]
+    # Truncate the note (not the finished string) so the closing quote always
+    # survives — Notification.message has a hard max_length=255.
+    wrapper_len = len(f"{name} can't go: “”")
+    max_note_len = max(0, 255 - wrapper_len)
+    truncated_note = note if len(note) <= max_note_len else note[: max_note_len - 1] + "…"
+    message = f"{name} can't go: “{truncated_note}”"
     recipient_id_list = sorted(recipient_ids)
     Notification.objects.bulk_create(
         [

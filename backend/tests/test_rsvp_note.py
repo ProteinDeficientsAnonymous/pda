@@ -110,3 +110,16 @@ class TestRSVPNoteRouting:
         # Re-RSVP with no note key (an edit) — must not post another comment.
         _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE)
         assert EventComment.objects.filter(event=rsvp_event, author=member).count() == 1
+
+    def test_repeated_notes_stop_creating_comments_past_the_note_rate_limit(
+        self, api_client, member_headers, member, rsvp_event
+    ):
+        # 10 notes/min matches post_comment's own rate limit (issue: the RSVP
+        # endpoint's higher 30/min limit must not let notes bypass that budget).
+        for i in range(12):
+            resp = _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, f"note {i}")
+            # The RSVP status write itself must keep succeeding even once the
+            # note side effect is throttled — only the comment/notification stops.
+            assert resp.status_code == 200
+
+        assert EventComment.objects.filter(event=rsvp_event, author=member).count() <= 10

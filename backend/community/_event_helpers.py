@@ -101,10 +101,6 @@ def _find_my_rsvp(rsvps, user) -> str | None:
     return None
 
 
-def _cant_go_count(event: Event) -> int:
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.CANT_GO)
-
-
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     """Return currently-CANT_GO RSVPs with lead time (days before start).
 

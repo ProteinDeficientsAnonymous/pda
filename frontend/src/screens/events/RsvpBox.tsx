@@ -27,7 +27,9 @@ interface Props {
   initialStatus: RsvpInputStatus;
   initialHasPlusOne: boolean;
   allowPlusOnes: boolean;
+  busy?: boolean;
   onConfirm: (args: ConfirmArgs) => void;
+  onRemove?: (() => void) | undefined;
   onClose: () => void;
 }
 
@@ -37,7 +39,9 @@ export function RsvpBox({
   initialStatus,
   initialHasPlusOne,
   allowPlusOnes,
+  busy = false,
   onConfirm,
+  onRemove,
   onClose,
 }: Props) {
   const [status, setStatus] = useState<RsvpInputStatus>(initialStatus);
@@ -55,7 +59,7 @@ export function RsvpBox({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="RSVP">
+    <Dialog open={open} onClose={onClose} title="rsvp">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap justify-center gap-2">
           {STATUS_LABELS.map((s) => (
@@ -93,13 +97,22 @@ export function RsvpBox({
 
         {showNote ? <RsvpNoteField value={note} onChange={setNote} /> : null}
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            cancel
-          </Button>
-          <Button type="button" onClick={confirm}>
-            {mode === 'edit' ? 'save' : 'confirm'}
-          </Button>
+        <div className="flex items-center justify-between gap-2">
+          {mode === 'edit' && onRemove ? (
+            <Button type="button" variant="ghost" onClick={onRemove} disabled={busy}>
+              remove rsvp
+            </Button>
+          ) : (
+            <span />
+          )}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+              cancel
+            </Button>
+            <Button type="button" onClick={confirm} disabled={busy}>
+              {mode === 'edit' ? 'save' : 'confirm'}
+            </Button>
+          </div>
         </div>
       </div>
     </Dialog>
