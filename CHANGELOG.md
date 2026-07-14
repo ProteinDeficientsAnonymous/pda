@@ -1,3 +1,10 @@
+# [0.23.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.22.0...v0.23.0) (2026-07-14)
+
+
+### Features
+
+* **feedback:** auto-label in-app feedback issues for the autonomous queue (Issue 608) ([#796](https://github.com/ProteinDeficientsAnonymous/pda/issues/796)) ([1ec0a3b](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ec0a3bf749063e48b45986cf55da8a7246f5e7e))
+
 # [0.22.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.21.0...v0.22.0) (2026-07-14)
 
 
