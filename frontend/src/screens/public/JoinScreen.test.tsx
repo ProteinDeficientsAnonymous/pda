@@ -36,7 +36,8 @@ const defaultSubmitResult = {
   mutateAsync: vi.fn(),
 } as unknown as ReturnType<typeof useSubmitJoinRequest>;
 
-// One-shot fill: typing costs ~350ms per test (245-option country select re-renders each keystroke), tripping the 5s timeout under load.
+// One-shot fill via fireEvent.change: typing key-by-key costs ~350ms per test
+// (245-option country select re-renders each keystroke) and starves the suite under load.
 function fillPhone(value = '(555) 123-4567') {
   fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value } });
 }
