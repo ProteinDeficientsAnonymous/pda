@@ -1,3 +1,10 @@
+## [0.25.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.2...v0.25.3) (2026-07-14)
+
+
+### Bug Fixes
+
+* **profile:** honor own hidden fields in view-my-profile preview (Issue 791) ([#802](https://github.com/ProteinDeficientsAnonymous/pda/issues/802)) ([8d4141e](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d4141e266cdf0e2c47ddec1c78599e482508185))
+
 ## [0.25.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.1...v0.25.2) (2026-07-14)
 
 
