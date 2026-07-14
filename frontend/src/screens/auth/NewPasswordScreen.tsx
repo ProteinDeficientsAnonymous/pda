@@ -32,7 +32,6 @@ export default function NewPasswordScreen() {
   // members — skip straight to the app) and first-time join-request users who
   // already have name+email but have never seen the profile step.
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
-  const startProfileStep = useAuthStore((s) => s.startProfileStep);
   const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
   const profileStepActive = useAuthStore((s) => s.profileStepActive);
   const needsOnboarding = useAuthStore((s) => s.user?.needsOnboarding ?? false);
@@ -53,10 +52,11 @@ export default function NewPasswordScreen() {
   async function onSubmit(values: FormValues) {
     setServerError(null);
     try {
-      await completeOnboarding({ newPassword: values.newPassword });
-      if (needsOnboarding) {
-        startProfileStep();
-      } else {
+      await completeOnboarding({
+        newPassword: values.newPassword,
+        startProfileStep: needsOnboarding,
+      });
+      if (!needsOnboarding) {
         void navigate('/calendar', { replace: true });
       }
     } catch (err) {

@@ -41,8 +41,12 @@ interface AuthState {
     email?: string | undefined;
     pronouns?: string | undefined;
     consentTypes?: ConsentTypeValue[] | undefined;
+    // Set alongside `user` in the same store update — a separate
+    // startProfileStep() call afterward leaves a render in between where
+    // needsOnboarding and profileStepActive are both false, which
+    // OnboardingGate would act on and bounce the user away mid-setup.
+    startProfileStep?: boolean;
   }) => Promise<void>;
-  startProfileStep: () => void;
   finishProfileStep: () => void;
   acceptConsents: (consentTypes: ConsentTypeValue[]) => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
@@ -106,12 +110,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async completeOnboarding(payload) {
-    const user = await authApi.completeOnboarding(payload);
-    set({ user });
-  },
-
-  startProfileStep() {
-    set({ profileStepActive: true });
+    const { startProfileStep: shouldStartProfileStep, ...apiPayload } = payload;
+    const user = await authApi.completeOnboarding(apiPayload);
+    set(shouldStartProfileStep ? { user, profileStepActive: true } : { user });
   },
 
   finishProfileStep() {

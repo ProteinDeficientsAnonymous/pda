@@ -27,13 +27,11 @@ const VALID = 'abcd1234ABCD!';
 
 describe('NewPasswordScreen', () => {
   const completeOnboarding = vi.fn();
-  const startProfileStep = vi.fn();
   const finishProfileStep = vi.fn();
 
   function setupMock(user: User, profileStepActive = false) {
     const storeState = {
       completeOnboarding,
-      startProfileStep,
       finishProfileStep,
       user,
       profileStepActive,
@@ -47,7 +45,6 @@ describe('NewPasswordScreen', () => {
 
   beforeEach(() => {
     completeOnboarding.mockReset();
-    startProfileStep.mockReset();
     finishProfileStep.mockReset();
     setupMock(makeUser({ needsOnboarding: false, needsPasswordReset: true }));
   });
@@ -66,7 +63,7 @@ describe('NewPasswordScreen', () => {
     expect(completeOnboarding).not.toHaveBeenCalled();
   });
 
-  it('submits the new password when confirmation matches, and does not enter the profile step on a real password reset', async () => {
+  it('submits the new password when confirmation matches, and does not request the profile step on a real password reset', async () => {
     completeOnboarding.mockResolvedValue(undefined);
     setupMock(makeUser({ needsOnboarding: false, needsPasswordReset: true }));
     render(
@@ -78,14 +75,16 @@ describe('NewPasswordScreen', () => {
     await userEvent.type(screen.getByLabelText(/confirm new password/i), VALID);
     await userEvent.click(screen.getByRole('button', { name: /save password/i }));
 
-    await vi.waitFor(() => {
-      expect(completeOnboarding).toHaveBeenCalledWith({ newPassword: VALID });
-    });
     // a self-service password reset is an already-onboarded member — no profile step
-    expect(startProfileStep).not.toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(completeOnboarding).toHaveBeenCalledWith({
+        newPassword: VALID,
+        startProfileStep: false,
+      });
+    });
   });
 
-  it('enters the profile step after a first-time join-request user sets their password', async () => {
+  it('requests the profile step after a first-time join-request user sets their password', async () => {
     completeOnboarding.mockResolvedValue(undefined);
     setupMock(makeUser({ needsOnboarding: true, needsPasswordReset: false }));
     render(
@@ -98,9 +97,11 @@ describe('NewPasswordScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: /save password/i }));
 
     await vi.waitFor(() => {
-      expect(completeOnboarding).toHaveBeenCalledWith({ newPassword: VALID });
+      expect(completeOnboarding).toHaveBeenCalledWith({
+        newPassword: VALID,
+        startProfileStep: true,
+      });
     });
-    expect(startProfileStep).toHaveBeenCalledTimes(1);
   });
 
   it('renders the profile step when profileStepActive is set', () => {

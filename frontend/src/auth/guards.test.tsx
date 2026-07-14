@@ -543,6 +543,66 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('guidelines page')).not.toBeInTheDocument();
   });
 
+  it('keeps a user with pending consent on /new-password while the profile step is active', () => {
+    // completeOnboarding clears needsOnboarding immediately, so setupTarget goes
+    // null and the gate would otherwise fall through to the consent branch —
+    // which must also respect profileStepActive, same as the setup branch does.
+    const user = makeUser({
+      needsOnboarding: false,
+      needsGuidelinesConsent: true,
+      firstName: 'Jamie',
+      fullName: 'Jamie',
+      email: 'jamie@example.com',
+    });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/new-password']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/new-password" element={<div>new password page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('new password page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
+  it('keeps a user with pending consent on /onboarding while the profile step is active', () => {
+    const user = makeUser({
+      needsOnboarding: false,
+      needsGuidelinesConsent: true,
+    });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/onboarding']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/onboarding" element={<div>onboarding page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('onboarding page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
   it('redirects an onboarding-complete user on /login to /calendar', () => {
     const user = makeUser({ needsOnboarding: false });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
