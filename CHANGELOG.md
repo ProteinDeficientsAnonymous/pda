@@ -1,3 +1,10 @@
+# [0.26.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.3...v0.26.0) (2026-07-14)
+
+
+### Features
+
+* **join-requests:** 723 - add search to join-requests screen ([#747](https://github.com/ProteinDeficientsAnonymous/pda/issues/747)) ([8b4591e](https://github.com/ProteinDeficientsAnonymous/pda/commit/8b4591e05664551807373ab5d1acaf3d028f45a9))
+
 ## [0.25.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.25.2...v0.25.3) (2026-07-14)
 
 
