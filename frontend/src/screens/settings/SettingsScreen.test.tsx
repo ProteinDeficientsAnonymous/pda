@@ -149,9 +149,7 @@ describe('SettingsScreen', () => {
     const user = userEvent.setup();
     renderSettings();
 
-    await user.click(
-      screen.getByRole('checkbox', { name: /show my last name to other members/i }),
-    );
+    await user.click(screen.getByRole('checkbox', { name: /show my last name to other members/i }));
 
     await waitFor(() => {
       expect(authApi.updateProfile).toHaveBeenCalledWith({ hideLastName: true });
