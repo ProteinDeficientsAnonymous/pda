@@ -1337,6 +1337,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/public/my-rsvps/resend/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend Manage Link
+         * @description Public recovery path: re-send a non-member's manage-rsvp link by phone + email.
+         *
+         *     Honeypot trips, bad phones, unknown contacts, and member contacts all
+         *     resolve to the same neutral 200 body; only a matching non-member with an
+         *     email on file is actually sent a link. The response body never reveals
+         *     whether an account exists — the one residual signal is that the match+email
+         *     path sends synchronously, so it's marginally slower; the 3/h IP rate limit
+         *     keeps that timing side channel impractical to exploit.
+         */
+        post: operations["community__public_rsvp_resend_resend_manage_link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/public/my-rsvps/{event_id}/": {
         parameters: {
             query?: never;
@@ -3433,6 +3460,26 @@ export interface components {
         RequestLoginLinkOut: {
             /** Delivery */
             delivery: string;
+            /** Detail */
+            detail: string;
+        };
+        /** ResendManageLinkIn */
+        ResendManageLinkIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Phone Number */
+            phone_number: string;
+            /**
+             * Website
+             * @default
+             */
+            website: string;
+        };
+        /** ResendManageLinkOut */
+        ResendManageLinkOut: {
             /** Detail */
             detail: string;
         };
@@ -8092,6 +8139,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__public_rsvp_resend_resend_manage_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendManageLinkIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResendManageLinkOut"];
                 };
             };
             /** @description Too Many Requests */
