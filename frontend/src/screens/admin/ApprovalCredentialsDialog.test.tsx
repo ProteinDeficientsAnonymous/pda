@@ -64,11 +64,11 @@ describe('ApprovalCredentialsDialog', () => {
     renderDialog(makeUser());
     const sms = screen.getByText('send via sms').closest('a');
     const wa = screen.getByText('send via whatsapp').closest('a');
-    // Expected body: "hi Sam, from Vetter Vee: <magic-link>"
+    // Expected body: "hi Sam, from Vetter: <magic-link>"
     expect(sms?.getAttribute('href')).toContain('sms:+12025551234?body=');
-    expect(sms?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter Vee: '));
+    expect(sms?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter: '));
     expect(wa?.getAttribute('href')).toContain('https://wa.me/12025551234?text=');
-    expect(wa?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter Vee: '));
+    expect(wa?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter: '));
   });
 
   it('opens send links in a new tab with safe rel', () => {
