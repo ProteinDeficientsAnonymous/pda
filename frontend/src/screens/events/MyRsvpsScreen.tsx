@@ -13,8 +13,7 @@ export default function MyRsvpsScreen() {
   const token = searchParams.get('token') ?? '';
   const { data, isPending, isError, error } = useMyRsvps(token);
 
-  // Only a 404 (unresolvable token) means the link is bad; transient failures
-  // (429 rate-limit, 5xx, offline) must not tell the holder to re-rsvp.
+  // only a 404 means the link is bad; transient failures must not tell the holder to re-rsvp.
   if (!token || (isError && getApiStatus(error) === 404)) {
     return (
       <ContentContainer>

@@ -8,6 +8,7 @@ import { apiClient } from './client';
 
 export type PublicRsvpIn = components['schemas']['PublicRsvpIn'];
 export type PublicRsvpOut = components['schemas']['PublicRsvpOut'];
+type PublicRsvpManageIn = components['schemas']['PublicRsvpManageIn'];
 
 interface SubmitArgs {
   eventId: string;
@@ -80,11 +81,10 @@ function useManageInvalidate(token: string) {
 export function useUpdateMyRsvp(token: string) {
   return useMutation({
     mutationFn: async ({ eventId, status, hasPlusOne }: UpdateArgs) => {
-      const { data } = await apiClient.post<PublicRsvpOut>(
-        `${MANAGE_BASE}${eventId}/`,
-        { status, has_plus_one: hasPlusOne },
-        { params: { token } },
-      );
+      const body: PublicRsvpManageIn = { status, has_plus_one: hasPlusOne };
+      const { data } = await apiClient.post<PublicRsvpOut>(`${MANAGE_BASE}${eventId}/`, body, {
+        params: { token },
+      });
       return data;
     },
     onSuccess: useManageInvalidate(token),

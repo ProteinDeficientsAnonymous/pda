@@ -23,7 +23,7 @@ function errorMessage(err: unknown): string {
   const status = getApiStatus(err);
   if (status === 429) return "you're going too fast — try again in a few minutes";
   if (status === 404) return "this rsvp isn't available anymore — refresh";
-  // 400s (e.g. event full, invalid status) carry an actionable backend message.
+  // 400s carry an actionable backend message (event full, invalid status).
   return extractApiErrorOr(err, 'something went wrong — try again');
 }
 
@@ -40,9 +40,8 @@ export function MyRsvpCard({ token, event, status, hasPlusOne }: Props) {
   const [error, setError] = useState<string | null>(null);
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
-  const canPlusOne =
-    event.allowPlusOnes &&
-    (status === RsvpServerStatus.Attending || status === RsvpServerStatus.Waitlisted);
+  // only attending holders can carry a +1; the backend discards a waitlisted +1.
+  const canPlusOne = event.allowPlusOnes && status === RsvpServerStatus.Attending;
 
   async function applyRsvp(next: RsvpInputStatus, plusOne: boolean) {
     setError(null);
@@ -56,7 +55,6 @@ export function MyRsvpCard({ token, event, status, hasPlusOne }: Props) {
 
   function changeStatus(next: RsvpInputStatus) {
     if (next === status) return;
-    // waitlisted holders re-submit as attending; the server re-derives the waitlist.
     void applyRsvp(next, next === RsvpStatus.Attending ? hasPlusOne : false);
   }
 
