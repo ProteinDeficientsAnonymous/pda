@@ -1,3 +1,10 @@
+# [0.28.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.6...v0.28.0) (2026-07-14)
+
+
+### Features
+
+* **members:** hard-delete never-logged-in approved users (Issue 722) ([#808](https://github.com/ProteinDeficientsAnonymous/pda/issues/808)) ([a87d60e](https://github.com/ProteinDeficientsAnonymous/pda/commit/a87d60e229f2c208bf480b419f3350eae49f2f1c))
+
 ## [0.27.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.27.5...v0.27.6) (2026-07-14)
 
 
