@@ -1,3 +1,10 @@
+# [0.33.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.32.0...v0.33.0) (2026-07-15)
+
+
+### Features
+
+* **rsvp:** add optional message/note to RSVP response (Issue 297) ([#798](https://github.com/ProteinDeficientsAnonymous/pda/issues/798)) ([a336c43](https://github.com/ProteinDeficientsAnonymous/pda/commit/a336c4361636cc17b4fb6db4ec3e3da5079cdf97))
+
 # [0.32.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.31.0...v0.32.0) (2026-07-15)
 
 
