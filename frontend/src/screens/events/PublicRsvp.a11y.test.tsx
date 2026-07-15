@@ -3,7 +3,6 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
-import type { PublicRsvpOut } from '@/api/publicRsvp';
 import {
   type Event,
   EventStatus,
@@ -16,7 +15,6 @@ vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
-import { PublicRsvpConfirmation } from './PublicRsvpConfirmation';
 import { PublicRsvpForm } from './PublicRsvpForm';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
@@ -54,6 +52,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     coHostInviteIds: [],
     guests: [],
     myRsvp: null,
+    viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],
@@ -90,20 +89,6 @@ describe('public rsvp a11y', () => {
       </MemoryRouter>,
     );
     fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
-    const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
-    expect(results).toHaveNoViolations();
-  }, 15000);
-
-  it('confirmation has no axe violations', async () => {
-    const result: PublicRsvpOut = {
-      event: { id: 'ev1' } as never,
-      rsvp: { status: 'attending', has_plus_one: false },
-    };
-    const { container } = render(
-      <MemoryRouter>
-        <PublicRsvpConfirmation event={makeEvent()} result={result} />
-      </MemoryRouter>,
-    );
     const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
     expect(results).toHaveNoViolations();
   }, 15000);

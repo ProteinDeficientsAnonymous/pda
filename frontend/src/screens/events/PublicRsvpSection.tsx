@@ -1,9 +1,7 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import type { PublicRsvpOut } from '@/api/publicRsvp';
 import type { Event } from '@/models/event';
 
-import { PublicRsvpConfirmation } from './PublicRsvpConfirmation';
 import { PublicRsvpForm } from './PublicRsvpForm';
 
 interface Props {
@@ -11,7 +9,15 @@ interface Props {
 }
 
 export function PublicRsvpSection({ event }: Props) {
-  const [result, setResult] = useState<PublicRsvpOut | null>(null);
-  if (result) return <PublicRsvpConfirmation event={event} result={result} />;
-  return <PublicRsvpForm event={event} onSuccess={setResult} />;
+  const navigate = useNavigate();
+  return (
+    <PublicRsvpForm
+      event={event}
+      onSuccess={(result) => {
+        void navigate(`/events/${event.id}?rsvp_token=${encodeURIComponent(result.rsvp_token)}`, {
+          replace: true,
+        });
+      }}
+    />
+  );
 }

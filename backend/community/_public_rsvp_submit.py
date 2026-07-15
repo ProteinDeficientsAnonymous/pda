@@ -44,6 +44,7 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
     return PublicRsvpOut(
         event=_event_out(event, None),
         rsvp=PublicRsvpStateOut(status=status, has_plus_one=has_plus_one),
+        rsvp_token="",
     )
 
 
@@ -204,5 +205,6 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         PublicRsvpOut(
             event=_event_out(fresh_event, user),
             rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
+            rsvp_token=token.token,
         ),
     )

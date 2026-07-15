@@ -2693,6 +2693,8 @@ export interface components {
              * @default
              */
             venmo_link: string;
+            /** Viewer User Id */
+            viewer_user_id?: string | null;
             /**
              * Visibility
              * @default public
@@ -3525,6 +3527,8 @@ export interface components {
         PublicRsvpOut: {
             event: components["schemas"]["EventOut"];
             rsvp: components["schemas"]["PublicRsvpStateOut"];
+            /** Rsvp Token */
+            rsvp_token: string;
         };
         /** PublicRsvpStateOut */
         PublicRsvpStateOut: {

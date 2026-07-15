@@ -1893,6 +1893,17 @@
             "title": "Venmo Link",
             "type": "string"
           },
+          "viewer_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewer User Id"
+          },
           "visibility": {
             "default": "public",
             "title": "Visibility",
@@ -3918,11 +3929,16 @@
           },
           "rsvp": {
             "$ref": "#/components/schemas/PublicRsvpStateOut"
+          },
+          "rsvp_token": {
+            "title": "Rsvp Token",
+            "type": "string"
           }
         },
         "required": [
           "event",
-          "rsvp"
+          "rsvp",
+          "rsvp_token"
         ],
         "title": "PublicRsvpOut",
         "type": "object"
@@ -8432,7 +8448,7 @@
         },
         "security": [
           {
-            "GatedJWTAuth": []
+            "OptionalJWTAuth": []
           }
         ],
         "summary": "Post Comment",
@@ -8503,7 +8519,7 @@
         },
         "security": [
           {
-            "GatedJWTAuth": []
+            "OptionalJWTAuth": []
           }
         ],
         "summary": "Delete Comment",
@@ -8601,7 +8617,7 @@
         },
         "security": [
           {
-            "GatedJWTAuth": []
+            "OptionalJWTAuth": []
           }
         ],
         "summary": "Toggle Reaction",
@@ -8699,7 +8715,7 @@
         },
         "security": [
           {
-            "GatedJWTAuth": []
+            "OptionalJWTAuth": []
           }
         ],
         "summary": "Post Reply",

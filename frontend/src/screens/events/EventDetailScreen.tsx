@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
@@ -20,6 +20,7 @@ import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { EventMemberSection } from './EventMemberSection';
+import { EventPublicRsvpSection } from './EventPublicRsvpSection';
 import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
 import { PublicRsvpSection } from './PublicRsvpSection';
@@ -31,9 +32,11 @@ function photoSrc(url: string, updatedAt: string | null): string {
 
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const rsvpToken = searchParams.get('rsvp_token') ?? undefined;
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
-  const { data: event, isPending, isError, error } = useEvent(id);
+  const { data: event, isPending, isError, error } = useEvent(id, undefined, rsvpToken);
 
   if (isPending) return <ContentLoading />;
   if (isError) {
@@ -45,6 +48,11 @@ export default function EventDetailScreen() {
   }
 
   const showKebab = isAuthed && event.rsvpEnabled && canManageEvent(event, user);
+  // myRsvp is populated by the backend's rsvp resolver only when the caller
+  // was resolved as "authed" (real member or a token scoped to THIS event) —
+  // an invalid/expired/wrong-scope token gets the same locked shape as no
+  // token at all, so this is an exact backend-verified signal, not a guess.
+  const hasTokenUnlock = Boolean(rsvpToken) && !isAuthed && event.myRsvp !== null;
 
   return (
     <ContentContainer>
@@ -84,7 +92,12 @@ export default function EventDetailScreen() {
         </section>
       ) : null}
 
-      {isAuthed ? <EventMemberSection event={event} /> : <AnonSection event={event} />}
+      <DetailSection
+        event={event}
+        isAuthed={isAuthed}
+        hasTokenUnlock={hasTokenUnlock}
+        rsvpToken={rsvpToken}
+      />
     </ContentContainer>
   );
 }
@@ -164,6 +177,22 @@ function ForbiddenNotice({ message }: { message: string }) {
       </section>
     </ContentContainer>
   );
+}
+
+function DetailSection({
+  event,
+  isAuthed,
+  hasTokenUnlock,
+  rsvpToken,
+}: {
+  event: Event;
+  isAuthed: boolean;
+  hasTokenUnlock: boolean;
+  rsvpToken: string | undefined;
+}) {
+  if (isAuthed) return <EventMemberSection event={event} />;
+  if (hasTokenUnlock) return <EventPublicRsvpSection event={event} token={rsvpToken ?? ''} />;
+  return <AnonSection event={event} />;
 }
 
 function AnonSection({ event }: { event: Event }) {

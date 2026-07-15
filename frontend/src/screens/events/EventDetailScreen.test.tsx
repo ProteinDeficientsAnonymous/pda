@@ -70,6 +70,7 @@ const BASE_EVENT: Event = {
   coHostInviteIds: [],
   guests: [],
   myRsvp: null,
+  viewerUserId: null,
   surveySlugs: [],
   invitedUserIds: [],
   invitedUserNames: [],
@@ -118,10 +119,10 @@ function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function renderScreen(eventId = 'ev1') {
+function renderScreen(eventId = 'ev1', search = '') {
   return render(
     <QueryClientProvider client={makeQc()}>
-      <MemoryRouter initialEntries={[`/events/${eventId}`]}>
+      <MemoryRouter initialEntries={[`/events/${eventId}${search}`]}>
         <Routes>
           <Route path="/events/:id" element={<EventDetailScreen />} />
           <Route path="/login" element={<div>login page</div>} />
@@ -231,5 +232,41 @@ describe('EventDetailScreen', () => {
     renderScreen();
 
     expect(screen.queryByRole('button', { name: /event settings/i })).not.toBeInTheDocument();
+  });
+
+  describe('token-scoped rsvp viewer', () => {
+    it('renders the public-rsvp section when rsvp_token is present and the event comes back unlocked', () => {
+      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      mockUseEvent.mockReturnValue({
+        data: { ...BASE_EVENT, myRsvp: 'attending' },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+
+      renderScreen('ev1', '?rsvp_token=tok-123');
+
+      expect(screen.getByRole('link', { name: /123 Main St/i })).toBeInTheDocument();
+      expect(screen.queryByText('want to see more?')).not.toBeInTheDocument();
+    });
+
+    it('falls back to the login wall when the token did not unlock the event', () => {
+      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      mockUseEvent.mockReturnValue({
+        data: { ...BASE_EVENT, myRsvp: null, whatsappLink: '', location: '' },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+
+      renderScreen('ev1', '?rsvp_token=expired-or-wrong-scope');
+
+      expect(screen.getByText('want to see more?')).toBeInTheDocument();
+    });
+
+    it('passes the rsvp_token through to useEvent', () => {
+      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      renderScreen('ev1', '?rsvp_token=tok-abc');
+
+      expect(mockUseEvent).toHaveBeenCalledWith('ev1', undefined, 'tok-abc');
+    });
   });
 });

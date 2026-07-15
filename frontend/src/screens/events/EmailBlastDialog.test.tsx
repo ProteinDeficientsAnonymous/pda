@@ -74,6 +74,7 @@ function makeEvent(guests: EventGuest[]): Event {
     coHostInviteIds: [],
     guests,
     myRsvp: null,
+    viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],

@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type * as RouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,8 +13,15 @@ import {
   InvitePermission,
 } from '@/models/event';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importActual) => {
+  const actual = await importActual<typeof RouterDom>();
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
+const mockSubmit = vi.fn();
 vi.mock('@/api/publicRsvp', () => ({
-  useSubmitPublicRsvp: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useSubmitPublicRsvp: () => ({ mutateAsync: mockSubmit, isPending: false }),
 }));
 
 import { PublicRsvpSection } from './PublicRsvpSection';
@@ -52,6 +61,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     coHostInviteIds: [],
     guests: [],
     myRsvp: null,
+    viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],
@@ -99,5 +109,29 @@ describe('PublicRsvpSection', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('heading', { name: 'rsvp' })).toBeInTheDocument();
+  });
+
+  it('navigates to the event page with the rsvp token on success', async () => {
+    mockSubmit.mockResolvedValue({
+      event: makeEvent(),
+      rsvp: { status: 'attending', has_plus_one: false },
+      rsvp_token: 'tok-abc',
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PublicRsvpSection event={makeEvent({ id: 'evt-1' })} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: "i'm going" }));
+    await user.type(screen.getByLabelText(/first name/i), 'Sam');
+    await user.type(screen.getByLabelText(/^email/i), 'sam@example.com');
+    await user.type(screen.getByLabelText(/phone/i), '4155550123');
+    await user.click(screen.getByRole('button', { name: 'rsvp' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/events/evt-1?rsvp_token=tok-abc', {
+      replace: true,
+    });
   });
 });

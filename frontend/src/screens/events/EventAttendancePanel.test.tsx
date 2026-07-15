@@ -80,6 +80,7 @@ const BASE_EVENT: Event = {
     },
   ],
   myRsvp: null,
+  viewerUserId: null,
   surveySlugs: [],
   invitedUserIds: [],
   invitedUserNames: [],

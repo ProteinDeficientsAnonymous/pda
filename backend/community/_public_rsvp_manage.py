@@ -159,6 +159,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     return 200, PublicRsvpOut(
         event=_event_out(fresh_event, user),
         rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
+        rsvp_token=rsvp_token.token,
     )
 
 

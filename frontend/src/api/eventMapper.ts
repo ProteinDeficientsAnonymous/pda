@@ -57,6 +57,7 @@ export interface WireEvent {
 
   guests?: WireGuest[];
   my_rsvp?: string | null;
+  viewer_user_id?: string | null;
   survey_slugs?: string[];
   invited_user_ids?: string[];
   invited_user_names?: string[];
@@ -164,6 +165,7 @@ export function mapEvent(e: WireEvent): Event {
 
     guests: (e.guests ?? []).map(mapGuest),
     myRsvp: e.my_rsvp ?? null,
+    viewerUserId: e.viewer_user_id ?? null,
     surveySlugs: e.survey_slugs ?? [],
     invitedUserIds: e.invited_user_ids ?? [],
     invitedUserNames: e.invited_user_names ?? [],

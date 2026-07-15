@@ -23,6 +23,13 @@ vi.mock('@/api/rsvp', () => ({
   useRemoveRsvp: () => ({ mutateAsync: removeRsvpMutate, isPending: false }),
 }));
 
+const updatePublicRsvpMutate = vi.fn();
+const cancelPublicRsvpMutate = vi.fn();
+vi.mock('@/api/publicRsvp', () => ({
+  useUpdatePublicMyRsvp: () => ({ mutateAsync: updatePublicRsvpMutate, isPending: false }),
+  useCancelPublicMyRsvp: () => ({ mutateAsync: cancelPublicRsvpMutate, isPending: false }),
+}));
+
 vi.mock('./RsvpGuestList', () => ({
   RsvpGuestList: () => <div data-testid="guest-list" />,
 }));
@@ -125,16 +132,17 @@ function makeEvent(overrides: Partial<Event>): Event {
     tags: [],
     isPast: false,
     status: EventStatus.Active,
+    viewerUserId: null,
     ...overrides,
   };
 }
 
-function renderSection(event: Event) {
+function renderSection(event: Event, token?: string) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <RsvpSection event={event} canSeeInvited={false} />
+        <RsvpSection event={event} canSeeInvited={false} {...(token ? { token } : {})} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -278,5 +286,26 @@ describe('RsvpSection — leave waitlist error handling (issue #633)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'leave waitlist' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't update your rsvp/i);
+  });
+});
+
+describe('RsvpSection — token-holding viewer (Issue 854)', () => {
+  it('shows the +1 toggle checked using viewerUserId, not useAuthStore (no logged-in user)', () => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    renderSection(
+      makeEvent({
+        myRsvp: RsvpServerStatus.Attending,
+        viewerUserId: 'non-member-1',
+        guests: [
+          makeGuest({ userId: 'non-member-1', name: 'Non Member', hasPlusOne: true }),
+          makeGuest({ userId: 'user-other', name: 'Other', hasPlusOne: false }),
+        ],
+      }),
+      'tok-abc',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+
+    expect(screen.getByRole('checkbox')).toBeChecked();
   });
 });

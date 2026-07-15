@@ -66,6 +66,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
       },
     ],
     myRsvp: null,
+    viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],
