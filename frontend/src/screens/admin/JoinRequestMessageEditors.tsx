@@ -1,9 +1,15 @@
 import { useState } from 'react';
 
-import { useTentativeApprovalMessage, useWelcomeTemplate, useWhatsAppLink } from '@/api/content';
+import {
+  useMembershipPromotionMessage,
+  useTentativeApprovalMessage,
+  useWelcomeTemplate,
+  useWhatsAppLink,
+} from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { hasPermission, Permission } from '@/models/permissions';
 
+import { MembershipPromotionMessageEditorDialog } from './MembershipPromotionMessageEditorDialog';
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
@@ -11,10 +17,12 @@ import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 export function JoinRequestMessageEditors() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tentativeOpen, setTentativeOpen] = useState(false);
+  const [membershipOpen, setMembershipOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const welcomeQ = useWelcomeTemplate();
   const tentativeQ = useTentativeApprovalMessage();
+  const membershipQ = useMembershipPromotionMessage();
   const whatsappQ = useWhatsAppLink();
 
   if (!hasPermission(currentUser, Permission.ApproveJoinRequests)) return null;
@@ -38,6 +46,12 @@ export function JoinRequestMessageEditors() {
           }}
         />
         <EditorTrigger
+          label="edit membership promotion message"
+          onClick={() => {
+            setMembershipOpen(true);
+          }}
+        />
+        <EditorTrigger
           label="edit whatsapp link"
           onClick={() => {
             setWhatsappOpen(true);
@@ -58,6 +72,13 @@ export function JoinRequestMessageEditors() {
         }}
         template={tentativeQ.data ?? null}
       />
+      <MembershipPromotionMessageEditorDialog
+        open={membershipOpen}
+        onClose={() => {
+          setMembershipOpen(false);
+        }}
+        template={membershipQ.data ?? null}
+      />
       <WhatsAppLinkEditorDialog
         open={whatsappOpen}
         onClose={() => {
@@ -74,7 +95,7 @@ function EditorTrigger({ label, onClick }: { label: string; onClick: () => void 
     <button
       type="button"
       onClick={onClick}
-      className="border-border-strong bg-surface text-foreground-secondary hover:bg-background focus-visible:ring-brand-200 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      className="border-border-strong bg-surface text-foreground-secondary hover:bg-background focus-visible:ring-brand-200 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none"
     >
       {label}
     </button>

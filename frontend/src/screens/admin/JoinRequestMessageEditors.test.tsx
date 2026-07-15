@@ -27,6 +27,7 @@ vi.mock('@/api/content', () => ({
     isError: false,
   }),
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useMembershipPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useWhatsAppLink: () => ({
     data: { link: 'https://chat.whatsapp.com/abc123', updatedAt: '2026-01-01' },
     isPending: false,
@@ -82,6 +83,9 @@ describe('JoinRequestMessageEditors', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /edit tentative approval message/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /edit membership promotion message/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /edit whatsapp link/i })).toBeInTheDocument();
   });
