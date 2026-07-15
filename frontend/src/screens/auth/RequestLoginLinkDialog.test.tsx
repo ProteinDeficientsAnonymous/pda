@@ -42,12 +42,34 @@ describe('RequestLoginLinkDialog', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows cooldown copy when backend reports cooldown delivery', async () => {
-    mutateAsync.mockResolvedValue({ detail: 'ok', delivery: 'cooldown' });
+  it('shows a distinct cooldown warning that says no new link was sent', async () => {
+    mutateAsync.mockResolvedValue({
+      detail: 'ok',
+      delivery: 'cooldown',
+      retryAfterSeconds: 90,
+    });
     render(<RequestLoginLinkDialog open onClose={() => {}} />);
     await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
     await userEvent.click(screen.getByRole('button', { name: /request link/i }));
-    expect(await screen.findByText(/you recently requested a login link/i)).toBeInTheDocument();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/didn't send a new link/i);
+    // The countdown surfaces the remaining wait from retryAfterSeconds (1:30).
+    expect(alert).toHaveTextContent(/1:30/);
+  });
+
+  it('does not show the success sprout on the cooldown warning', async () => {
+    mutateAsync.mockResolvedValue({
+      detail: 'ok',
+      delivery: 'cooldown',
+      retryAfterSeconds: 90,
+    });
+    render(<RequestLoginLinkDialog open onClose={() => {}} />);
+    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    await userEvent.click(screen.getByRole('button', { name: /request link/i }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByText(/🌱/)).not.toBeInTheDocument();
   });
 
   it('does not show success copy before submission', () => {
