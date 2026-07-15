@@ -4,7 +4,14 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { type Event, RsvpServerStatus, RsvpStatus, spotsLeft } from '@/models/event';
+import {
+  type Event,
+  RSVP_STATUS_LABELS,
+  type RsvpInputStatus,
+  RsvpServerStatus,
+  RsvpStatus,
+  spotsLeft,
+} from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
 import { RsvpGuestList } from './RsvpGuestList';
@@ -14,30 +21,22 @@ interface Props {
   canSeeInvited: boolean;
 }
 
-type InputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
-
 // `waitlisted` is server-assigned and not a valid input status, so anything
 // that re-POSTs an existing RSVP (box edit) needs this narrowing.
-function asInputStatus(status: string | null): InputStatus | null {
+function asInputStatus(status: string | null): RsvpInputStatus | null {
   const match = Object.values(RsvpStatus).find((s) => s === status);
   return match ?? null;
 }
 
-function statusLine(status: InputStatus): string {
+function statusLine(status: RsvpInputStatus): string {
   if (status === RsvpStatus.Attending) return "you're going";
   if (status === RsvpStatus.Maybe) return "you're a maybe";
   return "you can't go";
 }
 
-const PILLS: { status: InputStatus; label: string }[] = [
-  { status: RsvpStatus.Attending, label: "i'm going" },
-  { status: RsvpStatus.Maybe, label: 'maybe' },
-  { status: RsvpStatus.CantGo, label: "can't go" },
-];
-
 interface BoxState {
   mode: 'create' | 'edit';
-  initialStatus: InputStatus;
+  initialStatus: RsvpInputStatus;
 }
 
 export function RsvpSection({ event, canSeeInvited }: Props) {
@@ -57,7 +56,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
 
-  async function confirmRsvp(args: { status: InputStatus; comment?: string; hasPlusOne: boolean }) {
+  async function confirmRsvp(args: { status: RsvpInputStatus; comment?: string; hasPlusOne: boolean }) {
     setError(null);
     try {
       await setRsvp.mutateAsync({
@@ -151,10 +150,10 @@ function RsvpControls({
   onOpenCreate,
   onOpenEdit,
 }: {
-  myInputStatus: InputStatus | null;
+  myInputStatus: RsvpInputStatus | null;
   atCapacity: boolean;
   busy: boolean;
-  onOpenCreate: (status: InputStatus) => void;
+  onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
   if (myInputStatus) {
@@ -170,7 +169,7 @@ function RsvpControls({
 
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      {PILLS.map((p) => {
+      {RSVP_STATUS_LABELS.map((p) => {
         const waitlistAttending = p.status === RsvpStatus.Attending && atCapacity;
         return (
           <button

@@ -2,18 +2,10 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { RsvpStatus } from '@/models/event';
+import { RSVP_STATUS_LABELS, type RsvpInputStatus, RsvpStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 import { RsvpCommentField } from './RsvpCommentField';
-
-type RsvpInputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
-
-const STATUS_LABELS: { status: RsvpInputStatus; label: string }[] = [
-  { status: RsvpStatus.Attending, label: "i'm going" },
-  { status: RsvpStatus.Maybe, label: 'maybe' },
-  { status: RsvpStatus.CantGo, label: "can't go" },
-];
 
 interface ConfirmArgs {
   status: RsvpInputStatus;
@@ -62,7 +54,7 @@ export function RsvpBox({
     <Dialog open={open} onClose={onClose} title="rsvp">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap justify-center gap-2">
-          {STATUS_LABELS.map((s) => (
+          {RSVP_STATUS_LABELS.map((s) => (
             <button
               key={s.status}
               type="button"

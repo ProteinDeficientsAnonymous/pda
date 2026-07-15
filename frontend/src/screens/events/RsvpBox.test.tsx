@@ -70,4 +70,14 @@ describe('RsvpBox', () => {
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /remove rsvp/i })).toBeDisabled();
   });
+
+  it('toggling only the +1 checkbox in edit mode preserves the initial status', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="edit" initialHasPlusOne={false} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /bringing a \+1/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Attending, hasPlusOne: true }),
+    );
+  });
 });

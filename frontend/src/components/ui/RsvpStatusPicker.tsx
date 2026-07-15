@@ -1,12 +1,6 @@
 import type { RsvpInputStatus } from '@/models/event';
-import { RsvpStatus } from '@/models/event';
+import { RSVP_STATUS_LABELS } from '@/models/event';
 import { cn } from '@/utils/cn';
-
-const PILLS: { status: RsvpInputStatus; label: string }[] = [
-  { status: RsvpStatus.Attending, label: "i'm going" },
-  { status: RsvpStatus.Maybe, label: 'maybe' },
-  { status: RsvpStatus.CantGo, label: "can't go" },
-];
 
 interface Props {
   value: string | null;
@@ -18,7 +12,7 @@ interface Props {
 export function RsvpStatusPicker({ value, onSelect, disabled = false, labelFor }: Props) {
   return (
     <div className="-mx-1 flex justify-center-safe gap-2 overflow-x-auto px-1 py-1">
-      {PILLS.map((p) => {
+      {RSVP_STATUS_LABELS.map((p) => {
         const label = labelFor ? labelFor(p.status, p.label) : p.label;
         const active = value === p.status;
         return (
