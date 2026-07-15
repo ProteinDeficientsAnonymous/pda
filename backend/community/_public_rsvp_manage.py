@@ -134,7 +134,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids, _rsvp_event = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event.id, user, payload.status, payload.has_plus_one
         )
         rsvp_token = NonMemberRsvpToken.issue_or_extend(user)

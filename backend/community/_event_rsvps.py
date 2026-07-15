@@ -135,37 +135,36 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
-def _post_rsvp_comment(event: Event, user, final_status: str, comment: str | None) -> None:
-    """Post a non-empty RSVP comment: a public EventComment (going/maybe) or a
-    host-only decline notification (can't go) — never both, never persisted
-    on the RSVP itself.
-
-    Called after the RSVP transaction commits — not while the Event row lock
-    from select_for_update is held — since the comment/notification writes
-    have no correctness dependency on that lock.
-    """
+def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> None:
+    """Post a non-empty RSVP comment: an EventComment (going/maybe) or a decline notification (can't go)."""
     cleaned_comment = (comment or "").strip()
     if not cleaned_comment:
         return
-    if final_status == RSVPStatus.CANT_GO:
-        notify_rsvp_declined_note(event=event, author=user, note=cleaned_comment)
-    else:
-        posted_comment = EventComment.objects.create(
-            event=event, author=user, body=cleaned_comment[:500]
+    # Fresh fetch, not the row-locked event from _apply_rsvp_in_transaction — its co_hosts
+    # prefetch predates this (already-committed) transaction and could be stale.
+    event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
+    try:
+        if final_status == RSVPStatus.CANT_GO:
+            notify_rsvp_declined_note(event=event, author=user, note=cleaned_comment)
+        else:
+            posted_comment = EventComment.objects.create(
+                event=event, author=user, body=cleaned_comment[:500]
+            )
+            notify_event_comment(posted_comment)
+    except Exception:
+        # RSVP already committed — a failure here must not 500 an already-successful RSVP.
+        logging.getLogger(__name__).exception(
+            "rsvp_comment_post_failed", extra={"event_id": str(event_id), "user_id": str(user.pk)}
         )
-        notify_event_comment(posted_comment)
 
 
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool
-) -> tuple[str, list[str], Event]:
+) -> tuple[str, list[str]]:
     """Execute RSVP upsert inside a locked transaction.
 
-    Returns (final_status, promoted_user_ids, event). promoted_user_ids is the
-    list of users promoted off the waitlist by this change (empty unless a spot
-    freed). The returned event is for the caller to pass to _post_rsvp_comment
-    after the transaction commits, so that side effect isn't done under the row
-    lock — see _post_rsvp_comment's docstring.
+    Returns (final_status, promoted_user_ids). promoted_user_ids is the list of
+    users promoted off the waitlist by this change (empty unless a spot freed).
 
     Raises ValidationException on failure.
     """
@@ -201,7 +200,7 @@ def _apply_rsvp_in_transaction(
     )
     promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
-    return final_status, promoted_user_ids, event
+    return final_status, promoted_user_ids
 
 
 @router.post(
@@ -219,11 +218,11 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids, rsvp_event = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event_id, request.auth, payload.status, payload.has_plus_one
         )
 
-    _post_rsvp_comment(rsvp_event, request.auth, final_status, payload.comment)
+    _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
 
     audit_log(
         logging.INFO,
