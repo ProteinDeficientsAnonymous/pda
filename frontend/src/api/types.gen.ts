@@ -3525,6 +3525,8 @@ export interface components {
         PublicRsvpOut: {
             event: components["schemas"]["EventOut"];
             rsvp: components["schemas"]["PublicRsvpStateOut"];
+            /** Rsvp Token */
+            rsvp_token: string;
         };
         /** PublicRsvpStateOut */
         PublicRsvpStateOut: {

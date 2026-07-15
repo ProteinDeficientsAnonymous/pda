@@ -341,3 +341,15 @@ class TestPublicRsvpRateLimit:
         sixth = post(api_client, official_event, phone_number="+14155550199", email="u9@e.com")
         assert sixth.status_code == 429
         assert first_code(sixth) == Code.Rate.LIMITED
+
+
+@pytest.mark.django_db
+class TestPublicRsvpToken:
+    def test_submit_response_includes_rsvp_token(self, api_client, official_event, fake_email_sender):
+        response = post(api_client, official_event)
+        assert response.status_code == 200, response.content
+        body = response.json()
+        assert isinstance(body["rsvp_token"], str)
+        assert len(body["rsvp_token"]) > 20  # secrets.token_urlsafe(32) output
+
+        assert NonMemberRsvpToken.objects.filter(token=body["rsvp_token"]).exists()

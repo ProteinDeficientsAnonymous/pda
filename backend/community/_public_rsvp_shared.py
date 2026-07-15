@@ -25,6 +25,7 @@ class PublicRsvpStateOut(BaseModel):
 class PublicRsvpOut(BaseModel):
     event: EventOut
     rsvp: PublicRsvpStateOut
+    rsvp_token: str
 
 
 def _load_public_rsvp_event(event_id) -> Event:
