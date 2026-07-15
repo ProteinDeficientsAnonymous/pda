@@ -1,3 +1,10 @@
+## [0.33.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.33.1...v0.33.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* style and reposition feedback toast action button (Issue 811) ([#843](https://github.com/ProteinDeficientsAnonymous/pda/issues/843)) ([e859ead](https://github.com/ProteinDeficientsAnonymous/pda/commit/e859ead5cf89987bec4676121718144d44b42714))
+
 ## [0.33.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.33.0...v0.33.1) (2026-07-15)
 
 
