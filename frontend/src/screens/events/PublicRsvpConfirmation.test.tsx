@@ -82,9 +82,13 @@ describe('PublicRsvpConfirmation', () => {
   it('shows the attending heading and event info', () => {
     renderCard('attending');
     expect(screen.getByText("you're in! 🌱")).toBeInTheDocument();
-    expect(screen.getByText('Community Potluck')).toBeInTheDocument();
     expect(screen.getByText('123 Main St')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /whatsapp/i })).toBeInTheDocument();
+  });
+
+  it('does not duplicate the event title or date already shown above it', () => {
+    renderCard('attending');
+    expect(screen.queryByText('Community Potluck')).not.toBeInTheDocument();
   });
 
   it('shows the waitlist heading', () => {
