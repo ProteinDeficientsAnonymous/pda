@@ -16,7 +16,10 @@ vi.mock('@/api/client', () => ({
 
 vi.mock('@/api/content', () => ({
   useTentativeApprovalMessage: () => ({
-    data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in', updatedAt: '2026-01-01' },
+    data: {
+      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in',
+      updatedAt: '2026-01-01',
+    },
     isPending: false,
     isError: false,
   }),
@@ -79,9 +82,7 @@ describe('TentativeApprovalMessageDialog', () => {
 
   it('hides edit-template trigger without permission', () => {
     renderDialog(makeUser());
-    expect(
-      screen.queryByRole('button', { name: /edit tentative approval message/i }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit tentative approval message/i })).toBeNull();
   });
 
   it('shows edit-template trigger with permission', () => {
