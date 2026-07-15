@@ -1,3 +1,10 @@
+# [0.32.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.31.0...v0.32.0) (2026-07-15)
+
+
+### Features
+
+* **admin:** add tentatively approve button to pending join requests (Issue 838) ([#839](https://github.com/ProteinDeficientsAnonymous/pda/issues/839)) ([e0932ee](https://github.com/ProteinDeficientsAnonymous/pda/commit/e0932ee1ee2896adcb89222a616155dd9c80de2a))
+
 # [0.31.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.30.0...v0.31.0) (2026-07-14)
 
 
