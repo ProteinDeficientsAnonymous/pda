@@ -1,5 +1,3 @@
-"""Pydantic schemas for event endpoints."""
-
 import re
 from datetime import datetime
 from urllib.parse import urlparse
@@ -259,6 +257,9 @@ class EventOut(BaseModel):
 class RSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
+    # Not persisted on the RSVP — a non-empty value is a one-time post: a
+    # public EventComment (going/maybe) or a host-only notification (can't go).
+    comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
 
 class TextRecipientsOut(BaseModel):

@@ -1,11 +1,3 @@
-// RSVP mutations. The backend returns the full updated Event on POST/DELETE,
-// so we setQueryData instead of invalidating — one fewer round-trip than the
-// Flutter app does and the UI updates in the same tick as the mutation.
-//
-// Input statuses: attending | maybe | cant_go. `waitlisted` is never a valid
-// input — the server assigns it automatically when an attending request lands
-// over capacity.
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';
@@ -24,6 +16,9 @@ interface SetRsvpArgs {
   eventId: string;
   status: RsvpInput;
   hasPlusOne?: boolean;
+  // Not persisted server-side — a non-empty comment is posted once, as a
+  // public EventComment or a host-only decline notification.
+  comment?: string;
 }
 
 function updateCaches(qc: ReturnType<typeof useQueryClient>, event: Event, isAuthed: boolean) {
@@ -40,10 +35,11 @@ export function useSetRsvp() {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async ({ eventId, status, hasPlusOne = false }: SetRsvpArgs) => {
+    mutationFn: async ({ eventId, status, hasPlusOne = false, comment }: SetRsvpArgs) => {
       const { data } = await apiClient.post<WireEvent>(`/api/community/events/${eventId}/rsvp/`, {
         status,
         has_plus_one: hasPlusOne,
+        ...(comment === undefined ? {} : { comment }),
       });
       return mapEvent(data);
     },

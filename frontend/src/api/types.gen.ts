@@ -3512,6 +3512,8 @@ export interface components {
         };
         /** RSVPIn */
         RSVPIn: {
+            /** Comment */
+            comment?: string | null;
             /**
              * Has Plus One
              * @default false

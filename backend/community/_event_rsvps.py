@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications.service import notify_event_comment, notify_rsvp_declined_note
 
 from community._event_helpers import (
     _cancellations,
@@ -39,7 +40,13 @@ from community._rsvp_counts import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import AttendanceStatus, Event, EventRSVP, RSVPStatus
+from community.models import (
+    AttendanceStatus,
+    Event,
+    EventComment,
+    EventRSVP,
+    RSVPStatus,
+)
 
 router = Router()
 
@@ -128,14 +135,36 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
+def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> None:
+    """Post a non-empty RSVP comment: an EventComment (going/maybe) or a decline notification (can't go)."""
+    cleaned_comment = (comment or "").strip()
+    if not cleaned_comment:
+        return
+    try:
+        # Fresh fetch, not the row-locked event from _apply_rsvp_in_transaction — its co_hosts
+        # prefetch predates this (already-committed) transaction and could be stale.
+        event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
+        if final_status == RSVPStatus.CANT_GO:
+            notify_rsvp_declined_note(event=event, author=user, note=cleaned_comment)
+        else:
+            posted_comment = EventComment.objects.create(
+                event=event, author=user, body=cleaned_comment
+            )
+            notify_event_comment(posted_comment)
+    except Exception:
+        # RSVP already committed — a failure here must not 500 an already-successful RSVP.
+        logging.getLogger(__name__).exception(
+            "rsvp_comment_post_failed", extra={"event_id": str(event_id), "user_id": str(user.pk)}
+        )
+
+
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool
 ) -> tuple[str, list[str]]:
     """Execute RSVP upsert inside a locked transaction.
 
     Returns (final_status, promoted_user_ids). promoted_user_ids is the list of
-    users promoted off the waitlist by this change (empty unless a spot freed),
-    surfaced so callers can follow up per promoted user after commit.
+    users promoted off the waitlist by this change (empty unless a spot freed).
 
     Raises ValidationException on failure.
     """
@@ -179,7 +208,7 @@ def _apply_rsvp_in_transaction(
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=gated_jwt,
 )
-@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")
 def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     try:
         Event.objects.get(id=event_id)
@@ -192,6 +221,8 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         final_status, promoted_user_ids = _apply_rsvp_in_transaction(
             event_id, request.auth, payload.status, payload.has_plus_one
         )
+
+    _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
 
     audit_log(
         logging.INFO,

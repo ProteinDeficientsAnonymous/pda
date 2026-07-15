@@ -33,6 +33,16 @@ export const RsvpStatus = {
 
 export type RsvpInputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
 
+export const RSVP_STATUS_LABELS: { status: RsvpInputStatus; label: string }[] = [
+  { status: RsvpStatus.Attending, label: "i'm going" },
+  { status: RsvpStatus.Maybe, label: 'maybe' },
+  { status: RsvpStatus.CantGo, label: "can't go" },
+];
+
+export function isRsvpInputStatus(status: string | null): status is RsvpInputStatus {
+  return RSVP_STATUS_LABELS.some((s) => s.status === status);
+}
+
 export const RsvpServerStatus = {
   ...RsvpStatus,
   Waitlisted: 'waitlisted',

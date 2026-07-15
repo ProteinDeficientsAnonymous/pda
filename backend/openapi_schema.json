@@ -3972,6 +3972,18 @@
       },
       "RSVPIn": {
         "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
