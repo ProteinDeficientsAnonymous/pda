@@ -28,7 +28,10 @@ const Filter = {
 } as const;
 type Filter = (typeof Filter)[keyof typeof Filter];
 
-type Decision = typeof JoinRequestStatus.APPROVED | typeof JoinRequestStatus.REJECTED;
+type Decision =
+  | typeof JoinRequestStatus.APPROVED
+  | typeof JoinRequestStatus.TENTATIVE
+  | typeof JoinRequestStatus.REJECTED;
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: Filter.ALL, label: 'all' },
@@ -68,22 +71,13 @@ export default function JoinRequestsScreen() {
 
   async function decideRequest(request: JoinRequestSummary, status: Decision) {
     const name = request.fullName || formatPhone(request.phoneNumber);
-    const isApprove = status === JoinRequestStatus.APPROVED;
-    const message = isApprove
-      ? `approve ${name}? once you approve someone you can't un-approve them — are you sure?`
-      : `reject ${name}? once you reject someone you can't un-reject them — are you sure?`;
-    const ok = await confirm({
-      title: isApprove ? 'approve request' : 'reject request',
-      message,
-      confirmLabel: isApprove ? 'approve' : 'reject',
-      destructive: !isApprove,
-    });
+    const ok = await confirm(confirmPropsForDecision(status, name));
     if (!ok) return;
 
     setError(null);
     try {
       const result = await decide.mutateAsync({ id: request.id, status });
-      if (isApprove && result.magicLinkToken) {
+      if (status === JoinRequestStatus.APPROVED && result.magicLinkToken) {
         setCredsFor({
           fullName: result.fullName,
           firstName: result.firstName,
@@ -268,7 +262,7 @@ function JoinRequestCard({
       ) : null}
 
       {isPending ? (
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button
             onClick={() => {
               onDecide(JoinRequestStatus.APPROVED);
@@ -276,6 +270,15 @@ function JoinRequestCard({
             disabled={busy}
           >
             approve
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              onDecide(JoinRequestStatus.TENTATIVE);
+            }}
+            disabled={busy}
+          >
+            tentatively approve
           </Button>
           <Button
             variant="secondary"
@@ -415,6 +418,43 @@ function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
   }
   if (!hasRows) return null;
   return <p className="text-muted mb-3 text-xs">sorted newest first</p>;
+}
+
+const DECISION_CONFIRM_PROPS: Record<
+  Decision,
+  { title: string; confirmLabel: string; destructive: boolean; message: (name: string) => string }
+> = {
+  [JoinRequestStatus.APPROVED]: {
+    title: 'approve request',
+    confirmLabel: 'approve',
+    destructive: false,
+    message: (name) =>
+      `approve ${name}? once you approve someone you can't un-approve them — are you sure?`,
+  },
+  [JoinRequestStatus.TENTATIVE]: {
+    title: 'tentatively approve request',
+    confirmLabel: 'tentatively approve',
+    destructive: false,
+    message: (name) =>
+      `tentatively approve ${name}? they'll show up in the tentative tab and get promoted once they check in to an event, or you can approve them manually`,
+  },
+  [JoinRequestStatus.REJECTED]: {
+    title: 'reject request',
+    confirmLabel: 'reject',
+    destructive: true,
+    message: (name) =>
+      `reject ${name}? once you reject someone you can't un-reject them — are you sure?`,
+  },
+};
+
+function confirmPropsForDecision(status: Decision, name: string) {
+  const props = DECISION_CONFIRM_PROPS[status];
+  return {
+    title: props.title,
+    message: props.message(name),
+    confirmLabel: props.confirmLabel,
+    destructive: props.destructive,
+  };
 }
 
 function sortKey(request: JoinRequestSummary): number {
