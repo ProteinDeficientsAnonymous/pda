@@ -1,3 +1,10 @@
+## [0.34.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.34.1...v0.34.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* **rsvp:** keep +1 checkbox visible and editable on maybe/can't go (Issue 849) ([#851](https://github.com/ProteinDeficientsAnonymous/pda/issues/851)) ([c25bc18](https://github.com/ProteinDeficientsAnonymous/pda/commit/c25bc180bca4a4c4f84d993d86f44f8f4588ac70))
+
 ## [0.34.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.34.0...v0.34.1) (2026-07-15)
 
 
