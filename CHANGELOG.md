@@ -1,3 +1,15 @@
+# [0.35.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.34.2...v0.35.0) (2026-07-15)
+
+
+### Bug Fixes
+
+* **events:** stop masking rsvp_enabled for anonymous event detail requests (Issue 812) ([#852](https://github.com/ProteinDeficientsAnonymous/pda/issues/852)) ([eca19e7](https://github.com/ProteinDeficientsAnonymous/pda/commit/eca19e7d7fb647a2606fbd107c8ba1153ac2fc80))
+
+
+### Features
+
+* **auth:** show live countdown on login-link cooldown (Issue 674) ([#846](https://github.com/ProteinDeficientsAnonymous/pda/issues/846)) ([a433392](https://github.com/ProteinDeficientsAnonymous/pda/commit/a433392e8ac20a9371e7568224f50b977046f489))
+
 ## [0.34.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.34.1...v0.34.2) (2026-07-15)
 
 
