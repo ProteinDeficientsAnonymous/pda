@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -15,6 +15,13 @@ vi.mock('@/api/eventComments', () => ({
     isError: false,
   }),
   usePostComment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+const updatePublicRsvpMutate = vi.fn();
+const cancelPublicRsvpMutate = vi.fn();
+vi.mock('@/api/publicRsvp', () => ({
+  useUpdatePublicMyRsvp: () => ({ mutateAsync: updatePublicRsvpMutate, isPending: false }),
+  useCancelPublicMyRsvp: () => ({ mutateAsync: cancelPublicRsvpMutate, isPending: false }),
 }));
 
 function baseEvent(overrides: Partial<Event> = {}): Event {
@@ -92,5 +99,19 @@ describe('EventPublicRsvpSection', () => {
     renderSection(baseEvent());
     expect(screen.queryByText('invite members')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('add co-host')).not.toBeInTheDocument();
+  });
+
+  it('lets a token holder change their rsvp via the public endpoint', async () => {
+    updatePublicRsvpMutate.mockResolvedValue({});
+    renderSection(baseEvent({ myRsvp: RsvpServerStatus.Attending }));
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'save' }));
+
+    expect(updatePublicRsvpMutate).toHaveBeenCalledWith({
+      eventId: 'evt-1',
+      status: RsvpServerStatus.Attending,
+      hasPlusOne: false,
+    });
   });
 });

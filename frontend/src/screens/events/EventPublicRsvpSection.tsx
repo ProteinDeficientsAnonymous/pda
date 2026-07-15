@@ -2,7 +2,7 @@ import type { Event } from '@/models/event';
 
 import { EventCommentsCard } from './comments/EventCommentsCard';
 import { CostSection, LinksSection, LocationSection } from './EventMemberSection';
-import { RsvpGuestList } from './RsvpGuestList';
+import { RsvpSection } from './RsvpSection';
 
 interface Props {
   event: Event;
@@ -19,7 +19,7 @@ export function EventPublicRsvpSection({ event, token }: Props) {
       {event.isPast || rsvpDisabled ? null : (
         <section className="border-border bg-surface rounded-lg border p-4">
           <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">rsvp</h2>
-          <RsvpGuestList event={event} canSeeInvited={false} />
+          <RsvpSection event={event} canSeeInvited={false} token={token} />
         </section>
       )}
       {rsvpDisabled ? null : <EventCommentsCard eventId={event.id} token={token} />}

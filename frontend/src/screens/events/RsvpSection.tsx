@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
+import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
@@ -20,6 +21,7 @@ import { RsvpGuestList } from './RsvpGuestList';
 interface Props {
   event: Event;
   canSeeInvited: boolean;
+  token?: string;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -33,9 +35,11 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function RsvpSection({ event, canSeeInvited }: Props) {
+export function RsvpSection({ event, canSeeInvited, token }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
+  const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
+  const cancelPublicRsvp = useCancelPublicMyRsvp(token ?? '');
   const myUserId = useAuthStore((s) => s.user?.id);
   const [error, setError] = useState<string | null>(null);
   const [box, setBox] = useState<BoxState | null>(null);
@@ -57,12 +61,20 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   }) {
     setError(null);
     try {
-      await setRsvp.mutateAsync({
-        eventId: event.id,
-        status: args.status,
-        hasPlusOne: args.hasPlusOne,
-        ...(args.comment === undefined ? {} : { comment: args.comment }),
-      });
+      if (token) {
+        await updatePublicRsvp.mutateAsync({
+          eventId: event.id,
+          status: args.status,
+          hasPlusOne: args.hasPlusOne,
+        });
+      } else {
+        await setRsvp.mutateAsync({
+          eventId: event.id,
+          status: args.status,
+          hasPlusOne: args.hasPlusOne,
+          ...(args.comment === undefined ? {} : { comment: args.comment }),
+        });
+      }
       setBox(null);
     } catch (err) {
       setError(extractError(err));
@@ -72,7 +84,11 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   async function leaveWaitlist() {
     setError(null);
     try {
-      await removeRsvp.mutateAsync(event.id);
+      if (token) {
+        await cancelPublicRsvp.mutateAsync(event.id);
+      } else {
+        await removeRsvp.mutateAsync(event.id);
+      }
     } catch (err) {
       setError(extractError(err));
     }
@@ -81,14 +97,22 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   async function removeMyRsvp() {
     setError(null);
     try {
-      await removeRsvp.mutateAsync(event.id);
+      if (token) {
+        await cancelPublicRsvp.mutateAsync(event.id);
+      } else {
+        await removeRsvp.mutateAsync(event.id);
+      }
       setBox(null);
     } catch (err) {
       setError(extractError(err));
     }
   }
 
-  const busy = setRsvp.isPending || removeRsvp.isPending;
+  const busy =
+    setRsvp.isPending ||
+    removeRsvp.isPending ||
+    updatePublicRsvp.isPending ||
+    cancelPublicRsvp.isPending;
 
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
