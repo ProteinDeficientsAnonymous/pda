@@ -69,7 +69,7 @@ describe('MemberPromotionMessageEditorDialog', () => {
     renderEditor({ body: 'hi', updatedAt: '2026-01-01' });
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('promotion message must be at most 4000 characters');
+    expect(alert.textContent).toContain('member promotion message must be at most 4000 characters');
   });
 
   it('blocks save when body is empty', async () => {

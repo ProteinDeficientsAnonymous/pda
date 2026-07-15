@@ -284,7 +284,7 @@ export function useUpdateTentativeApprovalMessage() {
   });
 }
 
-// --- Member promotion message (plain text, feeds the auto-promotion email). -
+// --- Member promotion message (sms/whatsapp sent on manual promotion). -
 
 export interface MemberPromotionMessage {
   body: string;

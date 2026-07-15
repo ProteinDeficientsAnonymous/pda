@@ -27,12 +27,7 @@ vi.mock('@/api/content', () => ({
     isError: false,
   }),
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useMemberPromotionMessage: () => ({
-    data: { body: 'hi ${FIRST_NAME}, you are a full member now', updatedAt: '2026-01-01' },
-    isPending: false,
-    isError: false,
-  }),
-  useUpdateMemberPromotionMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useWhatsAppLink: () => ({
     data: { link: 'https://chat.whatsapp.com/abc123', updatedAt: '2026-01-01' },
     isPending: false,
@@ -76,7 +71,7 @@ describe('JoinRequestMessageEditors', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders all four edit triggers with permission', () => {
+  it('renders all edit triggers with permission', () => {
     const user = makeUser({
       roles: [
         { id: 'r1', name: 'vetter', isDefault: false, permissions: ['approve_join_requests'] },

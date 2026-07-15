@@ -17,12 +17,12 @@ import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 export function JoinRequestMessageEditors() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tentativeOpen, setTentativeOpen] = useState(false);
-  const [promotionOpen, setPromotionOpen] = useState(false);
+  const [memberPromotionOpen, setMemberPromotionOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const welcomeQ = useWelcomeTemplate();
   const tentativeQ = useTentativeApprovalMessage();
-  const promotionQ = useMemberPromotionMessage();
+  const memberPromotionQ = useMemberPromotionMessage();
   const whatsappQ = useWhatsAppLink();
 
   if (!hasPermission(currentUser, Permission.ApproveJoinRequests)) return null;
@@ -48,7 +48,7 @@ export function JoinRequestMessageEditors() {
         <EditorTrigger
           label="edit member promotion message"
           onClick={() => {
-            setPromotionOpen(true);
+            setMemberPromotionOpen(true);
           }}
         />
         <EditorTrigger
@@ -73,11 +73,11 @@ export function JoinRequestMessageEditors() {
         template={tentativeQ.data ?? null}
       />
       <MemberPromotionMessageEditorDialog
-        open={promotionOpen}
+        open={memberPromotionOpen}
         onClose={() => {
-          setPromotionOpen(false);
+          setMemberPromotionOpen(false);
         }}
-        template={promotionQ.data ?? null}
+        template={memberPromotionQ.data ?? null}
       />
       <WhatsAppLinkEditorDialog
         open={whatsappOpen}

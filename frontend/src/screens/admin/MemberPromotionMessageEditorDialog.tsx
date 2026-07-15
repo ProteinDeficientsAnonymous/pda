@@ -53,13 +53,15 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
       <p className="text-foreground-secondary text-sm">
-        sent automatically by email when a tentatively-approved member is promoted to full member —
-        manually, or by checking in at an event — this replaces the default confirmation text.
+        sent when a tentatively-approved applicant is manually promoted to full member — this
+        replaces the default message text.
       </p>
       <p className="text-muted text-xs">
         available placeholders:{' '}
         <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code> (recipient's first
-        name)
+        name), <code className="bg-surface-dim rounded px-1">{'${SENDER_NAME}'}</code>,{' '}
+        <code className="bg-surface-dim rounded px-1">{'${MAGIC_LINK}'}</code>,{' '}
+        <code className="bg-surface-dim rounded px-1">{'${WHATSAPP_LINK}'}</code>
       </p>
       <textarea
         value={body}
