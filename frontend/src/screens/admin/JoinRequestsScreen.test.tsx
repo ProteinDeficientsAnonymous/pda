@@ -292,6 +292,27 @@ describe('JoinRequestsScreen pending actions', () => {
       status: JoinRequestStatus.TENTATIVE,
     });
   });
+
+  it('opens the tentative approval message dialog after confirming', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({
+      fullName: 'Ada Lovelace',
+      firstName: 'Ada',
+      phoneNumber: '+16505550001',
+      magicLinkToken: null,
+    });
+    vi.mocked(useDecideJoinRequest).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDecideJoinRequest>);
+    mockResult([makeRequest({ id: 'jr-pending', status: JoinRequestStatus.PENDING })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'tentatively approve' }));
+    const confirmDialog = screen.getByRole('dialog');
+    await userEvent.click(within(confirmDialog).getByRole('button', { name: 'tentatively approve' }));
+
+    expect(await screen.findByText(/welcome ada lovelace/i)).toBeInTheDocument();
+  });
 });
 
 describe('JoinRequestsScreen tentative section', () => {
