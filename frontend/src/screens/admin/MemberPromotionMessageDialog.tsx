@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { useMembershipPromotionMessage, useWhatsAppLink } from '@/api/content';
+import { useMemberPromotionMessage, useWhatsAppLink } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -14,7 +14,7 @@ import {
   renderWelcomeMessage,
 } from '@/utils/welcomeMessage';
 
-import { MembershipPromotionMessageEditorDialog } from './MembershipPromotionMessageEditorDialog';
+import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
 
 interface Props {
   open: boolean;
@@ -25,7 +25,7 @@ interface Props {
   magicLinkToken: string | null;
 }
 
-export function MembershipPromotionMessageDialog({
+export function MemberPromotionMessageDialog({
   open,
   onClose,
   fullName,
@@ -36,7 +36,7 @@ export function MembershipPromotionMessageDialog({
   const [copied, setCopied] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
-  const templateQ = useMembershipPromotionMessage();
+  const templateQ = useMemberPromotionMessage();
   const whatsappLinkQ = useWhatsAppLink();
 
   if (!magicLinkToken) return null;
@@ -90,7 +90,7 @@ export function MembershipPromotionMessageDialog({
               }}
               className="text-muted hover:text-foreground text-left text-xs underline"
             >
-              edit membership promotion message
+              edit member promotion message
             </button>
           </div>
         ) : null}
@@ -98,7 +98,7 @@ export function MembershipPromotionMessageDialog({
           <Button onClick={onClose}>done</Button>
         </div>
       </Dialog>
-      <MembershipPromotionMessageEditorDialog
+      <MemberPromotionMessageEditorDialog
         open={editorOpen}
         onClose={() => {
           setEditorOpen(false);

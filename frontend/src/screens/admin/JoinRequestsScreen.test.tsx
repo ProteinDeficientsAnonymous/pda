@@ -21,7 +21,7 @@ vi.mock('@/api/join', async (importOriginal) => {
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
   useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
-  useMembershipPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
 }));
 
@@ -373,7 +373,7 @@ describe('JoinRequestsScreen tentative section', () => {
     });
   });
 
-  it('opens the membership promotion message dialog after manually approving', async () => {
+  it('opens the member promotion message dialog after manually approving', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       fullName: 'Ada Lovelace',
       firstName: 'Ada',

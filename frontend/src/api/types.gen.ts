@@ -1309,22 +1309,22 @@ export interface paths {
         patch: operations["community__join_requests_unreject_join_request"];
         trace?: never;
     };
-    "/api/community/membership-promotion-message/": {
+    "/api/community/member-promotion-message/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Membership Promotion Message */
-        get: operations["community__membership_promotion_message_get_membership_promotion_message"];
+        /** Get Member Promotion Message */
+        get: operations["community__member_promotion_message_get_member_promotion_message"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** Update Membership Promotion Message */
-        patch: operations["community__membership_promotion_message_update_membership_promotion_message"];
+        /** Update Member Promotion Message */
+        patch: operations["community__member_promotion_message_update_member_promotion_message"];
         trace?: never;
     };
     "/api/community/pages/{slug}/": {
@@ -3345,8 +3345,8 @@ export interface components {
              */
             pronouns: string;
         };
-        /** MembershipPromotionMessageOut */
-        MembershipPromotionMessageOut: {
+        /** MemberPromotionMessageOut */
+        MemberPromotionMessageOut: {
             /** Body */
             body: string;
             /**
@@ -3355,8 +3355,8 @@ export interface components {
              */
             updated_at: string;
         };
-        /** MembershipPromotionMessagePatchIn */
-        MembershipPromotionMessagePatchIn: {
+        /** MemberPromotionMessagePatchIn */
+        MemberPromotionMessagePatchIn: {
             /** Body */
             body?: string | null;
         };
@@ -8201,7 +8201,7 @@ export interface operations {
             };
         };
     };
-    community__membership_promotion_message_get_membership_promotion_message: {
+    community__member_promotion_message_get_member_promotion_message: {
         parameters: {
             query?: never;
             header?: never;
@@ -8216,12 +8216,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MembershipPromotionMessageOut"];
+                    "application/json": components["schemas"]["MemberPromotionMessageOut"];
                 };
             };
         };
     };
-    community__membership_promotion_message_update_membership_promotion_message: {
+    community__member_promotion_message_update_member_promotion_message: {
         parameters: {
             query?: never;
             header?: never;
@@ -8230,7 +8230,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MembershipPromotionMessagePatchIn"];
+                "application/json": components["schemas"]["MemberPromotionMessagePatchIn"];
             };
         };
         responses: {
@@ -8240,7 +8240,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MembershipPromotionMessageOut"];
+                    "application/json": components["schemas"]["MemberPromotionMessageOut"];
                 };
             };
             /** @description Forbidden */

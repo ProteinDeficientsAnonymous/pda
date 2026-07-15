@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { MembershipPromotionMessage } from '@/api/content';
+import type { MemberPromotionMessage } from '@/api/content';
 
-import { MembershipPromotionMessageEditorDialog } from './MembershipPromotionMessageEditorDialog';
+import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
 
 const mutateAsyncMock = vi.fn();
 
@@ -17,32 +17,30 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/api/content', () => ({
-  useUpdateMembershipPromotionMessage: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
+  useUpdateMemberPromotionMessage: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
 }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 function renderEditor(
-  template: MembershipPromotionMessage | null = { body: 'hi', updatedAt: '2026-01-01' },
+  template: MemberPromotionMessage | null = { body: 'hi', updatedAt: '2026-01-01' },
 ) {
   const onClose = vi.fn();
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const utils = render(
     <QueryClientProvider client={qc}>
-      <MembershipPromotionMessageEditorDialog open onClose={onClose} template={template} />
+      <MemberPromotionMessageEditorDialog open onClose={onClose} template={template} />
     </QueryClientProvider>,
   );
   return { ...utils, onClose };
 }
 
-describe('MembershipPromotionMessageEditorDialog', () => {
+describe('MemberPromotionMessageEditorDialog', () => {
   it('seeds the textarea from the loaded message and saves edits', async () => {
     mutateAsyncMock.mockReset();
     mutateAsyncMock.mockResolvedValue({ body: 'updated', updatedAt: '2026-01-02' });
     const { onClose } = renderEditor({ body: 'original', updatedAt: '2026-01-01' });
-    const textarea = screen.getByLabelText(
-      'membership promotion message body',
-    ) as HTMLTextAreaElement;
+    const textarea = screen.getByLabelText('member promotion message body') as HTMLTextAreaElement;
     expect(textarea.value).toBe('original');
     await userEvent.clear(textarea);
     await userEvent.type(textarea, 'updated');
@@ -60,7 +58,7 @@ describe('MembershipPromotionMessageEditorDialog', () => {
       data: {
         detail: [
           {
-            code: 'membership_promotion_message.body_too_long',
+            code: 'member_promotion_message.body_too_long',
             field: 'body',
             params: { max_length: 4000 },
           },
@@ -71,9 +69,7 @@ describe('MembershipPromotionMessageEditorDialog', () => {
     renderEditor({ body: 'hi', updatedAt: '2026-01-01' });
     await userEvent.click(screen.getByRole('button', { name: /save/i }));
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain(
-      'membership promotion message must be at most 4000 characters',
-    );
+    expect(alert.textContent).toContain('member promotion message must be at most 4000 characters');
   });
 
   it('blocks save when body is empty', async () => {

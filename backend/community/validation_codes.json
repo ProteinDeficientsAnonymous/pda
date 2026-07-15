@@ -852,15 +852,15 @@
         ]
       }
     ],
-    "MembershipPromotionMessage": [
+    "MemberPromotionMessage": [
       {
         "name": "BODY_REQUIRED",
-        "value": "membership_promotion_message.body_required",
+        "value": "member_promotion_message.body_required",
         "params": []
       },
       {
         "name": "BODY_TOO_LONG",
-        "value": "membership_promotion_message.body_too_long",
+        "value": "member_promotion_message.body_too_long",
         "params": [
           "max_length"
         ]

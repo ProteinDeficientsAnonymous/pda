@@ -330,9 +330,9 @@ class TestJoinApprovalEmail:
     def test_uses_editable_message_with_first_name_substitution(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import MemberPromotionMessageTemplate
+        from community.models import MemberPromotionEmailTemplate
 
-        template = MemberPromotionMessageTemplate.get()
+        template = MemberPromotionEmailTemplate.get()
         template.body = "hey ${FIRST_NAME} — you came through, you're in for real now"
         template.save()
         sample_join_request.email = "custom@example.com"
@@ -359,9 +359,9 @@ class TestJoinApprovalEmail:
     def test_html_email_escapes_editable_message_body(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import MemberPromotionMessageTemplate
+        from community.models import MemberPromotionEmailTemplate
 
-        template = MemberPromotionMessageTemplate.get()
+        template = MemberPromotionEmailTemplate.get()
         template.body = "hi <script>alert(1)</script> & welcome"
         template.save()
         sample_join_request.email = "html-check@example.com"
@@ -390,14 +390,14 @@ class TestJoinApprovalEmail:
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
         from community.models import (
-            MemberPromotionMessageTemplate,
+            MemberPromotionEmailTemplate,
             TentativeApprovalMessageTemplate,
         )
 
         tentative_template = TentativeApprovalMessageTemplate.get()
         tentative_template.body = "hi ${FIRST_NAME}, from ${SENDER_NAME} — you're tentatively in"
         tentative_template.save()
-        promotion_template = MemberPromotionMessageTemplate.get()
+        promotion_template = MemberPromotionEmailTemplate.get()
         promotion_template.body = "you're fully in now, ${FIRST_NAME}"
         promotion_template.save()
         sample_join_request.email = "separate-templates@example.com"

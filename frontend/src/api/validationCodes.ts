@@ -447,14 +447,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'approval message is too long';
     }
 
-    // Membership promotion message
-    case Code.MembershipPromotionMessage.BodyRequired:
-      return 'membership promotion message body is required';
-    case Code.MembershipPromotionMessage.BodyTooLong: {
+    // Member promotion message
+    case Code.MemberPromotionMessage.BodyRequired:
+      return 'member promotion message body is required';
+    case Code.MemberPromotionMessage.BodyTooLong: {
       const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
       return max !== null
-        ? `membership promotion message must be at most ${String(max)} characters`
-        : 'membership promotion message is too long';
+        ? `member promotion message must be at most ${String(max)} characters`
+        : 'member promotion message is too long';
     }
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)

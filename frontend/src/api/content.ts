@@ -284,50 +284,48 @@ export function useUpdateTentativeApprovalMessage() {
   });
 }
 
-// --- Membership promotion message (sms/whatsapp sent on manual promotion). -
+// --- Member promotion message (sms/whatsapp sent on manual promotion). -
 
-export interface MembershipPromotionMessage {
+export interface MemberPromotionMessage {
   body: string;
   updatedAt: string;
 }
 
-interface WireMembershipPromotionMessage {
+interface WireMemberPromotionMessage {
   body: string;
   updated_at: string;
 }
 
-function mapMembershipPromotionMessage(
-  data: WireMembershipPromotionMessage,
-): MembershipPromotionMessage {
+function mapMemberPromotionMessage(data: WireMemberPromotionMessage): MemberPromotionMessage {
   return { body: data.body, updatedAt: data.updated_at };
 }
 
-export function useMembershipPromotionMessage() {
+export function useMemberPromotionMessage() {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useQuery({
-    queryKey: ['membership-promotion-message'],
+    queryKey: ['member-promotion-message'],
     queryFn: async () => {
-      const { data } = await apiClient.get<WireMembershipPromotionMessage>(
-        '/api/community/membership-promotion-message/',
+      const { data } = await apiClient.get<WireMemberPromotionMessage>(
+        '/api/community/member-promotion-message/',
       );
-      return mapMembershipPromotionMessage(data);
+      return mapMemberPromotionMessage(data);
     },
     enabled: isAuthed,
   });
 }
 
-export function useUpdateMembershipPromotionMessage() {
+export function useUpdateMemberPromotionMessage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: string) => {
-      const { data } = await apiClient.patch<WireMembershipPromotionMessage>(
-        '/api/community/membership-promotion-message/',
+      const { data } = await apiClient.patch<WireMemberPromotionMessage>(
+        '/api/community/member-promotion-message/',
         { body },
       );
-      return mapMembershipPromotionMessage(data);
+      return mapMemberPromotionMessage(data);
     },
     onSuccess: (template) => {
-      qc.setQueryData(['membership-promotion-message'], template);
+      qc.setQueryData(['member-promotion-message'], template);
     },
   });
 }

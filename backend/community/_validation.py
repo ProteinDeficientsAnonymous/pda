@@ -212,9 +212,9 @@ class Code:
         BODY_REQUIRED = "tentative_approval_message.body_required"
         BODY_TOO_LONG = "tentative_approval_message.body_too_long"  # params: { max_length: int }
 
-    class MembershipPromotionMessage:
-        BODY_REQUIRED = "membership_promotion_message.body_required"
-        BODY_TOO_LONG = "membership_promotion_message.body_too_long"  # params: { max_length: int }
+    class MemberPromotionMessage:
+        BODY_REQUIRED = "member_promotion_message.body_required"
+        BODY_TOO_LONG = "member_promotion_message.body_too_long"  # params: { max_length: int }
 
 
 class ValidationException(Exception):

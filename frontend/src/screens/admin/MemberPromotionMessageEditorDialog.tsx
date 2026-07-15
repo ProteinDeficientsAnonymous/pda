@@ -2,10 +2,7 @@ import { type SyntheticEvent, useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import {
-  type MembershipPromotionMessage,
-  useUpdateMembershipPromotionMessage,
-} from '@/api/content';
+import { type MemberPromotionMessage, useUpdateMemberPromotionMessage } from '@/api/content';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { cn } from '@/utils/cn';
@@ -15,22 +12,22 @@ const MAX_LENGTH = 4000;
 interface Props {
   open: boolean;
   onClose: () => void;
-  template: MembershipPromotionMessage | null;
+  template: MemberPromotionMessage | null;
 }
 
-export function MembershipPromotionMessageEditorDialog({ open, onClose, template }: Props) {
+export function MemberPromotionMessageEditorDialog({ open, onClose, template }: Props) {
   if (!open) return null;
   // Inner form is keyed on the template body so each open seeds fresh state
   // without an effect.
   return (
-    <Dialog open onClose={onClose} title="edit membership promotion message">
+    <Dialog open onClose={onClose} title="edit member promotion message">
       <EditorForm key={template?.body ?? ''} initialBody={template?.body ?? ''} onClose={onClose} />
     </Dialog>
   );
 }
 
 function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: () => void }) {
-  const update = useUpdateMembershipPromotionMessage();
+  const update = useUpdateMemberPromotionMessage();
   const [body, setBody] = useState(initialBody);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -73,7 +70,7 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
         }}
         rows={10}
         className="border-border bg-background text-foreground focus-visible:ring-brand-200 w-full rounded-md border p-3 font-mono text-sm focus-visible:ring-2 focus-visible:outline-none"
-        aria-label="membership promotion message body"
+        aria-label="member promotion message body"
       />
       <div
         className={cn(

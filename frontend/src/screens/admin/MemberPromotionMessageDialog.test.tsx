@@ -6,7 +6,7 @@ import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
-import { MembershipPromotionMessageDialog } from './MembershipPromotionMessageDialog';
+import { MemberPromotionMessageDialog } from './MemberPromotionMessageDialog';
 
 vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
@@ -15,12 +15,12 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/api/content', () => ({
-  useMembershipPromotionMessage: () => ({
+  useMemberPromotionMessage: () => ({
     data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
     isPending: false,
     isError: false,
   }),
-  useUpdateMembershipPromotionMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateMemberPromotionMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({
     data: { link: '', updatedAt: '2026-01-01' },
     isPending: false,
@@ -53,7 +53,7 @@ function renderDialog(user: User | null, magicLinkToken: string | null = 'abc123
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MembershipPromotionMessageDialog
+      <MemberPromotionMessageDialog
         open
         onClose={() => {}}
         fullName="Sam Vetterson"
@@ -65,7 +65,7 @@ function renderDialog(user: User | null, magicLinkToken: string | null = 'abc123
   );
 }
 
-describe('MembershipPromotionMessageDialog', () => {
+describe('MemberPromotionMessageDialog', () => {
   it('renders the magic link box and copy button', () => {
     renderDialog(makeUser());
     expect(screen.getByText(/magic-login\/abc123/)).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('MembershipPromotionMessageDialog', () => {
 
   it('hides edit-template trigger without permission', () => {
     renderDialog(makeUser());
-    expect(screen.queryByRole('button', { name: /edit membership promotion message/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit member promotion message/i })).toBeNull();
   });
 
   it('shows the edit trigger with permission', () => {
@@ -104,7 +104,7 @@ describe('MembershipPromotionMessageDialog', () => {
     });
     renderDialog(user);
     expect(
-      screen.getByRole('button', { name: /edit membership promotion message/i }),
+      screen.getByRole('button', { name: /edit member promotion message/i }),
     ).toBeInTheDocument();
   });
 });

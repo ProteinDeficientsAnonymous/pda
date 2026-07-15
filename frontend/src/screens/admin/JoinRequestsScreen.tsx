@@ -18,7 +18,7 @@ import { formatPhone } from '@/utils/formatPhone';
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 import { type Decision, JoinRequestCard } from './JoinRequestCard';
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
-import { MembershipPromotionMessageDialog } from './MembershipPromotionMessageDialog';
+import { MemberPromotionMessageDialog } from './MemberPromotionMessageDialog';
 import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
 const Filter = {
@@ -56,7 +56,7 @@ export default function JoinRequestsScreen() {
     firstName: string;
     phoneNumber: string;
   } | null>(null);
-  const [membershipMessageFor, setMembershipMessageFor] = useState<{
+  const [memberPromotionMessageFor, setMemberPromotionMessageFor] = useState<{
     fullName: string;
     firstName: string;
     phoneNumber: string;
@@ -85,7 +85,7 @@ export default function JoinRequestsScreen() {
     try {
       const result = await decide.mutateAsync({ id: request.id, status: wireStatus });
       if (decision === 'manually_approved') {
-        setMembershipMessageFor({
+        setMemberPromotionMessageFor({
           fullName: result.fullName,
           firstName: result.firstName,
           phoneNumber: result.phoneNumber,
@@ -237,16 +237,16 @@ export default function JoinRequestsScreen() {
           phoneNumber={tentativeMessageFor.phoneNumber}
         />
       ) : null}
-      {membershipMessageFor ? (
-        <MembershipPromotionMessageDialog
+      {memberPromotionMessageFor ? (
+        <MemberPromotionMessageDialog
           open
           onClose={() => {
-            setMembershipMessageFor(null);
+            setMemberPromotionMessageFor(null);
           }}
-          fullName={membershipMessageFor.fullName}
-          firstName={membershipMessageFor.firstName}
-          phoneNumber={membershipMessageFor.phoneNumber}
-          magicLinkToken={membershipMessageFor.magicLinkToken}
+          fullName={memberPromotionMessageFor.fullName}
+          firstName={memberPromotionMessageFor.firstName}
+          phoneNumber={memberPromotionMessageFor.phoneNumber}
+          magicLinkToken={memberPromotionMessageFor.magicLinkToken}
         />
       ) : null}
       {confirmElement}

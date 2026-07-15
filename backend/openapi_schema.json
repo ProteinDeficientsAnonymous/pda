@@ -3492,7 +3492,7 @@
         "title": "MemberProfileOut",
         "type": "object"
       },
-      "MembershipPromotionMessageOut": {
+      "MemberPromotionMessageOut": {
         "properties": {
           "body": {
             "title": "Body",
@@ -3508,10 +3508,10 @@
           "body",
           "updated_at"
         ],
-        "title": "MembershipPromotionMessageOut",
+        "title": "MemberPromotionMessageOut",
         "type": "object"
       },
-      "MembershipPromotionMessagePatchIn": {
+      "MemberPromotionMessagePatchIn": {
         "properties": {
           "body": {
             "anyOf": [
@@ -3525,7 +3525,7 @@
             "title": "Body"
           }
         },
-        "title": "MembershipPromotionMessagePatchIn",
+        "title": "MemberPromotionMessagePatchIn",
         "type": "object"
       },
       "NotificationOut": {
@@ -11069,16 +11069,16 @@
         ]
       }
     },
-    "/api/community/membership-promotion-message/": {
+    "/api/community/member-promotion-message/": {
       "get": {
-        "operationId": "community__membership_promotion_message_get_membership_promotion_message",
+        "operationId": "community__member_promotion_message_get_member_promotion_message",
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MembershipPromotionMessageOut"
+                  "$ref": "#/components/schemas/MemberPromotionMessageOut"
                 }
               }
             },
@@ -11090,19 +11090,19 @@
             "GatedJWTAuth": []
           }
         ],
-        "summary": "Get Membership Promotion Message",
+        "summary": "Get Member Promotion Message",
         "tags": [
           "community"
         ]
       },
       "patch": {
-        "operationId": "community__membership_promotion_message_update_membership_promotion_message",
+        "operationId": "community__member_promotion_message_update_member_promotion_message",
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MembershipPromotionMessagePatchIn"
+                "$ref": "#/components/schemas/MemberPromotionMessagePatchIn"
               }
             }
           },
@@ -11113,7 +11113,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MembershipPromotionMessageOut"
+                  "$ref": "#/components/schemas/MemberPromotionMessageOut"
                 }
               }
             },
@@ -11145,7 +11145,7 @@
             "GatedJWTAuth": []
           }
         ],
-        "summary": "Update Membership Promotion Message",
+        "summary": "Update Member Promotion Message",
         "tags": [
           "community"
         ]

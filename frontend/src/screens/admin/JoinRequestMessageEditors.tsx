@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import {
-  useMembershipPromotionMessage,
+  useMemberPromotionMessage,
   useTentativeApprovalMessage,
   useWelcomeTemplate,
   useWhatsAppLink,
@@ -9,7 +9,7 @@ import {
 import { useAuthStore } from '@/auth/store';
 import { hasPermission, Permission } from '@/models/permissions';
 
-import { MembershipPromotionMessageEditorDialog } from './MembershipPromotionMessageEditorDialog';
+import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
@@ -17,12 +17,12 @@ import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 export function JoinRequestMessageEditors() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tentativeOpen, setTentativeOpen] = useState(false);
-  const [membershipOpen, setMembershipOpen] = useState(false);
+  const [memberPromotionOpen, setMemberPromotionOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const welcomeQ = useWelcomeTemplate();
   const tentativeQ = useTentativeApprovalMessage();
-  const membershipQ = useMembershipPromotionMessage();
+  const memberPromotionQ = useMemberPromotionMessage();
   const whatsappQ = useWhatsAppLink();
 
   if (!hasPermission(currentUser, Permission.ApproveJoinRequests)) return null;
@@ -46,9 +46,9 @@ export function JoinRequestMessageEditors() {
           }}
         />
         <EditorTrigger
-          label="edit membership promotion message"
+          label="edit member promotion message"
           onClick={() => {
-            setMembershipOpen(true);
+            setMemberPromotionOpen(true);
           }}
         />
         <EditorTrigger
@@ -72,12 +72,12 @@ export function JoinRequestMessageEditors() {
         }}
         template={tentativeQ.data ?? null}
       />
-      <MembershipPromotionMessageEditorDialog
-        open={membershipOpen}
+      <MemberPromotionMessageEditorDialog
+        open={memberPromotionOpen}
         onClose={() => {
-          setMembershipOpen(false);
+          setMemberPromotionOpen(false);
         }}
-        template={membershipQ.data ?? null}
+        template={memberPromotionQ.data ?? null}
       />
       <WhatsAppLinkEditorDialog
         open={whatsappOpen}
