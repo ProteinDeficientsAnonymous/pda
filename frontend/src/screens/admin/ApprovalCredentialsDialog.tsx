@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { useTentativeApprovalMessage, useWelcomeTemplate } from '@/api/content';
+import { useTentativeApprovalMessage, useWelcomeTemplate, useWhatsAppLink } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -40,6 +40,7 @@ export function ApprovalCredentialsDialog({
   const currentUser = useAuthStore((s) => s.user);
   const templateQ = useWelcomeTemplate();
   const tentativeMessageQ = useTentativeApprovalMessage();
+  const whatsappLinkQ = useWhatsAppLink();
 
   if (!magicLinkToken) return null;
   const magicLinkUrl = buildMagicLinkUrl(magicLinkToken);
@@ -51,6 +52,7 @@ export function ApprovalCredentialsDialog({
         name: firstName,
         senderName,
         magicLink: magicLinkUrl,
+        whatsappLink: whatsappLinkQ.data?.link ?? '',
       })
     : buildWelcomeMessage(firstName, magicLinkUrl);
   const smsHref = buildSmsHref(phoneNumber, welcomeMessage);

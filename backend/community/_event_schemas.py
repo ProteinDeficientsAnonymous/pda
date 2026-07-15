@@ -6,6 +6,7 @@ import phonenumbers
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from community._field_limits import FieldLimit
+from community._shared import require_url_path, validate_whatsapp_url
 from community._validation import Code, raise_validation
 from community.models import (
     AttendanceStatus,
@@ -56,47 +57,12 @@ def _validate_max_attendees(v: int | None) -> int | None:
     return v
 
 
-def _require_path(url: str, field: str) -> str:
-    """Validate that a URL has a non-trivial path (not bare domain)."""
-    if not url:
-        return url
-    normalized = url if url.startswith(("http://", "https://")) else f"https://{url}"
-    try:
-        parsed = urlparse(normalized)
-    except ValueError:
-        raise_validation(Code.Url.INVALID, field=field)
-    if not parsed.netloc:
-        raise_validation(Code.Url.INVALID, field=field)
-    path = parsed.path.rstrip("/")
-    if not path:
-        raise_validation(Code.Url.PATH_REQUIRED, field=field)
-    return normalized
-
-
 def _normalize_url(url: str) -> str:
     return url if url.startswith(("http://", "https://")) else f"https://{url}"
 
 
 def _strip_www(host: str) -> str:
     return host.removeprefix("www.")
-
-
-def _validate_whatsapp_url(url: str, field: str) -> str:
-    known_hosts = {"chat.whatsapp.com", "wa.me", "whats.app"}
-    if not url:
-        return url
-    try:
-        parsed = urlparse(_normalize_url(url))
-    except ValueError:
-        raise_validation(Code.Url.INVALID, field=field)
-    host = _strip_www(parsed.netloc.lower())
-    if host not in known_hosts:
-        raise_validation(
-            Code.Url.WHATSAPP_NOT_RECOGNIZED,
-            field=field,
-            allowed_hosts=sorted(known_hosts),
-        )
-    return _require_path(url, field=field)
 
 
 def _validate_partiful_url(url: str, field: str) -> str:
@@ -109,7 +75,7 @@ def _validate_partiful_url(url: str, field: str) -> str:
     host = _strip_www(parsed.netloc.lower())
     if "partiful.com" not in host:
         raise_validation(Code.Url.PARTIFUL_NOT_RECOGNIZED, field=field)
-    return _require_path(url, field=field)
+    return require_url_path(url, field=field)
 
 
 def _validate_generic_url(url: str, field: str) -> str:
@@ -352,7 +318,7 @@ class EventIn(BaseModel):
     @field_validator("whatsapp_link", mode="before")
     @classmethod
     def validate_whatsapp(cls, v: str) -> str:
-        return _validate_whatsapp_url(v or "", field="whatsapp_link")
+        return validate_whatsapp_url(v or "", field="whatsapp_link")
 
     @field_validator("partiful_link", mode="before")
     @classmethod
@@ -407,7 +373,7 @@ class EventPatchIn(BaseModel):
     def validate_whatsapp(cls, v: str | None) -> str | None:
         if v is None:
             return None
-        return _validate_whatsapp_url(v, field="whatsapp_link")
+        return validate_whatsapp_url(v, field="whatsapp_link")
 
     @field_validator("partiful_link", mode="before")
     @classmethod

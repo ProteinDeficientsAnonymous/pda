@@ -20,6 +20,7 @@ import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
+import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
 import { TentativeActions } from './JoinRequestTentativeSection';
 
 const Filter = {
@@ -135,6 +136,8 @@ export default function JoinRequestsScreen() {
   return (
     <ContentContainer>
       <h1 className="mb-6 text-2xl font-medium tracking-tight">join requests</h1>
+
+      <JoinRequestMessageEditors />
 
       <div className="mb-4 flex justify-center">
         <SegmentedControl

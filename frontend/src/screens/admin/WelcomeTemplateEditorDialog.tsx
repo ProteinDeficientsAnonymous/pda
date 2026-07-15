@@ -1,8 +1,3 @@
-// Sub-modal opened from ApprovalCredentialsDialog. Lets users with
-// APPROVE_JOIN_REQUESTS edit the shared template. Plain-text only —
-// placeholders ${FIRST_NAME}, ${SENDER_NAME}, ${MAGIC_LINK} are substituted at
-// render time by renderWelcomeMessage().
-
 import { type SyntheticEvent, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -64,7 +59,8 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
         available placeholders:{' '}
         <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code> (recipient's first
         name), <code className="bg-surface-dim rounded px-1">{'${SENDER_NAME}'}</code>,{' '}
-        <code className="bg-surface-dim rounded px-1">{'${MAGIC_LINK}'}</code>
+        <code className="bg-surface-dim rounded px-1">{'${MAGIC_LINK}'}</code>,{' '}
+        <code className="bg-surface-dim rounded px-1">{'${WHATSAPP_LINK}'}</code>
       </p>
       <textarea
         value={body}

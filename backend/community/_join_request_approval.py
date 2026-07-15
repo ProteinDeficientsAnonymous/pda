@@ -9,7 +9,12 @@ from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
 from community._shared import render_template_placeholders, validate_display_name
-from community.models import EventType, JoinRequestStatus, TentativeApprovalMessageTemplate
+from community.models import (
+    EventType,
+    JoinRequestStatus,
+    TentativeApprovalMessageTemplate,
+    WhatsAppLinkConfig,
+)
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
@@ -90,7 +95,9 @@ def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
         return
     template = TentativeApprovalMessageTemplate.get()
     body = template.body.strip() or _DEFAULT_TENTATIVE_APPROVAL_MESSAGE
-    message_body = render_template_placeholders(body, {"FIRST_NAME": first_name})
+    message_body = render_template_placeholders(
+        body, {"FIRST_NAME": first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link}
+    )
     try:
         send_join_approval_email(
             sender=get_email_sender(),

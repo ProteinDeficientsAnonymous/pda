@@ -154,6 +154,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     // URL
     case Code.Url.Invalid:
       return 'enter a valid url';
+    case Code.Url.TooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null ? `link must be at most ${String(max)} characters` : 'link is too long';
+    }
     case Code.Url.PathRequired:
       return 'link must point to a specific page, not just a homepage';
     case Code.Url.SchemeMustBeHttpOrHttps:

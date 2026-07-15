@@ -1688,6 +1688,24 @@ export interface paths {
         patch: operations["community__welcome_template_update_welcome_template"];
         trace?: never;
     };
+    "/api/community/whatsapp-link/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Whatsapp Link */
+        get: operations["community__whatsapp_link_get_whatsapp_link"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Whatsapp Link */
+        patch: operations["community__whatsapp_link_update_whatsapp_link"];
+        trace?: never;
+    };
     "/api/notifications/": {
         parameters: {
             query?: never;
@@ -4111,6 +4129,21 @@ export interface components {
         WelcomeTemplatePatchIn: {
             /** Body */
             body?: string | null;
+        };
+        /** WhatsAppLinkOut */
+        WhatsAppLinkOut: {
+            /** Link */
+            link: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WhatsAppLinkPatchIn */
+        WhatsAppLinkPatchIn: {
+            /** Link */
+            link?: string | null;
         };
     };
     responses: never;
@@ -9193,6 +9226,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WelcomeTemplateOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__whatsapp_link_get_whatsapp_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhatsAppLinkOut"];
+                };
+            };
+        };
+    };
+    community__whatsapp_link_update_whatsapp_link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WhatsAppLinkPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhatsAppLinkOut"];
                 };
             };
             /** @description Forbidden */

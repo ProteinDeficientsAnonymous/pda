@@ -58,16 +58,19 @@ describe('buildWelcomeMessage', () => {
 });
 
 describe('renderWelcomeMessage', () => {
-  it('substitutes all three placeholders', () => {
+  it('substitutes all four placeholders', () => {
     const out = renderWelcomeMessage(
-      'hi ${FIRST_NAME}, this is ${SENDER_NAME}, sign in: ${MAGIC_LINK}',
+      'hi ${FIRST_NAME}, this is ${SENDER_NAME}, sign in: ${MAGIC_LINK}, chat: ${WHATSAPP_LINK}',
       {
         name: 'Sam',
         senderName: 'Vetter',
         magicLink: 'https://pda.test/m/abc',
+        whatsappLink: 'https://chat.whatsapp.com/xyz',
       },
     );
-    expect(out).toBe('hi Sam, this is Vetter, sign in: https://pda.test/m/abc');
+    expect(out).toBe(
+      'hi Sam, this is Vetter, sign in: https://pda.test/m/abc, chat: https://chat.whatsapp.com/xyz',
+    );
   });
 
   it('replaces every occurrence of a repeated placeholder', () => {
@@ -75,6 +78,7 @@ describe('renderWelcomeMessage', () => {
       name: 'Sam',
       senderName: '',
       magicLink: '',
+      whatsappLink: '',
     });
     expect(out).toBe('Sam Sam!');
   });
@@ -84,6 +88,7 @@ describe('renderWelcomeMessage', () => {
       name: 'Sam',
       senderName: '',
       magicLink: '',
+      whatsappLink: '',
     });
     expect(out).toBe('Sam — ${UNKNOWN}');
   });
@@ -93,6 +98,7 @@ describe('renderWelcomeMessage', () => {
       name: 'ada',
       senderName: 'sender',
       magicLink: 'http://x',
+      whatsappLink: '',
     });
     expect(out).toBe('hi ada!');
   });

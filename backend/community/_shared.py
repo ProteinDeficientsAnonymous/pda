@@ -1,5 +1,6 @@
 import logging
 import re
+from urllib.parse import urlparse
 
 import phonenumbers
 from django.contrib.auth.models import AnonymousUser
@@ -87,6 +88,51 @@ def render_template_placeholders(body: str, placeholders: dict[str, str]) -> str
     for name, value in placeholders.items():
         body = body.replace(f"${{{name}}}", value)
     return body
+
+
+_WHATSAPP_KNOWN_HOSTS = {"chat.whatsapp.com", "wa.me", "whats.app"}
+
+
+def _normalize_url(url: str) -> str:
+    return url if url.startswith(("http://", "https://")) else f"https://{url}"
+
+
+def _strip_www(host: str) -> str:
+    return host.removeprefix("www.")
+
+
+def require_url_path(url: str, field: str) -> str:
+    """Validate that a URL has a non-trivial path (not bare domain)."""
+    if not url:
+        return url
+    normalized = _normalize_url(url)
+    try:
+        parsed = urlparse(normalized)
+    except ValueError:
+        raise_validation(Code.Url.INVALID, field=field)
+    if not parsed.netloc:
+        raise_validation(Code.Url.INVALID, field=field)
+    path = parsed.path.rstrip("/")
+    if not path:
+        raise_validation(Code.Url.PATH_REQUIRED, field=field)
+    return normalized
+
+
+def validate_whatsapp_url(url: str, field: str) -> str:
+    if not url:
+        return url
+    try:
+        parsed = urlparse(_normalize_url(url))
+    except ValueError:
+        raise_validation(Code.Url.INVALID, field=field)
+    host = _strip_www(parsed.netloc.lower())
+    if host not in _WHATSAPP_KNOWN_HOSTS:
+        raise_validation(
+            Code.Url.WHATSAPP_NOT_RECOGNIZED,
+            field=field,
+            allowed_hosts=sorted(_WHATSAPP_KNOWN_HOSTS),
+        )
+    return require_url_path(url, field=field)
 
 
 def flatten_to_single_line(value: str) -> str:

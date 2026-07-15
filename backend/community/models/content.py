@@ -152,3 +152,27 @@ class TentativeApprovalMessageTemplate(models.Model):
     def get(cls) -> "TentativeApprovalMessageTemplate":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class WhatsAppLinkConfig(models.Model):
+    """Singleton — only one row ever exists (pk=1).
+
+    Admin-editable WhatsApp group/community invite link, substituted into the
+    welcome and tentative-approval message templates via ${WHATSAPP_LINK}.
+    """
+
+    link = models.CharField(default="", max_length=200)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+        verbose_name = "WhatsApp Link"
+        verbose_name_plural = "WhatsApp Link"
+
+    def __str__(self) -> str:
+        return "WhatsApp Link"
+
+    @classmethod
+    def get(cls) -> "WhatsAppLinkConfig":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

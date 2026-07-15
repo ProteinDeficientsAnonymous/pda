@@ -57,9 +57,9 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
         confirmation text.
       </p>
       <p className="text-muted text-xs">
-        available placeholder:{' '}
+        available placeholders:{' '}
         <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code> (recipient's first
-        name)
+        name), <code className="bg-surface-dim rounded px-1">{'${WHATSAPP_LINK}'}</code>
       </p>
       <textarea
         value={body}

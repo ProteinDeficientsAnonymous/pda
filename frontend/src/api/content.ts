@@ -283,3 +283,46 @@ export function useUpdateTentativeApprovalMessage() {
     },
   });
 }
+
+// --- WhatsApp link (substituted into welcome + tentative-approval messages). -
+
+export interface WhatsAppLink {
+  link: string;
+  updatedAt: string;
+}
+
+interface WireWhatsAppLink {
+  link: string;
+  updated_at: string;
+}
+
+function mapWhatsAppLink(data: WireWhatsAppLink): WhatsAppLink {
+  return { link: data.link, updatedAt: data.updated_at };
+}
+
+export function useWhatsAppLink() {
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useQuery({
+    queryKey: ['whatsapp-link'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireWhatsAppLink>('/api/community/whatsapp-link/');
+      return mapWhatsAppLink(data);
+    },
+    enabled: isAuthed,
+  });
+}
+
+export function useUpdateWhatsAppLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (link: string) => {
+      const { data } = await apiClient.patch<WireWhatsAppLink>('/api/community/whatsapp-link/', {
+        link,
+      });
+      return mapWhatsAppLink(data);
+    },
+    onSuccess: (link) => {
+      qc.setQueryData(['whatsapp-link'], link);
+    },
+  });
+}

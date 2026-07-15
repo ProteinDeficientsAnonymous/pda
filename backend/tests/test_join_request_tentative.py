@@ -386,6 +386,37 @@ class TestJoinApprovalEmail:
         assert "&lt;script&gt;" in html
         assert "&amp; welcome" in html
 
+    def test_whatsapp_link_placeholder_substitution(
+        self, api_client, vettor_headers, sample_join_request, fake_email_sender
+    ):
+        from community.models import TentativeApprovalMessageTemplate, WhatsAppLinkConfig
+
+        template = TentativeApprovalMessageTemplate.get()
+        template.body = "you're in — join us here: ${WHATSAPP_LINK}"
+        template.save()
+        config = WhatsAppLinkConfig.get()
+        config.link = "https://chat.whatsapp.com/abc123"
+        config.save()
+        sample_join_request.email = "whatsapp-check@example.com"
+        sample_join_request.save(update_fields=["email"])
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.TENTATIVE},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
+        matching = [c for c in sends if c["to"] == "whatsapp-check@example.com"]
+        assert len(matching) == 1
+        assert "https://chat.whatsapp.com/abc123" in matching[0]["text"]
+        assert "${WHATSAPP_LINK}" not in matching[0]["text"]
+
 
 @pytest.mark.django_db
 class TestTentativeRsvpEvents:
