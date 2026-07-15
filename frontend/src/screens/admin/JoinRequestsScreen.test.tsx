@@ -18,6 +18,13 @@ vi.mock('@/api/join', async (importOriginal) => {
   };
 });
 
+vi.mock('@/api/content', () => ({
+  useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
+  useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
+}));
+
 import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
 
 import JoinRequestsScreen from './JoinRequestsScreen';
@@ -263,7 +270,12 @@ describe('JoinRequestsScreen pending actions', () => {
   });
 
   it('calls decide with tentative status when tentatively approve is confirmed', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue({ magicLinkToken: null });
+    const mutateAsync = vi.fn().mockResolvedValue({
+      fullName: 'Ada Lovelace',
+      firstName: 'Ada',
+      phoneNumber: '+16505550001',
+      magicLinkToken: null,
+    });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
       mutateAsync,
       isPending: false,

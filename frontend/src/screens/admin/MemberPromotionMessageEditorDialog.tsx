@@ -2,7 +2,7 @@ import { type SyntheticEvent, useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { type TentativeApprovalMessage, useUpdateTentativeApprovalMessage } from '@/api/content';
+import { type MemberPromotionMessage, useUpdateMemberPromotionMessage } from '@/api/content';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { cn } from '@/utils/cn';
@@ -12,22 +12,22 @@ const MAX_LENGTH = 4000;
 interface Props {
   open: boolean;
   onClose: () => void;
-  template: TentativeApprovalMessage | null;
+  template: MemberPromotionMessage | null;
 }
 
-export function TentativeApprovalMessageEditorDialog({ open, onClose, template }: Props) {
+export function MemberPromotionMessageEditorDialog({ open, onClose, template }: Props) {
   if (!open) return null;
   // Inner form is keyed on the template body so each open seeds fresh state
   // without an effect.
   return (
-    <Dialog open onClose={onClose} title="edit tentative approval message">
+    <Dialog open onClose={onClose} title="edit member promotion message">
       <EditorForm key={template?.body ?? ''} initialBody={template?.body ?? ''} onClose={onClose} />
     </Dialog>
   );
 }
 
 function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: () => void }) {
-  const update = useUpdateTentativeApprovalMessage();
+  const update = useUpdateMemberPromotionMessage();
   const [body, setBody] = useState(initialBody);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -53,13 +53,13 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-3">
       <p className="text-foreground-secondary text-sm">
-        sent when someone is tentatively approved — this replaces the default message text.
+        sent automatically by email when a tentatively-approved member is promoted to full member —
+        manually, or by checking in at an event — this replaces the default confirmation text.
       </p>
       <p className="text-muted text-xs">
         available placeholders:{' '}
         <code className="bg-surface-dim rounded px-1">{'${FIRST_NAME}'}</code> (recipient's first
-        name), <code className="bg-surface-dim rounded px-1">{'${SENDER_NAME}'}</code>,{' '}
-        <code className="bg-surface-dim rounded px-1">{'${WHATSAPP_LINK}'}</code>
+        name)
       </p>
       <textarea
         value={body}
@@ -68,7 +68,7 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
         }}
         rows={10}
         className="border-border bg-background text-foreground focus-visible:ring-brand-200 w-full rounded-md border p-3 font-mono text-sm focus-visible:ring-2 focus-visible:outline-none"
-        aria-label="tentative approval message body"
+        aria-label="member promotion message body"
       />
       <div
         className={cn(

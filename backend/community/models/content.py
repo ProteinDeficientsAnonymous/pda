@@ -132,9 +132,9 @@ class WelcomeMessageTemplate(models.Model):
 class TentativeApprovalMessageTemplate(models.Model):
     """Singleton — only one row ever exists (pk=1).
 
-    Plain-text body for the confirmation email sent when a tentatively-approved
-    applicant is promoted to full member. Placeholder ${FIRST_NAME} is
-    substituted server-side when the email is rendered.
+    Plain-text body for the sms/whatsapp message a vetter sends right after
+    tentatively approving a join request. Placeholders ${FIRST_NAME},
+    ${SENDER_NAME}, ${WHATSAPP_LINK} are substituted client-side when rendered.
     """
 
     body = models.TextField(default="", max_length=4000)
@@ -150,6 +150,32 @@ class TentativeApprovalMessageTemplate(models.Model):
 
     @classmethod
     def get(cls) -> "TentativeApprovalMessageTemplate":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class MemberPromotionMessageTemplate(models.Model):
+    """Singleton — only one row ever exists (pk=1).
+
+    Plain-text body for the email sent automatically when a tentatively-
+    approved applicant is promoted to full member (manually or via in-person
+    event check-in). Placeholder ${FIRST_NAME} is substituted server-side when
+    rendered — there is no sender, this is not a vetter-composed message.
+    """
+
+    body = models.TextField(default="", max_length=4000)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+        verbose_name = "Member Promotion Message Template"
+        verbose_name_plural = "Member Promotion Message Template"
+
+    def __str__(self) -> str:
+        return "Member Promotion Message Template"
+
+    @classmethod
+    def get(cls) -> "MemberPromotionMessageTemplate":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
 

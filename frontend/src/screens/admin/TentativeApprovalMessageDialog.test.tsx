@@ -6,7 +6,7 @@ import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
-import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
+import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
 vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
@@ -15,14 +15,11 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/api/content', () => ({
-  useWelcomeTemplate: () => ({
-    data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
-    isPending: false,
-    isError: false,
-  }),
-  useUpdateWelcomeTemplate: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useTentativeApprovalMessage: () => ({
-    data: { body: 'hi ${FIRST_NAME}, welcome', updatedAt: '2026-01-01' },
+    data: {
+      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in',
+      updatedAt: '2026-01-01',
+    },
     isPending: false,
     isError: false,
   }),
@@ -32,7 +29,6 @@ vi.mock('@/api/content', () => ({
     isPending: false,
     isError: false,
   }),
-  useUpdateWhatsAppLink: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 function makeUser(overrides?: Partial<User>): User {
@@ -59,43 +55,37 @@ function renderDialog(user: User | null) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <ApprovalCredentialsDialog
+      <TentativeApprovalMessageDialog
         open
         onClose={() => {}}
         fullName="Sam Vetterson"
         firstName="Sam"
         phoneNumber="+12025551234"
-        magicLinkToken="abc123"
       />
     </QueryClientProvider>,
   );
 }
 
-describe('ApprovalCredentialsDialog', () => {
-  it('renders sms and whatsapp buttons with substituted hrefs', () => {
+describe('TentativeApprovalMessageDialog', () => {
+  it('renders sms and whatsapp buttons with substituted hrefs, no magic link', () => {
     renderDialog(makeUser());
     const sms = screen.getByText('send via sms').closest('a');
     const wa = screen.getByText('send via whatsapp').closest('a');
-    // Expected body: "hi Sam, from Vetter: <magic-link>"
     expect(sms?.getAttribute('href')).toContain('sms:+12025551234?body=');
-    expect(sms?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter: '));
+    expect(sms?.getAttribute('href')).toContain(
+      encodeURIComponent('hi Sam, from Vetter — you are tentatively in'),
+    );
     expect(wa?.getAttribute('href')).toContain('https://wa.me/12025551234?text=');
-    expect(wa?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter: '));
-  });
-
-  it('opens send links in a new tab with safe rel', () => {
-    renderDialog(makeUser());
-    const wa = screen.getByText('send via whatsapp').closest('a');
-    expect(wa?.getAttribute('target')).toBe('_blank');
-    expect(wa?.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(screen.queryByText(/magic-login/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /copy link/i })).toBeNull();
   });
 
   it('hides edit-template trigger without permission', () => {
     renderDialog(makeUser());
-    expect(screen.queryByRole('button', { name: /edit shared welcome template/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit tentative approval message/i })).toBeNull();
   });
 
-  it('shows only the welcome-template edit trigger with permission', () => {
+  it('shows edit-template trigger with permission', () => {
     const user = makeUser({
       roles: [
         {
@@ -108,8 +98,7 @@ describe('ApprovalCredentialsDialog', () => {
     });
     renderDialog(user);
     expect(
-      screen.getByRole('button', { name: /edit shared welcome template/i }),
+      screen.getByRole('button', { name: /edit tentative approval message/i }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /edit tentative approval message/i })).toBeNull();
   });
 });

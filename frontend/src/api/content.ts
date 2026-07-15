@@ -238,7 +238,7 @@ export function useUpdateWelcomeTemplate() {
   });
 }
 
-// --- Tentative approval confirmation message (plain text, feeds an email). --
+// --- Tentative approval message (sms/whatsapp text sent by the vetter). -----
 
 export interface TentativeApprovalMessage {
   body: string;
@@ -280,6 +280,52 @@ export function useUpdateTentativeApprovalMessage() {
     },
     onSuccess: (template) => {
       qc.setQueryData(['tentative-approval-message'], template);
+    },
+  });
+}
+
+// --- Member promotion message (plain text, feeds the auto-promotion email). -
+
+export interface MemberPromotionMessage {
+  body: string;
+  updatedAt: string;
+}
+
+interface WireMemberPromotionMessage {
+  body: string;
+  updated_at: string;
+}
+
+function mapMemberPromotionMessage(data: WireMemberPromotionMessage): MemberPromotionMessage {
+  return { body: data.body, updatedAt: data.updated_at };
+}
+
+export function useMemberPromotionMessage() {
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  return useQuery({
+    queryKey: ['member-promotion-message'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<WireMemberPromotionMessage>(
+        '/api/community/member-promotion-message/',
+      );
+      return mapMemberPromotionMessage(data);
+    },
+    enabled: isAuthed,
+  });
+}
+
+export function useUpdateMemberPromotionMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: string) => {
+      const { data } = await apiClient.patch<WireMemberPromotionMessage>(
+        '/api/community/member-promotion-message/',
+        { body },
+      );
+      return mapMemberPromotionMessage(data);
+    },
+    onSuccess: (template) => {
+      qc.setQueryData(['member-promotion-message'], template);
     },
   });
 }

@@ -9,12 +9,7 @@ from users.models import NonMemberRsvpToken, User
 from users.roles import Role
 
 from community._shared import render_template_placeholders, validate_display_name
-from community.models import (
-    EventType,
-    JoinRequestStatus,
-    TentativeApprovalMessageTemplate,
-    WhatsAppLinkConfig,
-)
+from community.models import EventType, JoinRequestStatus, MemberPromotionMessageTemplate
 
 
 def _resolve_names(join_request) -> tuple[str, str]:
@@ -84,20 +79,18 @@ def _promote_non_member(user, join_request):
     return _create_magic_token(user)
 
 
-_DEFAULT_TENTATIVE_APPROVAL_MESSAGE = (
+_DEFAULT_MEMBER_PROMOTION_MESSAGE = (
     "you now have full member access. you'll receive a separate login link to set up your account."
 )
 
 
 def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
-    """Best-effort full-approval email. A send failure must not roll back approval."""
+    """Best-effort promotion email. A send failure must not roll back approval."""
     if not to:
         return
-    template = TentativeApprovalMessageTemplate.get()
-    body = template.body.strip() or _DEFAULT_TENTATIVE_APPROVAL_MESSAGE
-    message_body = render_template_placeholders(
-        body, {"FIRST_NAME": first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link}
-    )
+    template = MemberPromotionMessageTemplate.get()
+    body = template.body.strip() or _DEFAULT_MEMBER_PROMOTION_MESSAGE
+    message_body = render_template_placeholders(body, {"FIRST_NAME": first_name})
     try:
         send_join_approval_email(
             sender=get_email_sender(),

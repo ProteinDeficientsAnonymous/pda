@@ -330,9 +330,9 @@ class TestJoinApprovalEmail:
     def test_uses_editable_message_with_first_name_substitution(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import TentativeApprovalMessageTemplate
+        from community.models import MemberPromotionMessageTemplate
 
-        template = TentativeApprovalMessageTemplate.get()
+        template = MemberPromotionMessageTemplate.get()
         template.body = "hey ${FIRST_NAME} — you came through, you're in for real now"
         template.save()
         sample_join_request.email = "custom@example.com"
@@ -359,9 +359,9 @@ class TestJoinApprovalEmail:
     def test_html_email_escapes_editable_message_body(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import TentativeApprovalMessageTemplate
+        from community.models import MemberPromotionMessageTemplate
 
-        template = TentativeApprovalMessageTemplate.get()
+        template = MemberPromotionMessageTemplate.get()
         template.body = "hi <script>alert(1)</script> & welcome"
         template.save()
         sample_join_request.email = "html-check@example.com"
@@ -386,18 +386,21 @@ class TestJoinApprovalEmail:
         assert "&lt;script&gt;" in html
         assert "&amp; welcome" in html
 
-    def test_whatsapp_link_placeholder_substitution(
+    def test_tentative_message_template_does_not_affect_promotion_email(
         self, api_client, vettor_headers, sample_join_request, fake_email_sender
     ):
-        from community.models import TentativeApprovalMessageTemplate, WhatsAppLinkConfig
+        from community.models import (
+            MemberPromotionMessageTemplate,
+            TentativeApprovalMessageTemplate,
+        )
 
-        template = TentativeApprovalMessageTemplate.get()
-        template.body = "you're in — join us here: ${WHATSAPP_LINK}"
-        template.save()
-        config = WhatsAppLinkConfig.get()
-        config.link = "https://chat.whatsapp.com/abc123"
-        config.save()
-        sample_join_request.email = "whatsapp-check@example.com"
+        tentative_template = TentativeApprovalMessageTemplate.get()
+        tentative_template.body = "hi ${FIRST_NAME}, from ${SENDER_NAME} — you're tentatively in"
+        tentative_template.save()
+        promotion_template = MemberPromotionMessageTemplate.get()
+        promotion_template.body = "you're fully in now, ${FIRST_NAME}"
+        promotion_template.save()
+        sample_join_request.email = "separate-templates@example.com"
         sample_join_request.save(update_fields=["email"])
         api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
@@ -412,10 +415,10 @@ class TestJoinApprovalEmail:
             **vettor_headers,
         )
         sends = [c.kwargs for c in fake_email_sender.send.call_args_list]
-        matching = [c for c in sends if c["to"] == "whatsapp-check@example.com"]
+        matching = [c for c in sends if c["to"] == "separate-templates@example.com"]
         assert len(matching) == 1
-        assert "https://chat.whatsapp.com/abc123" in matching[0]["text"]
-        assert "${WHATSAPP_LINK}" not in matching[0]["text"]
+        assert "you're fully in now" in matching[0]["text"]
+        assert "tentatively in" not in matching[0]["text"]
 
 
 @pytest.mark.django_db
