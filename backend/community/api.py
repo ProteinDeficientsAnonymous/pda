@@ -30,6 +30,9 @@ from community._join_request_resend import router as join_request_resend_router
 from community._join_request_submit import router as join_request_submit_router
 from community._join_requests import router as join_requests_router
 from community._login_link import router as login_link_router
+from community._member_promotion_message import (
+    router as member_promotion_message_router,
+)
 from community._pages import router as pages_router
 from community._poll_options import router as poll_options_router
 from community._polls import router as polls_router
@@ -74,6 +77,7 @@ router.add_router("", event_flags_router)
 router.add_router("", calendar_router)
 router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)
+router.add_router("", member_promotion_message_router)
 router.add_router("", whatsapp_link_router)
 router.add_router("", polls_router)
 router.add_router("", poll_options_router)

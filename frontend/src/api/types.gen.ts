@@ -1309,6 +1309,24 @@ export interface paths {
         patch: operations["community__join_requests_unreject_join_request"];
         trace?: never;
     };
+    "/api/community/member-promotion-message/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Member Promotion Message */
+        get: operations["community__member_promotion_message_get_member_promotion_message"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Member Promotion Message */
+        patch: operations["community__member_promotion_message_update_member_promotion_message"];
+        trace?: never;
+    };
     "/api/community/pages/{slug}/": {
         parameters: {
             query?: never;
@@ -3326,6 +3344,21 @@ export interface components {
              * @default
              */
             pronouns: string;
+        };
+        /** MemberPromotionMessageOut */
+        MemberPromotionMessageOut: {
+            /** Body */
+            body: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MemberPromotionMessagePatchIn */
+        MemberPromotionMessagePatchIn: {
+            /** Body */
+            body?: string | null;
         };
         /** NotificationOut */
         NotificationOut: {
@@ -8157,6 +8190,68 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__member_promotion_message_get_member_promotion_message: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberPromotionMessageOut"];
+                };
+            };
+        };
+    };
+    community__member_promotion_message_update_member_promotion_message: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberPromotionMessagePatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberPromotionMessageOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

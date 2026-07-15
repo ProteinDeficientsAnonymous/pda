@@ -3492,6 +3492,42 @@
         "title": "MemberProfileOut",
         "type": "object"
       },
+      "MemberPromotionMessageOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "MemberPromotionMessageOut",
+        "type": "object"
+      },
+      "MemberPromotionMessagePatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "MemberPromotionMessagePatchIn",
+        "type": "object"
+      },
       "NotificationOut": {
         "properties": {
           "created_at": {
@@ -11017,6 +11053,88 @@
           }
         ],
         "summary": "Unreject Join Request",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/member-promotion-message/": {
+      "get": {
+        "operationId": "community__member_promotion_message_get_member_promotion_message",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionMessageOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Member Promotion Message",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__member_promotion_message_update_member_promotion_message",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberPromotionMessagePatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberPromotionMessageOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Member Promotion Message",
         "tags": [
           "community"
         ]

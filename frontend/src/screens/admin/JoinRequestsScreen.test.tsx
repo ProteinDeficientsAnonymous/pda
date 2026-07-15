@@ -21,6 +21,7 @@ vi.mock('@/api/join', async (importOriginal) => {
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
   useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
 }));
 

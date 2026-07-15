@@ -212,6 +212,10 @@ class Code:
         BODY_REQUIRED = "tentative_approval_message.body_required"
         BODY_TOO_LONG = "tentative_approval_message.body_too_long"  # params: { max_length: int }
 
+    class MemberPromotionMessage:
+        BODY_REQUIRED = "member_promotion_message.body_required"
+        BODY_TOO_LONG = "member_promotion_message.body_too_long"  # params: { max_length: int }
+
 
 class ValidationException(Exception):
     """Raised by validators and route handlers to signal a structured error.
