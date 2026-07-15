@@ -1,15 +1,9 @@
 import { useState } from 'react';
 
-import {
-  useMemberPromotionMessage,
-  useTentativeApprovalMessage,
-  useWelcomeTemplate,
-  useWhatsAppLink,
-} from '@/api/content';
+import { useTentativeApprovalMessage, useWelcomeTemplate, useWhatsAppLink } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { hasPermission, Permission } from '@/models/permissions';
 
-import { MemberPromotionMessageEditorDialog } from './MemberPromotionMessageEditorDialog';
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
@@ -17,12 +11,10 @@ import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 export function JoinRequestMessageEditors() {
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [tentativeOpen, setTentativeOpen] = useState(false);
-  const [promotionOpen, setPromotionOpen] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const welcomeQ = useWelcomeTemplate();
   const tentativeQ = useTentativeApprovalMessage();
-  const promotionQ = useMemberPromotionMessage();
   const whatsappQ = useWhatsAppLink();
 
   if (!hasPermission(currentUser, Permission.ApproveJoinRequests)) return null;
@@ -46,12 +38,6 @@ export function JoinRequestMessageEditors() {
           }}
         />
         <EditorTrigger
-          label="edit member promotion message"
-          onClick={() => {
-            setPromotionOpen(true);
-          }}
-        />
-        <EditorTrigger
           label="edit whatsapp link"
           onClick={() => {
             setWhatsappOpen(true);
@@ -71,13 +57,6 @@ export function JoinRequestMessageEditors() {
           setTentativeOpen(false);
         }}
         template={tentativeQ.data ?? null}
-      />
-      <MemberPromotionMessageEditorDialog
-        open={promotionOpen}
-        onClose={() => {
-          setPromotionOpen(false);
-        }}
-        template={promotionQ.data ?? null}
       />
       <WhatsAppLinkEditorDialog
         open={whatsappOpen}
