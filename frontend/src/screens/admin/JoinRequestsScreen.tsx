@@ -18,6 +18,7 @@ import { formatPhone } from '@/utils/formatPhone';
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
 import { type Decision, JoinRequestCard } from './JoinRequestCard';
 import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
+import { MembershipPromotionMessageDialog } from './MembershipPromotionMessageDialog';
 import { TentativeApprovalMessageDialog } from './TentativeApprovalMessageDialog';
 
 const Filter = {
@@ -55,6 +56,12 @@ export default function JoinRequestsScreen() {
     firstName: string;
     phoneNumber: string;
   } | null>(null);
+  const [membershipMessageFor, setMembershipMessageFor] = useState<{
+    fullName: string;
+    firstName: string;
+    phoneNumber: string;
+    magicLinkToken: string | null;
+  } | null>(null);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -67,22 +74,31 @@ export default function JoinRequestsScreen() {
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load join requests — try refreshing" />;
 
-  async function decideRequest(request: JoinRequestSummary, status: Decision) {
+  async function decideRequest(request: JoinRequestSummary, decision: Decision) {
     const name = request.fullName || formatPhone(request.phoneNumber);
-    const ok = await confirm(confirmPropsForDecision(status, name));
+    const ok = await confirm(confirmPropsForDecision(decision, name));
     if (!ok) return;
+
+    const wireStatus = decision === 'manually_approved' ? JoinRequestStatus.APPROVED : decision;
 
     setError(null);
     try {
-      const result = await decide.mutateAsync({ id: request.id, status });
-      if (status === JoinRequestStatus.APPROVED && result.magicLinkToken) {
+      const result = await decide.mutateAsync({ id: request.id, status: wireStatus });
+      if (decision === 'manually_approved') {
+        setMembershipMessageFor({
+          fullName: result.fullName,
+          firstName: result.firstName,
+          phoneNumber: result.phoneNumber,
+          magicLinkToken: result.magicLinkToken,
+        });
+      } else if (decision === JoinRequestStatus.APPROVED && result.magicLinkToken) {
         setCredsFor({
           fullName: result.fullName,
           firstName: result.firstName,
           phoneNumber: result.phoneNumber,
           magicLinkToken: result.magicLinkToken,
         });
-      } else if (status === JoinRequestStatus.TENTATIVE) {
+      } else if (decision === JoinRequestStatus.TENTATIVE) {
         setTentativeMessageFor({
           fullName: result.fullName,
           firstName: result.firstName,
@@ -221,6 +237,18 @@ export default function JoinRequestsScreen() {
           phoneNumber={tentativeMessageFor.phoneNumber}
         />
       ) : null}
+      {membershipMessageFor ? (
+        <MembershipPromotionMessageDialog
+          open
+          onClose={() => {
+            setMembershipMessageFor(null);
+          }}
+          fullName={membershipMessageFor.fullName}
+          firstName={membershipMessageFor.firstName}
+          phoneNumber={membershipMessageFor.phoneNumber}
+          magicLinkToken={membershipMessageFor.magicLinkToken}
+        />
+      ) : null}
       {confirmElement}
     </ContentContainer>
   );
@@ -252,6 +280,13 @@ const DECISION_CONFIRM_PROPS: Record<
   { title: string; confirmLabel: string; destructive: boolean; message: (name: string) => string }
 > = {
   [JoinRequestStatus.APPROVED]: {
+    title: 'approve request',
+    confirmLabel: 'approve',
+    destructive: false,
+    message: (name) =>
+      `approve ${name}? once you approve someone you can't un-approve them — are you sure?`,
+  },
+  manually_approved: {
     title: 'approve request',
     confirmLabel: 'approve',
     destructive: false,

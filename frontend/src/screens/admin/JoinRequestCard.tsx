@@ -10,7 +10,8 @@ import { TentativeActions } from './JoinRequestTentativeSection';
 export type Decision =
   | typeof JoinRequestStatus.APPROVED
   | typeof JoinRequestStatus.TENTATIVE
-  | typeof JoinRequestStatus.REJECTED;
+  | typeof JoinRequestStatus.REJECTED
+  | 'manually_approved';
 
 export function JoinRequestCard({
   request,
@@ -98,7 +99,7 @@ export function JoinRequestCard({
           request={request}
           busy={busy}
           onApprove={() => {
-            onDecide(JoinRequestStatus.APPROVED);
+            onDecide('manually_approved');
           }}
         />
       ) : (

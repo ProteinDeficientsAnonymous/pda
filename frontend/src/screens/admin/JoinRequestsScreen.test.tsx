@@ -21,7 +21,7 @@ vi.mock('@/api/join', async (importOriginal) => {
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({ data: undefined, isPending: false, isError: false }),
   useTentativeApprovalMessage: () => ({ data: undefined, isPending: false, isError: false }),
-  useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
+  useMembershipPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
 }));
 
@@ -309,7 +309,9 @@ describe('JoinRequestsScreen pending actions', () => {
     renderScreen();
     await userEvent.click(screen.getByRole('button', { name: 'tentatively approve' }));
     const confirmDialog = screen.getByRole('dialog');
-    await userEvent.click(within(confirmDialog).getByRole('button', { name: 'tentatively approve' }));
+    await userEvent.click(
+      within(confirmDialog).getByRole('button', { name: 'tentatively approve' }),
+    );
 
     expect(await screen.findByText(/welcome ada lovelace/i)).toBeInTheDocument();
   });
@@ -369,5 +371,31 @@ describe('JoinRequestsScreen tentative section', () => {
       id: 'jr-tentative',
       status: JoinRequestStatus.APPROVED,
     });
+  });
+
+  it('opens the membership promotion message dialog after manually approving', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({
+      fullName: 'Ada Lovelace',
+      firstName: 'Ada',
+      phoneNumber: '+16505550001',
+      magicLinkToken: 'magic-abc',
+    });
+    vi.mocked(useDecideJoinRequest).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDecideJoinRequest>);
+    mockResult([makeRequest({ id: 'jr-tentative', status: JoinRequestStatus.TENTATIVE })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('radio', { name: 'tentative' }));
+    await userEvent.click(screen.getByRole('button', { name: 'manually approve' }));
+    const confirmDialog = screen.getByRole('dialog');
+    await userEvent.click(within(confirmDialog).getByRole('button', { name: 'approve' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'jr-tentative',
+      status: JoinRequestStatus.APPROVED,
+    });
+    expect(await screen.findByText(/welcome ada lovelace/i)).toBeInTheDocument();
   });
 });
