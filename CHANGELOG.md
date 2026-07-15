@@ -1,3 +1,10 @@
+## [0.36.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.36.0...v0.36.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* **join-requests:** fix tentative approval flow bugs (Issue 850) ([#855](https://github.com/ProteinDeficientsAnonymous/pda/issues/855)) ([09e3371](https://github.com/ProteinDeficientsAnonymous/pda/commit/09e33712b3a4c1ea70270a74e14cebc14dc173a5))
+
 # [0.36.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.35.0...v0.36.0) (2026-07-15)
 
 
