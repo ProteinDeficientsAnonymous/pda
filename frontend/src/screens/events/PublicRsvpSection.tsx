@@ -14,7 +14,7 @@ export function PublicRsvpSection({ event }: Props) {
     <PublicRsvpForm
       event={event}
       onSuccess={(result) => {
-        navigate(`/events/${event.id}?rsvp_token=${encodeURIComponent(result.rsvp_token)}`, {
+        void navigate(`/events/${event.id}?rsvp_token=${encodeURIComponent(result.rsvp_token)}`, {
           replace: true,
         });
       }}

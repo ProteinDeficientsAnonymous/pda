@@ -191,7 +191,7 @@ function DetailSection({
   rsvpToken: string | undefined;
 }) {
   if (isAuthed) return <EventMemberSection event={event} />;
-  if (hasTokenUnlock) return <EventPublicRsvpSection event={event} token={rsvpToken as string} />;
+  if (hasTokenUnlock) return <EventPublicRsvpSection event={event} token={rsvpToken ?? ''} />;
   return <AnonSection event={event} />;
 }
 

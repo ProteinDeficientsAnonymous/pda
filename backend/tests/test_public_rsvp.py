@@ -345,7 +345,9 @@ class TestPublicRsvpRateLimit:
 
 @pytest.mark.django_db
 class TestPublicRsvpToken:
-    def test_submit_response_includes_rsvp_token(self, api_client, official_event, fake_email_sender):
+    def test_submit_response_includes_rsvp_token(
+        self, api_client, official_event, fake_email_sender
+    ):
         response = post(api_client, official_event)
         assert response.status_code == 200, response.content
         body = response.json()

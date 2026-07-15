@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type * as RouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -13,8 +14,8 @@ import {
 } from '@/models/event';
 
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+vi.mock('react-router-dom', async (importActual) => {
+  const actual = await importActual<typeof RouterDom>();
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
