@@ -140,15 +140,15 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
     cleaned_comment = (comment or "").strip()
     if not cleaned_comment:
         return
-    # Fresh fetch, not the row-locked event from _apply_rsvp_in_transaction — its co_hosts
-    # prefetch predates this (already-committed) transaction and could be stale.
-    event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
     try:
+        # Fresh fetch, not the row-locked event from _apply_rsvp_in_transaction — its co_hosts
+        # prefetch predates this (already-committed) transaction and could be stale.
+        event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
         if final_status == RSVPStatus.CANT_GO:
             notify_rsvp_declined_note(event=event, author=user, note=cleaned_comment)
         else:
             posted_comment = EventComment.objects.create(
-                event=event, author=user, body=cleaned_comment[:500]
+                event=event, author=user, body=cleaned_comment
             )
             notify_event_comment(posted_comment)
     except Exception:

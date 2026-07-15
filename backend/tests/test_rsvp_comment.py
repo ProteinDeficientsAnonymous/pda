@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from community.models import Event, EventComment, RSVPStatus
 from ninja_jwt.tokens import RefreshToken
@@ -110,6 +112,16 @@ class TestRSVPCommentRouting:
         # Re-RSVP with no comment key (an edit) — must not post another comment.
         _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE)
         assert EventComment.objects.filter(event=rsvp_event, author=member).count() == 1
+
+    def test_comment_post_failure_does_not_fail_the_rsvp(
+        self, api_client, member_headers, member, rsvp_event
+    ):
+        with patch("community._event_rsvps.notify_event_comment", side_effect=RuntimeError("boom")):
+            resp = _rsvp(
+                api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
+            )
+        assert resp.status_code == 200
+        assert EventComment.objects.filter(event=rsvp_event, author=member).exists()
 
     def test_rsvp_endpoint_is_rate_limited_at_10_per_minute(
         self, api_client, member_headers, member, rsvp_event

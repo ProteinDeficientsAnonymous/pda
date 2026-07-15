@@ -12,6 +12,7 @@ export const NotificationType = {
   EventCancelled: 'event_cancelled',
   CommentReply: 'comment_reply',
   EventComment: 'event_comment',
+  RsvpDeclinedNote: 'rsvp_declined_note',
 } as const;
 
 export interface AppNotification {
