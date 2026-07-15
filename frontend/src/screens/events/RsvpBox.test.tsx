@@ -80,4 +80,48 @@ describe('RsvpBox', () => {
       expect.objectContaining({ status: RsvpStatus.Attending, hasPlusOne: true }),
     );
   });
+
+  it('keeps the +1 checkbox visible and checked after switching to maybe', () => {
+    const onConfirm = vi.fn();
+    render(
+      <RsvpBox
+        {...base}
+        mode="edit"
+        initialStatus={RsvpStatus.Attending}
+        initialHasPlusOne
+        onConfirm={onConfirm}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    const checkbox = screen.getByRole('checkbox', { name: /bringing a \+1/i });
+    expect(checkbox).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Maybe, hasPlusOne: true }),
+    );
+  });
+
+  it('allows unchecking the +1 checkbox after switching to can’t go', () => {
+    const onConfirm = vi.fn();
+    render(
+      <RsvpBox
+        {...base}
+        mode="edit"
+        initialStatus={RsvpStatus.Attending}
+        initialHasPlusOne
+        onConfirm={onConfirm}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /bringing a \+1/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.CantGo, hasPlusOne: false }),
+    );
+  });
+
+  it('hides the +1 checkbox when the event does not allow plus ones', () => {
+    render(<RsvpBox {...base} mode="edit" allowPlusOnes={false} onConfirm={() => {}} />);
+    expect(screen.queryByRole('checkbox', { name: /bringing a \+1/i })).not.toBeInTheDocument();
+  });
 });
