@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { type RsvpInputStatus, RsvpStatus } from '@/models/event';
+import { type RsvpInputStatus } from '@/models/event';
 
 import { RsvpCommentField } from './RsvpCommentField';
 
@@ -41,7 +41,7 @@ export function RsvpBox({
   const [hasPlusOne, setHasPlusOne] = useState(initialHasPlusOne);
 
   const showComment = mode === 'create';
-  const showPlusOne = allowPlusOnes && status === RsvpStatus.Attending;
+  const showPlusOne = allowPlusOnes;
 
   function confirm() {
     const trimmed = comment.trim();

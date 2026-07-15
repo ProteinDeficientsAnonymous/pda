@@ -6,7 +6,7 @@ import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { Toggle } from '@/components/ui/Toggle';
-import { type Event, type RsvpInputStatus, RsvpServerStatus, RsvpStatus } from '@/models/event';
+import { type Event, type RsvpInputStatus, RsvpServerStatus } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
 import { buildEventLinks } from '@/utils/eventLinks';
 
@@ -40,8 +40,8 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
   const [error, setError] = useState<string | null>(null);
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
-  // only attending holders can carry a +1; the backend discards a waitlisted +1.
-  const canPlusOne = event.allowPlusOnes && status === RsvpServerStatus.Attending;
+  // the backend discards a waitlisted +1; every other status can carry one.
+  const canPlusOne = event.allowPlusOnes && status !== RsvpServerStatus.Waitlisted;
 
   async function applyRsvp(next: RsvpInputStatus, plusOne: boolean) {
     setError(null);
@@ -55,11 +55,11 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
 
   function changeStatus(next: RsvpInputStatus) {
     if (next === status) return;
-    void applyRsvp(next, next === RsvpStatus.Attending ? hasPlusOne : false);
+    void applyRsvp(next, hasPlusOne);
   }
 
   function togglePlusOne(next: boolean) {
-    void applyRsvp(RsvpStatus.Attending, next);
+    void applyRsvp(status as RsvpInputStatus, next);
   }
 
   async function cancelRsvp() {
