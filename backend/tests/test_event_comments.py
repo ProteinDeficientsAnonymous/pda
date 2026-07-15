@@ -70,7 +70,8 @@ class TestPostComment:
             data=json.dumps({"body": "hi"}),
             content_type="application/json",
         )
-        assert response.status_code == 401
+        assert response.status_code == 403
+        assert response.json()["detail"][0]["code"] == "comment.rsvp_required"
 
     def test_post_requires_rsvp(self, api_client, event):
         # A logged-in user who is NOT the creator, not a co-host, not an admin,
@@ -263,7 +264,7 @@ class TestDeleteComment:
         response = api_client.delete(
             f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/"
         )
-        assert response.status_code == 401
+        assert response.status_code == 403
 
     def test_double_delete_is_idempotent(
         self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
