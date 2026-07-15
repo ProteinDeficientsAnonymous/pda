@@ -14,7 +14,7 @@ export function buildWelcomeMessage(firstName: string | null | undefined, url: s
 export interface WelcomeMessageVars {
   name: string;
   senderName: string;
-  magicLink: string;
+  magicLink?: string;
   whatsappLink: string;
 }
 
@@ -22,7 +22,7 @@ export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars)
   return template
     .replaceAll('${FIRST_NAME}', vars.name)
     .replaceAll('${SENDER_NAME}', vars.senderName)
-    .replaceAll('${MAGIC_LINK}', vars.magicLink)
+    .replaceAll('${MAGIC_LINK}', vars.magicLink ?? '')
     .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink);
 }
 

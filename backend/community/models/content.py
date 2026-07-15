@@ -132,9 +132,11 @@ class WelcomeMessageTemplate(models.Model):
 class TentativeApprovalMessageTemplate(models.Model):
     """Singleton — only one row ever exists (pk=1).
 
-    Plain-text body for the confirmation email sent when a tentatively-approved
-    applicant is promoted to full member. Placeholder ${FIRST_NAME} is
-    substituted server-side when the email is rendered.
+    Plain-text body for the message sent when someone is tentatively approved,
+    and again for the confirmation email sent when they're later promoted to
+    full member. Placeholders ${FIRST_NAME}, ${SENDER_NAME}, ${WHATSAPP_LINK}
+    are substituted client-side (tentative approval) or server-side (promotion
+    email) when rendered.
     """
 
     body = models.TextField(default="", max_length=4000)

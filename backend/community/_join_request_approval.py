@@ -96,7 +96,12 @@ def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
     template = TentativeApprovalMessageTemplate.get()
     body = template.body.strip() or _DEFAULT_TENTATIVE_APPROVAL_MESSAGE
     message_body = render_template_placeholders(
-        body, {"FIRST_NAME": first_name, "WHATSAPP_LINK": WhatsAppLinkConfig.get().link}
+        body,
+        {
+            "FIRST_NAME": first_name,
+            "SENDER_NAME": "",
+            "WHATSAPP_LINK": WhatsAppLinkConfig.get().link,
+        },
     )
     try:
         send_join_approval_email(
