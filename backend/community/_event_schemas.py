@@ -1,5 +1,3 @@
-"""Pydantic schemas for event endpoints."""
-
 import re
 from datetime import datetime
 from urllib.parse import urlparse

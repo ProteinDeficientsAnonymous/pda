@@ -1,8 +1,3 @@
-// Sub-modal opened from ApprovalCredentialsDialog. Lets users with
-// APPROVE_JOIN_REQUESTS edit the shared template. Plain-text only —
-// placeholders ${FIRST_NAME}, ${SENDER_NAME}, ${MAGIC_LINK}, ${WHATSAPP_LINK}
-// are substituted at render time by renderWelcomeMessage().
-
 import { type SyntheticEvent, useState } from 'react';
 import { toast } from 'sonner';
 
