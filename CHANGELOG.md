@@ -1,3 +1,10 @@
+## [0.36.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.36.1...v0.36.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* **events:** remove duplicate event card from public rsvp confirmation (Issue 854) ([#858](https://github.com/ProteinDeficientsAnonymous/pda/issues/858)) ([da12327](https://github.com/ProteinDeficientsAnonymous/pda/commit/da1232773e32cd6c75acd09ebc5353f7c19a082f))
+
 ## [0.36.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.36.0...v0.36.1) (2026-07-15)
 
 
