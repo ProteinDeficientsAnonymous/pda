@@ -59,8 +59,12 @@ function commentsUrl(eventId: string, suffix = ''): string {
   return `/api/community/events/${eventId}/comments/${suffix}`;
 }
 
-async function fetchEventComments(eventId: string): Promise<EventCommentList> {
-  const { data } = await apiClient.get<WireCommentList>(commentsUrl(eventId));
+function tokenParams(token?: string) {
+  return token ? { params: { token } } : {};
+}
+
+async function fetchEventComments(eventId: string, token?: string): Promise<EventCommentList> {
+  const { data } = await apiClient.get<WireCommentList>(commentsUrl(eventId), tokenParams(token));
   return mapCommentList(data);
 }
 
@@ -68,10 +72,10 @@ async function fetchEventComments(eventId: string): Promise<EventCommentList> {
 // Read hook
 // ---------------------------------------------------------------------------
 
-export function useEventComments(eventId: string) {
+export function useEventComments(eventId: string, token?: string) {
   return useQuery({
     queryKey: eventCommentKeys.list(eventId),
-    queryFn: () => fetchEventComments(eventId),
+    queryFn: () => fetchEventComments(eventId, token),
     enabled: Boolean(eventId),
   });
 }
@@ -84,17 +88,21 @@ interface PostCommentVars {
   body: string;
 }
 
-export function usePostComment(eventId: string) {
+export function usePostComment(eventId: string, token?: string) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
     mutationFn: async ({ body }: PostCommentVars): Promise<EventComment> => {
-      const { data } = await apiClient.post<WireCommentResponse>(commentsUrl(eventId), { body });
+      const { data } = await apiClient.post<WireCommentResponse>(
+        commentsUrl(eventId),
+        { body },
+        tokenParams(token),
+      );
       return mapComment(data);
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
-      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed, token) });
     },
   });
 }
@@ -108,13 +116,14 @@ interface PostReplyVars {
   body: string;
 }
 
-export function usePostReply(eventId: string) {
+export function usePostReply(eventId: string, token?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ parentId, body }: PostReplyVars): Promise<EventCommentReply> => {
       const { data } = await apiClient.post<WireReplyResponse>(
         commentsUrl(eventId, `${parentId}/replies/`),
         { body },
+        tokenParams(token),
       );
       return mapReply(data);
     },
@@ -132,12 +141,12 @@ interface DeleteCommentVars {
   commentId: string;
 }
 
-export function useDeleteComment(eventId: string) {
+export function useDeleteComment(eventId: string, token?: string) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
     mutationFn: async ({ commentId }: DeleteCommentVars) => {
-      await apiClient.delete(commentsUrl(eventId, `${commentId}/`));
+      await apiClient.delete(commentsUrl(eventId, `${commentId}/`), tokenParams(token));
     },
     onMutate: async ({ commentId }) => {
       await qc.cancelQueries({ queryKey: eventCommentKeys.list(eventId) });
@@ -168,7 +177,7 @@ export function useDeleteComment(eventId: string) {
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
-      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed) });
+      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed, token) });
     },
   });
 }
@@ -204,13 +213,14 @@ function toggleOnRow<T extends EventCommentReply>(
   return { ...row, reactions: next };
 }
 
-export function useToggleReaction(eventId: string) {
+export function useToggleReaction(eventId: string, token?: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ commentId, emoji }: ToggleReactionVars): Promise<EventComment> => {
       const { data } = await apiClient.post<WireCommentResponse>(
         commentsUrl(eventId, `${commentId}/reactions/`),
         { emoji },
+        tokenParams(token),
       );
       return mapComment(data);
     },

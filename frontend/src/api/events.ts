@@ -20,8 +20,8 @@ export const eventKeys = {
   all: ['events'] as const,
   list: (isAuthed: boolean, status?: EventListStatus) =>
     ['events', 'list', { authed: isAuthed, status: status ?? 'active' }] as const,
-  detail: (id: string, isAuthed: boolean) =>
-    ['events', 'detail', id, { authed: isAuthed }] as const,
+  detail: (id: string, isAuthed: boolean, token?: string) =>
+    ['events', 'detail', id, { authed: isAuthed, token: token ?? '' }] as const,
 };
 
 export async function fetchEvents(status?: EventListStatus): Promise<Event[]> {
@@ -31,8 +31,10 @@ export async function fetchEvents(status?: EventListStatus): Promise<Event[]> {
   return data.map(mapEvent);
 }
 
-export async function fetchEvent(id: string): Promise<Event> {
-  const { data } = await apiClient.get<WireEvent>(`/api/community/events/${id}/`);
+export async function fetchEvent(id: string, token?: string): Promise<Event> {
+  const { data } = await apiClient.get<WireEvent>(`/api/community/events/${id}/`, {
+    params: token ? { token } : undefined,
+  });
   return mapEvent(data);
 }
 
@@ -46,11 +48,11 @@ export function useEvents(status?: EventListStatus) {
   });
 }
 
-export function useEvent(id: string | undefined, placeholder?: Event) {
+export function useEvent(id: string | undefined, placeholder?: Event, token?: string) {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useQuery({
-    queryKey: eventKeys.detail(id ?? '', isAuthed),
-    queryFn: () => fetchEvent(id ?? ''),
+    queryKey: eventKeys.detail(id ?? '', isAuthed, token),
+    queryFn: () => fetchEvent(id ?? '', token),
     enabled: Boolean(id),
     ...(placeholder ? { placeholderData: placeholder } : {}),
   });
