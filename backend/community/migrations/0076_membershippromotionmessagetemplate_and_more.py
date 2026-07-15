@@ -4,37 +4,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('community', '0075_seed_member_promotion_message'),
+        ("community", "0075_seed_member_promotion_message"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MembershipPromotionMessageTemplate',
+            name="MembershipPromotionMessageTemplate",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('body', models.TextField(default='', max_length=4000)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("body", models.TextField(default="", max_length=4000)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Membership Promotion Message Template',
-                'verbose_name_plural': 'Membership Promotion Message Template',
+                "verbose_name": "Membership Promotion Message Template",
+                "verbose_name_plural": "Membership Promotion Message Template",
             },
         ),
         migrations.AlterField(
-            model_name='memberpromotionmessagetemplate',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="memberpromotionmessagetemplate",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
         migrations.AlterField(
-            model_name='tentativeapprovalmessagetemplate',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="tentativeapprovalmessagetemplate",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
         migrations.AlterField(
-            model_name='whatsapplinkconfig',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="whatsapplinkconfig",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
     ]

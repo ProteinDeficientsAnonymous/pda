@@ -88,9 +88,7 @@ describe('MembershipPromotionMessageDialog', () => {
 
   it('hides edit-template trigger without permission', () => {
     renderDialog(makeUser());
-    expect(
-      screen.queryByRole('button', { name: /edit membership promotion message/i }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit membership promotion message/i })).toBeNull();
   });
 
   it('shows the edit trigger with permission', () => {
