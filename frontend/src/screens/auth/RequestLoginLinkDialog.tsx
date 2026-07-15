@@ -59,9 +59,7 @@ function RequestLoginLinkForm({
   }
 
   if (delivery === 'cooldown') {
-    return (
-      <CooldownResult initialSeconds={retryAfter} onClose={onClose} />
-    );
+    return <CooldownResult initialSeconds={retryAfter} onClose={onClose} />;
   }
 
   if (delivery !== null) {
