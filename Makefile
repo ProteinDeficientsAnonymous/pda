@@ -10,6 +10,19 @@ export
 SQLITE_DB := $(abspath $(CURDIR)/dev.db)
 SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
 
+# DB the agent-* backend targets run against. Locally this overrides .env's shared
+# Postgres with an isolated per-worktree SQLite DB. In GitHub Actions (CI=true,
+# set automatically by Actions) it falls through to the job's own isolated Postgres
+# service instead, since a handful of tests need pg_notify/JSONField features SQLite
+# lacks (see .github/workflows/ci.yml).
+ifdef CI
+AGENT_DATABASE_URL = $(DATABASE_URL)
+AGENT_DB_ENSURE =
+else
+AGENT_DATABASE_URL = $(SQLITE_DATABASE_URL)
+AGENT_DB_ENSURE = dev-db-ensure
+endif
+
 # pytest-xdist worker count for the AGENT ci ladder (agent-test*). The interactive
 # `test` target keeps `-n auto` (one worker per core — a solo run should own the box).
 # The agent ladder instead honors PYTEST_XDIST_AUTO_NUM_WORKERS, defaulting to 3: when
@@ -251,27 +264,27 @@ parallel-frontend:
 agent-lint:
 	cd backend && uv run ruff check -q --fix . && uv run ruff format -q .
 
-agent-check: dev-db-ensure
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py check --verbosity 0 --no-color
+agent-check: $(AGENT_DB_ENSURE)
+	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python manage.py check --verbosity 0 --no-color
 
-agent-test: dev-db-ensure
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python -m pytest tests/ \
+agent-test: $(AGENT_DB_ENSURE)
+	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python -m pytest tests/ \
 		-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings
 
-agent-test-since: dev-db-ensure
+agent-test-since: $(AGENT_DB_ENSURE)
 	@affected=$$(uv run python "$(CURDIR)/scripts/list_affected_tests.py"); \
 	if [ "$$affected" = "__FULL__" ]; then \
-		cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python -m pytest tests/ \
+		cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python -m pytest tests/ \
 			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
 	elif [ -z "$$affected" ]; then \
 		echo "No affected backend tests inferred; skipping pytest."; \
 	else \
-		cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python -m pytest $$(echo "$$affected" | tr '\n' ' ') \
+		cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python -m pytest $$(echo "$$affected" | tr '\n' ' ') \
 			-o addopts="--strict-markers -n $(AGENT_XDIST_N) --tb=line --reuse-db" -q --disable-warnings; \
 	fi
 
-agent-typecheck: dev-db-ensure
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run ty check -qq .
+agent-typecheck: $(AGENT_DB_ENSURE)
+	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run ty check -qq .
 
 agent-complexity:
 	cd backend && env UV_NO_PROGRESS=1 uvx -q --with flake8-cognitive-complexity flake8 -q \
@@ -298,11 +311,11 @@ agent-ci: agent-backend-ci agent-frontend-ci
 
 agent-backend-ci: agent-lint agent-check agent-test agent-typecheck agent-complexity agent-check-codes
 
-# check-codes against the per-worktree SQLite DB, matching the rest of the agent ladder.
-agent-check-codes: dev-db-ensure
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py dump_validation_codes --check
+# check-codes against AGENT_DATABASE_URL, matching the rest of the agent ladder.
+agent-check-codes: $(AGENT_DB_ENSURE)
+	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python manage.py dump_validation_codes --check
 	node frontend/scripts/generate-validation-codes.mjs --check
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run python manage.py dump_openapi_schema --check
+	cd backend && DATABASE_URL="$(AGENT_DATABASE_URL)" uv run python manage.py dump_openapi_schema --check
 
 agent-frontend-ci: parallel-agent-frontend
 
