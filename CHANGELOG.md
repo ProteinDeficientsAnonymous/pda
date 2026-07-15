@@ -1,3 +1,10 @@
+# [0.38.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.37.0...v0.38.0) (2026-07-15)
+
+
+### Features
+
+* **events:** show full event detail to non-members after public rsvp (Issue 854) ([#866](https://github.com/ProteinDeficientsAnonymous/pda/issues/866)) ([e2f5e0a](https://github.com/ProteinDeficientsAnonymous/pda/commit/e2f5e0a93c203a04db519b3817a9ab19bc84bd78))
+
 # [0.37.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.36.2...v0.37.0) (2026-07-15)
 
 
