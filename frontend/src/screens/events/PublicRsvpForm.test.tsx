@@ -79,10 +79,10 @@ function renderForm(event = makeEvent(), onSuccess = vi.fn()) {
 }
 
 function fillRequired() {
+  fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
   fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
   fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
   fireEvent.change(screen.getByLabelText('phone'), { target: { value: '+15550001111' } });
-  fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
 }
 
 describe('PublicRsvpForm', () => {
@@ -116,6 +116,7 @@ describe('PublicRsvpForm', () => {
 
   it('renders the plus-one toggle only when allowPlusOnes', () => {
     const { rerender } = renderForm(makeEvent({ allowPlusOnes: true }));
+    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
     expect(screen.getByRole('switch')).toBeInTheDocument();
     rerender(
       <MemoryRouter>
@@ -123,6 +124,44 @@ describe('PublicRsvpForm', () => {
       </MemoryRouter>,
     );
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+  });
+
+  it('shows only going/maybe status options in step one', () => {
+    renderForm();
+    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "can't go" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
+  });
+
+  it('advances to the contact-details step after picking a status', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    expect(screen.getByLabelText('first name')).toBeInTheDocument();
+    expect(screen.getByText('maybe')).toBeInTheDocument();
+  });
+
+  it('lets you change the status and go back to step one', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    fireEvent.click(screen.getByRole('button', { name: 'change' }));
+    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
+  });
+
+  it('submits maybe status chosen in step one', async () => {
+    const onSuccess = vi.fn();
+    renderForm(makeEvent(), onSuccess);
+    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
+    fireEvent.change(screen.getByLabelText('phone'), { target: { value: '+15550001111' } });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    expect(submitMutate).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      payload: expect.objectContaining({ status: 'maybe' }),
+    });
   });
 
   it('shows a 409 inline error with a sign-in link', async () => {
@@ -144,6 +183,7 @@ describe('PublicRsvpForm', () => {
 
   it('renders the hidden honeypot field', () => {
     renderForm();
+    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
     const hp = screen.getByLabelText('website (leave blank)');
     expect(hp).toHaveAttribute('name', 'website');
     expect(hp).toHaveAttribute('tabindex', '-1');

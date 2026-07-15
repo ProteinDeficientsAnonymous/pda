@@ -7,12 +7,16 @@ interface Props {
   onSelect: (status: RsvpInputStatus) => void;
   disabled?: boolean;
   labelFor?: (status: RsvpInputStatus, defaultLabel: string) => string;
+  statuses?: RsvpInputStatus[];
 }
 
-export function RsvpStatusPicker({ value, onSelect, disabled = false, labelFor }: Props) {
+export function RsvpStatusPicker({ value, onSelect, disabled = false, labelFor, statuses }: Props) {
+  const options = statuses
+    ? RSVP_STATUS_LABELS.filter((p) => statuses.includes(p.status))
+    : RSVP_STATUS_LABELS;
   return (
     <div className="-mx-1 flex justify-center-safe gap-2 overflow-x-auto px-1 py-1">
-      {RSVP_STATUS_LABELS.map((p) => {
+      {options.map((p) => {
         const label = labelFor ? labelFor(p.status, p.label) : p.label;
         const active = value === p.status;
         return (

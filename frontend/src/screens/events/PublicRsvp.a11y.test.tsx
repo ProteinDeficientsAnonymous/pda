@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
@@ -73,12 +73,23 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
 }
 
 describe('public rsvp a11y', () => {
-  it('form has no axe violations', async () => {
+  it('form step one has no axe violations', async () => {
     const { container } = render(
       <MemoryRouter>
         <PublicRsvpForm event={makeEvent()} onSuccess={vi.fn()} />
       </MemoryRouter>,
     );
+    const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
+    expect(results).toHaveNoViolations();
+  }, 15000);
+
+  it('form step two has no axe violations', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <PublicRsvpForm event={makeEvent()} onSuccess={vi.fn()} />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
     const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
     expect(results).toHaveNoViolations();
   }, 15000);
