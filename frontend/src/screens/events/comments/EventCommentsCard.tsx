@@ -9,6 +9,7 @@ import { CommentThread } from './CommentThread';
 
 interface Props {
   eventId: string;
+  token?: string;
 }
 
 function disabledReasonFor(cannot: CannotPostReason | null): string | undefined {
@@ -41,9 +42,9 @@ function ComposerOrPrompt({
   return <p className="text-foreground-tertiary mb-4 text-sm">log in to comment.</p>;
 }
 
-export function EventCommentsCard({ eventId }: Props) {
-  const { data, isPending, isError } = useEventComments(eventId);
-  const postComment = usePostComment(eventId);
+export function EventCommentsCard({ eventId, token }: Props) {
+  const { data, isPending, isError } = useEventComments(eventId, token);
+  const postComment = usePostComment(eventId, token);
 
   if (isPending) {
     return (

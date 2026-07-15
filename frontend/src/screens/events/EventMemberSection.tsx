@@ -359,7 +359,7 @@ function formatRelativeDays(date: Date): string {
   return `${String(days)} days ago`;
 }
 
-function LocationSection({ event }: { event: Event }) {
+export function LocationSection({ event }: { event: Event }) {
   if (!event.location) return null;
   const primary = event.location.split(', ')[0] ?? event.location;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`;
@@ -378,7 +378,7 @@ function LocationSection({ event }: { event: Event }) {
   );
 }
 
-function LinksSection({ event }: { event: Event }) {
+export function LinksSection({ event }: { event: Event }) {
   const links = buildEventLinks(event);
   const feedbackSurveys = event.surveySlugs.filter((s) => s !== event.datetimePollSlug);
 
@@ -410,7 +410,7 @@ function LinksSection({ event }: { event: Event }) {
   );
 }
 
-function CostSection({ event }: { event: Event }) {
+export function CostSection({ event }: { event: Event }) {
   const items: { label: string; url?: string }[] = [];
   if (event.price) items.push({ label: formatPrice(event.price) });
   if (event.venmoLink) items.push({ label: 'venmo', url: ensureHttps(event.venmoLink) });
