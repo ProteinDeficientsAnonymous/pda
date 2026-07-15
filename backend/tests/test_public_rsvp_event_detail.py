@@ -75,6 +75,10 @@ class TestGetEventWithToken:
         assert response.json()["whatsapp_link"] == ""
 
     def test_token_never_unlocks_invited_list(self, api_client, official_event, non_member):
+        invited = User.objects.create_user(
+            phone_number="+12025550199", first_name="Invited", last_name="Member"
+        )
+        official_event.invited_users.add(invited)
         EventRSVP.objects.create(event=official_event, user=non_member, status=RSVPStatus.ATTENDING)
         token = NonMemberRsvpToken.issue(non_member)
         response = api_client.get(
@@ -82,3 +86,4 @@ class TestGetEventWithToken:
         )
         body = response.json()
         assert body["invited_user_ids"] == []
+        assert str(invited.id) not in body["invited_user_ids"]
