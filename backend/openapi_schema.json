@@ -4061,6 +4061,17 @@
           "detail": {
             "title": "Detail",
             "type": "string"
+          },
+          "retry_after_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry After Seconds"
           }
         },
         "required": [

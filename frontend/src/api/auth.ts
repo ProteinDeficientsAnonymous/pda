@@ -259,6 +259,8 @@ export type RequestLoginLinkDelivery = 'email' | 'admin' | 'cooldown';
 interface RequestLoginLinkOut {
   detail: string;
   delivery: RequestLoginLinkDelivery;
+  // Seconds until another link may be requested — only present on cooldown.
+  retryAfterSeconds: number | null;
 }
 
 export function useRequestLoginLink() {
@@ -268,12 +270,17 @@ export function useRequestLoginLink() {
   // admin path so the response shape doesn't reveal whether the account
   // exists when no email was sent.
   return useMutation({
-    mutationFn: async (phoneNumber: string) => {
-      const { data } = await authClient.post<RequestLoginLinkOut>(
-        '/api/community/request-login-link/',
-        { phone_number: phoneNumber },
-      );
-      return data;
+    mutationFn: async (phoneNumber: string): Promise<RequestLoginLinkOut> => {
+      const { data } = await authClient.post<{
+        detail: string;
+        delivery: RequestLoginLinkDelivery;
+        retry_after_seconds: number | null;
+      }>('/api/community/request-login-link/', { phone_number: phoneNumber });
+      return {
+        detail: data.detail,
+        delivery: data.delivery,
+        retryAfterSeconds: data.retry_after_seconds,
+      };
     },
   });
 }

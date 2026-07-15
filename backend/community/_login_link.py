@@ -39,8 +39,13 @@ class RequestLoginLinkOut(BaseModel):
     # leak, especially given the 5/m rate limit on this endpoint. Unknown and
     # invalid phones stay in the neutral "admin" bucket.
     delivery: str
+    # Seconds until the user may request another link. Only set on the
+    # "cooldown" delivery so the client can show an honest countdown; null
+    # otherwise.
+    retry_after_seconds: int | None = None
 
 
+_COOLDOWN = timedelta(minutes=2)
 _DELIVERY_EMAIL = "email"
 _DELIVERY_ADMIN = "admin"
 _DELIVERY_COOLDOWN = "cooldown"
@@ -88,15 +93,20 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         )
         return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
-    # Cooldown: a link was already minted within the last 2 minutes. Re-requesting
+    # Cooldown: a link was already minted within the last window. Re-requesting
     # is allowed (no permanent block), but we throttle to one fresh link per window
     # and tell the user to check their inbox or wait.
-    recent_token_exists = MagicLoginToken.objects.filter(
-        user=user,
-        source=MagicLoginTokenSource.SELF_SERVICE,
-        created_at__gte=timezone.now() - timedelta(minutes=2),
-    ).exists()
-    if recent_token_exists:
+    now = timezone.now()
+    recent_token = (
+        MagicLoginToken.objects.filter(
+            user=user,
+            source=MagicLoginTokenSource.SELF_SERVICE,
+            created_at__gte=now - _COOLDOWN,
+        )
+        .order_by("-created_at")
+        .first()
+    )
+    if recent_token is not None:
         audit_log(
             logging.INFO,
             "magic_link_request_skipped_recent_token",
@@ -104,8 +114,14 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             target_type="user",
             target_id=str(user.pk),
         )
+        retry_after = max(1, round((recent_token.created_at + _COOLDOWN - now).total_seconds()))
         return Status(
-            200, RequestLoginLinkOut(detail=_COOLDOWN_RESPONSE, delivery=_DELIVERY_COOLDOWN)
+            200,
+            RequestLoginLinkOut(
+                detail=_COOLDOWN_RESPONSE,
+                delivery=_DELIVERY_COOLDOWN,
+                retry_after_seconds=retry_after,
+            ),
         )
 
     # Invalidate any prior unused links so only the newest one works — avoids

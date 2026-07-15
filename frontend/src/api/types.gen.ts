@@ -3565,6 +3565,8 @@ export interface components {
             delivery: string;
             /** Detail */
             detail: string;
+            /** Retry After Seconds */
+            retry_after_seconds?: number | null;
         };
         /** ResendManageLinkIn */
         ResendManageLinkIn: {

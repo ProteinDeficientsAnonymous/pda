@@ -145,6 +145,25 @@ class TestRequestLoginLink:
         # No second token created during the cooldown window.
         assert MagicLoginToken.objects.filter(user=user).count() == 1
 
+    def test_cooldown_reports_retry_after_seconds(self, api_client):
+        """The cooldown response reports how long until the user may retry."""
+        User.objects.create_user(phone_number=_PHONE, password="pass")
+        api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+
+        resp = api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+        body = resp.json()
+        assert body["delivery"] == "cooldown"
+        retry_after = body["retry_after_seconds"]
+        # The token was just minted, so the full window (minus request latency)
+        # should remain — bounded to the 2-minute window.
+        assert 0 < retry_after <= 120
+
+    def test_non_cooldown_response_omits_retry_after(self, api_client):
+        """Non-cooldown deliveries leave retry_after_seconds null."""
+        User.objects.create_user(phone_number=_PHONE, password="pass")
+        resp = api_client.post(_URL, {"phone_number": _PHONE}, content_type="application/json")
+        assert resp.json()["retry_after_seconds"] is None
+
     def test_self_service_token_stamped_source(self, api_client):
         """Self-service login-link tokens record source=self_service."""
         user = User.objects.create_user(phone_number=_PHONE, password="pass")
