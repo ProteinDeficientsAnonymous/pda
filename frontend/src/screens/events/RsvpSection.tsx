@@ -4,9 +4,10 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import {
   type Event,
-  RSVP_STATUS_LABELS,
+  isRsvpInputStatus,
   type RsvpInputStatus,
   RsvpServerStatus,
   RsvpStatus,
@@ -21,18 +22,11 @@ interface Props {
   canSeeInvited: boolean;
 }
 
-// `waitlisted` is server-assigned and not a valid input status, so anything
-// that re-POSTs an existing RSVP (box edit) needs this narrowing.
-function asInputStatus(status: string | null): RsvpInputStatus | null {
-  const match = Object.values(RsvpStatus).find((s) => s === status);
-  return match ?? null;
-}
-
-function statusLine(status: RsvpInputStatus): string {
-  if (status === RsvpStatus.Attending) return "you're going";
-  if (status === RsvpStatus.Maybe) return "you're a maybe";
-  return "you can't go";
-}
+const STATUS_LINES: Record<RsvpInputStatus, string> = {
+  [RsvpStatus.Attending]: "you're going",
+  [RsvpStatus.Maybe]: "you're a maybe",
+  [RsvpStatus.CantGo]: "you can't go",
+};
 
 interface BoxState {
   mode: 'create' | 'edit';
@@ -48,7 +42,7 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
 
   const myRsvp = event.myRsvp;
   const onWaitlist = myRsvp === RsvpServerStatus.Waitlisted;
-  const myInputStatus = asInputStatus(myRsvp);
+  const myInputStatus = isRsvpInputStatus(myRsvp) ? myRsvp : null;
   // Match by user id, not status — multiple guests share the same status,
   // so a status match returns some other attendee's record and the +1
   // toggle reflects the wrong user (issue #368).
@@ -159,7 +153,7 @@ function RsvpControls({
   if (myInputStatus) {
     return (
       <div className="flex items-center justify-center gap-3">
-        <span className="text-foreground-secondary text-sm">{statusLine(myInputStatus)}</span>
+        <span className="text-foreground-secondary text-sm">{STATUS_LINES[myInputStatus]}</span>
         <Button variant="secondary" onClick={onOpenEdit} disabled={busy}>
           edit rsvp
         </Button>
@@ -168,24 +162,14 @@ function RsvpControls({
   }
 
   return (
-    <div className="flex flex-wrap justify-center gap-2">
-      {RSVP_STATUS_LABELS.map((p) => {
-        const waitlistAttending = p.status === RsvpStatus.Attending && atCapacity;
-        return (
-          <button
-            key={p.status}
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              onOpenCreate(p.status);
-            }}
-            className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-full border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {waitlistAttending ? 'join the waitlist' : p.label}
-          </button>
-        );
-      })}
-    </div>
+    <RsvpStatusPicker
+      value={null}
+      disabled={busy}
+      onSelect={onOpenCreate}
+      labelFor={(status, defaultLabel) =>
+        status === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+      }
+    />
   );
 }
 

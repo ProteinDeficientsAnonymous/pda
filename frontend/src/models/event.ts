@@ -39,6 +39,10 @@ export const RSVP_STATUS_LABELS: { status: RsvpInputStatus; label: string }[] = 
   { status: RsvpStatus.CantGo, label: "can't go" },
 ];
 
+export function isRsvpInputStatus(status: string | null): status is RsvpInputStatus {
+  return RSVP_STATUS_LABELS.some((s) => s.status === status);
+}
+
 export const RsvpServerStatus = {
   ...RsvpStatus,
   Waitlisted: 'waitlisted',

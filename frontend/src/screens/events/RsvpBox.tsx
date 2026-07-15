@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { RSVP_STATUS_LABELS, type RsvpInputStatus, RsvpStatus } from '@/models/event';
-import { cn } from '@/utils/cn';
+import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
+import { type RsvpInputStatus, RsvpStatus } from '@/models/event';
 
 import { RsvpCommentField } from './RsvpCommentField';
 
@@ -53,26 +53,7 @@ export function RsvpBox({
   return (
     <Dialog open={open} onClose={onClose} title="rsvp">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap justify-center gap-2">
-          {RSVP_STATUS_LABELS.map((s) => (
-            <button
-              key={s.status}
-              type="button"
-              aria-pressed={status === s.status}
-              onClick={() => {
-                setStatus(s.status);
-              }}
-              className={cn(
-                'inline-flex h-10 items-center rounded-full px-4 text-sm font-medium',
-                status === s.status
-                  ? 'bg-brand-600 text-brand-on'
-                  : 'border-border-strong text-foreground-secondary border',
-              )}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        <RsvpStatusPicker value={status} onSelect={setStatus} disabled={busy} />
 
         {showPlusOne ? (
           <label className="flex items-center gap-2 text-sm">
