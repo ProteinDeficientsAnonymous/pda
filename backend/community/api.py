@@ -43,6 +43,7 @@ from community._tentative_approval_message import (
 )
 from community._version import router as version_router
 from community._welcome_template import router as welcome_template_router
+from community._whatsapp_link import router as whatsapp_link_router
 
 router = Router()
 router.add_router("", guidelines_router)
@@ -73,6 +74,7 @@ router.add_router("", event_flags_router)
 router.add_router("", calendar_router)
 router.add_router("", welcome_template_router)
 router.add_router("", tentative_approval_message_router)
+router.add_router("", whatsapp_link_router)
 router.add_router("", polls_router)
 router.add_router("", poll_options_router)
 router.add_router("", event_comments_router)

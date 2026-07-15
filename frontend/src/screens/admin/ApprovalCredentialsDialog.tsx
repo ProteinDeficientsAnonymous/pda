@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { useTentativeApprovalMessage, useWelcomeTemplate } from '@/api/content';
+import { useTentativeApprovalMessage, useWelcomeTemplate, useWhatsAppLink } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -16,6 +16,7 @@ import {
 
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
+import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 
 interface Props {
   open: boolean;
@@ -37,9 +38,11 @@ export function ApprovalCredentialsDialog({
   const [copied, setCopied] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [tentativeEditorOpen, setTentativeEditorOpen] = useState(false);
+  const [whatsappEditorOpen, setWhatsappEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const templateQ = useWelcomeTemplate();
   const tentativeMessageQ = useTentativeApprovalMessage();
+  const whatsappLinkQ = useWhatsAppLink();
 
   if (!magicLinkToken) return null;
   const magicLinkUrl = buildMagicLinkUrl(magicLinkToken);
@@ -51,6 +54,7 @@ export function ApprovalCredentialsDialog({
         name: firstName,
         senderName,
         magicLink: magicLinkUrl,
+        whatsappLink: whatsappLinkQ.data?.link ?? '',
       })
     : buildWelcomeMessage(firstName, magicLinkUrl);
   const smsHref = buildSmsHref(phoneNumber, welcomeMessage);
@@ -102,6 +106,15 @@ export function ApprovalCredentialsDialog({
             >
               edit tentative approval message
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setWhatsappEditorOpen(true);
+              }}
+              className="text-muted hover:text-foreground text-left text-xs underline"
+            >
+              edit whatsapp link
+            </button>
           </div>
         ) : null}
         <div className="mt-4 flex justify-end">
@@ -121,6 +134,13 @@ export function ApprovalCredentialsDialog({
           setTentativeEditorOpen(false);
         }}
         template={tentativeMessageQ.data ?? null}
+      />
+      <WhatsAppLinkEditorDialog
+        open={whatsappEditorOpen}
+        onClose={() => {
+          setWhatsappEditorOpen(false);
+        }}
+        whatsappLink={whatsappLinkQ.data ?? null}
       />
     </>
   );

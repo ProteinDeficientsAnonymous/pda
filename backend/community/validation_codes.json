@@ -257,6 +257,13 @@
         "params": []
       },
       {
+        "name": "TOO_LONG",
+        "value": "url.too_long",
+        "params": [
+          "max_length"
+        ]
+      },
+      {
         "name": "PATH_REQUIRED",
         "value": "url.path_required",
         "params": []

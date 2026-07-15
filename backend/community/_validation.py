@@ -62,6 +62,7 @@ class Code:
 
     class Url:
         INVALID = "url.invalid"
+        TOO_LONG = "url.too_long"  # params: { max_length: int }
         PATH_REQUIRED = "url.path_required"
         SCHEME_MUST_BE_HTTP_OR_HTTPS = "url.scheme_must_be_http_or_https"
         WHATSAPP_NOT_RECOGNIZED = "url.whatsapp_not_recognized"

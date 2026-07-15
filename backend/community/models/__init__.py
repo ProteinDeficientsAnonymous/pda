@@ -23,6 +23,7 @@ from community.models.content import (
     HomePage,
     TentativeApprovalMessageTemplate,
     WelcomeMessageTemplate,
+    WhatsAppLinkConfig,
 )
 from community.models.document import DocFolder, Document
 from community.models.event import Event, EventEmailBlast, EventFlag, EventRSVP
@@ -61,6 +62,7 @@ __all__ = [
     "HomePage",
     "TentativeApprovalMessageTemplate",
     "WelcomeMessageTemplate",
+    "WhatsAppLinkConfig",
     # document
     "DocFolder",
     "Document",

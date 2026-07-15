@@ -15,13 +15,15 @@ export interface WelcomeMessageVars {
   name: string;
   senderName: string;
   magicLink: string;
+  whatsappLink: string;
 }
 
 export function renderWelcomeMessage(template: string, vars: WelcomeMessageVars): string {
   return template
     .replaceAll('${FIRST_NAME}', vars.name)
     .replaceAll('${SENDER_NAME}', vars.senderName)
-    .replaceAll('${MAGIC_LINK}', vars.magicLink);
+    .replaceAll('${MAGIC_LINK}', vars.magicLink)
+    .replaceAll('${WHATSAPP_LINK}', vars.whatsappLink);
 }
 
 export function buildSmsHref(phoneNumber: string, body: string): string {

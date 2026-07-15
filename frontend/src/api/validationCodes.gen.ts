@@ -64,6 +64,7 @@ export const Code = {
   },
   Url: {
     Invalid: 'url.invalid',
+    TooLong: 'url.too_long',
     PathRequired: 'url.path_required',
     SchemeMustBeHttpOrHttps: 'url.scheme_must_be_http_or_https',
     WhatsappNotRecognized: 'url.whatsapp_not_recognized',
@@ -261,6 +262,7 @@ export type ValidationCode =
   | 'comment.perm_denied'
   | 'comment.event_mismatch'
   | 'url.invalid'
+  | 'url.too_long'
   | 'url.path_required'
   | 'url.scheme_must_be_http_or_https'
   | 'url.whatsapp_not_recognized'
@@ -412,6 +414,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'comment.perm_denied': [],
   'comment.event_mismatch': [],
   'url.invalid': [],
+  'url.too_long': ['max_length'],
   'url.path_required': [],
   'url.scheme_must_be_http_or_https': [],
   'url.whatsapp_not_recognized': [],

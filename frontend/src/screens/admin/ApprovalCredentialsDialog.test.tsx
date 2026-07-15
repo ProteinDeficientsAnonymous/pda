@@ -27,6 +27,12 @@ vi.mock('@/api/content', () => ({
     isError: false,
   }),
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useWhatsAppLink: () => ({
+    data: { link: '', updatedAt: '2026-01-01' },
+    isPending: false,
+    isError: false,
+  }),
+  useUpdateWhatsAppLink: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 function makeUser(overrides?: Partial<User>): User {
@@ -88,6 +94,7 @@ describe('ApprovalCredentialsDialog', () => {
     renderDialog(makeUser());
     expect(screen.queryByRole('button', { name: /edit shared welcome template/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /edit tentative approval message/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit whatsapp link/i })).toBeNull();
   });
 
   it('shows edit-template triggers with permission', () => {
@@ -108,5 +115,6 @@ describe('ApprovalCredentialsDialog', () => {
     expect(
       screen.getByRole('button', { name: /edit tentative approval message/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit whatsapp link/i })).toBeInTheDocument();
   });
 });
