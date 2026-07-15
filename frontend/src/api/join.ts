@@ -348,7 +348,10 @@ export function useDecideJoinRequest() {
   return useMutation({
     mutationFn: async (args: {
       id: string;
-      status: typeof JoinRequestStatus.APPROVED | typeof JoinRequestStatus.REJECTED;
+      status:
+        | typeof JoinRequestStatus.APPROVED
+        | typeof JoinRequestStatus.TENTATIVE
+        | typeof JoinRequestStatus.REJECTED;
     }) => {
       const { data } = await apiClient.patch<WireDecision>(
         `/api/community/join-requests/${args.id}/`,

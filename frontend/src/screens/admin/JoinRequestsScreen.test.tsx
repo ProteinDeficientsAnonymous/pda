@@ -251,6 +251,37 @@ describe('JoinRequestsScreen search', () => {
   });
 });
 
+describe('JoinRequestsScreen pending actions', () => {
+  it('shows approve, tentatively approve, and reject buttons on a pending request', () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING })]);
+
+    renderScreen();
+
+    expect(screen.getByRole('button', { name: 'approve' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'tentatively approve' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'reject' })).toBeInTheDocument();
+  });
+
+  it('calls decide with tentative status when tentatively approve is confirmed', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ magicLinkToken: null });
+    vi.mocked(useDecideJoinRequest).mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useDecideJoinRequest>);
+    mockResult([makeRequest({ id: 'jr-pending', status: JoinRequestStatus.PENDING })]);
+
+    renderScreen();
+    await userEvent.click(screen.getByRole('button', { name: 'tentatively approve' }));
+    const dialog = screen.getByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'tentatively approve' }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'jr-pending',
+      status: JoinRequestStatus.TENTATIVE,
+    });
+  });
+});
+
 describe('JoinRequestsScreen tentative section', () => {
   it('shows a manually approve button for tentative requests', async () => {
     mockResult([makeRequest({ status: JoinRequestStatus.TENTATIVE })]);
