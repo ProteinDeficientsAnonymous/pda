@@ -210,10 +210,6 @@ export const Code = {
     BodyRequired: 'tentative_approval_message.body_required',
     BodyTooLong: 'tentative_approval_message.body_too_long',
   },
-  MemberPromotionMessage: {
-    BodyRequired: 'member_promotion_message.body_required',
-    BodyTooLong: 'member_promotion_message.body_too_long',
-  },
   MembershipPromotionMessage: {
     BodyRequired: 'membership_promotion_message.body_required',
     BodyTooLong: 'membership_promotion_message.body_too_long',
@@ -371,8 +367,6 @@ export type ValidationCode =
   | 'welcome_template.body_too_long'
   | 'tentative_approval_message.body_required'
   | 'tentative_approval_message.body_too_long'
-  | 'member_promotion_message.body_required'
-  | 'member_promotion_message.body_too_long'
   | 'membership_promotion_message.body_required'
   | 'membership_promotion_message.body_too_long';
 
@@ -527,8 +521,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'welcome_template.body_too_long': ['max_length'],
   'tentative_approval_message.body_required': [],
   'tentative_approval_message.body_too_long': ['max_length'],
-  'member_promotion_message.body_required': [],
-  'member_promotion_message.body_too_long': ['max_length'],
   'membership_promotion_message.body_required': [],
   'membership_promotion_message.body_too_long': ['max_length'],
 };

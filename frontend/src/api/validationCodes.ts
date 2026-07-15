@@ -447,16 +447,6 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
         : 'approval message is too long';
     }
 
-    // Member promotion message
-    case Code.MemberPromotionMessage.BodyRequired:
-      return 'promotion message body is required';
-    case Code.MemberPromotionMessage.BodyTooLong: {
-      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
-      return max !== null
-        ? `promotion message must be at most ${String(max)} characters`
-        : 'promotion message is too long';
-    }
-
     // Membership promotion message
     case Code.MembershipPromotionMessage.BodyRequired:
       return 'membership promotion message body is required';
