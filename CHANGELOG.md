@@ -1,3 +1,10 @@
+# [0.39.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.38.0...v0.39.0) (2026-07-15)
+
+
+### Features
+
+* **rsvp:** persist non-member rsvp token so /my-rsvps auto-restores (Issue 867) ([#868](https://github.com/ProteinDeficientsAnonymous/pda/issues/868)) ([933a17f](https://github.com/ProteinDeficientsAnonymous/pda/commit/933a17f866771f80e6c8d5c99fdc5ebaa478da82))
+
 # [0.38.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.37.0...v0.38.0) (2026-07-15)
 
 
