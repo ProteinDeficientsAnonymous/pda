@@ -154,6 +154,32 @@ class TentativeApprovalMessageTemplate(models.Model):
         return obj
 
 
+class MembershipPromotionMessageTemplate(models.Model):
+    """Singleton — only one row ever exists (pk=1).
+
+    Plain-text body for the sms/whatsapp message a vetter sends after manually
+    promoting a tentatively-approved applicant to full member. Placeholders
+    ${FIRST_NAME}, ${SENDER_NAME}, ${WHATSAPP_LINK}, ${MAGIC_LINK} are
+    substituted client-side when rendered.
+    """
+
+    body = models.TextField(default="", max_length=4000)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "community"
+        verbose_name = "Membership Promotion Message Template"
+        verbose_name_plural = "Membership Promotion Message Template"
+
+    def __str__(self) -> str:
+        return "Membership Promotion Message Template"
+
+    @classmethod
+    def get(cls) -> "MembershipPromotionMessageTemplate":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class MemberPromotionMessageTemplate(models.Model):
     """Singleton — only one row ever exists (pk=1).
 
