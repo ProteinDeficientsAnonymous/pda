@@ -4,16 +4,19 @@ from django.http import HttpRequest
 from users.models import NonMemberRsvpToken, User
 
 from community._shared import _authenticated_user
-from community.models import Event, EventRSVP
+from community.models import Event
 
 
 def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     """Resolve the effective viewer for one event: real member, or a non-member
-    RSVP-token holder scoped to this event, or None.
+    RSVP-token holder on any public-RSVP-eligible event, or None.
 
-    A token only unlocks fields already gated purely on "is there a user
-    object" (see _event_out/_build_list_out) — it must never satisfy
-    permission checks that require real member/creator/co-host identity.
+    A valid token unlocks every event that already accepts public RSVPs — the
+    same events an anonymous visitor could unlock by submitting the form — so a
+    returning non-member reuses one token across events (issue #873). The token
+    only unlocks fields gated purely on "is there a user object" (see
+    _event_out/_build_list_out); it never satisfies member/creator/co-host
+    checks, and posting still requires an actual RSVP (see _can_post_comments).
     """
     auth_user = _authenticated_user(getattr(request, "auth", None))
     if auth_user is not None:
@@ -25,13 +28,9 @@ def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     user = NonMemberRsvpToken.resolve_user(token)
     if user is None:
         return None
-    rsvp = EventRSVP.objects.filter(event_id=event_id, user=user).select_related("event").first()
-    if rsvp is None:
-        return None
-    # Re-derive eligibility on every request — else an event that turns
-    # MEMBERS_ONLY (or otherwise drops out) after the RSVP keeps leaking its
-    # member-only fields to the token holder (mirrors _eligible_event_rsvps).
-    event: Event = rsvp.event
-    if not event.is_public_rsvp_eligible:
+    # Re-derive eligibility per request so an event that drops out of public-RSVP
+    # eligibility (MEMBERS_ONLY, cancelled, past, …) stops unlocking immediately.
+    event = Event.objects.filter(id=event_id).first()
+    if event is None or not event.is_public_rsvp_eligible:
         return None
     return user

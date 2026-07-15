@@ -1,5 +1,5 @@
 """GET /events/{id}/ with a non-member RSVP token — unlocks member-only fields
-scoped to the one event the token holder RSVP'd to."""
+on any public-RSVP-eligible event for a valid token holder (issue #873)."""
 
 import pytest
 from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
@@ -63,16 +63,28 @@ class TestGetEventWithToken:
         assert response.status_code == 200, response.content
         assert response.json()["whatsapp_link"] == "https://chat.whatsapp.com/abc123"
 
-    def test_token_scoped_to_other_event_does_not_unlock(
+    def test_token_from_other_event_unlocks_eligible_event(
         self, api_client, official_event, other_event, non_member
     ):
+        # One token, reused across events: RSVP'd to other_event, no RSVP on
+        # official_event, but the token still unlocks it (issue #873).
         EventRSVP.objects.create(event=other_event, user=non_member, status=RSVPStatus.ATTENDING)
         token = NonMemberRsvpToken.issue(non_member)
         response = api_client.get(
             f"/api/community/events/{official_event.id}/", {"token": token.token}
         )
         assert response.status_code == 200, response.content
-        assert response.json()["whatsapp_link"] == ""
+        assert response.json()["whatsapp_link"] == "https://chat.whatsapp.com/abc123"
+
+    def test_token_does_not_unlock_members_only_event(self, api_client, official_event, non_member):
+        official_event.visibility = PageVisibility.MEMBERS_ONLY
+        official_event.save(update_fields=["visibility"])
+        token = NonMemberRsvpToken.issue(non_member)
+        response = api_client.get(
+            f"/api/community/events/{official_event.id}/", {"token": token.token}
+        )
+        # Members-only events never accept public RSVPs — a token can't unlock them.
+        assert response.status_code == 404, response.content
 
     def test_token_never_unlocks_invited_list(self, api_client, official_event, non_member):
         invited = User.objects.create_user(

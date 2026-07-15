@@ -11,8 +11,31 @@ expect.extend(axeMatchers);
 
 setPhoneCountriesForTesting(['US', 'CA', 'GB', 'AU']);
 
+// jsdom's default Storage isn't wired up for get/set round-trips — stub a real one.
+const storageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string): string | null => store[key] ?? null,
+    setItem: (key: string, value: string): void => {
+      store[key] = value;
+    },
+    removeItem: (key: string): void => {
+      delete store[key];
+    },
+    clear: (): void => {
+      store = {};
+    },
+    get length(): number {
+      return Object.keys(store).length;
+    },
+    key: (index: number): string | null => Object.keys(store)[index] ?? null,
+  };
+})();
+Object.defineProperty(window, 'localStorage', { value: storageMock, writable: true });
+
 afterEach(() => {
   cleanup();
+  localStorage.clear();
 });
 
 // jsdom doesn't implement ResizeObserver — provide a no-op stub so components

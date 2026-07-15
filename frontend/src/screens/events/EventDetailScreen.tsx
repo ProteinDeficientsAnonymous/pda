@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
+import { clearStoredRsvpToken, getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import {
@@ -33,10 +35,21 @@ function photoSrc(url: string, updatedAt: string | null): string {
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const rsvpToken = searchParams.get('rsvp_token') ?? undefined;
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
+  // The emailed link carries ?rsvp_token=…; a returning non-member arrives with
+  // none, so fall back to the token persisted on their last rsvp (issue #873).
+  const urlToken = searchParams.get('rsvp_token') ?? undefined;
+  const rsvpToken = isAuthed ? undefined : (urlToken ?? getStoredRsvpToken() ?? undefined);
   const { data: event, isPending, isError, error } = useEvent(id, undefined, rsvpToken);
+
+  // A supplied token that didn't unlock the event is expired/invalid — drop it
+  // so a stale stored token doesn't keep re-attaching on every navigation.
+  const tokenRejected =
+    !isPending && !isError && Boolean(rsvpToken) && !isAuthed && event.viewerUserId === null;
+  useEffect(() => {
+    if (tokenRejected) clearStoredRsvpToken();
+  }, [tokenRejected]);
 
   if (isPending) return <ContentLoading />;
   if (isError) {
@@ -48,11 +61,11 @@ export default function EventDetailScreen() {
   }
 
   const showKebab = isAuthed && event.rsvpEnabled && canManageEvent(event, user);
-  // myRsvp is populated by the backend's rsvp resolver only when the caller
-  // was resolved as "authed" (real member or a token scoped to THIS event) —
-  // an invalid/expired/wrong-scope token gets the same locked shape as no
-  // token at all, so this is an exact backend-verified signal, not a guess.
-  const hasTokenUnlock = Boolean(rsvpToken) && !isAuthed && event.myRsvp !== null;
+  // viewerUserId is set by the backend's viewer resolver only when the caller
+  // resolved to a real identity (member, or a valid token on an eligible event);
+  // an invalid/expired token gets the same locked shape as no token at all, so
+  // this is an exact backend-verified signal, not a guess.
+  const hasTokenUnlock = Boolean(rsvpToken) && !isAuthed && event.viewerUserId !== null;
 
   return (
     <ContentContainer>
