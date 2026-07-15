@@ -1,8 +1,9 @@
 name: deploy railway (production)
 
-# Manual production deploys only — staging auto-deploys from main via Railway's
-# GitHub integration. Pick the ref from the "Run workflow" dropdown (main for
-# normal deploys; a tag or older commit for rollbacks).
+# Manual production deploys only — staging deploys automatically from
+# release.yml after a successful semantic-release run (see deploy-staging job
+# there). Pick the ref from the "Run workflow" dropdown (main for normal
+# deploys; a tag or older commit for rollbacks).
 # Pin matches image pulled 2026-04-20; bump intentionally when upgrading CLI.
 on:
   workflow_dispatch:

@@ -13,6 +13,9 @@ permissions:
   issues: write
   pull-requests: write
 
+env:
+  RAILWAY_CLI_IMAGE: ghcr.io/railwayapp/cli@sha256:10ff70f5b1d65e6eee8d8b7839b917bc88631efa5b5eddaa33a585a7891b254c
+
 jobs:
   release:
     name: Release
@@ -21,6 +24,8 @@ jobs:
     # only for pushes that create no commit (e.g. tag pushes), which this job
     # ignores anyway; semantic-release is also idempotent against existing tags.
     if: ${{ github.event.head_commit && !contains(github.event.head_commit.message, '[skip ci]') }}
+    outputs:
+      released: ${{ steps.check-release.outputs.released }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -44,6 +49,68 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Run semantic-release
-        run: npx semantic-release
+        run: |
+          before=$(git rev-parse HEAD)
+          npx semantic-release
+          after=$(git rev-parse HEAD)
+          if [ "$before" != "$after" ]; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+        id: check-release
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+  deploy-staging:
+    name: deploy to railway (staging)
+    needs: release
+    if: ${{ needs.release.outputs.released == 'true' }}
+    runs-on: ubuntu-latest
+    environment: railway-staging
+    concurrency:
+      group: railway-deploy-staging
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: print deploy context (no token)
+        env:
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_STAGING }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_STAGING }}
+        run: |
+          echo "railway deploy context (staging target)"
+          echo "  commit=$(git rev-parse --short=7 HEAD)"
+          echo "  railway_project_id=${RAILWAY_PROJECT_ID}"
+          echo "  railway_environment=${RAILWAY_ENVIRONMENT}"
+          echo "  railway_service=${RAILWAY_SERVICE_NAME}"
+
+      - name: railway up (staging token only in this job)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT: ${{ vars.RAILWAY_ENVIRONMENT_STAGING }}
+          RAILWAY_SERVICE_NAME: ${{ vars.RAILWAY_SERVICE_NAME_STAGING }}
+        run: |
+          set -eu
+          test -n "${RAILWAY_TOKEN}"
+          test -n "${RAILWAY_PROJECT_ID}"
+          test -n "${RAILWAY_ENVIRONMENT}"
+          test -n "${RAILWAY_SERVICE_NAME}"
+          docker_run=(docker run --rm --platform linux/amd64
+            -v "${GITHUB_WORKSPACE}:/workspace"
+            -w /workspace
+            -e RAILWAY_TOKEN
+            "${RAILWAY_CLI_IMAGE}")
+          echo "railway cli version:"
+          "${docker_run[@]}" railway --version
+          echo "railway up (verbose) — 404 here often means wrong project id, environment id/name, or service slug for this token"
+          "${docker_run[@]}" railway up --ci --verbose \
+            --project "${RAILWAY_PROJECT_ID}" \
+            --environment "${RAILWAY_ENVIRONMENT}" \
+            --service "${RAILWAY_SERVICE_NAME}"
