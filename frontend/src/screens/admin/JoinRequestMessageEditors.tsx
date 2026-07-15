@@ -95,7 +95,7 @@ function EditorTrigger({ label, onClick }: { label: string; onClick: () => void 
     <button
       type="button"
       onClick={onClick}
-      className="border-border-strong bg-surface text-foreground-secondary hover:bg-background focus-visible:ring-brand-200 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none"
+      className="border-border-strong bg-surface text-foreground-secondary hover:bg-background focus-visible:ring-brand-200 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
       {label}
     </button>
