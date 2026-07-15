@@ -1,3 +1,10 @@
+## [0.33.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.33.0...v0.33.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* **ci:** 840 - agent-ci uses shared postgres instead of isolated sqlite ([#841](https://github.com/ProteinDeficientsAnonymous/pda/issues/841)) ([2acc5f4](https://github.com/ProteinDeficientsAnonymous/pda/commit/2acc5f41b41075cc9adec7f92e8d24bdc38c557d))
+
 # [0.33.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.32.0...v0.33.0) (2026-07-15)
 
 
