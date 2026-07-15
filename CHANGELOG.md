@@ -1,3 +1,10 @@
+## [0.34.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.34.0...v0.34.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* **calendar:** remove tag filter row (Issue 845) ([#848](https://github.com/ProteinDeficientsAnonymous/pda/issues/848)) ([d99e22f](https://github.com/ProteinDeficientsAnonymous/pda/commit/d99e22f67125688080e5ab07b4a96ef06f7cebc3))
+
 # [0.34.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.33.2...v0.34.0) (2026-07-15)
 
 
