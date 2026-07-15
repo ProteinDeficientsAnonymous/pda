@@ -1,3 +1,10 @@
+# [0.37.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.36.2...v0.37.0) (2026-07-15)
+
+
+### Features
+
+* **join-requests:** membership promotion message dialog for manual approve (Issue 862) ([#863](https://github.com/ProteinDeficientsAnonymous/pda/issues/863)) ([eceaede](https://github.com/ProteinDeficientsAnonymous/pda/commit/eceaedefb375c452654b14366f15d49b17b18c29))
+
 ## [0.36.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.36.1...v0.36.2) (2026-07-15)
 
 
