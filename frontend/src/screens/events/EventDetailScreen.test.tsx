@@ -238,7 +238,7 @@ describe('EventDetailScreen', () => {
     it('renders the public-rsvp section when rsvp_token is present and the event comes back unlocked', () => {
       useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
       mockUseEvent.mockReturnValue({
-        data: { ...BASE_EVENT, myRsvp: 'attending' },
+        data: { ...BASE_EVENT, viewerUserId: 'nm-1' },
         isPending: false,
         isError: false,
       } as ReturnType<typeof useEvent>);
@@ -249,17 +249,24 @@ describe('EventDetailScreen', () => {
       expect(screen.queryByText('want to see more?')).not.toBeInTheDocument();
     });
 
-    it('falls back to the login wall when the token did not unlock the event', () => {
+    it('falls back to the public rsvp form when the token did not unlock the event', () => {
       useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
       mockUseEvent.mockReturnValue({
-        data: { ...BASE_EVENT, myRsvp: null, whatsappLink: '', location: '' },
+        data: {
+          ...BASE_EVENT,
+          eventType: EventType.Official,
+          viewerUserId: null,
+          whatsappLink: '',
+          location: '',
+        },
         isPending: false,
         isError: false,
       } as ReturnType<typeof useEvent>);
 
       renderScreen('ev1', '?rsvp_token=expired-or-wrong-scope');
 
-      expect(screen.getByText('want to see more?')).toBeInTheDocument();
+      // public-rsvp-eligible event with a rejected token → the rsvp form, not the login wall
+      expect(screen.getByRole('heading', { name: 'rsvp' })).toBeInTheDocument();
     });
 
     it('passes the rsvp_token through to useEvent', () => {
@@ -267,6 +274,43 @@ describe('EventDetailScreen', () => {
       renderScreen('ev1', '?rsvp_token=tok-abc');
 
       expect(mockUseEvent).toHaveBeenCalledWith('ev1', undefined, 'tok-abc');
+    });
+
+    it('reuses a persisted token when the url has none (issue 873)', () => {
+      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      localStorage.setItem('pda-rsvp-token', 'stored-tok');
+      mockUseEvent.mockReturnValue({
+        data: { ...BASE_EVENT, viewerUserId: 'nm-1' },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+
+      renderScreen('ev1');
+
+      expect(mockUseEvent).toHaveBeenCalledWith('ev1', undefined, 'stored-tok');
+      expect(screen.getByRole('link', { name: /123 Main St/i })).toBeInTheDocument();
+    });
+
+    it('drops a stored token the backend rejected', () => {
+      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      localStorage.setItem('pda-rsvp-token', 'stale-tok');
+      mockUseEvent.mockReturnValue({
+        data: { ...BASE_EVENT, viewerUserId: null },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+
+      renderScreen('ev1');
+
+      expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
+    });
+
+    it('ignores a stored token for an authed member', () => {
+      useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
+      localStorage.setItem('pda-rsvp-token', 'stored-tok');
+      renderScreen('ev1');
+
+      expect(mockUseEvent).toHaveBeenCalledWith('ev1', undefined, undefined);
     });
   });
 });

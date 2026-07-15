@@ -133,5 +133,7 @@ describe('PublicRsvpSection', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/events/evt-1?rsvp_token=tok-abc', {
       replace: true,
     });
+    // persisted so the token survives navigation to another event (issue 873)
+    expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-abc');
   });
 });
