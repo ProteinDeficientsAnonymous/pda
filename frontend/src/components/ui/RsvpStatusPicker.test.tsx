@@ -50,4 +50,11 @@ describe('RsvpStatusPicker', () => {
     );
     expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
   });
+
+  it('filters to only the given statuses', () => {
+    render(<RsvpStatusPicker value={null} onSelect={vi.fn()} statuses={['attending', 'maybe']} />);
+    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "can't go" })).not.toBeInTheDocument();
+  });
 });

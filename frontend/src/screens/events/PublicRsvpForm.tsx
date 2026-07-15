@@ -9,10 +9,11 @@ import { PhoneField } from '@/components/ui/PhoneField';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
-import { type Event, type RsvpInputStatus } from '@/models/event';
+import { type Event, RSVP_STATUS_LABELS, type RsvpInputStatus, RsvpStatus } from '@/models/event';
 import { optionalEmail } from '@/utils/validators';
 
 const MAX_NAME = 100;
+const PUBLIC_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatus.Maybe];
 
 interface Props {
   event: Event;
@@ -37,13 +38,17 @@ function messageForStatus(status: number | null): SubmitError {
   return { text: 'something went wrong — try again', showSignIn: false };
 }
 
+function statusLabel(status: RsvpInputStatus): string {
+  return RSVP_STATUS_LABELS.find((s) => s.status === status)?.label ?? status;
+}
+
 export function PublicRsvpForm({ event, onSuccess }: Props) {
   const submit = useSubmitPublicRsvp();
+  const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [hasPlusOne, setHasPlusOne] = useState(false);
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -55,7 +60,6 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     if (!email.trim()) next.email = 'email required';
     else if (optionalEmail(email)) next.email = 'not a valid email';
     if (!phone.trim()) next.phone = 'phone required';
-    if (!status) next.status = 'pick a status';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -63,7 +67,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
     setSubmitError(null);
-    if (!validate() || !status) return;
+    if (!status || !validate()) return;
     try {
       const result = await submit.mutateAsync({
         eventId: event.id,
@@ -86,73 +90,87 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   return (
     <section aria-label="rsvp" className="border-border bg-surface mt-8 rounded-lg border p-6">
       <h2 className="mb-4 text-base font-medium">rsvp</h2>
-      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
-        <Honeypot value={website} onChange={setWebsite} />
+      {status === null ? (
+        <RsvpStatusPicker value={status} onSelect={setStatus} statuses={PUBLIC_RSVP_STATUSES} />
+      ) : (
+        <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
+          <Honeypot value={website} onChange={setWebsite} />
 
-        <TextField
-          label="first name"
-          value={firstName}
-          onChange={(e) => {
-            setFirstName(e.target.value);
-          }}
-          maxLength={MAX_NAME}
-          autoComplete="given-name"
-          error={errors.firstName}
-          required
-        />
-        <TextField
-          label="last name"
-          value={lastName}
-          onChange={(e) => {
-            setLastName(e.target.value);
-          }}
-          maxLength={MAX_NAME}
-          autoComplete="family-name"
-        />
-        <TextField
-          label="email"
-          type="email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-          }}
-          autoComplete="email"
-          error={errors.email}
-          required
-        />
-        <PhoneField label="phone" value={phone} onChange={setPhone} error={errors.phone} />
-
-        <div className="flex flex-col gap-1">
-          <RsvpStatusPicker value={status} onSelect={setStatus} disabled={submit.isPending} />
-          {errors.status ? <p className="text-destructive text-xs">{errors.status}</p> : null}
-        </div>
-
-        {event.allowPlusOnes ? (
-          <Toggle label="bring a +1" checked={hasPlusOne} onChange={setHasPlusOne} />
-        ) : null}
-
-        <Button type="submit" disabled={submit.isPending} fullWidth>
-          rsvp
-        </Button>
-
-        {submitError ? (
-          <div role="alert" className="text-destructive text-sm">
-            <p>{submitError.text}</p>
-            {submitError.showSignIn ? (
-              <Link to="/login" className="text-info hover:underline">
-                sign in
-              </Link>
-            ) : null}
+          <div className="flex items-center justify-between">
+            <p className="text-foreground-secondary text-sm">
+              rsvping as <span className="text-foreground font-medium">{statusLabel(status)}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus(null);
+              }}
+              className="text-info text-sm hover:underline"
+            >
+              change
+            </button>
           </div>
-        ) : null}
 
-        <p className="text-foreground-tertiary text-xs">
-          rsvping doesn't make you a pda member —{' '}
-          <Link to="/join" className="text-info hover:underline">
-            request to join
-          </Link>
-        </p>
-      </form>
+          <TextField
+            label="first name"
+            value={firstName}
+            onChange={(e) => {
+              setFirstName(e.target.value);
+            }}
+            maxLength={MAX_NAME}
+            autoComplete="given-name"
+            error={errors.firstName}
+            required
+          />
+          <TextField
+            label="last name"
+            value={lastName}
+            onChange={(e) => {
+              setLastName(e.target.value);
+            }}
+            maxLength={MAX_NAME}
+            autoComplete="family-name"
+          />
+          <TextField
+            label="email"
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+            autoComplete="email"
+            error={errors.email}
+            required
+          />
+          <PhoneField label="phone" value={phone} onChange={setPhone} error={errors.phone} />
+
+          {event.allowPlusOnes ? (
+            <Toggle label="bring a +1" checked={hasPlusOne} onChange={setHasPlusOne} />
+          ) : null}
+
+          <Button type="submit" disabled={submit.isPending} fullWidth>
+            rsvp
+          </Button>
+
+          {submitError ? (
+            <div role="alert" className="text-destructive text-sm">
+              <p>{submitError.text}</p>
+              {submitError.showSignIn ? (
+                <Link to="/login" className="text-info hover:underline">
+                  sign in
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
+
+          <p className="text-foreground-tertiary text-xs">
+            rsvping doesn't make you a pda member —{' '}
+            <Link to="/join" className="text-info hover:underline">
+              request to join
+            </Link>
+          </p>
+        </form>
+      )}
     </section>
   );
 }
