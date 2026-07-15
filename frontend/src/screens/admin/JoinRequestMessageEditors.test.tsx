@@ -6,7 +6,7 @@ import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
-import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
+import { JoinRequestMessageEditors } from './JoinRequestMessageEditors';
 
 vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/api/client', () => ({
 
 vi.mock('@/api/content', () => ({
   useWelcomeTemplate: () => ({
-    data: { body: 'hi ${FIRST_NAME}, from ${SENDER_NAME}: ${MAGIC_LINK}', updatedAt: '2026-01-01' },
+    data: { body: 'hi ${FIRST_NAME}', updatedAt: '2026-01-01' },
     isPending: false,
     isError: false,
   }),
@@ -28,7 +28,7 @@ vi.mock('@/api/content', () => ({
   }),
   useUpdateTentativeApprovalMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useWhatsAppLink: () => ({
-    data: { link: '', updatedAt: '2026-01-01' },
+    data: { link: 'https://chat.whatsapp.com/abc123', updatedAt: '2026-01-01' },
     isPending: false,
     isError: false,
   }),
@@ -50,7 +50,7 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
 });
 
-function renderDialog(user: User | null) {
+function renderEditors(user: User | null) {
   useAuthStore.setState({
     status: user ? 'authed' : 'idle',
     user,
@@ -59,60 +59,42 @@ function renderDialog(user: User | null) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <ApprovalCredentialsDialog
-        open
-        onClose={() => {}}
-        fullName="Sam Vetterson"
-        firstName="Sam"
-        phoneNumber="+12025551234"
-        magicLinkToken="abc123"
-      />
+      <JoinRequestMessageEditors />
     </QueryClientProvider>,
   );
 }
 
-describe('ApprovalCredentialsDialog', () => {
-  it('renders sms and whatsapp buttons with substituted hrefs', () => {
-    renderDialog(makeUser());
-    const sms = screen.getByText('send via sms').closest('a');
-    const wa = screen.getByText('send via whatsapp').closest('a');
-    // Expected body: "hi Sam, from Vetter: <magic-link>"
-    expect(sms?.getAttribute('href')).toContain('sms:+12025551234?body=');
-    expect(sms?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter: '));
-    expect(wa?.getAttribute('href')).toContain('https://wa.me/12025551234?text=');
-    expect(wa?.getAttribute('href')).toContain(encodeURIComponent('hi Sam, from Vetter: '));
+describe('JoinRequestMessageEditors', () => {
+  it('renders nothing without permission', () => {
+    const { container } = renderEditors(makeUser());
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it('opens send links in a new tab with safe rel', () => {
-    renderDialog(makeUser());
-    const wa = screen.getByText('send via whatsapp').closest('a');
-    expect(wa?.getAttribute('target')).toBe('_blank');
-    expect(wa?.getAttribute('rel')).toBe('noopener noreferrer');
-  });
-
-  it('hides edit-template triggers without permission', () => {
-    renderDialog(makeUser());
-    expect(screen.queryByRole('button', { name: /edit shared welcome template/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /edit tentative approval message/i })).toBeNull();
-  });
-
-  it('shows edit-template triggers with permission', () => {
+  it('renders all three edit triggers with permission', () => {
     const user = makeUser({
       roles: [
-        {
-          id: 'r1',
-          name: 'vetter',
-          isDefault: false,
-          permissions: ['approve_join_requests'],
-        },
+        { id: 'r1', name: 'vetter', isDefault: false, permissions: ['approve_join_requests'] },
       ],
     });
-    renderDialog(user);
+    renderEditors(user);
     expect(
       screen.getByRole('button', { name: /edit shared welcome template/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /edit tentative approval message/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit whatsapp link/i })).toBeInTheDocument();
+  });
+
+  it('opens the whatsapp link editor dialog when clicked', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = makeUser({
+      roles: [
+        { id: 'r1', name: 'vetter', isDefault: false, permissions: ['approve_join_requests'] },
+      ],
+    });
+    renderEditors(user);
+    await userEvent.click(screen.getByRole('button', { name: /edit whatsapp link/i }));
+    expect(screen.getByLabelText('whatsapp link')).toBeInTheDocument();
   });
 });

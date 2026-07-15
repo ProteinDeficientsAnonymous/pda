@@ -16,7 +16,6 @@ import {
 
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
-import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 
 interface Props {
   open: boolean;
@@ -38,7 +37,6 @@ export function ApprovalCredentialsDialog({
   const [copied, setCopied] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [tentativeEditorOpen, setTentativeEditorOpen] = useState(false);
-  const [whatsappEditorOpen, setWhatsappEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
   const templateQ = useWelcomeTemplate();
   const tentativeMessageQ = useTentativeApprovalMessage();
@@ -106,15 +104,6 @@ export function ApprovalCredentialsDialog({
             >
               edit tentative approval message
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setWhatsappEditorOpen(true);
-              }}
-              className="text-muted hover:text-foreground text-left text-xs underline"
-            >
-              edit whatsapp link
-            </button>
           </div>
         ) : null}
         <div className="mt-4 flex justify-end">
@@ -134,13 +123,6 @@ export function ApprovalCredentialsDialog({
           setTentativeEditorOpen(false);
         }}
         template={tentativeMessageQ.data ?? null}
-      />
-      <WhatsAppLinkEditorDialog
-        open={whatsappEditorOpen}
-        onClose={() => {
-          setWhatsappEditorOpen(false);
-        }}
-        whatsappLink={whatsappLinkQ.data ?? null}
       />
     </>
   );
