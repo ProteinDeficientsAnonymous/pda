@@ -1,5 +1,5 @@
 import pytest
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
 from users.models import NonMemberRsvpToken, User
 
 from tests.conftest import future_iso
@@ -10,6 +10,9 @@ def event(db, test_user):
     return Event.objects.create(
         title="Test Event",
         start_datetime=future_iso(days=30),
+        event_type=EventType.OFFICIAL,
+        visibility=PageVisibility.PUBLIC,
+        rsvp_enabled=True,
         created_by=test_user,
     )
 

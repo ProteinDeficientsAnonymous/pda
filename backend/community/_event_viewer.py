@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from users.models import NonMemberRsvpToken, User
 
 from community._shared import _authenticated_user
-from community.models import EventRSVP
+from community.models import Event, EventRSVP
 
 
 def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
@@ -25,6 +25,13 @@ def resolve_event_viewer(request: HttpRequest, event_id: UUID) -> "User | None":
     user = NonMemberRsvpToken.resolve_user(token)
     if user is None:
         return None
-    if not EventRSVP.objects.filter(event_id=event_id, user=user).exists():
+    rsvp = EventRSVP.objects.filter(event_id=event_id, user=user).select_related("event").first()
+    if rsvp is None:
+        return None
+    # Re-derive eligibility on every request — else an event that turns
+    # MEMBERS_ONLY (or otherwise drops out) after the RSVP keeps leaking its
+    # member-only fields to the token holder (mirrors _eligible_event_rsvps).
+    event: Event = rsvp.event
+    if not event.is_public_rsvp_eligible:
         return None
     return user

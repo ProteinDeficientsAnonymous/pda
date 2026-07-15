@@ -1,6 +1,6 @@
 import pytest
 from community._event_viewer import resolve_event_viewer
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, EventType, PageVisibility, RSVPStatus
 from users.models import NonMemberRsvpToken, User
 
 from tests.conftest import future_iso
@@ -11,6 +11,9 @@ def event(db, test_user):
     return Event.objects.create(
         title="Resolver Test Event",
         start_datetime=future_iso(days=10),
+        event_type=EventType.OFFICIAL,
+        visibility=PageVisibility.PUBLIC,
+        rsvp_enabled=True,
         created_by=test_user,
     )
 
@@ -20,6 +23,9 @@ def other_event(db, test_user):
     return Event.objects.create(
         title="Other Event",
         start_datetime=future_iso(days=11),
+        event_type=EventType.OFFICIAL,
+        visibility=PageVisibility.PUBLIC,
+        rsvp_enabled=True,
         created_by=test_user,
     )
 
@@ -84,6 +90,17 @@ class TestResolveEventViewer:
 
         token.expires_at = timezone.now() - timedelta(days=1)
         token.save(update_fields=["expires_at"])
+        request = _request(rf, query=f"token={token.token}")
+        request.auth = None
+        assert resolve_event_viewer(request, event.id) is None
+
+    def test_valid_token_locks_out_once_event_turns_members_only(self, rf, event, non_member):
+        # Event was public-RSVP-eligible when the non-member RSVP'd, but a host
+        # later flipped visibility — the token must not keep unlocking it.
+        EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue(non_member)
+        event.visibility = PageVisibility.MEMBERS_ONLY
+        event.save(update_fields=["visibility"])
         request = _request(rf, query=f"token={token.token}")
         request.auth = None
         assert resolve_event_viewer(request, event.id) is None
