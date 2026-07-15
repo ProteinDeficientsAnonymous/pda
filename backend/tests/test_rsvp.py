@@ -75,7 +75,7 @@ class TestGetEvent:
         data = response.json()
         # Links hidden for unauthenticated
         assert data["whatsapp_link"] == ""
-        assert data["rsvp_enabled"] is False
+        assert data["rsvp_enabled"] is True
 
     def test_get_event_not_found(self, api_client, auth_headers):
         response = api_client.get(

@@ -421,6 +421,20 @@ class TestOfficialEventVisibility:
         assert response.status_code == 200
         assert response.json()["event_type"] == "official"
 
+    def test_get_official_event_rsvp_enabled_true_for_anonymous(self, api_client, test_user):
+        event = Event.objects.create(
+            title="Official Meetup",
+            start_datetime=timezone.now() + timedelta(days=1),
+            end_datetime=timezone.now() + timedelta(days=1),
+            event_type=EventType.OFFICIAL,
+            visibility=PageVisibility.PUBLIC,
+            rsvp_enabled=True,
+            created_by=test_user,
+        )
+        response = api_client.get(f"/api/community/events/{event.id}/")
+        assert response.status_code == 200
+        assert response.json()["rsvp_enabled"] is True
+
     def test_create_official_event_rejects_non_public_visibility(
         self, api_client, official_event_headers
     ):
