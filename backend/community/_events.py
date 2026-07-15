@@ -34,6 +34,7 @@ from community._event_transitions import (
     _handle_status_update,
     _set_event_participants,
 )
+from community._event_viewer import resolve_event_viewer
 from community._rsvp_counts import _attending_headcount, _waitlisted_count
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community._validation import Code, raise_validation
@@ -291,9 +292,9 @@ def get_event(request, event_id: UUID):
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    auth_user = _authenticated_user(request.auth)
-    _enforce_event_read_visibility(event, auth_user)
-    return Status(200, _event_out(event, request.auth))
+    viewer = resolve_event_viewer(request, event_id)
+    _enforce_event_read_visibility(event, viewer)
+    return Status(200, _event_out(event, viewer))
 
 
 @router.post(
