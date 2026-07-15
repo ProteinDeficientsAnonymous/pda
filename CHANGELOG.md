@@ -1,3 +1,10 @@
+## [0.39.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.0...v0.39.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* **events:** persist non-member rsvp token across events (Issue 873) ([#875](https://github.com/ProteinDeficientsAnonymous/pda/issues/875)) ([3ad8c55](https://github.com/ProteinDeficientsAnonymous/pda/commit/3ad8c55211226a18d4cbfefa649bfd8a1576564f))
+
 # [0.39.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.38.0...v0.39.0) (2026-07-15)
 
 
