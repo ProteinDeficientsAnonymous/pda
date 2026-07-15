@@ -3,8 +3,10 @@
 import logging
 import re
 
+from community._rsvp_counts import attendance_q, reportable_events_q
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
+from community.models import AttendanceStatus
 from config.audit import audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
@@ -18,9 +20,12 @@ from users._helpers import (
     _create_user_with_role,
     _is_admin,
     _is_last_admin,
+    _resolve_name_fields,
+    _strip_non_member_roles,
     _validate_admin_role_change,
     _validate_member_role_required,
     _validate_phone,
+    visible_name,
 )
 from users.models import User
 from users.permissions import PermissionKey
@@ -56,12 +61,16 @@ def create_user(request, payload: UserCreateIn):
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
-    if payload.display_name:
-        validate_display_name(payload.display_name)
+    if payload.last_name:
+        validate_display_name(payload.last_name, field="last_name")
+    first_name = payload.first_name.strip()
+    last_name = payload.last_name.strip()
+    validate_display_name(first_name, field="first_name")
 
     user, magic_token = _create_user_with_role(
         payload.phone_number,
-        payload.display_name,
+        first_name,
+        last_name,
         payload.email,
         payload.role_id,
         requesting_user=request.auth,
@@ -74,7 +83,7 @@ def create_user(request, payload: UserCreateIn):
         target_type="user",
         target_id=str(user.id),
         details={
-            "display_name": user.display_name,
+            "full_name": user.full_name,
             "role_id": str(payload.role_id) if payload.role_id else None,
         },
     )
@@ -83,7 +92,9 @@ def create_user(request, payload: UserCreateIn):
         UserCreateOut(
             id=str(user.id),
             phone_number=user.phone_number,
-            display_name=user.display_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            full_name=user.full_name,
             magic_link_token=magic_token,
         ),
     )
@@ -170,33 +181,56 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
     )
 
 
+def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
+    """Whether a search hit is legitimate for a non-admin viewer.
+
+    The DB query matches on last_name too, so a hide_last_name user would
+    otherwise leak via search even though their last name is suppressed in the
+    response. Re-check the match here against only the fields a non-admin can
+    actually see (first name, phone).
+    """
+    if not u.hide_last_name:
+        return True
+    if q.lower() in u.first_name.lower():
+        return True
+    return bool(u.show_phone and (q in u.phone_number or (digits and digits in u.phone_number)))
+
+
 @router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
 def search_users(request, q: str = ""):
     qs = User.objects.active_members().exclude(pk=request.auth.pk)
     q = q.strip()
+    digits = re.sub(r"\D", "", q)
     if q:
-        digits = re.sub(r"\D", "", q)
         phone_q = dj_models.Q(phone_number__icontains=q)
         if digits and digits != q:
             phone_q = phone_q | dj_models.Q(phone_number__icontains=digits)
-        qs = qs.filter(dj_models.Q(display_name__icontains=q) | phone_q)
-    qs = qs.order_by("display_name")[:10]
-    return Status(
-        200,
-        [
+        name_q = dj_models.Q(first_name__icontains=q) | dj_models.Q(last_name__icontains=q)
+        qs = qs.filter(name_q | phone_q)
+    qs = qs.order_by("first_name", "last_name")
+    needs_non_admin_filter = bool(q) and not _is_admin(request.auth)
+    # Non-admins post-filter in Python (the DB can match a hidden last name),
+    # so fetch some headroom before capping to 10. Admins take the top 10
+    # straight from the DB.
+    users = list(qs[:200]) if needs_non_admin_filter else list(qs[:10])
+    if needs_non_admin_filter:
+        users = [u for u in users if _matches_for_non_admin(u, q, digits)][:10]
+    results = []
+    for u in users:
+        last_name, full_name = visible_name(u, request.auth)
+        results.append(
             UserSearchOut(
                 id=str(u.id),
-                # Don't leak a private phone via the display_name fallback when
-                # show_phone is false (e.g. members with no display_name set).
-                display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
+                first_name=u.first_name,
+                last_name=last_name,
+                full_name=full_name,
                 # Respect each member's privacy flag — blank the phone rather
                 # than dropping the field, so callers (co-host/invite picker)
                 # don't break on a missing key. Mirrors the member directory.
                 phone_number=u.phone_number if u.show_phone else "",
             )
-            for u in qs
-        ],
-    )
+        )
+    return Status(200, results)
 
 
 @router.get(
@@ -204,7 +238,7 @@ def search_users(request, q: str = ""):
     response={200: list[UserOut], 403: ErrorOut},
     auth=gated_jwt,
 )
-def list_users(request):
+def list_users(request, include_non_members: bool = False):
     if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
         audit_log(
             logging.WARNING,
@@ -213,10 +247,20 @@ def list_users(request):
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
+    # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
+    attended = attendance_q(AttendanceStatus.ATTENDED, prefix="event_rsvps")
+    reportable = reportable_events_q(prefix="event_rsvps__event")
+    # Default stays members-only; the opt-in adds non-members (public-RSVP users).
+    base = User.objects.all() if include_non_members else User.objects.members()
     users = (
-        User.objects.members()
-        .filter(archived_at__isnull=True)
+        base.filter(archived_at__isnull=True)
         .prefetch_related("roles")
+        .annotate(
+            last_attended=dj_models.Max(
+                "event_rsvps__event__start_datetime",
+                filter=attended & reportable,
+            )
+        )
         .order_by("phone_number")
     )
     return Status(200, [UserOut.from_user(u) for u in users])
@@ -247,26 +291,41 @@ def update_user(request, user_id: str, payload: UserPatchIn):
     _apply_user_patch(user, user_id, payload, requester_id=str(request.auth.pk))
     user.save()
 
-    if payload.is_paused is not None and payload.is_paused != old_is_paused:
-        action = "user_paused" if payload.is_paused else "user_unpaused"
-        audit_log(logging.WARNING, action, request, target_type="user", target_id=user_id)
-    else:
-        changed = [
-            f
-            for f in ("phone_number", "display_name", "email")
-            if getattr(payload, f, None) is not None
-        ]
-        if changed:
-            audit_log(
-                logging.INFO,
-                "user_updated",
-                request,
-                target_type="user",
-                target_id=user_id,
-                details={"fields_changed": changed},
-            )
-
+    _audit_user_update(request, user, user_id, payload, old_is_paused)
     return Status(200, UserOut.from_user(user))
+
+
+def _audit_user_update(
+    request, user: User, user_id: str, payload: UserPatchIn, old_is_paused: bool
+) -> None:
+    """Emit the audit entry for an update_user PATCH.
+
+    A pause transition takes priority — pausing also strips non-member roles and
+    records the removed ids. Otherwise a plain field change logs user_updated.
+    """
+    is_pause_transition = payload.is_paused is not None and payload.is_paused != old_is_paused
+    if is_pause_transition:
+        action = "user_paused" if payload.is_paused else "user_unpaused"
+        details = {"removed_role_ids": _strip_non_member_roles(user)} if payload.is_paused else None
+        audit_log(
+            logging.WARNING, action, request, target_type="user", target_id=user_id, details=details
+        )
+        return
+
+    changed = [
+        f
+        for f in ("phone_number", "first_name", "last_name", "email")
+        if getattr(payload, f, None) is not None
+    ]
+    if changed:
+        audit_log(
+            logging.INFO,
+            "user_updated",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={"fields_changed": changed},
+        )
 
 
 def _patch_phone(user: User, user_id: str, phone_number: str) -> None:
@@ -289,9 +348,7 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
     """Apply UserPatchIn fields to user. Raises ValidationException on invalid input."""
     if payload.phone_number is not None:
         _patch_phone(user, user_id, payload.phone_number)
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
+    _resolve_name_fields(user, payload)
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user_id)
     _validate_pause_change(user, payload.is_paused, requester_id)
@@ -325,7 +382,7 @@ def delete_user(request, user_id: str):
         raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
     if user.archived_at is not None:
         raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
-    display_name = user.display_name
+    full_name = user.full_name
     user.archived_at = timezone.now()
     user.save(update_fields=["archived_at"])
     audit_log(
@@ -334,8 +391,58 @@ def delete_user(request, user_id: str):
         request,
         target_type="user",
         target_id=user_id,
-        details={"display_name": display_name},
+        details={"full_name": full_name},
     )
+    return Status(204, None)
+
+
+@router.delete(
+    "/users/{user_id}/hard/",
+    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def hard_delete_user(request, user_id: str):
+    """Permanently remove a member who has never logged in.
+
+    Unlike ``delete_user`` (which soft-archives via ``archived_at``), this row is
+    gone for good. Restricted to never-logged-in accounts — an approved entry the
+    person never actually claimed — so a real member's data is never destroyed.
+    """
+    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            target_type="user",
+            target_id=user_id,
+            details={
+                "endpoint": "hard_delete_user",
+                "required_permission": PermissionKey.MANAGE_USERS,
+            },
+        )
+        raise_validation(Code.Perm.DENIED, status_code=403, action="hard_delete_user")
+    try:
+        user = User.objects.members().get(pk=user_id)
+    except User.DoesNotExist:
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
+    if str(user.pk) == str(request.auth.pk):
+        raise_validation(Code.User.CANNOT_DELETE_SELF, status_code=400)
+    if _is_last_admin(user):
+        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
+    if user.last_login is not None:
+        raise_validation(Code.User.CANNOT_HARD_DELETE_LOGGED_IN, status_code=400)
+    full_name = user.full_name
+    audit_log(
+        logging.WARNING,
+        "user_hard_deleted",
+        request,
+        target_type="user",
+        target_id=user_id,
+        details={"full_name": full_name},
+    )
+    # Safe because last_login is None: a never-logged-in user has authored no
+    # EventComments (author is on_delete=PROTECT), so the cascade can't raise.
+    user.delete()
     return Status(204, None)
 
 

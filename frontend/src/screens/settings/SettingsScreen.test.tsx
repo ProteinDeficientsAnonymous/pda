@@ -64,15 +64,21 @@ vi.mock('@/api/auth', () => ({
   deleteProfilePhoto: vi.fn(),
 }));
 
+import * as authApi from '@/api/auth';
+
 import SettingsScreen from './SettingsScreen';
 
 const TEST_USER: User = {
   id: 'u1',
   phoneNumber: '+12125550001',
-  displayName: 'Test User',
+  firstName: 'Test',
+  lastName: 'User',
+  fullName: 'Test User',
+  nickname: '',
   email: 'test@example.com',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -81,6 +87,8 @@ const TEST_USER: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  showBirthday: false,
+  hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',
@@ -107,6 +115,9 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'authed', user: TEST_USER, accessToken: 'tok' });
   useAccessibilityStore.setState({ themeMode: 'system', dyslexiaFont: false, textScale: 1.0 });
   vi.clearAllMocks();
+  // The store's updateProfile reads .id off the resolved user; resolve a real one
+  // so toggles that call it directly don't hit an undefined-deref.
+  vi.mocked(authApi.updateProfile).mockResolvedValue(TEST_USER);
 });
 
 describe('SettingsScreen', () => {
@@ -134,8 +145,18 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('toggling "show my last name" off calls updateProfile with hideLastName true', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('checkbox', { name: /show my last name to other members/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ hideLastName: true });
+    });
+  });
+
   it('saves an edited pronouns value via updateProfile', async () => {
-    const authApi = await import('@/api/auth');
     const user = userEvent.setup();
     renderSettings();
 
@@ -149,8 +170,87 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('surfaces the error when saving an email that is already in use', async () => {
+  it('saves an edited nickname value via updateProfile', async () => {
     const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit nickname/i }));
+    const field = screen.getByLabelText(/^nickname$/i);
+    await user.type(field, 'Birdie');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ nickname: 'Birdie' });
+    });
+  });
+
+  it('saves an edited birthday via updateProfile', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit birthday/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^day$/i), '15');
+    await user.selectOptions(screen.getByLabelText(/^year$/i), '1990');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        birthday: { month: 6, day: 15, year: 1990 },
+      });
+    });
+  });
+
+  it('saves a birthday without a year via updateProfile', async () => {
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit birthday/i }));
+    await user.selectOptions(screen.getByLabelText(/^month$/i), 'june');
+    await user.selectOptions(screen.getByLabelText(/^day$/i), '15');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({
+        birthday: { month: 6, day: 15, year: null },
+      });
+    });
+  });
+
+  it('saves an edited first name via updateProfile', async () => {
+    const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit first name/i }));
+    const field = screen.getByLabelText(/^first name$/i);
+    await user.clear(field);
+    await user.type(field, 'Newname');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ firstName: 'Newname' });
+    });
+  });
+
+  it('saves an edited last name via updateProfile', async () => {
+    const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit last name/i }));
+    const field = screen.getByLabelText(/^last name$/i);
+    await user.clear(field);
+    await user.type(field, 'Newlast');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    await waitFor(() => {
+      expect(authApi.updateProfile).toHaveBeenCalledWith({ lastName: 'Newlast' });
+    });
+  });
+
+  it('surfaces the error when saving an email that is already in use', async () => {
     vi.mocked(authApi.updateProfile).mockRejectedValueOnce({
       isAxiosError: true,
       response: {

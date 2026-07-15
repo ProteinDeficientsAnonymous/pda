@@ -28,16 +28,23 @@ interface AuthState {
   // unauthed). Guards the app-level boot spinner so later 'loading' states
   // (login, magic-login) don't unmount the tree.
   booted: boolean;
+  // Keeps OnboardingGate from bouncing /onboarding once account setup clears
+  // needs_onboarding, so the optional profile step can render.
+  profileStepActive: boolean;
   login: (phoneNumber: string, password: string) => Promise<void>;
   magicLogin: (token: string) => Promise<void>;
   restoreSession: () => Promise<void>;
   completeOnboarding: (payload: {
     newPassword: string;
-    displayName?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
     email?: string | undefined;
     pronouns?: string | undefined;
     consentTypes?: ConsentTypeValue[] | undefined;
+    // Set atomically with `user` — a separate follow-up call would leave a render gap.
+    startProfileStep?: boolean;
   }) => Promise<void>;
+  finishProfileStep: () => void;
   acceptConsents: (consentTypes: ConsentTypeValue[]) => Promise<void>;
   changePassword: (current: string, next: string) => Promise<void>;
   updateProfile: (patch: authApi.ProfileUpdate) => Promise<void>;
@@ -54,6 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   booted: false,
+  profileStepActive: false,
 
   async login(phoneNumber, password) {
     set({ status: 'loading' });
@@ -99,8 +107,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async completeOnboarding(payload) {
-    const user = await authApi.completeOnboarding(payload);
-    set({ user });
+    const { startProfileStep: shouldStartProfileStep, ...apiPayload } = payload;
+    const user = await authApi.completeOnboarding(apiPayload);
+    set(shouldStartProfileStep ? { user, profileStepActive: true } : { user });
+  },
+
+  finishProfileStep() {
+    set({ profileStepActive: false });
   },
 
   async acceptConsents(consentTypes) {
@@ -139,12 +152,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async logout() {
     await authApi.logout();
     queryClient.clear();
-    set({ status: 'unauthed', user: null, accessToken: null });
+    set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
   },
 
   forceLogout() {
     queryClient.clear();
-    set({ status: 'unauthed', user: null, accessToken: null });
+    set({ status: 'unauthed', user: null, accessToken: null, profileStepActive: false });
   },
 }));
 

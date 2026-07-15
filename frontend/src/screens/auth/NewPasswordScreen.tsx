@@ -7,9 +7,11 @@ import { z } from 'zod';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { PasswordField } from '@/components/ui/PasswordField';
+import { postAuthRedirect } from '@/models/user';
 import { extractApiError } from '@/utils/errors';
 
 import { AuthLayout } from './AuthLayout';
+import { OnboardingProfileStep } from './OnboardingProfileStep';
 import { PasswordChecklist } from './PasswordChecklist';
 import { passwordRule } from './passwordRule';
 
@@ -26,9 +28,13 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export default function NewPasswordScreen() {
-  // Post-reset: the user arrived here via magic-login with needs_onboarding=true
-  // but an existing displayName — they only need to set a new password.
+  // Shared by two populations: self-service password resets (already-onboarded
+  // members — skip straight to the app) and first-time join-request users who
+  // already have name+email but have never seen the profile step.
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+  const finishProfileStep = useAuthStore((s) => s.finishProfileStep);
+  const profileStepActive = useAuthStore((s) => s.profileStepActive);
+  const needsOnboarding = useAuthStore((s) => s.user?.needsOnboarding ?? false);
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -46,11 +52,32 @@ export default function NewPasswordScreen() {
   async function onSubmit(values: FormValues) {
     setServerError(null);
     try {
-      await completeOnboarding({ newPassword: values.newPassword });
+      await completeOnboarding({
+        newPassword: values.newPassword,
+        startProfileStep: needsOnboarding,
+      });
+      if (needsOnboarding) return;
       void navigate('/calendar', { replace: true });
     } catch (err) {
       setServerError(extractApiError(err, "couldn't save password — try again"));
     }
+  }
+
+  if (profileStepActive) {
+    return (
+      <AuthLayout
+        title="make it yours ✨"
+        subtitle="add a photo and a few words so folks can put a face to your name — you can always do this later"
+      >
+        <OnboardingProfileStep
+          onDone={() => {
+            finishProfileStep();
+            const next = postAuthRedirect(useAuthStore.getState().user) ?? '/calendar';
+            void navigate(next, { replace: true });
+          }}
+        />
+      </AuthLayout>
+    );
   }
 
   return (

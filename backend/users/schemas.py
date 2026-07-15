@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
@@ -36,6 +37,50 @@ def _empty_str_to_none(v: str | None) -> str | None:
 OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_empty_str_to_none)]
 
 
+_DAYS_IN_MONTH = {
+    1: 31,
+    2: 29,  # allow Feb 29 regardless of year, since the year may be unknown
+    3: 31,
+    4: 30,
+    5: 31,
+    6: 30,
+    7: 31,
+    8: 31,
+    9: 30,
+    10: 31,
+    11: 30,
+    12: 31,
+}
+
+
+class BirthdayOut(BaseModel):
+    month: int
+    day: int
+    year: int | None = None
+
+    @staticmethod
+    def from_user(user: User) -> "BirthdayOut | None":
+        if user.birthday_month is None or user.birthday_day is None:
+            return None
+        return BirthdayOut(
+            month=user.birthday_month, day=user.birthday_day, year=user.birthday_year
+        )
+
+
+class BirthdayIn(BaseModel):
+    month: int = Field(ge=1, le=12)
+    day: int = Field(ge=1, le=31)
+    year: int | None = Field(default=None, ge=1900, le=date.today().year)
+
+    @field_validator("day")
+    @classmethod
+    def _validate_day(cls, day: int, info) -> int:
+        month = info.data.get("month")
+        if month is not None and day > _DAYS_IN_MONTH[month]:
+            raise_validation(Code.User.INVALID_BIRTHDAY, field="day")
+        return day
+
+
 class LoginIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     password: str = Field(max_length=FieldLimit.PASSWORD)
@@ -71,10 +116,15 @@ class RoleOut(BaseModel):
 class UserOut(BaseModel):
     id: str
     phone_number: str
-    display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
+    nickname: str = ""
     email: str = ""
     bio: str = ""
     pronouns: str = ""
+    birthday: BirthdayOut | None = None
+    is_member: bool = True
     is_superuser: bool = False
     needs_onboarding: bool = False
     needs_password_reset: bool = False
@@ -84,10 +134,17 @@ class UserOut(BaseModel):
     photo_updated_at: str | None = None
     show_phone: bool = True
     show_email: bool = True
+    show_birthday: bool = True
+    hide_last_name: bool = False
     is_paused: bool = False
+    # False until the user's first successful login (Django's last_login is null).
+    # Admins use this to spot approved entries that were never actually claimed.
+    has_logged_in: bool = True
     login_link_requested: bool = False
     week_start: str = "sunday"
     calendar_feed_scope: str = "all"
+    # Only populated by the list_users annotation; None everywhere else.
+    last_attended: datetime | None = None
     roles: list[RoleOut]
 
     @classmethod
@@ -95,10 +152,15 @@ class UserOut(BaseModel):
         return cls(
             id=str(user.id),
             phone_number=user.phone_number,
-            display_name=user.display_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            full_name=user.full_name,
+            nickname=user.nickname or "",
             email=user.email or "",
             bio=user.bio or "",
             pronouns=user.pronouns or "",
+            birthday=BirthdayOut.from_user(user),
+            is_member=user.is_member,
             is_superuser=user.is_superuser,
             needs_onboarding=user.needs_onboarding,
             needs_password_reset=user.needs_password_reset,
@@ -108,10 +170,14 @@ class UserOut(BaseModel):
             photo_updated_at=(user.photo_updated_at.isoformat() if user.photo_updated_at else None),
             show_phone=user.show_phone,
             show_email=user.show_email,
+            show_birthday=user.show_birthday,
+            hide_last_name=user.hide_last_name,
             is_paused=user.is_paused,
+            has_logged_in=user.last_login is not None,
             login_link_requested=user.login_link_requested,
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,
+            last_attended=getattr(user, "last_attended", None),
             roles=[
                 RoleOut(
                     id=str(r.id),
@@ -126,18 +192,24 @@ class UserOut(BaseModel):
 
 class MemberProfileOut(BaseModel):
     id: str
-    display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
+    nickname: str = ""
     phone_number: str
     email: str = ""
     bio: str = ""
     pronouns: str = ""
+    birthday: BirthdayOut | None = None
     profile_photo_url: str = ""
     login_link_requested: bool = False
 
 
 class MemberDirectoryOut(BaseModel):
     id: str
-    display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     phone_number: str = ""
     email: str = ""
     profile_photo_url: str = ""
@@ -145,7 +217,8 @@ class MemberDirectoryOut(BaseModel):
 
 class UserCreateIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
-    display_name: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
+    last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     role_id: str | None = None
 
@@ -153,7 +226,9 @@ class UserCreateIn(BaseModel):
 class UserCreateOut(BaseModel):
     id: str
     phone_number: str
-    display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     magic_link_token: str
 
 
@@ -177,19 +252,25 @@ class BulkUserCreateOut(BaseModel):
 
 class UserPatchIn(BaseModel):
     phone_number: str | None = Field(default=None, max_length=FieldLimit.PHONE)
-    display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
+    last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     is_paused: bool | None = None
 
 
 class MePatchIn(BaseModel):
-    display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
+    last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     bio: str | None = Field(default=None, max_length=FieldLimit.BIO)
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
+    nickname: str | None = Field(default=None, max_length=FieldLimit.NICKNAME)
+    birthday: BirthdayIn | None = None
     needs_onboarding: bool | None = None
     show_phone: bool | None = None
     show_email: bool | None = None
+    show_birthday: bool | None = None
+    hide_last_name: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
 
@@ -240,7 +321,8 @@ class AcceptConsentsIn(BaseModel):
 
 class OnboardingIn(BaseModel):
     new_password: str = Field(max_length=FieldLimit.PASSWORD)
-    display_name: str | None = Field(default=None, max_length=FieldLimit.DISPLAY_NAME)
+    first_name: str | None = Field(default=None, max_length=FieldLimit.FIRST_NAME)
+    last_name: str | None = Field(default=None, max_length=FieldLimit.LAST_NAME)
     email: OptionalEmail = None
     pronouns: str | None = Field(default=None, max_length=FieldLimit.PRONOUNS)
     consent_types: list[ConsentType] = Field(default_factory=list)
@@ -248,5 +330,7 @@ class OnboardingIn(BaseModel):
 
 class UserSearchOut(BaseModel):
     id: str
-    display_name: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
     phone_number: str

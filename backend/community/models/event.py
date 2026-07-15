@@ -2,6 +2,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 from community.models.choices import (
@@ -21,6 +22,30 @@ if TYPE_CHECKING:
     from community.models.comment import EventComment
     from community.models.poll import EventPoll
     from community.models.survey import Survey
+
+
+def _is_past_q(now, prefix: str = "") -> Q:
+    """Queryset mirror of Event.is_past, over the field path at `prefix` (e.g. "event__")."""
+    end = f"{prefix}end_datetime"
+    start = f"{prefix}start_datetime"
+    return Q(**{f"{prefix}datetime_tbd": False}) & (
+        Q(**{f"{end}__lt": now}) | Q(**{f"{end}__isnull": True, f"{start}__lt": now})
+    )
+
+
+def public_rsvp_eligible_q(now, prefix: str = "") -> Q:
+    """The single public-RSVP eligibility gate as a Q, over the field path at `prefix`.
+
+    Object-level (Event.is_public_rsvp_eligible) and queryset-level callers share this,
+    so the gate can never drift between the write path and the read path.
+    """
+    return (
+        Q(**{f"{prefix}event_type": EventType.OFFICIAL})
+        & Q(**{f"{prefix}status": EventStatus.ACTIVE})
+        & Q(**{f"{prefix}visibility": PageVisibility.PUBLIC})
+        & Q(**{f"{prefix}rsvp_enabled": True})
+        & ~_is_past_q(now, prefix)
+    )
 
 
 class Event(models.Model):
@@ -102,6 +127,17 @@ class Event(models.Model):
         ordering = ["start_datetime"]
 
     @property
+    def is_public_rsvp_eligible(self) -> bool:
+        """Object-level mirror of public_rsvp_eligible_q()."""
+        return (
+            self.event_type == EventType.OFFICIAL
+            and self.status == EventStatus.ACTIVE
+            and self.visibility == PageVisibility.PUBLIC
+            and self.rsvp_enabled
+            and not self.is_past
+        )
+
+    @property
     def is_past(self) -> bool:
         # TBD events have no decided time, so they're explicitly not "past" —
         # RSVPs, cohost invites, cancellations, etc. should all still apply.
@@ -143,6 +179,11 @@ class EventRSVP(models.Model):
         choices=AttendanceStatus.choices,
         default=AttendanceStatus.UNKNOWN,
     )
+    checked_in_at = models.DateTimeField(null=True, blank=True)
+    # Timestamp of the most recent transition into CANT_GO; cleared when the
+    # member re-RSVPs going/maybe. Accurate cancellation lead-time (unlike the
+    # lossy updated_at proxy, which any later save would overwrite).
+    cancelled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -153,7 +194,9 @@ class EventRSVP(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.display_name or self.user.phone_number} → {self.event.title}: {self.status}"
+        return (
+            f"{self.user.full_name or self.user.phone_number} → {self.event.title}: {self.status}"
+        )
 
 
 class EventFlag(models.Model):

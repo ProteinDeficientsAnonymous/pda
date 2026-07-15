@@ -143,6 +143,14 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Comment.EventMismatch:
       return "that reply target isn't in this event";
 
+    // Tag
+    case Code.Tag.NotFound:
+      return 'tag not found';
+    case Code.Tag.NameRequired:
+      return 'enter a tag name';
+    case Code.Tag.NameAlreadyExists:
+      return 'a tag with that name already exists';
+
     // URL
     case Code.Url.Invalid:
       return 'enter a valid url';
@@ -270,12 +278,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "can't delete the last admin — promote someone else first";
     case Code.User.AlreadyArchived:
       return 'this user is already archived';
+    case Code.User.CannotHardDeleteLoggedIn:
+      return 'this member has logged in — archive them instead of deleting';
     case Code.User.CannotPauseSelf:
       return "you can't pause your own account";
     case Code.User.CannotPauseAdmin:
       return "admins can't be paused";
     case Code.User.RoleIdsNotFound:
       return 'one or more role IDs not found';
+    case Code.User.InvalidBirthday:
+      return "that's not a valid birthday";
 
     // Survey
     case Code.Survey.NotFound:
@@ -419,6 +431,16 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return max !== null
         ? `welcome message must be at most ${String(max)} characters`
         : 'welcome message is too long';
+    }
+
+    // Tentative approval message
+    case Code.TentativeApprovalMessage.BodyRequired:
+      return 'approval message body is required';
+    case Code.TentativeApprovalMessage.BodyTooLong: {
+      const max = typeof err.params?.max_length === 'number' ? err.params.max_length : null;
+      return max !== null
+        ? `approval message must be at most ${String(max)} characters`
+        : 'approval message is too long';
     }
 
     // Generic (FE-only, emitted for Pydantic errors without a ValidationException)

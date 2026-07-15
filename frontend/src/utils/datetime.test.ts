@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDayHeader, formatEventDateTime, parseIsoDate } from './datetime';
+import { formatBirthday, formatDayHeader, formatEventDateTime, parseIsoDate } from './datetime';
 
 describe('parseIsoDate', () => {
   it('parses ISO 8601 string', () => {
@@ -8,6 +8,20 @@ describe('parseIsoDate', () => {
     expect(result.getFullYear()).toBe(2026);
     expect(result.getMonth()).toBe(3);
     expect(result.getDate()).toBe(15);
+  });
+});
+
+describe('formatBirthday', () => {
+  it('formats a birthday with a year as lowercase month day, year', () => {
+    expect(formatBirthday({ month: 6, day: 15, year: 1990 })).toBe('june 15, 1990');
+  });
+
+  it('formats a birthday without a year as lowercase month day', () => {
+    expect(formatBirthday({ month: 1, day: 1, year: null })).toBe('january 1');
+  });
+
+  it('formats a leap day without a year', () => {
+    expect(formatBirthday({ month: 2, day: 29, year: null })).toBe('february 29');
   });
 });
 

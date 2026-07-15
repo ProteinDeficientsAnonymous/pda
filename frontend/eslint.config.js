@@ -59,6 +59,22 @@ export default defineConfig([
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      // The modern JSX transform means no default React import is needed —
+      // import hooks/types by name (`useEffect`, not `React.useEffect`).
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              importNames: ['default'],
+              message:
+                "import hooks and types by name from 'react' — the default React import isn't needed with the modern jsx transform.",
+            },
+          ],
+        },
+      ],
     },
   },
   {

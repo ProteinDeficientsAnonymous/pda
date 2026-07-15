@@ -26,8 +26,8 @@ const BASE_EVENT = makeEvent({
   guests: [],
 });
 
-const CREATOR = makeUser({ id: 'user-creator', displayName: 'Alice' });
-const nonMember = makeUser({ id: 'user-nonmember', displayName: 'Casey' });
+const CREATOR = makeUser({ id: 'user-creator', firstName: 'Alice', fullName: 'Alice' });
+const nonMember = makeUser({ id: 'user-nonmember', firstName: 'Casey', fullName: 'Casey' });
 
 function renderScreen() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

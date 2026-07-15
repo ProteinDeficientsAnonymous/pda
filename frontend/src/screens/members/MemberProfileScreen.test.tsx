@@ -14,11 +14,13 @@ vi.mock('@/api/users', () => ({
 
 const BASE: MemberProfile = {
   id: 'u1',
-  displayName: 'Alex',
+  fullName: 'Alex',
+  nickname: '',
   phoneNumber: '',
   email: '',
   bio: '',
   pronouns: '',
+  birthday: null,
   profilePhotoUrl: '',
   loginLinkRequested: false,
 };
@@ -52,5 +54,21 @@ describe('MemberProfileScreen', () => {
     useMemberProfileMock.mockReturnValue({ data: BASE, isPending: false, isError: false });
     renderScreen();
     expect(screen.queryByText('they/them')).not.toBeInTheDocument();
+  });
+
+  it('shows the nickname beneath the name when set', () => {
+    useMemberProfileMock.mockReturnValue({
+      data: { ...BASE, nickname: 'Birdie' },
+      isPending: false,
+      isError: false,
+    });
+    renderScreen();
+    expect(screen.getByText('"Birdie"')).toBeInTheDocument();
+  });
+
+  it('omits the nickname line when the member has none set', () => {
+    useMemberProfileMock.mockReturnValue({ data: BASE, isPending: false, isError: false });
+    renderScreen();
+    expect(screen.queryByText(/^".*"$/)).not.toBeInTheDocument();
   });
 });

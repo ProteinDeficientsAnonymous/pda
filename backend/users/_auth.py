@@ -1,43 +1,41 @@
-"""Authentication endpoints (login, magic login, token refresh, me)."""
+"""Authentication endpoints (login, token refresh, me)."""
 
 import logging
 
-from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 from config.audit import audit_log
 from config.auth import gated_jwt
-from config.media_proxy import media_path
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
-from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import File, Router
 from ninja.files import UploadedFile
 from ninja.responses import Status
-from ninja_jwt.authentication import JWTAuth
 from ninja_jwt.exceptions import TokenError
 from ninja_jwt.tokens import RefreshToken
 
 from users._consents import stamp_consents
-from users._helpers import _check_and_set_email
+from users._helpers import (
+    _check_and_set_email,
+    _require_first_name,
+    _resolve_name_fields,
+)
 from users._password_validation import validate_password
 from users._refresh_cookie import (
     clear_refresh_cookie,
     read_refresh_cookie,
     set_refresh_cookie,
 )
-from users.models import MagicLoginToken, User
-from users.permissions import PermissionKey
+from users.models import User
 from users.schemas import (
     AcceptConsentsIn,
     AccessOut,
+    BirthdayIn,
     ChangePasswordIn,
     ErrorOut,
     LoginIn,
     LogoutOut,
-    MemberDirectoryOut,
-    MemberProfileOut,
     MePatchIn,
     OnboardingIn,
     TokenOut,
@@ -89,129 +87,6 @@ def login(request, payload: LoginIn, response: HttpResponse):
     return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
 
-def _current_jwt_user(request) -> User | None:
-    """Best-effort JWT read for endpoints declared with auth=None.
-
-    Returns the authenticated user if the request carries a valid access token,
-    else None. Any auth error (missing/invalid/expired token) is treated as
-    anonymous — the calling endpoint decides whether that matters.
-    """
-    try:
-        user = JWTAuth()(request)
-    except Exception:
-        return None
-    if isinstance(user, User):
-        return user
-    return None
-
-
-def _validate_magic_user(request, magic: MagicLoginToken) -> None:
-    """Run the non-consuming guards for a magic token. Raises on failure."""
-    # Reject cross-user magic links: if the caller is already authenticated as a
-    # different user, a silent session swap would let them complete onboarding /
-    # password-set on behalf of the link's target. Force explicit logout first.
-    current_user = _current_jwt_user(request)
-    if current_user is not None and current_user.pk != magic.user.pk:
-        audit_log(
-            logging.WARNING,
-            "magic_login_cross_user_blocked",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-            details={"current_user_id": str(current_user.pk)},
-        )
-        raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
-    if magic.user.archived_at is not None:
-        audit_log(
-            logging.WARNING,
-            "magic_login_archived",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-        )
-        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
-    if magic.user.is_paused:
-        audit_log(
-            logging.WARNING,
-            "magic_login_paused",
-            request,
-            target_type="user",
-            target_id=str(magic.user.pk),
-        )
-        raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
-
-
-def _consume_magic_token(request, token: str) -> MagicLoginToken:
-    """Atomically fetch, validate, and mark a magic token used.
-
-    Row-locked (select_for_update) so two concurrent requests can't both pass
-    the used-check and replay the link (TOCTOU). Raises on any guard failure.
-    """
-    with transaction.atomic():
-        try:
-            magic = (
-                MagicLoginToken.objects.select_for_update().select_related("user").get(token=token)
-            )
-        except MagicLoginToken.DoesNotExist:
-            audit_log(
-                logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
-            )
-            raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
-        _validate_magic_user(request, magic)
-        if magic.used or magic.is_expired:
-            audit_log(
-                logging.WARNING,
-                "magic_login_failed",
-                request,
-                target_type="user",
-                target_id=str(magic.user.pk),
-                details={"reason": "used_or_expired"},
-            )
-            raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
-        magic.used = True
-        magic.save(update_fields=["used"])
-        if magic.requires_password_reset:
-            # Self-service login link: the user got in without a password, so force a
-            # reset before normal use. set_unusable_password() ensures the old password
-            # can't be used until they pick a new one (cleared by complete_onboarding).
-            # Also clear login_link_requested so future link requests aren't skipped.
-            magic.user.needs_password_reset = True
-            magic.user.login_link_requested = False
-            magic.user.set_unusable_password()
-            magic.user.save(
-                update_fields=["needs_password_reset", "login_link_requested", "password"]
-            )
-            audit_log(
-                logging.INFO,
-                "magic_login_requires_password_reset",
-                request,
-                target_type="user",
-                target_id=str(magic.user.pk),
-            )
-    return magic
-
-
-@router.get(
-    "/magic-login/{token}/",
-    response={200: TokenOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
-    auth=None,
-)
-@rate_limit(key_func=client_ip, rate="5/m")
-def magic_login(request, token: str, response: HttpResponse):
-    magic = _consume_magic_token(request, token)
-    refresh = RefreshToken.for_user(magic.user)
-    request.auth = magic.user
-    set_refresh_cookie(response, str(refresh))
-    audit_log(
-        logging.INFO,
-        "magic_login_success",
-        request,
-        target_type="user",
-        target_id=str(magic.user.pk),
-    )
-    return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
-
-
 @router.post("/refresh/", response={200: AccessOut, 401: ErrorOut}, auth=None)
 def refresh_token(request, response: HttpResponse):
     token = read_refresh_cookie(request)
@@ -244,6 +119,26 @@ def me(request):
     return Status(200, UserOut.from_user(user))
 
 
+# Fields copied straight from payload to user with no extra validation.
+_ME_PATCH_PASSTHROUGH_FIELDS = (
+    "needs_onboarding",
+    "show_phone",
+    "show_email",
+    "show_birthday",
+    "hide_last_name",
+    "week_start",
+    "calendar_feed_scope",
+)
+# Passthrough fields that also get whitespace-stripped.
+_ME_PATCH_STRIPPED_FIELDS = ("bio", "pronouns", "nickname")
+
+
+def _apply_birthday(user, birthday: BirthdayIn | None) -> None:
+    user.birthday_month = birthday.month if birthday else None
+    user.birthday_day = birthday.day if birthday else None
+    user.birthday_year = birthday.year if birthday else None
+
+
 def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     """Apply MePatchIn fields to user. Returns the list of changed fields.
 
@@ -251,34 +146,26 @@ def _apply_me_patch(user, payload: MePatchIn) -> list[str]:
     to the global handler.
     """
     changed: list[str] = []
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
-        changed.append("display_name")
+    if _resolve_name_fields(user, payload):
+        changed.extend(["first_name", "last_name"])
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
         changed.append("email")
-    if payload.bio is not None:
-        user.bio = payload.bio.strip()
-        changed.append("bio")
-    if payload.pronouns is not None:
-        user.pronouns = payload.pronouns.strip()
-        changed.append("pronouns")
-    if payload.needs_onboarding is not None:
-        user.needs_onboarding = payload.needs_onboarding
-        changed.append("needs_onboarding")
-    if payload.show_phone is not None:
-        user.show_phone = payload.show_phone
-        changed.append("show_phone")
-    if payload.show_email is not None:
-        user.show_email = payload.show_email
-        changed.append("show_email")
-    if payload.week_start is not None:
-        user.week_start = payload.week_start
-        changed.append("week_start")
-    if payload.calendar_feed_scope is not None:
-        user.calendar_feed_scope = payload.calendar_feed_scope
-        changed.append("calendar_feed_scope")
+    for attr in _ME_PATCH_STRIPPED_FIELDS:
+        value = getattr(payload, attr)
+        if value is not None:
+            setattr(user, attr, value.strip())
+            changed.append(attr)
+    for attr in _ME_PATCH_PASSTHROUGH_FIELDS:
+        value = getattr(payload, attr)
+        if value is not None:
+            setattr(user, attr, value)
+            changed.append(attr)
+    # birthday is nullable: a sent-but-null value is an explicit clear, so key on
+    # whether the field was present in the payload rather than on it being None.
+    if "birthday" in payload.model_fields_set:
+        _apply_birthday(user, payload.birthday)
+        changed.append("birthday")
     return changed
 
 
@@ -343,62 +230,6 @@ def delete_photo(request):
     return Status(200, UserOut.from_user(user))
 
 
-@router.get(
-    "/users/directory/",
-    response={200: list[MemberDirectoryOut]},
-    auth=gated_jwt,
-)
-def list_member_directory(request):
-    """Authed-only member directory. Respects each user's show_phone/show_email flags."""
-    users = (
-        User.objects.active_members()
-        .filter(needs_onboarding=False)
-        .order_by("display_name", "phone_number")
-    )
-    return Status(
-        200,
-        [
-            MemberDirectoryOut(
-                id=str(u.id),
-                # Don't leak a private phone via the display_name fallback when
-                # show_phone is false (e.g. members with no display_name set).
-                display_name=u.display_name or (u.phone_number if u.show_phone else "member"),
-                phone_number=u.phone_number if u.show_phone else "",
-                email=(u.email or "") if u.show_email else "",
-                profile_photo_url=media_path(u.profile_photo),
-            )
-            for u in users
-        ],
-    )
-
-
-@router.get(
-    "/users/{user_id}/profile/",
-    response={200: MemberProfileOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def get_member_profile(request, user_id: str):
-    try:
-        user = User.objects.active_members().get(pk=user_id)
-    except User.DoesNotExist:
-        raise_validation(Code.Member.NOT_FOUND, status_code=404)
-    is_own_profile = str(request.auth.pk) == user_id
-    can_manage_users = request.auth.has_permission(PermissionKey.MANAGE_USERS)
-    return Status(
-        200,
-        MemberProfileOut(
-            id=str(user.id),
-            display_name=user.display_name,
-            phone_number=user.phone_number if (user.show_phone or is_own_profile) else "",
-            email=(user.email or "") if (user.show_email or is_own_profile) else "",
-            bio=user.bio or "",
-            pronouns=user.pronouns or "",
-            profile_photo_url=media_path(user.profile_photo),
-            login_link_requested=user.login_link_requested if can_manage_users else False,
-        ),
-    )
-
-
 @router.post(
     "/complete-onboarding/",
     response={200: UserOut, 400: ErrorOut, 409: ErrorOut, 422: ErrorOut},
@@ -416,9 +247,10 @@ def complete_onboarding(request, payload: OnboardingIn):
     # check_password always fails and this is correctly skipped.
     if user.has_usable_password() and user.check_password(payload.new_password):
         raise_validation(Code.Password.SAME_AS_OLD, field="new_password", status_code=400)
-    if payload.display_name is not None:
-        validate_display_name(payload.display_name)
-        user.display_name = payload.display_name.strip()
+    _resolve_name_fields(user, payload)
+    # Bulk/phone-only accounts reach onboarding with no name; a name-less
+    # payload must not let them complete with an empty first_name (Issue 733).
+    _require_first_name(user)
     if payload.email is not None:
         _check_and_set_email(user, payload.email, exclude_pk=user.pk)
     elif not user.email:

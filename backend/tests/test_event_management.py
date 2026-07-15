@@ -20,7 +20,8 @@ def manage_events_user(db):
     user = User.objects.create_user(
         phone_number="+14155551234",
         password="eventmanagerpass123",
-        display_name="Event Manager",
+        first_name="Event",
+        last_name="Manager",
     )
     role = Role.objects.create(name="event_manager", permissions=[PermissionKey.MANAGE_EVENTS])
     user.roles.add(role)
@@ -87,7 +88,8 @@ class TestEventManagement:
         member = User.objects.create_user(
             phone_number="+12025550199",
             password="memberpass",
-            display_name="Regular Member",
+            first_name="Regular",
+            last_name="Member",
         )
         headers = {
             "HTTP_AUTHORIZATION": f"Bearer {RefreshToken.for_user(member).access_token}"  # type: ignore

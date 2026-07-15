@@ -1,5 +1,3 @@
-"""Shared utilities, schemas, and auth used across community API modules."""
-
 import logging
 import re
 
@@ -82,6 +80,13 @@ def _validate_phone(raw: str, field: str = "phone_number") -> str:
     if not phonenumbers.is_valid_number(parsed):
         raise_validation(Code.Phone.INVALID, field=field)
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+
+
+def render_template_placeholders(body: str, placeholders: dict[str, str]) -> str:
+    """Substitute ``${NAME}``-style placeholders in an admin-editable template body."""
+    for name, value in placeholders.items():
+        body = body.replace(f"${{{name}}}", value)
+    return body
 
 
 def flatten_to_single_line(value: str) -> str:

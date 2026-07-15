@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 import { EmailGate, OnboardingGate, RequireAuth, RequirePermission } from './guards';
 import { useAuthStore } from './store';
@@ -34,32 +36,24 @@ vi.mock('@/api/auth', () => ({
 // ---------------------------------------------------------------------------
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'user-1',
     phoneNumber: '+12125551234',
-    displayName: 'Alice',
+    firstName: 'Alice',
+    lastName: '',
+    fullName: 'Alice',
     email: 'alice@example.com',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  useAuthStore.setState({
+    status: 'unauthed',
+    user: null,
+    accessToken: null,
+    profileStepActive: false,
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -171,8 +165,8 @@ describe('RequirePermission', () => {
 // ---------------------------------------------------------------------------
 
 describe('OnboardingGate', () => {
-  it('redirects a first-time user (needsOnboarding=true, empty displayName) to /onboarding', () => {
-    const user = makeUser({ needsOnboarding: true, displayName: '' });
+  it('redirects a first-time user (needsOnboarding=true, empty name) to /onboarding', () => {
+    const user = makeUser({ needsOnboarding: true, firstName: '', fullName: '' });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
@@ -191,10 +185,11 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
-  it('redirects a password-reset user (needsOnboarding=true, has displayName + email) to /new-password', () => {
+  it('redirects a password-reset user (needsOnboarding=true, has name + email) to /new-password', () => {
     const user = makeUser({
       needsOnboarding: true,
-      displayName: 'Alice',
+      firstName: 'Alice',
+      fullName: 'Alice',
       email: 'alice@example.com',
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
@@ -215,11 +210,16 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
-  it('redirects a legacy user (needsOnboarding=true, has displayName but no email) to /onboarding', () => {
-    // Pre-email-requirement users were approved with a displayName but never
+  it('redirects a legacy user (needsOnboarding=true, has a name but no email) to /onboarding', () => {
+    // Pre-email-requirement users were approved with a name but never
     // supplied an email. On first login they must end up at /onboarding so
     // they can add one — /new-password has no email field and would loop.
-    const user = makeUser({ needsOnboarding: true, displayName: 'Alice', email: '' });
+    const user = makeUser({
+      needsOnboarding: true,
+      firstName: 'Alice',
+      fullName: 'Alice',
+      email: '',
+    });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
@@ -238,11 +238,12 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('new password page')).not.toBeInTheDocument();
   });
 
-  it('redirects a needsPasswordReset user (has displayName + email) to /new-password', () => {
+  it('redirects a needsPasswordReset user (has name + email) to /new-password', () => {
     const user = makeUser({
       needsOnboarding: false,
       needsPasswordReset: true,
-      displayName: 'Bob',
+      firstName: 'Bob',
+      fullName: 'Bob',
       email: 'bob@example.com',
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
@@ -266,10 +267,44 @@ describe('OnboardingGate', () => {
     const user = makeUser({
       needsOnboarding: false,
       needsPasswordReset: true,
-      displayName: 'Bob',
+      firstName: 'Bob',
+      fullName: 'Bob',
       email: 'bob@example.com',
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/new-password']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/new-password" element={<div>new password page</div>} />
+            <Route path="/calendar" element={<div>calendar page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('new password page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('keeps a first-time join-request user on /new-password while the profile step is active', () => {
+    // Once account setup clears needsOnboarding, this user's setupTarget becomes
+    // null — same as a fully-onboarded user — so the gate must check
+    // profileStepActive before bouncing them off /new-password, same as it
+    // already does for /onboarding.
+    const user = makeUser({
+      needsOnboarding: false,
+      firstName: 'Jamie',
+      fullName: 'Jamie',
+      email: 'jamie@example.com',
+    });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
 
     render(
       <MemoryRouter initialEntries={['/new-password']}>
@@ -343,8 +378,65 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('consent page')).not.toBeInTheDocument();
   });
 
-  it('lets a needsSmsConsent user read /sms-policy (so consent is possible)', () => {
-    const user = makeUser({ needsGuidelinesConsent: true, needsSmsConsent: true });
+  it('redirects an sms-only consent-pending user to /consent', () => {
+    const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/calendar" element={<div>calendar page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('consent page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('does not bounce an sms-only consent-pending user away from /consent', () => {
+    const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/consent']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/consent" element={<div>consent page</div>} />
+            <Route path="/calendar" element={<div>calendar page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('consent page')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('lets an sms-only consent-pending user read /sms-policy (so consent is possible)', () => {
+    const user = makeUser({ needsGuidelinesConsent: false, needsSmsConsent: true });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/sms-policy']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/sms-policy" element={<div>sms policy page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('sms policy page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
+  it('lets a guidelines-consent-pending user read /sms-policy too', () => {
+    const user = makeUser({ needsGuidelinesConsent: true });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
 
     render(
@@ -367,7 +459,8 @@ describe('OnboardingGate', () => {
     // password gate first — consent is only asked once setup is done.
     const user = makeUser({
       needsOnboarding: true,
-      displayName: '',
+      firstName: '',
+      fullName: '',
       needsGuidelinesConsent: true,
     });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
@@ -426,6 +519,90 @@ describe('OnboardingGate', () => {
     expect(screen.queryByText('onboarding page')).not.toBeInTheDocument();
   });
 
+  it('keeps an onboarding-complete user on /onboarding while the profile step is active', () => {
+    const user = makeUser({ needsOnboarding: false });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/onboarding']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/onboarding" element={<div>onboarding page</div>} />
+            <Route path="/guidelines" element={<div>guidelines page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('onboarding page')).toBeInTheDocument();
+    expect(screen.queryByText('guidelines page')).not.toBeInTheDocument();
+  });
+
+  it('keeps a user with pending consent on /new-password while the profile step is active', () => {
+    // completeOnboarding clears needsOnboarding immediately, so setupTarget goes
+    // null and the gate would otherwise fall through to the consent branch —
+    // which must also respect profileStepActive, same as the setup branch does.
+    const user = makeUser({
+      needsOnboarding: false,
+      needsGuidelinesConsent: true,
+      firstName: 'Jamie',
+      fullName: 'Jamie',
+      email: 'jamie@example.com',
+    });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/new-password']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/new-password" element={<div>new password page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('new password page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
+  it('keeps a user with pending consent on /onboarding while the profile step is active', () => {
+    const user = makeUser({
+      needsOnboarding: false,
+      needsGuidelinesConsent: true,
+    });
+    useAuthStore.setState({
+      status: 'authed',
+      user,
+      accessToken: 'tok-abc',
+      profileStepActive: true,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/onboarding']}>
+        <Routes>
+          <Route element={<OnboardingGate />}>
+            <Route path="/onboarding" element={<div>onboarding page</div>} />
+            <Route path="/consent" element={<div>consent page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('onboarding page')).toBeInTheDocument();
+    expect(screen.queryByText('consent page')).not.toBeInTheDocument();
+  });
+
   it('redirects an onboarding-complete user on /login to /calendar', () => {
     const user = makeUser({ needsOnboarding: false });
     useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
@@ -465,8 +642,33 @@ describe('EmailGate', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/add your email/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /add your email/i })).toBeInTheDocument();
     expect(screen.queryByText('calendar')).not.toBeInTheDocument();
+  });
+
+  it('logs out and lands on public calendar (not /login) when "not now" is clicked', async () => {
+    const user = makeUser({ email: '' });
+    useAuthStore.setState({ status: 'authed', user, accessToken: 'tok-abc' });
+
+    render(
+      <MemoryRouter initialEntries={['/members']}>
+        <Routes>
+          <Route element={<EmailGate />}>
+            <Route path="/calendar" element={<div>calendar</div>} />
+            <Route element={<RequireAuth />}>
+              <Route path="/members" element={<div>members</div>} />
+            </Route>
+            <Route path="/login" element={<div>login</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /not now/i }));
+    expect(useAuthStore.getState().status).toBe('unauthed');
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(await screen.findByText('calendar')).toBeInTheDocument();
+    expect(screen.queryByText('login')).not.toBeInTheDocument();
   });
 
   it('renders Outlet when authed user has email', () => {

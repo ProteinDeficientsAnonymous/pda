@@ -10,11 +10,16 @@ import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
 
-type TypeFilter = 'all' | typeof EventType.Official | typeof EventType.Community;
+type TypeFilter =
+  | 'all'
+  | typeof EventType.Official
+  | typeof EventType.Club
+  | typeof EventType.Community;
 
 const FILTER_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: 'all', label: 'all' },
   { value: EventType.Official, label: 'pda official' },
+  { value: EventType.Club, label: 'pda club' },
   { value: EventType.Community, label: 'community' },
 ];
 

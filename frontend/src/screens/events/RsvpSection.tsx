@@ -1,19 +1,20 @@
-// RSVP toggle. Three pills (going / maybe / can't) + optional +1 toggle.
-// Semantics intentionally mirror rsvp_section.dart:
-//   - tap an active pill to remove the RSVP entirely
-//   - tap going while at capacity → server auto-waitlists you
-//   - +1 is a second POST with the same status + hasPlusOne: true
-//   - waitlisted state shows only "leave waitlist" (no maybe/can't pills)
-
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { type Event, RsvpServerStatus, RsvpStatus, spotsLeft } from '@/models/event';
-import { cn } from '@/utils/cn';
+import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
+import {
+  type Event,
+  isRsvpInputStatus,
+  type RsvpInputStatus,
+  RsvpServerStatus,
+  RsvpStatus,
+  spotsLeft,
+} from '@/models/event';
 
+import { RsvpBox } from './RsvpBox';
 import { RsvpGuestList } from './RsvpGuestList';
 
 interface Props {
@@ -21,22 +22,27 @@ interface Props {
   canSeeInvited: boolean;
 }
 
-type InputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
+const STATUS_LINES: Record<RsvpInputStatus, string> = {
+  [RsvpStatus.Attending]: "you're going",
+  [RsvpStatus.Maybe]: "you're a maybe",
+  [RsvpStatus.CantGo]: "you can't go",
+};
 
-const PILLS: { status: InputStatus; label: string }[] = [
-  { status: RsvpStatus.Attending, label: "i'm going" },
-  { status: RsvpStatus.Maybe, label: 'maybe' },
-  { status: RsvpStatus.CantGo, label: "can't go" },
-];
+interface BoxState {
+  mode: 'create' | 'edit';
+  initialStatus: RsvpInputStatus;
+}
 
 export function RsvpSection({ event, canSeeInvited }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const myUserId = useAuthStore((s) => s.user?.id);
   const [error, setError] = useState<string | null>(null);
+  const [box, setBox] = useState<BoxState | null>(null);
 
   const myRsvp = event.myRsvp;
   const onWaitlist = myRsvp === RsvpServerStatus.Waitlisted;
+  const myInputStatus = isRsvpInputStatus(myRsvp) ? myRsvp : null;
   // Match by user id, not status — multiple guests share the same status,
   // so a status match returns some other attendee's record and the +1
   // toggle reflects the wrong user (issue #368).
@@ -44,31 +50,39 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   const hasPlusOne = myGuest?.hasPlusOne ?? false;
   const atCapacity = spotsLeft(event) === 0;
 
-  async function apply(next: InputStatus) {
+  async function confirmRsvp(args: {
+    status: RsvpInputStatus;
+    comment?: string;
+    hasPlusOne: boolean;
+  }) {
     setError(null);
     try {
-      if (next === myRsvp) {
-        await removeRsvp.mutateAsync(event.id);
-      } else {
-        await setRsvp.mutateAsync({ eventId: event.id, status: next });
-      }
+      await setRsvp.mutateAsync({
+        eventId: event.id,
+        status: args.status,
+        hasPlusOne: args.hasPlusOne,
+        ...(args.comment === undefined ? {} : { comment: args.comment }),
+      });
+      setBox(null);
     } catch (err) {
       setError(extractError(err));
     }
   }
 
-  async function togglePlusOne() {
-    if (!myRsvp || onWaitlist) return;
-    // Only attending/maybe can bring a +1 (server-enforced on attending; UI
-    // gate prevents the extra POST in the first place).
-    if (myRsvp !== RsvpServerStatus.Attending && myRsvp !== RsvpServerStatus.Maybe) return;
+  async function leaveWaitlist() {
     setError(null);
     try {
-      await setRsvp.mutateAsync({
-        eventId: event.id,
-        status: myRsvp as InputStatus,
-        hasPlusOne: !hasPlusOne,
-      });
+      await removeRsvp.mutateAsync(event.id);
+    } catch (err) {
+      setError(extractError(err));
+    }
+  }
+
+  async function removeMyRsvp() {
+    setError(null);
+    try {
+      await removeRsvp.mutateAsync(event.id);
+      setBox(null);
     } catch (err) {
       setError(extractError(err));
     }
@@ -79,43 +93,23 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
       {onWaitlist ? (
-        <WaitlistView
-          onLeave={() => {
-            void removeRsvp.mutateAsync(event.id);
-          }}
-          busy={busy}
-        />
+        <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
       ) : (
-        <>
-          <div className="flex flex-wrap justify-center gap-2">
-            {PILLS.map((p) => {
-              const waitlistAttending =
-                p.status === RsvpStatus.Attending &&
-                atCapacity &&
-                myRsvp !== RsvpServerStatus.Attending;
-              return (
-                <RsvpPill
-                  key={p.status}
-                  label={waitlistAttending ? 'join the waitlist' : p.label}
-                  active={myRsvp === p.status}
-                  disabled={busy}
-                  onClick={() => void apply(p.status)}
-                />
-              );
-            })}
-          </div>
-          <SpotsLeft event={event} />
-          {event.allowPlusOnes &&
-          (myRsvp === RsvpServerStatus.Attending || myRsvp === RsvpServerStatus.Maybe) ? (
-            <div className="flex justify-center">
-              <Button variant="secondary" onClick={() => void togglePlusOne()} disabled={busy}>
-                {hasPlusOne ? 'remove +1' : 'bring a +1'}
-              </Button>
-            </div>
-          ) : null}
-        </>
+        <RsvpControls
+          myInputStatus={myInputStatus}
+          atCapacity={atCapacity}
+          busy={busy}
+          onOpenCreate={(status) => {
+            setBox({ mode: 'create', initialStatus: status });
+          }}
+          onOpenEdit={() => {
+            if (!myInputStatus) return;
+            setBox({ mode: 'edit', initialStatus: myInputStatus });
+          }}
+        />
       )}
 
+      <SpotsLeft event={event} />
       <Summary event={event} />
       {error ? (
         <p role="alert" className="text-destructive text-sm">
@@ -126,37 +120,60 @@ export function RsvpSection({ event, canSeeInvited }: Props) {
       <div className="mt-2">
         <RsvpGuestList event={event} canSeeInvited={canSeeInvited} />
       </div>
+
+      {box ? (
+        <RsvpBox
+          key={box.mode + box.initialStatus}
+          open
+          mode={box.mode}
+          initialStatus={box.initialStatus}
+          initialHasPlusOne={hasPlusOne}
+          allowPlusOnes={event.allowPlusOnes}
+          busy={busy}
+          onConfirm={(args) => void confirmRsvp(args)}
+          onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
+          onClose={() => {
+            setBox(null);
+          }}
+        />
+      ) : null}
     </section>
   );
 }
 
-function RsvpPill({
-  label,
-  active,
-  disabled,
-  onClick,
+function RsvpControls({
+  myInputStatus,
+  atCapacity,
+  busy,
+  onOpenCreate,
+  onOpenEdit,
 }: {
-  label: string;
-  active: boolean;
-  disabled: boolean;
-  onClick: () => void;
+  myInputStatus: RsvpInputStatus | null;
+  atCapacity: boolean;
+  busy: boolean;
+  onOpenCreate: (status: RsvpInputStatus) => void;
+  onOpenEdit: () => void;
 }) {
+  if (myInputStatus) {
+    return (
+      <div className="flex items-center justify-center gap-3">
+        <span className="text-foreground-secondary text-sm">{STATUS_LINES[myInputStatus]}</span>
+        <Button variant="secondary" onClick={onOpenEdit} disabled={busy}>
+          edit rsvp
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      aria-pressed={active}
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'inline-flex h-10 items-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
-        active
-          ? 'bg-brand-600 text-brand-on'
-          : 'border-border-strong text-foreground-secondary hover:bg-background border',
-        disabled && 'opacity-60',
-      )}
-    >
-      {label}
-    </button>
+    <RsvpStatusPicker
+      value={null}
+      disabled={busy}
+      onSelect={onOpenCreate}
+      labelFor={(status, defaultLabel) =>
+        status === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+      }
+    />
   );
 }
 

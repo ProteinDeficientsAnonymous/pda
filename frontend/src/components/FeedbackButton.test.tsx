@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+import { makeUser as makeSharedUser } from '@/test/fixtures';
 
 const submitFeedbackMock = vi.fn();
 
@@ -32,28 +33,15 @@ import { FeedbackButton } from './FeedbackButton';
 const mockedUseSubmitFeedback = vi.mocked(useSubmitFeedback);
 
 function makeUser(overrides: Partial<User> = {}): User {
-  return {
+  return makeSharedUser({
     id: 'user-1',
     phoneNumber: '+12125551234',
-    displayName: 'alice',
+    firstName: 'alice',
+    lastName: '',
+    fullName: 'alice',
     email: 'alice@example.com',
-    bio: '',
-    pronouns: '',
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    showPhone: false,
-    showEmail: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
-    roles: [],
     ...overrides,
-  };
+  });
 }
 
 function renderButton(initialPath = '/calendar') {
@@ -175,7 +163,7 @@ describe('FeedbackButton', () => {
   it('never sends user display name, phone, or id from the client — backend derives identity from auth', async () => {
     useAuthStore.setState({
       status: 'authed',
-      user: makeUser({ displayName: 'alice smith' }),
+      user: makeUser({ firstName: 'alice', lastName: 'smith', fullName: 'alice smith' }),
       accessToken: 'tok',
     });
     const user = userEvent.setup();

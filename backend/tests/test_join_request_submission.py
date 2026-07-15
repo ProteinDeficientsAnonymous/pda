@@ -15,7 +15,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+12025551234",
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
@@ -26,7 +27,7 @@ class TestJoinRequestSubmission:
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["display_name"] == "Leafy G"
+        assert data["full_name"] == "Leafy G"
         assert data["phone_number"] == "+12025551234"
         assert len(data["answers"]) >= 1
         # Consent timestamps recorded — sms proof for Twilio toll-free
@@ -40,7 +41,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+12025551235",
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
@@ -55,7 +57,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+12025551236",
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
@@ -70,7 +73,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+12025551237",
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
@@ -88,7 +92,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+12025551238",
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "I want to connect with other vegans."},
@@ -104,7 +109,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Bot Spammer",
+                "first_name": "Bot",
+                "last_name": "Spammer",
                 "phone_number": "+12025557777",
                 "email": "bot@example.com",
                 "answers": {why_join_id: "spammy text"},
@@ -121,7 +127,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Real Person",
+                "first_name": "Real",
+                "last_name": "Person",
                 "phone_number": "+12025558888",
                 "email": "real@example.com",
                 "answers": {why_join_id: "I care about animals."},
@@ -138,7 +145,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+12025551234",
                 "answers": {},
                 "sms_consent": True,
@@ -152,7 +160,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy123",
+                "first_name": "Leafy123",
                 "phone_number": "+12025551234",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
@@ -166,7 +174,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "not-a-number",
                 "answers": {why_join_id: "Liberation."},
                 "sms_consent": True,
@@ -180,7 +189,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+13105551234",
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "Liberation."},
@@ -199,7 +209,8 @@ class TestJoinRequestSubmission:
         api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Test Person",
+                "first_name": "Test",
+                "last_name": "Person",
                 "phone_number": "+14155551234",
                 "email": "testperson@example.com",
                 "answers": {why_join_id: "Because liberation."},
@@ -219,7 +230,8 @@ class TestJoinRequestSubmission:
         api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Test Person",
+                "first_name": "Test",
+                "last_name": "Person",
                 "phone_number": "+14155551234",
                 "email": "testperson@example.com",
                 "answers": {why_join_id: "Because liberation."},
@@ -234,7 +246,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "   ",
+                "first_name": "   ",
                 "phone_number": "+12025550701",
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
@@ -249,7 +261,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Alice",
+                "first_name": "Alice",
                 "phone_number": "+12025550702",
                 "email": "applicant@example.com",
                 "answers": {},
@@ -264,7 +276,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "A" * 65,
+                "first_name": "A" * 65,
                 "phone_number": "+12025550703",
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
@@ -279,7 +291,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Alice2",
+                "first_name": "Alice2",
                 "phone_number": "+12025550704",
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
@@ -294,7 +306,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "user@example.com",
+                "first_name": "user@example.com",
                 "phone_number": "+12025550705",
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
@@ -309,7 +321,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "http://evil.com",
+                "first_name": "http://evil.com",
                 "phone_number": "+12025550706",
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "I care"},
@@ -333,7 +345,7 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": name,
+                "first_name": name,
                 "phone_number": phone,
                 "email": "applicant@example.com",
                 "answers": {why_join_id: "Collective liberation."},
@@ -348,7 +360,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Mary-Jane O'Brien",
+                "first_name": "Mary-Jane",
+                "last_name": "O'Brien",
                 "phone_number": "+12025550708",
                 "email": "maryjane@example.com",
                 "answers": {why_join_id: "Collective liberation."},
@@ -363,7 +376,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "New Sprout",
+                "first_name": "New",
+                "last_name": "Sprout",
                 "phone_number": "+19175551234",
                 "email": "newsprout@example.com",
                 "answers": {why_join_id: "Collective liberation matters."},
@@ -377,7 +391,7 @@ class TestJoinRequestSubmission:
 
     def test_submit_creates_notifications_for_approvers(self, api_client, why_join_id, db):
         approver = User.objects.create_user(
-            phone_number="+12025559001", password="pass", display_name="Approver"
+            phone_number="+12025559001", password="pass", first_name="Approver"
         )
         role = Role.objects.create(name="vetter", permissions=[PermissionKey.APPROVE_JOIN_REQUESTS])
         approver.roles.add(role)
@@ -385,7 +399,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy New",
+                "first_name": "Leafy",
+                "last_name": "New",
                 "phone_number": "+12025559002",
                 "email": "leafynew@example.com",
                 "answers": {why_join_id: "Collective liberation."},
@@ -409,7 +424,8 @@ class TestJoinRequestSubmission:
         response = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "Leafy G",
+                "first_name": "Leafy",
+                "last_name": "G",
                 "phone_number": "+12025559003",
                 "email": "leafy@example.com",
                 "answers": {why_join_id: "Liberation."},
@@ -428,7 +444,7 @@ class TestJoinRequestSubmission:
             resp = api_client.post(
                 "/api/community/join-request/",
                 {
-                    "display_name": name,
+                    "first_name": name,
                     "phone_number": phone,
                     "email": email,
                     "answers": {why_join_id: "Liberation."},
@@ -441,7 +457,8 @@ class TestJoinRequestSubmission:
         resp = api_client.post(
             "/api/community/join-request/",
             {
-                "display_name": "One Too Many",
+                "first_name": "One Too",
+                "last_name": "Many",
                 "phone_number": "+12025559104",
                 "email": "onetoomany@example.com",
                 "answers": {why_join_id: "Liberation."},

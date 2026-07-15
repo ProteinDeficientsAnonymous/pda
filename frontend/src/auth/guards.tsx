@@ -11,12 +11,12 @@
 // matching the Flutter behavior.
 
 import { type ReactNode, useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
-import { guidelinesConsentRedirect, passwordSetupRedirect } from '@/models/user';
+import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
 import { useAuthStore } from './store';
 
@@ -69,15 +69,21 @@ function BootSpinner() {
 
 export function OnboardingGate() {
   const user = useAuthStore((s) => s.user);
+  const profileStepActive = useAuthStore((s) => s.profileStepActive);
   const location = useLocation();
   const path = location.pathname.toLowerCase();
+
+  // Checked before setupTarget goes null post-completeOnboarding, or this would bounce the user mid-step.
+  if (user && (path === '/onboarding' || path === '/new-password') && profileStepActive) {
+    return <Outlet />;
+  }
 
   // passwordSetupRedirect is the shared source of truth (also used by
   // MagicLoginScreen) for where a setup-pending user must go. Password setup
   // takes priority over the consent gate — a brand-new user sets their name +
   // password before being asked to consent.
   const setupTarget = passwordSetupRedirect(user);
-  const consentTarget = guidelinesConsentRedirect(user);
+  const consentTarget = consentRedirect(user);
 
   if (setupTarget) {
     if (path !== setupTarget) {
@@ -141,8 +147,23 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
 
 export function EmailGate() {
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+  // You can't stay logged in without an email, but "not now" isn't a dead end:
+  // it drops the session and lands on the public calendar, so the app stays
+  // usable from a logged-out state (an authed-only route would otherwise
+  // bounce to /login). A failed logout is swallowed so RequireEmail can
+  // re-enable its button and let the user retry.
+  async function onSkip() {
+    try {
+      await logout();
+      void navigate('/calendar', { replace: true });
+    } catch {
+      // network/server error — stay on the modal, user can retry
+    }
+  }
   if (user && !user.needsOnboarding && !user.email) {
-    return <RequireEmail />;
+    return <RequireEmail onSkip={onSkip} />;
   }
   return <Outlet />;
 }

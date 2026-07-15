@@ -30,10 +30,14 @@ const mockUseUsers = vi.mocked(useUsers);
 const baseUser: User = {
   id: 'me',
   phoneNumber: '+15551230000',
-  displayName: 'Admin User',
+  firstName: 'Admin',
+  lastName: 'User',
+  fullName: 'Admin User',
+  nickname: '',
   email: 'admin@example.com',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -42,6 +46,8 @@ const baseUser: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  showBirthday: false,
+  hideLastName: false,
   weekStart: 'monday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',
@@ -66,17 +72,21 @@ function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
 function makeMember(overrides: Partial<Member> = {}): Member {
   return {
     id: 'member-1',
-    displayName: 'Ada',
+    firstName: 'Ada',
+    lastName: '',
+    fullName: 'Ada',
     phoneNumber: '+15551230001',
     email: '',
     bio: '',
     profilePhotoUrl: '',
     showPhone: true,
     showEmail: true,
+    isMember: true,
     isSuperuser: false,
     isPaused: false,
     needsOnboarding: false,
     loginLinkRequested: false,
+    lastAttendedAt: null,
     roles: [],
     ...overrides,
   };
@@ -115,8 +125,13 @@ describe('MembersScreen', () => {
   it('displays member display names from the users query', () => {
     mockUsersResult({
       data: [
-        makeMember({ id: 'm1', displayName: 'Ada Lovelace' }),
-        makeMember({ id: 'm2', displayName: 'Grace Hopper' }),
+        makeMember({ id: 'm1', firstName: 'Ada', lastName: 'Lovelace', fullName: 'Ada Lovelace' }),
+        makeMember({
+          id: 'm2',
+          firstName: 'Grace',
+          lastName: 'Hopper',
+          fullName: 'Grace Hopper',
+        }),
       ],
     });
 
@@ -129,8 +144,18 @@ describe('MembersScreen', () => {
   it('filters members by user id prefix when searching', async () => {
     mockUsersResult({
       data: [
-        makeMember({ id: 'abc12345-aaaa-bbbb-cccc-dddddddddddd', displayName: 'Ada Lovelace' }),
-        makeMember({ id: 'def67890-eeee-ffff-1111-222222222222', displayName: 'Grace Hopper' }),
+        makeMember({
+          id: 'abc12345-aaaa-bbbb-cccc-dddddddddddd',
+          firstName: 'Ada',
+          lastName: 'Lovelace',
+          fullName: 'Ada Lovelace',
+        }),
+        makeMember({
+          id: 'def67890-eeee-ffff-1111-222222222222',
+          firstName: 'Grace',
+          lastName: 'Hopper',
+          fullName: 'Grace Hopper',
+        }),
       ],
     });
 
@@ -200,7 +225,7 @@ describe('MembersScreen', () => {
     expect(screen.getByRole('button', { name: /add member/i })).toBeInTheDocument();
   });
 
-  it('renders the Members/Roles tab switcher for users with manage_roles', () => {
+  it('renders the members/non-members/roles tab switcher for users with manage_roles', () => {
     useAuthStore.setState({
       status: 'authed',
       user: adminUser([Permission.ManageUsers, Permission.ManageRoles]),
@@ -210,13 +235,14 @@ describe('MembersScreen', () => {
 
     renderScreen();
 
-    const group = screen.getByRole('radiogroup', { name: /members or roles/i });
+    const group = screen.getByRole('radiogroup', { name: /members, non-members, or roles/i });
     expect(group).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'members' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'non-members' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'roles' })).toBeInTheDocument();
   });
 
-  it('hides the tab switcher when the user lacks manage_roles', () => {
+  it('hides only the roles tab when the user lacks manage_roles', () => {
     useAuthStore.setState({
       status: 'authed',
       user: {
@@ -236,6 +262,109 @@ describe('MembersScreen', () => {
 
     renderScreen();
 
-    expect(screen.queryByRole('radiogroup', { name: /members or roles/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'members' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'non-members' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'roles' })).not.toBeInTheDocument();
+  });
+
+  it('switches to the non-members tab and shows only non-members', async () => {
+    mockUsersResult({
+      data: [
+        makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
+        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+      ],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('radio', { name: 'non-members' }));
+
+    expect(screen.getByText('Guest Rsvp')).toBeInTheDocument();
+    expect(screen.queryByText('Ada Member')).not.toBeInTheDocument();
+    // The non-members tab has no add-member controls.
+    expect(screen.queryByRole('button', { name: /add member/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the non-members empty state when there are no non-members', async () => {
+    mockUsersResult({
+      data: [makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true })],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('radio', { name: 'non-members' }));
+
+    expect(screen.getByText(/no non-members yet/i)).toBeInTheDocument();
+  });
+
+  it('shows last-attended date for a member who has attended', () => {
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Ada Lovelace',
+          lastAttendedAt: new Date('2026-03-15T18:00:00Z'),
+        }),
+      ],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText(/last attended mar 15, 2026/i)).toBeInTheDocument();
+  });
+
+  it('shows "never attended" for a member with no attendance', () => {
+    mockUsersResult({
+      data: [makeMember({ id: 'm1', fullName: 'Ada Lovelace', lastAttendedAt: null })],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText(/never attended/i)).toBeInTheDocument();
+  });
+
+  it('sorts members by last attended (most recent first, never-attended last)', async () => {
+    mockUsersResult({
+      data: [
+        makeMember({
+          id: 'm1',
+          fullName: 'Older Attendee',
+          lastAttendedAt: new Date('2026-01-01T00:00:00Z'),
+        }),
+        makeMember({ id: 'm2', fullName: 'Never Attendee', lastAttendedAt: null }),
+        makeMember({
+          id: 'm3',
+          fullName: 'Recent Attendee',
+          lastAttendedAt: new Date('2026-06-01T00:00:00Z'),
+        }),
+      ],
+    });
+
+    renderScreen();
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByLabelText(/^sort by$/i), 'lastAttended');
+
+    // Member rows are links; their order in the DOM reflects the sort.
+    const rowNames = screen
+      .getAllByRole('link')
+      .map((link) => link.querySelector('p')?.textContent ?? '');
+    expect(rowNames).toEqual(['Recent Attendee', 'Older Attendee', 'Never Attendee']);
+  });
+
+  it('marks non-members with a badge and renders them as non-clickable rows', () => {
+    mockUsersResult({
+      data: [
+        makeMember({ id: 'm1', fullName: 'Ada Member', isMember: true }),
+        makeMember({ id: 'm2', fullName: 'Guest Rsvp', isMember: false }),
+      ],
+    });
+
+    renderScreen();
+
+    expect(screen.getByText('non-member')).toBeInTheDocument();
+    // Only the member row is a link; the non-member row is a plain div.
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(1);
+    expect(links[0]?.textContent).toContain('Ada Member');
   });
 });

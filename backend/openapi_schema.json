@@ -29,8 +29,14 @@
       },
       "ApproveJoinRequestOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
@@ -70,7 +76,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "status"
         ],
@@ -89,6 +94,20 @@
         "title": "AttendanceIn",
         "type": "object"
       },
+      "AttendanceReportOut": {
+        "properties": {
+          "events": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventAttendanceRowOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "title": "AttendanceReportOut",
+        "type": "object"
+      },
       "AttendanceStatus": {
         "enum": [
           "unknown",
@@ -97,6 +116,70 @@
         ],
         "title": "AttendanceStatus",
         "type": "string"
+      },
+      "BirthdayIn": {
+        "properties": {
+          "day": {
+            "maximum": 31,
+            "minimum": 1,
+            "title": "Day",
+            "type": "integer"
+          },
+          "month": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "maximum": 2026,
+                "minimum": 1900,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "month",
+          "day"
+        ],
+        "title": "BirthdayIn",
+        "type": "object"
+      },
+      "BirthdayOut": {
+        "properties": {
+          "day": {
+            "title": "Day",
+            "type": "integer"
+          },
+          "month": {
+            "title": "Month",
+            "type": "integer"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "month",
+          "day"
+        ],
+        "title": "BirthdayOut",
+        "type": "object"
       },
       "BulkUserCreateIn": {
         "properties": {
@@ -748,6 +831,52 @@
           "detail"
         ],
         "title": "ErrorReportOut",
+        "type": "object"
+      },
+      "EventAttendanceRowOut": {
+        "description": "One event's attendance summary for the admin attendance report.",
+        "properties": {
+          "attended_count": {
+            "default": 0,
+            "title": "Attended Count",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "going_count": {
+            "default": 0,
+            "title": "Going Count",
+            "type": "integer"
+          },
+          "no_show_count": {
+            "default": 0,
+            "title": "No Show Count",
+            "type": "integer"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title"
+        ],
+        "title": "EventAttendanceRowOut",
         "type": "object"
       },
       "EventCommentListOut": {
@@ -2792,20 +2921,27 @@
             "title": "Answers",
             "type": "object"
           },
-          "display_name": {
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "format": "email",
             "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "First Name",
             "type": "string"
           },
           "guidelines_consent": {
             "default": false,
             "title": "Guidelines Consent",
             "type": "boolean"
+          },
+          "last_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Last Name",
+            "type": "string"
           },
           "phone_number": {
             "maxLength": 20,
@@ -2825,7 +2961,6 @@
           }
         },
         "required": [
-          "display_name",
           "phone_number",
           "email"
         ],
@@ -2865,17 +3000,38 @@
             ],
             "title": "Approved By Name"
           },
-          "attached_user_official_rsvp_count": {
+          "attended_club_count": {
             "default": 0,
-            "title": "Attached User Official Rsvp Count",
+            "title": "Attended Club Count",
             "type": "integer"
           },
-          "display_name": {
-            "title": "Display Name",
+          "attended_official_count": {
+            "default": 0,
+            "title": "Attended Official Count",
+            "type": "integer"
+          },
+          "email": {
+            "default": "",
+            "title": "Email",
+            "type": "string"
+          },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "onboarded_at": {
@@ -2922,6 +3078,14 @@
             ],
             "title": "Rejected By Name"
           },
+          "rsvp_events": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/JoinRequestRsvpOut"
+            },
+            "title": "Rsvp Events",
+            "type": "array"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -2930,6 +3094,16 @@
             "format": "date-time",
             "title": "Submitted At",
             "type": "string"
+          },
+          "upcoming_club_count": {
+            "default": 0,
+            "title": "Upcoming Club Count",
+            "type": "integer"
+          },
+          "upcoming_official_count": {
+            "default": 0,
+            "title": "Upcoming Official Count",
+            "type": "integer"
           },
           "user_id": {
             "anyOf": [
@@ -2945,12 +3119,41 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number",
           "submitted_at",
           "status"
         ],
         "title": "JoinRequestOut",
+        "type": "object"
+      },
+      "JoinRequestRsvpOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title"
+        ],
+        "title": "JoinRequestRsvpOut",
         "type": "object"
       },
       "JoinRequestStatusIn": {
@@ -3014,6 +3217,16 @@
             ],
             "title": "Bio"
           },
+          "birthday": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BirthdayIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "calendar_feed_scope": {
             "anyOf": [
               {
@@ -3029,18 +3242,6 @@
             ],
             "title": "Calendar Feed Scope"
           },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -3053,6 +3254,41 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "hide_last_name": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hide Last Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
           "needs_onboarding": {
             "anyOf": [
               {
@@ -3063,6 +3299,18 @@
               }
             ],
             "title": "Needs Onboarding"
+          },
+          "nickname": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
           },
           "pronouns": {
             "anyOf": [
@@ -3075,6 +3323,17 @@
               }
             ],
             "title": "Pronouns"
+          },
+          "show_birthday": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Birthday"
           },
           "show_email": {
             "anyOf": [
@@ -3119,17 +3378,28 @@
       },
       "MemberDirectoryOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "default": "",
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -3144,8 +3414,7 @@
           }
         },
         "required": [
-          "id",
-          "display_name"
+          "id"
         ],
         "title": "MemberDirectoryOut",
         "type": "object"
@@ -3157,23 +3426,49 @@
             "title": "Bio",
             "type": "string"
           },
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
+          "birthday": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BirthdayOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "email": {
             "default": "",
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "login_link_requested": {
             "default": false,
             "title": "Login Link Requested",
             "type": "boolean"
+          },
+          "nickname": {
+            "default": "",
+            "title": "Nickname",
+            "type": "string"
           },
           "phone_number": {
             "title": "Phone Number",
@@ -3192,7 +3487,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "MemberProfileOut",
@@ -3265,18 +3559,6 @@
             "title": "Consent Types",
             "type": "array"
           },
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -3288,6 +3570,30 @@
               }
             ],
             "title": "Email"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "new_password": {
             "maxLength": 128,
@@ -3444,14 +3750,20 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "maxLength": 64,
+            "title": "First Name",
+            "type": "string"
+          },
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
             "type": "boolean"
           },
-          "name": {
+          "last_name": {
+            "default": "",
             "maxLength": 64,
-            "title": "Name",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -3472,12 +3784,95 @@
           }
         },
         "required": [
-          "name",
+          "first_name",
           "email",
           "phone_number",
           "status"
         ],
         "title": "PublicRsvpIn",
+        "type": "object"
+      },
+      "PublicRsvpManageIn": {
+        "properties": {
+          "has_plus_one": {
+            "default": false,
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "PublicRsvpManageIn",
+        "type": "object"
+      },
+      "PublicRsvpManageItemOut": {
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/EventOut"
+          },
+          "has_plus_one": {
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event",
+          "status",
+          "has_plus_one"
+        ],
+        "title": "PublicRsvpManageItemOut",
+        "type": "object"
+      },
+      "PublicRsvpManageOut": {
+        "properties": {
+          "rsvps": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRsvpManageItemOut"
+            },
+            "title": "Rsvps",
+            "type": "array"
+          },
+          "user": {
+            "$ref": "#/components/schemas/PublicRsvpManageUserOut"
+          }
+        },
+        "required": [
+          "user",
+          "rsvps"
+        ],
+        "title": "PublicRsvpManageOut",
+        "type": "object"
+      },
+      "PublicRsvpManageUserOut": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "email",
+          "phone_number"
+        ],
+        "title": "PublicRsvpManageUserOut",
         "type": "object"
       },
       "PublicRsvpOut": {
@@ -3520,6 +3915,18 @@
             "default": "unknown",
             "title": "Attendance",
             "type": "string"
+          },
+          "checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked In At"
           },
           "has_plus_one": {
             "default": false,
@@ -3565,6 +3972,18 @@
       },
       "RSVPIn": {
         "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
@@ -3660,6 +4079,45 @@
           "delivery"
         ],
         "title": "RequestLoginLinkOut",
+        "type": "object"
+      },
+      "ResendManageLinkIn": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "phone_number": {
+            "maxLength": 20,
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "website": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Website",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "phone_number"
+        ],
+        "title": "ResendManageLinkIn",
+        "type": "object"
+      },
+      "ResendManageLinkOut": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ResendManageLinkOut",
         "type": "object"
       },
       "ResetPasswordOut": {
@@ -4258,6 +4716,21 @@
         "title": "SurveyResponseOut",
         "type": "object"
       },
+      "TagIn": {
+        "properties": {
+          "name": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TagIn",
+        "type": "object"
+      },
       "TagOut": {
         "properties": {
           "id": {
@@ -4279,6 +4752,42 @@
           "slug"
         ],
         "title": "TagOut",
+        "type": "object"
+      },
+      "TentativeApprovalMessageOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "updated_at"
+        ],
+        "title": "TentativeApprovalMessageOut",
+        "type": "object"
+      },
+      "TentativeApprovalMessagePatchIn": {
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "title": "TentativeApprovalMessagePatchIn",
         "type": "object"
       },
       "TextRecipientsOut": {
@@ -4355,12 +4864,6 @@
       },
       "UserCreateIn": {
         "properties": {
-          "display_name": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "anyOf": [
               {
@@ -4372,6 +4875,18 @@
               }
             ],
             "title": "Email"
+          },
+          "first_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "First Name",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Last Name",
+            "type": "string"
           },
           "phone_number": {
             "maxLength": 20,
@@ -4398,12 +4913,23 @@
       },
       "UserCreateOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "magic_link_token": {
@@ -4418,7 +4944,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "magic_link_token"
         ],
         "title": "UserCreateOut",
@@ -4431,13 +4956,19 @@
             "title": "Bio",
             "type": "string"
           },
+          "birthday": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BirthdayOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "calendar_feed_scope": {
             "default": "all",
             "title": "Calendar Feed Scope",
-            "type": "string"
-          },
-          "display_name": {
-            "title": "Display Name",
             "type": "string"
           },
           "email": {
@@ -4445,9 +4976,34 @@
             "title": "Email",
             "type": "string"
           },
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
+            "type": "string"
+          },
+          "has_logged_in": {
+            "default": true,
+            "title": "Has Logged In",
+            "type": "boolean"
+          },
+          "hide_last_name": {
+            "default": false,
+            "title": "Hide Last Name",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
           },
           "is_paused": {
             "default": false,
@@ -4458,6 +5014,23 @@
             "default": false,
             "title": "Is Superuser",
             "type": "boolean"
+          },
+          "last_attended": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attended"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
+            "type": "string"
           },
           "login_link_requested": {
             "default": false,
@@ -4483,6 +5056,11 @@
             "default": false,
             "title": "Needs Sms Consent",
             "type": "boolean"
+          },
+          "nickname": {
+            "default": "",
+            "title": "Nickname",
+            "type": "string"
           },
           "phone_number": {
             "title": "Phone Number",
@@ -4516,6 +5094,11 @@
             "title": "Roles",
             "type": "array"
           },
+          "show_birthday": {
+            "default": true,
+            "title": "Show Birthday",
+            "type": "boolean"
+          },
           "show_email": {
             "default": true,
             "title": "Show Email",
@@ -4535,7 +5118,6 @@
         "required": [
           "id",
           "phone_number",
-          "display_name",
           "roles"
         ],
         "title": "UserOut",
@@ -4543,18 +5125,6 @@
       },
       "UserPatchIn": {
         "properties": {
-          "display_name": {
-            "anyOf": [
-              {
-                "maxLength": 64,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
-          },
           "email": {
             "anyOf": [
               {
@@ -4567,6 +5137,18 @@
             ],
             "title": "Email"
           },
+          "first_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
           "is_paused": {
             "anyOf": [
               {
@@ -4577,6 +5159,18 @@
               }
             ],
             "title": "Is Paused"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
           },
           "phone_number": {
             "anyOf": [
@@ -4612,12 +5206,23 @@
       },
       "UserSearchOut": {
         "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "first_name": {
+            "default": "",
+            "title": "First Name",
+            "type": "string"
+          },
+          "full_name": {
+            "default": "",
+            "title": "Full Name",
             "type": "string"
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "last_name": {
+            "default": "",
+            "title": "Last Name",
             "type": "string"
           },
           "phone_number": {
@@ -4627,7 +5232,6 @@
         },
         "required": [
           "id",
-          "display_name",
           "phone_number"
         ],
         "title": "UserSearchOut",
@@ -5087,7 +5691,7 @@
     },
     "/api/auth/magic-login/{token}/": {
       "get": {
-        "operationId": "users__auth_magic_login",
+        "operationId": "users__magic_login_magic_login",
         "parameters": [
           {
             "in": "path",
@@ -5598,7 +6202,18 @@
     "/api/auth/users/": {
       "get": {
         "operationId": "users__management_list_users",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_non_members",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Non Members",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -5638,8 +6253,8 @@
     },
     "/api/auth/users/directory/": {
       "get": {
-        "description": "Authed-only member directory. Respects each user's show_phone/show_email flags.",
-        "operationId": "users__auth_list_member_directory",
+        "description": "Authed-only member directory. Respects each user's show_phone/show_email/show_birthday flags.",
+        "operationId": "users__members_list_member_directory",
         "parameters": [],
         "responses": {
           "200": {
@@ -5855,6 +6470,67 @@
         ]
       }
     },
+    "/api/auth/users/{user_id}/hard/": {
+      "delete": {
+        "description": "Permanently remove a member who has never logged in.\n\nUnlike ``delete_user`` (which soft-archives via ``archived_at``), this row is\ngone for good. Restricted to never-logged-in accounts \u2014 an approved entry the\nperson never actually claimed \u2014 so a real member's data is never destroyed.",
+        "operationId": "users__management_hard_delete_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Hard Delete User",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/auth/users/{user_id}/magic-link/": {
       "post": {
         "operationId": "users__magic_links_generate_magic_link",
@@ -5914,7 +6590,7 @@
     },
     "/api/auth/users/{user_id}/profile/": {
       "get": {
-        "operationId": "users__auth_get_member_profile",
+        "operationId": "users__members_get_member_profile",
         "parameters": [
           {
             "in": "path",
@@ -6907,6 +7583,122 @@
         "tags": [
           "community"
         ]
+      },
+      "post": {
+        "operationId": "community__event_tags_create_event_tag",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Event Tag",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/event-tags/{tag_id}/": {
+      "delete": {
+        "operationId": "community__event_tags_delete_event_tag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tag_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Tag Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Event Tag",
+        "tags": [
+          "community"
+        ]
       }
     },
     "/api/community/events/": {
@@ -7021,6 +7813,44 @@
           }
         ],
         "summary": "Create Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-report/": {
+      "get": {
+        "description": "Per-event attendance summary, newest first, for events with any mark.",
+        "operationId": "community__attendance_report_attendance_report",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceReportOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Attendance Report",
         "tags": [
           "community"
         ]
@@ -8539,7 +9369,7 @@
     },
     "/api/community/events/{event_id}/poll/options/": {
       "post": {
-        "operationId": "community__polls_add_poll_option",
+        "operationId": "community__poll_options_add_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -8627,7 +9457,7 @@
     },
     "/api/community/events/{event_id}/poll/options/{option_id}/": {
       "delete": {
-        "operationId": "community__polls_delete_poll_option",
+        "operationId": "community__poll_options_delete_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -8713,7 +9543,7 @@
         ]
       },
       "patch": {
-        "operationId": "community__polls_update_poll_option",
+        "operationId": "community__poll_options_update_poll_option",
         "parameters": [
           {
             "in": "path",
@@ -8945,6 +9775,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "security": [
@@ -10271,7 +11111,7 @@
     },
     "/api/community/public/events/{event_id}/rsvp/": {
       "post": {
-        "operationId": "community__public_rsvp_submit_public_rsvp",
+        "operationId": "community__public_rsvp_submit_submit_public_rsvp",
         "parameters": [
           {
             "in": "path",
@@ -10346,6 +11186,237 @@
           }
         },
         "summary": "Submit Public Rsvp",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/my-rsvps/": {
+      "get": {
+        "operationId": "community__public_rsvp_manage_list_my_rsvps",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRsvpManageOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "List My Rsvps",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/my-rsvps/resend/": {
+      "post": {
+        "description": "Public recovery path: re-send a non-member's manage-rsvp link by phone + email.\n\nHoneypot trips, bad phones, unknown contacts, and member contacts all\nresolve to the same neutral 200 body; only a matching non-member with an\nemail on file is actually sent a link. The response body never reveals\nwhether an account exists \u2014 the one residual signal is that the match+email\npath sends synchronously, so it's marginally slower; the 3/h IP rate limit\nkeeps that timing side channel impractical to exploit.",
+        "operationId": "community__public_rsvp_resend_resend_manage_link",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendManageLinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResendManageLinkOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Resend Manage Link",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/my-rsvps/{event_id}/": {
+      "delete": {
+        "operationId": "community__public_rsvp_manage_delete_my_rsvp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Delete My Rsvp",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community__public_rsvp_manage_update_my_rsvp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "token",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicRsvpManageIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRsvpOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Update My Rsvp",
         "tags": [
           "community"
         ]
@@ -11285,6 +12356,88 @@
           }
         ],
         "summary": "Get Survey Tallies",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/tentative-approval-message/": {
+      "get": {
+        "operationId": "community__tentative_approval_message_get_tentative_approval_message",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TentativeApprovalMessageOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Tentative Approval Message",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__tentative_approval_message_update_tentative_approval_message",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TentativeApprovalMessagePatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TentativeApprovalMessageOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Tentative Approval Message",
         "tags": [
           "community"
         ]

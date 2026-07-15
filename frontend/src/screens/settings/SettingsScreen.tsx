@@ -1,16 +1,18 @@
+import { getDaysInMonth } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 import { type TextScale, type ThemeMode, useAccessibilityStore } from '@/accessibility/store';
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useVersion } from '@/api/version';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
+import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
+import { type Birthday, CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
+import { formatBirthday } from '@/utils/datetime';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AvatarUpload } from './AvatarUpload';
@@ -38,9 +40,16 @@ export default function SettingsScreen() {
       <Section label="profile">
         <AvatarUpload />
         <InlineText
-          label="display name"
-          value={user.displayName}
-          onSave={(v) => updateProfile({ displayName: v })}
+          label="first name"
+          value={user.firstName}
+          onSave={(v) => updateProfile({ firstName: v })}
+          required
+        />
+        <InlineText
+          label="last name"
+          value={user.lastName}
+          onSave={(v) => updateProfile({ lastName: v })}
+          placeholder="add a last name"
         />
         <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
         <InlineText
@@ -54,6 +63,18 @@ export default function SettingsScreen() {
           value={user.pronouns}
           onSave={(v) => updateProfile({ pronouns: v })}
           placeholder="add your pronouns"
+        />
+        <InlineText
+          label="nickname"
+          value={user.nickname}
+          onSave={(v) => updateProfile({ nickname: v })}
+          placeholder="add a nickname"
+        />
+        <InlineBirthday
+          label="birthday"
+          value={user.birthday}
+          onSave={(v) => updateProfile({ birthday: v })}
+          placeholder="add your birthday"
         />
       </Section>
 
@@ -79,6 +100,16 @@ export default function SettingsScreen() {
           checked={user.showEmail}
           onChange={(v) => updateProfile({ showEmail: v })}
         />
+        <Toggle
+          label="show birthday on my profile"
+          checked={user.showBirthday}
+          onChange={(v) => updateProfile({ showBirthday: v })}
+        />
+        <Toggle
+          label="show my last name to other members"
+          checked={!user.hideLastName}
+          onChange={(v) => updateProfile({ hideLastName: !v })}
+        />
       </Section>
 
       <Section label="calendar">
@@ -96,8 +127,6 @@ export default function SettingsScreen() {
         <TextScaleToggle value={textScale} onChange={setTextScale} />
       </Section>
 
-      <BuildInfo />
-
       <ChangePasswordDialog
         open={pwOpen}
         onClose={() => {
@@ -105,17 +134,6 @@ export default function SettingsScreen() {
         }}
       />
     </ContentContainer>
-  );
-}
-
-function BuildInfo() {
-  const versionQ = useVersion();
-  if (!versionQ.data) return null;
-  const { commitShaShort, environment } = versionQ.data;
-  return (
-    <p className="text-muted mb-6 text-center text-xs">
-      build {commitShaShort} · {environment}
-    </p>
   );
 }
 
@@ -142,11 +160,13 @@ function InlineText({
   value,
   onSave,
   placeholder,
+  required = false,
 }: {
   label: string;
   value: string;
   onSave: (v: string) => Promise<void>;
   placeholder?: string;
+  required?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -154,6 +174,10 @@ function InlineText({
   const [error, setError] = useState<string | null>(null);
 
   async function commit() {
+    if (required && !draft.trim()) {
+      setError(`${label} required`);
+      return;
+    }
     if (draft.trim() === value) {
       setEditing(false);
       return;
@@ -218,6 +242,160 @@ function InlineText({
       <Button onClick={() => void commit()} disabled={saving}>
         save
       </Button>
+    </div>
+  );
+}
+
+const MONTH_OPTIONS = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+].map((name, i) => ({ value: String(i + 1), label: name }));
+
+const NO_YEAR = '';
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = [
+  { value: NO_YEAR, label: 'prefer not to say' },
+  ...Array.from({ length: 120 }, (_, i) => {
+    const year = CURRENT_YEAR - i;
+    return { value: String(year), label: String(year) };
+  }),
+];
+
+function dayOptions(month: number | null) {
+  const count = month ? getDaysInMonth(new Date(2000, month - 1)) : 31;
+  return Array.from({ length: count }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+}
+
+function InlineBirthday({
+  label,
+  value,
+  onSave,
+  placeholder,
+}: {
+  label: string;
+  value: Birthday | null;
+  onSave: (v: Birthday | null) => Promise<void>;
+  placeholder?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [month, setMonth] = useState(value?.month ?? null);
+  const [day, setDay] = useState(value?.day ?? null);
+  const [year, setYear] = useState(value?.year ?? null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function startEditing() {
+    setMonth(value?.month ?? null);
+    setDay(value?.day ?? null);
+    setYear(value?.year ?? null);
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save(next: Birthday | null) {
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(next);
+      setEditing(false);
+    } catch (err) {
+      setError(extractApiErrorOr(err, "couldn't save — try again"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-muted text-xs">{label}</div>
+          <div className="text-foreground text-sm">
+            {value ? formatBirthday(value) : placeholder}
+          </div>
+        </div>
+        <Button variant="ghost" onClick={startEditing} aria-label={`edit ${label}`}>
+          edit
+        </Button>
+      </div>
+    );
+  }
+
+  const canSave = month !== null && day !== null;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <Select
+          label="month"
+          options={MONTH_OPTIONS}
+          value={month ? String(month) : ''}
+          placeholder="month"
+          onChange={(e) => {
+            const nextMonth = e.target.value ? Number(e.target.value) : null;
+            setMonth(nextMonth);
+            if (nextMonth && day && day > getDaysInMonth(new Date(2000, nextMonth - 1))) {
+              setDay(null);
+            }
+            if (error) setError(null);
+          }}
+        />
+        <Select
+          label="day"
+          options={dayOptions(month)}
+          value={day ? String(day) : ''}
+          placeholder="day"
+          onChange={(e) => {
+            setDay(e.target.value ? Number(e.target.value) : null);
+            if (error) setError(null);
+          }}
+        />
+        <Select
+          label="year"
+          options={YEAR_OPTIONS}
+          value={year ? String(year) : NO_YEAR}
+          onChange={(e) => {
+            setYear(e.target.value ? Number(e.target.value) : null);
+            if (error) setError(null);
+          }}
+        />
+      </div>
+      {error ? <p className="text-destructive text-xs">{error}</p> : null}
+      <div className="flex items-center justify-end gap-2">
+        {value ? (
+          <Button variant="ghost" onClick={() => void save(null)} disabled={saving}>
+            clear
+          </Button>
+        ) : null}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setError(null);
+            setEditing(false);
+          }}
+          disabled={saving}
+        >
+          cancel
+        </Button>
+        <Button
+          onClick={() => {
+            if (canSave) void save({ month, day, year });
+          }}
+          disabled={saving || !canSave}
+        >
+          save
+        </Button>
+      </div>
     </div>
   );
 }

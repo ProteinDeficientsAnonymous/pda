@@ -30,6 +30,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   [Permission.EditJoinQuestions]: 'edit join questions',
   [Permission.ManageSurveys]: 'manage surveys',
   [Permission.TagOfficialEvent]: 'tag official events',
+  [Permission.TagClubEvent]: 'tag club events',
   [Permission.ManageDocuments]: 'manage documents',
 };
 

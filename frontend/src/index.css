@@ -59,6 +59,8 @@
   --color-evt-community-fg: #0a3c34;
   --color-evt-official-bg: #d0e8ff;
   --color-evt-official-fg: #0b2a4a;
+  --color-evt-club-bg: #f5d0e0;
+  --color-evt-club-fg: #5c1a3a;
   --color-evt-members-bg: #ffe0b2;
   --color-evt-members-fg: #4a2808;
   --color-evt-invite-bg: #e0d0f0;
@@ -123,6 +125,8 @@
   --color-evt-community-fg: #a8e0d8;
   --color-evt-official-bg: #1a3050;
   --color-evt-official-fg: #b0d4ff;
+  --color-evt-club-bg: #3d1028;
+  --color-evt-club-fg: #f0b0d0;
   --color-evt-members-bg: #3d2810;
   --color-evt-members-fg: #ffd6a0;
   --color-evt-invite-bg: #201040;
@@ -213,6 +217,12 @@ body {
   border-inline-start-color: var(--color-evt-official-fg);
 }
 
+.pda-evt-club {
+  background: var(--color-evt-club-bg);
+  color: var(--color-evt-club-fg);
+  border-inline-start-color: var(--color-evt-club-fg);
+}
+
 .pda-evt-members {
   background: var(--color-evt-members-bg);
   color: var(--color-evt-members-fg);
@@ -250,6 +260,12 @@ body {
   background: var(--color-evt-official-bg);
   color: var(--color-evt-official-fg);
   border-inline-start-color: var(--color-evt-official-fg);
+}
+
+.rbc-event.pda-evt-club {
+  background: var(--color-evt-club-bg);
+  color: var(--color-evt-club-fg);
+  border-inline-start-color: var(--color-evt-club-fg);
 }
 
 .rbc-event.pda-evt-members {
@@ -376,6 +392,18 @@ body {
 }
 .rbc-time-view .rbc-time-gutter {
   color: var(--color-muted-foreground);
+}
+/* "n more" popover — themed to match the rest of the calendar. */
+.rbc-overlay.rbc-overlay {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-foreground);
+  box-shadow: var(--shadow-lg);
+}
+.rbc-overlay .rbc-overlay-header {
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-foreground);
 }
 
 /* react-day-picker theme — lowercase, brand colors, matching radii/font. */

@@ -4,6 +4,7 @@ import type { User } from './user';
 export const EventType = {
   Community: 'community',
   Official: 'official',
+  Club: 'club',
 } as const;
 
 export const EventVisibility = {
@@ -29,6 +30,18 @@ export const RsvpStatus = {
   Maybe: 'maybe',
   CantGo: 'cant_go',
 } as const;
+
+export type RsvpInputStatus = (typeof RsvpStatus)[keyof typeof RsvpStatus];
+
+export const RSVP_STATUS_LABELS: { status: RsvpInputStatus; label: string }[] = [
+  { status: RsvpStatus.Attending, label: "i'm going" },
+  { status: RsvpStatus.Maybe, label: 'maybe' },
+  { status: RsvpStatus.CantGo, label: "can't go" },
+];
+
+export function isRsvpInputStatus(status: string | null): status is RsvpInputStatus {
+  return RSVP_STATUS_LABELS.some((s) => s.status === status);
+}
 
 export const RsvpServerStatus = {
   ...RsvpStatus,
@@ -154,9 +167,20 @@ export function canManageEvent(event: Event, user: User | null): boolean {
   return hasPermission(user, Permission.ManageEvents);
 }
 
+export function canPublicRsvp(event: Event): boolean {
+  return (
+    event.eventType === EventType.Official &&
+    event.visibility === EventVisibility.Public &&
+    event.rsvpEnabled &&
+    event.status !== EventStatus.Cancelled &&
+    !event.isPast
+  );
+}
+
 export function eventClass(e: Event): string {
   if (e.status === EventStatus.Cancelled) return 'pda-evt pda-evt-cancelled';
   if (e.eventType === EventType.Official) return 'pda-evt pda-evt-official';
+  if (e.eventType === EventType.Club) return 'pda-evt pda-evt-club';
   if (e.visibility === EventVisibility.InviteOnly) return 'pda-evt pda-evt-invite';
   if (e.visibility === EventVisibility.MembersOnly) return 'pda-evt pda-evt-members';
   return 'pda-evt pda-evt-community';

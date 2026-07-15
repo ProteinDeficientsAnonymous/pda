@@ -47,6 +47,11 @@ class Code:
         MIN_TWO_OPTIONS = "poll.min_two_options"
         INVALID_AVAILABILITY = "poll.invalid_availability"
 
+    class Tag:
+        NOT_FOUND = "tag.not_found"
+        NAME_REQUIRED = "tag.name_required"
+        NAME_ALREADY_EXISTS = "tag.name_already_exists"
+
     class Comment:
         NOT_FOUND = "comment.not_found"
         REPLY_DEPTH_EXCEEDED = "comment.reply_depth_exceeded"
@@ -118,9 +123,11 @@ class Code:
         CANNOT_DELETE_SELF = "user.cannot_delete_self"
         CANNOT_DELETE_LAST_ADMIN = "user.cannot_delete_last_admin"
         ALREADY_ARCHIVED = "user.already_archived"
+        CANNOT_HARD_DELETE_LOGGED_IN = "user.cannot_hard_delete_logged_in"
         CANNOT_PAUSE_SELF = "user.cannot_pause_self"
         CANNOT_PAUSE_ADMIN = "user.cannot_pause_admin"
         ROLE_IDS_NOT_FOUND = "user.role_ids_not_found"
+        INVALID_BIRTHDAY = "user.invalid_birthday"
 
     class Survey:
         NOT_FOUND = "survey.not_found"
@@ -200,6 +207,10 @@ class Code:
         BODY_REQUIRED = "welcome_template.body_required"
         BODY_TOO_LONG = "welcome_template.body_too_long"  # params: { max_length: int }
 
+    class TentativeApprovalMessage:
+        BODY_REQUIRED = "tentative_approval_message.body_required"
+        BODY_TOO_LONG = "tentative_approval_message.body_too_long"  # params: { max_length: int }
+
 
 class ValidationException(Exception):
     """Raised by validators and route handlers to signal a structured error.
@@ -261,3 +272,13 @@ def raise_validation(
         status_code=status_code,
         clear_refresh_cookie=clear_refresh_cookie,
     )
+
+
+def validate_template_body(
+    body: str | None, *, required_code: str, too_long_code: str, max_length: int
+) -> None:
+    """Shared required/max-length check for singleton editable-text templates."""
+    if body is None or not body.strip():
+        raise_validation(required_code, field="body")
+    if len(body) > max_length:
+        raise_validation(too_long_code, field="body", max_length=max_length)

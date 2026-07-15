@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -25,7 +25,7 @@ describe('RequestLoginLinkDialog', () => {
   it('shows email delivery copy when backend reports email delivery', async () => {
     mutateAsync.mockResolvedValue({ detail: 'ok', delivery: 'email' });
     render(<RequestLoginLinkDialog open onClose={() => {}} />);
-    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+12025550101' } });
     await userEvent.click(screen.getByRole('button', { name: /request link/i }));
     expect(
       await screen.findByText(/we sent a login link to the email on file/i),
@@ -35,7 +35,7 @@ describe('RequestLoginLinkDialog', () => {
   it('shows admin-follow-up copy when backend reports admin delivery', async () => {
     mutateAsync.mockResolvedValue({ detail: 'ok', delivery: 'admin' });
     render(<RequestLoginLinkDialog open onClose={() => {}} />);
-    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+12025550101' } });
     await userEvent.click(screen.getByRole('button', { name: /request link/i }));
     expect(
       await screen.findByText(/an admin will follow up with your login link/i),
@@ -49,7 +49,7 @@ describe('RequestLoginLinkDialog', () => {
       retryAfterSeconds: 90,
     });
     render(<RequestLoginLinkDialog open onClose={() => {}} />);
-    await userEvent.type(screen.getByLabelText(/phone number/i), '+12025550101');
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+12025550101' } });
     await userEvent.click(screen.getByRole('button', { name: /request link/i }));
 
     const alert = await screen.findByRole('alert');

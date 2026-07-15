@@ -49,6 +49,11 @@ export const Code = {
     MinTwoOptions: 'poll.min_two_options',
     InvalidAvailability: 'poll.invalid_availability',
   },
+  Tag: {
+    NotFound: 'tag.not_found',
+    NameRequired: 'tag.name_required',
+    NameAlreadyExists: 'tag.name_already_exists',
+  },
   Comment: {
     NotFound: 'comment.not_found',
     ReplyDepthExceeded: 'comment.reply_depth_exceeded',
@@ -120,9 +125,11 @@ export const Code = {
     CannotDeleteSelf: 'user.cannot_delete_self',
     CannotDeleteLastAdmin: 'user.cannot_delete_last_admin',
     AlreadyArchived: 'user.already_archived',
+    CannotHardDeleteLoggedIn: 'user.cannot_hard_delete_logged_in',
     CannotPauseSelf: 'user.cannot_pause_self',
     CannotPauseAdmin: 'user.cannot_pause_admin',
     RoleIdsNotFound: 'user.role_ids_not_found',
+    InvalidBirthday: 'user.invalid_birthday',
   },
   Survey: {
     NotFound: 'survey.not_found',
@@ -198,6 +205,10 @@ export const Code = {
     BodyRequired: 'welcome_template.body_required',
     BodyTooLong: 'welcome_template.body_too_long',
   },
+  TentativeApprovalMessage: {
+    BodyRequired: 'tentative_approval_message.body_required',
+    BodyTooLong: 'tentative_approval_message.body_too_long',
+  },
 } as const;
 
 export type ValidationCode =
@@ -240,6 +251,9 @@ export type ValidationCode =
   | 'poll.winning_option_not_found'
   | 'poll.min_two_options'
   | 'poll.invalid_availability'
+  | 'tag.not_found'
+  | 'tag.name_required'
+  | 'tag.name_already_exists'
   | 'comment.not_found'
   | 'comment.reply_depth_exceeded'
   | 'comment.invalid_emoji'
@@ -290,9 +304,11 @@ export type ValidationCode =
   | 'user.cannot_delete_self'
   | 'user.cannot_delete_last_admin'
   | 'user.already_archived'
+  | 'user.cannot_hard_delete_logged_in'
   | 'user.cannot_pause_self'
   | 'user.cannot_pause_admin'
   | 'user.role_ids_not_found'
+  | 'user.invalid_birthday'
   | 'survey.not_found'
   | 'survey.slug_already_exists'
   | 'survey.question_not_found'
@@ -342,7 +358,9 @@ export type ValidationCode =
   | 'cohost_invite.would_leave_hostless'
   | 'cohost_invite.event_is_past'
   | 'welcome_template.body_required'
-  | 'welcome_template.body_too_long';
+  | 'welcome_template.body_too_long'
+  | 'tentative_approval_message.body_required'
+  | 'tentative_approval_message.body_too_long';
 
 export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.not_found': [],
@@ -384,6 +402,9 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'poll.winning_option_not_found': [],
   'poll.min_two_options': [],
   'poll.invalid_availability': [],
+  'tag.not_found': [],
+  'tag.name_required': [],
+  'tag.name_already_exists': [],
   'comment.not_found': [],
   'comment.reply_depth_exceeded': [],
   'comment.invalid_emoji': [],
@@ -434,9 +455,11 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'user.cannot_delete_self': [],
   'user.cannot_delete_last_admin': [],
   'user.already_archived': [],
+  'user.cannot_hard_delete_logged_in': [],
   'user.cannot_pause_self': [],
   'user.cannot_pause_admin': [],
   'user.role_ids_not_found': [],
+  'user.invalid_birthday': [],
   'survey.not_found': [],
   'survey.slug_already_exists': [],
   'survey.question_not_found': [],
@@ -487,4 +510,6 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'cohost_invite.event_is_past': [],
   'welcome_template.body_required': [],
   'welcome_template.body_too_long': ['max_length'],
+  'tentative_approval_message.body_required': [],
+  'tentative_approval_message.body_too_long': ['max_length'],
 };

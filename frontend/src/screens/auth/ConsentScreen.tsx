@@ -59,14 +59,15 @@ export default function ConsentScreen() {
         >
           {submitting ? 'saving…' : 'continue'}
         </Button>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          fullWidth
           disabled={submitting}
           onClick={() => void onSkip()}
-          className="text-foreground-tertiary text-center text-sm underline disabled:opacity-50"
         >
           not now
-        </button>
+        </Button>
       </div>
     </AuthLayout>
   );

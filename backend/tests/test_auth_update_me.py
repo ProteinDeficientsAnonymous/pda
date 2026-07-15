@@ -88,6 +88,104 @@ class TestUpdateMe:
 
 
 @pytest.mark.django_db
+class TestUpdateBirthday:
+    def test_set_birthday_with_year_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": {"month": 6, "day": 15, "year": 1990}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["birthday"] == {"month": 6, "day": 15, "year": 1990}
+        test_user.refresh_from_db()
+        assert (test_user.birthday_month, test_user.birthday_day, test_user.birthday_year) == (
+            6,
+            15,
+            1990,
+        )
+
+    def test_set_birthday_without_year_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": {"month": 6, "day": 15}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["birthday"] == {"month": 6, "day": 15, "year": None}
+        test_user.refresh_from_db()
+        assert (test_user.birthday_month, test_user.birthday_day, test_user.birthday_year) == (
+            6,
+            15,
+            None,
+        )
+
+    def test_birthday_can_be_cleared(self, api_client, auth_headers, test_user):
+        test_user.birthday_month, test_user.birthday_day, test_user.birthday_year = 6, 15, 1990
+        test_user.save(update_fields=["birthday_month", "birthday_day", "birthday_year"])
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": None},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["birthday"] is None
+        test_user.refresh_from_db()
+        assert (test_user.birthday_month, test_user.birthday_day, test_user.birthday_year) == (
+            None,
+            None,
+            None,
+        )
+
+    def test_birthday_omitted_leaves_value_untouched(self, api_client, auth_headers, test_user):
+        test_user.birthday_month, test_user.birthday_day, test_user.birthday_year = 6, 15, 1990
+        test_user.save(update_fields=["birthday_month", "birthday_day", "birthday_year"])
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"pronouns": "they/them"},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        test_user.refresh_from_db()
+        assert (test_user.birthday_month, test_user.birthday_day, test_user.birthday_year) == (
+            6,
+            15,
+            1990,
+        )
+
+    def test_malformed_birthday_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": {"month": 13, "day": 15}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_invalid_day_for_month_rejected(self, api_client, auth_headers):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": {"month": 4, "day": 31}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_leap_day_without_year_accepted(self, api_client, auth_headers, test_user):
+        response = api_client.patch(
+            "/api/auth/me/",
+            {"birthday": {"month": 2, "day": 29}},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["birthday"] == {"month": 2, "day": 29, "year": None}
+
+
+@pytest.mark.django_db
 class TestPatchMeEmail:
     def test_update_email_lowercases(self, api_client, auth_headers, test_user):
         resp = api_client.patch(
@@ -102,7 +200,7 @@ class TestPatchMeEmail:
 
     def test_duplicate_email_rejected(self, api_client, auth_headers, db):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", last_name="", email="taken@example.com"
         )
         resp = api_client.patch(
             "/api/auth/me/",
@@ -116,7 +214,7 @@ class TestPatchMeEmail:
 
     def test_duplicate_email_case_insensitive(self, api_client, auth_headers, db):
         User.objects.create_user(
-            phone_number="+12025550199", display_name="other", email="taken@example.com"
+            phone_number="+12025550199", first_name="other", last_name="", email="taken@example.com"
         )
         resp = api_client.patch(
             "/api/auth/me/",

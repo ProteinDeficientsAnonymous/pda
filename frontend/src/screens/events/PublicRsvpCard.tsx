@@ -1,0 +1,130 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
+import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
+import { Button } from '@/components/ui/Button';
+import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
+import { Toggle } from '@/components/ui/Toggle';
+import { type Event, type RsvpInputStatus, RsvpServerStatus, RsvpStatus } from '@/models/event';
+import { formatEventDateTime } from '@/utils/datetime';
+import { buildEventLinks } from '@/utils/eventLinks';
+
+const UPDATED_TOAST = 'rsvp updated — check your email for an updated link';
+
+const STATUS_LABELS: Record<string, string> = {
+  [RsvpServerStatus.Attending]: "you're going",
+  [RsvpServerStatus.Maybe]: "you're a maybe",
+  [RsvpServerStatus.CantGo]: "you can't go",
+  [RsvpServerStatus.Waitlisted]: "you're on the waitlist",
+};
+
+function errorMessage(err: unknown): string {
+  const status = getApiStatus(err);
+  if (status === 429) return "you're going too fast — try again in a few minutes";
+  if (status === 404) return "this rsvp isn't available anymore — refresh";
+  // 400s carry an actionable backend message (event full, invalid status).
+  return extractApiErrorOr(err, 'something went wrong — try again');
+}
+
+interface Props {
+  token: string;
+  event: Event;
+  status: string;
+  hasPlusOne: boolean;
+}
+
+export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
+  const update = useUpdatePublicMyRsvp(token);
+  const cancel = useCancelPublicMyRsvp(token);
+  const [error, setError] = useState<string | null>(null);
+  const links = buildEventLinks(event);
+  const busy = update.isPending || cancel.isPending;
+  // only attending holders can carry a +1; the backend discards a waitlisted +1.
+  const canPlusOne = event.allowPlusOnes && status === RsvpServerStatus.Attending;
+
+  async function applyRsvp(next: RsvpInputStatus, plusOne: boolean) {
+    setError(null);
+    try {
+      await update.mutateAsync({ eventId: event.id, status: next, hasPlusOne: plusOne });
+      toast.success(UPDATED_TOAST);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  function changeStatus(next: RsvpInputStatus) {
+    if (next === status) return;
+    void applyRsvp(next, next === RsvpStatus.Attending ? hasPlusOne : false);
+  }
+
+  function togglePlusOne(next: boolean) {
+    void applyRsvp(RsvpStatus.Attending, next);
+  }
+
+  async function cancelRsvp() {
+    setError(null);
+    try {
+      await cancel.mutateAsync(event.id);
+      toast.success('rsvp cancelled');
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  return (
+    <section aria-label={event.title} className="border-border bg-surface rounded-lg border p-6">
+      <h2 className="text-foreground text-lg font-medium">{event.title}</h2>
+      {event.startDatetime ? (
+        <p className="text-foreground-secondary text-sm">
+          {formatEventDateTime(event.startDatetime, event.endDatetime, event.datetimeTbd)}
+        </p>
+      ) : null}
+      {event.location ? (
+        <p className="text-foreground-secondary text-sm">{event.location}</p>
+      ) : null}
+      {links.length > 0 ? (
+        <ul className="mt-2 flex flex-col gap-1">
+          {links.map((l) => (
+            <li key={l.url}>
+              <a
+                href={l.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-info text-sm hover:underline"
+              >
+                {l.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <p className="text-foreground-tertiary mt-4 mb-2 text-sm">
+        {STATUS_LABELS[status] ?? 'your rsvp'}
+      </p>
+      <div className="flex flex-col gap-3">
+        <RsvpStatusPicker value={status} onSelect={changeStatus} disabled={busy} />
+
+        {canPlusOne ? (
+          <Toggle
+            label="bring a +1"
+            checked={hasPlusOne}
+            onChange={togglePlusOne}
+            disabled={busy}
+          />
+        ) : null}
+
+        <Button variant="ghost" onClick={() => void cancelRsvp()} disabled={busy}>
+          cancel rsvp
+        </Button>
+
+        {error ? (
+          <p role="alert" className="text-destructive text-sm">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}

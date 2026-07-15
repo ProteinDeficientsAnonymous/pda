@@ -5,6 +5,7 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import {
   JoinRequestStatus,
   type JoinRequestSummary,
+  type RsvpBreakdown,
   useDecideJoinRequest,
   useJoinRequests,
   useResendMagicLink,
@@ -12,12 +13,14 @@ import {
 } from '@/api/join';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { TextField } from '@/components/ui/TextField';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { cn } from '@/utils/cn';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { ApprovalCredentialsDialog } from './ApprovalCredentialsDialog';
+import { TentativeActions } from './JoinRequestTentativeSection';
 
 const Filter = {
   ALL: 'all',
@@ -25,11 +28,15 @@ const Filter = {
 } as const;
 type Filter = (typeof Filter)[keyof typeof Filter];
 
-type Decision = typeof JoinRequestStatus.APPROVED | typeof JoinRequestStatus.REJECTED;
+type Decision =
+  | typeof JoinRequestStatus.APPROVED
+  | typeof JoinRequestStatus.TENTATIVE
+  | typeof JoinRequestStatus.REJECTED;
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: Filter.ALL, label: 'all' },
   { value: Filter.PENDING, label: 'pending' },
+  { value: Filter.TENTATIVE, label: 'tentative' },
   { value: Filter.APPROVED, label: 'approved' },
   { value: Filter.REJECTED, label: 'rejected' },
 ];
@@ -42,41 +49,38 @@ export default function JoinRequestsScreen() {
   const { confirm, element: confirmElement } = useConfirm();
 
   const [filter, setFilter] = useState<Filter>(Filter.PENDING);
+  const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [credsFor, setCredsFor] = useState<{
-    displayName: string;
+    fullName: string;
+    firstName: string;
     phoneNumber: string;
     magicLinkToken: string;
   } | null>(null);
 
   const visible = useMemo(() => {
-    if (filter === Filter.ALL) return data;
-    return data.filter((r) => r.status === filter);
-  }, [data, filter]);
+    const q = query.trim().toLowerCase();
+    const rows = data.filter(
+      (r) => (filter === Filter.ALL || r.status === filter) && matchesQuery(r, q),
+    );
+    return [...rows].sort((a, b) => sortKey(b) - sortKey(a));
+  }, [data, filter, query]);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load join requests — try refreshing" />;
 
   async function decideRequest(request: JoinRequestSummary, status: Decision) {
-    const name = request.displayName || formatPhone(request.phoneNumber);
-    const isApprove = status === JoinRequestStatus.APPROVED;
-    const message = isApprove
-      ? `approve ${name}? once you approve someone you can't un-approve them — are you sure?`
-      : `reject ${name}? once you reject someone you can't un-reject them — are you sure?`;
-    const ok = await confirm({
-      title: isApprove ? 'approve request' : 'reject request',
-      message,
-      confirmLabel: isApprove ? 'approve' : 'reject',
-      destructive: !isApprove,
-    });
+    const name = request.fullName || formatPhone(request.phoneNumber);
+    const ok = await confirm(confirmPropsForDecision(status, name));
     if (!ok) return;
 
     setError(null);
     try {
       const result = await decide.mutateAsync({ id: request.id, status });
-      if (isApprove && result.magicLinkToken) {
+      if (status === JoinRequestStatus.APPROVED && result.magicLinkToken) {
         setCredsFor({
-          displayName: result.displayName,
+          fullName: result.fullName,
+          firstName: result.firstName,
           phoneNumber: result.phoneNumber,
           magicLinkToken: result.magicLinkToken,
         });
@@ -87,7 +91,7 @@ export default function JoinRequestsScreen() {
   }
 
   async function unrejectRequest(request: JoinRequestSummary) {
-    const name = request.displayName || formatPhone(request.phoneNumber);
+    const name = request.fullName || formatPhone(request.phoneNumber);
     const ok = await confirm({
       title: 'un-reject request',
       message: `un-reject ${name}? this will move them back to pending review.`,
@@ -104,7 +108,7 @@ export default function JoinRequestsScreen() {
   }
 
   async function resendWelcome(request: JoinRequestSummary) {
-    const name = request.displayName || formatPhone(request.phoneNumber);
+    const name = request.fullName || formatPhone(request.phoneNumber);
     const ok = await confirm({
       title: 're-send welcome',
       message: `re-send welcome to ${name}? this generates a fresh login link and invalidates any earlier link you sent them.`,
@@ -117,7 +121,8 @@ export default function JoinRequestsScreen() {
       const result = await resend.mutateAsync(request.id);
       if (result.magicLinkToken) {
         setCredsFor({
-          displayName: result.displayName,
+          fullName: result.fullName,
+          firstName: result.firstName,
           phoneNumber: result.phoneNumber,
           magicLinkToken: result.magicLinkToken,
         });
@@ -141,12 +146,19 @@ export default function JoinRequestsScreen() {
         />
       </div>
 
-      {filter === Filter.APPROVED ? (
-        <p className="text-muted mb-3 text-xs">
-          approved members show here until 3 days after their first login — this tab clears them out
-          automatically once they're settled in
-        </p>
-      ) : null}
+      <div className="mb-4">
+        <TextField
+          label="search"
+          placeholder="name, phone, or email"
+          value={query}
+          maxLength={100}
+          onChange={(e) => {
+            setQuery(e.target.value);
+          }}
+        />
+      </div>
+
+      <SortHint filter={filter} hasRows={visible.length > 0} />
 
       {error ? (
         <p role="alert" className="text-destructive mb-3 text-sm">
@@ -155,7 +167,9 @@ export default function JoinRequestsScreen() {
       ) : null}
 
       {visible.length === 0 ? (
-        <p className="text-muted text-sm">nothing here 🌿</p>
+        <p className="text-muted text-sm">
+          {query.trim() ? 'nothing matches — try a different search' : 'nothing here 🌿'}
+        </p>
       ) : (
         <ul className="flex flex-col gap-3">
           {visible.map((r) => (
@@ -184,7 +198,8 @@ export default function JoinRequestsScreen() {
           onClose={() => {
             setCredsFor(null);
           }}
-          displayName={credsFor.displayName}
+          fullName={credsFor.fullName}
+          firstName={credsFor.firstName}
           phoneNumber={credsFor.phoneNumber}
           magicLinkToken={credsFor.magicLinkToken}
         />
@@ -208,17 +223,19 @@ function JoinRequestCard({
   onResend: () => void;
 }) {
   const isPending = request.status === JoinRequestStatus.PENDING;
+  const isTentative = request.status === JoinRequestStatus.TENTATIVE;
   const isRejected = request.status === JoinRequestStatus.REJECTED;
   const canResend = request.status === JoinRequestStatus.APPROVED && request.onboardedAt === null;
   return (
     <article className="border-border bg-surface rounded-lg border p-4">
       <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-medium">{request.displayName}</h2>
+          <h2 className="text-base font-medium">{request.fullName}</h2>
           <p className="text-muted text-xs">
-            {formatPhone(request.phoneNumber)} · submitted{' '}
+            {formatPhone(request.phoneNumber)} · {request.email} · submitted{' '}
             {format(new Date(request.submittedAt), 'MMM d, h:mm a')}
           </p>
+          <RsvpBreakdownNote breakdown={request.rsvpBreakdown} />
         </div>
         <div className="flex flex-wrap items-center gap-1">
           {request.previouslyArchived ? (
@@ -245,7 +262,7 @@ function JoinRequestCard({
       ) : null}
 
       {isPending ? (
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button
             onClick={() => {
               onDecide(JoinRequestStatus.APPROVED);
@@ -257,6 +274,15 @@ function JoinRequestCard({
           <Button
             variant="secondary"
             onClick={() => {
+              onDecide(JoinRequestStatus.TENTATIVE);
+            }}
+            disabled={busy}
+          >
+            tentatively approve
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
               onDecide(JoinRequestStatus.REJECTED);
             }}
             disabled={busy}
@@ -264,6 +290,14 @@ function JoinRequestCard({
             reject
           </Button>
         </div>
+      ) : isTentative ? (
+        <TentativeActions
+          request={request}
+          busy={busy}
+          onApprove={() => {
+            onDecide(JoinRequestStatus.APPROVED);
+          }}
+        />
       ) : (
         <>
           <DecisionAttribution request={request} />
@@ -284,6 +318,39 @@ function JoinRequestCard({
         </>
       )}
     </article>
+  );
+}
+
+function attendedLine(count: number, eventType: string): string {
+  const noun = count === 1 ? 'event' : 'events';
+  return `attended ${String(count)} ${eventType} ${noun}`;
+}
+
+function upcomingLine(count: number, eventType: string): string {
+  const noun = count === 1 ? 'event' : 'events';
+  return `rsvp'd for ${String(count)} upcoming ${eventType} ${noun}`;
+}
+
+function RsvpBreakdownNote({ breakdown }: { breakdown: RsvpBreakdown }) {
+  const lines = [
+    {
+      count: breakdown.attendedOfficial,
+      text: attendedLine(breakdown.attendedOfficial, 'official'),
+    },
+    { count: breakdown.attendedClub, text: attendedLine(breakdown.attendedClub, 'club') },
+    {
+      count: breakdown.upcomingOfficial,
+      text: upcomingLine(breakdown.upcomingOfficial, 'official'),
+    },
+    { count: breakdown.upcomingClub, text: upcomingLine(breakdown.upcomingClub, 'club') },
+  ].filter((line) => line.count > 0);
+  if (lines.length === 0) return null;
+  return (
+    <div className="text-muted mt-1 text-xs">
+      {lines.map((line) => (
+        <p key={line.text}>{line.text}</p>
+      ))}
+    </div>
   );
 }
 
@@ -327,9 +394,82 @@ function StatusBadge({ status }: { status: JoinRequestStatus }) {
 
 const STATUS_TONES: Record<JoinRequestStatus, string> = {
   [JoinRequestStatus.PENDING]: 'bg-warning-subtle text-warning',
+  [JoinRequestStatus.TENTATIVE]: 'bg-highlight-subtle text-highlight',
   [JoinRequestStatus.APPROVED]: 'bg-success-subtle text-success',
   [JoinRequestStatus.REJECTED]: 'bg-surface-raised text-foreground-secondary',
 };
+
+function SortHint({ filter, hasRows }: { filter: Filter; hasRows: boolean }) {
+  if (filter === Filter.APPROVED) {
+    return (
+      <p className="text-muted mb-3 text-xs">
+        sorted newest first — approved members show here until 3 days after their first login, then
+        this tab clears them out automatically
+      </p>
+    );
+  }
+  if (filter === Filter.TENTATIVE) {
+    return (
+      <p className="text-muted mb-3 text-xs">
+        approved once they come to an event — they&rsquo;ll be promoted automatically when checked
+        in, or you can approve them manually below
+      </p>
+    );
+  }
+  if (!hasRows) return null;
+  return <p className="text-muted mb-3 text-xs">sorted newest first</p>;
+}
+
+const DECISION_CONFIRM_PROPS: Record<
+  Decision,
+  { title: string; confirmLabel: string; destructive: boolean; message: (name: string) => string }
+> = {
+  [JoinRequestStatus.APPROVED]: {
+    title: 'approve request',
+    confirmLabel: 'approve',
+    destructive: false,
+    message: (name) =>
+      `approve ${name}? once you approve someone you can't un-approve them — are you sure?`,
+  },
+  [JoinRequestStatus.TENTATIVE]: {
+    title: 'tentatively approve request',
+    confirmLabel: 'tentatively approve',
+    destructive: false,
+    message: (name) =>
+      `tentatively approve ${name}? they'll show up in the tentative tab and get promoted once they check in to an event, or you can approve them manually`,
+  },
+  [JoinRequestStatus.REJECTED]: {
+    title: 'reject request',
+    confirmLabel: 'reject',
+    destructive: true,
+    message: (name) =>
+      `reject ${name}? once you reject someone you can't un-reject them — are you sure?`,
+  },
+};
+
+function confirmPropsForDecision(status: Decision, name: string) {
+  const props = DECISION_CONFIRM_PROPS[status];
+  return {
+    title: props.title,
+    message: props.message(name),
+    confirmLabel: props.confirmLabel,
+    destructive: props.destructive,
+  };
+}
+
+function sortKey(request: JoinRequestSummary): number {
+  const stamp = request.approvedAt ?? request.rejectedAt ?? request.submittedAt;
+  return new Date(stamp).getTime();
+}
+
+function matchesQuery(request: JoinRequestSummary, q: string): boolean {
+  if (!q) return true;
+  return (
+    request.fullName.toLowerCase().includes(q) ||
+    request.phoneNumber.toLowerCase().includes(q) ||
+    request.email.toLowerCase().includes(q)
+  );
+}
 
 function extractError(err: unknown): string {
   return extractApiErrorOr(err, "couldn't complete that action — try again");

@@ -201,6 +201,23 @@
         "params": []
       }
     ],
+    "Tag": [
+      {
+        "name": "NOT_FOUND",
+        "value": "tag.not_found",
+        "params": []
+      },
+      {
+        "name": "NAME_REQUIRED",
+        "value": "tag.name_required",
+        "params": []
+      },
+      {
+        "name": "NAME_ALREADY_EXISTS",
+        "value": "tag.name_already_exists",
+        "params": []
+      }
+    ],
     "Comment": [
       {
         "name": "NOT_FOUND",
@@ -479,6 +496,11 @@
         "params": []
       },
       {
+        "name": "CANNOT_HARD_DELETE_LOGGED_IN",
+        "value": "user.cannot_hard_delete_logged_in",
+        "params": []
+      },
+      {
         "name": "CANNOT_PAUSE_SELF",
         "value": "user.cannot_pause_self",
         "params": []
@@ -491,6 +513,11 @@
       {
         "name": "ROLE_IDS_NOT_FOUND",
         "value": "user.role_ids_not_found",
+        "params": []
+      },
+      {
+        "name": "INVALID_BIRTHDAY",
+        "value": "user.invalid_birthday",
         "params": []
       }
     ],
@@ -799,6 +826,20 @@
       {
         "name": "BODY_TOO_LONG",
         "value": "welcome_template.body_too_long",
+        "params": [
+          "max_length"
+        ]
+      }
+    ],
+    "TentativeApprovalMessage": [
+      {
+        "name": "BODY_REQUIRED",
+        "value": "tentative_approval_message.body_required",
+        "params": []
+      },
+      {
+        "name": "BODY_TOO_LONG",
+        "value": "tentative_approval_message.body_too_long",
         "params": [
           "max_length"
         ]

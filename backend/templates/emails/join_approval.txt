@@ -1,0 +1,7 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+you're fully approved — welcome to pda!
+
+{% autoescape off %}{{ message_body }}{% endautoescape %}
+
+— pda

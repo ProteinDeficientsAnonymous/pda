@@ -17,13 +17,20 @@ import {
 import type { User } from '@/models/user';
 
 const setRsvpMutate = vi.fn();
+const removeRsvpMutate = vi.fn();
 vi.mock('@/api/rsvp', () => ({
   useSetRsvp: () => ({ mutateAsync: setRsvpMutate, isPending: false }),
-  useRemoveRsvp: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRemoveRsvp: () => ({ mutateAsync: removeRsvpMutate, isPending: false }),
 }));
 
 vi.mock('./RsvpGuestList', () => ({
   RsvpGuestList: () => <div data-testid="guest-list" />,
+}));
+
+// Covered by RsvpCommentField.test.tsx — stubbed here so the RsvpBox's textarea
+// isn't a factor in assertions that only care about the dialog/pills.
+vi.mock('./RsvpCommentField', () => ({
+  RsvpCommentField: () => <div data-testid="rsvp-comment-field" />,
 }));
 
 import { RsvpSection } from './RsvpSection';
@@ -31,10 +38,14 @@ import { RsvpSection } from './RsvpSection';
 const ME: User = {
   id: 'user-me',
   phoneNumber: '+12125550001',
-  displayName: 'Me',
+  firstName: 'Me',
+  lastName: '',
+  fullName: 'Me',
+  nickname: '',
   email: '',
   bio: '',
   pronouns: '',
+  birthday: null,
   isSuperuser: false,
   isStaff: false,
   needsOnboarding: false,
@@ -43,6 +54,8 @@ const ME: User = {
   needsSmsConsent: false,
   showPhone: false,
   showEmail: false,
+  showBirthday: false,
+  hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
   profilePhotoUrl: '',
@@ -97,7 +110,7 @@ function makeEvent(overrides: Partial<Event>): Event {
     coHostPhotoUrls: [],
     coHostInviteIds: [],
     guests: [],
-    myRsvp: RsvpServerStatus.Attending,
+    myRsvp: null,
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],
@@ -130,82 +143,81 @@ function renderSection(event: Event) {
 beforeEach(() => {
   setRsvpMutate.mockReset();
   setRsvpMutate.mockResolvedValue(undefined);
+  removeRsvpMutate.mockReset();
+  removeRsvpMutate.mockResolvedValue(undefined);
   useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'tok' });
 });
 
-describe('RsvpSection — +1 toggle', () => {
-  it('shows "remove +1" when MY guest record has a +1, even if other attendees do not', () => {
-    // Issue #368 regression: previously the lookup matched by status, so
-    // the toggle reflected some other attendee's hasPlusOne value.
-    renderSection(
-      makeEvent({
-        guests: [
-          makeGuest({ userId: 'user-other', hasPlusOne: false }),
-          makeGuest({ userId: 'user-me', name: 'Me', hasPlusOne: true }),
-        ],
-      }),
-    );
+describe('RsvpSection — before RSVPing', () => {
+  it('opens the RSVP box when a pill is tapped (not yet RSVP’d)', () => {
+    renderSection(makeEvent({ myRsvp: null }));
 
-    expect(screen.getByRole('button', { name: 'remove +1' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+
+    expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
   });
 
-  it('shows "bring a +1" when MY guest record has no +1, even if another attendee does', () => {
-    renderSection(
-      makeEvent({
-        guests: [
-          makeGuest({ userId: 'user-other', hasPlusOne: true }),
-          makeGuest({ userId: 'user-me', name: 'Me', hasPlusOne: false }),
-        ],
-      }),
-    );
+  it('shows all three pills and no status line when I have not RSVP’d', () => {
+    renderSection(makeEvent({ myRsvp: null }));
 
-    expect(screen.getByRole('button', { name: 'bring a +1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: "can't go" })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
   });
 
-  it('toggling off sends hasPlusOne: false', async () => {
-    renderSection(
-      makeEvent({
-        guests: [makeGuest({ userId: 'user-me', name: 'Me', hasPlusOne: true })],
-      }),
-    );
+  it('shows "join the waitlist" instead of "i\'m going" when the event is full', () => {
+    renderSection(makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: null }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'remove +1' }));
+    expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+  });
+});
 
-    expect(setRsvpMutate).toHaveBeenCalledWith({
-      eventId: 'ev1',
-      status: RsvpServerStatus.Attending,
-      hasPlusOne: false,
-    });
+describe('RsvpSection — after RSVPing', () => {
+  it('shows an edit RSVP button and no status pills once the member has responded', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
+
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'maybe' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "can't go" })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit RSVP/i })).toBeInTheDocument();
   });
 
-  it('toggling on sends hasPlusOne: true', async () => {
-    renderSection(
-      makeEvent({
-        guests: [makeGuest({ userId: 'user-me', name: 'Me', hasPlusOne: false })],
-      }),
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'bring a +1' }));
-
-    expect(setRsvpMutate).toHaveBeenCalledWith({
-      eventId: 'ev1',
-      status: RsvpServerStatus.Attending,
-      hasPlusOne: true,
-    });
+  it('shows a "you\'re going" status line when attending', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
+    expect(screen.getByText("you're going")).toBeInTheDocument();
   });
 
-  it('hides the +1 button when allowPlusOnes is false', () => {
-    renderSection(
-      makeEvent({
-        allowPlusOnes: false,
-        guests: [makeGuest({ userId: 'user-me', name: 'Me' })],
-      }),
-    );
-
-    expect(screen.queryByRole('button', { name: /\+1/ })).not.toBeInTheDocument();
+  it('shows a "you\'re a maybe" status line when maybe', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Maybe }));
+    expect(screen.getByText("you're a maybe")).toBeInTheDocument();
   });
 
-  it('hides the +1 button on the waitlist', () => {
+  it('shows a "you can\'t go" status line when cant_go', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.CantGo }));
+    expect(screen.getByText("you can't go")).toBeInTheDocument();
+  });
+
+  it('opens the RSVP box in edit mode when "edit RSVP" is tapped', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+
+    expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
+  });
+
+  it('removes the RSVP when "remove rsvp" is tapped in the edit box', async () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+    fireEvent.click(screen.getByRole('button', { name: /remove rsvp/i }));
+
+    expect(removeRsvpMutate).toHaveBeenCalledWith('ev1');
+  });
+
+  it('shows only "leave waitlist" when on the waitlist (no pills, no status line, no edit button)', () => {
     renderSection(
       makeEvent({
         myRsvp: RsvpServerStatus.Waitlisted,
@@ -213,43 +225,26 @@ describe('RsvpSection — +1 toggle', () => {
       }),
     );
 
-    expect(screen.queryByRole('button', { name: /\+1/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'leave waitlist' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
   });
 });
 
-describe('RsvpSection — waitlist label at capacity (issue #584)', () => {
-  it('shows "join the waitlist" instead of "i\'m going" when the event is full and I am not attending', () => {
-    renderSection(makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: null }));
-
-    expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
-  });
-
-  it('keeps the "i\'m going" label when the event has spots left', () => {
+describe('RsvpSection — spots left indicator', () => {
+  it('shows spots left when the event has a cap and room remains', () => {
     renderSection(makeEvent({ maxAttendees: 4, attendingCount: 2, myRsvp: null }));
-
-    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'join the waitlist' })).not.toBeInTheDocument();
+    expect(screen.getByText('2 spots left')).toBeInTheDocument();
   });
 
-  it('keeps the "i\'m going" label when I am already attending, even at capacity', () => {
-    renderSection(
-      makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: RsvpServerStatus.Attending }),
-    );
-
-    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'join the waitlist' })).not.toBeInTheDocument();
+  it('hides spots left when uncapped', () => {
+    renderSection(makeEvent({ maxAttendees: null, attendingCount: 2, myRsvp: null }));
+    expect(screen.queryByText(/spots left/)).not.toBeInTheDocument();
   });
 
-  it('tapping "join the waitlist" still sends status: attending (server auto-waitlists)', () => {
+  it('hides spots left at capacity', () => {
     renderSection(makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: null }));
-
-    fireEvent.click(screen.getByRole('button', { name: 'join the waitlist' }));
-
-    expect(setRsvpMutate).toHaveBeenCalledWith({
-      eventId: 'ev1',
-      status: RsvpServerStatus.Attending,
-    });
+    expect(screen.queryByText(/spots left/)).not.toBeInTheDocument();
   });
 });
 
@@ -272,5 +267,16 @@ describe('RsvpSection — spots left', () => {
   it('shows no spots-left text at capacity', () => {
     renderSection(makeEvent({ maxAttendees: 10, attendingCount: 10, myRsvp: null }));
     expect(screen.queryByText(/spots? left/)).not.toBeInTheDocument();
+  });
+});
+
+describe('RsvpSection — leave waitlist error handling (issue #633)', () => {
+  it('surfaces an error when leaving the waitlist fails', async () => {
+    removeRsvpMutate.mockRejectedValue(new Error('boom'));
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'leave waitlist' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't update your rsvp/i);
   });
 });
