@@ -27,6 +27,28 @@ vi.mock('@/api/publicRsvp', () => ({
   useCancelPublicMyRsvp: () => ({ mutateAsync: cancelAsync, isPending: false }),
 }));
 
+// jsdom's default Storage isn't wired up for get/set round-trips — stub a real one.
+const storageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string): string | null => store[key] ?? null,
+    setItem: (key: string, value: string): void => {
+      store[key] = value;
+    },
+    removeItem: (key: string): void => {
+      delete store[key];
+    },
+    clear: (): void => {
+      store = {};
+    },
+    get length(): number {
+      return Object.keys(store).length;
+    },
+    key: (index: number): string | null => Object.keys(store)[index] ?? null,
+  };
+})();
+Object.defineProperty(window, 'localStorage', { value: storageMock, writable: true });
+
 import PublicRsvpsScreen from './PublicRsvpsScreen';
 
 function renderAt(token: string | null) {
@@ -54,6 +76,7 @@ function successData(overrides: Partial<ManageRsvps> = {}): ManageRsvps {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   updateAsync.mockResolvedValue({});
   cancelAsync.mockResolvedValue(undefined);
 });
@@ -71,6 +94,33 @@ describe('PublicRsvpsScreen', () => {
     usePublicMyRsvps.mockReturnValue({ data: undefined, isPending: false, isError: false });
     renderAt(null);
     expect(screen.getByText(/this link's expired or invalid/)).toBeInTheDocument();
+  });
+
+  it('persists the token from the url so a later visit can reuse it', () => {
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    renderAt('good-token');
+    expect(localStorage.getItem('pda-rsvp-token')).toBe('good-token');
+  });
+
+  it('restores the persisted token when the url has none', () => {
+    localStorage.setItem('pda-rsvp-token', 'stored-token');
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    renderAt(null);
+    expect(usePublicMyRsvps).toHaveBeenCalledWith('stored-token');
+    expect(screen.getByRole('heading', { name: 'your rsvps' })).toBeInTheDocument();
+  });
+
+  it('clears the persisted token and shows the invalid-token state on a 404', () => {
+    localStorage.setItem('pda-rsvp-token', 'stale-token');
+    usePublicMyRsvps.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: { isAxiosError: true, response: { status: 404 } },
+    });
+    renderAt(null);
+    expect(screen.getByText(/this link's expired or invalid/)).toBeInTheDocument();
+    expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
   });
 
   it('shows the invalid-token empty state on a 404 (expired or revoked)', () => {
