@@ -1,3 +1,10 @@
+# [0.34.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.33.2...v0.34.0) (2026-07-15)
+
+
+### Features
+
+* **admin:** add editable whatsapp link for message templates (Issue 837) ([#842](https://github.com/ProteinDeficientsAnonymous/pda/issues/842)) ([86c7477](https://github.com/ProteinDeficientsAnonymous/pda/commit/86c7477710c4b3ddfcced00ec1d161834d0217a0))
+
 ## [0.33.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.33.1...v0.33.2) (2026-07-15)
 
 
