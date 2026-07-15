@@ -59,12 +59,15 @@ function commentsUrl(eventId: string, suffix = ''): string {
   return `/api/community/events/${eventId}/comments/${suffix}`;
 }
 
-function tokenParams(token?: string) {
-  return token ? { params: { token } } : {};
+function tokenConfig(token?: string) {
+  return token ? [{ params: { token } }] : [];
 }
 
 async function fetchEventComments(eventId: string, token?: string): Promise<EventCommentList> {
-  const { data } = await apiClient.get<WireCommentList>(commentsUrl(eventId), tokenParams(token));
+  const { data } = await apiClient.get<WireCommentList>(
+    commentsUrl(eventId),
+    ...tokenConfig(token),
+  );
   return mapCommentList(data);
 }
 
@@ -96,7 +99,7 @@ export function usePostComment(eventId: string, token?: string) {
       const { data } = await apiClient.post<WireCommentResponse>(
         commentsUrl(eventId),
         { body },
-        tokenParams(token),
+        ...tokenConfig(token),
       );
       return mapComment(data);
     },
@@ -123,7 +126,7 @@ export function usePostReply(eventId: string, token?: string) {
       const { data } = await apiClient.post<WireReplyResponse>(
         commentsUrl(eventId, `${parentId}/replies/`),
         { body },
-        tokenParams(token),
+        ...tokenConfig(token),
       );
       return mapReply(data);
     },
@@ -146,7 +149,7 @@ export function useDeleteComment(eventId: string, token?: string) {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
     mutationFn: async ({ commentId }: DeleteCommentVars) => {
-      await apiClient.delete(commentsUrl(eventId, `${commentId}/`), tokenParams(token));
+      await apiClient.delete(commentsUrl(eventId, `${commentId}/`), ...tokenConfig(token));
     },
     onMutate: async ({ commentId }) => {
       await qc.cancelQueries({ queryKey: eventCommentKeys.list(eventId) });
@@ -220,7 +223,7 @@ export function useToggleReaction(eventId: string, token?: string) {
       const { data } = await apiClient.post<WireCommentResponse>(
         commentsUrl(eventId, `${commentId}/reactions/`),
         { emoji },
-        tokenParams(token),
+        ...tokenConfig(token),
       );
       return mapComment(data);
     },
