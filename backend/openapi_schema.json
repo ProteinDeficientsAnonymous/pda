@@ -1893,6 +1893,17 @@
             "title": "Venmo Link",
             "type": "string"
           },
+          "viewer_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewer User Id"
+          },
           "visibility": {
             "default": "public",
             "title": "Visibility",

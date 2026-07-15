@@ -40,7 +40,10 @@ export function RsvpSection({ event, canSeeInvited, token }: Props) {
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
   const cancelPublicRsvp = useCancelPublicMyRsvp(token ?? '');
-  const myUserId = useAuthStore((s) => s.user?.id);
+  const authUserId = useAuthStore((s) => s.user?.id);
+  // A token holder has no useAuthStore session (not logged in) — their
+  // identity comes from the backend-resolved viewer instead (issue #854).
+  const myUserId = token ? event.viewerUserId : authUserId;
   const [error, setError] = useState<string | null>(null);
   const [box, setBox] = useState<BoxState | null>(null);
 

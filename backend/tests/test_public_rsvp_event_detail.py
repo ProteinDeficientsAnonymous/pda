@@ -87,3 +87,17 @@ class TestGetEventWithToken:
         body = response.json()
         assert body["invited_user_ids"] == []
         assert str(invited.id) not in body["invited_user_ids"]
+
+    def test_valid_token_reports_own_viewer_user_id(self, api_client, official_event, non_member):
+        EventRSVP.objects.create(event=official_event, user=non_member, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue(non_member)
+        response = api_client.get(
+            f"/api/community/events/{official_event.id}/", {"token": token.token}
+        )
+        assert response.status_code == 200, response.content
+        assert response.json()["viewer_user_id"] == str(non_member.id)
+
+    def test_no_token_reports_no_viewer_user_id(self, api_client, official_event):
+        response = api_client.get(f"/api/community/events/{official_event.id}/")
+        assert response.status_code == 200, response.content
+        assert response.json()["viewer_user_id"] is None

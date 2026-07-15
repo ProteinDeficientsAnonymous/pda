@@ -2693,6 +2693,8 @@ export interface components {
              * @default
              */
             venmo_link: string;
+            /** Viewer User Id */
+            viewer_user_id?: string | null;
             /**
              * Visibility
              * @default public

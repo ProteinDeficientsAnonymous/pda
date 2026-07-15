@@ -341,6 +341,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_invite_ids=co_host_invite_ids,
         guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
+        viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
         visibility=event.visibility,
         photo_url=media_path(event.photo),

@@ -195,6 +195,10 @@ class EventOut(BaseModel):
     co_host_invite_ids: list[str | None] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
+    # Same gating as my_rsvp (both derive from the resolved viewer in
+    # _event_out) — lets a token-holding, not-logged-in viewer identify their
+    # own entry in `guests` without a real auth session to key off of.
+    viewer_user_id: str | None = None
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
     photo_url: str = ""

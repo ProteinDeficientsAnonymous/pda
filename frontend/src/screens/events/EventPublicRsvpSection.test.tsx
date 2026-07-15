@@ -59,6 +59,7 @@ function baseEvent(overrides: Partial<Event> = {}): Event {
     myPendingCohostInviteId: null,
     guests: [],
     myRsvp: RsvpServerStatus.Attending,
+    viewerUserId: null,
     eventType: EventType.Official,
     visibility: EventVisibility.Public,
     photoUrl: '',

@@ -59,6 +59,7 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
     coHostInviteIds: [],
     guests: [guest('attending')],
     myRsvp: null,
+    viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],
