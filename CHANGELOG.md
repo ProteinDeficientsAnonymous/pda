@@ -1,3 +1,10 @@
+# [0.36.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.35.0...v0.36.0) (2026-07-15)
+
+
+### Features
+
+* **events:** split public rsvp into status-then-details steps (Issue 853) ([#857](https://github.com/ProteinDeficientsAnonymous/pda/issues/857)) ([66a32d9](https://github.com/ProteinDeficientsAnonymous/pda/commit/66a32d9face8a7d24a3c9a8fdf68630a8e156fdc))
+
 # [0.35.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.34.2...v0.35.0) (2026-07-15)
 
 
