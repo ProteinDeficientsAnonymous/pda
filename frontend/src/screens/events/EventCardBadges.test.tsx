@@ -85,16 +85,6 @@ describe('EventCardBadges', () => {
     expect(screen.getByText('8 / 20 going')).toBeInTheDocument();
   });
 
-  it('shows official event type badges', () => {
-    render(<EventCardBadges event={makeEvent({ eventType: EventType.Official })} variant="card" />);
-    expect(screen.getByText('official')).toBeInTheDocument();
-  });
-
-  it('shows club event type badges', () => {
-    render(<EventCardBadges event={makeEvent({ eventType: EventType.Club })} variant="card" />);
-    expect(screen.getByText('pda club')).toBeInTheDocument();
-  });
-
   it('omits the headcount for unlimited-capacity events', () => {
     render(
       <EventCardBadges

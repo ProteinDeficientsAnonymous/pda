@@ -1,7 +1,5 @@
-import { type Event, EventType, myRsvpLabel } from '@/models/event';
+import { type Event, myRsvpLabel } from '@/models/event';
 import { cn } from '@/utils/cn';
-
-import { EventBadge } from './EventBadge';
 
 type Variant = 'card' | 'row';
 
@@ -28,17 +26,12 @@ export function EventCardBadges({
   const rsvp = myRsvpLabel(event);
   const headcount = headcountLabel(event);
 
-  const showEventBadge =
-    event.eventType === EventType.Official ||
-    event.eventType === EventType.Club;
-
-  if (!rsvp && !headcount && !showEventBadge) return null;
+  if (!rsvp && !headcount) return null;
 
   const pill = PILL_CLASS[variant];
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5 text-xs', className)}>
-      {showEventBadge ? <EventBadge event={event} /> : null}
       {rsvp ? <span className={cn(pill, 'font-medium')}>{rsvp}</span> : null}
       {headcount ? <span className={pill}>{headcount}</span> : null}
     </div>
