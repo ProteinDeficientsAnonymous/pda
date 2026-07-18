@@ -7,3 +7,5 @@ here's your link to manage your rsvps:
 if you didn't request it, you can ignore this email.
 
 — pda
+
+{% include "emails/_no_reply_footer.txt" %}

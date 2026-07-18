@@ -1,3 +1,10 @@
+## [0.40.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.4...v0.40.5) (2026-07-18)
+
+
+### Bug Fixes
+
+* **notifications:** add no-reply note to member-facing emails (Issue 883) ([#898](https://github.com/ProteinDeficientsAnonymous/pda/issues/898)) ([9423d59](https://github.com/ProteinDeficientsAnonymous/pda/commit/9423d59a47c72ba7f1657bd6a5d9df87cef8967f))
+
 ## [0.40.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.3...v0.40.4) (2026-07-18)
 
 

@@ -25,9 +25,11 @@ export function EventCardBadges({
 }) {
   const rsvp = myRsvpLabel(event);
   const headcount = headcountLabel(event);
+
   if (!rsvp && !headcount) return null;
 
   const pill = PILL_CLASS[variant];
+
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5 text-xs', className)}>
       {rsvp ? <span className={cn(pill, 'font-medium')}>{rsvp}</span> : null}

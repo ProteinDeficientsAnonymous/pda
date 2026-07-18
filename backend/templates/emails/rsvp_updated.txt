@@ -13,3 +13,5 @@ manage or change your rsvp anytime:
 when you join pda you get access to club events and our whatsapp community. click here to join: {{ join_url }}
 
 — pda
+
+{% include "emails/_no_reply_footer.txt" %}
