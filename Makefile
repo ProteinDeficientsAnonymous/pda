@@ -39,7 +39,7 @@ AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
         parallel-frontend parallel-agent-frontend \
         agent-lint agent-check agent-test agent-test-since agent-typecheck agent-complexity agent-check-codes \
-        agent-frontend-lint agent-frontend-format agent-frontend-format-check agent-frontend-test agent-frontend-typecheck
+        agent-frontend-lint agent-frontend-format agent-frontend-format-check agent-frontend-test agent-frontend-e2e agent-frontend-typecheck
 
 help:
 	@echo "Backend commands:"
@@ -303,6 +303,9 @@ agent-frontend-format-check:
 
 agent-frontend-test:
 	cd frontend && pnpm exec vitest run --reporter=dot --silent passed-only
+
+agent-frontend-e2e:
+	@cd frontend && pnpm test:e2e
 
 agent-frontend-typecheck:
 	cd frontend && pnpm exec tsc -b --noEmit --pretty false
