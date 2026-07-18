@@ -1,3 +1,10 @@
+# [0.42.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.41.0...v0.42.0) (2026-07-18)
+
+
+### Features
+
+* **notifications:** email members when invited to an event (Issue 859) ([#909](https://github.com/ProteinDeficientsAnonymous/pda/issues/909)) ([7eb085a](https://github.com/ProteinDeficientsAnonymous/pda/commit/7eb085a5a58046580bad9e4e3cb7c9eb2187c93c))
+
 # [0.41.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.6...v0.41.0) (2026-07-18)
 
 
