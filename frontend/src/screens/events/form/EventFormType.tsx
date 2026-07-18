@@ -9,12 +9,16 @@ interface Props {
   canTagClub: boolean;
 }
 
-// Single-valued event_type makes the toggles mutually exclusive; both force public.
+// Single-valued event_type makes the toggles mutually exclusive; only official/club force public.
 export function EventFormType({ values, onChange, canTagOfficial, canTagClub }: Props) {
   if (!canTagOfficial && !canTagClub) return null;
 
   const setType = (type: EventFormValues['eventType']) => {
-    onChange({ eventType: type, visibility: EventVisibility.Public });
+    const isPublicOnly = type === EventType.Official || type === EventType.Club;
+    onChange({
+      eventType: type,
+      ...(isPublicOnly ? { visibility: EventVisibility.Public } : {}),
+    });
   };
 
   return (
