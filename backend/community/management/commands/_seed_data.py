@@ -10,6 +10,8 @@ from community.models.choices import (
     RSVPStatus,
 )
 
+from ._seed_shared import SeedEvent
+
 PASSWORD = "testpass123"
 
 
@@ -25,19 +27,6 @@ class SeedUser:
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
-
-
-@dataclass
-class SeedEvent:
-    title: str
-    description: str
-    delta_days: int
-    duration_hours: float
-    location: str
-    event_type: str = EventType.COMMUNITY
-    rsvp_enabled: bool = False
-    allow_plus_ones: bool = False
-    max_attendees: int | None = None
 
 
 @dataclass

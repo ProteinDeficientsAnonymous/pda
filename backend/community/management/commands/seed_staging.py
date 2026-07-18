@@ -12,14 +12,16 @@ from users.models import NonMemberRsvpToken, User
 from users.permissions import PermissionKey
 from users.roles import Role
 
-from community.models import Event, EventRSVP, EventType, RSVPStatus
+from community.models import Event, EventType, RSVPStatus
 
 from ._seed_join_requests import reset_join_requests, seed_join_requests
+from ._seed_shared import apply_rsvp, get_or_create_seed_user, seed_events
 from ._seed_staging_data import (
     MEMBER_RSVP_SPECS,
     NON_MEMBER_EVENT_TITLE,
     NON_MEMBER_SPECS,
     PASSWORD,
+    PRIVACY_SPECS,
     STAGING_EVENTS,
     TOKEN_EXPIRED,
     TOKEN_NONE,
@@ -32,6 +34,7 @@ from ._seed_staging_data import (
     nonmember_phone,
     perm_email,
     perm_phone,
+    privacy_phone,
 )
 
 
@@ -60,6 +63,7 @@ class Command(BaseCommand):
             roles = self._seed_perm_roles()
             perm_users = self._seed_perm_users(roles)
             cond_users = self._seed_condition_users()
+            self._seed_privacy_users()
             admin = perm_users[0] if perm_users else None
             events = self._seed_events(admin)
             self._seed_member_rsvps(cond_users, events)
@@ -82,6 +86,7 @@ class Command(BaseCommand):
         User.objects.filter(phone_number__startswith="+170255501").delete()
         User.objects.filter(phone_number__startswith="+170255502").delete()
         User.objects.filter(phone_number__startswith="+170255503").delete()
+        User.objects.filter(phone_number__startswith="+170255505").delete()
         Role.objects.filter(name__startswith="perm: ").delete()
         reset_join_requests()
         self.stdout.write("  reset: removed staging-scoped rows")
@@ -105,22 +110,18 @@ class Command(BaseCommand):
         users: list[User] = []
         now = timezone.now()
         for index, key in enumerate(PermissionKey.values):
-            user, created = User.objects.get_or_create(
-                phone_number=perm_phone(index),
-                defaults={
-                    "first_name": f"perm: {key}",
-                    "email": perm_email(key),
-                    "is_member": True,
-                    "needs_onboarding": False,
-                    "onboarded_at": now,
-                    "guidelines_consent_at": now,
-                    "sms_consent_at": now,
-                },
+            defaults = {
+                "first_name": f"perm: {key}",
+                "email": perm_email(key),
+                "is_member": True,
+                "needs_onboarding": False,
+                "onboarded_at": now,
+                "guidelines_consent_at": now,
+                "sms_consent_at": now,
+            }
+            user, created = get_or_create_seed_user(
+                perm_phone(index), PASSWORD, defaults, [roles[key]]
             )
-            if created:
-                user.set_password(PASSWORD)
-                user.save(update_fields=["password"])
-            user.roles.set([roles[key]])
             users.append(user)
             self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
@@ -168,37 +169,46 @@ class Command(BaseCommand):
             self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
 
-    def _seed_events(self, created_by) -> list[Event]:
+    def _seed_privacy_users(self) -> list[User]:
+        member_role = self._member_role()
         now = timezone.now()
-        events: list[Event] = []
-        for data in STAGING_EVENTS:
-            start = now + timedelta(days=data.delta_days)
-            end = start + timedelta(hours=data.duration_hours)
-            event, created = Event.objects.get_or_create(
-                title=data.title,
-                defaults={
-                    "description": data.description,
-                    "start_datetime": start,
-                    "end_datetime": end,
-                    "location": data.location,
-                    "event_type": data.event_type,
-                    "rsvp_enabled": data.rsvp_enabled,
-                    "max_attendees": data.max_attendees,
-                    "created_by": created_by,
-                },
+        users: list[User] = []
+        for index, spec in enumerate(PRIVACY_SPECS):
+            user, created = User.objects.get_or_create(
+                phone_number=privacy_phone(index), defaults={"is_member": True}
             )
-            events.append(event)
-            self.stdout.write(f"  {'created' if created else 'exists'} event: {data.title}")
-        return events
+            user.first_name = spec.label
+            user.last_name = ""
+            user.pronouns = spec.pronouns
+            user.birthday_month = spec.birthday_month
+            user.birthday_day = spec.birthday_day
+            user.show_phone = spec.show_phone
+            user.show_email = spec.show_email
+            user.show_birthday = spec.show_birthday
+            user.hide_last_name = spec.hide_last_name
+            user.needs_onboarding = False
+            user.onboarded_at = now
+            user.save()
+            if created:
+                user.set_password(PASSWORD)
+                user.save(update_fields=["password"])
+            user.roles.set([member_role])
+            users.append(user)
+            self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
+        return users
+
+    def _seed_events(self, created_by) -> list[Event]:
+        return list(seed_events(self.stdout, STAGING_EVENTS, created_by).values())
 
     def _apply_rsvps(self, user, rsvps, events_by_title: dict) -> None:
         for rsvp in rsvps:
             event = events_by_title.get(rsvp.event_title)
             if event is not None:
-                EventRSVP.objects.update_or_create(
-                    event=event,
-                    user=user,
-                    defaults={"status": rsvp.status, "attendance": rsvp.attendance},
+                apply_rsvp(
+                    event,
+                    user,
+                    {"status": rsvp.status, "attendance": rsvp.attendance},
+                    overwrite=True,
                 )
 
     def _seed_member_rsvps(self, cond_users: list[User], events: list[Event]) -> None:
