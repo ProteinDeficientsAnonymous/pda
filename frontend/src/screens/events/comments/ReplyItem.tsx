@@ -10,13 +10,14 @@ import { formatRelative } from './utils';
 interface Props {
   reply: EventCommentReply;
   eventId: string;
+  token?: string;
   canReact: boolean;
   reactDisabledReason?: string | undefined;
 }
 
-export function ReplyItem({ reply, eventId, canReact, reactDisabledReason }: Props) {
-  const toggleReaction = useToggleReaction(eventId);
-  const deleteComment = useDeleteComment(eventId);
+export function ReplyItem({ reply, eventId, token, canReact, reactDisabledReason }: Props) {
+  const toggleReaction = useToggleReaction(eventId, token);
+  const deleteComment = useDeleteComment(eventId, token);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleToggle = (emoji: ReactionEmojiValue) => {
