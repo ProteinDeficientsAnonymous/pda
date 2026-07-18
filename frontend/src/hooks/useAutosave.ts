@@ -89,8 +89,7 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
       if (pendingValueRef.current !== null) void flush(pendingValueRef.current);
       if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [flush]);
 
   return { status, schedule, cancel, flush };
 }
