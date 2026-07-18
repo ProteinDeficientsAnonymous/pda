@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from community._html_sanitize import sanitize_content_html
 from community._prosemirror_html import prosemirror_to_html
 
 
@@ -29,6 +30,6 @@ def render_content_payload(*, prosemirror: str | None = None) -> RenderedContent
         return RenderedContent(
             content="",
             content_pm=prosemirror,
-            content_html=prosemirror_to_html(prosemirror),
+            content_html=sanitize_content_html(prosemirror_to_html(prosemirror)),
         )
     return RenderedContent(content="", content_pm="", content_html="")
