@@ -20,7 +20,7 @@ E2E_PASSWORD = "e2e-test-pass-123"
 
 
 def _random_phone() -> str:
-    return "+1555" + str(secrets.randbelow(10_000_000)).zfill(7)
+    return "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
 
 
 def _random_event(scenario: str, **overrides) -> Event:
