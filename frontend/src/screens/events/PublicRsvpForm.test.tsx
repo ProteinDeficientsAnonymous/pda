@@ -239,6 +239,39 @@ describe('PublicRsvpForm', () => {
     });
   });
 
+  it('shows join the waitlist instead of going when the event is at capacity', () => {
+    renderForm(makeEvent({ maxAttendees: 2, attendingCount: 2 }));
+    expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
+  });
+
+  it('submits attending status and shows join the waitlist copy when at capacity', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    submitMutate.mockResolvedValue({
+      event: { id: 'ev1' },
+      rsvp: { status: 'waitlisted', has_plus_one: false },
+    });
+    const onSuccess = vi.fn();
+    renderForm(makeEvent({ maxAttendees: 2, attendingCount: 2 }), onSuccess);
+    fireEvent.click(screen.getByRole('button', { name: 'join the waitlist' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+14155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
+    expect(screen.getByText('join the waitlist')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    expect(submitMutate).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      payload: expect.objectContaining({ status: 'attending' }),
+    });
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+  });
+
   it('shows a 409 inline error with a sign-in link', async () => {
     submitMutate.mockRejectedValue({ isAxiosError: true, response: { status: 409 } });
     renderForm();
