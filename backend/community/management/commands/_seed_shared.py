@@ -1,11 +1,3 @@
-"""Helpers shared by the `seed` and `seed_staging` commands.
-
-Only genuinely identical shapes live here — events, the create-user-with-password
-idiom, and applying an RSVP. Anything that differs between local dev and staging
-(permission-matrix users, condition users, non-member tokens, join requests,
-env gating, transactions/reset) stays in each command's own module.
-"""
-
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -68,13 +60,7 @@ def get_or_create_seed_user(
 
 
 def apply_rsvp(event: Event, user: User, defaults: dict, *, overwrite: bool = False) -> None:
-    """Seed one RSVP row directly (bypassing capacity rules) so seeded statuses
-    — including waitlisted entries and marked attendance — land verbatim.
-
-    `defaults` holds status/attendance/has_plus_one. `overwrite=True` (staging)
-    reflects the current spec on every run since staging is `--reset`-able;
-    local's default (create-only) is purely additive.
-    """
+    """Seed one RSVP row directly (bypassing capacity rules) so seeded statuses land verbatim."""
     if overwrite:
         EventRSVP.objects.update_or_create(event=event, user=user, defaults=defaults)
     else:
