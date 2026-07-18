@@ -1,3 +1,15 @@
+# [0.40.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.2...v0.40.0) (2026-07-18)
+
+
+### Bug Fixes
+
+* **feedback:** show feedback button to token-holding non-members (Issue 879) ([#888](https://github.com/ProteinDeficientsAnonymous/pda/issues/888)) ([06fa73b](https://github.com/ProteinDeficientsAnonymous/pda/commit/06fa73b3bd12a157403cbab3290e1af201b116c3))
+
+
+### Features
+
+* **events:** let non-members reach my-rsvps from bottom nav (Issue 878) ([#887](https://github.com/ProteinDeficientsAnonymous/pda/issues/887)) ([70e6911](https://github.com/ProteinDeficientsAnonymous/pda/commit/70e6911bd406136a77315fc54105b6133eba53df))
+
 ## [0.39.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.1...v0.39.2) (2026-07-18)
 
 
