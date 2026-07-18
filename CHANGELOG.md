@@ -1,3 +1,10 @@
+## [0.39.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.1...v0.39.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** add official-event hint to non-member sign-in prompt (Issue 877) ([#886](https://github.com/ProteinDeficientsAnonymous/pda/issues/886)) ([ecdfc2d](https://github.com/ProteinDeficientsAnonymous/pda/commit/ecdfc2d1345f62f6f2fd18ecb5434b6fe5312ec7))
+
 ## [0.39.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.0...v0.39.1) (2026-07-15)
 
 
