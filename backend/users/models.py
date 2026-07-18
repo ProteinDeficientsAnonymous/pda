@@ -200,9 +200,9 @@ class MagicLoginToken(models.Model):
 
 
 # Number of days a non-member RSVP-management link stays valid from issuance.
-NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 180
+NON_MEMBER_RSVP_TOKEN_TTL_DAYS = 90
 # Absolute cap on a token's life, even with repeated extension, to bound leak exposure.
-NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 365
+NON_MEMBER_RSVP_TOKEN_MAX_LIFETIME_DAYS = 180
 
 
 class NonMemberRsvpToken(models.Model):
@@ -252,7 +252,7 @@ class NonMemberRsvpToken(models.Model):
 
     @classmethod
     def issue(cls, user: "User") -> "NonMemberRsvpToken":
-        """Create a fresh token for a non-member, valid for 180 days.
+        """Create a fresh token for a non-member, valid for 90 days.
 
         Rejects members — a converted/existing member must use the member flow,
         not the scoped non-member RSVP link.

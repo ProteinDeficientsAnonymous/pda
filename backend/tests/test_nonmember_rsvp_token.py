@@ -27,7 +27,7 @@ def non_member(db):
 
 @pytest.mark.django_db
 class TestIssue:
-    def test_issue_produces_unique_urlsafe_token_with_180_day_expiry(self, non_member):
+    def test_issue_produces_unique_urlsafe_token_with_90_day_expiry(self, non_member):
         before = timezone.now()
         token = NonMemberRsvpToken.issue(non_member)
 
@@ -38,7 +38,7 @@ class TestIssue:
         assert token.revoked_at is None
 
         expected = before + timedelta(days=NON_MEMBER_RSVP_TOKEN_TTL_DAYS)
-        # Expiry is ~180 days out; allow a small window for clock drift in the test.
+        # Expiry is ~90 days out; allow a small window for clock drift in the test.
         assert abs((token.expires_at - expected).total_seconds()) < 60
 
     def test_issue_tokens_are_unique(self, non_member):
