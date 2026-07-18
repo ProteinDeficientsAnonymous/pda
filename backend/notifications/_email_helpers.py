@@ -159,6 +159,44 @@ def send_join_approval_email(
     )
 
 
+@dataclass(frozen=True)
+class EventInviteEmailDetails:
+    """Recipient + event details for the member event-invite email."""
+
+    to: str
+    display_name: str
+    inviter_name: str
+    event_title: str
+    event_when: str
+    event_url: str
+
+    def template_context(self) -> dict:
+        return {
+            "display_name": self.display_name or "",
+            "inviter_name": self.inviter_name,
+            "event_title": self.event_title,
+            "event_when": self.event_when,
+            "event_url": self.event_url,
+        }
+
+
+def send_event_invite_email(
+    *,
+    sender: EmailSender,
+    details: EventInviteEmailDetails,
+) -> SendResult:
+    """Render and send the "you're invited to an event" email."""
+    context = details.template_context()
+    html = render_to_string("emails/event_invite.html", context)
+    text = render_to_string("emails/event_invite.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you're invited to {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
 def send_event_blast_email(
     *,
     sender: EmailSender,

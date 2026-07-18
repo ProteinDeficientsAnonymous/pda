@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{{ inviter_name|lower }} invited you to {{ event_title|lower }}{% if event_when %} on {{ event_when|lower }}{% endif %}.
+
+view the event:
+
+{{ event_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
