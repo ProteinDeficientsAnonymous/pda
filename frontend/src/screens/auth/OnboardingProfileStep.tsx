@@ -51,6 +51,9 @@ export function OnboardingProfileStep({ onDone }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
+      <p className="text-foreground-tertiary text-sm">
+        totally optional — fill in what you want, skip the rest, change it later in settings
+      </p>
       <div className="flex flex-col items-center gap-2">
         <AvatarUpload size="lg" />
         {hasPhoto ? <p className="text-foreground-tertiary text-sm">✓ photo added</p> : null}
