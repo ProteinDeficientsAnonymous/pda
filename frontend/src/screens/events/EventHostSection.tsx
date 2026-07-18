@@ -49,8 +49,7 @@ export function EventHostSection({
       inviteId: event.coHostInviteIds[i] ?? null,
     });
   });
-  // Backend only includes pending invites for the creator + accepted co-hosts.
-  // Other viewers always get an empty list, so the chips never leak.
+  // backend already scopes pending invites to creator/accepted co-hosts; others get []
   const pending = event.pendingCohostInvites;
   if (hosts.length === 0 && pending.length === 0 && !canEdit) return null;
   const totalChips = hosts.length + pending.length;

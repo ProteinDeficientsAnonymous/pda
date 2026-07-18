@@ -26,18 +26,11 @@ interface Props {
   token?: string;
 }
 
-// A token holder has no real member identity — resolve_event_viewer explicitly
-// never satisfies member/creator/co-host checks for a token (see backend
-// community/_event_viewer.py). Host/admin affordances stay gated on the real
-// auth session, never on the token.
 export function EventMemberSection({ event, token }: Props) {
   const user = useAuthStore((s) => s.user);
   if (!user && !token) return null;
 
-  // A token holder is never a real member — resolve_event_viewer explicitly
-  // never satisfies member/creator/co-host checks for a token (see backend
-  // community/_event_viewer.py). Host/invite/admin affordances all key off
-  // a real auth session, never the token.
+  // token holders never satisfy host/co-host checks (see backend resolve_event_viewer)
   const isCoHost =
     user !== null && (user.id === event.createdById || event.coHostIds.includes(user.id));
   const canManageEvents = user !== null && hasPermission(user, Permission.ManageEvents);
