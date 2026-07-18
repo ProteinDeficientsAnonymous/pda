@@ -1,9 +1,3 @@
-// Bulk-create dialog for /members. Admin pastes a list of phone numbers
-// (one per line) — we normalize each to E.164 using US as the default
-// country code and post them to /api/auth/bulk-create-users/. The result
-// view lists one-time magic-login links for each newly created row and
-// any per-row errors so the admin can retry the failed entries.
-
 import { type SyntheticEvent, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';

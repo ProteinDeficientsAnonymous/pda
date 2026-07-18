@@ -1,7 +1,3 @@
-// date-fns localizer for react-big-calendar. Respects the user's weekStart
-// preference (Sunday=0 | Monday=1), defaulting to Sunday to match the project
-// rule that weekStart is user-configurable on the profile.
-
 import { format, getDay, parse, startOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { dateFnsLocalizer } from 'react-big-calendar';

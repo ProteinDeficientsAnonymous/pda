@@ -1,8 +1,3 @@
-// Accept/decline banner shown to a user with a pending co-host invite for
-// this event. Hidden once the invite is resolved or the event is past — the
-// banner relies on `myPendingCohostInviteId` from EventOut, which the backend
-// clears via lazy expiration once the event ends.
-
 import { toast } from 'sonner';
 
 import { hasErrorCode } from '@/api/apiErrors';

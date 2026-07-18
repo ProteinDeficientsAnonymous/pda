@@ -1,8 +1,3 @@
-// Action row on the event detail page: add-to-calendar menu + share.
-//
-// Add-to-calendar is a tiny popover with google / apple / download-ics.
-// Share uses the Web Share API when available; falls back to clipboard.
-
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';

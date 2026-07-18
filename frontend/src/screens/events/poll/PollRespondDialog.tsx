@@ -1,8 +1,3 @@
-// Respond to a poll — yes / maybe / no per option. Each click POSTs the full
-// merged votes map (idempotent). Dialog stays open so a member can change
-// multiple options in one sitting; it closes only via backdrop / Escape /
-// close button.
-
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 

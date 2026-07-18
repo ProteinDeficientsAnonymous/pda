@@ -1,8 +1,3 @@
-// Host-only event stats + attendance mutations.
-//
-// The GET /stats/ endpoint returns 403 for non-hosts, so components must gate
-// the `enabled` flag on host status themselves to avoid noisy error toasts.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
@@ -72,6 +67,7 @@ export function useEventStats(eventId: string | undefined, enabled: boolean) {
       const { data } = await apiClient.get<WireStats>(`/api/community/events/${id}/stats/`);
       return mapStats(data);
     },
+    // GET /stats/ returns 403 for non-hosts; callers must gate this on host status.
     enabled: Boolean(eventId) && enabled,
   });
 }

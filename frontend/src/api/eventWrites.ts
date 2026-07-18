@@ -1,9 +1,3 @@
-// Event create/edit + photo upload mutations.
-//
-// Separated from events.ts so phase-2 read hooks stay focused. The POST path
-// has a hard 10/day rate limit per backend _events.py; we surface that as a
-// dedicated error so the UI can show a sane message.
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';

@@ -1,7 +1,3 @@
-// Hand-written until `pnpm types:api` is run against a live backend. When the
-// generated types come online, swap these for `components['schemas']['UserOut']`
-// narrowings in api/auth.ts — this file should disappear.
-
 export const CalendarFeedScope = {
   All: 'all',
   Mine: 'mine',

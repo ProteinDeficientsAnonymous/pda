@@ -1,5 +1,3 @@
-// Dialog for inserting or editing a CTA button node in the editor.
-
 import { type SyntheticEvent, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';

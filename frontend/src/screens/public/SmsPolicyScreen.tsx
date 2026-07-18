@@ -1,13 +1,8 @@
-// Static SMS policy page. Linked from the join form's consent checkbox and
-// from the URL the org submits to Twilio's toll-free verification form. Stable
-// content — don't make this editable, since changing the policy mid-review
-// breaks Twilio's verification process. The automated SMS send path is deferred
-// (see #501), but this policy page stays to back manual group-text consent.
-
 import type { ReactNode } from 'react';
 
 import { ContentContainer } from './ContentContainer';
 
+// don't make this editable — Twilio toll-free verification depends on stable content
 export default function SmsPolicyScreen() {
   return (
     <ContentContainer>

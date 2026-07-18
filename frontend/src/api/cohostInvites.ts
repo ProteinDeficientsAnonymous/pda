@@ -1,9 +1,3 @@
-// Co-host invite mutations: accept / decline / rescind.
-//
-// Each endpoint returns the updated EventOut so we can both invalidate the
-// detail cache and seed it with fresh data — avoids a flicker where the banner
-// disappears but the host row hasn't refetched yet.
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';

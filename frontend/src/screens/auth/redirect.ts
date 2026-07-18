@@ -1,7 +1,3 @@
-// Open-redirect guard for the post-login `redirect` query param. Lives in its
-// own module (not LoginScreen.tsx) so react-refresh stays happy — component
-// files may only export components.
-
 export const DEFAULT_POST_LOGIN_ROUTE = '/calendar';
 
 function isNonPreservedTarget(path: string): boolean {

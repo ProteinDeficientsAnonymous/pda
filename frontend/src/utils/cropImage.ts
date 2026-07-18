@@ -1,8 +1,3 @@
-// Canvas-based image crop. Given a source image blob and a crop rect (in
-// source pixels), produces a cropped PNG Blob. react-easy-crop gives us the
-// rect; we do the actual compositing. Output dimensions preserve the crop
-// area's aspect ratio, bounded by maxSize on the longer edge.
-
 export interface CropArea {
   x: number;
   y: number;

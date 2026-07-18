@@ -1,13 +1,3 @@
-// Dual-mode poll creator.
-//
-//   live mode   — eventId present. "create poll" fires useCreatePoll.
-//   buffer mode — onBuffer provided (EventForm, pre-save). Options are
-//                 returned to the parent, which queues them and fires the
-//                 create-poll request after useCreateEvent settles.
-//
-// Reason: the event-create form doesn't have an event_id yet, and we don't
-// want to force a round-trip save just to start a poll.
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 

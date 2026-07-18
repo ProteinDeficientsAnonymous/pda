@@ -1,8 +1,3 @@
-// Invite members to an event — calls the dedicated invitations endpoint
-// (POST /events/{id}/invitations/), which adds with set-union semantics so
-// it can never clobber the existing invitee list. Co-hosts + members (when
-// invite_permission=all_members) can invite.
-
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';

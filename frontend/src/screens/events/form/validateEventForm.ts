@@ -1,7 +1,3 @@
-// Client-side event form validation. Mirrors what _events.py enforces, but
-// lets the UI show field-level errors before the round-trip. The server is
-// still the source of truth; we surface the returned `detail` on a 400.
-
 import type { EventFormValues } from '@/api/eventWrites';
 
 type Errors = Partial<Record<keyof EventFormValues, string>>;

@@ -1,8 +1,3 @@
-// DOMPurify wrapper with defaults tuned for PDA's rendered Quill Delta HTML.
-// The backend produces this HTML via delta_to_html; we sanitize again on the
-// client as defense-in-depth (the backend isn't the only path — future edits,
-// pasted content, etc. could flow through).
-
 import DOMPurify from 'dompurify';
 
 // Conservative allowlist: headings, lists, inline emphasis, links, images,

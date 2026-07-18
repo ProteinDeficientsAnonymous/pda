@@ -1,6 +1,3 @@
-// Add co-hosts to an event from the event detail view. Hosts + existing
-// co-hosts can open this from the hosts section.
-
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';

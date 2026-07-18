@@ -1,6 +1,3 @@
-// Admin user management — list, create, edit, magic-link resend, role patch.
-// Mirrors backend/users/_management.py.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { normalizePermissions } from '@/models/permissions';

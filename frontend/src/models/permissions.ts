@@ -1,5 +1,3 @@
-// Permission keys — mirror backend/users/permissions.py:PermissionKey.
-// Keep in sync: when adding a key, update both sides.
 export const Permission = {
   CreateUser: 'create_user',
   ManageUsers: 'manage_users',

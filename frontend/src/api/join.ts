@@ -1,12 +1,3 @@
-// Join-request API: fetch the dynamic question list + submit. The static
-// fields (first_name, last_name, phone_number) are NOT in the question list —
-// the form composes them with the server questions.
-//
-// The submit endpoint has these notable error shapes:
-//   400 { detail }                                   — validation (bad name, duplicate pending, etc.)
-//   409 phone_already_invited — phone already matches a user → /login?invited=true
-//   409 email.already_exists  — email matches another user → surfaced inline on the form
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { hasErrorCode } from './apiErrors';

@@ -1,8 +1,3 @@
-// Location autocomplete field. Type 3+ chars to search via Photon geocode
-// API (proxied through backend). On selection, fills the input with a condensed
-// lowercase address and fires onChange with location + lat/lng. Free text
-// still works — coords stay null if no result is picked.
-
 import { useEffect, useRef, useState } from 'react';
 
 import { type PhotonResult, searchLocations } from '@/api/geocode';

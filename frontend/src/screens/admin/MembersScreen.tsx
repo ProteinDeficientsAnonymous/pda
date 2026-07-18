@@ -1,7 +1,3 @@
-// Admin: /members — a tabbed shell switching between the member list, the
-// non-member list (both share MembersTab, parameterized by mode), and role
-// management.
-
 import { useState } from 'react';
 
 import { useAuthStore } from '@/auth/store';

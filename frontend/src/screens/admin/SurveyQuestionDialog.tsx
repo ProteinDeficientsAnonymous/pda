@@ -1,6 +1,3 @@
-// Create / edit a single survey question. Covers all 9 field types; options
-// textarea appears only for types that use them.
-
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 

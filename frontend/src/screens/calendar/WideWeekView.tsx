@@ -1,9 +1,3 @@
-// Wide-screen week view — 7 day columns, no time grid. Mirrors the narrow
-// week view's clean chip layout but horizontal. Events within each day are
-// stacked in chronological order; if there isn't enough vertical room for
-// all of them, the last visible slot becomes a "+N more" indicator that
-// drills into that day.
-
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 import { useLayoutEffect, useRef, useState } from 'react';
 

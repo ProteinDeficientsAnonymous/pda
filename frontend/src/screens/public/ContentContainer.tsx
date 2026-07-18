@@ -1,6 +1,3 @@
-// Shared prose page container. Centers content at max-w-3xl with vertical
-// padding and a consistent empty/loading/error UX.
-
 import type { ReactNode } from 'react';
 
 export function ContentContainer({ children }: { children: ReactNode }) {
