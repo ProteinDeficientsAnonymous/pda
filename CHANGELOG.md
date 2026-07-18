@@ -1,3 +1,10 @@
+## [0.40.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.5...v0.40.6) (2026-07-18)
+
+
+### Bug Fixes
+
+* **notifications:** include magic login link in join-approval email (Issue 882) ([#901](https://github.com/ProteinDeficientsAnonymous/pda/issues/901)) ([cac2ac6](https://github.com/ProteinDeficientsAnonymous/pda/commit/cac2ac6ed4faa5d8395627cc165a872a681608e3))
+
 ## [0.40.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.4...v0.40.5) (2026-07-18)
 
 
