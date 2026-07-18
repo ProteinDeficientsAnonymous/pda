@@ -3,9 +3,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export interface SeedScenarioMap {
-  member: { event_id: string; event_title: string; user_phone: string; user_password: string; access_token: string };
+  member: {
+    event_id: string;
+    event_title: string;
+    user_phone: string;
+    user_password: string;
+    access_token: string;
+  };
   'public-new': { event_id: string; event_title: string };
-  'public-returning': { event_id: string; event_title: string; user_phone: string; rsvp_token: string };
+  'public-returning': {
+    event_id: string;
+    event_title: string;
+    user_phone: string;
+    rsvp_token: string;
+  };
   comments: { event_id: string; event_title: string; rsvp_token: string };
   'my-rsvps': { event_id: string; event_title: string; rsvp_token: string };
   'live-updates': {
