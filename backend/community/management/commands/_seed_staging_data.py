@@ -4,19 +4,9 @@ from dataclasses import dataclass
 
 from community.models.choices import AttendanceStatus, EventType, JoinRequestStatus, RSVPStatus
 
+from ._seed_shared import SeedEvent
+
 PASSWORD = "testPassword1@"
-
-
-@dataclass
-class SeedStagingEvent:
-    title: str
-    description: str
-    delta_days: int
-    duration_hours: float
-    location: str
-    event_type: str = EventType.COMMUNITY
-    rsvp_enabled: bool = False
-    max_attendees: int | None = None
 
 
 def perm_phone(index: int) -> str:
@@ -89,28 +79,28 @@ def is_seed_allowed(env_name: str | None, force: bool) -> bool:
 
 
 STAGING_EVENTS = [
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] past potluck",
         description="a wrapped-up community potluck from last month.",
         delta_days=-30,
         duration_hours=3,
         location="community center",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] last week's film night",
         description="documentary screening and discussion.",
         delta_days=-7,
         duration_hours=2,
         location="the annex",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] yesterday's kitchen social",
         description="casual cook-and-hang.",
         delta_days=-1,
         duration_hours=2.5,
         location="shared kitchen",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] happening today",
         description="drop-in tabling and outreach.",
         delta_days=0,
@@ -118,28 +108,28 @@ STAGING_EVENTS = [
         location="market square",
         event_type=EventType.OFFICIAL,
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] tomorrow's cooking workshop",
         description="plant-based basics, hands-on.",
         delta_days=1,
         duration_hours=2,
         location="teaching kitchen",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] weekend park cleanup",
         description="gloves and bags provided.",
         delta_days=3,
         duration_hours=3,
         location="riverside park",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] next week's book club",
         description="this month's read: collective liberation.",
         delta_days=7,
         duration_hours=1.5,
         location="library room b",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] monthly official meeting",
         description="agenda, updates, and open floor.",
         delta_days=14,
@@ -147,21 +137,21 @@ STAGING_EVENTS = [
         location="main hall",
         event_type=EventType.OFFICIAL,
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] future festival",
         description="all-day tabling, food, and music.",
         delta_days=45,
         duration_hours=8,
         location="fairgrounds",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title="[staging] far-future retreat",
         description="weekend planning retreat.",
         delta_days=90,
         duration_hours=48,
         location="the lodge",
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title=NON_MEMBER_EVENT_TITLE,
         description="official public event for testing non-member rsvp.",
         delta_days=5,
@@ -171,7 +161,7 @@ STAGING_EVENTS = [
         rsvp_enabled=True,
         max_attendees=20,
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title=OFFICIAL_PAST_TITLE,
         description="past official event with attendance marked for the report.",
         delta_days=-10,
@@ -181,7 +171,7 @@ STAGING_EVENTS = [
         rsvp_enabled=True,
         max_attendees=8,
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title=OFFICIAL_TODAY_TITLE,
         description="official event happening today with rsvp open, well under capacity.",
         delta_days=0,
@@ -191,7 +181,7 @@ STAGING_EVENTS = [
         rsvp_enabled=True,
         max_attendees=50,
     ),
-    SeedStagingEvent(
+    SeedEvent(
         title=OFFICIAL_FULL_TITLE,
         description="official event at/over capacity to exercise waitlist + promotion.",
         delta_days=9,
