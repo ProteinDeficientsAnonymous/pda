@@ -8,6 +8,8 @@ import { apiClient } from './client';
 
 export type PublicRsvpIn = components['schemas']['PublicRsvpIn'];
 export type PublicRsvpOut = components['schemas']['PublicRsvpOut'];
+export type PublicRsvpPhoneStatus = components['schemas']['PublicRsvpPhoneStatus'];
+export type PublicRsvpPhoneCheckOut = components['schemas']['PublicRsvpPhoneCheckOut'];
 type PublicRsvpManageIn = components['schemas']['PublicRsvpManageIn'];
 
 interface SubmitArgs {
@@ -21,6 +23,23 @@ export function useSubmitPublicRsvp() {
       const { data } = await apiClient.post<PublicRsvpOut>(
         `/api/community/public/events/${eventId}/rsvp/`,
         payload,
+      );
+      return data;
+    },
+  });
+}
+
+interface PhoneCheckArgs {
+  eventId: string;
+  phoneNumber: string;
+}
+
+export function useCheckPublicRsvpPhone() {
+  return useMutation({
+    mutationFn: async ({ eventId, phoneNumber }: PhoneCheckArgs) => {
+      const { data } = await apiClient.post<PublicRsvpPhoneCheckOut>(
+        `/api/community/public/events/${eventId}/rsvp-phone-check/`,
+        { phone_number: phoneNumber },
       );
       return data;
     },

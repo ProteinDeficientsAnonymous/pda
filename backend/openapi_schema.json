@@ -3943,6 +3943,46 @@
         "title": "PublicRsvpOut",
         "type": "object"
       },
+      "PublicRsvpPhoneCheckIn": {
+        "properties": {
+          "phone_number": {
+            "maxLength": 20,
+            "title": "Phone Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone_number"
+        ],
+        "title": "PublicRsvpPhoneCheckIn",
+        "type": "object"
+      },
+      "PublicRsvpPhoneCheckOut": {
+        "properties": {
+          "rsvp_token": {
+            "default": "",
+            "title": "Rsvp Token",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicRsvpPhoneStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "PublicRsvpPhoneCheckOut",
+        "type": "object"
+      },
+      "PublicRsvpPhoneStatus": {
+        "enum": [
+          "member",
+          "already_rsvpd",
+          "new"
+        ],
+        "title": "PublicRsvpPhoneStatus",
+        "type": "string"
+      },
       "PublicRsvpStateOut": {
         "properties": {
           "has_plus_one": {
@@ -11279,6 +11319,69 @@
           }
         ],
         "summary": "Update Page",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/public/events/{event_id}/rsvp-phone-check/": {
+      "post": {
+        "description": "Resolve a phone number's state for this event, before the full rsvp form is shown.",
+        "operationId": "community__public_rsvp_submit_check_public_rsvp_phone",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicRsvpPhoneCheckIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRsvpPhoneCheckOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "summary": "Check Public Rsvp Phone",
         "tags": [
           "community"
         ]
