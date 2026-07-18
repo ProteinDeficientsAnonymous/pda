@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { makeEvent } from '@/test/fixtures';
+
 import {
-  type Event,
   eventClass,
   EventStatus,
   EventType,
@@ -10,60 +11,6 @@ import {
   RsvpServerStatus,
   spotsLeft,
 } from './event';
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return {
-    id: 'test-id',
-    title: 'Test Event',
-    description: '',
-    startDatetime: new Date('2026-04-15T18:00:00Z'),
-    endDatetime: null,
-    location: '',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: false,
-    allowPlusOnes: false,
-    maxAttendees: null,
-    attendingCount: 0,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
-    createdById: null,
-    createdByName: null,
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
-    guests: [],
-    myRsvp: null,
-    viewerUserId: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: 'all_members',
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Community,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    tags: [],
-    isPast: false,
-    status: EventStatus.Active,
-    ...overrides,
-  };
-}
 
 describe('eventClass', () => {
   it('returns cancelled class for cancelled events (highest precedence)', () => {

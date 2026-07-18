@@ -2,13 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  type Event,
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-} from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 const submitMutate = vi.fn();
 const checkPhoneMutate = vi.fn();
@@ -18,60 +12,6 @@ vi.mock('@/api/publicRsvp', () => ({
 }));
 
 import { PublicRsvpForm } from './PublicRsvpForm';
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return {
-    id: 'ev1',
-    title: 'Potluck',
-    description: '',
-    startDatetime: new Date('2099-06-01T18:00:00Z'),
-    endDatetime: null,
-    location: '',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: true,
-    allowPlusOnes: true,
-    maxAttendees: null,
-    attendingCount: 0,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
-    createdById: null,
-    createdByName: null,
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
-    guests: [],
-    myRsvp: null,
-    viewerUserId: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: InvitePermission.AllMembers,
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Official,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    tags: [],
-    isPast: false,
-    status: EventStatus.Active,
-    ...overrides,
-  };
-}
 
 function renderForm(
   event = makeEvent(),
