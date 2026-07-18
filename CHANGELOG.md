@@ -1,3 +1,10 @@
+## [0.48.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.1...v0.48.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **faq:** flush pending autosave on stop editing (Issue 899) ([#925](https://github.com/ProteinDeficientsAnonymous/pda/issues/925)) ([7f37ff4](https://github.com/ProteinDeficientsAnonymous/pda/commit/7f37ff4fbc506378d260338ff8d9351fd4380915))
+
 ## [0.48.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.0...v0.48.1) (2026-07-18)
 
 
