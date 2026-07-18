@@ -1,3 +1,11 @@
+# [0.43.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.42.0...v0.43.0) (2026-07-18)
+
+
+### Features
+
+* **events:** recognize returning non-member rsvps by phone (Issue 894) ([#910](https://github.com/ProteinDeficientsAnonymous/pda/issues/910)) ([b4d1d8e](https://github.com/ProteinDeficientsAnonymous/pda/commit/b4d1d8e4f5bcd556dd8f8617fd14316d7643e514))
+* **users:** hide contact info from new members until first login ([#902](https://github.com/ProteinDeficientsAnonymous/pda/issues/902)) ([642f34e](https://github.com/ProteinDeficientsAnonymous/pda/commit/642f34e3f1b5cf50403f15c35200de3b156a82bd))
+
 # [0.42.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.41.0...v0.42.0) (2026-07-18)
 
 
