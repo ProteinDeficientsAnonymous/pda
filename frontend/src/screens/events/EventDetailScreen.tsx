@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
-import { clearStoredRsvpToken, getStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import {
@@ -43,13 +42,11 @@ export default function EventDetailScreen() {
   const rsvpToken = isAuthed ? undefined : (urlToken ?? getStoredRsvpToken() ?? undefined);
   const { data: event, isPending, isError, error } = useEvent(id, undefined, rsvpToken);
 
-  // A supplied token that didn't unlock the event is expired/invalid — drop it
-  // so a stale stored token doesn't keep re-attaching on every navigation.
-  const tokenRejected =
-    !isPending && !isError && Boolean(rsvpToken) && !isAuthed && event.viewerUserId === null;
-  useEffect(() => {
-    if (tokenRejected) clearStoredRsvpToken();
-  }, [tokenRejected]);
+  // We never clear the stored token here: viewerUserId is null both for a dead
+  // token AND for a live token on an event that isn't public-rsvp-eligible, so
+  // this view can't tell them apart. Clearing on that ambiguous signal wiped
+  // valid tokens mid-browse (issue #880). A dead token is harmless — it resolves
+  // to anonymous — and is cleared authoritatively by the /my-rsvps 404 path.
 
   if (isPending) return <ContentLoading />;
   if (isError) {
