@@ -15,7 +15,6 @@ import { EventActions } from './EventActions';
 import { EventBadge } from './EventBadge';
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { EventMemberSection } from './EventMemberSection';
-import { EventPublicRsvpSection } from './EventPublicRsvpSection';
 import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
 import { PublicRsvpSection } from './PublicRsvpSection';
@@ -151,7 +150,7 @@ function DetailSection({
   rsvpToken: string | undefined;
 }) {
   if (isAuthed) return <EventMemberSection event={event} />;
-  if (hasTokenUnlock) return <EventPublicRsvpSection event={event} token={rsvpToken ?? ''} />;
+  if (hasTokenUnlock) return <EventMemberSection event={event} token={rsvpToken ?? ''} />;
   return <AnonSection event={event} />;
 }
 
