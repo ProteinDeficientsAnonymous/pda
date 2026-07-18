@@ -433,7 +433,6 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     notify_attendees = updates.pop("notify_attendees", False) or False
 
     # Field edits before the transition so publish validates the corrected date.
-    # Wrapped in a transaction so a failed status transition rolls back the field edits.
     with transaction.atomic():
         _apply_field_updates(request, event, event_id, updates)
 
