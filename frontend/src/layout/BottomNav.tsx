@@ -1,4 +1,4 @@
-// Fixed bottom nav — calendar / my events / +event / members / profile.
+// Fixed bottom nav — calendar / my rsvps / +event / members / profile.
 //
 // Mirrors Flutter's NavigationBar with labelBehavior=alwaysHide: labels are
 // visually hidden but present in the accessible name so screen readers can
@@ -8,6 +8,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
 
@@ -15,12 +16,14 @@ export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const onEventsAdd = location.pathname === '/events/add';
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
   const photoUrl = user?.profilePhotoUrl
     ? user.photoUpdatedAt
       ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
       : user.profilePhotoUrl
     : '';
+  const myEventsTo = isAuthed ? '/events/mine' : getStoredRsvpToken() ? '/my-rsvps' : null;
 
   return (
     <nav
@@ -32,9 +35,13 @@ export function BottomNav() {
           {({ active }) => <CalendarIcon filled={active} />}
         </NavItem>
 
-        <NavItem to="/events/mine" label="my events">
-          {({ active }) => <StarIcon filled={active} />}
-        </NavItem>
+        {myEventsTo ? (
+          <NavItem to={myEventsTo} label="my rsvps">
+            {({ active }) => <StarIcon filled={active} />}
+          </NavItem>
+        ) : (
+          <div />
+        )}
 
         <div className="flex items-center justify-center">
           <button
