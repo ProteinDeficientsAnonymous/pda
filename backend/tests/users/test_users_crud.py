@@ -266,12 +266,17 @@ class TestSearchUsers:
         assert response.status_code == 401
 
     def test_search_limits_to_ten_results(self, api_client, auth_headers, db):
-        for i in range(15):
-            User.objects.create_user(
+        users = [
+            User(
                 phone_number=f"+1555001{i:04d}",
-                password="pass",
                 first_name=f"Searchable User {i}",
+                is_member=True,
             )
+            for i in range(11)
+        ]
+        for user in users:
+            user.set_unusable_password()
+        User.objects.bulk_create(users)
         response = api_client.get("/api/auth/users/search/?q=Searchable", **auth_headers)
         assert response.status_code == 200
         assert len(response.json()) <= 10
