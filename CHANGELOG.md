@@ -1,3 +1,10 @@
+# [0.41.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.6...v0.41.0) (2026-07-18)
+
+
+### Features
+
+* **events:** add forget-my-rsvps control for non-members (Issue 896) ([#908](https://github.com/ProteinDeficientsAnonymous/pda/issues/908)) ([809e473](https://github.com/ProteinDeficientsAnonymous/pda/commit/809e473297cf787451ce58767501c5aca14591ab))
+
 ## [0.40.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.5...v0.40.6) (2026-07-18)
 
 
