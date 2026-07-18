@@ -235,6 +235,10 @@ function LoginOrJoinSection() {
           request to join
         </Link>
       </div>
+      <p className="text-foreground-tertiary mt-4 text-sm">
+        if you're not a member yet, look for the official events in blue on the calendar — once
+        you've come to one of those, you'll be able to sign up for all of the events on here!
+      </p>
     </section>
   );
 }
