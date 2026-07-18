@@ -20,6 +20,7 @@ from community._cohost_invite_helpers import (
     diff_cohost_invites,
     get_my_pending_invite,
     get_pending_invites_for_event,
+    send_cohost_invite_emails,
 )
 from community._event_schemas import (
     CancellationOut,
@@ -379,6 +380,7 @@ def _update_co_hosts(
     newly_invited, removed_accepted_ids = diff_cohost_invites(event, next_ids, updater)
     if newly_invited:
         create_cohost_invite_notifications(event, newly_invited, updater)
+        send_cohost_invite_emails(event, newly_invited, updater)
 
     if newly_invited or removed_accepted_ids:
         broadcast_cohost_change(

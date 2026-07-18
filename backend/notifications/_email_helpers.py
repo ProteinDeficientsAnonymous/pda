@@ -197,6 +197,39 @@ def send_event_invite_email(
     )
 
 
+@dataclass(frozen=True)
+class CohostInviteEmailDetails:
+    """Recipient + event details for the co-host invite email."""
+
+    to: str
+    display_name: str
+    inviter_name: str
+    event_title: str
+    event_url: str
+
+
+def send_cohost_invite_email(
+    *,
+    sender: EmailSender,
+    details: CohostInviteEmailDetails,
+) -> SendResult:
+    """Render and send the "you've been invited to co-host" email."""
+    context = {
+        "display_name": details.display_name or "",
+        "inviter_name": details.inviter_name,
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+    }
+    html = render_to_string("emails/cohost_invite.html", context)
+    text = render_to_string("emails/cohost_invite.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you've been invited to co-host {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
 def send_event_blast_email(
     *,
     sender: EmailSender,
