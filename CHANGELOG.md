@@ -1,3 +1,10 @@
+## [0.48.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.4...v0.48.5) (2026-07-18)
+
+
+### Bug Fixes
+
+* **seed:** document seeder split rationale, fix affected-tests gap ([#936](https://github.com/ProteinDeficientsAnonymous/pda/issues/936)) ([c4c3bb1](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4c3bb10f8b911ff840a57f93896e51bb28de1cb))
+
 ## [0.48.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.3...v0.48.4) (2026-07-18)
 
 
