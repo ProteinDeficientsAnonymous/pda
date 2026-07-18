@@ -10019,7 +10019,7 @@
     },
     "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
       "post": {
-        "operationId": "community__event_rsvps_set_attendance",
+        "operationId": "community__event_host_actions_set_attendance",
         "parameters": [
           {
             "in": "path",
@@ -10117,7 +10117,7 @@
     },
     "/api/community/events/{event_id}/stats/": {
       "get": {
-        "operationId": "community__event_rsvps_get_event_stats",
+        "operationId": "community__event_host_actions_get_event_stats",
         "parameters": [
           {
             "in": "path",
@@ -10175,7 +10175,7 @@
     },
     "/api/community/events/{event_id}/text-recipients/": {
       "get": {
-        "operationId": "community__event_rsvps_get_text_recipients",
+        "operationId": "community__event_host_actions_get_text_recipients",
         "parameters": [
           {
             "in": "path",
