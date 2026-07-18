@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
@@ -11,11 +11,26 @@ import {
   InvitePermission,
 } from '@/models/event';
 
+const checkPhoneMutate = vi.fn();
 vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
 
 import { PublicRsvpForm } from './PublicRsvpForm';
+
+function renderForm(event: Event) {
+  return render(
+    <MemoryRouter>
+      <PublicRsvpForm
+        event={event}
+        onSuccess={vi.fn()}
+        onMember={vi.fn()}
+        onAlreadyRsvpd={vi.fn()}
+      />
+    </MemoryRouter>,
+  );
+}
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -73,22 +88,25 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
 
 describe('public rsvp a11y', () => {
   it('form step one has no axe violations', async () => {
-    const { container } = render(
-      <MemoryRouter>
-        <PublicRsvpForm event={makeEvent()} onSuccess={vi.fn()} />
-      </MemoryRouter>,
-    );
+    const { container } = renderForm(makeEvent());
     const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
     expect(results).toHaveNoViolations();
   }, 15000);
 
-  it('form step two has no axe violations', async () => {
-    const { container } = render(
-      <MemoryRouter>
-        <PublicRsvpForm event={makeEvent()} onSuccess={vi.fn()} />
-      </MemoryRouter>,
-    );
+  it('form step two (phone) has no axe violations', async () => {
+    const { container } = renderForm(makeEvent());
     fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+    const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
+    expect(results).toHaveNoViolations();
+  }, 15000);
+
+  it('form step three (contact details) has no axe violations', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    const { container } = renderForm(makeEvent());
+    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+14155550123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
     const results = await axe(container, { rules: { 'color-contrast': { enabled: false } } });
     expect(results).toHaveNoViolations();
   }, 15000);

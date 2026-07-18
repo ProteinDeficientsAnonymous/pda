@@ -1345,6 +1345,26 @@ export interface paths {
         patch: operations["community__pages_update_page"];
         trace?: never;
     };
+    "/api/community/public/events/{event_id}/rsvp-phone-check/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Public Rsvp Phone
+         * @description Resolve a phone number's state for this event, before the full rsvp form is shown.
+         */
+        post: operations["community__public_rsvp_submit_check_public_rsvp_phone"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/public/events/{event_id}/rsvp/": {
         parameters: {
             query?: never;
@@ -3530,6 +3550,25 @@ export interface components {
             /** Rsvp Token */
             rsvp_token: string;
         };
+        /** PublicRsvpPhoneCheckIn */
+        PublicRsvpPhoneCheckIn: {
+            /** Phone Number */
+            phone_number: string;
+        };
+        /** PublicRsvpPhoneCheckOut */
+        PublicRsvpPhoneCheckOut: {
+            /**
+             * Rsvp Token
+             * @default
+             */
+            rsvp_token: string;
+            status: components["schemas"]["PublicRsvpPhoneStatus"];
+        };
+        /**
+         * PublicRsvpPhoneStatus
+         * @enum {string}
+         */
+        PublicRsvpPhoneStatus: "member" | "already_rsvpd" | "new";
         /** PublicRsvpStateOut */
         PublicRsvpStateOut: {
             /** Has Plus One */
@@ -8338,6 +8377,50 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__public_rsvp_submit_check_public_rsvp_phone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicRsvpPhoneCheckIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRsvpPhoneCheckOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,4 +1,5 @@
 import logging
+from enum import StrEnum
 
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
@@ -22,7 +23,7 @@ from community._public_rsvp_shared import (
     _log_email_failure,
 )
 from community._shared import ErrorOut, _validate_phone, validate_display_name
-from community._validation import Code, raise_validation
+from community._validation import Code, ValidationException, raise_validation
 from community.models import Event, RSVPStatus
 
 router = Router()
@@ -37,6 +38,21 @@ class PublicRsvpIn(BaseModel):
     has_plus_one: bool = False
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
+
+
+class PublicRsvpPhoneStatus(StrEnum):
+    MEMBER = "member"
+    ALREADY_RSVPD = "already_rsvpd"
+    NEW = "new"
+
+
+class PublicRsvpPhoneCheckIn(BaseModel):
+    phone_number: str = Field(max_length=FieldLimit.PHONE)
+
+
+class PublicRsvpPhoneCheckOut(BaseModel):
+    status: PublicRsvpPhoneStatus
+    rsvp_token: str = ""
 
 
 def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicRsvpOut:
@@ -136,6 +152,36 @@ def _send_confirmation_email(
             raise RuntimeError(result.error or "send returned failure")
     except Exception as exc:
         _log_email_failure(request, event, user, exc)
+
+
+@router.post(
+    "/public/events/{event_id}/rsvp-phone-check/",
+    response={200: PublicRsvpPhoneCheckOut, 404: ErrorOut, 429: ErrorOut},
+    auth=None,
+)
+@rate_limit(key_func=client_ip, rate="20/h")
+def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
+    """Resolve a phone number's state for this event, before the full rsvp form is shown."""
+    event = _load_public_rsvp_event(event_id)
+    try:
+        phone = _validate_phone(payload.phone_number)
+    except ValidationException:
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
+
+    user = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
+    if user is None:
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
+    if user.is_member:
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
+    if event.rsvps.filter(user=user).exists():
+        token = NonMemberRsvpToken.issue_or_extend(user)
+        return Status(
+            200,
+            PublicRsvpPhoneCheckOut(
+                status=PublicRsvpPhoneStatus.ALREADY_RSVPD, rsvp_token=token.token
+            ),
+        )
+    return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
 
 
 @router.post(
