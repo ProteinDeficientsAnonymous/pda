@@ -8,6 +8,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
 
@@ -22,7 +23,7 @@ export function BottomNav() {
       ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
       : user.profilePhotoUrl
     : '';
-  const myEventsTo = isAuthed ? '/events/mine' : '/my-rsvps';
+  const myEventsTo = isAuthed ? '/events/mine' : getStoredRsvpToken() ? '/my-rsvps' : null;
 
   return (
     <nav
@@ -73,12 +74,25 @@ export function BottomNav() {
 }
 
 interface NavItemProps {
-  to: string;
+  to: string | null;
   label: string;
   children: (state: { active: boolean }) => ReactNode;
 }
 
 function NavItem({ to, label, children }: NavItemProps) {
+  if (!to) {
+    return (
+      <div
+        aria-label={label}
+        className="text-muted flex flex-col items-center justify-center gap-0.5"
+      >
+        {children({ active: false })}
+        <span aria-hidden="true" className="h-1 w-1 rounded-full opacity-0" />
+        <span className="sr-only">{label}</span>
+      </div>
+    );
+  }
+
   return (
     <NavLink
       to={to}
