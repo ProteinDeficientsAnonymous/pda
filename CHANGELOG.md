@@ -1,3 +1,10 @@
+## [0.45.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.0...v0.45.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** show waitlist option on public rsvp form at capacity ([#900](https://github.com/ProteinDeficientsAnonymous/pda/issues/900)) ([ab739b0](https://github.com/ProteinDeficientsAnonymous/pda/commit/ab739b0a1ed3482efed1ee01c162607e23cf1f67))
+
 # [0.45.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.44.0...v0.45.0) (2026-07-18)
 
 
