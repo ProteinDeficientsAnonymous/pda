@@ -49,6 +49,15 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
+def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
+    return (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .filter(id=event_id)
+        .first()
+    )
+
+
 def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | None = None) -> None:
     """Post-commit, silently refresh stakeholders' cached event so capacity shows live (no notification)."""
     excluded = exclude_user_ids or set()

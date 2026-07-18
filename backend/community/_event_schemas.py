@@ -233,6 +233,11 @@ class RSVPIn(BaseModel):
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
 
+class HostRSVPIn(BaseModel):
+    status: RSVPStatus
+    has_plus_one: bool = False
+
+
 class TextRecipientsOut(BaseModel):
     attending: list[str] = []
     maybe: list[str] = []
