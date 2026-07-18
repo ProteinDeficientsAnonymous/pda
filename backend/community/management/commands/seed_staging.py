@@ -47,8 +47,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # kept separate from seed.py: enum-driven per-permission + condition-matrix +
-        # non-member fixtures and this env gate don't belong in local dev's `seed`.
+        # kept separate from seed.py so `make seed` never emits staging demo
+        # accounts (enum-driven per-permission/condition-matrix/non-member fixtures).
         env_name = os.environ.get("RAILWAY_ENVIRONMENT_NAME")
         self.stdout.write(f"detected environment: {env_name or 'local/unset'}")
         if not is_seed_allowed(env_name, force=options["force"]):
