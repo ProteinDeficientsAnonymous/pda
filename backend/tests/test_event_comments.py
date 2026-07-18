@@ -138,7 +138,7 @@ class TestPostComment:
         assert response.status_code == 422
 
     def test_post_broadcasts_event_update(self, api_client, rsvp_headers, event_with_rsvp):
-        with patch("community._event_comments.broadcast_event_update") as mock_broadcast:
+        with patch("community._event_comments.broadcast_event_comment_update") as mock_broadcast:
             response = api_client.post(
                 f"/api/community/events/{event_with_rsvp.id}/comments/",
                 data=json.dumps({"body": "first comment"}),
@@ -184,7 +184,7 @@ class TestPostReply:
         self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
     ):
         parent = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="parent")
-        with patch("community._event_comments.broadcast_event_update") as mock_broadcast:
+        with patch("community._event_comments.broadcast_event_comment_update") as mock_broadcast:
             response = api_client.post(
                 f"/api/community/events/{event_with_rsvp.id}/comments/{parent.id}/replies/",
                 data=json.dumps({"body": "reply"}),
@@ -313,7 +313,7 @@ class TestDeleteComment:
         self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
     ):
         comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="mine")
-        with patch("community._event_comments.broadcast_event_update") as mock_broadcast:
+        with patch("community._event_comments.broadcast_event_comment_update") as mock_broadcast:
             response = api_client.delete(
                 f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/",
                 **rsvp_headers,

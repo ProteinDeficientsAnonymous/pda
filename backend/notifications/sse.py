@@ -60,9 +60,10 @@ def _format_notify_for_user(channel: str, payload: str, user_id: str) -> str | N
             return f"event: notification\ndata: {json.dumps({'type': 'notification'})}\n\n"
         return None
     if channel == _EVENT_UPDATES_CHANNEL:
-        # Payload format: "<user_id>:<event_id>"
+        # Payload format: "<user_id-or-*>:<event_id>". "*" broadcasts to every
+        # connected viewer (used for changes visible to any member, e.g. comments).
         target_user, _, event_id = payload.partition(":")
-        if target_user == user_id and event_id:
+        if target_user in (user_id, "*") and event_id:
             return f"event: event_updated\ndata: {json.dumps({'event_id': event_id})}\n\n"
         return None
     return None
