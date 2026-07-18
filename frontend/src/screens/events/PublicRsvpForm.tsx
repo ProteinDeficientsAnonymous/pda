@@ -227,7 +227,10 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
 
   return (
     <section aria-label="rsvp" className="border-border bg-surface mt-8 rounded-lg border p-6">
-      <h2 className="mb-4 text-base font-medium">rsvp</h2>
+      <h2 className="mb-2 text-base font-medium">rsvp</h2>
+      <p className="text-foreground-tertiary mb-4 text-sm">
+        rsvp to see the location and more details
+      </p>
       {renderStep()}
     </section>
   );
