@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -130,5 +130,23 @@ describe('PublicRsvpCard', () => {
       event: { allowPlusOnes: false },
     });
     expect(screen.queryByRole('switch', { name: /bring a \+1/i })).not.toBeInTheDocument();
+  });
+
+  it('renders the comment field', () => {
+    renderCard({ status: RsvpServerStatus.Attending, hasPlusOne: false });
+    expect(screen.getByLabelText('comment (optional)')).toBeInTheDocument();
+  });
+
+  it('calls update with the comment when save comment is clicked', async () => {
+    updateMutate.mockResolvedValue(undefined);
+    renderCard({ status: RsvpServerStatus.Attending, hasPlusOne: false });
+    fireEvent.change(screen.getByLabelText('comment (optional)'), {
+      target: { value: 'bringing snacks' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'save comment' }));
+    await waitFor(() => expect(updateMutate).toHaveBeenCalled());
+    expect(updateMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ comment: 'bringing snacks' }),
+    );
   });
 });

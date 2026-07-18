@@ -19,6 +19,7 @@ interface Props {
   initialStatus: RsvpInputStatus;
   initialHasPlusOne: boolean;
   allowPlusOnes: boolean;
+  allowComment?: boolean;
   busy?: boolean;
   onConfirm: (args: ConfirmArgs) => void;
   onRemove?: (() => void) | undefined;
@@ -31,6 +32,7 @@ export function RsvpBox({
   initialStatus,
   initialHasPlusOne,
   allowPlusOnes,
+  allowComment,
   busy = false,
   onConfirm,
   onRemove,
@@ -40,7 +42,7 @@ export function RsvpBox({
   const [comment, setComment] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(initialHasPlusOne);
 
-  const showComment = mode === 'create';
+  const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
 
   function confirm() {

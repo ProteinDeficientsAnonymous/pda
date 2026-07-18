@@ -3463,6 +3463,8 @@ export interface components {
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
+            /** Comment */
+            comment?: string | null;
             /**
              * Email
              * Format: email
@@ -3492,6 +3494,8 @@ export interface components {
         };
         /** PublicRsvpManageIn */
         PublicRsvpManageIn: {
+            /** Comment */
+            comment?: string | null;
             /**
              * Has Plus One
              * @default false

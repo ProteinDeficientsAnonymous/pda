@@ -12,6 +12,8 @@ import { Toggle } from '@/components/ui/Toggle';
 import { type Event, RSVP_STATUS_LABELS, type RsvpInputStatus, RsvpStatus } from '@/models/event';
 import { optionalEmail } from '@/utils/validators';
 
+import { RsvpCommentField } from './RsvpCommentField';
+
 const MAX_NAME = 100;
 const PUBLIC_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatus.Maybe];
 
@@ -50,6 +52,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(false);
+  const [comment, setComment] = useState('');
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<SubmitError | null>(null);
@@ -78,6 +81,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           phone_number: phone.trim(),
           status,
           has_plus_one: hasPlusOne,
+          comment: comment.trim() || null,
           website,
         },
       });
@@ -147,6 +151,8 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           {event.allowPlusOnes ? (
             <Toggle label="bring a +1" checked={hasPlusOne} onChange={setHasPlusOne} />
           ) : null}
+
+          <RsvpCommentField value={comment} onChange={setComment} disabled={submit.isPending} />
 
           <Button type="submit" disabled={submit.isPending} fullWidth>
             rsvp

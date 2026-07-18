@@ -355,3 +355,68 @@ class TestPublicRsvpToken:
         assert len(body["rsvp_token"]) > 20  # secrets.token_urlsafe(32) output
 
         assert NonMemberRsvpToken.objects.filter(token=body["rsvp_token"]).exists()
+
+
+@pytest.mark.django_db
+class TestPublicRsvpComment:
+    def test_going_comment_creates_event_comment(
+        self, api_client, official_event, fake_email_sender
+    ):
+        response = post(api_client, official_event, comment="bringing snacks")
+        assert response.status_code == 200
+        from community.models import EventComment
+
+        user = User.objects.get(phone_number="+14155550123")
+        comments = EventComment.objects.filter(event=official_event, author=user)
+        assert comments.count() == 1
+        assert comments.first().body == "bringing snacks"
+
+    def test_cant_go_comment_sends_decline_notification(
+        self, api_client, official_event, fake_email_sender
+    ):
+        """Can't Go is not available for first-time public RSVPs, but the endpoint
+        must handle it gracefully if ever called directly: a decline-note notification
+        is sent and no public comment is created."""
+        from community.models import EventComment
+        from notifications.models import Notification, NotificationType
+
+        host = official_event.created_by
+        resp = api_client.post(
+            URL_TEMPLATE.format(event_id=official_event.id),
+            {
+                **payload(),
+                "status": RSVPStatus.CANT_GO,
+                "comment": "out of town",
+            },
+            content_type="application/json",
+        )
+        # The endpoint accepts any status; validation only blocks WAITLISTED.
+        assert resp.status_code == 200
+        user = User.objects.get(phone_number="+14155550123")
+        assert not EventComment.objects.filter(event=official_event, author=user).exists()
+        if host:
+            assert Notification.objects.filter(
+                recipient=host, notification_type=NotificationType.RSVP_DECLINED_NOTE
+            ).exists()
+
+    def test_empty_comment_creates_nothing(
+        self, api_client, official_event, fake_email_sender
+    ):
+        from community.models import EventComment
+
+        response = post(api_client, official_event, comment="   ")
+        assert response.status_code == 200
+        user = User.objects.get(phone_number="+14155550123")
+        assert not EventComment.objects.filter(event=official_event, author=user).exists()
+
+    def test_no_comment_creates_nothing(self, api_client, official_event, fake_email_sender):
+        from community.models import EventComment
+
+        response = post(api_client, official_event)
+        assert response.status_code == 200
+        user = User.objects.get(phone_number="+14155550123")
+        assert not EventComment.objects.filter(event=official_event, author=user).exists()
+
+    def test_oversized_comment_is_rejected(self, api_client, official_event, fake_email_sender):
+        response = post(api_client, official_event, comment="x" * 301)
+        assert response.status_code == 422

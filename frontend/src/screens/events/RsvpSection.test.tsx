@@ -37,7 +37,13 @@ vi.mock('./RsvpGuestList', () => ({
 // Covered by RsvpCommentField.test.tsx — stubbed here so the RsvpBox's textarea
 // isn't a factor in assertions that only care about the dialog/pills.
 vi.mock('./RsvpCommentField', () => ({
-  RsvpCommentField: () => <div data-testid="rsvp-comment-field" />,
+  RsvpCommentField: ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+    <textarea
+      data-testid="rsvp-comment-field"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ),
 }));
 
 import { RsvpSection } from './RsvpSection';
@@ -307,5 +313,59 @@ describe('RsvpSection — token-holding viewer (Issue 854)', () => {
     fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
 
     expect(screen.getByRole('checkbox')).toBeChecked();
+  });
+});
+
+describe('RsvpSection — comments in public manage vs member flows', () => {
+  beforeEach(() => {
+    updatePublicRsvpMutate.mockReset();
+    setRsvpMutate.mockReset();
+  });
+
+  it('renders the comment field in edit mode when token is present, and forwards it on save', async () => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    renderSection(
+      makeEvent({
+        myRsvp: RsvpServerStatus.Attending,
+        viewerUserId: 'nonmember-1',
+      }),
+      'tok-123',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+    const commentField = screen.getByTestId('rsvp-comment-field');
+    expect(commentField).toBeInTheDocument();
+    fireEvent.change(commentField, { target: { value: 'bringing snacks' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(updatePublicRsvpMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment: 'bringing snacks',
+      }),
+    );
+  });
+
+  it('hides the comment field in edit mode when token is absent (member edit)', () => {
+    useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'abc' });
+    renderSection(
+      makeEvent({
+        myRsvp: RsvpServerStatus.Attending,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
+    expect(screen.queryByTestId('rsvp-comment-field')).not.toBeInTheDocument();
+  });
+
+  it('shows the comment field in create mode when token is absent (member create)', () => {
+    useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'abc' });
+    renderSection(
+      makeEvent({
+        myRsvp: null,
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /going/i }));
+    expect(screen.getByTestId('rsvp-comment-field')).toBeInTheDocument();
   });
 });

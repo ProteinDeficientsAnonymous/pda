@@ -69,6 +69,7 @@ export function RsvpSection({ event, canSeeInvited, token }: Props) {
           eventId: event.id,
           status: args.status,
           hasPlusOne: args.hasPlusOne,
+          ...(args.comment !== undefined ? { comment: args.comment } : {}),
         });
       } else {
         await setRsvp.mutateAsync({
@@ -156,6 +157,7 @@ export function RsvpSection({ event, canSeeInvited, token }: Props) {
           initialStatus={box.initialStatus}
           initialHasPlusOne={hasPlusOne}
           allowPlusOnes={event.allowPlusOnes}
+          allowComment={Boolean(token) || box.mode === 'create'}
           busy={busy}
           onConfirm={(args) => void confirmRsvp(args)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}

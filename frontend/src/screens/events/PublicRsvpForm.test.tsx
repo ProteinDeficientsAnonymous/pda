@@ -189,4 +189,40 @@ describe('PublicRsvpForm', () => {
     expect(hp).toHaveAttribute('name', 'website');
     expect(hp).toHaveAttribute('tabindex', '-1');
   });
+
+  it('renders the comment field in step two', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+    expect(screen.getByLabelText('comment (optional)')).toBeInTheDocument();
+  });
+
+  it('includes a non-empty comment in the submitted payload', async () => {
+    const onSuccess = vi.fn();
+    renderForm(makeEvent(), onSuccess);
+    fillRequired();
+    fireEvent.change(screen.getByLabelText('comment (optional)'), {
+      target: { value: 'bringing snacks' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    expect(submitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ comment: 'bringing snacks' }),
+      }),
+    );
+  });
+
+  it('omits comment from payload when the field is blank', async () => {
+    const onSuccess = vi.fn();
+    renderForm(makeEvent(), onSuccess);
+    fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    // When no comment is entered the form sends null (not undefined) to satisfy the schema type.
+    expect(submitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ comment: null }),
+      }),
+    );
+  });
 });

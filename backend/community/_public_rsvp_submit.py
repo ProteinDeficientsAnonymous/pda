@@ -11,7 +11,11 @@ from pydantic import BaseModel, EmailStr, Field
 from users.models import NonMemberRsvpToken, User
 
 from community._event_helpers import _event_out, broadcast_capacity_change
-from community._event_rsvps import _apply_rsvp_in_transaction, _validate_rsvp_status
+from community._event_rsvps import (
+    _apply_rsvp_in_transaction,
+    _post_rsvp_comment,
+    _validate_rsvp_status,
+)
 from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
     PublicRsvpOut,
@@ -35,6 +39,7 @@ class PublicRsvpIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
+    comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
 
@@ -188,6 +193,8 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         target_id=str(event.id),
         details={"user_id": str(user.pk), "status": final_status},
     )
+
+    _post_rsvp_comment(event.id, user, final_status, payload.comment)
 
     waitlisted = final_status == RSVPStatus.WAITLISTED
     _send_confirmation_email(request, event, user, token.token, waitlisted)

@@ -3792,6 +3792,18 @@
       },
       "PublicRsvpIn": {
         "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
           "email": {
             "format": "email",
             "title": "Email",
@@ -3841,6 +3853,18 @@
       },
       "PublicRsvpManageIn": {
         "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",

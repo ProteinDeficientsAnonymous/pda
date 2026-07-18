@@ -124,4 +124,14 @@ describe('RsvpBox', () => {
     render(<RsvpBox {...base} mode="edit" allowPlusOnes={false} onConfirm={() => {}} />);
     expect(screen.queryByRole('checkbox', { name: /bringing a \+1/i })).not.toBeInTheDocument();
   });
+
+  it('shows the comment field in edit mode when allowComment is true', () => {
+    render(<RsvpBox {...base} mode="edit" allowComment onConfirm={() => {}} />);
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
+
+  it('hides the comment field in create mode when allowComment is false', () => {
+    render(<RsvpBox {...base} mode="create" allowComment={false} onConfirm={() => {}} />);
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
 });
