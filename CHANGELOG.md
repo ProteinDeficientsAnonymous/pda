@@ -1,3 +1,10 @@
+## [0.40.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.2...v0.40.3) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** check phone before showing public rsvp form (Issue 881) ([#890](https://github.com/ProteinDeficientsAnonymous/pda/issues/890)) ([ec364a8](https://github.com/ProteinDeficientsAnonymous/pda/commit/ec364a8d89575b2480e59bf76bf2d62ac18ab63b))
+
 ## [0.40.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.1...v0.40.2) (2026-07-18)
 
 
