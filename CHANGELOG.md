@@ -1,3 +1,15 @@
+# [0.47.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.2...v0.47.0) (2026-07-18)
+
+
+### Bug Fixes
+
+* **comments:** thread rsvp token through reply/react/delete for non-members ([#928](https://github.com/ProteinDeficientsAnonymous/pda/issues/928)) ([5a9ed9d](https://github.com/ProteinDeficientsAnonymous/pda/commit/5a9ed9dc134d5197e15e7a4940e97118aa8dcb56))
+
+
+### Features
+
+* **onboarding:** add pronouns, birthday, and privacy toggles (Issue 923) ([#931](https://github.com/ProteinDeficientsAnonymous/pda/issues/931)) ([f110249](https://github.com/ProteinDeficientsAnonymous/pda/commit/f11024931608b802474c3a90e61c77a7aba3cfb8))
+
 ## [0.46.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.1...v0.46.2) (2026-07-18)
 
 
