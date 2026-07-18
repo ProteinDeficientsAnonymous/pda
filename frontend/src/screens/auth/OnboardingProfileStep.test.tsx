@@ -71,17 +71,38 @@ describe('OnboardingProfileStep', () => {
 
   it('saves a non-empty bio then finishes when "done" is clicked', async () => {
     render(<OnboardingProfileStep onDone={onDone} />);
-    await userEvent.type(screen.getByLabelText(/bio/i), 'i love tofu');
+    await userEvent.type(screen.getByLabelText(/^bio$/i), 'i love tofu');
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
     expect(updateProfile).toHaveBeenCalledWith({ bio: 'i love tofu' });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('finishes without calling updateProfile when bio is left empty', async () => {
+  it('finishes without calling updateProfile when bio and pronouns are left empty', async () => {
     render(<OnboardingProfileStep onDone={onDone} />);
     await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
     expect(updateProfile).not.toHaveBeenCalled();
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('saves non-empty pronouns then finishes when "done" is clicked', async () => {
+    render(<OnboardingProfileStep onDone={onDone} />);
+    await userEvent.type(screen.getByLabelText(/pronouns/i), 'they/them');
+    await userEvent.click(screen.getByRole('button', { name: /^done$/i }));
+    expect(updateProfile).toHaveBeenCalledWith({ pronouns: 'they/them' });
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows privacy toggles including show birthday', () => {
+    render(<OnboardingProfileStep onDone={onDone} />);
+    expect(screen.getByText(/show birthday on my profile/i)).toBeInTheDocument();
+    expect(screen.getByText(/show phone on my profile/i)).toBeInTheDocument();
+    expect(screen.getByText(/show email on my profile/i)).toBeInTheDocument();
+  });
+
+  it('shows a birthday field with an edit control', () => {
+    render(<OnboardingProfileStep onDone={onDone} />);
+    expect(screen.getByText(/^birthday$/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit birthday/i })).toBeInTheDocument();
   });
 
   it('shows the "photo added" confirmation once a profile photo exists', () => {

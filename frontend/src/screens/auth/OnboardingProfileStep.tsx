@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
+import { TextField } from '@/components/ui/TextField';
 import { AvatarUpload } from '@/screens/settings/AvatarUpload';
+import { InlineBirthday } from '@/screens/settings/InlineBirthday';
+import { PrivacyToggles } from '@/screens/settings/PrivacyToggles';
 import { extractApiError } from '@/utils/errors';
 
 const MAX_BIO = 500;
@@ -16,28 +19,35 @@ export function OnboardingProfileStep({ onDone }: Props) {
   const user = useAuthStore((s) => s.user);
   const updateProfile = useAuthStore((s) => s.updateProfile);
   const [bio, setBio] = useState('');
+  const [pronouns, setPronouns] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const hasPhoto = Boolean(user?.profilePhotoUrl);
 
   async function onFinish() {
-    const trimmed = bio.trim();
-    if (!trimmed) {
+    const trimmedBio = bio.trim();
+    const trimmedPronouns = pronouns.trim();
+    if (!trimmedBio && !trimmedPronouns) {
       onDone();
       return;
     }
     setError(null);
     setSaving(true);
     try {
-      await updateProfile({ bio: trimmed });
+      await updateProfile({
+        ...(trimmedBio ? { bio: trimmedBio } : {}),
+        ...(trimmedPronouns ? { pronouns: trimmedPronouns } : {}),
+      });
       onDone();
     } catch (err) {
-      setError(extractApiError(err, "couldn't save your bio — try again"));
+      setError(extractApiError(err, "couldn't save your profile — try again"));
     } finally {
       setSaving(false);
     }
   }
+
+  if (!user) return null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -55,6 +65,24 @@ export function OnboardingProfileStep({ onDone }: Props) {
         rows={4}
         hint="optional — a sentence or two about you"
       />
+      <TextField
+        label="pronouns (optional)"
+        placeholder="e.g. she/her, they/them"
+        value={pronouns}
+        onChange={(e) => {
+          setPronouns(e.target.value);
+        }}
+      />
+      <InlineBirthday
+        label="birthday"
+        value={user.birthday}
+        onSave={(v) => updateProfile({ birthday: v })}
+        placeholder="add your birthday"
+      />
+      <div>
+        <p className="text-foreground-tertiary mb-2 text-sm">privacy</p>
+        <PrivacyToggles user={user} onChange={(patch) => void updateProfile(patch)} />
+      </div>
       {error ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
