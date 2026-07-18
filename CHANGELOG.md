@@ -1,3 +1,10 @@
+# [0.45.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.44.0...v0.45.0) (2026-07-18)
+
+
+### Features
+
+* **events:** email notification for co-host invites (Issue 856) ([#907](https://github.com/ProteinDeficientsAnonymous/pda/issues/907)) ([0374c85](https://github.com/ProteinDeficientsAnonymous/pda/commit/0374c85e466e9202ce56d023f1f83ca5aec2e085))
+
 # [0.44.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.43.0...v0.44.0) (2026-07-18)
 
 
