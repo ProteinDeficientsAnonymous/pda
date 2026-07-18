@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
@@ -6,19 +5,14 @@ import { useEvent } from '@/api/events';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import {
-  canManageEvent,
-  canPublicRsvp,
-  EventStatus,
-  EventType,
-  EventVisibility,
-} from '@/models/event';
+import { canManageEvent, canPublicRsvp } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
 
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
+import { EventBadge } from './EventBadge';
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { EventMemberSection } from './EventMemberSection';
 import { EventPublicRsvpSection } from './EventPublicRsvpSection';
@@ -79,7 +73,7 @@ export default function EventDetailScreen() {
         <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
           {event.title}
         </h1>
-        <VisibilityBadge event={event} />
+        <EventBadge event={event} />
         {showKebab ? (
           <div className="ml-auto">
             <EventDetailKebabMenu eventId={event.id} />
@@ -123,50 +117,6 @@ function WhenLine({ event }: { event: Event }) {
         ? formatEventDateTime(event.startDatetime, event.endDatetime, event.datetimeTbd)
         : 'date & time tbd'}
     </p>
-  );
-}
-
-function VisibilityBadge({ event }: { event: Event }) {
-  if (event.status === EventStatus.Cancelled) {
-    return <Badge tone="neutral">cancelled</Badge>;
-  }
-  if (event.eventType === EventType.Official) {
-    return <Badge tone="blue">official</Badge>;
-  }
-  if (event.eventType === EventType.Club) {
-    return <Badge tone="rose">pda club</Badge>;
-  }
-  if (event.visibility === EventVisibility.InviteOnly) {
-    return <Badge tone="lavender">invite only</Badge>;
-  }
-  if (event.visibility === EventVisibility.MembersOnly) {
-    return <Badge tone="amber">members only</Badge>;
-  }
-  return null;
-}
-
-function Badge({
-  tone,
-  children,
-}: {
-  tone: 'neutral' | 'blue' | 'amber' | 'lavender' | 'rose';
-  children: ReactNode;
-}) {
-  const tones = {
-    neutral: 'bg-surface-dim text-foreground-secondary',
-    blue: 'bg-info-subtle text-info',
-    amber: 'bg-warning-subtle text-warning',
-    lavender: 'bg-highlight-subtle text-highlight',
-    rose: '',
-  };
-  const style =
-    tone === 'rose'
-      ? { background: 'var(--color-evt-club-bg)', color: 'var(--color-evt-club-fg)' }
-      : undefined;
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs ${tones[tone]}`} style={style}>
-      {children}
-    </span>
   );
 }
 

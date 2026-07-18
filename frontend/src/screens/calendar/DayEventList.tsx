@@ -5,7 +5,8 @@
 
 import { format, isSameDay } from 'date-fns';
 
-import { type Event as PdaEvent, eventClass } from '@/models/event';
+import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';
+import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
 
@@ -87,6 +88,11 @@ function DayEventCard({ event, onSelect }: CardProps) {
       )}
     >
       <div className="text-[15px] font-semibold">{event.title}</div>
+      {event.eventType === EventType.Official || event.eventType === EventType.Club ? (
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          <EventBadge event={event} />
+        </div>
+      ) : null}
       {timeRange ? <div className="mt-1 text-[13px] opacity-90">{timeRange}</div> : null}
       {event.location ? (
         <div className="mt-0.5 flex items-center gap-1 text-xs opacity-90">
