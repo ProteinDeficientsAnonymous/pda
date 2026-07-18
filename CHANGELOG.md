@@ -1,3 +1,10 @@
+## [0.40.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.3...v0.40.4) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** never clear rsvp token from event detail view (Issue 880) ([#889](https://github.com/ProteinDeficientsAnonymous/pda/issues/889)) ([ecbb0b1](https://github.com/ProteinDeficientsAnonymous/pda/commit/ecbb0b1d3664eae052e450a36e0920f46f86dc2a))
+
 ## [0.40.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.2...v0.40.3) (2026-07-18)
 
 
