@@ -97,12 +97,8 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
 }
 
 function GuestChip({ guest }: { guest: EventGuest }) {
-  return (
-    <Link
-      to={`/members/${guest.userId}`}
-      className="bg-surface-dim hover:bg-surface-dim/70 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs"
-      title={guest.name}
-    >
+  const content = (
+    <>
       {guest.photoUrl ? (
         <img
           src={guest.photoUrl}
@@ -120,6 +116,28 @@ function GuestChip({ guest }: { guest: EventGuest }) {
       )}
       {guest.name}
       {guest.hasPlusOne ? <span className="text-muted">+1</span> : null}
+    </>
+  );
+
+  if (!guest.isMember) {
+    return (
+      <span
+        className="bg-surface-dim/60 text-foreground-secondary inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs opacity-60 grayscale"
+        title={`${guest.name} (not a member)`}
+        aria-label={`${guest.name} (not a member)`}
+      >
+        {content}
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      to={`/members/${guest.userId}`}
+      className="bg-surface-dim hover:bg-surface-dim/70 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs"
+      title={guest.name}
+    >
+      {content}
     </Link>
   );
 }
@@ -144,6 +162,7 @@ export function InvitedList({ event }: { event: Event }) {
               photoUrl,
               hasPlusOne: false,
               attendance: AttendanceStatus.Unknown,
+              isMember: true,
             }}
           />
         );

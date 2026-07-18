@@ -51,6 +51,7 @@ class TestBuildGuestList:
                 show_phone=show_phone,
                 profile_photo=None,
                 hide_last_name=False,
+                is_member=True,
             ),
             status=status,
             has_plus_one=False,

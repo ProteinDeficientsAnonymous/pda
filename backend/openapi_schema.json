@@ -3985,6 +3985,11 @@
             "title": "Has Plus One",
             "type": "boolean"
           },
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"

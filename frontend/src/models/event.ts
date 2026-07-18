@@ -70,6 +70,7 @@ export interface EventGuest {
   photoUrl: string;
   hasPlusOne: boolean;
   attendance: AttendanceStatusValue;
+  isMember: boolean;
 }
 
 export interface EventCancellation {

@@ -54,6 +54,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
         photoUrl: '',
         hasPlusOne: false,
         attendance: AttendanceStatus.Unknown,
+        isMember: true,
       },
       {
         userId: 'b',
@@ -62,6 +63,7 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
         phone: '+15553334444',
         photoUrl: '',
         hasPlusOne: false,
+        isMember: true,
         attendance: AttendanceStatus.Unknown,
       },
     ],

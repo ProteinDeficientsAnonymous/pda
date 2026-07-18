@@ -77,6 +77,7 @@ const BASE_EVENT: Event = {
       photoUrl: '',
       hasPlusOne: false,
       attendance: AttendanceStatus.Unknown,
+      isMember: true,
     },
   ],
   myRsvp: null,

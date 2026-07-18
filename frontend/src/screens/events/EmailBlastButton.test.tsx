@@ -21,6 +21,7 @@ function guest(status: string): EventGuest {
     photoUrl: '',
     hasPlusOne: false,
     attendance: 'unknown',
+    isMember: true,
   };
 }
 
