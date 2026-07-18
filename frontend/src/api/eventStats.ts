@@ -5,7 +5,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { AttendanceStatusValue, EventCancellation, EventStats } from '@/models/event';
+import type {
+  AttendanceStatusValue,
+  EventCancellation,
+  EventStats,
+  RsvpInputStatus,
+} from '@/models/event';
 
 import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
@@ -87,6 +92,23 @@ export function useSetAttendance(eventId: string) {
       // attendance marks feed the admin report + members-list last_attended.
       void qc.invalidateQueries({ queryKey: attendanceReportKey });
       void qc.invalidateQueries({ queryKey: USERS_KEY });
+    },
+  });
+}
+
+export function useSetGuestRsvp(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { userId: string; status: RsvpInputStatus; hasPlusOne?: boolean }) => {
+      const { data } = await apiClient.post<WireEvent>(
+        `/api/community/events/${eventId}/rsvps/${args.userId}/rsvp/`,
+        { status: args.status, has_plus_one: args.hasPlusOne ?? false },
+      );
+      return mapEvent(data);
+    },
+    onSuccess: (event) => {
+      qc.setQueryData(eventKeys.detail(event.id, true), event);
+      void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });
 }
