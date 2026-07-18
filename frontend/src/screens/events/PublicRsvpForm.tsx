@@ -9,7 +9,13 @@ import { PhoneField } from '@/components/ui/PhoneField';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
-import { type Event, RSVP_STATUS_LABELS, type RsvpInputStatus, RsvpStatus } from '@/models/event';
+import {
+  type Event,
+  RSVP_STATUS_LABELS,
+  type RsvpInputStatus,
+  RsvpStatus,
+  spotsLeft,
+} from '@/models/event';
 import { optionalEmail } from '@/utils/validators';
 
 import { type AlreadyRsvpdResult, PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
@@ -42,12 +48,14 @@ function messageForStatus(status: number | null): SubmitError {
   return { text: 'something went wrong — try again', showSignIn: false };
 }
 
-function statusLabel(status: RsvpInputStatus): string {
+function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
+  if (status === RsvpStatus.Attending && atCapacity) return 'join the waitlist';
   return RSVP_STATUS_LABELS.find((s) => s.status === status)?.label ?? status;
 }
 
 export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: Props) {
   const submit = useSubmitPublicRsvp();
+  const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -95,7 +103,14 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
   function renderStep() {
     if (status === null) {
       return (
-        <RsvpStatusPicker value={status} onSelect={setStatus} statuses={PUBLIC_RSVP_STATUSES} />
+        <RsvpStatusPicker
+          value={status}
+          onSelect={setStatus}
+          statuses={PUBLIC_RSVP_STATUSES}
+          labelFor={(s, defaultLabel) =>
+            s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+          }
+        />
       );
     }
     if (!phoneConfirmed) {
@@ -117,7 +132,10 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
 
         <div className="flex items-center justify-between">
           <p className="text-foreground-secondary text-sm">
-            rsvping as <span className="text-foreground font-medium">{statusLabel(status)}</span>
+            rsvping as{' '}
+            <span className="text-foreground font-medium">
+              {statusLabel(status, atCapacity)}
+            </span>
           </p>
           <button
             type="button"
