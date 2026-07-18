@@ -8,7 +8,6 @@
 import type { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
-import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
 
@@ -23,7 +22,7 @@ export function BottomNav() {
       ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
       : user.profilePhotoUrl
     : '';
-  const myEventsTo = isAuthed ? '/events/mine' : getStoredRsvpToken() ? '/my-rsvps' : null;
+  const myEventsTo = isAuthed ? '/events/mine' : '/my-rsvps';
 
   return (
     <nav
@@ -35,13 +34,9 @@ export function BottomNav() {
           {({ active }) => <CalendarIcon filled={active} />}
         </NavItem>
 
-        {myEventsTo ? (
-          <NavItem to={myEventsTo} label="my rsvps">
-            {({ active }) => <StarIcon filled={active} />}
-          </NavItem>
-        ) : (
-          <div />
-        )}
+        <NavItem to={myEventsTo} label="my rsvps">
+          {({ active }) => <StarIcon filled={active} />}
+        </NavItem>
 
         <div className="flex items-center justify-center">
           <button

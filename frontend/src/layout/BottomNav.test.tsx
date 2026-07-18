@@ -1,6 +1,7 @@
 // Unit tests for the bottom nav. Covers the fixed destinations rendering,
-// the auth-dependent my-rsvps tab, the add-event button navigating to
-// /events/add, and the nav always mounting (no permission gate on the FAB).
+// the my-rsvps tab always rendering with an auth-dependent target, the
+// add-event button navigating to /events/add, and the nav always mounting
+// (no permission gate on the FAB).
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -70,10 +71,11 @@ describe('BottomNav', () => {
     expect(link).toHaveAttribute('href', '/my-rsvps');
   });
 
-  it('logged-out users with no stored rsvp token get no my rsvps tab', () => {
+  it('logged-out users with no stored rsvp token still get a my rsvps tab pointing at /my-rsvps', () => {
     renderNav('/');
 
-    expect(screen.queryByRole('link', { name: /^my rsvps$/i })).not.toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /^my rsvps$/i });
+    expect(link).toHaveAttribute('href', '/my-rsvps');
   });
 
   it('members link points at /members', () => {
