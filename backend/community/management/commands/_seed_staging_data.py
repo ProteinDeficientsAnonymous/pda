@@ -2,7 +2,13 @@
 
 from dataclasses import dataclass
 
-from community.models.choices import AttendanceStatus, EventType, JoinRequestStatus, RSVPStatus
+from community.models.choices import (
+    AttendanceStatus,
+    EventType,
+    JoinRequestStatus,
+    PageVisibility,
+    RSVPStatus,
+)
 
 PASSWORD = "testPassword1@"
 
@@ -18,6 +24,13 @@ class SeedStagingEvent:
     rsvp_enabled: bool = False
     max_attendees: int | None = None
 
+    @property
+    def visibility(self) -> str:
+        """Official/club events are always public; matches the real event-form default."""
+        if self.event_type in (EventType.OFFICIAL, EventType.CLUB):
+            return PageVisibility.PUBLIC
+        return PageVisibility.MEMBERS_ONLY
+
 
 def perm_phone(index: int) -> str:
     return f"+170255501{index:02d}"
@@ -25,6 +38,10 @@ def perm_phone(index: int) -> str:
 
 def cond_phone(index: int) -> str:
     return f"+170255502{index:02d}"
+
+
+def privacy_phone(index: int) -> str:
+    return f"+170255505{index:02d}"
 
 
 def perm_email(key: str) -> str:
@@ -86,6 +103,36 @@ def is_seed_allowed(env_name: str | None, force: bool) -> bool:
     if not env_name or env_name == "staging":
         return True
     return force
+
+
+@dataclass
+class PrivacySpec:
+    """Members covering the pronouns/birthday/contact-privacy fields (Issue 923)."""
+
+    label: str
+    pronouns: str
+    birthday_month: int | None
+    birthday_day: int | None
+    show_phone: bool = True
+    show_email: bool = True
+    show_birthday: bool = True
+    hide_last_name: bool = False
+
+
+PRIVACY_SPECS = [
+    PrivacySpec("privacy: fully public", "they/them", 6, 15),
+    PrivacySpec(
+        "privacy: hides everything",
+        "she/her",
+        11,
+        3,
+        show_phone=False,
+        show_email=False,
+        show_birthday=False,
+        hide_last_name=True,
+    ),
+    PrivacySpec("privacy: no pronouns or birthday set", "", None, None),
+]
 
 
 STAGING_EVENTS = [
