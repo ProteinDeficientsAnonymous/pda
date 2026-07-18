@@ -3568,7 +3568,7 @@ export interface components {
          * PublicRsvpPhoneStatus
          * @enum {string}
          */
-        PublicRsvpPhoneStatus: "member" | "already_rsvpd" | "new";
+        PublicRsvpPhoneStatus: "member" | "already_rsvpd" | "recognized" | "new";
         /** PublicRsvpStateOut */
         PublicRsvpStateOut: {
             /** Has Plus One */

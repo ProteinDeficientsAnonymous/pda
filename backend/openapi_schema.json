@@ -3978,6 +3978,7 @@
         "enum": [
           "member",
           "already_rsvpd",
+          "recognized",
           "new"
         ],
         "title": "PublicRsvpPhoneStatus",
