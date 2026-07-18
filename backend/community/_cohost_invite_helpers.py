@@ -4,10 +4,16 @@ plus lazy-on-read expiration of pending invites past the event end.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from notifications._email_helpers import CohostInviteEmailDetails, send_cohost_invite_email
+from notifications.email_sender import get_email_sender
+from users._helpers import visible_display_name
+from users.models import User
 
 from community._validation import Code, raise_validation
 from community.models import CoHostInviteStatus, Event, EventCoHostInvite
@@ -16,6 +22,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from users.models import User as UserModel
+
+logger = logging.getLogger("pda.community.cohost_invite_helpers")
 
 
 def expire_stale_cohost_invites(event: Event) -> None:
@@ -153,6 +161,42 @@ def _check_past_event_guard(
         existing = existing_by_user.get(user_id)
         if existing is None or existing.status not in _ACTIVE_OR_PENDING:
             raise_validation(Code.CoHostInvite.EVENT_IS_PAST, status_code=400)
+
+
+def send_cohost_invite_emails(
+    event: Event,
+    new_user_ids: Iterable[str],
+    inviter: UserModel,
+) -> None:
+    """Email newly-invited co-hosts, complementing the in-app notification.
+
+    Legacy users may have no email on file — skip silently rather than crash
+    the invite flow. One bad send must not block the others.
+    """
+    inviter_id = str(inviter.pk)
+    invited_by_name = visible_display_name(inviter, None)
+    recipients = User.objects.filter(pk__in=[uid for uid in new_user_ids if str(uid) != inviter_id])
+    sender = get_email_sender()
+    event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.pk}"
+    for user in recipients:
+        if not user.email:
+            continue
+        try:
+            result = send_cohost_invite_email(
+                sender=sender,
+                details=CohostInviteEmailDetails(
+                    to=user.email,
+                    display_name=user.full_name or "",
+                    inviter_name=invited_by_name,
+                    event_title=event.title,
+                    event_url=event_url,
+                ),
+            )
+        except Exception:  # noqa: BLE001 — one bad send must not abort the batch
+            logger.warning("cohost_invite_email_send_exception", exc_info=True)
+            continue
+        if not result.success:
+            logger.warning("cohost_invite_email_failed", extra={"error": result.error})
 
 
 def get_pending_invites_for_event(event: Event) -> list[EventCoHostInvite]:

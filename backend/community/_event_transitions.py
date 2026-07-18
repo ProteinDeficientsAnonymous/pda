@@ -12,7 +12,7 @@ from notifications.service import (
 )
 from users.permissions import PermissionKey
 
-from community._cohost_invite_helpers import diff_cohost_invites
+from community._cohost_invite_helpers import diff_cohost_invites, send_cohost_invite_emails
 from community._event_helpers import _event_out, _has_attendees
 from community._validation import Code, raise_validation
 from community.models import Event, EventStatus
@@ -84,6 +84,7 @@ def _set_event_participants(request, event: Event, co_host_ids: list) -> None:
         newly_invited, _ = diff_cohost_invites(event, co_host_ids, request.auth)
         if newly_invited:
             create_cohost_invite_notifications(event, newly_invited, request.auth)
+            send_cohost_invite_emails(event, newly_invited, request.auth)
 
 
 def _publish_draft(request, event: Event) -> None:
