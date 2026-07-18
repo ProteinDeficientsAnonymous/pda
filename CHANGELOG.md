@@ -1,3 +1,10 @@
+## [0.40.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.1...v0.40.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** tighten plus-one toggle label spacing (Issue 869) ([#891](https://github.com/ProteinDeficientsAnonymous/pda/issues/891)) ([469e4ce](https://github.com/ProteinDeficientsAnonymous/pda/commit/469e4ce416db19078065480adcf135a19d11e97d))
+
 ## [0.40.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.0...v0.40.1) (2026-07-18)
 
 
