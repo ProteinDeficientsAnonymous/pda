@@ -411,7 +411,8 @@
       "ConsentType": {
         "enum": [
           "guidelines",
-          "sms"
+          "sms",
+          "contact_privacy"
         ],
         "title": "ConsentType",
         "type": "string"
@@ -5133,6 +5134,11 @@
           "login_link_requested": {
             "default": false,
             "title": "Login Link Requested",
+            "type": "boolean"
+          },
+          "needs_contact_privacy_consent": {
+            "default": false,
+            "title": "Needs Contact Privacy Consent",
             "type": "boolean"
           },
           "needs_guidelines_consent": {

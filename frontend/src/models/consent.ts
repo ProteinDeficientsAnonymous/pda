@@ -3,6 +3,7 @@ import type { User } from './user';
 export const ConsentType = {
   Guidelines: 'guidelines',
   Sms: 'sms',
+  ContactPrivacy: 'contact_privacy',
 } as const;
 export type ConsentTypeValue = (typeof ConsentType)[keyof typeof ConsentType];
 

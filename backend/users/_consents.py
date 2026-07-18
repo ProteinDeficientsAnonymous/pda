@@ -7,11 +7,13 @@ from django.utils import timezone
 class ConsentType(models.TextChoices):
     GUIDELINES = "guidelines", "Community guidelines"
     SMS = "sms", "SMS policy"
+    CONTACT_PRIVACY = "contact_privacy", "Contact privacy"
 
 
 CONSENT_FIELDS: dict[ConsentType, str] = {
     ConsentType.GUIDELINES: "guidelines_consent_at",
     ConsentType.SMS: "sms_consent_at",
+    ConsentType.CONTACT_PRIVACY: "contact_privacy_consent_at",
 }
 
 
