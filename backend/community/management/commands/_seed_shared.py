@@ -5,7 +5,7 @@ from django.utils import timezone
 from users.models import User
 from users.roles import Role
 
-from community.models import Event, EventRSVP, EventType
+from community.models import Event, EventRSVP, EventType, PageVisibility
 
 
 @dataclass
@@ -16,6 +16,7 @@ class SeedEvent:
     duration_hours: float
     location: str
     event_type: str = EventType.COMMUNITY
+    visibility: str = PageVisibility.PUBLIC
     rsvp_enabled: bool = False
     allow_plus_ones: bool = False
     max_attendees: int | None = None
@@ -36,6 +37,7 @@ def seed_events(stdout, events: list[SeedEvent], created_by: User | None) -> dic
                 "end_datetime": end,
                 "location": data.location,
                 "event_type": data.event_type,
+                "visibility": data.visibility,
                 "rsvp_enabled": data.rsvp_enabled,
                 "allow_plus_ones": data.allow_plus_ones,
                 "max_attendees": data.max_attendees,

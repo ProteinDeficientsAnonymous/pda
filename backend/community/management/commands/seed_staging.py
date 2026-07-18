@@ -21,6 +21,7 @@ from ._seed_staging_data import (
     NON_MEMBER_EVENT_TITLE,
     NON_MEMBER_SPECS,
     PASSWORD,
+    PRIVACY_SPECS,
     STAGING_EVENTS,
     TOKEN_EXPIRED,
     TOKEN_NONE,
@@ -33,6 +34,7 @@ from ._seed_staging_data import (
     nonmember_phone,
     perm_email,
     perm_phone,
+    privacy_phone,
 )
 
 
@@ -61,6 +63,7 @@ class Command(BaseCommand):
             roles = self._seed_perm_roles()
             perm_users = self._seed_perm_users(roles)
             cond_users = self._seed_condition_users()
+            self._seed_privacy_users()
             admin = perm_users[0] if perm_users else None
             events = self._seed_events(admin)
             self._seed_member_rsvps(cond_users, events)
@@ -83,6 +86,7 @@ class Command(BaseCommand):
         User.objects.filter(phone_number__startswith="+170255501").delete()
         User.objects.filter(phone_number__startswith="+170255502").delete()
         User.objects.filter(phone_number__startswith="+170255503").delete()
+        User.objects.filter(phone_number__startswith="+170255505").delete()
         Role.objects.filter(name__startswith="perm: ").delete()
         reset_join_requests()
         self.stdout.write("  reset: removed staging-scoped rows")
@@ -157,6 +161,34 @@ class Command(BaseCommand):
                 defaults={"first_name": condition_label(combo), "is_member": True},
             )
             self._apply_condition_user_fields(user, combo, index, now)
+            if created:
+                user.set_password(PASSWORD)
+                user.save(update_fields=["password"])
+            user.roles.set([member_role])
+            users.append(user)
+            self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
+        return users
+
+    def _seed_privacy_users(self) -> list[User]:
+        member_role = self._member_role()
+        now = timezone.now()
+        users: list[User] = []
+        for index, spec in enumerate(PRIVACY_SPECS):
+            user, created = User.objects.get_or_create(
+                phone_number=privacy_phone(index), defaults={"is_member": True}
+            )
+            user.first_name = spec.label
+            user.last_name = ""
+            user.pronouns = spec.pronouns
+            user.birthday_month = spec.birthday_month
+            user.birthday_day = spec.birthday_day
+            user.show_phone = spec.show_phone
+            user.show_email = spec.show_email
+            user.show_birthday = spec.show_birthday
+            user.hide_last_name = spec.hide_last_name
+            user.needs_onboarding = False
+            user.onboarded_at = now
+            user.save()
             if created:
                 user.set_password(PASSWORD)
                 user.save(update_fields=["password"])

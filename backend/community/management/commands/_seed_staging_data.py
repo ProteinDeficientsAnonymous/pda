@@ -2,7 +2,13 @@
 
 from dataclasses import dataclass
 
-from community.models.choices import AttendanceStatus, EventType, JoinRequestStatus, RSVPStatus
+from community.models.choices import (
+    AttendanceStatus,
+    EventType,
+    JoinRequestStatus,
+    PageVisibility,
+    RSVPStatus,
+)
 
 from ._seed_shared import SeedEvent
 
@@ -15,6 +21,10 @@ def perm_phone(index: int) -> str:
 
 def cond_phone(index: int) -> str:
     return f"+170255502{index:02d}"
+
+
+def privacy_phone(index: int) -> str:
+    return f"+170255505{index:02d}"
 
 
 def perm_email(key: str) -> str:
@@ -78,6 +88,36 @@ def is_seed_allowed(env_name: str | None, force: bool) -> bool:
     return force
 
 
+@dataclass
+class PrivacySpec:
+    """Members covering the pronouns/birthday/contact-privacy fields (Issue 923)."""
+
+    label: str
+    pronouns: str
+    birthday_month: int | None
+    birthday_day: int | None
+    show_phone: bool = True
+    show_email: bool = True
+    show_birthday: bool = True
+    hide_last_name: bool = False
+
+
+PRIVACY_SPECS = [
+    PrivacySpec("privacy: fully public", "they/them", 6, 15),
+    PrivacySpec(
+        "privacy: hides everything",
+        "she/her",
+        11,
+        3,
+        show_phone=False,
+        show_email=False,
+        show_birthday=False,
+        hide_last_name=True,
+    ),
+    PrivacySpec("privacy: no pronouns or birthday set", "", None, None),
+]
+
+
 STAGING_EVENTS = [
     SeedEvent(
         title="[staging] past potluck",
@@ -85,6 +125,7 @@ STAGING_EVENTS = [
         delta_days=-30,
         duration_hours=3,
         location="community center",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title="[staging] last week's film night",
@@ -92,6 +133,7 @@ STAGING_EVENTS = [
         delta_days=-7,
         duration_hours=2,
         location="the annex",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title="[staging] yesterday's kitchen social",
@@ -99,6 +141,7 @@ STAGING_EVENTS = [
         delta_days=-1,
         duration_hours=2.5,
         location="shared kitchen",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title="[staging] happening today",
@@ -114,6 +157,7 @@ STAGING_EVENTS = [
         delta_days=1,
         duration_hours=2,
         location="teaching kitchen",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title="[staging] weekend park cleanup",
@@ -121,6 +165,7 @@ STAGING_EVENTS = [
         delta_days=3,
         duration_hours=3,
         location="riverside park",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title="[staging] next week's book club",
@@ -128,6 +173,7 @@ STAGING_EVENTS = [
         delta_days=7,
         duration_hours=1.5,
         location="library room b",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title="[staging] monthly official meeting",
@@ -143,6 +189,7 @@ STAGING_EVENTS = [
         delta_days=45,
         duration_hours=8,
         location="fairgrounds",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title="[staging] far-future retreat",
@@ -150,6 +197,7 @@ STAGING_EVENTS = [
         delta_days=90,
         duration_hours=48,
         location="the lodge",
+        visibility=PageVisibility.MEMBERS_ONLY,
     ),
     SeedEvent(
         title=NON_MEMBER_EVENT_TITLE,
