@@ -115,4 +115,14 @@ describe('EventPublicRsvpSection', () => {
       hasPlusOne: false,
     });
   });
+
+  it('clears the stored token when "not you?" is confirmed', () => {
+    localStorage.setItem('pda-rsvp-token', 'tok-123');
+    renderSection(baseEvent());
+
+    fireEvent.click(screen.getByRole('button', { name: 'not you?' }));
+    fireEvent.click(screen.getByRole('button', { name: 'forget me' }));
+
+    expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
+  });
 });
