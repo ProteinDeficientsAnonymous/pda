@@ -7,6 +7,12 @@ dist-ssr
 .vitest
 coverage
 
+# Playwright
+test-results
+playwright-report
+blob-report
+playwright/.cache
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
