@@ -1016,7 +1016,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Set Attendance */
-        post: operations["community__event_rsvps_set_attendance"];
+        post: operations["community__event_host_actions_set_attendance"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1031,7 +1031,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Event Stats */
-        get: operations["community__event_rsvps_get_event_stats"];
+        get: operations["community__event_host_actions_get_event_stats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1048,7 +1048,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Text Recipients */
-        get: operations["community__event_rsvps_get_text_recipients"];
+        get: operations["community__event_host_actions_get_text_recipients"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7461,7 +7461,7 @@ export interface operations {
             };
         };
     };
-    community__event_rsvps_set_attendance: {
+    community__event_host_actions_set_attendance: {
         parameters: {
             query?: never;
             header?: never;
@@ -7524,7 +7524,7 @@ export interface operations {
             };
         };
     };
-    community__event_rsvps_get_event_stats: {
+    community__event_host_actions_get_event_stats: {
         parameters: {
             query?: never;
             header?: never;
@@ -7564,7 +7564,7 @@ export interface operations {
             };
         };
     };
-    community__event_rsvps_get_text_recipients: {
+    community__event_host_actions_get_text_recipients: {
         parameters: {
             query?: never;
             header?: never;
