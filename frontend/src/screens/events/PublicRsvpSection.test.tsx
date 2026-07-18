@@ -119,7 +119,7 @@ describe('PublicRsvpSection', () => {
     expect(screen.getByRole('heading', { name: 'rsvp' })).toBeInTheDocument();
   });
 
-  it('navigates to the event page with the rsvp token on success', async () => {
+  it('persists the rsvp token and refreshes without putting it in the url', async () => {
     mockCheckPhone.mockResolvedValue({ status: 'new', rsvp_token: '' });
     mockSubmit.mockResolvedValue({
       event: makeEvent(),
@@ -141,10 +141,7 @@ describe('PublicRsvpSection', () => {
     await user.type(screen.getByLabelText(/^email/i), 'sam@example.com');
     await user.click(screen.getByRole('button', { name: 'rsvp' }));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/events/evt-1?rsvp_token=tok-abc', {
-      replace: true,
-    });
-    // persisted so the token survives navigation to another event (issue 873)
+    expect(mockNavigate).toHaveBeenCalledWith(0);
     expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-abc');
   });
 
@@ -165,7 +162,7 @@ describe('PublicRsvpSection', () => {
     expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument();
   });
 
-  it('navigates straight to the event page when already rsvpd, skipping the form', async () => {
+  it('unlocks the event page when already rsvpd, skipping the form', async () => {
     mockCheckPhone.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: 'tok-returning' });
     const user = userEvent.setup();
     render(
@@ -178,9 +175,7 @@ describe('PublicRsvpSection', () => {
     await user.type(screen.getByLabelText(/phone number/i), '4155550123');
     await user.click(screen.getByRole('button', { name: 'continue' }));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/events/evt-1?rsvp_token=tok-returning', {
-      replace: true,
-    });
+    expect(mockNavigate).toHaveBeenCalledWith(0);
     expect(mockSubmit).not.toHaveBeenCalled();
     expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-returning');
   });
