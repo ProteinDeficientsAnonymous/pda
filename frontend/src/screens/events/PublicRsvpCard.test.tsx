@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -78,17 +79,27 @@ function renderCard(props: { status: string; hasPlusOne: boolean; event?: Partia
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <PublicRsvpCard
-        token="tok123"
-        event={makeEvent(props.event ?? {})}
-        status={props.status}
-        hasPlusOne={props.hasPlusOne}
-      />
+      <MemoryRouter>
+        <PublicRsvpCard
+          token="tok123"
+          event={makeEvent(props.event ?? {})}
+          status={props.status}
+          hasPlusOne={props.hasPlusOne}
+        />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
 describe('PublicRsvpCard', () => {
+  it('links the event title to the event detail page with the rsvp token', () => {
+    renderCard({ status: RsvpServerStatus.Attending, hasPlusOne: false, event: { id: 'ev1' } });
+    expect(screen.getByRole('link', { name: 'Potluck' })).toHaveAttribute(
+      'href',
+      '/events/ev1?rsvp_token=tok123',
+    );
+  });
+
   it('shows the +1 toggle when attending', () => {
     renderCard({ status: RsvpServerStatus.Attending, hasPlusOne: false });
     expect(screen.getByRole('switch', { name: /bring a \+1/i })).toBeInTheDocument();
