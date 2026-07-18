@@ -1,3 +1,10 @@
+## [0.46.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.0...v0.46.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* 918 - stop leaking rsvp token via shareable event url ([#927](https://github.com/ProteinDeficientsAnonymous/pda/issues/927)) ([ec3f0b8](https://github.com/ProteinDeficientsAnonymous/pda/commit/ec3f0b83f718385e940f743e4173c1a141b56646))
+
 # [0.46.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.4...v0.46.0) (2026-07-18)
 
 
