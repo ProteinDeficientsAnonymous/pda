@@ -133,9 +133,7 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
         <div className="flex items-center justify-between">
           <p className="text-foreground-secondary text-sm">
             rsvping as{' '}
-            <span className="text-foreground font-medium">
-              {statusLabel(status, atCapacity)}
-            </span>
+            <span className="text-foreground font-medium">{statusLabel(status, atCapacity)}</span>
           </p>
           <button
             type="button"
