@@ -1,3 +1,10 @@
+## [0.45.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.2...v0.45.3) (2026-07-18)
+
+
+### Bug Fixes
+
+* **fe:** always render my-rsvps star tab in bottom nav (Issue 915) ([#922](https://github.com/ProteinDeficientsAnonymous/pda/issues/922)) ([7f9de9b](https://github.com/ProteinDeficientsAnonymous/pda/commit/7f9de9b4d42ef94b2ff4939c590f2848357552e3))
+
 ## [0.45.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.1...v0.45.2) (2026-07-18)
 
 
