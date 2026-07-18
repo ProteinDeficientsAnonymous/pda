@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from community.models import RSVPStatus
+from community.models import PageVisibility, RSVPStatus
 from django.db import DatabaseError, connection
 from users._helpers import visible_display_name
 from users.models import User
@@ -50,6 +50,20 @@ def _ping_event_update(user_ids: Iterable[str], event_id: str) -> None:
                 cursor.execute(f"SELECT pg_notify('{_EVENT_UPDATES_CHANNEL}', %s)", [payload])
     except DatabaseError:
         logging.getLogger(__name__).warning("event_update ping failed", exc_info=True)
+
+
+def broadcast_event_comment_update(event: Event) -> None:
+    """Live-update ping for anyone who can view this event's comments.
+
+    Comments are readable by any member who can see the event, not just
+    RSVP'd/invited stakeholders, so this pings every connected viewer for
+    public/members-only events. Invite-only events stay scoped to the people
+    who can actually see them, matching `broadcast_event_update`.
+    """
+    if event.visibility == PageVisibility.INVITE_ONLY:
+        broadcast_event_update(event)
+        return
+    _ping_event_update(["*"], str(event.pk))
 
 
 def broadcast_cohost_change(

@@ -9,7 +9,7 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.service import (
-    broadcast_event_update,
+    broadcast_event_comment_update,
     notify_comment_reply,
     notify_event_comment,
 )
@@ -221,7 +221,7 @@ def post_comment(request, event_id: UUID, payload: CommentBodyIn):
     with transaction.atomic():
         comment = EventComment.objects.create(event=event, author=user, body=payload.body)
         notify_event_comment(comment)
-    broadcast_event_update(event, exclude_user_ids={str(user.pk)})
+    broadcast_event_comment_update(event)
     return Status(201, _comment_out(comment, event, user))
 
 
@@ -262,7 +262,7 @@ def post_reply(request, event_id: UUID, comment_id: UUID, payload: CommentBodyIn
             event=event, author=user, body=payload.body, parent=parent
         )
         notify_comment_reply(reply)
-    broadcast_event_update(event, exclude_user_ids={str(user.pk)})
+    broadcast_event_comment_update(event)
     return Status(201, _comment_reply_out(reply, event, user))
 
 
@@ -293,7 +293,7 @@ def delete_comment(request, event_id: UUID, comment_id: UUID):
         with transaction.atomic():
             comment.deleted_at = timezone.now()
             comment.save(update_fields=["deleted_at", "updated_at"])
-        broadcast_event_update(event, exclude_user_ids={str(user.pk)})
+        broadcast_event_comment_update(event)
     return Status(204, None)
 
 
