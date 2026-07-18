@@ -1,3 +1,10 @@
+## [0.48.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.3...v0.48.4) (2026-07-18)
+
+
+### Bug Fixes
+
+* **security:** validate URL schemes in HTML renderers and harden DOMPurify config ([#468](https://github.com/ProteinDeficientsAnonymous/pda/issues/468)) ([1a4ad50](https://github.com/ProteinDeficientsAnonymous/pda/commit/1a4ad50a412d6d3d0acf20d46da2aa4e03c15654))
+
 ## [0.48.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.2...v0.48.3) (2026-07-18)
 
 
