@@ -276,6 +276,20 @@ class TestRSVP:
         assert len(guests) == 1
         assert guests[0]["phone"] is None
 
+    def test_guest_list_flags_non_members(self, api_client, auth_headers, rsvp_event):
+        non_member = User.objects.create_user(
+            phone_number="+12025550199",
+            password="testpass123",
+            first_name="Guest",
+            is_member=False,
+        )
+        EventRSVP.objects.create(event=rsvp_event, user=non_member, status=RSVPStatus.ATTENDING)
+        response = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers)
+        assert response.status_code == 200
+        guests = response.json()["guests"]
+        assert len(guests) == 1
+        assert guests[0]["is_member"] is False
+
 
 # ---------------------------------------------------------------------------
 # TestCreateEventWithCohosts

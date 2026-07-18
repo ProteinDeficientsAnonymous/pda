@@ -3551,6 +3551,11 @@ export interface components {
              * @default false
              */
             has_plus_one: boolean;
+            /**
+             * Is Member
+             * @default true
+             */
+            is_member: boolean;
             /** Name */
             name: string;
             /** Phone */
