@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.utils import timezone
 from notifications._email_helpers import send_join_approval_email
 from notifications.email_sender import get_email_sender
@@ -79,24 +80,24 @@ def _promote_non_member(user, join_request):
     return _create_magic_token(user)
 
 
-_DEFAULT_MEMBER_PROMOTION_EMAIL = (
-    "you now have full member access. you'll receive a separate login link to set up your account."
-)
+_DEFAULT_MEMBER_PROMOTION_EMAIL = "you now have full member access."
 
 
-def send_join_approval(*, to: str, display_name: str, first_name: str) -> None:
+def send_join_approval(*, to: str, display_name: str, first_name: str, magic_token: str) -> None:
     """Best-effort promotion email. A send failure must not roll back approval."""
     if not to:
         return
     template = MemberPromotionEmailTemplate.get()
     body = template.body.strip() or _DEFAULT_MEMBER_PROMOTION_EMAIL
     message_body = render_template_placeholders(body, {"FIRST_NAME": first_name})
+    magic_link_url = f"{settings.FRONTEND_BASE_URL}/magic-login/{magic_token}"
     try:
         send_join_approval_email(
             sender=get_email_sender(),
             to=to,
             display_name=display_name,
             message_body=message_body,
+            magic_link_url=magic_link_url,
         )
     except Exception:
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
@@ -129,25 +130,26 @@ def _provision_tentative_user(join_request, requesting_user) -> User:
     return user
 
 
-def _maybe_promote_tentative(user, event, actor) -> bool:
+def _maybe_promote_tentative(user, event, actor) -> str | None:
     """Promote a tentative applicant to full member when they check in.
 
     Fires only for an ATTENDED check-in on an official/club event whose RSVP'd
-    user has a linked TENTATIVE join request. Returns whether a promotion ran so
-    the caller can send the approval email. No-op otherwise.
+    user has a linked TENTATIVE join request. Returns the minted magic token so
+    the caller can send the approval email with a login link. Returns None
+    (no promotion) otherwise.
     """
     if event.event_type not in (EventType.OFFICIAL, EventType.CLUB):
-        return False
+        return None
     join_request = user.join_requests.filter(status=JoinRequestStatus.TENTATIVE).first()
     if join_request is None:
-        return False
+        return None
 
-    _promote_non_member(user, join_request)
+    magic_token = _promote_non_member(user, join_request)
     join_request.status = JoinRequestStatus.APPROVED
     join_request.approved_at = timezone.now()
     join_request.approved_by = actor
     join_request.save(update_fields=["status", "approved_at", "approved_by"])
-    return True
+    return magic_token
 
 
 def _provision_approved_user(join_request, requesting_user) -> tuple[str | None, bool]:

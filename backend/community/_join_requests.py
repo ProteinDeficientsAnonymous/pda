@@ -340,6 +340,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             to=join_request.email,
             display_name=join_request.full_name,
             first_name=join_request.first_name,
+            magic_token=magic_token,
         )
 
     action = _DECISION_ACTIONS[payload.status]

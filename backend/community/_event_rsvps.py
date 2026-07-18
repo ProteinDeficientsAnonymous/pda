@@ -348,15 +348,18 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         if payload.attendance == AttendanceStatus.ATTENDED and rsvp.checked_in_at is None:
             rsvp.checked_in_at = timezone.now()
         rsvp.save(update_fields=["attendance", "checked_in_at", "updated_at"])
-        promoted = payload.attendance == AttendanceStatus.ATTENDED and _maybe_promote_tentative(
-            rsvp.user, event, request.auth
+        magic_token = (
+            _maybe_promote_tentative(rsvp.user, event, request.auth)
+            if payload.attendance == AttendanceStatus.ATTENDED
+            else None
         )
 
-    if promoted:
+    if magic_token:
         send_join_approval(
             to=rsvp.user.email,
             display_name=rsvp.user.full_name,
             first_name=rsvp.user.first_name,
+            magic_token=magic_token,
         )
 
     audit_log(
