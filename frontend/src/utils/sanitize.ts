@@ -73,9 +73,7 @@ DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
     const normalized = normalizeUrl(data.attrValue);
     // Image src is http/https/relative only (DOMPurify would keep data:/mailto:).
     const badImgScheme =
-      data.attrName === 'src' &&
-      URL_SCHEME_RE.test(normalized) &&
-      !/^https?:/i.test(normalized);
+      data.attrName === 'src' && URL_SCHEME_RE.test(normalized) && !/^https?:/i.test(normalized);
     if (isProtocolRelative(normalized) || badImgScheme) {
       data.attrValue = '';
       data.keepAttr = false;
