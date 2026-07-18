@@ -23,6 +23,7 @@ from users.models import User as UserModel
 from users.permissions import PermissionKey
 
 from community._event_helpers import _event_out
+from community._event_invite_email import email_invited_members
 from community._event_schemas import EventOut
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
@@ -87,7 +88,9 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
         new_users = UserModel.objects.filter(pk__in=new_ids)
         event.invited_users.add(*new_users)
         if not event.is_draft:
-            create_event_invite_notifications(event, [str(uid) for uid in new_ids], request.auth)
+            new_id_strs = [str(uid) for uid in new_ids]
+            create_event_invite_notifications(event, new_id_strs, request.auth)
+            email_invited_members(request, event, new_id_strs, request.auth)
 
     audit_log(
         logging.INFO,
