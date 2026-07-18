@@ -33,8 +33,8 @@ export function EditableHtmlBlock({
     autosave.schedule(next);
   }
 
-  function stopEditing() {
-    void autosave.flush(draft);
+  async function stopEditing() {
+    if (draft !== initialPm) await autosave.flush(draft);
     setEditing(false);
   }
 
@@ -67,7 +67,7 @@ export function EditableHtmlBlock({
         <div className="flex-1">
           <AutosaveStatus status={autosave.status} />
         </div>
-        <Button variant="ghost" onClick={stopEditing}>
+        <Button variant="ghost" onClick={() => void stopEditing()}>
           done
         </Button>
       </div>

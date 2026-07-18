@@ -12,6 +12,7 @@ interface Handle {
   status: AutosaveStatus;
   schedule: (value: string) => void;
   cancel: () => void;
+  /** Save the given value now, coalescing with any save already in flight for the same value. */
   flush: (value: string) => Promise<void>;
 }
 
@@ -20,6 +21,8 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
   const timerRef = useRef<number | null>(null);
   const savedTimerRef = useRef<number | null>(null);
   const onSaveRef = useRef(onSave);
+  const inFlightRef = useRef<{ value: string; promise: Promise<void> } | null>(null);
+  const pendingValueRef = useRef<string | null>(null);
 
   useEffect(() => {
     onSaveRef.current = onSave;
@@ -30,12 +33,13 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    pendingValueRef.current = null;
   }, []);
 
   const runSave = useCallback(
     (value: string) => {
       setStatus('saving');
-      return onSaveRef.current(value).then(
+      const promise = onSaveRef.current(value).then(
         () => {
           setStatus('saved');
           if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
@@ -47,6 +51,11 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
           setStatus('error');
         },
       );
+      inFlightRef.current = { value, promise };
+      void promise.finally(() => {
+        if (inFlightRef.current?.promise === promise) inFlightRef.current = null;
+      });
+      return promise;
     },
     [savedBadgeMs],
   );
@@ -54,8 +63,10 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
   const schedule = useCallback(
     (value: string) => {
       cancel();
+      pendingValueRef.current = value;
       timerRef.current = window.setTimeout(() => {
         timerRef.current = null;
+        pendingValueRef.current = null;
         void runSave(value);
       }, delay);
     },
@@ -64,6 +75,11 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
 
   const flush = useCallback(
     (value: string) => {
+      if (timerRef.current === null) {
+        // Nothing debounced; a save for this exact value may already be in flight.
+        if (inFlightRef.current?.value === value) return inFlightRef.current.promise;
+        return Promise.resolve();
+      }
       cancel();
       return runSave(value);
     },
@@ -72,10 +88,11 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
 
   useEffect(() => {
     return () => {
-      cancel();
+      if (pendingValueRef.current !== null) void flush(pendingValueRef.current);
       if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
     };
-  }, [cancel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return { status, schedule, cancel, flush };
 }
