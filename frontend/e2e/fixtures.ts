@@ -2,13 +2,23 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export type SeedScenario =
-  | 'member'
-  | 'public-new'
-  | 'public-returning'
-  | 'comments'
-  | 'my-rsvps'
-  | 'live-updates';
+export interface SeedScenarioMap {
+  member: { event_id: string; event_title: string; user_phone: string; user_password: string; access_token: string };
+  'public-new': { event_id: string; event_title: string };
+  'public-returning': { event_id: string; event_title: string; user_phone: string; rsvp_token: string };
+  comments: { event_id: string; event_title: string; rsvp_token: string };
+  'my-rsvps': { event_id: string; event_title: string; rsvp_token: string };
+  'live-updates': {
+    event_id: string;
+    event_title: string;
+    user_a_phone: string;
+    user_a_password: string;
+    user_b_phone: string;
+    user_b_password: string;
+  };
+}
+
+export type SeedScenario = keyof SeedScenarioMap;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '../..');
@@ -21,11 +31,11 @@ function resolveDatabaseUrl(): string {
   }).trim();
 }
 
-export function seed<T = Record<string, string>>(scenario: SeedScenario): T {
+export function seed<S extends SeedScenario>(scenario: S): SeedScenarioMap[S] {
   const output = execFileSync('uv', ['run', 'python', 'manage.py', 'e2e_seed', scenario], {
     cwd: BACKEND_DIR,
     encoding: 'utf-8',
     env: { ...process.env, DATABASE_URL: resolveDatabaseUrl() },
   });
-  return JSON.parse(output.trim()) as T;
+  return JSON.parse(output.trim()) as SeedScenarioMap[S];
 }

@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect,test } from '@playwright/test';
+
 import { seed } from './fixtures';
 
 test('new non-member rsvps via public event link', async ({ page }) => {

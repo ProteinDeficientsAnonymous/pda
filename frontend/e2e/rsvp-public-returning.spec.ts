@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect,test } from '@playwright/test';
+
 import { seed } from './fixtures';
 
 test('returning non-member with stored token skips phone-check', async ({ page }) => {
