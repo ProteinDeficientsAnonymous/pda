@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { clearStoredRsvpToken, setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
@@ -54,6 +55,7 @@ function renderButton(initialPath = '/calendar') {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearStoredRsvpToken();
   useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok' });
   submitFeedbackMock.mockResolvedValue({ html_url: 'https://example.com/1' });
   mockedUseSubmitFeedback.mockReturnValue({
@@ -70,10 +72,17 @@ describe('FeedbackButton', () => {
     expect(btn).toHaveTextContent('?');
   });
 
-  it('is hidden when the user is not authenticated', () => {
+  it('is hidden when the user is not authenticated and has no rsvp token', () => {
     useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
     renderButton();
     expect(screen.queryByRole('button', { name: /send feedback/i })).not.toBeInTheDocument();
+  });
+
+  it('renders for an unauthenticated non-member holding a stored rsvp token', () => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+    setStoredRsvpToken('rsvp-token-123');
+    renderButton();
+    expect(screen.getByRole('button', { name: /send feedback/i })).toBeInTheDocument();
   });
 
   it('opens the form dialog when the button is tapped', async () => {

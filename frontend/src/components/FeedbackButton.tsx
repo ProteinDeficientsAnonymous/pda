@@ -1,8 +1,9 @@
 // Floating feedback button — bottom-right FAB that opens a card form.
 //
 // Submits to /api/community/feedback/, which creates a GitHub issue. Shown
-// only to authed users; route-aware via useLocation. Copy is all lowercase
-// per .claude/rules/ui-copy-tone.md. maxLength caps match the frontend
+// to authed users and to non-members holding a persisted public-RSVP token
+// (Issue 879). Route-aware via useLocation. Copy is all lowercase per
+// .claude/rules/ui-copy-tone.md. maxLength caps match the frontend
 // input-validation guidance (title 150, description 2000) and stay under
 // the backend FieldLimit on FeedbackIn (200 / 10000).
 import type { SyntheticEvent } from 'react';
@@ -11,6 +12,7 @@ import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { type FeedbackType, useSubmitFeedback } from '@/api/feedback';
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
@@ -21,6 +23,8 @@ const DESCRIPTION_MAX = 2000;
 
 export function FeedbackButton() {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
+  const hasRsvpToken = !!getStoredRsvpToken();
+  const canShowFeedback = isAuthed || hasRsvpToken;
   const location = useLocation();
   const { mutateAsync, isPending } = useSubmitFeedback();
 
@@ -43,7 +47,7 @@ export function FeedbackButton() {
     };
   }, [open]);
 
-  if (!isAuthed) return null;
+  if (!canShowFeedback) return null;
 
   function close() {
     setOpen(false);
