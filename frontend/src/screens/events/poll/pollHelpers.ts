@@ -1,6 +1,3 @@
-// Pure helpers for the datetime-poll feature. No React, no API calls — keeps
-// the UI components thin and lets us unit-test sort/pick logic in isolation.
-
 import type { EventPollOption } from '@/models/eventPoll';
 
 // Chronological order (earliest first). Backend's display_order is the insert

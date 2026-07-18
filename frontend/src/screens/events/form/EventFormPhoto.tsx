@@ -1,8 +1,3 @@
-// Hero cover photo for the event form. The whole banner is one button — tap to
-// pick or drag-and-drop an image; cropping happens via the shared ImageCropDialog.
-// On create the cropped blob is staged and uploaded after the event POST returns
-// an id; on edit it uploads immediately.
-
 import type { ChangeEvent, DragEvent, MouseEvent } from 'react';
 import { useRef, useState } from 'react';
 

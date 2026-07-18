@@ -1,6 +1,3 @@
-// Shared test fixtures. Factories return a complete, valid object with sensible
-// defaults; pass `overrides` to vary the fields a given test cares about.
-
 import type { Event } from '@/models/event';
 import {
   AttendanceStatus,

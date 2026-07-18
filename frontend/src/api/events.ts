@@ -1,10 +1,3 @@
-// Events API — list + detail. Uses apiClient (sends Bearer if authed, still
-// succeeds unauthed via optional_jwt on the backend).
-//
-// The backend returns different field sets for unauthed vs authed callers
-// (member-only fields blanked), so we re-fetch on auth transition by wiring
-// the query key to the accessToken presence, not the user id.
-
 import { useQuery } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';

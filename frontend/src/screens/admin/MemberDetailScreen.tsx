@@ -1,7 +1,3 @@
-// Admin detail view for a single member. Pulls the member out of the cached
-// list (no dedicated detail endpoint exists on the backend) and lets admins
-// edit first/last name / email / phone + pause/unpause the account.
-
 import { type SyntheticEvent, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';

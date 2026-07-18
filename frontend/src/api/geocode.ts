@@ -1,7 +1,3 @@
-// Geocode search via the backend Photon proxy (/api/community/geocode/).
-// Photon (komoot.io) is free, no API key. The backend adds NYC bias params
-// and relays the response unchanged.
-
 import { apiClient } from './client';
 
 export interface PhotonResult {

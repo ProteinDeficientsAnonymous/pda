@@ -1,7 +1,3 @@
-// TipTap extensions + config. Feature set is narrow by design — every node
-// we enable here must also have a handler in backend/community/_prosemirror_html.py,
-// otherwise it will be silently dropped on render.
-
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import type { Extensions } from '@tiptap/react';
@@ -9,6 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { CtaExtension } from './CtaExtension';
 
+// every node enabled here must also have a handler in backend/community/_prosemirror_html.py, or it's silently dropped on render
 export function pdaExtensions(): Extensions {
   return [
     StarterKit.configure({

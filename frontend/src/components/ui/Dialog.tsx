@@ -1,8 +1,3 @@
-// Minimal accessible dialog: overlay + Escape to close + focus trap via
-// autofocus on a designated element. Not a shadcn/Radix wholesale port —
-// we only need this for a handful of small forms in phase 3, so keeping it
-// inline avoids another dep.
-
 import { type ReactNode, useEffect } from 'react';
 
 interface Props {

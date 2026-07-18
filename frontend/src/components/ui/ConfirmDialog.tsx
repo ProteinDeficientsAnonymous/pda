@@ -1,7 +1,3 @@
-// In-app replacement for window.confirm. Native confirm() is silently
-// suppressed by some mobile browsers (especially iOS Safari in PWA mode
-// and popup-blocker heuristics), so admin screens must use this instead.
-
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 

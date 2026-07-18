@@ -1,6 +1,3 @@
-// Domain types for the datetime-poll feature. Backend schemas at
-// backend/community/_event_poll_schemas.py.
-
 export enum VoteChoice {
   Yes = 'yes',
   Maybe = 'maybe',

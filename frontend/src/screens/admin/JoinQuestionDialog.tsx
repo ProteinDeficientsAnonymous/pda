@@ -1,6 +1,3 @@
-// Create / edit a single JoinFormQuestion. Kept in its own file so the
-// parent screen stays focused on list semantics + reorder.
-
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 

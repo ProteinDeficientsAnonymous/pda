@@ -1,9 +1,3 @@
-// Feedback submission — POST /api/community/feedback/.
-//
-// Backend creates a GitHub issue via the GitHub App. Returns { html_url } on
-// success (201). A 503 is returned when the GitHub App isn't configured; from
-// the user's perspective both failure modes surface the same toast.
-
 import { useMutation } from '@tanstack/react-query';
 
 import { apiClient } from './client';

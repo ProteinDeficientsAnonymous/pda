@@ -1,7 +1,3 @@
-// Member-facing flag dialog. Sends POST /api/community/events/{id}/flag/
-// with a required reason; surfaces the backend's 409 (already flagged) as a
-// friendly toast. Max length mirrors the backend BIO field limit (500).
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 

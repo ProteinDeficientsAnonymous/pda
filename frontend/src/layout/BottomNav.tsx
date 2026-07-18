@@ -1,10 +1,3 @@
-// Fixed bottom nav — calendar / my rsvps / +event / members / profile.
-//
-// Mirrors Flutter's NavigationBar with labelBehavior=alwaysHide: labels are
-// visually hidden but present in the accessible name so screen readers can
-// announce them. Active state uses a filled icon + dot so the distinction
-// survives the color-blind-friendly rule (not color-only).
-
 import type { ReactNode } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 

@@ -1,7 +1,3 @@
-// Host-only finalize dialog. Radio list of options with the current leader
-// pre-selected. Warns if event.endDatetime is set (backend finalize won't
-// update end-time; host has to fix it after).
-
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';

@@ -1,8 +1,3 @@
-// App chrome — mobile-first layout matching the Flutter AppScaffold:
-// sticky header with logo-triggered menu tray, a bottom nav with three
-// destinations, and a centered content outlet in between. No responsive
-// branching — one code path from phone to 4K.
-
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 

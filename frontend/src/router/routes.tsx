@@ -1,10 +1,3 @@
-// Route tree — mirrors app_router.dart. Grouped by guard shape:
-//   public (no guard)        : landing, login, magic-login, onboarding, guidelines, ...
-//   authed (RequireAuth)     : settings, profile, ...
-//   permissioned             : admin/*, members, etc.
-//
-// All screens are lazy-loaded (lazy) — 1:1 replacement for DeferredScreen.
-
 import { createBrowserRouter } from 'react-router-dom';
 
 import { AuthBoot, EmailGate, OnboardingGate, RequireAuth, RequirePermission } from '@/auth/guards';

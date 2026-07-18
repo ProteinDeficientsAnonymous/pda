@@ -1,7 +1,3 @@
-// Dialog for creating a new member from /members. On success, swaps to the
-// same welcome-credentials view used after approving a join request so the
-// admin can copy the magic-login link before leaving the dialog.
-
 import { type SyntheticEvent, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';

@@ -1,7 +1,3 @@
-// TipTap editor wrapper. Serializes to ProseMirror JSON strings (not
-// JSObjects) to match the backend wire format — the content_pm column is a
-// TextField, not a JSONField.
-
 import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import { useEffect } from 'react';
 

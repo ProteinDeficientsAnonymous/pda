@@ -1,8 +1,3 @@
-// Dialog to create or edit a role. Shows the role name input and a
-// checkbox grid of every permission key. Built-in roles (is_default)
-// are read-only — opened only so admins can see which permissions
-// are checked.
-
 import { type SyntheticEvent, useState } from 'react';
 
 import { type Role, useCreateRole, useUpdateRole } from '@/api/roles';

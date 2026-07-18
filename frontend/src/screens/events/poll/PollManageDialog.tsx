@@ -1,8 +1,3 @@
-// Host-only option manager. Edit datetimes, add new options, remove
-// existing ones, and nuke the whole poll. Each row is independent — the
-// mutation fires on a per-row "save" so the host can leave mid-edit
-// without losing other changes.
-
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';

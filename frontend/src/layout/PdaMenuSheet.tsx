@@ -1,8 +1,3 @@
-// Bottom-sheet menu opened by the header logo. The Flutter app uses
-// showModalBottomSheet; this is a lightweight port — fixed overlay + panel
-// sliding up from the bottom. Escape + backdrop close it, item-taps route
-// and close, logout calls the auth store then closes.
-
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';

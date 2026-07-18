@@ -1,11 +1,3 @@
-// Thin dnd-kit wrapper for reorderable lists. Callers own the source-of-
-// truth state and decide what to do on reorder (optimistic update + server
-// PUT is the common pattern).
-//
-// Keyboard support is baked in — focus an item, space to lift, arrow keys
-// to move, space to drop. The visual drag handle is a button with an
-// aria-label so screen readers announce it.
-
 import {
   closestCenter,
   DndContext,

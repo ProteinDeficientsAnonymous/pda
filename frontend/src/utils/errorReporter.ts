@@ -1,15 +1,3 @@
-// Frontend error reporter. Mirrors Flutter's `ErrorReporter`: when the user
-// is authenticated, POSTs a normalized error payload to the backend so it
-// surfaces in server logs. When there's no access token, or the POST fails,
-// we fall back to `console.error` so the error is never silently swallowed.
-//
-// Field names match the existing `/api/community/error-report/` schema in
-// `backend/community/_feedback.py` (`error`, `stack_trace`, `route`,
-// `user_agent`, `context`, `client_timestamp`). `app_version` is
-// intentionally omitted — we have no reliable source for it on the FE
-// today. The backend `context` field is a capped string, so we
-// JSON-stringify any object the caller passes and truncate to fit.
-
 import { apiClient } from '@/api/client';
 import { useAuthStore } from '@/auth/store';
 

@@ -1,6 +1,3 @@
-// Landing for /admin — a menu of admin areas filtered by the current user's
-// permissions. Mirrors the flutter admin_screen.dart tile layout.
-
 import { Link } from 'react-router-dom';
 
 import { useAuthStore } from '@/auth/store';

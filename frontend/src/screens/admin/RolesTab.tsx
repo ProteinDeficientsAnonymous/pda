@@ -1,6 +1,3 @@
-// Roles tab body — list existing roles, create new ones, edit permissions,
-// or delete. Protected roles (admin/member) can be edited but not deleted.
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 

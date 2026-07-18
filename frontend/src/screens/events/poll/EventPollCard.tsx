@@ -1,8 +1,3 @@
-// Orchestrator for the datetime-poll block on an event detail page.
-// Owns dialog open-states; decides which branch to render based on who the
-// viewer is and what state the poll is in. Dialog bodies live in sibling
-// files (Phase 3); this file stays focused on branching + layout.
-
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';

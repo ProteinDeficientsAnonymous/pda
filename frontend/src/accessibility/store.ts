@@ -1,14 +1,3 @@
-// Accessibility preferences store.
-//
-// Three settings, persisted to localStorage via Zustand `persist`:
-//   themeMode  — 'system' (default) | 'light' | 'dark'
-//   dyslexiaFont — true toggles OpenDyslexic font family
-//   textScale  — 1.0 | 1.15 | 1.3  (normal / medium / large)
-//
-// DOM sync: on every state change, the store applies CSS classes and
-// custom properties to <html>.  A blocking <script> in index.html
-// reads the same localStorage key before React hydrates to prevent FOUC.
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
