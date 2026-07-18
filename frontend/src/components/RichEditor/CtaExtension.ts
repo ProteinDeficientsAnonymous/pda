@@ -1,7 +1,3 @@
-// Custom TipTap node for CTA buttons. Renders as an anchor with class
-// `cta cta--{variant}` — the backend PM→HTML renderer emits the same markup
-// so the live editor preview and the saved HTML look identical.
-
 import { Node } from '@tiptap/core';
 
 export type CtaVariant = 'primary' | 'secondary';

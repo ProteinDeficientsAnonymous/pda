@@ -1,5 +1,3 @@
-// Pure-helper tests for the event write layer: enum-coercion on the inbound
-// side (eventToFormValues) and per-field PATCH body building (toPartialWireBody).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';

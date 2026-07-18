@@ -1,8 +1,3 @@
-// All-events grid for admins + creators. Sort + search + filter are client-
-// side because the backend's list endpoint doesn't accept a `search` or
-// `sort` query param — it's a flat fetch and the Flutter app works the
-// same way.
-
 import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';

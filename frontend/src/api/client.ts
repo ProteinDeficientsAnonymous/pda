@@ -1,15 +1,3 @@
-// axios client with a Completer-style refresh lock.
-//
-// Two instances:
-//   - `authClient`  — no interceptors. Used for /login/, /magic-login/, /refresh/,
-//                     /logout/. Avoids the interceptor calling itself on 401.
-//   - `apiClient`   — attaches `Authorization: Bearer <access>` from the auth store,
-//                     and on a 401 refreshes via a single shared in-flight promise
-//                     (the Dio `_refreshLock` Completer port).
-//
-// Both instances send cookies (`withCredentials`) so the httpOnly refresh cookie
-// reaches the server on cross-origin dev (React :3000 → Django :8000).
-
 import axios, {
   type AxiosError,
   type AxiosInstance,
@@ -51,6 +39,7 @@ const BASE_CONFIG = {
   headers: { 'Content-Type': 'application/json' },
 };
 
+// No interceptors, to avoid the 401-refresh interceptor calling itself.
 export const authClient: AxiosInstance = axios.create(BASE_CONFIG);
 export const apiClient: AxiosInstance = axios.create(BASE_CONFIG);
 

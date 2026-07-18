@@ -1,7 +1,3 @@
-// Client-side defense-in-depth sanitizer for rendered Delta / ProseMirror HTML.
-// Kept equivalent to the backend `sanitize_content_html` on tags, URL handling,
-// and the text-align allowlist.
-
 import DOMPurify from 'dompurify';
 
 const ALLOWED_TAGS = [

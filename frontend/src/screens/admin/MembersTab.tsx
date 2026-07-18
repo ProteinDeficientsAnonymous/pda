@@ -1,7 +1,3 @@
-// Members tab body — the actual list/filter/sort/create UI. Shared between the
-// members and non-members tabs (parameterized by `mode`); the outer
-// MembersScreen shell switches between this and the RolesTab.
-
 import { format } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';

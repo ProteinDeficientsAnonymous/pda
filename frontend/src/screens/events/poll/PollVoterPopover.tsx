@@ -1,7 +1,3 @@
-// Click-to-open popover showing who voted yes / maybe / no on a single option.
-// Anchored to the card it's attached to — parent is relative, we're absolute.
-// Dismisses on outside-click + Escape.
-
 import { useEffect, useRef } from 'react';
 
 import type { EventPollOption, PollVoter } from '@/models/eventPoll';

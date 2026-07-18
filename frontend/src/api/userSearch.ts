@@ -1,5 +1,3 @@
-// Member search — used by co-host picker and invite picker in the event form.
-
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from './client';

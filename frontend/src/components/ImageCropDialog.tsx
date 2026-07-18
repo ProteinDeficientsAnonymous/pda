@@ -1,6 +1,3 @@
-// Crop dialog for avatars (round, 1:1) and event covers (rect — square or 4:5).
-// Built on react-image-crop; returns a PNG blob via onCrop.
-
 import 'react-image-crop/dist/ReactCrop.css';
 
 import type { SyntheticEvent } from 'react';

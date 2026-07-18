@@ -1,6 +1,3 @@
-// Async autocomplete that selects multiple members by id. Used for the event
-// form's co-host and invited-user pickers.
-
 import { useState } from 'react';
 
 import { type MemberSearchResult, useUserSearch } from '@/api/userSearch';

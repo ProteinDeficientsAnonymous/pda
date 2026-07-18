@@ -1,19 +1,3 @@
-// Always-visible zone: title, type toggle, tbd toggle, start + end / poll
-// button, location. Description / visibility live in the details section.
-//
-// Layout order (when no poll/buffered dates): tbd toggle → either the
-// start/end pickers (fixed time) or the "poll for dates" button (tbd). The
-// button shares the pickers' slot and is gated on tbd — a poll only makes
-// sense when the date isn't fixed.
-//
-// Poll integration: the "poll for dates" button has two modes:
-//   - create-flow (no existing event): opens PollCreateDialog in buffer
-//     mode; the parent queues Date[]s and fires them after useCreateEvent.
-//     Queued options replace the pickers + toggle with a summary card.
-//   - edit-flow (existing, no poll): opens PollCreateDialog in live mode,
-//     which POSTs immediately. Once the poll exists the parent re-renders
-//     with timeLocked=true and the button disappears.
-
 import { format } from 'date-fns';
 import { useState } from 'react';
 

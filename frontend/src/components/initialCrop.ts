@@ -1,6 +1,3 @@
-// Initial crop geometry for ImageCropDialog. `width`/`height` are the rendered
-// (height-capped at MAX_PREVIEW_PX) image dimensions; returns percent units.
-
 import { centerCrop, makeAspectCrop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 
 import type { CropShape } from './ImageCropDialog';

@@ -1,6 +1,3 @@
-// Calendar-icon "go to today" button — mirrors the Flutter calendar_nav_row
-// design: an outlined calendar glyph with today's day-of-month overlaid inside.
-
 interface Props {
   onClick: () => void;
 }

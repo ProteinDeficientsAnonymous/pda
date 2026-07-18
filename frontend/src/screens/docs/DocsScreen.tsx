@@ -1,6 +1,3 @@
-// Docs tree: nested folders and documents. Members with manage_documents can
-// create folders and docs, delete, and drag-reorder within the tree.
-
 import { type ElementType, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';

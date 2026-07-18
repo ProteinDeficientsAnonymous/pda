@@ -1,15 +1,3 @@
-// Zustand auth store.
-//
-// State machine:
-//   idle      — before session restore has run (app boot)
-//   loading   — a login/restore is in flight
-//   authed    — user + accessToken present; API calls authorized
-//   unauthed  — no session; login required
-//
-// The access token lives in memory only. The refresh token is an httpOnly cookie
-// managed by the server — we never touch it from JS. On reload, `restoreSession`
-// calls /api/auth/refresh/ (cookie is sent automatically) and rehydrates.
-
 import { create } from 'zustand';
 
 import * as authApi from '@/api/auth';

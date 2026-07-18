@@ -1,11 +1,3 @@
-// "details" section — description + visibility choice.
-// Rendered inside a CollapsibleCard by the parent form; this component only
-// owns the body layout.
-//
-// The visibility helper text below the select clarifies that "public" only
-// means listed-publicly — location, links, and rsvp are still members-only
-// regardless of choice. See EventMemberSection (the public/auth gate).
-
 import type { EventFormValues } from '@/api/eventWrites';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';

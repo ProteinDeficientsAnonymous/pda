@@ -1,6 +1,3 @@
-// ISO8601 ↔ <input type="datetime-local"> converters. The browser input wants
-// "YYYY-MM-DDTHH:mm" in local time; the server wants UTC ISO strings.
-
 export function isoToLocalInput(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);

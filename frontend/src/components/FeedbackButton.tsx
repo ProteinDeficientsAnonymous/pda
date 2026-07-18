@@ -1,11 +1,3 @@
-// Floating feedback button — bottom-right FAB that opens a card form.
-//
-// Submits to /api/community/feedback/, which creates a GitHub issue. Shown
-// to authed users and to non-members holding a persisted public-RSVP token
-// (Issue 879). Route-aware via useLocation. Copy is all lowercase per
-// .claude/rules/ui-copy-tone.md. maxLength caps match the frontend
-// input-validation guidance (title 150, description 2000) and stay under
-// the backend FieldLimit on FeedbackIn (200 / 10000).
 import type { SyntheticEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';

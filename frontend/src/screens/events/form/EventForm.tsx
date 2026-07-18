@@ -1,13 +1,3 @@
-// Event create/edit form.
-//
-// Layout: hero photo → always-visible (title/when/where) → collapsible
-// sections (hosts, details, rsvp, links, money) → actions.
-//
-// Photo-first by design: the Flutter app's form opened with a big cover
-// banner so the flow feels inviting even before a title is typed. Sections
-// collapse by default so simple events don't feel like a chore — summary
-// badges on each header show what's already filled in.
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';

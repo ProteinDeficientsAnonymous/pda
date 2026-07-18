@@ -1,8 +1,3 @@
-// Survey admin API: list/create/edit/delete surveys, CRUD + reorder on
-// their questions, and fetch responses. All endpoints require
-// manage_surveys; finalize-poll uses a looser permission check on the
-// backend (organizer/co-host/etc.).
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';

@@ -1,15 +1,3 @@
-// Route guards. Port of the GoRouter `redirect:` pipeline from app_router.dart.
-//
-// Three wrappers, composable via nested routes:
-//   <AuthBoot>           — root gate: blocks all routes until restoreSession resolves.
-//   <RequireAuth>        — bounces unauthed users to /login?redirect=<path>.
-//   <RequirePermission>  — additionally checks a permission key; bounces to /calendar.
-//   <OnboardingGate>     — routes needs_onboarding users to /onboarding or /new-password.
-//   <EmailGate>          — blocks authed users without an email until they supply one.
-//
-// The onboarding gate wraps the WHOLE app so it applies on every navigation,
-// matching the Flutter behavior.
-
 import { type ReactNode, useEffect } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 

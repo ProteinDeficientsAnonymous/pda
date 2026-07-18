@@ -1,7 +1,3 @@
-// rsvp section — toggles + max attendees.
-// Rendered inside its own CollapsibleCard by the parent form.
-// When rsvp is off, allow +1s and guests-can-invite are forced off.
-
 import type { EventFormValues } from '@/api/eventWrites';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';

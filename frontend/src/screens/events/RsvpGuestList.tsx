@@ -1,6 +1,3 @@
-// Inline guest list — not a modal. Tabs by status (going / maybe / can't /
-// waitlist / invited) and renders GuestChip pills.
-
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';

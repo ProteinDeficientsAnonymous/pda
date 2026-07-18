@@ -1,7 +1,3 @@
-// Custom agenda (list) view — a flat list of event cards, each colored by
-// event type. No rbc date/time columns; title sits on top, date + time line
-// sits underneath. Mirrors the "cleaner" list layout the user asked for.
-
 import { format, isSameDay } from 'date-fns';
 import { useMemo, useState } from 'react';
 

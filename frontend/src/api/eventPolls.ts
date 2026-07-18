@@ -1,7 +1,3 @@
-// DateTime poll API — create, get, vote, finalize, delete, option CRUD.
-// Mirrors backend/community/_polls.py. GET is optional-auth, so unauthed
-// viewers see counts but not their own votes.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';

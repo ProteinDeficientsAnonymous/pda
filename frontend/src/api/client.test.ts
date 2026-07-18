@@ -1,10 +1,3 @@
-// Unit tests for the refresh-lock interceptor.
-// We mock axios at the network layer and exercise the state machine:
-//   - 401 triggers a single in-flight refresh even under concurrent requests
-//   - successful refresh retries the original request with the new token
-//   - failed refresh fires onSessionExpired and rethrows
-//   - retried requests aren't retried again (no infinite loop)
-
 import MockAdapter from 'axios-mock-adapter';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

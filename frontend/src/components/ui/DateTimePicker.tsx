@@ -1,7 +1,3 @@
-// Cute date/time picker using react-day-picker + a simple time input.
-// Clicking the display opens a dropdown calendar; picking a date + time
-// shows a formatted string like "saturday, april 18 · 3:30 pm".
-
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import { useEffect, useRef, useState } from 'react';
