@@ -5,3 +5,5 @@ you're fully approved — welcome to pda!
 {% autoescape off %}{{ message_body }}{% endautoescape %}
 
 — pda
+
+{% include "emails/_no_reply_footer.txt" %}

@@ -7,3 +7,5 @@ here's your one-time login link for pda:
 this link expires in 7 days. if you didn't request it, you can ignore this email.
 
 — pda
+
+{% include "emails/_no_reply_footer.txt" %}

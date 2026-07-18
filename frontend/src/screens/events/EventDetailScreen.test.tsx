@@ -291,9 +291,9 @@ describe('EventDetailScreen', () => {
       expect(screen.getByRole('link', { name: /123 Main St/i })).toBeInTheDocument();
     });
 
-    it('drops a stored token the backend rejected', () => {
+    it('keeps a stored token when viewing an ineligible event (issue 880)', () => {
       useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
-      localStorage.setItem('pda-rsvp-token', 'stale-tok');
+      localStorage.setItem('pda-rsvp-token', 'valid-tok');
       mockUseEvent.mockReturnValue({
         data: { ...BASE_EVENT, viewerUserId: null },
         isPending: false,
@@ -302,7 +302,27 @@ describe('EventDetailScreen', () => {
 
       renderScreen('ev1');
 
-      expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
+      expect(localStorage.getItem('pda-rsvp-token')).toBe('valid-tok');
+    });
+
+    it('keeps a stored token even on an eligible event that came back locked (issue 880)', () => {
+      // A null viewerUserId can't distinguish a dead token from a live one here,
+      // so EventDetailScreen never clears — the /my-rsvps 404 path owns that.
+      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      localStorage.setItem('pda-rsvp-token', 'valid-tok');
+      mockUseEvent.mockReturnValue({
+        data: {
+          ...BASE_EVENT,
+          eventType: EventType.Official,
+          viewerUserId: null,
+        },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+
+      renderScreen('ev1');
+
+      expect(localStorage.getItem('pda-rsvp-token')).toBe('valid-tok');
     });
 
     it('ignores a stored token for an authed member', () => {

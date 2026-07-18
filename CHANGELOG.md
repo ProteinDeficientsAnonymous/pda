@@ -1,3 +1,57 @@
+## [0.40.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.4...v0.40.5) (2026-07-18)
+
+
+### Bug Fixes
+
+* **notifications:** add no-reply note to member-facing emails (Issue 883) ([#898](https://github.com/ProteinDeficientsAnonymous/pda/issues/898)) ([9423d59](https://github.com/ProteinDeficientsAnonymous/pda/commit/9423d59a47c72ba7f1657bd6a5d9df87cef8967f))
+
+## [0.40.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.3...v0.40.4) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** never clear rsvp token from event detail view (Issue 880) ([#889](https://github.com/ProteinDeficientsAnonymous/pda/issues/889)) ([ecbb0b1](https://github.com/ProteinDeficientsAnonymous/pda/commit/ecbb0b1d3664eae052e450a36e0920f46f86dc2a))
+
+## [0.40.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.2...v0.40.3) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** check phone before showing public rsvp form (Issue 881) ([#890](https://github.com/ProteinDeficientsAnonymous/pda/issues/890)) ([ec364a8](https://github.com/ProteinDeficientsAnonymous/pda/commit/ec364a8d89575b2480e59bf76bf2d62ac18ab63b))
+
+## [0.40.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.1...v0.40.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** tighten plus-one toggle label spacing (Issue 869) ([#891](https://github.com/ProteinDeficientsAnonymous/pda/issues/891)) ([469e4ce](https://github.com/ProteinDeficientsAnonymous/pda/commit/469e4ce416db19078065480adcf135a19d11e97d))
+
+## [0.40.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.0...v0.40.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** prevent clicking non-member rsvp entries (Issue 876) ([#892](https://github.com/ProteinDeficientsAnonymous/pda/issues/892)) ([d6a57e9](https://github.com/ProteinDeficientsAnonymous/pda/commit/d6a57e9a76e779910907a73a9ebdce443a4889f0))
+
+# [0.40.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.2...v0.40.0) (2026-07-18)
+
+
+### Bug Fixes
+
+* **feedback:** show feedback button to token-holding non-members (Issue 879) ([#888](https://github.com/ProteinDeficientsAnonymous/pda/issues/888)) ([06fa73b](https://github.com/ProteinDeficientsAnonymous/pda/commit/06fa73b3bd12a157403cbab3290e1af201b116c3))
+
+
+### Features
+
+* **events:** let non-members reach my-rsvps from bottom nav (Issue 878) ([#887](https://github.com/ProteinDeficientsAnonymous/pda/issues/887)) ([70e6911](https://github.com/ProteinDeficientsAnonymous/pda/commit/70e6911bd406136a77315fc54105b6133eba53df))
+
+## [0.39.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.1...v0.39.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** add official-event hint to non-member sign-in prompt (Issue 877) ([#886](https://github.com/ProteinDeficientsAnonymous/pda/issues/886)) ([ecdfc2d](https://github.com/ProteinDeficientsAnonymous/pda/commit/ecdfc2d1345f62f6f2fd18ecb5434b6fe5312ec7))
+
 ## [0.39.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.0...v0.39.1) (2026-07-15)
 
 

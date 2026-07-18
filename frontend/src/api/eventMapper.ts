@@ -15,6 +15,7 @@ interface WireGuest {
   photo_url?: string;
   has_plus_one?: boolean;
   attendance?: string;
+  is_member?: boolean;
 }
 
 export interface WireEvent {
@@ -107,6 +108,7 @@ function mapGuest(g: WireGuest): EventGuest {
     photoUrl: g.photo_url ?? '',
     hasPlusOne: g.has_plus_one ?? false,
     attendance: mapAttendance(g.attendance),
+    isMember: g.is_member ?? true,
   };
 }
 

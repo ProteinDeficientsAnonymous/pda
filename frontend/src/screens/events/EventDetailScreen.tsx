@@ -1,25 +1,18 @@
-import type { ReactNode } from 'react';
-import { useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
-import { clearStoredRsvpToken, getStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import {
-  canManageEvent,
-  canPublicRsvp,
-  EventStatus,
-  EventType,
-  EventVisibility,
-} from '@/models/event';
+import { canManageEvent, canPublicRsvp } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
 
 import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
+import { EventBadge } from './EventBadge';
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { EventMemberSection } from './EventMemberSection';
 import { EventPublicRsvpSection } from './EventPublicRsvpSection';
@@ -43,13 +36,11 @@ export default function EventDetailScreen() {
   const rsvpToken = isAuthed ? undefined : (urlToken ?? getStoredRsvpToken() ?? undefined);
   const { data: event, isPending, isError, error } = useEvent(id, undefined, rsvpToken);
 
-  // A supplied token that didn't unlock the event is expired/invalid — drop it
-  // so a stale stored token doesn't keep re-attaching on every navigation.
-  const tokenRejected =
-    !isPending && !isError && Boolean(rsvpToken) && !isAuthed && event.viewerUserId === null;
-  useEffect(() => {
-    if (tokenRejected) clearStoredRsvpToken();
-  }, [tokenRejected]);
+  // We never clear the stored token here: viewerUserId is null both for a dead
+  // token AND for a live token on an event that isn't public-rsvp-eligible, so
+  // this view can't tell them apart. Clearing on that ambiguous signal wiped
+  // valid tokens mid-browse (issue #880). A dead token is harmless — it resolves
+  // to anonymous — and is cleared authoritatively by the /my-rsvps 404 path.
 
   if (isPending) return <ContentLoading />;
   if (isError) {
@@ -82,7 +73,7 @@ export default function EventDetailScreen() {
         <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
           {event.title}
         </h1>
-        <VisibilityBadge event={event} />
+        <EventBadge event={event} />
         {showKebab ? (
           <div className="ml-auto">
             <EventDetailKebabMenu eventId={event.id} />
@@ -126,50 +117,6 @@ function WhenLine({ event }: { event: Event }) {
         ? formatEventDateTime(event.startDatetime, event.endDatetime, event.datetimeTbd)
         : 'date & time tbd'}
     </p>
-  );
-}
-
-function VisibilityBadge({ event }: { event: Event }) {
-  if (event.status === EventStatus.Cancelled) {
-    return <Badge tone="neutral">cancelled</Badge>;
-  }
-  if (event.eventType === EventType.Official) {
-    return <Badge tone="blue">official</Badge>;
-  }
-  if (event.eventType === EventType.Club) {
-    return <Badge tone="rose">pda club</Badge>;
-  }
-  if (event.visibility === EventVisibility.InviteOnly) {
-    return <Badge tone="lavender">invite only</Badge>;
-  }
-  if (event.visibility === EventVisibility.MembersOnly) {
-    return <Badge tone="amber">members only</Badge>;
-  }
-  return null;
-}
-
-function Badge({
-  tone,
-  children,
-}: {
-  tone: 'neutral' | 'blue' | 'amber' | 'lavender' | 'rose';
-  children: ReactNode;
-}) {
-  const tones = {
-    neutral: 'bg-surface-dim text-foreground-secondary',
-    blue: 'bg-info-subtle text-info',
-    amber: 'bg-warning-subtle text-warning',
-    lavender: 'bg-highlight-subtle text-highlight',
-    rose: '',
-  };
-  const style =
-    tone === 'rose'
-      ? { background: 'var(--color-evt-club-bg)', color: 'var(--color-evt-club-fg)' }
-      : undefined;
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-xs ${tones[tone]}`} style={style}>
-      {children}
-    </span>
   );
 }
 
@@ -235,6 +182,10 @@ function LoginOrJoinSection() {
           request to join
         </Link>
       </div>
+      <p className="text-foreground-tertiary mt-4 text-sm">
+        if you're not a member yet, look for the official events in blue on the calendar — once
+        you've come to one of those, you'll be able to sign up for all of the events on here!
+      </p>
     </section>
   );
 }

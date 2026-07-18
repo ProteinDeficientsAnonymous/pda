@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type * as RouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   canPublicRsvp,
@@ -20,8 +20,10 @@ vi.mock('react-router-dom', async (importActual) => {
 });
 
 const mockSubmit = vi.fn();
+const mockCheckPhone = vi.fn();
 vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: mockSubmit, isPending: false }),
+  useCheckPublicRsvpPhone: () => ({ mutateAsync: mockCheckPhone, isPending: false }),
 }));
 
 import { PublicRsvpSection } from './PublicRsvpSection';
@@ -102,6 +104,12 @@ describe('canPublicRsvp', () => {
 });
 
 describe('PublicRsvpSection', () => {
+  beforeEach(() => {
+    mockSubmit.mockReset();
+    mockCheckPhone.mockReset();
+    localStorage.clear();
+  });
+
   it('renders the form heading initially', () => {
     render(
       <MemoryRouter>
@@ -112,6 +120,7 @@ describe('PublicRsvpSection', () => {
   });
 
   it('navigates to the event page with the rsvp token on success', async () => {
+    mockCheckPhone.mockResolvedValue({ status: 'new', rsvp_token: '' });
     mockSubmit.mockResolvedValue({
       event: makeEvent(),
       rsvp: { status: 'attending', has_plus_one: false },
@@ -125,9 +134,11 @@ describe('PublicRsvpSection', () => {
     );
 
     await user.click(screen.getByRole('button', { name: "i'm going" }));
+    await user.type(screen.getByLabelText(/phone number/i), '4155550123');
+    await user.click(screen.getByRole('button', { name: 'continue' }));
+    await screen.findByLabelText(/first name/i);
     await user.type(screen.getByLabelText(/first name/i), 'Sam');
     await user.type(screen.getByLabelText(/^email/i), 'sam@example.com');
-    await user.type(screen.getByLabelText(/phone/i), '4155550123');
     await user.click(screen.getByRole('button', { name: 'rsvp' }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/events/evt-1?rsvp_token=tok-abc', {
@@ -135,5 +146,42 @@ describe('PublicRsvpSection', () => {
     });
     // persisted so the token survives navigation to another event (issue 873)
     expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-abc');
+  });
+
+  it('prompts sign-in when the phone belongs to a member, without showing the form', async () => {
+    mockCheckPhone.mockResolvedValue({ status: 'member', rsvp_token: '' });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PublicRsvpSection event={makeEvent({ id: 'evt-1' })} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: "i'm going" }));
+    await user.type(screen.getByLabelText(/phone number/i), '4155550123');
+    await user.click(screen.getByRole('button', { name: 'continue' }));
+
+    expect(await screen.findByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
+    expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument();
+  });
+
+  it('navigates straight to the event page when already rsvpd, skipping the form', async () => {
+    mockCheckPhone.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: 'tok-returning' });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PublicRsvpSection event={makeEvent({ id: 'evt-1' })} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: "i'm going" }));
+    await user.type(screen.getByLabelText(/phone number/i), '4155550123');
+    await user.click(screen.getByRole('button', { name: 'continue' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/events/evt-1?rsvp_token=tok-returning', {
+      replace: true,
+    });
+    expect(mockSubmit).not.toHaveBeenCalled();
+    expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-returning');
   });
 });

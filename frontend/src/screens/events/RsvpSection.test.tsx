@@ -85,6 +85,7 @@ function makeGuest(overrides: Partial<EventGuest>): EventGuest {
     photoUrl: '',
     hasPlusOne: false,
     attendance: AttendanceStatus.Unknown,
+    isMember: true,
     ...overrides,
   };
 }

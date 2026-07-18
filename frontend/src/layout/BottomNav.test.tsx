@@ -1,11 +1,15 @@
-// Unit tests for the bottom nav. Covers all five destinations rendering,
-// the add-event button navigating to /events/add, and the nav always
-// mounting (no permission gate on the FAB).
+// Unit tests for the bottom nav. Covers the fixed destinations rendering,
+// the auth-dependent my-rsvps tab, the add-event button navigating to
+// /events/add, and the nav always mounting (no permission gate on the FAB).
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
+import { useAuthStore } from '@/auth/store';
+import type { User } from '@/models/user';
 
 import { BottomNav } from './BottomNav';
 
@@ -33,20 +37,43 @@ function renderNav(initialPath = '/') {
 }
 
 describe('BottomNav', () => {
-  it('renders all five destinations: calendar, my events, add event, members, profile', () => {
+  afterEach(() => {
+    useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
+  });
+
+  it('renders calendar, add event, members, profile regardless of auth state', () => {
     renderNav('/');
 
     expect(screen.getByRole('link', { name: /^calendar$/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^my events$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^add event$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^members$/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
   });
 
-  it('my events link points at /events/mine', () => {
+  it('authed users get a my rsvps link pointing at /events/mine', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: { profilePhotoUrl: '', photoUpdatedAt: null } as User,
+      accessToken: 'token',
+    });
     renderNav('/');
-    const link = screen.getByRole('link', { name: /^my events$/i });
+
+    const link = screen.getByRole('link', { name: /^my rsvps$/i });
     expect(link).toHaveAttribute('href', '/events/mine');
+  });
+
+  it('logged-out users with a stored rsvp token get a my rsvps link pointing at /my-rsvps', () => {
+    setStoredRsvpToken('abc123');
+    renderNav('/');
+
+    const link = screen.getByRole('link', { name: /^my rsvps$/i });
+    expect(link).toHaveAttribute('href', '/my-rsvps');
+  });
+
+  it('logged-out users with no stored rsvp token get no my rsvps tab', () => {
+    renderNav('/');
+
+    expect(screen.queryByRole('link', { name: /^my rsvps$/i })).not.toBeInTheDocument();
   });
 
   it('members link points at /members', () => {

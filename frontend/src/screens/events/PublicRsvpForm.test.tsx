@@ -11,8 +11,10 @@ import {
 } from '@/models/event';
 
 const submitMutate = vi.fn();
+const checkPhoneMutate = vi.fn();
 vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: submitMutate, isPending: false }),
+  useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
 
 import { PublicRsvpForm } from './PublicRsvpForm';
@@ -71,19 +73,36 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
   };
 }
 
-function renderForm(event = makeEvent(), onSuccess = vi.fn()) {
+function renderForm(
+  event = makeEvent(),
+  onSuccess = vi.fn(),
+  onMember = vi.fn(),
+  onAlreadyRsvpd = vi.fn(),
+) {
   return render(
     <MemoryRouter>
-      <PublicRsvpForm event={event} onSuccess={onSuccess} />
+      <PublicRsvpForm
+        event={event}
+        onSuccess={onSuccess}
+        onMember={onMember}
+        onAlreadyRsvpd={onAlreadyRsvpd}
+      />
     </MemoryRouter>,
   );
 }
 
-function fillRequired() {
+function fillPhoneStep(phone = '4155550123') {
   fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+  fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: phone } });
+  fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+}
+
+async function fillRequired() {
+  checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+  fillPhoneStep();
+  await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
   fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
   fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
-  fireEvent.change(screen.getByLabelText('phone'), { target: { value: '+15550001111' } });
 }
 
 describe('PublicRsvpForm', () => {
@@ -93,12 +112,13 @@ describe('PublicRsvpForm', () => {
       event: { id: 'ev1' },
       rsvp: { status: 'attending', has_plus_one: false },
     });
+    checkPhoneMutate.mockReset();
   });
 
   it('submits the correct payload shape', async () => {
     const onSuccess = vi.fn();
     renderForm(makeEvent(), onSuccess);
-    fillRequired();
+    await fillRequired();
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await waitFor(() => expect(submitMutate).toHaveBeenCalled());
     expect(submitMutate).toHaveBeenCalledWith({
@@ -106,7 +126,7 @@ describe('PublicRsvpForm', () => {
       payload: expect.objectContaining({
         first_name: 'Ada',
         email: 'ada@example.com',
-        phone_number: '+15550001111',
+        phone_number: '+14155550123',
         status: 'attending',
         has_plus_one: false,
         website: '',
@@ -115,13 +135,19 @@ describe('PublicRsvpForm', () => {
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
   });
 
-  it('renders the plus-one toggle only when allowPlusOnes', () => {
+  it('renders the plus-one toggle only when allowPlusOnes', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
     const { rerender } = renderForm(makeEvent({ allowPlusOnes: true }));
-    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
-    expect(screen.getByRole('switch')).toBeInTheDocument();
+    fillPhoneStep();
+    await waitFor(() => expect(screen.getByRole('switch')).toBeInTheDocument());
     rerender(
       <MemoryRouter>
-        <PublicRsvpForm event={makeEvent({ allowPlusOnes: false })} onSuccess={vi.fn()} />
+        <PublicRsvpForm
+          event={makeEvent({ allowPlusOnes: false })}
+          onSuccess={vi.fn()}
+          onMember={vi.fn()}
+          onAlreadyRsvpd={vi.fn()}
+        />
       </MemoryRouter>,
     );
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
@@ -132,31 +158,69 @@ describe('PublicRsvpForm', () => {
     expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "can't go" })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/phone number/i)).not.toBeInTheDocument();
   });
 
-  it('advances to the contact-details step after picking a status', () => {
+  it('advances to the phone step after picking a status', () => {
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
-    expect(screen.getByLabelText('first name')).toBeInTheDocument();
+    expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
+  });
+
+  it('advances to the contact-details step after the phone check resolves new', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+14155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
     expect(screen.getByText('maybe')).toBeInTheDocument();
   });
 
-  it('lets you change the status and go back to step one', () => {
+  it('calls onMember when the phone belongs to a member', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'member', rsvp_token: '' });
+    const onMember = vi.fn();
+    renderForm(makeEvent(), vi.fn(), onMember);
+    fillPhoneStep();
+    await waitFor(() => expect(onMember).toHaveBeenCalled());
+  });
+
+  it('calls onAlreadyRsvpd with the refreshed token when already rsvpd', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: 'tok-xyz' });
+    const onAlreadyRsvpd = vi.fn();
+    renderForm(makeEvent(), vi.fn(), vi.fn(), onAlreadyRsvpd);
+    fillPhoneStep();
+    await waitFor(() => expect(onAlreadyRsvpd).toHaveBeenCalledWith({ rsvpToken: 'tok-xyz' }));
+  });
+
+  it('lets you change the status and go back to step one from the details step', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+14155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: 'change' }));
     expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });
 
   it('submits maybe status chosen in step one', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
     const onSuccess = vi.fn();
     renderForm(makeEvent(), onSuccess);
     fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+14155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
     fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
     fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
-    fireEvent.change(screen.getByLabelText('phone'), { target: { value: '+15550001111' } });
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await waitFor(() => expect(submitMutate).toHaveBeenCalled());
     expect(submitMutate).toHaveBeenCalledWith({
@@ -168,7 +232,7 @@ describe('PublicRsvpForm', () => {
   it('shows a 409 inline error with a sign-in link', async () => {
     submitMutate.mockRejectedValue({ isAxiosError: true, response: { status: 409 } });
     renderForm();
-    fillRequired();
+    await fillRequired();
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await screen.findByText('looks like you already have an account — sign in to rsvp');
     expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
@@ -177,14 +241,16 @@ describe('PublicRsvpForm', () => {
   it('shows a 429 rate-limit error', async () => {
     submitMutate.mockRejectedValue({ isAxiosError: true, response: { status: 429 } });
     renderForm();
-    fillRequired();
+    await fillRequired();
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await screen.findByText("you're rsvping too fast — try again in a few minutes");
   });
 
-  it('renders the hidden honeypot field', () => {
+  it('renders the hidden honeypot field', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
     renderForm();
-    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+    fillPhoneStep();
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
     const hp = screen.getByLabelText('website (leave blank)');
     expect(hp).toHaveAttribute('name', 'website');
     expect(hp).toHaveAttribute('tabindex', '-1');

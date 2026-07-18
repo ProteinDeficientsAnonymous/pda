@@ -86,6 +86,7 @@ def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGues
             photo_url=media_path(r.user.profile_photo),
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
+            is_member=r.user.is_member,
         )
         for r in rsvps
     ]
