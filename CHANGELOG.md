@@ -1,3 +1,10 @@
+# [0.44.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.43.0...v0.44.0) (2026-07-18)
+
+
+### Features
+
+* **consent:** prompt existing members to hide contact info ([#903](https://github.com/ProteinDeficientsAnonymous/pda/issues/903)) ([2f2e303](https://github.com/ProteinDeficientsAnonymous/pda/commit/2f2e3034306cba9861b3852cc32d2e08bbf28681))
+
 # [0.43.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.42.0...v0.43.0) (2026-07-18)
 
 
