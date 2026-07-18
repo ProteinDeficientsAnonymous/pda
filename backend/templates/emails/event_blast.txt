@@ -5,3 +5,5 @@ an update about {{ event_title|lower }}
 you're receiving this because you rsvp'd to this event on pda.
 
 — pda
+
+{% include "emails/_no_reply_footer.txt" %}
