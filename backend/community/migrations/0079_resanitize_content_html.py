@@ -27,7 +27,7 @@ def resanitize(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("community", "0066_backfill_joinrequest_names"),
+        ("community", "0078_rename_promotion_message_templates"),
     ]
 
     operations = [
