@@ -115,6 +115,10 @@ export default function OnboardingScreen() {
           {...register('email')}
           error={errors.email?.message}
         />
+        <p className="text-muted-foreground text-sm">
+          your phone number and email stay private from other members by default — you can choose
+          to share them anytime in settings
+        </p>
         <TextField
           label="pronouns (optional)"
           placeholder="e.g. she/her, they/them"

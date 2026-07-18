@@ -152,6 +152,8 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
             phone_number=validated_phone,
             is_member=True,
             needs_onboarding=True,
+            show_phone=False,
+            show_email=False,
         )
         user.set_unusable_password()
         user.save(update_fields=["password"])

@@ -77,6 +77,16 @@ describe('OnboardingScreen', () => {
     expect(completeOnboarding).not.toHaveBeenCalled();
   });
 
+  it('explains that contact info stays private by default', () => {
+    setupMock(makeUser({ needsGuidelinesConsent: false, needsSmsConsent: false }));
+    render(
+      <MemoryRouter>
+        <OnboardingScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText(/stay private from other members by default/i)).toBeInTheDocument();
+  });
+
   it('submits with required email (no consent checkboxes for already-consented user)', async () => {
     completeOnboarding.mockResolvedValue(undefined);
     setupMock(makeUser({ needsGuidelinesConsent: false, needsSmsConsent: false }));
