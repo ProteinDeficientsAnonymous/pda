@@ -26,6 +26,7 @@ const baseUser: User = {
   needsPasswordReset: false,
   needsGuidelinesConsent: false,
   needsSmsConsent: false,
+  needsContactPrivacyConsent: false,
   showPhone: false,
   showEmail: false,
   showBirthday: false,

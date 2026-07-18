@@ -11,13 +11,13 @@ import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
 import { type Birthday, CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
-import { cn } from '@/utils/cn';
 import { formatBirthday } from '@/utils/datetime';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { PrivacyToggles } from './PrivacyToggles';
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
@@ -90,26 +90,7 @@ export default function SettingsScreen() {
       </Section>
 
       <Section label="privacy">
-        <Toggle
-          label="show phone on my profile"
-          checked={user.showPhone}
-          onChange={(v) => updateProfile({ showPhone: v })}
-        />
-        <Toggle
-          label="show email on my profile"
-          checked={user.showEmail}
-          onChange={(v) => updateProfile({ showEmail: v })}
-        />
-        <Toggle
-          label="show birthday on my profile"
-          checked={user.showBirthday}
-          onChange={(v) => updateProfile({ showBirthday: v })}
-        />
-        <Toggle
-          label="show my last name to other members"
-          checked={!user.hideLastName}
-          onChange={(v) => updateProfile({ hideLastName: !v })}
-        />
+        <PrivacyToggles user={user} onChange={(patch) => void updateProfile(patch)} />
       </Section>
 
       <Section label="calendar">
@@ -397,44 +378,6 @@ function InlineBirthday({
         </Button>
       </div>
     </div>
-  );
-}
-
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => Promise<void>;
-}) {
-  return (
-    <label className="flex items-center justify-between gap-3">
-      <span className="text-foreground text-sm">{label}</span>
-      <span
-        className={cn(
-          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-          checked ? 'bg-brand-600' : 'bg-toggle-off',
-        )}
-      >
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => {
-            void onChange(e.target.checked);
-          }}
-          className="sr-only"
-        />
-        <span
-          aria-hidden="true"
-          className={cn(
-            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-            checked ? 'translate-x-5' : 'translate-x-0.5',
-          )}
-        />
-      </span>
-    </label>
   );
 }
 

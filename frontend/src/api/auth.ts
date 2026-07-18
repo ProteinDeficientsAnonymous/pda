@@ -39,6 +39,7 @@ interface WireUser {
   needs_password_reset?: boolean;
   needs_guidelines_consent?: boolean;
   needs_sms_consent?: boolean;
+  needs_contact_privacy_consent?: boolean;
   show_phone?: boolean;
   show_email?: boolean;
   show_birthday?: boolean;
@@ -93,6 +94,7 @@ function mapUser(u: WireUser): User {
     needsPasswordReset: u.needs_password_reset ?? false,
     needsGuidelinesConsent: u.needs_guidelines_consent ?? false,
     needsSmsConsent: u.needs_sms_consent ?? false,
+    needsContactPrivacyConsent: u.needs_contact_privacy_consent ?? false,
     showPhone: u.show_phone ?? false,
     showEmail: u.show_email ?? false,
     showBirthday: u.show_birthday ?? false,
