@@ -45,6 +45,7 @@ export function NotificationBell() {
       // for anyone who happens to be looking at the event right now.
       event_updated: () => {
         void qc.invalidateQueries({ queryKey: ['events'] });
+        void qc.invalidateQueries({ queryKey: ['event-comments'] });
       },
     },
   });

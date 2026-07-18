@@ -1,6 +1,7 @@
 """End-to-end tests for the event comments API."""
 
 import json
+from unittest.mock import patch
 
 import pytest
 from community.models import (
@@ -136,6 +137,18 @@ class TestPostComment:
         )
         assert response.status_code == 422
 
+    def test_post_broadcasts_event_update(self, api_client, rsvp_headers, event_with_rsvp):
+        with patch("community._event_comments.broadcast_event_update") as mock_broadcast:
+            response = api_client.post(
+                f"/api/community/events/{event_with_rsvp.id}/comments/",
+                data=json.dumps({"body": "first comment"}),
+                content_type="application/json",
+                **rsvp_headers,
+            )
+        assert response.status_code == 201, response.content
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0].id == event_with_rsvp.id
+
 
 @pytest.mark.django_db
 class TestPostReply:
@@ -166,6 +179,21 @@ class TestPostReply:
         )
         assert response.status_code == 422
         assert response.json()["detail"][0]["code"] == "comment.reply_depth_exceeded"
+
+    def test_reply_broadcasts_event_update(
+        self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
+    ):
+        parent = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="parent")
+        with patch("community._event_comments.broadcast_event_update") as mock_broadcast:
+            response = api_client.post(
+                f"/api/community/events/{event_with_rsvp.id}/comments/{parent.id}/replies/",
+                data=json.dumps({"body": "reply"}),
+                content_type="application/json",
+                **rsvp_headers,
+            )
+        assert response.status_code == 201, response.content
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0].id == event_with_rsvp.id
 
     def test_reply_to_deleted_parent_404(
         self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
@@ -280,6 +308,19 @@ class TestDeleteComment:
         )
         assert first.status_code == 204
         assert second.status_code == 204
+
+    def test_delete_broadcasts_event_update(
+        self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
+    ):
+        comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="mine")
+        with patch("community._event_comments.broadcast_event_update") as mock_broadcast:
+            response = api_client.delete(
+                f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/",
+                **rsvp_headers,
+            )
+        assert response.status_code == 204
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0].id == event_with_rsvp.id
 
 
 @pytest.mark.django_db
