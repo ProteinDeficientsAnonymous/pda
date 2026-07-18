@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   AttendanceStatus,
@@ -13,12 +14,17 @@ import {
   RsvpServerStatus,
 } from '@/models/event';
 
+const setGuestRsvpMutate = vi.fn();
+vi.mock('@/api/eventStats', () => ({
+  useSetGuestRsvp: () => ({ mutate: setGuestRsvpMutate, isPending: false }),
+}));
+
 import { RsvpGuestList } from './RsvpGuestList';
 
 function makeGuest(overrides: Partial<EventGuest>): EventGuest {
   return {
-    userId: 'user-1',
-    name: 'Alex',
+    userId: 'user-other',
+    name: 'Other',
     status: RsvpServerStatus.Attending,
     phone: null,
     photoUrl: '',
@@ -29,7 +35,7 @@ function makeGuest(overrides: Partial<EventGuest>): EventGuest {
   };
 }
 
-function makeEvent(guests: EventGuest[]): Event {
+function makeEvent(overrides: Partial<Event>): Event {
   return {
     id: 'ev1',
     title: 'Potluck',
@@ -49,7 +55,7 @@ function makeEvent(guests: EventGuest[]): Event {
     rsvpEnabled: true,
     allowPlusOnes: true,
     maxAttendees: null,
-    attendingCount: guests.length,
+    attendingCount: 0,
     waitlistedCount: 0,
     invitedCount: 0,
     datetimeTbd: false,
@@ -62,9 +68,8 @@ function makeEvent(guests: EventGuest[]): Event {
     coHostNames: [],
     coHostPhotoUrls: [],
     coHostInviteIds: [],
-    guests,
+    guests: [makeGuest({})],
     myRsvp: null,
-    viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
     invitedUserNames: [],
@@ -79,31 +84,76 @@ function makeEvent(guests: EventGuest[]): Event {
     tags: [],
     isPast: false,
     status: EventStatus.Active,
+    viewerUserId: null,
+    ...overrides,
   };
 }
 
+function renderList(event: Event, canManageRsvps = false) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <RsvpGuestList event={event} canSeeInvited={false} canManageRsvps={canManageRsvps} />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  setGuestRsvpMutate.mockReset();
+});
+
 describe('RsvpGuestList', () => {
   it('links member guests to their profile', () => {
-    const event = makeEvent([makeGuest({ userId: 'user-1', name: 'Alex', isMember: true })]);
-    render(
-      <MemoryRouter>
-        <RsvpGuestList event={event} canSeeInvited={false} />
-      </MemoryRouter>,
-    );
+    const event = makeEvent({
+      guests: [makeGuest({ userId: 'user-1', name: 'Alex', isMember: true })],
+    });
+    renderList(event);
     const link = screen.getByRole('link', { name: /alex/i });
     expect(link).toHaveAttribute('href', '/members/user-1');
   });
 
   it('renders non-member guests without a profile link', () => {
-    const event = makeEvent([
-      makeGuest({ userId: 'guest-1', name: 'Sam', isMember: false, hasPlusOne: true }),
-    ]);
-    render(
-      <MemoryRouter>
-        <RsvpGuestList event={event} canSeeInvited={false} />
-      </MemoryRouter>,
-    );
+    const event = makeEvent({
+      guests: [makeGuest({ userId: 'guest-1', name: 'Sam', isMember: false, hasPlusOne: true })],
+    });
+    renderList(event);
     expect(screen.queryByRole('link', { name: /sam/i })).not.toBeInTheDocument();
     expect(screen.getByText('Sam')).toBeInTheDocument();
+  });
+});
+
+describe('RsvpGuestList — host rsvp management (Issue 872)', () => {
+  it('does not show an edit control when the viewer cannot manage rsvps', () => {
+    renderList(makeEvent({}), false);
+    expect(screen.queryByRole('button', { name: /change other's rsvp/i })).not.toBeInTheDocument();
+  });
+
+  it('shows an edit control per guest when the viewer can manage rsvps', () => {
+    renderList(makeEvent({}), true);
+    expect(screen.getByRole('button', { name: /change other's rsvp/i })).toBeInTheDocument();
+  });
+
+  it('does not show an edit control for non-member guests', () => {
+    renderList(makeEvent({ guests: [makeGuest({ isMember: false })] }), true);
+    expect(screen.queryByRole('button', { name: /change other's rsvp/i })).not.toBeInTheDocument();
+  });
+
+  it('opens a dialog with status options when edit is tapped', () => {
+    renderList(makeEvent({}), true);
+    fireEvent.click(screen.getByRole('button', { name: /change other's rsvp/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^maybe$/i })).toBeInTheDocument();
+  });
+
+  it('calls the mutation with the selected status', () => {
+    renderList(makeEvent({}), true);
+    fireEvent.click(screen.getByRole('button', { name: /change other's rsvp/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    expect(setGuestRsvpMutate).toHaveBeenCalledWith(
+      { userId: 'user-other', status: 'maybe', hasPlusOne: false },
+      expect.objectContaining({ onSuccess: expect.any(Function), onError: expect.any(Function) }),
+    );
   });
 });

@@ -2791,6 +2791,23 @@
         "title": "HomePagePatchIn",
         "type": "object"
       },
+      "HostRSVPIn": {
+        "properties": {
+          "has_plus_one": {
+            "default": false,
+            "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RSVPStatus"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HostRSVPIn",
+        "type": "object"
+      },
       "InviteIn": {
         "properties": {
           "user_ids": {
@@ -10019,7 +10036,7 @@
     },
     "/api/community/events/{event_id}/rsvps/{user_id}/attendance/": {
       "post": {
-        "operationId": "community__event_rsvps_set_attendance",
+        "operationId": "community__event_host_actions_set_attendance",
         "parameters": [
           {
             "in": "path",
@@ -10115,9 +10132,108 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/": {
+      "post": {
+        "description": "Let an event host/co-host/manager change another user's rsvp on their behalf (Issue 872).",
+        "operationId": "community__event_host_actions_set_guest_rsvp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HostRSVPIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Set Guest Rsvp",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/stats/": {
       "get": {
-        "operationId": "community__event_rsvps_get_event_stats",
+        "operationId": "community__event_host_actions_get_event_stats",
         "parameters": [
           {
             "in": "path",
@@ -10175,7 +10291,7 @@
     },
     "/api/community/events/{event_id}/text-recipients/": {
       "get": {
-        "operationId": "community__event_rsvps_get_text_recipients",
+        "operationId": "community__event_host_actions_get_text_recipients",
         "parameters": [
           {
             "in": "path",

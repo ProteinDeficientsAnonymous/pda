@@ -16,6 +16,7 @@ from community._event_helpers import (  # noqa: F401
     _can_see_phones,
     _find_my_rsvp,
 )
+from community._event_host_actions import router as event_host_actions_router
 from community._event_invitations import router as event_invitations_router
 from community._event_rsvps import router as event_rsvps_router
 from community._event_schemas import EventPatchIn  # noqa: F401
@@ -64,6 +65,7 @@ router.add_router("", attendance_report_router)
 router.add_router("", events_router)
 router.add_router("", event_tags_router)
 router.add_router("", event_rsvps_router)
+router.add_router("", event_host_actions_router)
 router.add_router("", public_rsvp_submit_router)
 # Mount resend before manage so the literal `/public/my-rsvps/resend/` route
 # resolves before that router's `/public/my-rsvps/{event_id}/` parameterized route.

@@ -62,7 +62,7 @@ export function EventMemberSection({ event }: Props) {
       <CostSection event={event} />
       {showRsvp ? (
         <Card label="rsvp">
-          <RsvpSection event={event} canSeeInvited={canSeeInvited} />
+          <RsvpSection event={event} canSeeInvited={canSeeInvited} canManageRsvps={canSeeInvited} />
           {canInvite || isCoHost ? (
             <div className="mt-4 flex flex-wrap justify-end gap-2">
               {canInvite ? <InviteSection event={event} /> : null}
