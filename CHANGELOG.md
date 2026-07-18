@@ -1,3 +1,10 @@
+## [0.48.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.2...v0.48.3) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** wrap update_event field edits + status transition in a transaction (Issue 721) ([#937](https://github.com/ProteinDeficientsAnonymous/pda/issues/937)) ([2df8ad4](https://github.com/ProteinDeficientsAnonymous/pda/commit/2df8ad478dd72699771979bf96a54e773c1b6723))
+
 ## [0.48.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.1...v0.48.2) (2026-07-18)
 
 
