@@ -94,12 +94,7 @@ export function RsvpGuestList({ event, canSeeInvited, canManageRsvps = false }: 
       ) : (
         <div className="flex flex-wrap gap-2">
           {visible.map((g) => (
-            <GuestChip
-              key={g.userId}
-              guest={g}
-              eventId={event.id}
-              canEdit={canManageRsvps}
-            />
+            <GuestChip key={g.userId} guest={g} eventId={event.id} canEdit={canManageRsvps} />
           ))}
         </div>
       )}

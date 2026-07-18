@@ -99,11 +99,7 @@ export function useSetAttendance(eventId: string) {
 export function useSetGuestRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (args: {
-      userId: string;
-      status: RsvpInputStatus;
-      hasPlusOne?: boolean;
-    }) => {
+    mutationFn: async (args: { userId: string; status: RsvpInputStatus; hasPlusOne?: boolean }) => {
       const { data } = await apiClient.post<WireEvent>(
         `/api/community/events/${eventId}/rsvps/${args.userId}/rsvp/`,
         { status: args.status, has_plus_one: args.hasPlusOne ?? false },
