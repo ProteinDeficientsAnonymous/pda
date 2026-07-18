@@ -77,14 +77,16 @@ describe('OnboardingScreen', () => {
     expect(completeOnboarding).not.toHaveBeenCalled();
   });
 
-  it('explains that contact info stays private by default', () => {
+  it('explains that contact info is shared with other members after onboarding', () => {
     setupMock(makeUser({ needsGuidelinesConsent: false, needsSmsConsent: false }));
     render(
       <MemoryRouter>
         <OnboardingScreen />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/stay private from other members by default/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/your name and contact info are shared with other members/i),
+    ).toBeInTheDocument();
   });
 
   it('submits with required email (no consent checkboxes for already-consented user)', async () => {

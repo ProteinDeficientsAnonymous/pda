@@ -152,8 +152,6 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
             phone_number=validated_phone,
             is_member=True,
             needs_onboarding=True,
-            show_phone=False,
-            show_email=False,
         )
         user.set_unusable_password()
         user.save(update_fields=["password"])
@@ -200,7 +198,7 @@ def _matches_for_non_admin(u: User, q: str, digits: str) -> bool:
 
 @router.get("/users/search/", response={200: list[UserSearchOut]}, auth=gated_jwt)
 def search_users(request, q: str = ""):
-    qs = User.objects.active_members().exclude(pk=request.auth.pk)
+    qs = User.objects.active_members().filter(needs_onboarding=False).exclude(pk=request.auth.pk)
     q = q.strip()
     digits = re.sub(r"\D", "", q)
     if q:

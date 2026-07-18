@@ -66,7 +66,7 @@ class TestCreateUser:
         user = User.objects.get(phone_number="+12025550903")
         assert user.needs_onboarding is True
 
-    def test_create_user_hides_contact_info_by_default(self, api_client, manage_users_headers):
+    def test_create_user_keeps_contact_visibility_default(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
             {"phone_number": "+12025550907", "first_name": "Newmember"},
@@ -75,8 +75,9 @@ class TestCreateUser:
         )
         assert response.status_code == 201
         user = User.objects.get(phone_number="+12025550907")
-        assert user.show_phone is False
-        assert user.show_email is False
+        assert user.needs_onboarding is True
+        assert user.show_phone is True
+        assert user.show_email is True
 
     def test_create_user_unauthenticated(self, api_client):
         response = api_client.post(
@@ -207,7 +208,7 @@ class TestBulkCreateUsers:
         assert data["created"] == 2
         assert all(r.get("magic_link_token") for r in data["results"] if r["success"])
 
-    def test_bulk_create_users_hides_contact_info_by_default(
+    def test_bulk_create_users_keeps_contact_visibility_default(
         self, api_client, manage_users_headers
     ):
         response = api_client.post(
@@ -218,8 +219,9 @@ class TestBulkCreateUsers:
         )
         assert response.status_code == 200
         user = User.objects.get(phone_number="+12025551501")
-        assert user.show_phone is False
-        assert user.show_email is False
+        assert user.needs_onboarding is True
+        assert user.show_phone is True
+        assert user.show_email is True
 
     def test_bulk_create_users_empty_list(self, api_client, manage_users_headers):
         response = api_client.post(

@@ -116,8 +116,8 @@ export default function OnboardingScreen() {
           error={errors.email?.message}
         />
         <p className="text-muted-foreground text-sm">
-          your phone number and email stay private from other members by default — you can choose
-          to share them anytime in settings
+          once you finish here, your name and contact info are shared with other members — you can
+          hide your phone number or email anytime in settings
         </p>
         <TextField
           label="pronouns (optional)"

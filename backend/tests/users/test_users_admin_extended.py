@@ -231,6 +231,14 @@ class TestMemberProfile:
         response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
         assert response.status_code == 404
 
+    def test_member_profile_returns_404_for_onboarding_pending_user(
+        self, api_client, auth_headers, other_user
+    ):
+        other_user.needs_onboarding = True
+        other_user.save(update_fields=["needs_onboarding"])
+        response = api_client.get(f"/api/auth/users/{other_user.pk}/profile/", **auth_headers)
+        assert response.status_code == 404
+
     def test_member_profile_returns_pronouns(self, api_client, auth_headers, other_user):
         other_user.pronouns = "they/them"
         other_user.save(update_fields=["pronouns"])
@@ -294,6 +302,17 @@ class TestDeleteUser:
     def test_archived_user_excluded_from_search(self, api_client, manage_users_headers, other_user):
         other_user.archived_at = timezone.now()
         other_user.save(update_fields=["archived_at"])
+
+        response = api_client.get("/api/auth/users/search/?q=Other", **manage_users_headers)
+        assert response.status_code == 200
+        ids = [u["id"] for u in response.json()]
+        assert str(other_user.pk) not in ids
+
+    def test_onboarding_pending_user_excluded_from_search(
+        self, api_client, manage_users_headers, other_user
+    ):
+        other_user.needs_onboarding = True
+        other_user.save(update_fields=["needs_onboarding"])
 
         response = api_client.get("/api/auth/users/search/?q=Other", **manage_users_headers)
         assert response.status_code == 200
