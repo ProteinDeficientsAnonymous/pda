@@ -1,3 +1,10 @@
+## [0.46.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.1...v0.46.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** broadcast comment live-updates to all viewers, not just rsvps (Issue 919) ([#930](https://github.com/ProteinDeficientsAnonymous/pda/issues/930)) ([444be39](https://github.com/ProteinDeficientsAnonymous/pda/commit/444be39a42147255fa11eb8777258954ea43cf93))
+
 ## [0.46.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.0...v0.46.1) (2026-07-18)
 
 
