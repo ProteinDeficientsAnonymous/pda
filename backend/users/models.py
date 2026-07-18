@@ -57,6 +57,10 @@ class UserManager(BaseUserManager):
             archived_at__isnull=True,
         )
 
+    def with_permission(self, key: str):
+        """Members granted `key` via role permissions, honoring the admin-default rule."""
+        return self.members().filter(roles__id__in=Role.ids_with_permission(key)).distinct()
+
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("Phone number is required")
