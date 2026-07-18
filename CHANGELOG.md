@@ -1,3 +1,10 @@
+## [0.48.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.0...v0.48.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* 921 - link rsvp'd events to detail page on my-rsvps ([#929](https://github.com/ProteinDeficientsAnonymous/pda/issues/929)) ([4bbc7d8](https://github.com/ProteinDeficientsAnonymous/pda/commit/4bbc7d81e5b1944494a8382f8ebd4177043a4ec9)), closes [#927](https://github.com/ProteinDeficientsAnonymous/pda/issues/927)
+
 # [0.48.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.47.0...v0.48.0) (2026-07-18)
 
 
