@@ -23,6 +23,8 @@ interface Handle {
   schedule: (value: string) => void;
   /** Cancel any pending save (e.g. on unmount). Automatic via effect cleanup. */
   cancel: () => void;
+  /** Cancel any pending debounce and save the given value immediately. */
+  flush: (value: string) => Promise<void>;
 }
 
 export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Options): Handle {
@@ -44,27 +46,42 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
     }
   }, []);
 
+  const runSave = useCallback(
+    (value: string) => {
+      setStatus('saving');
+      return onSaveRef.current(value).then(
+        () => {
+          setStatus('saved');
+          if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
+          savedTimerRef.current = window.setTimeout(() => {
+            setStatus('idle');
+          }, savedBadgeMs);
+        },
+        () => {
+          setStatus('error');
+        },
+      );
+    },
+    [savedBadgeMs],
+  );
+
   const schedule = useCallback(
     (value: string) => {
       cancel();
       timerRef.current = window.setTimeout(() => {
         timerRef.current = null;
-        setStatus('saving');
-        onSaveRef.current(value).then(
-          () => {
-            setStatus('saved');
-            if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
-            savedTimerRef.current = window.setTimeout(() => {
-              setStatus('idle');
-            }, savedBadgeMs);
-          },
-          () => {
-            setStatus('error');
-          },
-        );
+        void runSave(value);
       }, delay);
     },
-    [cancel, delay, savedBadgeMs],
+    [cancel, delay, runSave],
+  );
+
+  const flush = useCallback(
+    (value: string) => {
+      cancel();
+      return runSave(value);
+    },
+    [cancel, runSave],
   );
 
   useEffect(() => {
@@ -74,5 +91,5 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
     };
   }, [cancel]);
 
-  return { status, schedule, cancel };
+  return { status, schedule, cancel, flush };
 }

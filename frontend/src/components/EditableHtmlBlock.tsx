@@ -45,7 +45,7 @@ export function EditableHtmlBlock({
   }
 
   function stopEditing() {
-    autosave.cancel();
+    void autosave.flush(draft);
     setEditing(false);
   }
 
