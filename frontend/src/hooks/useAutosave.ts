@@ -12,7 +12,6 @@ interface Handle {
   status: AutosaveStatus;
   schedule: (value: string) => void;
   cancel: () => void;
-  /** Save the given value now, coalescing with any save already in flight for the same value. */
   flush: (value: string) => Promise<void>;
 }
 
@@ -76,7 +75,6 @@ export function useAutosave({ delay = 2000, savedBadgeMs = 2000, onSave }: Optio
   const flush = useCallback(
     (value: string) => {
       if (timerRef.current === null) {
-        // Nothing debounced; a save for this exact value may already be in flight.
         if (inFlightRef.current?.value === value) return inFlightRef.current.promise;
         return Promise.resolve();
       }
