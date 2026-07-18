@@ -1,3 +1,10 @@
+## [0.48.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.5...v0.48.6) (2026-07-18)
+
+
+### Bug Fixes
+
+* **notifications:** cancel refetches before optimistic mark-all + report-only mutation backstop ([#951](https://github.com/ProteinDeficientsAnonymous/pda/issues/951)) ([b83964d](https://github.com/ProteinDeficientsAnonymous/pda/commit/b83964d27b8b46df5c31c6e8fcc1df19500682ad)), closes [#714](https://github.com/ProteinDeficientsAnonymous/pda/issues/714) [#726](https://github.com/ProteinDeficientsAnonymous/pda/issues/726)
+
 ## [0.48.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.4...v0.48.5) (2026-07-18)
 
 
