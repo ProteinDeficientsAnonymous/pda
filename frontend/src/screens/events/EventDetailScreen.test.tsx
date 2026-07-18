@@ -291,9 +291,27 @@ describe('EventDetailScreen', () => {
       expect(screen.getByRole('link', { name: /123 Main St/i })).toBeInTheDocument();
     });
 
-    it('drops a stored token the backend rejected', () => {
+    it('drops a stored token the backend rejected on a public-rsvp-eligible event', () => {
       useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
       localStorage.setItem('pda-rsvp-token', 'stale-tok');
+      mockUseEvent.mockReturnValue({
+        data: {
+          ...BASE_EVENT,
+          eventType: EventType.Official,
+          viewerUserId: null,
+        },
+        isPending: false,
+        isError: false,
+      } as ReturnType<typeof useEvent>);
+
+      renderScreen('ev1');
+
+      expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
+    });
+
+    it('keeps a stored token when viewing an event the token was never meant to unlock (issue 880)', () => {
+      useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+      localStorage.setItem('pda-rsvp-token', 'valid-tok');
       mockUseEvent.mockReturnValue({
         data: { ...BASE_EVENT, viewerUserId: null },
         isPending: false,
@@ -302,7 +320,7 @@ describe('EventDetailScreen', () => {
 
       renderScreen('ev1');
 
-      expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
+      expect(localStorage.getItem('pda-rsvp-token')).toBe('valid-tok');
     });
 
     it('ignores a stored token for an authed member', () => {

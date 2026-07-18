@@ -43,10 +43,17 @@ export default function EventDetailScreen() {
   const rsvpToken = isAuthed ? undefined : (urlToken ?? getStoredRsvpToken() ?? undefined);
   const { data: event, isPending, isError, error } = useEvent(id, undefined, rsvpToken);
 
-  // A supplied token that didn't unlock the event is expired/invalid — drop it
-  // so a stale stored token doesn't keep re-attaching on every navigation.
+  // A token that didn't unlock an event the token SHOULD unlock is expired/invalid
+  // — drop it so a stale stored token doesn't keep re-attaching. An event that
+  // isn't public-RSVP-eligible always resolves viewerUserId to null regardless of
+  // the token, so that alone must never be treated as rejection (issue #880).
   const tokenRejected =
-    !isPending && !isError && Boolean(rsvpToken) && !isAuthed && event.viewerUserId === null;
+    !isPending &&
+    !isError &&
+    Boolean(rsvpToken) &&
+    !isAuthed &&
+    canPublicRsvp(event) &&
+    event.viewerUserId === null;
   useEffect(() => {
     if (tokenRejected) clearStoredRsvpToken();
   }, [tokenRejected]);
