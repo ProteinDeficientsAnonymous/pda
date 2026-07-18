@@ -10,9 +10,9 @@ export function ContactPrivacyStep({ showPhone, showEmail, onChange }: ContactPr
   return (
     <div className="border-border flex flex-col gap-3 rounded-lg border p-3">
       <p className="text-foreground text-sm">
-        want to hide your phone number or email from your profile? only other members can ever
-        see this info — and if you hide your number, you'll still be included in group texts for
-        events you rsvp'd to, it just won't be shown on its own
+        want to hide your phone number or email from your profile? only other members can ever see
+        this info — and if you hide your number, you'll still be included in group texts for events
+        you rsvp'd to, it just won't be shown on its own
       </p>
       <Toggle
         label="show phone on my profile"

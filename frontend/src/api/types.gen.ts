@@ -1994,7 +1994,7 @@ export interface components {
          * ConsentType
          * @enum {string}
          */
-        ConsentType: "guidelines" | "sms";
+        ConsentType: "guidelines" | "sms" | "contact_privacy";
         /** DocFolderOut */
         DocFolderOut: {
             /** Children */
@@ -4078,6 +4078,11 @@ export interface components {
              * @default false
              */
             login_link_requested: boolean;
+            /**
+             * Needs Contact Privacy Consent
+             * @default false
+             */
+            needs_contact_privacy_consent: boolean;
             /**
              * Needs Guidelines Consent
              * @default false
