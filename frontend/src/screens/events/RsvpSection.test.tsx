@@ -4,17 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
-import {
-  AttendanceStatus,
-  type Event,
-  type EventGuest,
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-  RsvpServerStatus,
-} from '@/models/event';
-import type { User } from '@/models/user';
+import { type Event, RsvpServerStatus } from '@/models/event';
+import { makeEvent as makeBaseEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 const setRsvpMutate = vi.fn();
 const removeRsvpMutate = vi.fn();
@@ -42,101 +33,16 @@ vi.mock('./RsvpCommentField', () => ({
 
 import { RsvpSection } from './RsvpSection';
 
-const ME: User = {
-  id: 'user-me',
-  phoneNumber: '+12125550001',
-  firstName: 'Me',
-  lastName: '',
-  fullName: 'Me',
-  nickname: '',
-  email: '',
-  bio: '',
-  pronouns: '',
-  birthday: null,
-  isSuperuser: false,
-  isStaff: false,
-  needsOnboarding: false,
-  needsPasswordReset: false,
-  needsGuidelinesConsent: false,
-  needsSmsConsent: false,
-  needsContactPrivacyConsent: false,
-  showPhone: false,
-  showEmail: false,
-  showBirthday: false,
-  hideLastName: false,
-  weekStart: 'sunday',
-  calendarFeedScope: 'all',
-  profilePhotoUrl: '',
-  photoUpdatedAt: null,
-  roles: [],
-};
+const ME = makeUser({ id: 'user-me', firstName: 'Me', lastName: '', fullName: 'Me' });
 
-function makeGuest(overrides: Partial<EventGuest>): EventGuest {
-  return {
-    userId: 'user-other',
-    name: 'Other',
-    status: RsvpServerStatus.Attending,
-    phone: null,
-    photoUrl: '',
-    hasPlusOne: false,
-    attendance: AttendanceStatus.Unknown,
-    isMember: true,
-    ...overrides,
-  };
-}
-
-function makeEvent(overrides: Partial<Event>): Event {
-  return {
-    id: 'ev1',
-    title: 'Potluck',
-    description: '',
-    startDatetime: new Date('2099-06-01T18:00:00Z'),
-    endDatetime: null,
-    location: '',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: true,
-    allowPlusOnes: true,
-    maxAttendees: null,
-    attendingCount: 0,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
+function makeEvent(overrides: Partial<Event> = {}): Event {
+  return makeBaseEvent({
     createdById: 'user-host',
     createdByName: 'Host',
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
+    allowPlusOnes: true,
     guests: [],
-    myRsvp: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: InvitePermission.AllMembers,
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Community,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    tags: [],
-    isPast: false,
-    status: EventStatus.Active,
-    viewerUserId: null,
     ...overrides,
-  };
+  });
 }
 
 function renderSection(event: Event, token?: string) {

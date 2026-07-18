@@ -3,14 +3,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  type Event,
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-  RsvpServerStatus,
-} from '@/models/event';
+import { type Event, RsvpServerStatus } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 const updateMutate = vi.fn();
 const cancelMutate = vi.fn();
@@ -21,60 +15,6 @@ vi.mock('@/api/publicRsvp', () => ({
 
 import { PublicRsvpCard } from './PublicRsvpCard';
 
-function makeEvent(overrides: Partial<Event>): Event {
-  return {
-    id: 'ev1',
-    title: 'Potluck',
-    description: '',
-    startDatetime: new Date('2099-06-01T18:00:00Z'),
-    endDatetime: null,
-    location: '',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: true,
-    allowPlusOnes: true,
-    maxAttendees: null,
-    attendingCount: 0,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
-    createdById: 'user-host',
-    createdByName: 'Host',
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
-    guests: [],
-    myRsvp: null,
-    viewerUserId: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: InvitePermission.AllMembers,
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Community,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    tags: [],
-    isPast: false,
-    status: EventStatus.Active,
-    ...overrides,
-  };
-}
-
 function renderCard(props: { status: string; hasPlusOne: boolean; event?: Partial<Event> }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -82,7 +22,7 @@ function renderCard(props: { status: string; hasPlusOne: boolean; event?: Partia
       <MemoryRouter>
         <PublicRsvpCard
           token="tok123"
-          event={makeEvent(props.event ?? {})}
+          event={makeEvent({ allowPlusOnes: true, ...props.event })}
           status={props.status}
           hasPlusOne={props.hasPlusOne}
         />
@@ -93,7 +33,11 @@ function renderCard(props: { status: string; hasPlusOne: boolean; event?: Partia
 
 describe('PublicRsvpCard', () => {
   it('links the event title to the event detail page', () => {
-    renderCard({ status: RsvpServerStatus.Attending, hasPlusOne: false, event: { id: 'ev1' } });
+    renderCard({
+      status: RsvpServerStatus.Attending,
+      hasPlusOne: false,
+      event: { id: 'ev1', title: 'Potluck' },
+    });
     expect(screen.getByRole('link', { name: 'Potluck' })).toHaveAttribute('href', '/events/ev1');
   });
 

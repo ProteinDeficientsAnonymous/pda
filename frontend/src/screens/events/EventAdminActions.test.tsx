@@ -7,6 +7,7 @@ import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
+import { makeUser as makeBaseUser } from '@/test/fixtures';
 
 // Mock network-touching dependencies
 vi.mock('@/api/eventWrites', () => ({
@@ -24,34 +25,10 @@ const COHOST_ID = 'cohost-user';
 const REGULAR_ID = 'regular-user';
 
 function makeUser(id: string, permissions: string[] = []): User {
-  return {
+  return makeBaseUser({
     id,
-    phoneNumber: '+12125550001',
-    firstName: 'Test',
-    lastName: 'User',
-    fullName: 'Test User',
-    nickname: '',
-    email: '',
-    bio: '',
-    pronouns: '',
-    birthday: null,
-    isSuperuser: false,
-    isStaff: false,
-    needsOnboarding: false,
-    needsPasswordReset: false,
-    needsGuidelinesConsent: false,
-    needsSmsConsent: false,
-    needsContactPrivacyConsent: false,
-    showPhone: false,
-    showEmail: false,
-    showBirthday: false,
-    hideLastName: false,
-    weekStart: 'sunday',
-    calendarFeedScope: 'all',
-    profilePhotoUrl: '',
-    photoUpdatedAt: null,
     roles: permissions.length ? [{ id: 'r1', name: 'custom', isDefault: true, permissions }] : [],
-  };
+  });
 }
 
 const BASE_EVENT: Event = {

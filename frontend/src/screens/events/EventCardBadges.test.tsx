@@ -1,69 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import {
-  type Event,
-  EventStatus,
-  EventType,
-  EventVisibility,
-  RsvpServerStatus,
-} from '@/models/event';
+import { RsvpServerStatus } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 import { EventCardBadges } from './EventCardBadges';
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return {
-    id: 'ev1',
-    title: 'potluck',
-    description: '',
-    startDatetime: new Date('2026-04-15T18:00:00Z'),
-    endDatetime: null,
-    location: '',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: false,
-    allowPlusOnes: false,
-    maxAttendees: null,
-    attendingCount: 0,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
-    createdById: null,
-    createdByName: null,
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
-    guests: [],
-    myRsvp: null,
-    viewerUserId: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: 'all_members',
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Community,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    isPast: false,
-    status: EventStatus.Active,
-    tags: [],
-    ...overrides,
-  };
-}
 
 describe('EventCardBadges', () => {
   it('renders nothing when there is no rsvp and capacity is unlimited', () => {

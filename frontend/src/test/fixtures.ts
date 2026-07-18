@@ -1,7 +1,7 @@
 // Shared test fixtures. Factories return a complete, valid object with sensible
 // defaults; pass `overrides` to vary the fields a given test cares about.
 
-import type { Event } from '@/models/event';
+import type { Event, EventGuest } from '@/models/event';
 import {
   AttendanceStatus,
   EventStatus,
@@ -11,6 +11,20 @@ import {
   RsvpServerStatus,
 } from '@/models/event';
 import type { User } from '@/models/user';
+
+export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
+  return {
+    userId: 'user-other',
+    name: 'Other',
+    status: RsvpServerStatus.Attending,
+    phone: null,
+    photoUrl: '',
+    hasPlusOne: false,
+    attendance: AttendanceStatus.Unknown,
+    isMember: true,
+    ...overrides,
+  };
+}
 
 export function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
