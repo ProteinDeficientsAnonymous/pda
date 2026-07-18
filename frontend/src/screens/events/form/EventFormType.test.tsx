@@ -59,7 +59,7 @@ describe('EventFormType', () => {
     expect(onChange).toHaveBeenCalledWith({ eventType: 'club', visibility: 'public' });
   });
 
-  it('turning a type off reverts to community (still public)', async () => {
+  it('turning a type off reverts to community without forcing visibility', async () => {
     const onChange = vi.fn();
     render(
       <EventFormType
@@ -70,7 +70,7 @@ describe('EventFormType', () => {
       />,
     );
     await userEvent.click(screen.getByRole('switch'));
-    expect(onChange).toHaveBeenCalledWith({ eventType: 'community', visibility: 'public' });
+    expect(onChange).toHaveBeenCalledWith({ eventType: 'community' });
   });
 
   it('with both permissions, the club toggle is off while official is selected', () => {

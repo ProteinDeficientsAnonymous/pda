@@ -308,7 +308,7 @@ export function emptyEventFormValues(): EventFormValues {
     endDatetime: null,
     datetimeTbd: false,
     eventType: 'community',
-    visibility: 'public',
+    visibility: 'members_only',
     invitePermission: 'all_members',
     rsvpEnabled: true,
     allowPlusOnes: true,
