@@ -141,10 +141,7 @@ describe('PublicRsvpSection', () => {
     await user.type(screen.getByLabelText(/^email/i), 'sam@example.com');
     await user.click(screen.getByRole('button', { name: 'rsvp' }));
 
-    // issue 918: no url param — the event url is what people share, and a
-    // token there would leak the rsvp identity to whoever they share it with
     expect(mockNavigate).toHaveBeenCalledWith(0);
-    // persisted so the token survives navigation to another event (issue 873)
     expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-abc');
   });
 
