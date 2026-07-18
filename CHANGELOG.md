@@ -1,3 +1,10 @@
+## [0.40.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.0...v0.40.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** prevent clicking non-member rsvp entries (Issue 876) ([#892](https://github.com/ProteinDeficientsAnonymous/pda/issues/892)) ([d6a57e9](https://github.com/ProteinDeficientsAnonymous/pda/commit/d6a57e9a76e779910907a73a9ebdce443a4889f0))
+
 # [0.40.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.39.2...v0.40.0) (2026-07-18)
 
 
