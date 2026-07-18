@@ -1,3 +1,10 @@
+## [0.45.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.1...v0.45.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** live-update comments via SSE event_updates channel (Issue 870) ([#914](https://github.com/ProteinDeficientsAnonymous/pda/issues/914)) ([cb3f8e9](https://github.com/ProteinDeficientsAnonymous/pda/commit/cb3f8e9c7547ca15d3260c5f4a7a85d4243a839a))
+
 ## [0.45.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.0...v0.45.1) (2026-07-18)
 
 
