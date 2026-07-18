@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
+import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { Toggle } from '@/components/ui/Toggle';
@@ -76,7 +77,10 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
   return (
     <section aria-label={event.title} className="border-border bg-surface rounded-lg border p-6">
       <Link
-        to={`/events/${event.id}?rsvp_token=${encodeURIComponent(token)}`}
+        to={`/events/${event.id}`}
+        onClick={() => {
+          setStoredRsvpToken(token);
+        }}
         className="text-foreground text-lg font-medium hover:underline"
       >
         <h2>{event.title}</h2>

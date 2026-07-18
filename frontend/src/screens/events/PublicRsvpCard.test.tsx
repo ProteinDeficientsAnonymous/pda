@@ -92,12 +92,12 @@ function renderCard(props: { status: string; hasPlusOne: boolean; event?: Partia
 }
 
 describe('PublicRsvpCard', () => {
-  it('links the event title to the event detail page with the rsvp token', () => {
+  it('links the event title to the event detail page and stores the rsvp token', () => {
     renderCard({ status: RsvpServerStatus.Attending, hasPlusOne: false, event: { id: 'ev1' } });
-    expect(screen.getByRole('link', { name: 'Potluck' })).toHaveAttribute(
-      'href',
-      '/events/ev1?rsvp_token=tok123',
-    );
+    const link = screen.getByRole('link', { name: 'Potluck' });
+    expect(link).toHaveAttribute('href', '/events/ev1');
+    fireEvent.click(link);
+    expect(localStorage.getItem('pda-rsvp-token')).toBe('tok123');
   });
 
   it('shows the +1 toggle when attending', () => {
