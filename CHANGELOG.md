@@ -1,3 +1,10 @@
+# [0.46.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.4...v0.46.0) (2026-07-18)
+
+
+### Features
+
+* **events:** host rsvp management UI (Issue 872) ([#912](https://github.com/ProteinDeficientsAnonymous/pda/issues/912)) ([bbed3e7](https://github.com/ProteinDeficientsAnonymous/pda/commit/bbed3e792cbc2de9de6aad01ad3a9a9b232164ac)), closes [#906](https://github.com/ProteinDeficientsAnonymous/pda/issues/906)
+
 ## [0.45.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.3...v0.45.4) (2026-07-18)
 
 
