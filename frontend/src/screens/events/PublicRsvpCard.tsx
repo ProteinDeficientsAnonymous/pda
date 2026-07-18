@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
@@ -74,7 +75,12 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
 
   return (
     <section aria-label={event.title} className="border-border bg-surface rounded-lg border p-6">
-      <h2 className="text-foreground text-lg font-medium">{event.title}</h2>
+      <Link
+        to={`/events/${event.id}`}
+        className="text-foreground text-lg font-medium hover:underline"
+      >
+        <h2>{event.title}</h2>
+      </Link>
       {event.startDatetime ? (
         <p className="text-foreground-secondary text-sm">
           {formatEventDateTime(event.startDatetime, event.endDatetime, event.datetimeTbd)}
