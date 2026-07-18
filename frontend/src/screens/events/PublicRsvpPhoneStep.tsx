@@ -19,10 +19,17 @@ interface Props {
   onNew: (result: PhoneStepResult) => void;
   onMember: () => void;
   onAlreadyRsvpd: (result: AlreadyRsvpdResult) => void;
+  onRecognized: () => void;
   eventId: string;
 }
 
-export function PublicRsvpPhoneStep({ onNew, onMember, onAlreadyRsvpd, eventId }: Props) {
+export function PublicRsvpPhoneStep({
+  onNew,
+  onMember,
+  onAlreadyRsvpd,
+  onRecognized,
+  eventId,
+}: Props) {
   const check = useCheckPublicRsvpPhone();
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
@@ -42,6 +49,10 @@ export function PublicRsvpPhoneStep({ onNew, onMember, onAlreadyRsvpd, eventId }
       }
       if (result.status === 'already_rsvpd') {
         onAlreadyRsvpd({ rsvpToken: result.rsvp_token });
+        return;
+      }
+      if (result.status === 'recognized') {
+        onRecognized();
         return;
       }
       onNew({ phone, status: 'new' });
