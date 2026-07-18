@@ -145,7 +145,12 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           <PhoneField label="phone" value={phone} onChange={setPhone} error={errors.phone} />
 
           {event.allowPlusOnes ? (
-            <Toggle label="bring a +1" checked={hasPlusOne} onChange={setHasPlusOne} />
+            <Toggle
+              label="bring a +1"
+              checked={hasPlusOne}
+              onChange={setHasPlusOne}
+              className="justify-start gap-2"
+            />
           ) : null}
 
           <Button type="submit" disabled={submit.isPending} fullWidth>
