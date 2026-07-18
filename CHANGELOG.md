@@ -1,3 +1,10 @@
+## [0.45.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.3...v0.45.4) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** default visibility to members-only except official/club (Issue 895) ([#926](https://github.com/ProteinDeficientsAnonymous/pda/issues/926)) ([fd064bb](https://github.com/ProteinDeficientsAnonymous/pda/commit/fd064bb8bed6cf8e39cffcac85586357ecd8f904))
+
 ## [0.45.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.2...v0.45.3) (2026-07-18)
 
 
