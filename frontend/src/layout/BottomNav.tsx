@@ -35,13 +35,9 @@ export function BottomNav() {
           {({ active }) => <CalendarIcon filled={active} />}
         </NavItem>
 
-        {myEventsTo ? (
-          <NavItem to={myEventsTo} label="my rsvps">
-            {({ active }) => <StarIcon filled={active} />}
-          </NavItem>
-        ) : (
-          <div />
-        )}
+        <NavItem to={myEventsTo} label="my rsvps">
+          {({ active }) => <StarIcon filled={active} />}
+        </NavItem>
 
         <div className="flex items-center justify-center">
           <button
@@ -78,12 +74,25 @@ export function BottomNav() {
 }
 
 interface NavItemProps {
-  to: string;
+  to: string | null;
   label: string;
   children: (state: { active: boolean }) => ReactNode;
 }
 
 function NavItem({ to, label, children }: NavItemProps) {
+  if (!to) {
+    return (
+      <div
+        aria-label={label}
+        className="text-muted flex flex-col items-center justify-center gap-0.5"
+      >
+        {children({ active: false })}
+        <span aria-hidden="true" className="h-1 w-1 rounded-full opacity-0" />
+        <span className="sr-only">{label}</span>
+      </div>
+    );
+  }
+
   return (
     <NavLink
       to={to}
