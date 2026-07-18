@@ -1,3 +1,10 @@
+# [0.48.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.47.0...v0.48.0) (2026-07-18)
+
+
+### Features
+
+* **events:** hint that rsvp unlocks more event detail (Issue 917) ([#932](https://github.com/ProteinDeficientsAnonymous/pda/issues/932)) ([29070da](https://github.com/ProteinDeficientsAnonymous/pda/commit/29070da263e481ac773d836a34fc9bdf84ad4b59))
+
 # [0.47.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.2...v0.47.0) (2026-07-18)
 
 
