@@ -11,6 +11,7 @@ import { useIsWideScreen } from '@/hooks/useResponsive';
 import { type Event as PdaEvent, eventClass } from '@/models/event';
 
 import { AgendaList } from './AgendaList';
+import { CalendarFilterBar, type TypeFilter } from './CalendarFilterBar';
 import { makeLocalizer } from './calendarLocalizer';
 import { CalendarToolbar } from './CalendarToolbar';
 import { DayEventList } from './DayEventList';
@@ -68,15 +69,27 @@ export default function CalendarScreen() {
   const isWide = useIsWideScreen(720);
 
   const { data: events = [], isPending, isError, refetch } = useEvents();
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [search, setSearch] = useState('');
+
+  const filteredEvents = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return events.filter((e) => {
+      if (typeFilter !== 'all' && e.eventType !== typeFilter) return false;
+      if (term && !e.title.toLowerCase().includes(term)) return false;
+      return true;
+    });
+  }, [events, typeFilter, search]);
+
   const bigCalEvents = useMemo<BigCalEvent[]>(
     () =>
-      events
+      filteredEvents
         .filter((e) => !e.datetimeTbd)
         .map(toBigCalEvent)
         .filter((e): e is BigCalEvent => e !== null),
-    [events],
+    [filteredEvents],
   );
-  const datedEvents = useMemo(() => events.filter((e) => !e.datetimeTbd), [events]);
+  const datedEvents = useMemo(() => filteredEvents.filter((e) => !e.datetimeTbd), [filteredEvents]);
 
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState<Date>(new Date());
@@ -99,6 +112,15 @@ export default function CalendarScreen() {
       <header className="mb-4 flex justify-center">
         <ViewSwitcher value={view} onChange={setView} />
       </header>
+
+      <CalendarFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        typeFilter={typeFilter}
+        onTypeFilterChange={setTypeFilter}
+        date={date}
+        onDateChange={setDate}
+      />
 
       {isError ? (
         <div className="border-destructive bg-destructive-subtle text-destructive mb-4 rounded-md border px-3 py-2 text-sm">

@@ -5,6 +5,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
+import { EventType } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 // react-big-calendar is a heavy component that requires CSS imports and relies
 // on browser layout. Stub it so tests focus on CalendarScreen logic.
@@ -126,5 +128,51 @@ describe('CalendarScreen', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /go to today/i })).toBeInTheDocument();
     });
+  });
+});
+
+describe('CalendarScreen filtering', () => {
+  const events = [
+    makeEvent({ id: 'a', title: 'official meeting', eventType: EventType.Official }),
+    makeEvent({ id: 'b', title: 'community picnic', eventType: EventType.Community }),
+  ];
+
+  beforeEach(() => {
+    mockUseEvents.mockReturnValue({
+      data: events,
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useEvents>);
+  });
+
+  async function goToAgenda(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole('radio', { name: /^list$/i }));
+  }
+
+  it('defaults to showing all event types', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+    await goToAgenda(user);
+    expect(screen.getByRole('button', { name: 'official meeting' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'community picnic' })).toBeInTheDocument();
+  });
+
+  it('filters to pda official only', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+    await goToAgenda(user);
+    await user.click(screen.getByRole('radio', { name: 'pda official' }));
+    expect(screen.getByRole('button', { name: 'official meeting' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'community picnic' })).not.toBeInTheDocument();
+  });
+
+  it('filters by search term across all views', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+    await goToAgenda(user);
+    await user.type(screen.getByLabelText('search events'), 'picnic');
+    expect(screen.queryByRole('button', { name: 'official meeting' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'community picnic' })).toBeInTheDocument();
   });
 });

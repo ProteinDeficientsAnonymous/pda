@@ -54,13 +54,9 @@ interface DayRowProps {
   onSelectEvent: (event: PdaEvent) => void;
 }
 
-const MAX_CHIPS_PER_DAY = 2;
-
 function DayRow({ day, isLast, isToday, events, onSelectEvent }: DayRowProps) {
   const weekdayLabel = lower(day, 'EEE');
   const dayNumber = format(day, 'd');
-  const visibleEvents = events.slice(0, MAX_CHIPS_PER_DAY);
-  const overflowCount = events.length - visibleEvents.length;
   return (
     <li
       aria-label={`${weekdayLabel} ${dayNumber}`}
@@ -80,21 +76,10 @@ function DayRow({ day, isLast, isToday, events, onSelectEvent }: DayRowProps) {
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 overflow-hidden px-2 py-1.5">
-        {visibleEvents.map((event) => (
+      <div className="flex min-w-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-1.5">
+        {events.map((event) => (
           <EventChip key={event.id} event={event} onSelect={onSelectEvent} />
         ))}
-        {overflowCount > 0 ? (
-          <span
-            className="text-brand-700 text-[11px] font-medium"
-            style={{
-              borderInlineStart: '3px solid transparent',
-              paddingInlineStart: '6px',
-            }}
-          >
-            {String(overflowCount)} more
-          </span>
-        ) : null}
       </div>
     </li>
   );

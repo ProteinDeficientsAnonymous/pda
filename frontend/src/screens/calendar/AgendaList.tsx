@@ -1,24 +1,10 @@
 import { format, isSameDay } from 'date-fns';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';
 import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
-
-type TypeFilter =
-  | 'all'
-  | typeof EventType.Official
-  | typeof EventType.Club
-  | typeof EventType.Community;
-
-const FILTER_OPTIONS: { value: TypeFilter; label: string }[] = [
-  { value: 'all', label: 'all' },
-  { value: EventType.Official, label: 'pda official' },
-  { value: EventType.Club, label: 'pda club' },
-  { value: EventType.Community, label: 'community' },
-];
 
 interface Props {
   events: PdaEvent[];
@@ -52,29 +38,15 @@ function upcomingEvents(events: PdaEvent[]): PdaEvent[] {
 }
 
 export function AgendaList({ events, onSelectEvent }: Props) {
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const upcoming = useMemo(() => upcomingEvents(events), [events]);
-  const filtered = useMemo(
-    () => (typeFilter === 'all' ? upcoming : upcoming.filter((e) => e.eventType === typeFilter)),
-    [upcoming, typeFilter],
-  );
 
   return (
     <div className="flex flex-col">
-      <div className="flex justify-center px-3 pt-3">
-        <SegmentedControl<TypeFilter>
-          name="agenda-type-filter"
-          ariaLabel="event type filter"
-          options={FILTER_OPTIONS}
-          value={typeFilter}
-          onChange={setTypeFilter}
-        />
-      </div>
-      {filtered.length === 0 ? (
-        <EmptyState filter={typeFilter} />
+      {upcoming.length === 0 ? (
+        <EmptyState />
       ) : (
         <ul className="flex flex-col gap-2.5 p-3">
-          {filtered.map((event) => (
+          {upcoming.map((event) => (
             <li key={event.id}>
               <AgendaCard event={event} onSelect={onSelectEvent} />
             </li>
@@ -85,20 +57,13 @@ export function AgendaList({ events, onSelectEvent }: Props) {
   );
 }
 
-function emptyMessage(filter: TypeFilter): string {
-  if (filter === EventType.Official) return 'no pda official events coming up';
-  if (filter === EventType.Community) return 'no community events coming up';
-  return 'nothing on the horizon — pop back later';
-}
-
-function EmptyState({ filter }: { filter: TypeFilter }) {
-  const message = emptyMessage(filter);
+function EmptyState() {
   return (
     <div className="text-muted flex min-h-[40vh] flex-col items-center justify-center">
       <span aria-hidden="true" className="mb-3 text-4xl">
         🌿
       </span>
-      <p className="text-sm">{message}</p>
+      <p className="text-sm">nothing on the horizon — pop back later</p>
     </div>
   );
 }
