@@ -152,6 +152,13 @@ def _apply_rsvp_in_transaction(
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
 
+    if (
+        existing is not None
+        and existing.status == final_status
+        and existing.has_plus_one == final_plus_one
+    ):
+        return final_status, []
+
     EventRSVP.objects.update_or_create(
         event=event,
         user=user,
