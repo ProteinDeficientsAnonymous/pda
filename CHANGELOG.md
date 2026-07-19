@@ -1,3 +1,10 @@
+# [0.49.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.8...v0.49.0) (2026-07-19)
+
+
+### Features
+
+* **events:** note vegan-only +1 on public rsvp form (Issue 980) ([#983](https://github.com/ProteinDeficientsAnonymous/pda/issues/983)) ([91350ae](https://github.com/ProteinDeficientsAnonymous/pda/commit/91350ae00a10662e4887f94d08dcf93ae760e7c0))
+
 ## [0.48.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.7...v0.48.8) (2026-07-19)
 
 
