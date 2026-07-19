@@ -192,12 +192,17 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
         <PhoneField label="phone" value={phone} onChange={setPhone} error={errors.phone} />
 
         {event.allowPlusOnes ? (
-          <Toggle
-            label="bring a +1"
-            checked={hasPlusOne}
-            onChange={setHasPlusOne}
-            className="justify-start gap-2"
-          />
+          <div className="flex flex-col gap-1">
+            <Toggle
+              label="bring a +1"
+              checked={hasPlusOne}
+              onChange={setHasPlusOne}
+              className="justify-start gap-2"
+            />
+            <p className="text-foreground-tertiary text-xs">
+              these events are vegan only — your +1 must be vegan too
+            </p>
+          </div>
         ) : null}
 
         <Button type="submit" disabled={submit.isPending} fullWidth>
