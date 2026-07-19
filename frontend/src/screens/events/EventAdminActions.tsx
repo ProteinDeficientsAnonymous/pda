@@ -119,7 +119,7 @@ function AdminActionRow({
             onClick={() => {
               setDeleteOpen(true);
             }}
-            className="border-red-300 text-red-700 underline hover:bg-red-50"
+            className="border-red-300 font-medium text-red-700 hover:bg-red-50"
           >
             ⚠ delete
           </Button>
