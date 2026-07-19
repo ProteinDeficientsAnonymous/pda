@@ -125,6 +125,11 @@ function AdminActionRow({
           </Button>
         ) : null}
       </div>
+      {!canEditEvent && !isCancelled ? (
+        <p className="text-foreground-tertiary text-center text-xs">
+          editing closes 6 hours after the event ends
+        </p>
+      ) : null}
       {publishError ? (
         <p role="alert" className="text-sm text-red-600">
           {publishError}
