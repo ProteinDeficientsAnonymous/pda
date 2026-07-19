@@ -399,9 +399,7 @@ class TestPublicRsvpComment:
                 recipient=host, notification_type=NotificationType.RSVP_DECLINED_NOTE
             ).exists()
 
-    def test_empty_comment_creates_nothing(
-        self, api_client, official_event, fake_email_sender
-    ):
+    def test_empty_comment_creates_nothing(self, api_client, official_event, fake_email_sender):
         from community.models import EventComment
 
         response = post(api_client, official_event, comment="   ")
