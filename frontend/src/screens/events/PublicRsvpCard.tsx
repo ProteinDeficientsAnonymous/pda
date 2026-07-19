@@ -106,7 +106,7 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
         </ul>
       ) : null}
 
-      <p className="text-foreground-tertiary mt-4 mb-2 text-sm">
+      <p role="status" className="text-foreground-tertiary mt-4 mb-2 text-sm">
         {STATUS_LABELS[status] ?? 'your rsvp'}
       </p>
       <div className="flex flex-col gap-3">
