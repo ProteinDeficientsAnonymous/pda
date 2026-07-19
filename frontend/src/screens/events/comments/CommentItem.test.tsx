@@ -44,7 +44,9 @@ describe('CommentItem', () => {
   it('renders the body and author', () => {
     wrap(<CommentItem comment={baseComment} eventId="evt" canReact canReply />);
     expect(screen.getByText('hello')).toBeInTheDocument();
-    expect(screen.getByText('alice')).toBeInTheDocument();
+    // Rendered lowercase via CSS text-transform, not string mutation — the DOM
+    // text content stays the real display name.
+    expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
   it('renders [deleted] placeholder when isDeleted', () => {

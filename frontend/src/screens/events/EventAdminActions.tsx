@@ -119,15 +119,15 @@ function AdminActionRow({
             onClick={() => {
               setDeleteOpen(true);
             }}
-            className="border-red-300 text-red-700 hover:bg-red-50"
+            className="border-red-300 text-red-700 underline hover:bg-red-50"
           >
-            delete
+            ⚠ delete
           </Button>
         ) : null}
       </div>
       {publishError ? (
-        <p role="alert" className="text-sm text-red-600">
-          {publishError}
+        <p role="alert" className="text-sm font-medium text-red-600">
+          ⚠ {publishError}
         </p>
       ) : null}
 
@@ -144,8 +144,8 @@ function AdminActionRow({
           — you can't un-cancel from the react app yet.
         </p>
         {cancelError ? (
-          <p role="alert" className="mt-3 text-sm text-red-600">
-            {cancelError}
+          <p role="alert" className="mt-3 text-sm font-medium text-red-600">
+            ⚠ {cancelError}
           </p>
         ) : null}
         <div className="mt-4 flex justify-end gap-2">
@@ -182,8 +182,8 @@ function AdminActionRow({
           react app.
         </p>
         {deleteError ? (
-          <p role="alert" className="mt-3 text-sm text-red-600">
-            {deleteError}
+          <p role="alert" className="mt-3 text-sm font-medium text-red-600">
+            ⚠ {deleteError}
           </p>
         ) : null}
         <div className="mt-4 flex justify-end gap-2">

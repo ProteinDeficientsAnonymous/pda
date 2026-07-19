@@ -64,7 +64,7 @@ export function CommentItem({
         {comment.authorPhotoUrl ? (
           <img src={comment.authorPhotoUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
         ) : null}
-        <span className="text-sm font-medium">{comment.authorDisplayName.toLowerCase()}</span>
+        <span className="text-sm font-medium lowercase">{comment.authorDisplayName}</span>
         <span className="text-foreground-tertiary text-xs">
           {formatRelative(comment.createdAt)}
         </span>
