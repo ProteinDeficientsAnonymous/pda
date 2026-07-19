@@ -153,6 +153,9 @@ jobs:
       - name: Run e2e tests
         run: |
           (cd backend && uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000) &
+          # Vite dev (not preview): only the dev server proxies /api, including
+          # the SSE stream with buffering disabled. A preview build would break
+          # the live-update spec.
           (cd frontend && pnpm dev --host 0.0.0.0 --port 3000) &
           wait_for() {
             for _ in $(seq 1 60); do
