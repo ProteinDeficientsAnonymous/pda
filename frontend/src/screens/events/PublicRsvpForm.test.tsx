@@ -80,6 +80,7 @@ describe('PublicRsvpForm', () => {
     const { rerender } = renderForm(makeEvent({ allowPlusOnes: true }));
     fillPhoneStep();
     await waitFor(() => expect(screen.getByRole('switch')).toBeInTheDocument());
+    expect(screen.getByText(/your \+1 must be vegan too/i)).toBeInTheDocument();
     rerender(
       <MemoryRouter>
         <PublicRsvpForm
@@ -91,6 +92,7 @@ describe('PublicRsvpForm', () => {
       </MemoryRouter>,
     );
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(screen.queryByText(/your \+1 must be vegan too/i)).not.toBeInTheDocument();
   });
 
   it('shows only going/maybe status options in step one', () => {
