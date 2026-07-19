@@ -23,6 +23,10 @@ router = Router()
 
 frontend_logger = logging.getLogger("pda.frontend")
 
+# Cap the GitHub API call so a slow/unresponsive upstream raises (caught → 503)
+# instead of hanging until the gateway times out and returns a 502.
+_GITHUB_TIMEOUT_SECONDS = 10
+
 
 class ErrorReportIn(BaseModel):
     error: str = Field(max_length=2000)
@@ -128,7 +132,7 @@ def _github_request(url: str, token: str, data: dict) -> dict:
         },
         method="POST",
     )
-    with urlopen(req) as response:
+    with urlopen(req, timeout=_GITHUB_TIMEOUT_SECONDS) as response:
         return json_module.loads(response.read())
 
 

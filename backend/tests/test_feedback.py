@@ -13,7 +13,7 @@ def _mock_urlopen(monkeypatch, issue_url="https://github.com/leahpeker/pda/issue
     """Patch community.api.urlopen to return a fake GitHub issue creation response."""
     captured: dict = {"calls": []}
 
-    def fake_urlopen(request):
+    def fake_urlopen(request, timeout=None):
         captured["calls"].append(request)
         buf = io.BytesIO(json.dumps({"html_url": issue_url}).encode())
         buf.status = 201  # ty: ignore[unresolved-attribute]
@@ -226,6 +226,25 @@ class TestFeedback:
                 "title": "Bug report",
                 "description": "Details here",
             },
+            content_type="application/json",
+        )
+        assert response.status_code == 503
+        assert response.json()["detail"][0]["code"] == "feedback.creation_failed"
+
+    def test_feedback_returns_503_on_github_timeout(self, api_client, settings, monkeypatch):
+        for k, v in _APP_SETTINGS.items():
+            setattr(settings, k, v)
+        monkeypatch.setattr(
+            "community._feedback._get_github_app_token", lambda *_: "ghs_inst_token"
+        )
+        monkeypatch.setattr(
+            "community._feedback.urlopen",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(TimeoutError("timed out")),
+        )
+
+        response = api_client.post(
+            "/api/community/feedback/",
+            {"title": "Bug report", "description": "Details here"},
             content_type="application/json",
         )
         assert response.status_code == 503
