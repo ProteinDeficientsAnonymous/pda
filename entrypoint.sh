@@ -16,5 +16,20 @@ nginx -t
 nginx -g 'daemon off;' || kill "$$" &
 
 cd backend
-uv run python manage.py migrate
+
+# Railway's private network (internal IPv6 mesh + DNS) can lag the container
+# boot, so the first DB connect times out even though Postgres is up. Poll until
+# reachable instead of letting a single-shot migrate kill the whole deploy.
+# ponytail: fixed 60s ceiling, bump the loop count if cold starts get slower.
+attempt=1
+until uv run python manage.py migrate; do
+  if [ "$attempt" -ge 12 ]; then
+    echo "database unreachable after $attempt attempts, giving up" >&2
+    exit 1
+  fi
+  echo "database not ready (attempt $attempt), retrying in 5s..." >&2
+  attempt=$((attempt + 1))
+  sleep 5
+done
+
 uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000
