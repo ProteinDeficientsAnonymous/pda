@@ -99,12 +99,6 @@ function LockedVisibility({ helper }: { helper: string }) {
         <span className="text-foreground font-medium">
           public<span className="sr-only"> — selected, locked</span>
         </span>
-        <span className="text-foreground-secondary line-through" aria-disabled="true">
-          members only<span className="sr-only"> (not available)</span>
-        </span>
-        <span className="text-foreground-secondary line-through" aria-disabled="true">
-          invite only<span className="sr-only"> (not available)</span>
-        </span>
         <span className="border-border-strong text-foreground-secondary ml-auto rounded-full border px-2 py-0.5 text-xs">
           locked
         </span>
