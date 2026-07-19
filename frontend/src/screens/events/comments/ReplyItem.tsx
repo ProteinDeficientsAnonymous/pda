@@ -43,7 +43,7 @@ export function ReplyItem({ reply, eventId, token, canReact, reactDisabledReason
           {reply.authorPhotoUrl ? (
             <img src={reply.authorPhotoUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
           ) : null}
-          <span className="text-sm font-medium">{reply.authorDisplayName.toLowerCase()}</span>
+          <span className="text-sm font-medium lowercase">{reply.authorDisplayName}</span>
           <span className="text-foreground-tertiary text-xs">
             {formatRelative(reply.createdAt)}
           </span>

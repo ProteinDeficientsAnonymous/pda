@@ -112,7 +112,7 @@ describe('EventAdminActions', () => {
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancel event/i })).toBeInTheDocument();
     // With attendees, the event must be cancelled before it can be deleted.
-    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete$/i })).not.toBeInTheDocument();
   });
 
   it('creator sees delete (no cancel) for active upcoming event with no attendees', () => {
@@ -123,7 +123,7 @@ describe('EventAdminActions', () => {
     renderActions(emptyEvent);
 
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
   });
 
@@ -136,7 +136,7 @@ describe('EventAdminActions', () => {
 
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^publish$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete$/i })).toBeInTheDocument();
   });
 
   it('co-host sees edit and cancel buttons for upcoming event', () => {
@@ -148,7 +148,7 @@ describe('EventAdminActions', () => {
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /cancel event/i })).toBeInTheDocument();
     // Co-host is not the creator, so no delete button (canDelete = isCreator || canManage)
-    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete$/i })).not.toBeInTheDocument();
   });
 
   it('creator sees no cancel button for a past event', () => {
@@ -162,7 +162,7 @@ describe('EventAdminActions', () => {
     // Edit and delete present, but no cancel-event button for already-cancelled events
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete$/i })).toBeInTheDocument();
   });
 
   it('regular member (not creator, not co-host) sees no admin action buttons', () => {
@@ -173,7 +173,7 @@ describe('EventAdminActions', () => {
 
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete$/i })).not.toBeInTheDocument();
   });
 
   it('unauthenticated user sees no admin action buttons', () => {
@@ -183,7 +183,7 @@ describe('EventAdminActions', () => {
 
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^delete$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete$/i })).not.toBeInTheDocument();
   });
 
   // A draft event with attendees still shows delete: drafts haven't been
@@ -199,7 +199,7 @@ describe('EventAdminActions', () => {
     };
     renderActions(draftWithAttendees);
 
-    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete$/i })).toBeInTheDocument();
   });
 
   // Past events can't be edited (would change historical record). Delete is
@@ -219,7 +219,7 @@ describe('EventAdminActions', () => {
     renderActions(pastCancelled);
 
     expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
   });
 
