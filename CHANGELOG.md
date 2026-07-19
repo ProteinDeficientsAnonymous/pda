@@ -1,3 +1,10 @@
+## [0.48.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.7...v0.48.8) (2026-07-19)
+
+
+### Bug Fixes
+
+* **a11y:** pair red-only cues with non-colour markers (Issue 958) ([#961](https://github.com/ProteinDeficientsAnonymous/pda/issues/961)) ([f807bc5](https://github.com/ProteinDeficientsAnonymous/pda/commit/f807bc5a3350b9e86d697db71d8538fadf599507))
+
 ## [0.48.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.6...v0.48.7) (2026-07-19)
 
 
