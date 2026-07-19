@@ -8,7 +8,6 @@ from django.db import DatabaseError, connection
 from users._helpers import visible_display_name
 from users.models import User
 from users.permissions import PermissionKey
-from users.roles import Role
 
 from notifications.models import Notification, NotificationType
 
@@ -117,11 +116,7 @@ def broadcast_event_update(
 
 
 def create_join_request_notifications(full_name: str) -> None:
-    recipients = (
-        User.objects.members()
-        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.APPROVE_JOIN_REQUESTS))
-        .distinct()
-    )
+    recipients = User.objects.with_permission(PermissionKey.APPROVE_JOIN_REQUESTS)
 
     Notification.objects.bulk_create(
         [
@@ -138,11 +133,7 @@ def create_join_request_notifications(full_name: str) -> None:
 
 def create_event_flag_notifications(event: Event, flagger: User) -> None:
     flagger_name = flagger.full_name or flagger.phone_number
-    recipients = (
-        User.objects.members()
-        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.MANAGE_EVENTS))
-        .distinct()
-    )
+    recipients = User.objects.with_permission(PermissionKey.MANAGE_EVENTS)
 
     Notification.objects.bulk_create(
         [
@@ -160,11 +151,7 @@ def create_event_flag_notifications(event: Event, flagger: User) -> None:
 
 def create_magic_link_request_notifications(user: User) -> None:
     display = user.full_name or user.phone_number
-    recipients = (
-        User.objects.members()
-        .filter(roles__id__in=Role.ids_with_permission(PermissionKey.MANAGE_USERS))
-        .distinct()
-    )
+    recipients = User.objects.with_permission(PermissionKey.MANAGE_USERS)
 
     Notification.objects.bulk_create(
         [
