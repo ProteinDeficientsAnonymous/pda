@@ -110,6 +110,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://pda:pda@localhost:5432/pda
       SECRET_KEY: ci-only-not-used-in-prod
+      # The live uvicorn server enforces ALLOWED_HOSTS (unlike pytest's test
+      # client), so the e2e job must allow the hosts Playwright hits.
+      ALLOWED_HOSTS: localhost,127.0.0.1
 
     steps:
       - uses: actions/checkout@v6
