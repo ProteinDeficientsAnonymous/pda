@@ -48,8 +48,7 @@ export default function EventDetailScreen() {
       const message = extractApiError(error) ?? "you don't have permission to see this event";
       return <ForbiddenNotice message={message} />;
     }
-    // A members-only event resolves to 404 for signed-out visitors — refreshing
-    // never helps, so tell them there's nothing here (issue #978).
+    // members-only events 404 for signed-out visitors, so refreshing never helps
     if (status === 404) {
       return (
         <ForbiddenNotice
