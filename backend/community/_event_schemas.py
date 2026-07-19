@@ -109,11 +109,11 @@ class TagIn(BaseModel):
 class RSVPGuestOut(BaseModel):
     user_id: str
     name: str
-    status: str
+    status: RSVPStatus
     has_plus_one: bool = False
     phone: str | None = None
     photo_url: str = ""
-    attendance: str = AttendanceStatus.UNKNOWN
+    attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     checked_in_at: datetime | None = None
     is_member: bool = True
 

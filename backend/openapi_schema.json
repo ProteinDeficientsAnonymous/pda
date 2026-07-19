@@ -4023,9 +4023,12 @@
       "RSVPGuestOut": {
         "properties": {
           "attendance": {
-            "default": "unknown",
-            "title": "Attendance",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttendanceStatus"
+              }
+            ],
+            "default": "unknown"
           },
           "checked_in_at": {
             "anyOf": [
@@ -4070,8 +4073,7 @@
             "type": "string"
           },
           "status": {
-            "title": "Status",
-            "type": "string"
+            "$ref": "#/components/schemas/RSVPStatus"
           },
           "user_id": {
             "title": "User Id",
