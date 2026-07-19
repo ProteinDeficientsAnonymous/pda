@@ -1,3 +1,10 @@
+## [0.48.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.6...v0.48.7) (2026-07-19)
+
+
+### Bug Fixes
+
+* skip RSVP write on no-op resubmit to preserve updated_at ([#954](https://github.com/ProteinDeficientsAnonymous/pda/issues/954)) ([0b755ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/0b755ace01b10cdfee3a921c4de4143680422a99))
+
 ## [0.48.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.5...v0.48.6) (2026-07-18)
 
 
