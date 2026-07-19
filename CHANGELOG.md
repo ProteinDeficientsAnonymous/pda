@@ -1,3 +1,11 @@
+## [0.49.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.0...v0.49.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* **a11y:** add role="status" to rsvp status lines (Issue 977) ([#982](https://github.com/ProteinDeficientsAnonymous/pda/issues/982)) ([6eacd95](https://github.com/ProteinDeficientsAnonymous/pda/commit/6eacd9591922ee689adb599ff54e169fce5bdacb))
+* **events:** drop struck-through options from locked visibility read-out (Issue 979) ([#985](https://github.com/ProteinDeficientsAnonymous/pda/issues/985)) ([e5ef9ec](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5ef9ec4186eca414ef7c7ad8ff25882ca18604e))
+
 # [0.49.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.8...v0.49.0) (2026-07-19)
 
 
