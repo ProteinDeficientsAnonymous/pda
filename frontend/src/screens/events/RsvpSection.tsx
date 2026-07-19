@@ -189,7 +189,9 @@ function RsvpControls({
   if (myInputStatus) {
     return (
       <div className="flex items-center justify-center gap-3">
-        <span className="text-foreground-secondary text-sm">{STATUS_LINES[myInputStatus]}</span>
+        <span role="status" className="text-foreground-secondary text-sm">
+          {STATUS_LINES[myInputStatus]}
+        </span>
         <Button variant="secondary" onClick={onOpenEdit} disabled={busy}>
           edit rsvp
         </Button>
@@ -212,7 +214,9 @@ function RsvpControls({
 function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean }) {
   return (
     <div className="flex items-center gap-3 rounded-md bg-amber-50 px-3 py-2">
-      <span className="text-warning text-sm">you're on the waitlist</span>
+      <span role="status" className="text-warning text-sm">
+        you're on the waitlist
+      </span>
       <Button variant="ghost" onClick={onLeave} disabled={busy}>
         leave waitlist
       </Button>
