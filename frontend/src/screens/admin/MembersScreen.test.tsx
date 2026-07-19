@@ -4,10 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Member } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
+import { makeMember } from '@/test/fixtures';
 
 // Mock the users API module so we can drive loading / error / data states
 // without hitting the network. useCreateUser is only pulled in transitively
@@ -67,29 +67,6 @@ function adminUser(permissions: string[] = [Permission.ManageUsers]): User {
         permissions,
       },
     ],
-  };
-}
-
-function makeMember(overrides: Partial<Member> = {}): Member {
-  return {
-    id: 'member-1',
-    firstName: 'Ada',
-    lastName: '',
-    fullName: 'Ada',
-    phoneNumber: '+15551230001',
-    email: '',
-    bio: '',
-    profilePhotoUrl: '',
-    showPhone: true,
-    showEmail: true,
-    isMember: true,
-    isSuperuser: false,
-    isPaused: false,
-    needsOnboarding: false,
-    loginLinkRequested: false,
-    lastAttendedAt: null,
-    roles: [],
-    ...overrides,
   };
 }
 

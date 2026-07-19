@@ -1,3 +1,7 @@
+import type { EventAttendanceRow } from '@/api/attendanceReport';
+import type { JoinRequestSummary } from '@/api/join';
+import { JoinRequestStatus } from '@/api/join';
+import type { Member } from '@/api/users';
 import type { Event, EventGuest } from '@/models/event';
 import {
   AttendanceStatus,
@@ -7,6 +11,8 @@ import {
   InvitePermission,
   RsvpServerStatus,
 } from '@/models/event';
+import type { AppNotification } from '@/models/notification';
+import { NotificationType } from '@/models/notification';
 import type { User } from '@/models/user';
 
 export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
@@ -127,5 +133,79 @@ export function makeUser(overrides: Partial<User> = {}): User {
     photoUpdatedAt: null,
     roles: [],
     ...overrides,
+  };
+}
+
+export function makeMember(overrides: Partial<Member> = {}): Member {
+  return {
+    id: 'member-1',
+    firstName: 'Ada',
+    lastName: '',
+    fullName: 'Ada',
+    phoneNumber: '+15551230001',
+    email: '',
+    bio: '',
+    profilePhotoUrl: '',
+    showPhone: true,
+    showEmail: true,
+    isMember: true,
+    isSuperuser: false,
+    isPaused: false,
+    needsOnboarding: false,
+    loginLinkRequested: false,
+    lastAttendedAt: null,
+    roles: [],
+    ...overrides,
+  };
+}
+
+export function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRequestSummary {
+  return {
+    id: 'jr-1',
+    fullName: 'Ada Lovelace',
+    phoneNumber: '+16505550001',
+    email: 'ada@example.com',
+    answers: [],
+    submittedAt: '2026-01-01T00:00:00Z',
+    status: JoinRequestStatus.PENDING,
+    userId: null,
+    previouslyArchived: false,
+    approvedAt: null,
+    approvedByName: null,
+    rejectedAt: null,
+    rejectedByName: null,
+    onboardedAt: null,
+    rsvpBreakdown: {
+      attendedOfficial: 0,
+      attendedClub: 0,
+      upcomingOfficial: 0,
+      upcomingClub: 0,
+    },
+    rsvpEvents: [],
+    ...overrides,
+  };
+}
+
+export function makeRow(overrides: Partial<EventAttendanceRow> = {}): EventAttendanceRow {
+  return {
+    eventId: 'e1',
+    title: 'Potluck',
+    startDatetime: new Date('2026-03-15T18:00:00Z'),
+    attendedCount: 4,
+    noShowCount: 1,
+    goingCount: 6,
+    ...overrides,
+  };
+}
+
+export function makeNotification(id: string, message: string, isRead = false): AppNotification {
+  return {
+    id,
+    notificationType: NotificationType.EventInvite,
+    eventId: 'evt1',
+    relatedUserId: null,
+    message,
+    isRead,
+    createdAt: '2024-01-01T00:00:00Z',
   };
 }

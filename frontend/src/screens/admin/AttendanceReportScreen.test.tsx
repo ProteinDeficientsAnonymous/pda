@@ -3,13 +3,12 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { EventAttendanceRow } from '@/api/attendanceReport';
-
 vi.mock('@/api/attendanceReport', () => ({
   useAttendanceReport: vi.fn(),
 }));
 
 import { useAttendanceReport } from '@/api/attendanceReport';
+import { makeRow } from '@/test/fixtures';
 
 import AttendanceReportScreen from './AttendanceReportScreen';
 
@@ -22,18 +21,6 @@ function mockResult(overrides: Partial<ReturnType<typeof useAttendanceReport>>) 
     data: [],
     ...overrides,
   } as ReturnType<typeof useAttendanceReport>);
-}
-
-function makeRow(overrides: Partial<EventAttendanceRow> = {}): EventAttendanceRow {
-  return {
-    eventId: 'e1',
-    title: 'Potluck',
-    startDatetime: new Date('2026-03-15T18:00:00Z'),
-    attendedCount: 4,
-    noShowCount: 1,
-    goingCount: 6,
-    ...overrides,
-  };
 }
 
 function renderScreen() {
