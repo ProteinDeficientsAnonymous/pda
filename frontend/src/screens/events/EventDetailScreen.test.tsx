@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import { AxiosError, type AxiosResponse } from 'axios';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -332,6 +333,34 @@ describe('EventDetailScreen', () => {
       renderScreen('ev1');
 
       expect(mockUseEvent).toHaveBeenCalledWith('ev1', undefined, undefined);
+    });
+  });
+
+  describe('error states', () => {
+    function mockError(status: number) {
+      const err = new AxiosError('boom');
+      err.response = { status } as AxiosResponse;
+      mockUseEvent.mockReturnValue({
+        data: undefined,
+        isPending: false,
+        isError: true,
+        error: err,
+      } as ReturnType<typeof useEvent>);
+    }
+
+    it('shows a "nothing here" notice on 404 instead of a refresh prompt', () => {
+      mockError(404);
+      renderScreen('ev1');
+
+      expect(screen.getByText(/nothing here/i)).toBeInTheDocument();
+      expect(screen.queryByText(/try refreshing/i)).not.toBeInTheDocument();
+    });
+
+    it('shows a refresh prompt on a generic error', () => {
+      mockError(500);
+      renderScreen('ev1');
+
+      expect(screen.getByText(/try refreshing/i)).toBeInTheDocument();
     });
   });
 });
