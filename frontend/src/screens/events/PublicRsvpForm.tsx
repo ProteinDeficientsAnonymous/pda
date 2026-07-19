@@ -58,7 +58,6 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
   const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
-  const [recognized, setRecognized] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -114,22 +113,12 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
         />
       );
     }
-    if (recognized) {
-      return (
-        <p className="text-foreground-secondary text-sm">
-          we recognized your number — check your email for a link to confirm your rsvp
-        </p>
-      );
-    }
     if (!phoneConfirmed) {
       return (
         <PublicRsvpPhoneStep
           eventId={event.id}
           onMember={onMember}
           onAlreadyRsvpd={onAlreadyRsvpd}
-          onRecognized={() => {
-            setRecognized(true);
-          }}
           onNew={(result) => {
             setPhone(result.phone);
             setPhoneConfirmed(true);

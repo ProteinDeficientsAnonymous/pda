@@ -135,14 +135,12 @@ describe('PublicRsvpForm', () => {
     await waitFor(() => expect(onAlreadyRsvpd).toHaveBeenCalledWith({ rsvpToken: 'tok-xyz' }));
   });
 
-  it('shows a check-your-email message instead of the contact form when recognized', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'recognized', rsvp_token: '' });
-    renderForm();
+  it('unlocks inline rsvp via onAlreadyRsvpd when recognized from another event', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'recognized', rsvp_token: 'tok-rec' });
+    const onAlreadyRsvpd = vi.fn();
+    renderForm(makeEvent(), vi.fn(), vi.fn(), onAlreadyRsvpd);
     fillPhoneStep();
-    await screen.findByText(
-      'we recognized your number — check your email for a link to confirm your rsvp',
-    );
-    expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
+    await waitFor(() => expect(onAlreadyRsvpd).toHaveBeenCalledWith({ rsvpToken: 'tok-rec' }));
   });
 
   it('lets you change the status and go back to step one from the details step', async () => {

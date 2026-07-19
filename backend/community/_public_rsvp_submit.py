@@ -3,11 +3,10 @@ from enum import StrEnum
 
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
-from django.conf import settings
 from django.db import IntegrityError, transaction
 from ninja import Router
 from ninja.responses import Status
-from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
+from notifications._email_helpers import send_rsvp_confirmation_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
 from users.models import NonMemberRsvpToken, User
@@ -156,33 +155,6 @@ def _send_confirmation_email(
         _log_email_failure(request, event, user, exc)
 
 
-def _send_recognized_login_link(request, user: User) -> None:
-    """Email a returning non-member their manage link instead of re-asking for contact info.
-
-    Best-effort — a send failure must not block the phone-check response.
-    """
-    token = NonMemberRsvpToken.issue_or_extend(user)
-    manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
-    try:
-        result = send_rsvp_manage_link_email(
-            sender=get_email_sender(),
-            to=user.email,
-            display_name=user.full_name,
-            manage_url=manage_url,
-        )
-        if not result.success:
-            raise RuntimeError(result.error or "send returned failure")
-    except Exception as exc:
-        audit_log(
-            logging.WARNING,
-            "public_rsvp_recognized_email_failed",
-            request,
-            target_type="user",
-            target_id=str(user.pk),
-            details={"error": str(exc)},
-        )
-
-
 @router.post(
     "/public/events/{event_id}/rsvp-phone-check/",
     response={200: PublicRsvpPhoneCheckOut, 404: ErrorOut, 429: ErrorOut},
@@ -211,8 +183,16 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
             ),
         )
     if user.email and user.event_rsvps.exists():
-        _send_recognized_login_link(request, user)
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.RECOGNIZED))
+        # Returning non-member (rsvp'd to some other event): unlock inline rsvp
+        # with a fresh token instead of forcing an email round-trip, which
+        # dead-ended them and blocked rsvping to a second event (issue #981).
+        token = NonMemberRsvpToken.issue_or_extend(user)
+        return Status(
+            200,
+            PublicRsvpPhoneCheckOut(
+                status=PublicRsvpPhoneStatus.RECOGNIZED, rsvp_token=token.token
+            ),
+        )
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
 
 

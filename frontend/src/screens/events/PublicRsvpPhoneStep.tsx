@@ -19,17 +19,10 @@ interface Props {
   onNew: (result: PhoneStepResult) => void;
   onMember: () => void;
   onAlreadyRsvpd: (result: AlreadyRsvpdResult) => void;
-  onRecognized: () => void;
   eventId: string;
 }
 
-export function PublicRsvpPhoneStep({
-  onNew,
-  onMember,
-  onAlreadyRsvpd,
-  onRecognized,
-  eventId,
-}: Props) {
+export function PublicRsvpPhoneStep({ onNew, onMember, onAlreadyRsvpd, eventId }: Props) {
   const check = useCheckPublicRsvpPhone();
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
@@ -47,12 +40,10 @@ export function PublicRsvpPhoneStep({
         onMember();
         return;
       }
-      if (result.status === 'already_rsvpd') {
+      // A returning non-member (rsvp'd here, or recognized from another event)
+      // gets a token to unlock inline rsvp — no email round-trip (issue #981).
+      if (result.status === 'already_rsvpd' || result.status === 'recognized') {
         onAlreadyRsvpd({ rsvpToken: result.rsvp_token });
-        return;
-      }
-      if (result.status === 'recognized') {
-        onRecognized();
         return;
       }
       onNew({ phone, status: 'new' });
