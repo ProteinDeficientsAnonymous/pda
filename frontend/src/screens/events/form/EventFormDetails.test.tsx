@@ -33,10 +33,9 @@ describe('EventFormDetails', () => {
     expect(screen.getByText('official and club pda events are always public')).toBeInTheDocument();
   });
 
-  it('greys out the non-public options in the locked read-out', () => {
+  it('shows only public in the locked read-out, no struck-through alternatives', () => {
     render(<EventFormDetails values={values()} onChange={vi.fn()} errors={{}} typeLocked />);
-    expect(screen.getByText(/members only/)).toHaveClass('line-through');
-    expect(screen.getByText(/invite only/)).toHaveClass('line-through');
-    expect(screen.getByText(/members only/)).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByText(/members only/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/invite only/)).not.toBeInTheDocument();
   });
 });
