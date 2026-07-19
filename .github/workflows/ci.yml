@@ -85,3 +85,91 @@ jobs:
 
       - name: Run frontend CI
         run: make agent-frontend-ci
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+
+    # Playwright specs drive the real app end-to-end, including the SSE
+    # comment live-update path, which needs pg_notify — Postgres, not SQLite.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pda
+          POSTGRES_PASSWORD: pda
+          POSTGRES_DB: pda
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://pda:pda@localhost:5432/pda
+      SECRET_KEY: ci-only-not-used-in-prod
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install backend dependencies
+        run: uv sync --locked
+
+      - name: Install frontend dependencies
+        run: cd frontend && pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: cd frontend && pnpm exec playwright install --with-deps chromium
+
+      - name: Migrate and seed database
+        run: |
+          cd backend
+          uv run python manage.py migrate
+          uv run python manage.py seed
+
+      # Start both servers and run the specs in a single step: background
+      # processes started in one step aren't guaranteed to survive into the
+      # next, so serving and testing must share a step.
+      - name: Run e2e tests
+        run: |
+          (cd backend && uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000) &
+          (cd frontend && pnpm dev --host 0.0.0.0 --port 3000) &
+          wait_for() {
+            for _ in $(seq 1 60); do
+              curl -sf "$1" > /dev/null && return 0
+              sleep 1
+            done
+            echo "timed out waiting for $1" >&2
+            return 1
+          }
+          wait_for http://localhost:8000/api/openapi.json
+          wait_for http://localhost:3000
+          make agent-frontend-e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
