@@ -3607,11 +3607,8 @@ export interface components {
         };
         /** RSVPGuestOut */
         RSVPGuestOut: {
-            /**
-             * Attendance
-             * @default unknown
-             */
-            attendance: string;
+            /** @default unknown */
+            attendance: components["schemas"]["AttendanceStatus"];
             /** Checked In At */
             checked_in_at?: string | null;
             /**
@@ -3633,8 +3630,7 @@ export interface components {
              * @default
              */
             photo_url: string;
-            /** Status */
-            status: string;
+            status: components["schemas"]["RSVPStatus"];
             /** User Id */
             user_id: string;
         };
