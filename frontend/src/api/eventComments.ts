@@ -1,7 +1,3 @@
-// Comments API — list + post + reply + delete + react. Mirrors
-// backend/community/_event_comments.py. GET is optional-auth; all writes
-// require auth + an EventRSVP on the event.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';

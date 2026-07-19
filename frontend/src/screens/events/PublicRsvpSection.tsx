@@ -15,12 +15,9 @@ export function PublicRsvpSection({ event }: Props) {
   const [isMember, setIsMember] = useState(false);
 
   function unlockWithToken(token: string) {
-    // Persist so the token survives navigation — a returning non-member
-    // reuses it across events instead of re-filling the form (issue #873).
+    // kept out of the url — this page's url is shared, and a token there would leak rsvp identity
     setStoredRsvpToken(token);
-    void navigate(`/events/${event.id}?rsvp_token=${encodeURIComponent(token)}`, {
-      replace: true,
-    });
+    void navigate(0);
   }
 
   if (isMember) return <MemberSignInPrompt />;

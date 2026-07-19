@@ -1,7 +1,3 @@
-// Edit the dynamic join-form questions. Reorder via dnd-kit; optimistic
-// update on drop + server PUT; server returns the full list in the new
-// order which replaces the optimistic cache.
-
 import { useState } from 'react';
 
 import type { JoinQuestion } from '@/api/join';

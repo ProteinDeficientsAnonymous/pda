@@ -9,7 +9,13 @@ import { PhoneField } from '@/components/ui/PhoneField';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
-import { type Event, RSVP_STATUS_LABELS, type RsvpInputStatus, RsvpStatus } from '@/models/event';
+import {
+  type Event,
+  RSVP_STATUS_LABELS,
+  type RsvpInputStatus,
+  RsvpStatus,
+  spotsLeft,
+} from '@/models/event';
 import { optionalEmail } from '@/utils/validators';
 
 import { type AlreadyRsvpdResult, PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
@@ -43,14 +49,17 @@ function messageForStatus(status: number | null): SubmitError {
   return { text: 'something went wrong — try again', showSignIn: false };
 }
 
-function statusLabel(status: RsvpInputStatus): string {
+function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
+  if (status === RsvpStatus.Attending && atCapacity) return 'join the waitlist';
   return RSVP_STATUS_LABELS.find((s) => s.status === status)?.label ?? status;
 }
 
 export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: Props) {
   const submit = useSubmitPublicRsvp();
+  const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
+  const [recognized, setRecognized] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -98,7 +107,21 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
   function renderStep() {
     if (status === null) {
       return (
-        <RsvpStatusPicker value={status} onSelect={setStatus} statuses={PUBLIC_RSVP_STATUSES} />
+        <RsvpStatusPicker
+          value={status}
+          onSelect={setStatus}
+          statuses={PUBLIC_RSVP_STATUSES}
+          labelFor={(s, defaultLabel) =>
+            s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+          }
+        />
+      );
+    }
+    if (recognized) {
+      return (
+        <p className="text-foreground-secondary text-sm">
+          we recognized your number — check your email for a link to confirm your rsvp
+        </p>
       );
     }
     if (!phoneConfirmed) {
@@ -107,6 +130,9 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
           eventId={event.id}
           onMember={onMember}
           onAlreadyRsvpd={onAlreadyRsvpd}
+          onRecognized={() => {
+            setRecognized(true);
+          }}
           onNew={(result) => {
             setPhone(result.phone);
             setPhoneConfirmed(true);
@@ -120,7 +146,8 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
 
         <div className="flex items-center justify-between">
           <p className="text-foreground-secondary text-sm">
-            rsvping as <span className="text-foreground font-medium">{statusLabel(status)}</span>
+            rsvping as{' '}
+            <span className="text-foreground font-medium">{statusLabel(status, atCapacity)}</span>
           </p>
           <button
             type="button"
@@ -206,7 +233,9 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
   return (
     <section aria-label="rsvp" className="border-border bg-surface mt-8 rounded-lg border p-6">
       <h2 className="mb-4 text-base font-medium">rsvp</h2>
-
+      <p className="text-foreground-tertiary mb-4 text-sm">
+        rsvp to see the location and more details
+      </p>
       {renderStep()}
     </section>
   );

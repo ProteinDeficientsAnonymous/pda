@@ -20,6 +20,7 @@ from community._cohost_invite_helpers import (
     diff_cohost_invites,
     get_my_pending_invite,
     get_pending_invites_for_event,
+    send_cohost_invite_emails,
 )
 from community._event_schemas import (
     CancellationOut,
@@ -46,6 +47,15 @@ from community.models import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+
+def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
+    return (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .filter(id=event_id)
+        .first()
+    )
 
 
 def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | None = None) -> None:
@@ -379,6 +389,7 @@ def _update_co_hosts(
     newly_invited, removed_accepted_ids = diff_cohost_invites(event, next_ids, updater)
     if newly_invited:
         create_cohost_invite_notifications(event, newly_invited, updater)
+        send_cohost_invite_emails(event, newly_invited, updater)
 
     if newly_invited or removed_accepted_ids:
         broadcast_cohost_change(

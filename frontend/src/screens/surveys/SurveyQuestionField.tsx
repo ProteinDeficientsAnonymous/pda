@@ -1,6 +1,3 @@
-// Renders one survey question by type. Returns the answer as the exact
-// shape the backend expects (strings for most, dict for datetime_poll).
-
 import type { AnswerValue, SurveyQuestion } from '@/api/surveys';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';

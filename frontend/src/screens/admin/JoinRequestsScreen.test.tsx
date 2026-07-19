@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as JoinApi from '@/api/join';
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
+import { makeRequest } from '@/test/fixtures';
 
 vi.mock('@/api/join', async (importOriginal) => {
   const actual = await importOriginal<typeof JoinApi>();
@@ -30,33 +31,6 @@ import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
 import JoinRequestsScreen from './JoinRequestsScreen';
 
 const mockUseJoinRequests = vi.mocked(useJoinRequests);
-
-function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRequestSummary {
-  return {
-    id: 'jr-1',
-    fullName: 'Ada Lovelace',
-    phoneNumber: '+16505550001',
-    email: 'ada@example.com',
-    answers: [],
-    submittedAt: '2026-01-01T00:00:00Z',
-    status: JoinRequestStatus.PENDING,
-    userId: null,
-    previouslyArchived: false,
-    approvedAt: null,
-    approvedByName: null,
-    rejectedAt: null,
-    rejectedByName: null,
-    onboardedAt: null,
-    rsvpBreakdown: {
-      attendedOfficial: 0,
-      attendedClub: 0,
-      upcomingOfficial: 0,
-      upcomingClub: 0,
-    },
-    rsvpEvents: [],
-    ...overrides,
-  };
-}
 
 function renderScreen() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

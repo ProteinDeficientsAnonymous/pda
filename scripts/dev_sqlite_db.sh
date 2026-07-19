@@ -13,7 +13,8 @@ fingerprint() {
     find "$ROOT/backend" -path '*/migrations/*.py' | sort
     printf '%s\n' \
       "$ROOT/backend/community/management/commands/seed.py" \
-      "$ROOT/backend/community/management/commands/_seed_data.py"
+      "$ROOT/backend/community/management/commands/_seed_data.py" \
+      "$ROOT/backend/community/management/commands/_seed_shared.py"
   } | xargs shasum -a 256 | shasum -a 256 | awk '{print $1}'
 }
 

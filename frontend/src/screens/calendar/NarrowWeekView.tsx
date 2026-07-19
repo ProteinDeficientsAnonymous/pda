@@ -1,8 +1,3 @@
-// Mobile-first week view — days become rows instead of columns. Mirrors the
-// Flutter `week_view_narrow.dart` layout: a fixed left column with the weekday
-// + date (today gets a filled brand pill), and the day's events stack as
-// colored chips on the right. Multi-day events only show on their start day.
-
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns';
 
 import { type Event as PdaEvent, eventClass } from '@/models/event';

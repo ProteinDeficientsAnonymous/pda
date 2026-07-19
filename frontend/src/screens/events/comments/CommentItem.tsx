@@ -14,15 +14,23 @@ import { formatRelative } from './utils';
 interface Props {
   comment: EventComment;
   eventId: string;
+  token?: string;
   canReact: boolean;
   canReply: boolean;
   reactDisabledReason?: string | undefined;
 }
 
-export function CommentItem({ comment, eventId, canReact, canReply, reactDisabledReason }: Props) {
-  const toggleReaction = useToggleReaction(eventId);
-  const deleteComment = useDeleteComment(eventId);
-  const postReply = usePostReply(eventId);
+export function CommentItem({
+  comment,
+  eventId,
+  token,
+  canReact,
+  canReply,
+  reactDisabledReason,
+}: Props) {
+  const toggleReaction = useToggleReaction(eventId, token);
+  const deleteComment = useDeleteComment(eventId, token);
+  const postReply = usePostReply(eventId, token);
   const [replyOpen, setReplyOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -119,6 +127,7 @@ export function CommentItem({ comment, eventId, canReact, canReply, reactDisable
               key={reply.id}
               reply={reply}
               eventId={eventId}
+              {...(token ? { token } : {})}
               canReact={canReact}
               reactDisabledReason={reactDisabledReason}
             />

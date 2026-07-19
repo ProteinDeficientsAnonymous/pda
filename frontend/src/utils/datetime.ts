@@ -1,6 +1,3 @@
-// Date formatting helpers. Centralized so Event rendering stays consistent
-// across calendar, detail panel, and list views.
-
 import { format, isSameDay } from 'date-fns';
 
 import type { Birthday } from '@/models/user';

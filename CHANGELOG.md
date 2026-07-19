@@ -1,3 +1,156 @@
+## [0.48.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.5...v0.48.6) (2026-07-18)
+
+
+### Bug Fixes
+
+* **notifications:** cancel refetches before optimistic mark-all + report-only mutation backstop ([#951](https://github.com/ProteinDeficientsAnonymous/pda/issues/951)) ([b83964d](https://github.com/ProteinDeficientsAnonymous/pda/commit/b83964d27b8b46df5c31c6e8fcc1df19500682ad)), closes [#714](https://github.com/ProteinDeficientsAnonymous/pda/issues/714) [#726](https://github.com/ProteinDeficientsAnonymous/pda/issues/726)
+
+## [0.48.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.4...v0.48.5) (2026-07-18)
+
+
+### Bug Fixes
+
+* **seed:** document seeder split rationale, fix affected-tests gap ([#936](https://github.com/ProteinDeficientsAnonymous/pda/issues/936)) ([c4c3bb1](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4c3bb10f8b911ff840a57f93896e51bb28de1cb))
+
+## [0.48.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.3...v0.48.4) (2026-07-18)
+
+
+### Bug Fixes
+
+* **security:** validate URL schemes in HTML renderers and harden DOMPurify config ([#468](https://github.com/ProteinDeficientsAnonymous/pda/issues/468)) ([1a4ad50](https://github.com/ProteinDeficientsAnonymous/pda/commit/1a4ad50a412d6d3d0acf20d46da2aa4e03c15654))
+
+## [0.48.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.2...v0.48.3) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** wrap update_event field edits + status transition in a transaction (Issue 721) ([#937](https://github.com/ProteinDeficientsAnonymous/pda/issues/937)) ([2df8ad4](https://github.com/ProteinDeficientsAnonymous/pda/commit/2df8ad478dd72699771979bf96a54e773c1b6723))
+
+## [0.48.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.1...v0.48.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **faq:** flush pending autosave on stop editing (Issue 899) ([#925](https://github.com/ProteinDeficientsAnonymous/pda/issues/925)) ([7f37ff4](https://github.com/ProteinDeficientsAnonymous/pda/commit/7f37ff4fbc506378d260338ff8d9351fd4380915))
+
+## [0.48.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.48.0...v0.48.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* 921 - link rsvp'd events to detail page on my-rsvps ([#929](https://github.com/ProteinDeficientsAnonymous/pda/issues/929)) ([4bbc7d8](https://github.com/ProteinDeficientsAnonymous/pda/commit/4bbc7d81e5b1944494a8382f8ebd4177043a4ec9)), closes [#927](https://github.com/ProteinDeficientsAnonymous/pda/issues/927)
+
+# [0.48.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.47.0...v0.48.0) (2026-07-18)
+
+
+### Features
+
+* **events:** hint that rsvp unlocks more event detail (Issue 917) ([#932](https://github.com/ProteinDeficientsAnonymous/pda/issues/932)) ([29070da](https://github.com/ProteinDeficientsAnonymous/pda/commit/29070da263e481ac773d836a34fc9bdf84ad4b59))
+
+# [0.47.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.2...v0.47.0) (2026-07-18)
+
+
+### Bug Fixes
+
+* **comments:** thread rsvp token through reply/react/delete for non-members ([#928](https://github.com/ProteinDeficientsAnonymous/pda/issues/928)) ([5a9ed9d](https://github.com/ProteinDeficientsAnonymous/pda/commit/5a9ed9dc134d5197e15e7a4940e97118aa8dcb56))
+
+
+### Features
+
+* **onboarding:** add pronouns, birthday, and privacy toggles (Issue 923) ([#931](https://github.com/ProteinDeficientsAnonymous/pda/issues/931)) ([f110249](https://github.com/ProteinDeficientsAnonymous/pda/commit/f11024931608b802474c3a90e61c77a7aba3cfb8))
+
+## [0.46.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.1...v0.46.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** broadcast comment live-updates to all viewers, not just rsvps (Issue 919) ([#930](https://github.com/ProteinDeficientsAnonymous/pda/issues/930)) ([444be39](https://github.com/ProteinDeficientsAnonymous/pda/commit/444be39a42147255fa11eb8777258954ea43cf93))
+
+## [0.46.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.46.0...v0.46.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* 918 - stop leaking rsvp token via shareable event url ([#927](https://github.com/ProteinDeficientsAnonymous/pda/issues/927)) ([ec3f0b8](https://github.com/ProteinDeficientsAnonymous/pda/commit/ec3f0b83f718385e940f743e4173c1a141b56646))
+
+# [0.46.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.4...v0.46.0) (2026-07-18)
+
+
+### Features
+
+* **events:** host rsvp management UI (Issue 872) ([#912](https://github.com/ProteinDeficientsAnonymous/pda/issues/912)) ([bbed3e7](https://github.com/ProteinDeficientsAnonymous/pda/commit/bbed3e792cbc2de9de6aad01ad3a9a9b232164ac)), closes [#906](https://github.com/ProteinDeficientsAnonymous/pda/issues/906)
+
+## [0.45.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.3...v0.45.4) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** default visibility to members-only except official/club (Issue 895) ([#926](https://github.com/ProteinDeficientsAnonymous/pda/issues/926)) ([fd064bb](https://github.com/ProteinDeficientsAnonymous/pda/commit/fd064bb8bed6cf8e39cffcac85586357ecd8f904))
+
+## [0.45.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.2...v0.45.3) (2026-07-18)
+
+
+### Bug Fixes
+
+* **fe:** always render my-rsvps star tab in bottom nav (Issue 915) ([#922](https://github.com/ProteinDeficientsAnonymous/pda/issues/922)) ([7f9de9b](https://github.com/ProteinDeficientsAnonymous/pda/commit/7f9de9b4d42ef94b2ff4939c590f2848357552e3))
+
+## [0.45.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.1...v0.45.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** live-update comments via SSE event_updates channel (Issue 870) ([#914](https://github.com/ProteinDeficientsAnonymous/pda/issues/914)) ([cb3f8e9](https://github.com/ProteinDeficientsAnonymous/pda/commit/cb3f8e9c7547ca15d3260c5f4a7a85d4243a839a))
+
+## [0.45.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.45.0...v0.45.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **events:** show waitlist option on public rsvp form at capacity ([#900](https://github.com/ProteinDeficientsAnonymous/pda/issues/900)) ([ab739b0](https://github.com/ProteinDeficientsAnonymous/pda/commit/ab739b0a1ed3482efed1ee01c162607e23cf1f67))
+
+# [0.45.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.44.0...v0.45.0) (2026-07-18)
+
+
+### Features
+
+* **events:** email notification for co-host invites (Issue 856) ([#907](https://github.com/ProteinDeficientsAnonymous/pda/issues/907)) ([0374c85](https://github.com/ProteinDeficientsAnonymous/pda/commit/0374c85e466e9202ce56d023f1f83ca5aec2e085))
+
+# [0.44.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.43.0...v0.44.0) (2026-07-18)
+
+
+### Features
+
+* **consent:** prompt existing members to hide contact info ([#903](https://github.com/ProteinDeficientsAnonymous/pda/issues/903)) ([2f2e303](https://github.com/ProteinDeficientsAnonymous/pda/commit/2f2e3034306cba9861b3852cc32d2e08bbf28681))
+
+# [0.43.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.42.0...v0.43.0) (2026-07-18)
+
+
+### Features
+
+* **events:** recognize returning non-member rsvps by phone (Issue 894) ([#910](https://github.com/ProteinDeficientsAnonymous/pda/issues/910)) ([b4d1d8e](https://github.com/ProteinDeficientsAnonymous/pda/commit/b4d1d8e4f5bcd556dd8f8617fd14316d7643e514))
+* **users:** hide contact info from new members until first login ([#902](https://github.com/ProteinDeficientsAnonymous/pda/issues/902)) ([642f34e](https://github.com/ProteinDeficientsAnonymous/pda/commit/642f34e3f1b5cf50403f15c35200de3b156a82bd))
+
+# [0.42.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.41.0...v0.42.0) (2026-07-18)
+
+
+### Features
+
+* **notifications:** email members when invited to an event (Issue 859) ([#909](https://github.com/ProteinDeficientsAnonymous/pda/issues/909)) ([7eb085a](https://github.com/ProteinDeficientsAnonymous/pda/commit/7eb085a5a58046580bad9e4e3cb7c9eb2187c93c))
+
+# [0.41.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.6...v0.41.0) (2026-07-18)
+
+
+### Features
+
+* **events:** add forget-my-rsvps control for non-members (Issue 896) ([#908](https://github.com/ProteinDeficientsAnonymous/pda/issues/908)) ([809e473](https://github.com/ProteinDeficientsAnonymous/pda/commit/809e473297cf787451ce58767501c5aca14591ab))
+
+## [0.40.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.5...v0.40.6) (2026-07-18)
+
+
+### Bug Fixes
+
+* **notifications:** include magic login link in join-approval email (Issue 882) ([#901](https://github.com/ProteinDeficientsAnonymous/pda/issues/901)) ([cac2ac6](https://github.com/ProteinDeficientsAnonymous/pda/commit/cac2ac6ed4faa5d8395627cc165a872a681608e3))
+
 ## [0.40.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.40.4...v0.40.5) (2026-07-18)
 
 

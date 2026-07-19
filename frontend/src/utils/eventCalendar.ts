@@ -1,9 +1,3 @@
-// Helpers for building "add to calendar" URLs and sharing an event.
-//
-// Google Calendar takes a structured URL; Apple Calendar + other clients
-// consume an .ics file. The backend exposes `/api/community/events/{id}/ics/`
-// so we link straight to that for Apple and also for the generic download.
-
 import type { Event } from '@/models/event';
 
 export function googleCalendarUrl(event: Event): string | null {

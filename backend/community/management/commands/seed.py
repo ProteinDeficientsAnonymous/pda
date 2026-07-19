@@ -22,6 +22,7 @@ from ._seed_data import (
     SEED_USERS,
     SeedUser,
 )
+from ._seed_shared import apply_rsvp, get_or_create_seed_user, seed_events
 
 
 def _seed_singleton(model_cls, seed_data: dict, fields: tuple[str, ...], cmd: "Command") -> None:
@@ -77,13 +78,9 @@ class Command(BaseCommand):
         if data.is_superuser:
             defaults["is_superuser"] = True
             defaults["is_staff"] = True
-        user, created = User.objects.get_or_create(
-            phone_number=data.phone_number, defaults=defaults
-        )
+        role = admin_role if data.is_superuser else member_role
+        user, created = get_or_create_seed_user(data.phone_number, PASSWORD, defaults, [role])
         if created:
-            user.set_password(PASSWORD)
-            user.save()
-            user.roles.add(admin_role if data.is_superuser else member_role)
             self.stdout.write(f"  Created user: {user.full_name}")
         else:
             self._backfill_user(user, data)
@@ -148,37 +145,10 @@ class Command(BaseCommand):
 
     def _seed_events(self, created_by: User) -> dict[str, Event]:
         """Seed events. Returns a title→Event mapping for RSVP seeding."""
-        now = timezone.now()
-        events: dict[str, Event] = {}
-        for data in SEED_EVENTS:
-            start = now + timedelta(days=data.delta_days)
-            end = start + timedelta(hours=data.duration_hours)
-            event, created = Event.objects.get_or_create(
-                title=data.title,
-                defaults={
-                    "description": data.description,
-                    "start_datetime": start,
-                    "end_datetime": end,
-                    "location": data.location,
-                    "event_type": data.event_type,
-                    "rsvp_enabled": data.rsvp_enabled,
-                    "allow_plus_ones": data.allow_plus_ones,
-                    "max_attendees": data.max_attendees,
-                    "created_by": created_by,
-                },
-            )
-            events[data.title] = event
-            label = "Created" if created else "Already exists"
-            self.stdout.write(f"  {label} event: {data.title}")
-        return events
+        return seed_events(self.stdout, SEED_EVENTS, created_by)
 
     def _seed_rsvps(self, events: dict[str, Event]) -> None:
-        """Seed RSVPs so the roster, waitlist, and stats panel are QA-able.
-
-        RSVP rows are written directly (not via the upsert endpoint) so the
-        seeded statuses — including waitlisted entries and marked attendance —
-        land verbatim rather than being re-derived from capacity rules.
-        """
+        """Seed RSVPs so the roster, waitlist, and stats panel are QA-able."""
         users = {
             u.phone_number: u for u in User.objects.filter(phone_number__startswith="+1702555")
         }
@@ -190,17 +160,16 @@ class Command(BaseCommand):
                     f"  Skipped RSVP (missing event/user): {data.event_title} / {data.phone_number}"
                 )
                 continue
-            _, created = EventRSVP.objects.get_or_create(
-                event=event,
-                user=user,
-                defaults={
+            apply_rsvp(
+                event,
+                user,
+                {
                     "status": data.status,
-                    "has_plus_one": data.has_plus_one,
                     "attendance": data.attendance,
+                    "has_plus_one": data.has_plus_one,
                 },
             )
-            label = "Created" if created else "Already exists"
-            self.stdout.write(f"  {label} RSVP: {user.full_name} → {data.event_title}")
+            self.stdout.write(f"  RSVP: {user.full_name} → {data.event_title}")
 
     def _seed_join_requests(self, questions: dict[str, JoinFormQuestion], admin_user: User) -> None:
         now = timezone.now()

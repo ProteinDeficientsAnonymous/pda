@@ -9,6 +9,7 @@ from community.management.commands._seed_staging_data import (
     OFFICIAL_PAST_TITLE,
     OFFICIAL_TODAY_TITLE,
     PASSWORD,
+    PRIVACY_SPECS,
     STAGING_EVENTS,
     TOKEN_EXPIRED,
     TOKEN_NONE,
@@ -21,6 +22,7 @@ from community.management.commands._seed_staging_data import (
     joinreq_phone,
     perm_email,
     perm_phone,
+    privacy_phone,
 )
 from community.models import (
     AttendanceStatus,
@@ -29,6 +31,7 @@ from community.models import (
     EventType,
     JoinRequest,
     JoinRequestStatus,
+    PageVisibility,
     RSVPStatus,
 )
 from django.contrib.auth.hashers import check_password
@@ -273,6 +276,16 @@ def test_official_events_span_past_today_future_with_capacity_variety():
 
 
 @pytest.mark.django_db
+def test_seed_staging_official_and_club_events_are_public():
+    call_command("seed_staging")
+    for event in Event.objects.filter(title__startswith="[staging] "):
+        if event.event_type in (EventType.OFFICIAL, EventType.CLUB):
+            assert event.visibility == PageVisibility.PUBLIC
+        else:
+            assert event.visibility == PageVisibility.MEMBERS_ONLY
+
+
+@pytest.mark.django_db
 def test_seed_staging_official_events_are_rsvp_enabled():
     call_command("seed_staging")
     for title in (OFFICIAL_PAST_TITLE, OFFICIAL_TODAY_TITLE, OFFICIAL_FULL_TITLE):
@@ -370,6 +383,29 @@ def test_seed_staging_join_requests_idempotent():
     assert JoinRequest.objects.filter(phone_number__startswith="+170255504").count() == len(
         JOIN_REQUEST_SPECS
     )
+
+
+@pytest.mark.django_db
+def test_seed_staging_privacy_users_match_specs():
+    call_command("seed_staging")
+    assert User.objects.filter(phone_number__startswith="+170255505").count() == len(PRIVACY_SPECS)
+    for index, spec in enumerate(PRIVACY_SPECS):
+        user = User.objects.get(phone_number=privacy_phone(index))
+        assert user.is_member is True
+        assert user.pronouns == spec.pronouns
+        assert user.birthday_month == spec.birthday_month
+        assert user.birthday_day == spec.birthday_day
+        assert user.show_phone is spec.show_phone
+        assert user.show_email is spec.show_email
+        assert user.show_birthday is spec.show_birthday
+        assert user.hide_last_name is spec.hide_last_name
+
+
+@pytest.mark.django_db
+def test_seed_staging_privacy_users_idempotent():
+    call_command("seed_staging")
+    call_command("seed_staging")
+    assert User.objects.filter(phone_number__startswith="+170255505").count() == len(PRIVACY_SPECS)
 
 
 @pytest.mark.django_db

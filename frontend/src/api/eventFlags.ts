@@ -1,10 +1,3 @@
-// Event flag moderation endpoints.
-//
-// Any authenticated user can flag an event (rate-limited 3/h server-side).
-// Admin queue (list + decide) requires manage_events.
-//
-// Transitions: pending → dismissed | actioned. Cannot go back to pending.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getApiStatus, hasErrorCode } from './apiErrors';

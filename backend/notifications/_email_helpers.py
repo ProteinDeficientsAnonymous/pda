@@ -137,18 +137,94 @@ def send_join_approval_email(
     to: str,
     display_name: str,
     message_body: str,
+    magic_link_url: str,
 ) -> SendResult:
     """Render and send the "you're a full member now" join-approval email.
 
     ``message_body`` is the UI-editable confirmation text (tentative-approval
     message template) with ``${FIRST_NAME}`` substituted by the caller.
     """
-    context = {"display_name": display_name or "", "message_body": message_body}
+    context = {
+        "display_name": display_name or "",
+        "message_body": message_body,
+        "magic_link_url": magic_link_url,
+    }
     html = render_to_string("emails/join_approval.html", context)
     text = render_to_string("emails/join_approval.txt", context)
     return sender.send(
         to=to,
         subject="you're fully approved — welcome to pda",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class EventInviteEmailDetails:
+    """Recipient + event details for the member event-invite email."""
+
+    to: str
+    display_name: str
+    inviter_name: str
+    event_title: str
+    event_when: str
+    event_url: str
+
+    def template_context(self) -> dict:
+        return {
+            "display_name": self.display_name or "",
+            "inviter_name": self.inviter_name,
+            "event_title": self.event_title,
+            "event_when": self.event_when,
+            "event_url": self.event_url,
+        }
+
+
+def send_event_invite_email(
+    *,
+    sender: EmailSender,
+    details: EventInviteEmailDetails,
+) -> SendResult:
+    """Render and send the "you're invited to an event" email."""
+    context = details.template_context()
+    html = render_to_string("emails/event_invite.html", context)
+    text = render_to_string("emails/event_invite.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you're invited to {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
+@dataclass(frozen=True)
+class CohostInviteEmailDetails:
+    """Recipient + event details for the co-host invite email."""
+
+    to: str
+    display_name: str
+    inviter_name: str
+    event_title: str
+    event_url: str
+
+
+def send_cohost_invite_email(
+    *,
+    sender: EmailSender,
+    details: CohostInviteEmailDetails,
+) -> SendResult:
+    """Render and send the "you've been invited to co-host" email."""
+    context = {
+        "display_name": details.display_name or "",
+        "inviter_name": details.inviter_name,
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+    }
+    html = render_to_string("emails/cohost_invite.html", context)
+    text = render_to_string("emails/cohost_invite.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you've been invited to co-host {details.event_title.lower()}",
         html=html,
         text=text,
     )

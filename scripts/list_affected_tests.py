@@ -64,6 +64,7 @@ COMMUNITY_TESTS: frozenset[str] = frozenset(
         "tests/test_calendar.py",
         "tests/test_community.py",
         "tests/test_seed.py",
+        "tests/test_seed_staging.py",
         "tests/test_join_request_submission.py",
         "tests/test_join_request_management.py",
         "tests/test_event_cancel.py",

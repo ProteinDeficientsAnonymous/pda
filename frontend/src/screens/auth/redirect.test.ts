@@ -1,4 +1,3 @@
-// Open-redirect guard for the post-login `redirect` query param.
 import { describe, expect, it } from 'vitest';
 
 import { safeRedirect } from './redirect';

@@ -2,13 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  type Event,
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-} from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 const submitMutate = vi.fn();
 const checkPhoneMutate = vi.fn();
@@ -18,60 +12,6 @@ vi.mock('@/api/publicRsvp', () => ({
 }));
 
 import { PublicRsvpForm } from './PublicRsvpForm';
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return {
-    id: 'ev1',
-    title: 'Potluck',
-    description: '',
-    startDatetime: new Date('2099-06-01T18:00:00Z'),
-    endDatetime: null,
-    location: '',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: true,
-    allowPlusOnes: true,
-    maxAttendees: null,
-    attendingCount: 0,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
-    createdById: null,
-    createdByName: null,
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
-    guests: [],
-    myRsvp: null,
-    viewerUserId: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: InvitePermission.AllMembers,
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Official,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    tags: [],
-    isPast: false,
-    status: EventStatus.Active,
-    ...overrides,
-  };
-}
 
 function renderForm(
   event = makeEvent(),
@@ -195,6 +135,16 @@ describe('PublicRsvpForm', () => {
     await waitFor(() => expect(onAlreadyRsvpd).toHaveBeenCalledWith({ rsvpToken: 'tok-xyz' }));
   });
 
+  it('shows a check-your-email message instead of the contact form when recognized', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'recognized', rsvp_token: '' });
+    renderForm();
+    fillPhoneStep();
+    await screen.findByText(
+      'we recognized your number — check your email for a link to confirm your rsvp',
+    );
+    expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
+  });
+
   it('lets you change the status and go back to step one from the details step', async () => {
     checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
     renderForm();
@@ -227,6 +177,39 @@ describe('PublicRsvpForm', () => {
       eventId: 'ev1',
       payload: expect.objectContaining({ status: 'maybe' }),
     });
+  });
+
+  it('shows join the waitlist instead of going when the event is at capacity', () => {
+    renderForm(makeEvent({ maxAttendees: 2, attendingCount: 2 }));
+    expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
+  });
+
+  it('submits attending status and shows join the waitlist copy when at capacity', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    submitMutate.mockResolvedValue({
+      event: { id: 'ev1' },
+      rsvp: { status: 'waitlisted', has_plus_one: false },
+    });
+    const onSuccess = vi.fn();
+    renderForm(makeEvent({ maxAttendees: 2, attendingCount: 2 }), onSuccess);
+    fireEvent.click(screen.getByRole('button', { name: 'join the waitlist' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+14155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
+    expect(screen.getByText('join the waitlist')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    expect(submitMutate).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      payload: expect.objectContaining({ status: 'attending' }),
+    });
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
   });
 
   it('shows a 409 inline error with a sign-in link', async () => {

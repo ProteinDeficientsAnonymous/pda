@@ -16,11 +16,18 @@ import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
 const rescindMutate = vi.fn();
+const updatePublicRsvpMutate = vi.fn();
+const cancelPublicRsvpMutate = vi.fn();
 
 vi.mock('@/api/cohostInvites', () => ({
   useAcceptCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useDeclineCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useRescindCohostInvite: () => ({ mutate: rescindMutate, isPending: false }),
+}));
+
+vi.mock('@/api/publicRsvp', () => ({
+  useUpdatePublicMyRsvp: () => ({ mutateAsync: updatePublicRsvpMutate, isPending: false }),
+  useCancelPublicMyRsvp: () => ({ mutateAsync: cancelPublicRsvpMutate, isPending: false }),
 }));
 
 // Stub heavy sub-sections so we focus on the host row.
@@ -104,6 +111,7 @@ const CREATOR: User = {
   needsPasswordReset: false,
   needsGuidelinesConsent: false,
   needsSmsConsent: false,
+  needsContactPrivacyConsent: false,
   showPhone: false,
   showEmail: false,
   showBirthday: false,
@@ -137,12 +145,12 @@ const MANAGER: User = {
   ],
 };
 
-function renderSection(event: Event) {
+function renderSection(event: Event, token?: string) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <EventMemberSection event={event} />
+        <EventMemberSection event={event} token={token} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -432,5 +440,50 @@ describe('EventMemberSection — pending host row', () => {
       { eventId: 'ev1', inviteId: 'inv1' },
       expect.any(Object),
     );
+  });
+});
+
+describe('EventMemberSection — token-holding non-member (Issue 904)', () => {
+  const TOKEN_EVENT: Event = {
+    ...ACCEPTED_COHOST_EVENT,
+    rsvpEnabled: true,
+    location: '123 Main St',
+    invitePermission: InvitePermission.AllMembers,
+    myRsvp: RsvpStatus.Attending,
+  };
+
+  beforeEach(() => {
+    useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+  });
+
+  it('renders the read experience — location, rsvp, and comments', () => {
+    renderSection(TOKEN_EVENT, 'tok-123');
+    expect(screen.getByText('123 Main St')).toBeInTheDocument();
+    expect(screen.getByTestId('rsvp-section')).toBeInTheDocument();
+    expect(screen.getByTestId('comments-card')).toBeInTheDocument();
+  });
+
+  it('never shows the host row for a token holder, even on an event with hosts', () => {
+    renderSection(TOKEN_EVENT, 'tok-123');
+    expect(screen.queryByText('hosts')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('add co-host')).not.toBeInTheDocument();
+  });
+
+  it('never shows invite members, email blast, or group text to a token holder', () => {
+    renderSection(TOKEN_EVENT, 'tok-123');
+    expect(screen.queryByRole('button', { name: /invite members/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/email blast/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/group text/i)).not.toBeInTheDocument();
+  });
+
+  it('never shows admin actions (edit/cancel) to a token holder', () => {
+    renderSection(TOKEN_EVENT, 'tok-123');
+    expect(screen.queryByRole('button', { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^cancel event$/i })).not.toBeInTheDocument();
+  });
+
+  it('renders nothing without a token or a session', () => {
+    const { container } = renderSection(TOKEN_EVENT);
+    expect(container).toBeEmptyDOMElement();
   });
 });

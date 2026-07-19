@@ -1,7 +1,3 @@
-// Codebase audit: no interactive handlers on non-semantic elements.
-// Mirrors widgets/gesture_detector_audit_test.dart from the Flutter suite —
-// enforces that tap handlers live on <button>/<a>, not on <div> or <span>.
-
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';

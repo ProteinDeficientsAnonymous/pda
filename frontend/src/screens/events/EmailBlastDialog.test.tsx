@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Event, EventGuest } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import { makeEvent as makeEventFixture } from '@/test/fixtures';
 
 const mutateAsyncMock = vi.fn();
 const toastSuccessMock = vi.fn();
@@ -41,56 +41,10 @@ function guest(status: string, i: number): EventGuest {
 }
 
 function makeEvent(guests: EventGuest[]): Event {
-  return {
-    id: 'ev1',
-    title: 'Potluck',
-    description: '',
-    startDatetime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    endDatetime: null,
-    location: '',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: true,
-    allowPlusOnes: false,
-    maxAttendees: null,
-    attendingCount: guests.filter((g) => g.status === 'attending').length,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
-    createdById: 'creator',
-    createdByName: 'Creator',
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
+  return makeEventFixture({
     guests,
-    myRsvp: null,
-    viewerUserId: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: InvitePermission.CoHostsOnly,
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Community,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    isPast: false,
-    status: EventStatus.Active,
-    tags: [],
-  };
+    attendingCount: guests.filter((g) => g.status === 'attending').length,
+  });
 }
 
 function renderDialog(event: Event) {

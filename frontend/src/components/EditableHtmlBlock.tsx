@@ -1,9 +1,3 @@
-// View-or-edit content block. Non-editors see the sanitized HTML. Users with
-// the right permission see an "edit" toggle that swaps to a TipTap editor
-// with autosave. The component doesn't own the data — callers pass both the
-// current values and the save callback, so home/faq/guidelines/editable pages
-// can all reuse it.
-
 import { useState } from 'react';
 
 import { useAutosave } from '@/hooks/useAutosave';
@@ -16,14 +10,9 @@ import { Button } from './ui/Button';
 interface Props {
   canEdit: boolean;
   contentHtml: string;
-  /** ProseMirror JSON string to seed the editor. Empty string = blank doc. */
   initialPm: string;
   onSave: (contentPm: string) => Promise<void>;
   placeholder?: string;
-  /**
-   * Whether to show the "edit" chip inline with the rendered content, or
-   * leave the caller to place it elsewhere. Defaults to inline.
-   */
   toolbar?: 'inline' | 'none';
 }
 
@@ -44,8 +33,8 @@ export function EditableHtmlBlock({
     autosave.schedule(next);
   }
 
-  function stopEditing() {
-    autosave.cancel();
+  async function stopEditing() {
+    if (draft !== initialPm) await autosave.flush(draft);
     setEditing(false);
   }
 
@@ -78,7 +67,7 @@ export function EditableHtmlBlock({
         <div className="flex-1">
           <AutosaveStatus status={autosave.status} />
         </div>
-        <Button variant="ghost" onClick={stopEditing}>
+        <Button variant="ghost" onClick={() => void stopEditing()}>
           done
         </Button>
       </div>

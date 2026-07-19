@@ -5,6 +5,7 @@ import { CommentItem } from './CommentItem';
 interface Props {
   comments: EventComment[];
   eventId: string;
+  token?: string;
   canReact: boolean;
   canReply: boolean;
   reactDisabledReason?: string | undefined;
@@ -13,6 +14,7 @@ interface Props {
 export function CommentThread({
   comments,
   eventId,
+  token,
   canReact,
   canReply,
   reactDisabledReason,
@@ -27,6 +29,7 @@ export function CommentThread({
           key={c.id}
           comment={c}
           eventId={eventId}
+          {...(token ? { token } : {})}
           canReact={canReact}
           canReply={canReply}
           reactDisabledReason={reactDisabledReason}

@@ -1,6 +1,3 @@
-// Matches Flutter's MediaQuery.sizeOf(context).width >= 720 check used to
-// decide side-panel vs full-page layouts. Updates on window resize.
-
 import { useEffect, useState } from 'react';
 
 export function useIsWideScreen(minWidth = 720): boolean {

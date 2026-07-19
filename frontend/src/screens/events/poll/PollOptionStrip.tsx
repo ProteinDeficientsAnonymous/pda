@@ -1,6 +1,3 @@
-// Horizontal strip of poll-option cards. Scrolls on small screens so long
-// option lists don't wrap into a messy grid.
-
 import type { EventPoll } from '@/models/eventPoll';
 
 import { sortOptionsByVotes } from './pollHelpers';

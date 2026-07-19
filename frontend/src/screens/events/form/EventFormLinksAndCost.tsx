@@ -1,7 +1,3 @@
-// Links + cost section bodies. Each is rendered inside its own
-// CollapsibleCard by the parent form. Kept in one file so the small
-// per-section components stay co-located with their related logic.
-
 import type { EventFormValues } from '@/api/eventWrites';
 import { TextField } from '@/components/ui/TextField';
 

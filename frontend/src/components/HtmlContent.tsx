@@ -1,7 +1,3 @@
-// Sanitized HTML renderer for server-produced Quill HTML.
-// Centralizes the dangerouslySetInnerHTML usage so every callsite goes through
-// DOMPurify + a consistent prose stylesheet.
-
 import { useMemo } from 'react';
 
 import { cn } from '@/utils/cn';

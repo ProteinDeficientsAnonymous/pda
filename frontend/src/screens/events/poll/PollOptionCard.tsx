@@ -1,7 +1,3 @@
-// Single poll-option card. Intentionally minimal — day + date + time on top,
-// numeric counts below. No fill bar, no progress indicator. Click to toggle
-// the voter popover for that option.
-
 import { format } from 'date-fns';
 import { useState } from 'react';
 

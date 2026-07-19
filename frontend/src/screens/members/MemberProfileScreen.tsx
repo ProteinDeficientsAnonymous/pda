@@ -1,7 +1,3 @@
-// Public member profile — any authed member can view another member's profile.
-// Phone/email come pre-redacted from the backend based on the target user's
-// show_phone / show_email settings, so we just check truthiness here.
-
 import { useParams } from 'react-router-dom';
 
 import { type MemberProfile, useMemberProfile } from '@/api/users';

@@ -1,18 +1,11 @@
-// Pure-helper tests for the event write layer: enum-coercion on the inbound
-// side (eventToFormValues) and per-field PATCH body building (toPartialWireBody).
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  type Event,
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-} from '@/models/event';
+import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -35,60 +28,6 @@ import {
   useUploadEventPhoto,
 } from './eventWrites';
 import { textRecipientsKeys } from './textRecipients';
-
-function makeEvent(overrides: Partial<Event> = {}): Event {
-  return {
-    id: 'e1',
-    title: 'potluck',
-    description: 'bring food',
-    startDatetime: new Date('2026-06-01T18:00:00Z'),
-    endDatetime: new Date('2026-06-01T20:00:00Z'),
-    location: 'the park',
-    latitude: null,
-    longitude: null,
-    whatsappLink: '',
-    partifulLink: '',
-    otherLink: '',
-    venmoLink: '',
-    cashappLink: '',
-    zelleInfo: '',
-    price: '',
-    rsvpEnabled: true,
-    allowPlusOnes: true,
-    maxAttendees: null,
-    attendingCount: 0,
-    waitlistedCount: 0,
-    invitedCount: 0,
-    datetimeTbd: false,
-    hasPoll: false,
-    datetimePollSlug: null,
-    createdById: null,
-    createdByName: null,
-    createdByPhotoUrl: '',
-    coHostIds: [],
-    coHostNames: [],
-    coHostPhotoUrls: [],
-    coHostInviteIds: [],
-    guests: [],
-    myRsvp: null,
-    viewerUserId: null,
-    surveySlugs: [],
-    invitedUserIds: [],
-    invitedUserNames: [],
-    invitedUserPhotoUrls: [],
-    invitePermission: InvitePermission.AllMembers,
-    pendingCohostInvites: [],
-    myPendingCohostInviteId: null,
-    eventType: EventType.Community,
-    visibility: EventVisibility.Public,
-    photoUrl: '',
-    photoUpdatedAt: null,
-    tags: [],
-    isPast: false,
-    status: EventStatus.Active,
-    ...overrides,
-  };
-}
 
 describe('eventToFormValues enum validation', () => {
   it('passes through known enum values', () => {

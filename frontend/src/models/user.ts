@@ -1,7 +1,3 @@
-// Hand-written until `pnpm types:api` is run against a live backend. When the
-// generated types come online, swap these for `components['schemas']['UserOut']`
-// narrowings in api/auth.ts — this file should disappear.
-
 export const CalendarFeedScope = {
   All: 'all',
   Mine: 'mine',
@@ -44,6 +40,9 @@ export interface User {
   // is grandfathered; existing members and admins must re-consent.
   needsGuidelinesConsent: boolean;
   needsSmsConsent: boolean;
+  // True once for existing members who haven't hidden any contact info yet — an
+  // already-hidden phone/email means they've seen the toggles in settings already.
+  needsContactPrivacyConsent: boolean;
   showPhone: boolean;
   showEmail: boolean;
   showBirthday: boolean;
@@ -76,7 +75,9 @@ export function passwordSetupRedirect(user: User | null): '/new-password' | '/on
 
 export function consentRedirect(user: User | null): '/consent' | null {
   if (!user) return null;
-  return user.needsGuidelinesConsent || user.needsSmsConsent ? '/consent' : null;
+  const needsConsent =
+    user.needsGuidelinesConsent || user.needsSmsConsent || user.needsContactPrivacyConsent;
+  return needsConsent ? '/consent' : null;
 }
 
 /**

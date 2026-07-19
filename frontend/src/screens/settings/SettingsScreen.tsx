@@ -1,4 +1,3 @@
-import { getDaysInMonth } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
@@ -7,17 +6,16 @@ import { extractApiErrorOr } from '@/api/apiErrors';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
-import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { type Birthday, CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
+import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
-import { cn } from '@/utils/cn';
-import { formatBirthday } from '@/utils/datetime';
 import { formatPhone } from '@/utils/formatPhone';
 
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { InlineBirthday } from './InlineBirthday';
+import { PrivacyToggles } from './PrivacyToggles';
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
@@ -90,26 +88,7 @@ export default function SettingsScreen() {
       </Section>
 
       <Section label="privacy">
-        <Toggle
-          label="show phone on my profile"
-          checked={user.showPhone}
-          onChange={(v) => updateProfile({ showPhone: v })}
-        />
-        <Toggle
-          label="show email on my profile"
-          checked={user.showEmail}
-          onChange={(v) => updateProfile({ showEmail: v })}
-        />
-        <Toggle
-          label="show birthday on my profile"
-          checked={user.showBirthday}
-          onChange={(v) => updateProfile({ showBirthday: v })}
-        />
-        <Toggle
-          label="show my last name to other members"
-          checked={!user.hideLastName}
-          onChange={(v) => updateProfile({ hideLastName: !v })}
-        />
+        <PrivacyToggles user={user} onChange={(patch) => void updateProfile(patch)} />
       </Section>
 
       <Section label="calendar">
@@ -243,198 +222,6 @@ function InlineText({
         save
       </Button>
     </div>
-  );
-}
-
-const MONTH_OPTIONS = [
-  'january',
-  'february',
-  'march',
-  'april',
-  'may',
-  'june',
-  'july',
-  'august',
-  'september',
-  'october',
-  'november',
-  'december',
-].map((name, i) => ({ value: String(i + 1), label: name }));
-
-const NO_YEAR = '';
-const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = [
-  { value: NO_YEAR, label: 'prefer not to say' },
-  ...Array.from({ length: 120 }, (_, i) => {
-    const year = CURRENT_YEAR - i;
-    return { value: String(year), label: String(year) };
-  }),
-];
-
-function dayOptions(month: number | null) {
-  const count = month ? getDaysInMonth(new Date(2000, month - 1)) : 31;
-  return Array.from({ length: count }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
-}
-
-function InlineBirthday({
-  label,
-  value,
-  onSave,
-  placeholder,
-}: {
-  label: string;
-  value: Birthday | null;
-  onSave: (v: Birthday | null) => Promise<void>;
-  placeholder?: string;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [month, setMonth] = useState(value?.month ?? null);
-  const [day, setDay] = useState(value?.day ?? null);
-  const [year, setYear] = useState(value?.year ?? null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function startEditing() {
-    setMonth(value?.month ?? null);
-    setDay(value?.day ?? null);
-    setYear(value?.year ?? null);
-    setError(null);
-    setEditing(true);
-  }
-
-  async function save(next: Birthday | null) {
-    setSaving(true);
-    setError(null);
-    try {
-      await onSave(next);
-      setEditing(false);
-    } catch (err) {
-      setError(extractApiErrorOr(err, "couldn't save — try again"));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (!editing) {
-    return (
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-muted text-xs">{label}</div>
-          <div className="text-foreground text-sm">
-            {value ? formatBirthday(value) : placeholder}
-          </div>
-        </div>
-        <Button variant="ghost" onClick={startEditing} aria-label={`edit ${label}`}>
-          edit
-        </Button>
-      </div>
-    );
-  }
-
-  const canSave = month !== null && day !== null;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-3 gap-2">
-        <Select
-          label="month"
-          options={MONTH_OPTIONS}
-          value={month ? String(month) : ''}
-          placeholder="month"
-          onChange={(e) => {
-            const nextMonth = e.target.value ? Number(e.target.value) : null;
-            setMonth(nextMonth);
-            if (nextMonth && day && day > getDaysInMonth(new Date(2000, nextMonth - 1))) {
-              setDay(null);
-            }
-            if (error) setError(null);
-          }}
-        />
-        <Select
-          label="day"
-          options={dayOptions(month)}
-          value={day ? String(day) : ''}
-          placeholder="day"
-          onChange={(e) => {
-            setDay(e.target.value ? Number(e.target.value) : null);
-            if (error) setError(null);
-          }}
-        />
-        <Select
-          label="year"
-          options={YEAR_OPTIONS}
-          value={year ? String(year) : NO_YEAR}
-          onChange={(e) => {
-            setYear(e.target.value ? Number(e.target.value) : null);
-            if (error) setError(null);
-          }}
-        />
-      </div>
-      {error ? <p className="text-destructive text-xs">{error}</p> : null}
-      <div className="flex items-center justify-end gap-2">
-        {value ? (
-          <Button variant="ghost" onClick={() => void save(null)} disabled={saving}>
-            clear
-          </Button>
-        ) : null}
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setError(null);
-            setEditing(false);
-          }}
-          disabled={saving}
-        >
-          cancel
-        </Button>
-        <Button
-          onClick={() => {
-            if (canSave) void save({ month, day, year });
-          }}
-          disabled={saving || !canSave}
-        >
-          save
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => Promise<void>;
-}) {
-  return (
-    <label className="flex items-center justify-between gap-3">
-      <span className="text-foreground text-sm">{label}</span>
-      <span
-        className={cn(
-          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-          checked ? 'bg-brand-600' : 'bg-toggle-off',
-        )}
-      >
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => {
-            void onChange(e.target.checked);
-          }}
-          className="sr-only"
-        />
-        <span
-          aria-hidden="true"
-          className={cn(
-            'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-            checked ? 'translate-x-5' : 'translate-x-0.5',
-          )}
-        />
-      </span>
-    </label>
   );
 }
 

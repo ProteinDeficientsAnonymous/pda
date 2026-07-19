@@ -57,6 +57,10 @@ class UserManager(BaseUserManager):
             archived_at__isnull=True,
         )
 
+    def with_permission(self, key: str):
+        """Members granted `key` via role permissions, honoring the admin-default rule."""
+        return self.members().filter(roles__id__in=Role.ids_with_permission(key)).distinct()
+
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError("Phone number is required")
@@ -88,6 +92,7 @@ class User(AbstractUser):
     needs_password_reset = models.BooleanField(default=False)
     guidelines_consent_at = models.DateTimeField(null=True, blank=True)
     sms_consent_at = models.DateTimeField(null=True, blank=True)
+    contact_privacy_consent_at = models.DateTimeField(null=True, blank=True)
     calendar_token = models.CharField(max_length=64, blank=True, default="", db_index=True)
     bio = models.CharField(max_length=500, blank=True, default="")
     pronouns = models.CharField(max_length=100, blank=True, default="")
@@ -134,6 +139,13 @@ class User(AbstractUser):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    @property
+    def needs_contact_privacy_consent(self) -> bool:
+        # Already hiding something means they've seen the privacy toggles in settings.
+        if not self.show_phone or not self.show_email:
+            return False
+        return self.contact_privacy_consent_at is None
 
     def __str__(self):
         return self.full_name or self.phone_number

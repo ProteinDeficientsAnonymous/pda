@@ -128,7 +128,9 @@ export function useMarkAllNotificationsRead() {
     mutationFn: async () => {
       await apiClient.post('/api/notifications/read-all/');
     },
-    onMutate: () => {
+    onMutate: async () => {
+      // Cancel in-flight refetches so a late response can't clobber the optimistic write.
+      await qc.cancelQueries({ queryKey: notificationKeys.all });
       // Snapshot for onError rollback so a failed mark-all doesn't leave the badge stuck at 0.
       const prevUnread = qc.getQueryData<number>(notificationKeys.unread);
       const prevBell = qc.getQueryData<AppNotification[]>(notificationKeys.bell);

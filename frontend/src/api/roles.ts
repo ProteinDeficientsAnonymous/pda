@@ -1,8 +1,3 @@
-// Role CRUD — mirrors backend/users/_roles.py. Create/update/delete are
-// permission-gated (MANAGE_ROLES). The list endpoint requires MANAGE_ROLES
-// or MANAGE_USERS (the role-assignment picker on the members screens needs
-// role names) — plain members get a 403.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { normalizePermissions } from '@/models/permissions';

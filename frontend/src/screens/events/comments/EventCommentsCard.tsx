@@ -84,6 +84,7 @@ export function EventCommentsCard({ eventId, token }: Props) {
       <CommentThread
         comments={data.items}
         eventId={eventId}
+        {...(token ? { token } : {})}
         canReact={canReact}
         canReply={data.canPost}
         reactDisabledReason={reactDisabledReason}

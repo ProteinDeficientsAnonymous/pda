@@ -1,8 +1,3 @@
-// Custom day view — stacked list of event cards instead of rbc's hour-by-hour
-// time grid. Mirrors `frontend/lib/screens/calendar/day_view.dart` —
-// cards show title, time range, location (with pin icon), and a 2-line
-// description preview. Empty state reads "nothing today 🌿".
-
 import { format, isSameDay } from 'date-fns';
 
 import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';

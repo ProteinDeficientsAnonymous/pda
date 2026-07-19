@@ -53,7 +53,7 @@ def list_member_directory(request):
 )
 def get_member_profile(request, user_id: str):
     try:
-        user = User.objects.active_members().get(pk=user_id)
+        user = User.objects.active_members().filter(needs_onboarding=False).get(pk=user_id)
     except User.DoesNotExist:
         raise_validation(Code.Member.NOT_FOUND, status_code=404)
     is_own_profile = str(request.auth.pk) == user_id

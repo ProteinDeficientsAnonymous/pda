@@ -1,14 +1,3 @@
-// Expand/collapse card for grouped form sections.
-//
-// - Header is a real <button> toggling aria-expanded + aria-controls on the
-//   panel. Chevron animates via CSS transform.
-// - `forceOpen` overrides local state — used by the event form to open any
-//   section that has a validation error on submit.
-// - `summary` slot appears on the right when collapsed (e.g. "3 links" /
-//   "members only"). Hidden when an error is present.
-//
-// Reusable anywhere we want a "cute, friendly" expandable block.
-
 import { type ReactNode, useId, useState } from 'react';
 
 import { cn } from '@/utils/cn';

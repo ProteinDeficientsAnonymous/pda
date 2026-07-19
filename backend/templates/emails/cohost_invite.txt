@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{{ inviter_name|lower }} invited you to co-host {{ event_title|lower }} on pda.
+
+view the invite here:
+
+{{ event_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

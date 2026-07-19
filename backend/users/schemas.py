@@ -130,6 +130,7 @@ class UserOut(BaseModel):
     needs_password_reset: bool = False
     needs_guidelines_consent: bool = False
     needs_sms_consent: bool = False
+    needs_contact_privacy_consent: bool = False
     profile_photo_url: str = ""
     photo_updated_at: str | None = None
     show_phone: bool = True
@@ -166,6 +167,7 @@ class UserOut(BaseModel):
             needs_password_reset=user.needs_password_reset,
             needs_guidelines_consent=user.guidelines_consent_at is None,
             needs_sms_consent=user.sms_consent_at is None,
+            needs_contact_privacy_consent=user.needs_contact_privacy_consent,
             profile_photo_url=media_path(user.profile_photo),
             photo_updated_at=(user.photo_updated_at.isoformat() if user.photo_updated_at else None),
             show_phone=user.show_phone,

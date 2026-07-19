@@ -136,6 +136,18 @@ class TestAcceptConsents:
         )
         assert resp.status_code == 401
 
+    def test_accepts_contact_privacy_consent_type(self, api_client):
+        user = User.objects.create_user(
+            phone_number="+12025550409", password="pass", first_name="Contactor", last_name=""
+        )
+
+        resp = _accept(api_client, user, ["contact_privacy"])
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["needs_contact_privacy_consent"] is False
+
+        user.refresh_from_db()
+        assert user.contact_privacy_consent_at is not None
+
     def test_admin_is_not_grandfathered(self, api_client):
         """Admins are gated too — a fresh admin with null consent is blocked."""
         admin = User.objects.create_user(

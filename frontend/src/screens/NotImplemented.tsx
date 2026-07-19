@@ -1,6 +1,3 @@
-// Placeholder for routes that will be filled in Phases 2–4. Keeps the full
-// route tree wired end-to-end during Phase 1 so guards can be exercised.
-
 import { useLocation } from 'react-router-dom';
 
 export default function NotImplemented() {

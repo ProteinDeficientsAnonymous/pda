@@ -1,6 +1,3 @@
-// Responses viewer: per-question columns plus aggregate tallies for datetime
-// polls (GET /surveys/{id}/tallies/) and finalize flow when the poll is open.
-
 import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';

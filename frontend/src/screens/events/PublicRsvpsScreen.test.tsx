@@ -175,6 +175,28 @@ describe('PublicRsvpsScreen', () => {
     });
   });
 
+  it('clears the stored token when "not you?" is confirmed', () => {
+    localStorage.setItem('pda-rsvp-token', 'good-token');
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    renderAt('good-token');
+
+    fireEvent.click(screen.getByRole('button', { name: 'not you?' }));
+    fireEvent.click(screen.getByRole('button', { name: 'forget me' }));
+
+    expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
+  });
+
+  it('keeps the stored token when "not you?" is cancelled', () => {
+    localStorage.setItem('pda-rsvp-token', 'good-token');
+    usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
+    renderAt('good-token');
+
+    fireEvent.click(screen.getByRole('button', { name: 'not you?' }));
+    fireEvent.click(screen.getByRole('button', { name: 'cancel' }));
+
+    expect(localStorage.getItem('pda-rsvp-token')).toBe('good-token');
+  });
+
   it('has no axe violations', async () => {
     usePublicMyRsvps.mockReturnValue({ data: successData(), isPending: false, isError: false });
     const { container } = renderAt('good-token');

@@ -4,6 +4,12 @@ you're fully approved — welcome to pda!
 
 {% autoescape off %}{{ message_body }}{% endautoescape %}
 
+here's your one-time login link to set up your account:
+
+{{ magic_link_url }}
+
+this link expires in 7 days.
+
 — pda
 
 {% include "emails/_no_reply_footer.txt" %}

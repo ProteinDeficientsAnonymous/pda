@@ -1,7 +1,3 @@
-// Member-facing directory — all active members, searchable. Rows link to the
-// public /members/:userId profile. Backend redacts phone/email per each
-// target's show_phone / show_email flags, so we just check truthiness here.
-
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 

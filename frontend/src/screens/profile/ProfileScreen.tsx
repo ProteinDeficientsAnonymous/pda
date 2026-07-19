@@ -1,7 +1,3 @@
-// Profile: mostly view-only. Bio is inline-editable via dialog; everything
-// else edits from /settings. Logout lives here as the primary destructive
-// action (matches profile_screen.dart).
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 

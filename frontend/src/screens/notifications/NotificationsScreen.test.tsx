@@ -3,8 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { NotificationType } from '@/models/notification';
-
 vi.mock('@/api/notifications', () => ({
   useNotificationHistory: vi.fn(),
   useMarkNotificationRead: vi.fn(),
@@ -15,23 +13,12 @@ vi.mock('@/utils/errorReporter', () => ({
 }));
 
 import { useMarkNotificationRead, useNotificationHistory } from '@/api/notifications';
+import { makeNotification } from '@/test/fixtures';
 
 import NotificationsScreen from './NotificationsScreen';
 
 const mockUseHistory = vi.mocked(useNotificationHistory);
 const mockUseMarkRead = vi.mocked(useMarkNotificationRead);
-
-function makeNotification(id: string, message: string, isRead = false) {
-  return {
-    id,
-    notificationType: NotificationType.EventInvite,
-    eventId: 'evt1',
-    relatedUserId: null,
-    message,
-    isRead,
-    createdAt: '2024-01-01T00:00:00Z',
-  };
-}
 
 function renderScreen() {
   return render(

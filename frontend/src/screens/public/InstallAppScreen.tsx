@@ -1,6 +1,3 @@
-// Fully static screen — no API. Step copy mirrors install_app_screen.dart so
-// the web and Flutter apps stay consistent while both are in production.
-
 import { useMemo, useState } from 'react';
 
 import { ContentContainer } from './ContentContainer';

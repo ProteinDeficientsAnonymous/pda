@@ -1,13 +1,3 @@
-// Public survey API — fetch a survey by slug + submit answers.
-//
-// Answer shape is mixed per question type:
-//   - text/textarea/number/yesNo/rating/select/dropdown → string
-//   - multiselect → comma-separated string (server parses by split on ",")
-//   - datetimePoll → dict { isoOption: "yes" | "maybe" }
-//
-// Keep these encodings consistent with the Flutter app so data written by
-// either client is readable by the other.
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
