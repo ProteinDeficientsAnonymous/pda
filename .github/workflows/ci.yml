@@ -141,11 +141,10 @@ jobs:
       - name: Install Playwright browsers
         run: cd frontend && pnpm exec playwright install --with-deps chromium
 
-      - name: Migrate and seed database
-        run: |
-          cd backend
-          uv run python manage.py migrate
-          uv run python manage.py seed
+      # Only migrate — each spec seeds its own data via the e2e_seed command;
+      # the global demo seed isn't needed and would just add a failure surface.
+      - name: Migrate database
+        run: cd backend && uv run python manage.py migrate
 
       # Start both servers and run the specs in a single step: background
       # processes started in one step aren't guaranteed to survive into the

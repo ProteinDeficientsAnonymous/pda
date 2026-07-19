@@ -2,7 +2,7 @@ import json
 import secrets
 from datetime import timedelta
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import NonMemberRsvpToken, User
@@ -49,16 +49,14 @@ def _member_user(phone: str) -> User:
 
 
 def _non_member_user(phone: str) -> User:
-    user = User.objects.create_user(
+    # create_user with no password calls set_password(None) → unusable password.
+    return User.objects.create_user(
         phone_number=phone,
         first_name="E2E",
         last_name="Guest",
         email=f"{phone.lstrip('+')}@example.com",
         is_member=False,
     )
-    user.set_unusable_password()
-    user.save(update_fields=["password"])
-    return user
 
 
 def _access_token(user: User) -> str:
@@ -148,8 +146,5 @@ class Command(BaseCommand):
         parser.add_argument("scenario", choices=sorted(SCENARIOS))
 
     def handle(self, *args, **options):
-        scenario = options["scenario"]
-        builder = SCENARIOS.get(scenario)
-        if builder is None:
-            raise CommandError(f"Unknown scenario: {scenario}")
-        self.stdout.write(json.dumps(builder()))
+        # argparse choices= already rejects any unknown scenario before handle runs.
+        self.stdout.write(json.dumps(SCENARIOS[options["scenario"]]()))
