@@ -10,6 +10,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Scope Vitest to src/ so it never picks up the Playwright e2e/ specs
+    // (calling Playwright's test() under Vitest throws).
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],

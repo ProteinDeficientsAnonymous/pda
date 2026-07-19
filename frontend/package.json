@@ -15,6 +15,7 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "types:api": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts",
     "types:api:check": "openapi-typescript ../backend/openapi_schema.json -o src/api/types.gen.ts --check"
   },
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
