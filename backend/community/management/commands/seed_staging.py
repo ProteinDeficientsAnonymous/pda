@@ -35,6 +35,8 @@ from ._seed_staging_data import (
     perm_email,
     perm_phone,
     privacy_phone,
+    reset_member_email,
+    reset_member_phone,
 )
 
 
@@ -64,6 +66,7 @@ class Command(BaseCommand):
             perm_users = self._seed_perm_users(roles)
             cond_users = self._seed_condition_users()
             self._seed_privacy_users()
+            self._seed_reset_member()
             admin = perm_users[0] if perm_users else None
             events = self._seed_events(admin)
             self._seed_member_rsvps(cond_users, events)
@@ -87,6 +90,7 @@ class Command(BaseCommand):
         User.objects.filter(phone_number__startswith="+170255502").delete()
         User.objects.filter(phone_number__startswith="+170255503").delete()
         User.objects.filter(phone_number__startswith="+170255505").delete()
+        User.objects.filter(phone_number__startswith="+170255506").delete()
         Role.objects.filter(name__startswith="perm: ").delete()
         reset_join_requests()
         self.stdout.write("  reset: removed staging-scoped rows")
@@ -196,6 +200,27 @@ class Command(BaseCommand):
             users.append(user)
             self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
         return users
+
+    def _seed_reset_member(self) -> User:
+        now = timezone.now()
+        defaults = {
+            "first_name": "reset: needs password reset",
+            "email": reset_member_email(),
+            "is_member": True,
+            "needs_onboarding": False,
+            "onboarded_at": now,
+            "needs_password_reset": True,
+            "guidelines_consent_at": now,
+            "sms_consent_at": now,
+        }
+        user, created = get_or_create_seed_user(
+            reset_member_phone(), PASSWORD, defaults, [self._member_role()]
+        )
+        if not created and not user.needs_password_reset:
+            user.needs_password_reset = True
+            user.save(update_fields=["needs_password_reset"])
+        self.stdout.write(f"  {'created' if created else 'exists'} user: {user.full_name}")
+        return user
 
     def _seed_events(self, created_by) -> list[Event]:
         return list(seed_events(self.stdout, STAGING_EVENTS, created_by).values())

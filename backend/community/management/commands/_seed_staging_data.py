@@ -27,6 +27,14 @@ def privacy_phone(index: int) -> str:
     return f"+170255505{index:02d}"
 
 
+def reset_member_phone() -> str:
+    return "+17025550600"
+
+
+def reset_member_email() -> str:
+    return "reset.member@staging.example"
+
+
 def perm_email(key: str) -> str:
     return f"perm.{key}@staging.example"
 
