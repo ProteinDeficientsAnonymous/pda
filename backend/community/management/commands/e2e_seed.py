@@ -31,6 +31,8 @@ def _random_event(scenario: str, **overrides) -> Event:
         "visibility": PageVisibility.PUBLIC,
         "status": EventStatus.ACTIVE,
         "rsvp_enabled": True,
+        # member-gated field: hidden from anon, revealed once a public rsvp unlocks the event.
+        "location": f"secret loft {secrets.token_hex(3)}",
     }
     base.update(overrides)
     return Event.objects.create(**base)
@@ -71,6 +73,7 @@ def _seed_member() -> dict:
     return {
         "event_id": str(event.id),
         "event_title": event.title,
+        "event_location": event.location,
         "user_phone": phone,
         "user_password": E2E_PASSWORD,
         "access_token": _access_token(user),
@@ -79,7 +82,11 @@ def _seed_member() -> dict:
 
 def _seed_public_new() -> dict:
     event = _random_event("public-new")
-    return {"event_id": str(event.id), "event_title": event.title}
+    return {
+        "event_id": str(event.id),
+        "event_title": event.title,
+        "event_location": event.location,
+    }
 
 
 def _seed_public_returning() -> dict:
