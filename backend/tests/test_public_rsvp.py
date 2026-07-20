@@ -77,6 +77,16 @@ class TestPublicRsvpHappyPath:
         assert event_out["location"] == "123 Vegan Way"
         assert event_out["whatsapp_link"] == "https://chat.whatsapp.com/abc123"
 
+    def test_ignores_plus_one_parameter(self, api_client, official_event, fake_email_sender):
+        response = post(api_client, official_event, has_plus_one=True)
+        assert response.status_code == 200
+        body = response.json()
+        assert body["rsvp"]["has_plus_one"] is False
+
+        user = User.objects.get(phone_number="+14155550123")
+        rsvp = EventRSVP.objects.get(event=official_event, user=user)
+        assert rsvp.has_plus_one is False
+
 
 @pytest.mark.django_db
 class TestPublicRsvpDedup:
@@ -340,9 +350,13 @@ class TestPublicRsvpHoneypot:
     def test_honeypot_returns_decoy_no_side_effects(
         self, api_client, official_event, fake_email_sender
     ):
-        response = post(api_client, official_event, website="http://spam.example")
+        response = post(
+            api_client, official_event, website="http://spam.example", has_plus_one=True
+        )
 
         assert response.status_code == 200
+        body = response.json()
+        assert body["rsvp"]["has_plus_one"] is False
         assert not User.objects.filter(phone_number="+14155550123").exists()
         assert not EventRSVP.objects.exists()
         assert not NonMemberRsvpToken.objects.exists()
