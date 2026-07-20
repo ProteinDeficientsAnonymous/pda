@@ -345,7 +345,7 @@ describe('EventDetailScreen', () => {
         isPending: false,
         isError: true,
         error: err,
-      } as ReturnType<typeof useEvent>);
+      } as unknown as ReturnType<typeof useEvent>);
     }
 
     it('shows a "nothing here" notice on 404 instead of a refresh prompt', () => {
