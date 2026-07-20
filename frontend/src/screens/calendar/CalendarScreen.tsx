@@ -81,15 +81,11 @@ export default function CalendarScreen() {
     });
   }, [events, typeFilter, search]);
 
-  const bigCalEvents = useMemo<BigCalEvent[]>(
-    () =>
-      filteredEvents
-        .filter((e) => !e.datetimeTbd)
-        .map(toBigCalEvent)
-        .filter((e): e is BigCalEvent => e !== null),
-    [filteredEvents],
-  );
   const datedEvents = useMemo(() => filteredEvents.filter((e) => !e.datetimeTbd), [filteredEvents]);
+  const bigCalEvents = useMemo<BigCalEvent[]>(
+    () => datedEvents.map(toBigCalEvent).filter((e): e is BigCalEvent => e !== null),
+    [datedEvents],
+  );
 
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState<Date>(new Date());
@@ -118,8 +114,7 @@ export default function CalendarScreen() {
         onSearchChange={setSearch}
         typeFilter={typeFilter}
         onTypeFilterChange={setTypeFilter}
-        date={date}
-        onDateChange={setDate}
+        {...(useAgendaList ? {} : { date, onDateChange: setDate })}
       />
 
       {isError ? (
@@ -172,7 +167,11 @@ export default function CalendarScreen() {
           </>
         ) : useAgendaList ? (
           <div className="flex-1 overflow-y-auto">
-            <AgendaList events={datedEvents} onSelectEvent={goToEvent} />
+            <AgendaList
+              events={datedEvents}
+              onSelectEvent={goToEvent}
+              isFiltered={typeFilter !== 'all' || search.trim() !== ''}
+            />
           </div>
         ) : (
           <Calendar<BigCalEvent>

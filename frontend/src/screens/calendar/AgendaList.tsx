@@ -9,6 +9,7 @@ import { cn } from '@/utils/cn';
 interface Props {
   events: PdaEvent[];
   onSelectEvent: (event: PdaEvent) => void;
+  isFiltered?: boolean;
 }
 
 const lower = (d: Date, f: string) => format(d, f).toLowerCase();
@@ -37,13 +38,13 @@ function upcomingEvents(events: PdaEvent[]): PdaEvent[] {
     .sort((a, b) => (a.startDatetime?.getTime() ?? 0) - (b.startDatetime?.getTime() ?? 0));
 }
 
-export function AgendaList({ events, onSelectEvent }: Props) {
+export function AgendaList({ events, onSelectEvent, isFiltered = false }: Props) {
   const upcoming = useMemo(() => upcomingEvents(events), [events]);
 
   return (
     <div className="flex flex-col">
       {upcoming.length === 0 ? (
-        <EmptyState />
+        <EmptyState isFiltered={isFiltered} />
       ) : (
         <ul className="flex flex-col gap-2.5 p-3">
           {upcoming.map((event) => (
@@ -57,13 +58,17 @@ export function AgendaList({ events, onSelectEvent }: Props) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ isFiltered }: { isFiltered: boolean }) {
   return (
     <div className="text-muted flex min-h-[40vh] flex-col items-center justify-center">
       <span aria-hidden="true" className="mb-3 text-4xl">
         🌿
       </span>
-      <p className="text-sm">nothing on the horizon — pop back later</p>
+      <p className="text-sm">
+        {isFiltered
+          ? 'no events match your search or filter'
+          : 'nothing on the horizon — pop back later'}
+      </p>
     </div>
   );
 }

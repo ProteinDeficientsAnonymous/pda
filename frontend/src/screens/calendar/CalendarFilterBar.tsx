@@ -21,8 +21,8 @@ interface Props {
   onSearchChange: (value: string) => void;
   typeFilter: TypeFilter;
   onTypeFilterChange: (value: TypeFilter) => void;
-  date: Date;
-  onDateChange: (date: Date) => void;
+  date?: Date;
+  onDateChange?: (date: Date) => void;
 }
 
 export function CalendarFilterBar({
@@ -52,15 +52,17 @@ export function CalendarFilterBar({
         value={typeFilter}
         onChange={onTypeFilterChange}
       />
-      <div className="w-full max-w-xs">
-        <DateTimePicker
-          label="jump to date"
-          value={date.toISOString()}
-          onChange={(iso) => {
-            if (iso) onDateChange(new Date(iso));
-          }}
-        />
-      </div>
+      {date && onDateChange ? (
+        <div className="w-full max-w-xs">
+          <DateTimePicker
+            label="jump to date"
+            value={date.toISOString()}
+            onChange={(iso) => {
+              if (iso) onDateChange(new Date(iso));
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -167,6 +167,15 @@ describe('CalendarScreen filtering', () => {
     expect(screen.queryByRole('button', { name: 'community picnic' })).not.toBeInTheDocument();
   });
 
+  it('filters to community only', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+    await goToAgenda(user);
+    await user.click(screen.getByRole('radio', { name: 'community' }));
+    expect(screen.queryByRole('button', { name: 'official meeting' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'community picnic' })).toBeInTheDocument();
+  });
+
   it('filters by search term across all views', async () => {
     const user = userEvent.setup();
     renderCalendar();
@@ -174,5 +183,28 @@ describe('CalendarScreen filtering', () => {
     await user.type(screen.getByLabelText('search events'), 'picnic');
     expect(screen.queryByRole('button', { name: 'official meeting' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'community picnic' })).toBeInTheDocument();
+  });
+
+  it('shows a filter-aware empty state when the type filter matches nothing', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+    await goToAgenda(user);
+    await user.click(screen.getByRole('radio', { name: 'pda club' }));
+    expect(screen.getByText('no events match your search or filter')).toBeInTheDocument();
+  });
+
+  it('shows a filter-aware empty state when search matches nothing', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+    await goToAgenda(user);
+    await user.type(screen.getByLabelText('search events'), 'no such event');
+    expect(screen.getByText('no events match your search or filter')).toBeInTheDocument();
+  });
+
+  it('does not show the jump-to-date picker in list view', async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+    await goToAgenda(user);
+    expect(screen.queryByLabelText('jump to date')).not.toBeInTheDocument();
   });
 });
