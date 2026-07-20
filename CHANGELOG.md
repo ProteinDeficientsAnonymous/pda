@@ -1,3 +1,10 @@
+## [0.49.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.1...v0.49.2) (2026-07-20)
+
+
+### Bug Fixes
+
+* **rsvp:** unify closed-state status codes between member and public paths (Issue 973) ([#990](https://github.com/ProteinDeficientsAnonymous/pda/issues/990)) ([e53f8e1](https://github.com/ProteinDeficientsAnonymous/pda/commit/e53f8e1feebd08bb8d98f6b1096881c3f318962f))
+
 ## [0.49.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.0...v0.49.1) (2026-07-19)
 
 
