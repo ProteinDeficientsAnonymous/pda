@@ -43,9 +43,19 @@ export default function EventDetailScreen() {
 
   if (isPending) return <ContentLoading />;
   if (isError) {
-    if (getApiStatus(error) === 403) {
+    const status = getApiStatus(error);
+    if (status === 403) {
       const message = extractApiError(error) ?? "you don't have permission to see this event";
       return <ForbiddenNotice message={message} />;
+    }
+    // members-only events 404 for signed-out visitors, so refreshing never helps
+    if (status === 404) {
+      return (
+        <ForbiddenNotice
+          message="there's nothing here"
+          subtext="this event isn't public or no longer exists"
+        />
+      );
     }
     return <ContentError message="couldn't load this event — try refreshing" />;
   }
@@ -119,14 +129,18 @@ function WhenLine({ event }: { event: Event }) {
   );
 }
 
-function ForbiddenNotice({ message }: { message: string }) {
+function ForbiddenNotice({
+  message,
+  subtext = 'if you think this is a mistake, reach out to the host',
+}: {
+  message: string;
+  subtext?: string;
+}) {
   return (
     <ContentContainer>
       <section className="border-border bg-surface mt-8 rounded-lg border p-6">
         <h2 className="mb-2 text-base font-medium">{message}</h2>
-        <p className="text-foreground-tertiary mb-4 text-sm">
-          if you think this is a mistake, reach out to the host
-        </p>
+        <p className="text-foreground-tertiary mb-4 text-sm">{subtext}</p>
         <Link
           to="/calendar"
           className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
