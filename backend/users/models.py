@@ -13,11 +13,9 @@ from django.utils import timezone
 
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
-# Fallback region phonenumbers uses ONLY when raw has no explicit "+countrycode" —
-# a number with an explicit country code is read correctly regardless of this default,
-# so this never restricts which countries are accepted, just how bare digits are read.
-ADMIN_ENTERED_PHONE_REGION = "US"  # bare digits assumed US (admin-created/edited members)
-PUBLIC_FORM_PHONE_REGION = None  # bare digits rejected; visitor must include country code
+# Fallback for bare digits only — a number with an explicit country code is unaffected.
+ADMIN_ENTERED_PHONE_REGION = "US"
+PUBLIC_FORM_PHONE_REGION = None
 
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
@@ -31,11 +29,7 @@ def _parse_phone(raw: str, default_region: str | None) -> str | None:
 
 
 def validate_phone(raw: str, default_region: str | None, field: str = "phone_number") -> str:
-    """Parse, validate, and return E.164. Raises ValidationException on invalid.
-
-    default_region is only a fallback for bare digit-only input — pass
-    ADMIN_ENTERED_PHONE_REGION or PUBLIC_FORM_PHONE_REGION from this module.
-    """
+    """Parse, validate, and return E.164. Raises ValidationException on invalid."""
     canonical = _parse_phone(raw, default_region)
     if canonical is None:
         raise_validation(Code.Phone.INVALID, field=field)
@@ -43,10 +37,7 @@ def validate_phone(raw: str, default_region: str | None, field: str = "phone_num
 
 
 def normalize_phone_number(raw: str) -> str:
-    """Best-effort canonicalize to E.164; returns the input unchanged if unparseable.
-
-    Used by save() — must not hard-fail on legacy bad data, unlike validate_phone().
-    """
+    """Best-effort canonicalize to E.164 for save() — never raises on bad legacy data."""
     return _parse_phone(raw, ADMIN_ENTERED_PHONE_REGION) or raw
 
 

@@ -235,9 +235,6 @@ class TestPublicRsvpMemberCollision:
     def test_member_created_with_non_canonical_phone_still_trips_gate(
         self, api_client, official_event, fake_email_sender
     ):
-        # User.save() now canonicalizes on every write (Issue 975), so even a
-        # member row constructed with a loosely-formatted phone number is
-        # stored as E.164 and the RSVP phone-match gate still catches it.
         User.objects.create_user(
             phone_number="(415) 555-0123", first_name="A", last_name="Member", is_member=True
         )
