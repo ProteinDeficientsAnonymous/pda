@@ -23,7 +23,7 @@ def test_e2e_seed_public_new(capsys):
     call_command("e2e_seed", "public-new")
     out = json.loads(capsys.readouterr().out)
     assert Event.objects.filter(id=out["event_id"]).exists()
-    assert set(out.keys()) == {"event_id", "event_title"}
+    assert set(out.keys()) == {"event_id", "event_title", "event_location"}
 
 
 @pytest.mark.django_db
