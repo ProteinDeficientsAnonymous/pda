@@ -24,10 +24,9 @@ from users._helpers import (
     _strip_non_member_roles,
     _validate_admin_role_change,
     _validate_member_role_required,
-    _validate_phone,
     visible_name,
 )
-from users.models import User
+from users.models import User, validate_phone
 from users.permissions import PermissionKey
 from users.roles import Role
 from users.schemas import (
@@ -128,7 +127,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
         # We catch ValidationException and surface its code as the result's
         # error field — the frontend maps codes → copy via messageForCode.
         try:
-            validated_phone = _validate_phone(raw_phone.strip())
+            validated_phone = validate_phone(raw_phone.strip(), "US")
         except ValidationException as e:
             results.append(
                 BulkUserResult(row=i + 1, phone_number=raw_phone, success=False, error=e.code)
@@ -332,7 +331,7 @@ def _patch_phone(user: User, user_id: str, phone_number: str) -> None:
     """Validate and apply a phone number change. Raises ValidationException on failure."""
     if User.objects.exclude(pk=user_id).filter(phone_number=phone_number).exists():
         raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
-    user.phone_number = _validate_phone(phone_number)
+    user.phone_number = validate_phone(phone_number, "US")
 
 
 def _validate_pause_change(user: User, is_paused: bool | None, requester_id: str) -> None:

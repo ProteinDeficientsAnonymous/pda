@@ -3,6 +3,7 @@ import uuid
 from datetime import timedelta
 
 import phonenumbers
+from community._validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -13,19 +14,34 @@ from django.utils import timezone
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
 
+def _parse_phone(raw: str, default_region: str | None) -> str | None:
+    try:
+        parsed = phonenumbers.parse(raw, default_region)
+    except phonenumbers.phonenumberutil.NumberParseException:
+        return None
+    if not phonenumbers.is_valid_number(parsed):
+        return None
+    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+
+
+def validate_phone(raw: str, default_region: str | None, field: str = "phone_number") -> str:
+    """Parse, validate, and return E.164. Raises ValidationException on invalid.
+
+    Pass default_region="US" so bare digit-only numbers are read as US numbers;
+    pass None to require an explicit country code (e.g. public-facing forms).
+    """
+    canonical = _parse_phone(raw, default_region)
+    if canonical is None:
+        raise_validation(Code.Phone.INVALID, field=field)
+    return canonical
+
+
 def normalize_phone_number(raw: str) -> str:
     """Best-effort canonicalize to E.164; returns the input unchanged if unparseable.
 
-    Mirrors the format step in community._shared._validate_phone / users._helpers._validate_phone,
-    minus the validation-exception raising — save() must not hard-fail on legacy bad data.
+    Used by save() — must not hard-fail on legacy bad data, unlike validate_phone().
     """
-    try:
-        parsed = phonenumbers.parse(raw, "US")
-    except phonenumbers.phonenumberutil.NumberParseException:
-        return raw
-    if not phonenumbers.is_valid_number(parsed):
-        return raw
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+    return _parse_phone(raw, "US") or raw
 
 
 class WeekStart:

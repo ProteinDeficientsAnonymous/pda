@@ -2,7 +2,6 @@ import logging
 import re
 from urllib.parse import urlparse
 
-import phonenumbers
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from ninja.security import HttpBearer
@@ -71,16 +70,6 @@ def validate_display_name(name: str, field: str = "display_name") -> None:
         raise_validation(Code.DisplayName.INVALID_CHARS, field=field)
     if all(c in " '-." for c in stripped):
         raise_validation(Code.DisplayName.NEEDS_A_LETTER, field=field)
-
-
-def _validate_phone(raw: str, field: str = "phone_number") -> str:
-    try:
-        parsed = phonenumbers.parse(raw, None)
-    except phonenumbers.phonenumberutil.NumberParseException:
-        raise_validation(Code.Phone.INVALID, field=field)
-    if not phonenumbers.is_valid_number(parsed):
-        raise_validation(Code.Phone.INVALID, field=field)
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
 def render_template_placeholders(body: str, placeholders: dict[str, str]) -> str:

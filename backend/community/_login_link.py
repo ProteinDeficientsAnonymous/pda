@@ -14,10 +14,10 @@ from notifications.email_sender import get_email_sender
 from notifications.service import create_magic_link_request_notifications
 from pydantic import BaseModel, Field
 from users._helpers import _create_magic_token
-from users.models import MagicLoginToken, MagicLoginTokenSource, User
+from users.models import MagicLoginToken, MagicLoginTokenSource, User, validate_phone
 
 from community._field_limits import FieldLimit
-from community._shared import ErrorOut, _validate_phone, logger  # noqa: F401
+from community._shared import ErrorOut, logger  # noqa: F401
 from community._validation import ValidationException
 
 router = Router()
@@ -75,7 +75,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
     If a User exists, generates a magic link token and notifies admins.
     """
     try:
-        normalized = _validate_phone(payload.phone_number)
+        normalized = validate_phone(payload.phone_number, None)
     except ValidationException:
         audit_log(
             logging.INFO,
