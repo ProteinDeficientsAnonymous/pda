@@ -247,20 +247,8 @@ class TestPublicRsvpEventGating:
         event = make_official_event(visibility=PageVisibility.INVITE_ONLY)
         assert post(api_client, event).status_code == 404
 
-    def test_rsvp_disabled(self, api_client, fake_email_sender):
-        event = make_official_event(rsvp_enabled=False)
-        assert post(api_client, event).status_code == 404
-
     def test_draft(self, api_client, fake_email_sender):
         event = make_official_event(status=EventStatus.DRAFT)
-        assert post(api_client, event).status_code == 404
-
-    def test_cancelled(self, api_client, fake_email_sender):
-        event = make_official_event(status=EventStatus.CANCELLED)
-        assert post(api_client, event).status_code == 404
-
-    def test_past(self, api_client, fake_email_sender):
-        event = make_official_event(start_datetime=past_iso(days=2), end_datetime=past_iso(days=2))
         assert post(api_client, event).status_code == 404
 
     def test_nonexistent(self, api_client, fake_email_sender):
@@ -277,6 +265,44 @@ class TestPublicRsvpEventGating:
         event = make_official_event(event_type=EventType.COMMUNITY)
         response = post(api_client, event)
         assert first_code(response) == Code.Event.NOT_FOUND
+
+
+@pytest.mark.django_db
+class TestPublicRsvpClosedStateParity:
+    """A publicly-visible event that's merely closed for RSVPs must 400 with the
+    same reason code as the member path — not 404 (Issue 973)."""
+
+    def test_rsvp_disabled_returns_400_matching_member_code(self, api_client, fake_email_sender):
+        event = make_official_event(rsvp_enabled=False)
+        response = post(api_client, event)
+        assert response.status_code == 400
+        assert first_code(response) == Code.Event.RSVPS_NOT_ENABLED
+
+    def test_cancelled_returns_400_matching_member_code(self, api_client, fake_email_sender):
+        event = make_official_event(status=EventStatus.CANCELLED)
+        response = post(api_client, event)
+        assert response.status_code == 400
+        assert first_code(response) == Code.Event.RSVPS_CLOSED_CANCELLED
+
+    def test_past_returns_400_matching_member_code(self, api_client, fake_email_sender):
+        event = make_official_event(start_datetime=past_iso(days=2), end_datetime=past_iso(days=2))
+        response = post(api_client, event)
+        assert response.status_code == 400
+        assert first_code(response) == Code.Event.RSVPS_CLOSED_PAST
+
+    def test_missing_private_and_non_official_events_still_404(self, api_client, fake_email_sender):
+        import uuid
+
+        missing = api_client.post(
+            URL_TEMPLATE.format(event_id=uuid.uuid4()), payload(), content_type="application/json"
+        )
+        members_only = post(api_client, make_official_event(visibility=PageVisibility.MEMBERS_ONLY))
+        invite_only = post(api_client, make_official_event(visibility=PageVisibility.INVITE_ONLY))
+        community = post(api_client, make_official_event(event_type=EventType.COMMUNITY))
+
+        for response in (missing, members_only, invite_only, community):
+            assert response.status_code == 404
+            assert first_code(response) == Code.Event.NOT_FOUND
 
 
 @pytest.mark.django_db

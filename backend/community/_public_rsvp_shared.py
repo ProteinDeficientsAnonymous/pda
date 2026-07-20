@@ -29,10 +29,17 @@ class PublicRsvpOut(BaseModel):
 
 
 def _load_public_rsvp_event(event_id) -> Event:
-    """Fetch a public-RSVP-eligible event, else 404 (every ineligible state hides as NOT_FOUND)."""
+    """Fetch a public-RSVP event: 404 if it can't be seen at all, else 400 with the
+    specific reason if it's visible but closed — mirrors _validate_rsvp_access."""
     event = Event.objects.prefetch_related("co_hosts", "invited_users").filter(id=event_id).first()
-    if event is None or not event.is_public_rsvp_eligible:
+    if event is None or not event.is_public_rsvp_visible:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if not event.rsvp_enabled:
+        raise_validation(Code.Event.RSVPS_NOT_ENABLED, status_code=400)
+    if event.is_cancelled:
+        raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
+    if event.is_past:
+        raise_validation(Code.Event.RSVPS_CLOSED_PAST, status_code=400)
     return event
 
 

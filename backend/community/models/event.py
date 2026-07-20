@@ -127,12 +127,25 @@ class Event(models.Model):
         ordering = ["start_datetime"]
 
     @property
+    def is_public_rsvp_visible(self) -> bool:
+        """Event exists in a state a public visitor may even know about (Issue 973).
+
+        Split out of is_public_rsvp_eligible so callers can 404 on "can't see this
+        event" while still 400-ing with a specific reason when it's visible but closed
+        (cancelled / past / rsvp-disabled) — matching the member-side RSVP error codes.
+        """
+        return (
+            self.event_type == EventType.OFFICIAL
+            and self.visibility == PageVisibility.PUBLIC
+            and self.status not in (EventStatus.DRAFT, EventStatus.DELETED)
+        )
+
+    @property
     def is_public_rsvp_eligible(self) -> bool:
         """Object-level mirror of public_rsvp_eligible_q()."""
         return (
-            self.event_type == EventType.OFFICIAL
+            self.is_public_rsvp_visible
             and self.status == EventStatus.ACTIVE
-            and self.visibility == PageVisibility.PUBLIC
             and self.rsvp_enabled
             and not self.is_past
         )
