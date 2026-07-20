@@ -138,6 +138,20 @@ def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
     return rows
 
 
+def _next_promotable_waitlist_rsvp(event: Event, headcount: int) -> EventRSVP | None:
+    """Return the oldest waitlisted RSVP that still fits under max_attendees, if any."""
+    oldest = (
+        EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED)
+        .order_by("created_at")
+        .first()
+    )
+    if not oldest:
+        return None
+    if headcount + (2 if oldest.has_plus_one else 1) > event.max_attendees:
+        return None
+    return oldest
+
+
 def promote_from_waitlist(event: Event) -> list[str]:
     """Promote oldest waitlisted users to attending (FIFO by created_at).
 
@@ -152,12 +166,8 @@ def promote_from_waitlist(event: Event) -> list[str]:
         headcount = _attending_headcount_db(event)
         if headcount >= event.max_attendees:
             break
-        oldest = (
-            EventRSVP.objects.filter(event=event, status=RSVPStatus.WAITLISTED)
-            .order_by("created_at")
-            .first()
-        )
-        if not oldest:
+        oldest = _next_promotable_waitlist_rsvp(event, headcount)
+        if oldest is None:
             break
         oldest.status = RSVPStatus.ATTENDING
         oldest.save(update_fields=["status", "updated_at"])
