@@ -159,6 +159,8 @@ def promote_from_waitlist(event: Event) -> list[str]:
         )
         if not oldest:
             break
+        if headcount + (2 if oldest.has_plus_one else 1) > event.max_attendees:
+            break
         oldest.status = RSVPStatus.ATTENDING
         oldest.save(update_fields=["status", "updated_at"])
         promoted_user_ids.append(str(oldest.user_id))

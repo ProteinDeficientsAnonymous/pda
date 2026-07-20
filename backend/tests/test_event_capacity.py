@@ -4,6 +4,7 @@ import json
 from datetime import timedelta
 
 import pytest
+from community._event_helpers import promote_from_waitlist
 from community._validation import Code
 from community.models import Event, EventRSVP, RSVPStatus
 from django.utils import timezone
@@ -265,6 +266,33 @@ class TestWaitlistPromotion:
         # Delete one — no waitlisted to promote, should not crash
         resp = api_client.delete(f"/api/community/events/{capped_event.id}/rsvp/", **headers1)
         assert resp.status_code == 204
+
+    def test_waitlisted_plus_one_not_promoted_into_single_seat(self, test_user, user2):
+        """A WAITLISTED +1 row, unreachable via the API but forced here, must not overfill."""
+        event = Event.objects.create(
+            title="Single Seat Event",
+            start_datetime=future_iso(days=30),
+            rsvp_enabled=True,
+            max_attendees=1,
+            allow_plus_ones=True,
+            created_by=test_user,
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=user2,
+            status=RSVPStatus.WAITLISTED,
+            has_plus_one=True,
+        )
+
+        promote_from_waitlist(event)
+
+        headcount = sum(
+            1 + (1 if r.has_plus_one else 0)
+            for r in EventRSVP.objects.filter(event=event, status=RSVPStatus.ATTENDING)
+        )
+        assert headcount <= event.max_attendees
+        rsvp2 = EventRSVP.objects.get(event=event, user=user2)
+        assert rsvp2.status == RSVPStatus.WAITLISTED
 
 
 # ---------------------------------------------------------------------------
