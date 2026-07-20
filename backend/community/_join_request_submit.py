@@ -13,7 +13,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import create_join_request_notifications
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from users.models import User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, User, validate_phone
 
 from community._field_limits import FieldLimit
 from community._join_requests import JoinRequestOut, _join_request_out
@@ -223,7 +223,7 @@ def submit_join_request(request, payload: JoinRequestIn):
     validate_display_name(first_name, field="first_name")
     if last_name:
         validate_display_name(last_name, field="last_name")
-    validated_phone = validate_phone(payload.phone_number, None)
+    validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     matched_user, email_claimed = _resolve_submission_user(validated_phone, normalized_email)
 
@@ -275,7 +275,7 @@ def submit_join_request(request, payload: JoinRequestIn):
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_phone(request, payload: CheckPhoneIn):
     try:
-        normalized = validate_phone(payload.phone_number, None)
+        normalized = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
         return Status(200, CheckPhoneOut(status=CheckPhoneStatus.UNKNOWN))
     if User.objects.filter(

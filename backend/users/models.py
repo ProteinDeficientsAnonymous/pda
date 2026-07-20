@@ -13,6 +13,12 @@ from django.utils import timezone
 
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
 
+# Fallback region phonenumbers uses ONLY when raw has no explicit "+countrycode" —
+# a number with an explicit country code is read correctly regardless of this default,
+# so this never restricts which countries are accepted, just how bare digits are read.
+ADMIN_ENTERED_PHONE_REGION = "US"  # bare digits assumed US (admin-created/edited members)
+PUBLIC_FORM_PHONE_REGION = None  # bare digits rejected; visitor must include country code
+
 
 def _parse_phone(raw: str, default_region: str | None) -> str | None:
     try:
@@ -27,8 +33,8 @@ def _parse_phone(raw: str, default_region: str | None) -> str | None:
 def validate_phone(raw: str, default_region: str | None, field: str = "phone_number") -> str:
     """Parse, validate, and return E.164. Raises ValidationException on invalid.
 
-    Pass default_region="US" so bare digit-only numbers are read as US numbers;
-    pass None to require an explicit country code (e.g. public-facing forms).
+    default_region is only a fallback for bare digit-only input — pass
+    ADMIN_ENTERED_PHONE_REGION or PUBLIC_FORM_PHONE_REGION from this module.
     """
     canonical = _parse_phone(raw, default_region)
     if canonical is None:
@@ -41,7 +47,7 @@ def normalize_phone_number(raw: str) -> str:
 
     Used by save() — must not hard-fail on legacy bad data, unlike validate_phone().
     """
-    return _parse_phone(raw, "US") or raw
+    return _parse_phone(raw, ADMIN_ENTERED_PHONE_REGION) or raw
 
 
 class WeekStart:

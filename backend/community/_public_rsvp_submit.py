@@ -10,7 +10,7 @@ from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import NonMemberRsvpToken, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
 
 from community._event_helpers import _event_out, broadcast_capacity_change
 from community._event_rsvps import (
@@ -198,7 +198,7 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     """Resolve a phone number's state for this event, before the full rsvp form is shown."""
     event = _load_public_rsvp_event(event_id)
     try:
-        phone = validate_phone(payload.phone_number, None)
+        phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
 
@@ -246,7 +246,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     validate_display_name(first_name, field="first_name")
     if last_name:
         validate_display_name(last_name, field="last_name")
-    validated_phone = validate_phone(payload.phone_number, None)
+    validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     normalized_email = payload.email.strip().lower()
     _validate_rsvp_status(payload.status)
 

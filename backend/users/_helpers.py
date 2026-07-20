@@ -10,7 +10,13 @@ from typing import Protocol
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 
-from users.models import MagicLoginToken, MagicLoginTokenSource, User, validate_phone
+from users.models import (
+    ADMIN_ENTERED_PHONE_REGION,
+    MagicLoginToken,
+    MagicLoginTokenSource,
+    User,
+    validate_phone,
+)
 from users.roles import Role
 
 
@@ -198,7 +204,7 @@ def _create_user_with_role(  # noqa: PLR0913
     captured consent — otherwise it defaults to None (e.g. admin-created users
     who have no prior consent record).
     """
-    validated_phone = validate_phone(phone, "US")
+    validated_phone = validate_phone(phone, ADMIN_ENTERED_PHONE_REGION)
     if User.objects.filter(phone_number=validated_phone).exists():
         raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
     normalized_email = _normalize_email(email)

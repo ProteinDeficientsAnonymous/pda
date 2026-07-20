@@ -8,7 +8,7 @@ from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, EmailStr, Field
-from users.models import NonMemberRsvpToken, User, validate_phone
+from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
 
 from community._field_limits import FieldLimit
 from community._shared import ErrorOut
@@ -109,7 +109,7 @@ def resend_manage_link(request, payload: ResendManageLinkIn):
         return _neutral()
 
     try:
-        validated_phone = validate_phone(payload.phone_number, None)
+        validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
         return _neutral()
     normalized_email = payload.email.strip().lower()
