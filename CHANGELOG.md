@@ -1,3 +1,10 @@
+## [0.49.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.2...v0.49.3) (2026-07-20)
+
+
+### Bug Fixes
+
+* **rsvp:** guard waitlist promotion against +1 overfill ([#989](https://github.com/ProteinDeficientsAnonymous/pda/issues/989)) ([3530ad9](https://github.com/ProteinDeficientsAnonymous/pda/commit/3530ad9ec68014bdc82283ee36eaf4c47f4f10dd))
+
 ## [0.49.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.1...v0.49.2) (2026-07-20)
 
 
