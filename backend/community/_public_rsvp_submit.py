@@ -82,8 +82,8 @@ def _backfill_email(phone_match: User, email: str) -> User:
 def _create_non_member(first_name: str, last_name: str, email: str, phone: str) -> User:
     """Get-or-create the non-member User keyed on the unique phone number.
 
-    On a unique-email collision the email is dropped inside a savepoint so the
-    outer transaction and the RSVP survive; the row is just saved without it.
+    A unique-email collision (e.g. an archived user still holding that email)
+    raises email.already_exists rather than silently dropping the email.
     """
     defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
@@ -92,7 +92,7 @@ def _create_non_member(first_name: str, last_name: str, email: str, phone: str) 
                 phone_number=phone, defaults={**defaults, "email": email or None}
             )
     except IntegrityError:
-        user, created = User.objects.get_or_create(phone_number=phone, defaults=defaults)
+        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
     if created:
         user.set_unusable_password()
         user.save(update_fields=["password"])
