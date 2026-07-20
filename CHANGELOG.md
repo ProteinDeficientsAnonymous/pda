@@ -1,3 +1,10 @@
+# [0.50.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.5...v0.50.0) (2026-07-20)
+
+
+### Features
+
+* **seed:** add password-reset member to staging seed ([#993](https://github.com/ProteinDeficientsAnonymous/pda/issues/993)) ([33ce72a](https://github.com/ProteinDeficientsAnonymous/pda/commit/33ce72a7f91f1be642924677c4dc519ef7a4ac06))
+
 ## [0.49.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.4...v0.49.5) (2026-07-20)
 
 
