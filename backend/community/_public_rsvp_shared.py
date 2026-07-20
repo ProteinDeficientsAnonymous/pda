@@ -1,4 +1,5 @@
 import logging
+from dataclasses import replace
 
 from config.audit import audit_log
 from django.conf import settings
@@ -80,7 +81,14 @@ def _log_email_failure(request, event: Event, user: User, exc: Exception) -> Non
 
 
 def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[str]) -> None:
-    """Email any promoted non-members their manage link. Best-effort per user."""
+    """Email any promoted non-members their manage link. Best-effort per user.
+
+    By the time a spot frees up, the event may have dropped out of public-RSVP
+    eligibility since the non-member first waitlisted. Strip the member-only
+    location/links in that case, matching what _event_out/get_event/my-rsvps
+    already hide from them — the promotion itself is still worth telling them
+    about.
+    """
     if not promoted_user_ids:
         return
     promoted = User.objects.filter(id__in=promoted_user_ids, is_member=False, email__isnull=False)
@@ -89,9 +97,12 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
             continue
         try:
             token = NonMemberRsvpToken.issue_or_extend(user)
+            details = _email_details(event, user, token.token)
+            if not event.is_public_rsvp_eligible:
+                details = replace(details, event_location="", event_links=[])
             result = send_rsvp_waitlist_promoted_email(
                 sender=get_email_sender(),
-                details=_email_details(event, user, token.token),
+                details=details,
             )
             if not result.success:
                 raise RuntimeError(result.error or "send returned failure")
