@@ -1,3 +1,10 @@
+## [0.49.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.3...v0.49.4) (2026-07-20)
+
+
+### Bug Fixes
+
+* **events:** show "nothing here" on 404 event, not a refresh prompt (Issue 978) ([#984](https://github.com/ProteinDeficientsAnonymous/pda/issues/984)) ([8f26f2d](https://github.com/ProteinDeficientsAnonymous/pda/commit/8f26f2d2dbbcc63397a9d3015693c7acdb14c9d4))
+
 ## [0.49.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.2...v0.49.3) (2026-07-20)
 
 
