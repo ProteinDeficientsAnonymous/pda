@@ -2,6 +2,7 @@ import secrets
 import uuid
 from datetime import timedelta
 
+import phonenumbers
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -10,6 +11,21 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
+
+
+def normalize_phone_number(raw: str) -> str:
+    """Best-effort canonicalize to E.164; returns the input unchanged if unparseable.
+
+    Mirrors the format step in community._shared._validate_phone / users._helpers._validate_phone,
+    minus the validation-exception raising — save() must not hard-fail on legacy bad data.
+    """
+    try:
+        parsed = phonenumbers.parse(raw, "US")
+    except phonenumbers.phonenumberutil.NumberParseException:
+        return raw
+    if not phonenumbers.is_valid_number(parsed):
+        return raw
+    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
 
 
 class WeekStart:
@@ -146,6 +162,11 @@ class User(AbstractUser):
         if not self.show_phone or not self.show_email:
             return False
         return self.contact_privacy_consent_at is None
+
+    def save(self, *args, **kwargs):
+        if self.phone_number:
+            self.phone_number = normalize_phone_number(self.phone_number)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.full_name or self.phone_number

@@ -64,6 +64,14 @@ class TestUserModel:
         with pytest.raises(ValueError, match="Phone number is required"):
             User.objects.create_user(phone_number="", password="testpass123")
 
+    def test_save_normalizes_non_canonical_phone_number(self):
+        user = User.objects.create_user(
+            phone_number="(415) 555-0199", password="testpass123", first_name="A"
+        )
+        assert user.phone_number == "+14155550199"
+        user.refresh_from_db()
+        assert user.phone_number == "+14155550199"
+
 
 @pytest.mark.django_db
 class TestUserEmailField:
