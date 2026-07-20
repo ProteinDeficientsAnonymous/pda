@@ -1,3 +1,10 @@
+## [0.49.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.4...v0.49.5) (2026-07-20)
+
+
+### Bug Fixes
+
+* **rsvp:** reject duplicate email on public rsvp instead of dropping it ([#992](https://github.com/ProteinDeficientsAnonymous/pda/issues/992)) ([2965312](https://github.com/ProteinDeficientsAnonymous/pda/commit/2965312d2bfdd1a751bbe5be793ed3a0ef5f2417))
+
 ## [0.49.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.3...v0.49.4) (2026-07-20)
 
 
