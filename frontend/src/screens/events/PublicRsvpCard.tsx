@@ -11,6 +11,8 @@ import { type Event, type RsvpInputStatus, RsvpServerStatus } from '@/models/eve
 import { formatEventDateTime } from '@/utils/datetime';
 import { buildEventLinks } from '@/utils/eventLinks';
 
+import { RsvpCommentField } from './RsvpCommentField';
+
 const UPDATED_TOAST = 'rsvp updated — check your email for an updated link';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -39,15 +41,21 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
   const update = useUpdatePublicMyRsvp(token);
   const cancel = useCancelPublicMyRsvp(token);
   const [error, setError] = useState<string | null>(null);
+  const [comment, setComment] = useState('');
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
   // the backend discards a waitlisted +1; every other status can carry one.
   const canPlusOne = event.allowPlusOnes && status !== RsvpServerStatus.Waitlisted;
 
-  async function applyRsvp(next: RsvpInputStatus, plusOne: boolean) {
+  async function applyRsvp(next: RsvpInputStatus, plusOne: boolean, rsvpComment?: string) {
     setError(null);
     try {
-      await update.mutateAsync({ eventId: event.id, status: next, hasPlusOne: plusOne });
+      await update.mutateAsync({
+        eventId: event.id,
+        status: next,
+        hasPlusOne: plusOne,
+        ...(rsvpComment !== undefined ? { comment: rsvpComment } : {}),
+      });
       toast.success(UPDATED_TOAST);
     } catch (err) {
       setError(errorMessage(err));
@@ -61,6 +69,13 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
 
   function togglePlusOne(next: boolean) {
     void applyRsvp(status as RsvpInputStatus, next);
+  }
+
+  function saveComment() {
+    const trimmed = comment.trim();
+    if (!trimmed) return;
+    void applyRsvp(status as RsvpInputStatus, hasPlusOne, trimmed);
+    setComment('');
   }
 
   async function cancelRsvp() {
@@ -120,6 +135,11 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
             disabled={busy}
           />
         ) : null}
+
+        <RsvpCommentField value={comment} onChange={setComment} disabled={busy} />
+        <Button variant="ghost" onClick={saveComment} disabled={busy || !comment.trim()}>
+          save comment
+        </Button>
 
         <Button variant="ghost" onClick={() => void cancelRsvp()} disabled={busy}>
           cancel rsvp

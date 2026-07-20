@@ -88,6 +88,7 @@ interface UpdateArgs {
   eventId: string;
   status: RsvpInputStatus;
   hasPlusOne: boolean;
+  comment?: string;
 }
 
 function useManageInvalidate(token: string) {
@@ -99,8 +100,12 @@ function useManageInvalidate(token: string) {
 
 export function useUpdatePublicMyRsvp(token: string) {
   return useMutation({
-    mutationFn: async ({ eventId, status, hasPlusOne }: UpdateArgs) => {
-      const body: PublicRsvpManageIn = { status, has_plus_one: hasPlusOne };
+    mutationFn: async ({ eventId, status, hasPlusOne, comment }: UpdateArgs) => {
+      const body: PublicRsvpManageIn = {
+        status,
+        has_plus_one: hasPlusOne,
+        comment: comment ?? null,
+      };
       const { data } = await apiClient.post<PublicRsvpOut>(`${MANAGE_BASE}${eventId}/`, body, {
         params: { token },
       });

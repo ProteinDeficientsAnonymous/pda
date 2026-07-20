@@ -19,6 +19,7 @@ import {
 import { optionalEmail } from '@/utils/validators';
 
 import { type AlreadyRsvpdResult, PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
+import { RsvpCommentField } from './RsvpCommentField';
 
 const MAX_NAME = 100;
 const PUBLIC_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatus.Maybe];
@@ -64,6 +65,7 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(false);
+  const [comment, setComment] = useState('');
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<SubmitError | null>(null);
@@ -92,6 +94,7 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
           phone_number: phone.trim(),
           status,
           has_plus_one: hasPlusOne,
+          comment: comment.trim() || null,
           website,
         },
       });
@@ -205,6 +208,8 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
           </div>
         ) : null}
 
+        <RsvpCommentField value={comment} onChange={setComment} disabled={submit.isPending} />
+
         <Button type="submit" disabled={submit.isPending} fullWidth>
           rsvp
         </Button>
@@ -232,7 +237,7 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
 
   return (
     <section aria-label="rsvp" className="border-border bg-surface mt-8 rounded-lg border p-6">
-      <h2 className="mb-2 text-base font-medium">rsvp</h2>
+      <h2 className="mb-4 text-base font-medium">rsvp</h2>
       <p className="text-foreground-tertiary mb-4 text-sm">
         rsvp to see the location and more details
       </p>

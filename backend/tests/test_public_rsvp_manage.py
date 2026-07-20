@@ -250,3 +250,94 @@ class TestDeleteMyRsvps:
     def test_delete_bad_token_404(self, api_client, official_event):
         resp = api_client.delete(f"{_post_url(official_event)}?token=nope")
         assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+class TestPublicRsvpManageComment:
+    """Verify that update_my_rsvp now honours the optional comment field."""
+
+    def _setup(self, nonmember, official_event, status=RSVPStatus.ATTENDING):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=status)
+        return NonMemberRsvpToken.issue_or_extend(nonmember)
+
+    def _post(self, api_client, event, token, **body):
+        return api_client.post(
+            f"{_post_url(event)}?token={token.token}",
+            body,
+            content_type="application/json",
+        )
+
+    def test_going_comment_creates_event_comment(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        from community.models import EventComment
+
+        token = self._setup(nonmember, official_event)
+        resp = self._post(
+            api_client,
+            official_event,
+            token,
+            status=RSVPStatus.ATTENDING,
+            comment="bringing snacks",
+        )
+        assert resp.status_code == 200
+        comments = EventComment.objects.filter(event=official_event, author=nonmember)
+        assert comments.count() == 1
+        assert comments.first().body == "bringing snacks"
+
+    def test_cant_go_comment_sends_decline_notification(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        from unittest.mock import patch
+
+        from community.models import EventComment
+
+        token = self._setup(nonmember, official_event, status=RSVPStatus.ATTENDING)
+        with patch("community._event_rsvps.notify_rsvp_declined_note") as mock_notify:
+            resp = self._post(
+                api_client,
+                official_event,
+                token,
+                status=RSVPStatus.CANT_GO,
+                comment="out of town",
+            )
+        assert resp.status_code == 200
+        assert not EventComment.objects.filter(event=official_event, author=nonmember).exists()
+        mock_notify.assert_called_once()
+        call_kwargs = mock_notify.call_args.kwargs
+        assert call_kwargs["note"] == "out of town"
+
+    def test_empty_comment_creates_nothing(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        from community.models import EventComment
+
+        token = self._setup(nonmember, official_event)
+        resp = self._post(
+            api_client, official_event, token, status=RSVPStatus.ATTENDING, comment="   "
+        )
+        assert resp.status_code == 200
+        assert not EventComment.objects.filter(event=official_event, author=nonmember).exists()
+
+    def test_no_comment_creates_nothing(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        from community.models import EventComment
+
+        token = self._setup(nonmember, official_event)
+        resp = self._post(api_client, official_event, token, status=RSVPStatus.ATTENDING)
+        assert resp.status_code == 200
+        assert not EventComment.objects.filter(event=official_event, author=nonmember).exists()
+
+    def test_oversized_comment_is_rejected(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        token = self._setup(nonmember, official_event)
+        resp = self._post(
+            api_client,
+            official_event,
+            token,
+            status=RSVPStatus.ATTENDING,
+            comment="x" * 301,
+        )
+        assert resp.status_code == 422

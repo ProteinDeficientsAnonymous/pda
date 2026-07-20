@@ -9,12 +9,17 @@ from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_updated_email
 from notifications.email_sender import get_email_sender
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from users.models import NonMemberRsvpToken, User
 
 from community._event_helpers import _event_out, promote_from_waitlist
-from community._event_rsvps import _apply_rsvp_in_transaction, _validate_rsvp_status
+from community._event_rsvps import (
+    _apply_rsvp_in_transaction,
+    _post_rsvp_comment,
+    _validate_rsvp_status,
+)
 from community._event_schemas import EventOut
+from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
     PublicRsvpOut,
     PublicRsvpStateOut,
@@ -51,6 +56,7 @@ class PublicRsvpManageOut(BaseModel):
 class PublicRsvpManageIn(BaseModel):
     status: str
     has_plus_one: bool = False
+    comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
 
 def _resolve_token_user(token: str) -> User:
@@ -147,6 +153,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         target_id=str(event.id),
         details={"user_id": str(user.pk), "status": final_status},
     )
+    _post_rsvp_comment(event.id, user, final_status, payload.comment)
     _send_updated_email(request, event, user, rsvp_token.token)
     _email_promoted_non_members(request, event, promoted_user_ids)
 

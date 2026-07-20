@@ -240,4 +240,58 @@ describe('PublicRsvpForm', () => {
     expect(hp).toHaveAttribute('name', 'website');
     expect(hp).toHaveAttribute('tabindex', '-1');
   });
+
+  it('renders the comment field in step two', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+
+    renderForm();
+
+    fillPhoneStep();
+
+    expect(await screen.findByLabelText('comment (optional)')).toBeInTheDocument();
+  });
+
+  it('includes a non-empty comment in the submitted payload', async () => {
+    const onSuccess = vi.fn();
+
+    renderForm(makeEvent(), onSuccess);
+
+    await fillRequired();
+
+    fireEvent.change(screen.getByLabelText('comment (optional)'), {
+      target: { value: 'bringing snacks' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+
+    expect(submitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          comment: 'bringing snacks',
+        }),
+      }),
+    );
+  });
+
+  it('omits comment from payload when the field is blank', async () => {
+    const onSuccess = vi.fn();
+
+    renderForm(makeEvent(), onSuccess);
+
+    await fillRequired();
+
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+
+    expect(submitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          comment: null,
+        }),
+      }),
+    );
+  });
 });
