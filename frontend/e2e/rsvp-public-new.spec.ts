@@ -8,7 +8,6 @@ test('new non-member rsvps via public event link', async ({ page }) => {
   await page.goto(`/events/${event_id}`);
   await expect(page.getByRole('heading', { name: event_title })).toBeVisible();
 
-  // member-gated location is hidden until the visitor rsvps and unlocks the event.
   await expect(page.getByText(event_location)).toBeHidden();
 
   const phone = '202555' + String(Math.floor(1000 + Math.random() * 9000));
@@ -25,6 +24,5 @@ test('new non-member rsvps via public event link', async ({ page }) => {
 
   await expect(page.getByLabel('rsvp').getByText("you're going")).toBeVisible();
 
-  // the rsvp unlocked the event: the previously-gated location is now visible.
   await expect(page.getByText(event_location)).toBeVisible();
 });

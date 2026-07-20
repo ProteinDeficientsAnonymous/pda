@@ -12,7 +12,6 @@ test('non-member views, updates, and cancels rsvp via my-rsvps manage link', asy
   await expect(card).toBeVisible();
   await expect(card.getByText("you're going")).toBeVisible();
 
-  // change the status through the manage card and confirm it sticks.
   await card.getByRole('button', { name: 'maybe' }).click();
   await expect(page.getByText('rsvp updated', { exact: false })).toBeVisible();
   await expect(card.getByText("you're a maybe")).toBeVisible();

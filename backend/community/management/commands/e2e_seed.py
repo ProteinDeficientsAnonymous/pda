@@ -31,7 +31,6 @@ def _random_event(scenario: str, **overrides) -> Event:
         "visibility": PageVisibility.PUBLIC,
         "status": EventStatus.ACTIVE,
         "rsvp_enabled": True,
-        # member-gated field: hidden from anon, revealed once a public rsvp unlocks the event.
         "location": f"secret loft {secrets.token_hex(3)}",
     }
     base.update(overrides)
