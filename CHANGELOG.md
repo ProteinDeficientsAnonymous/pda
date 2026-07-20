@@ -1,3 +1,10 @@
+# [0.51.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.50.0...v0.51.0) (2026-07-20)
+
+
+### Features
+
+* **events:** note when the 6-hour edit window has closed (Issue 959) ([#965](https://github.com/ProteinDeficientsAnonymous/pda/issues/965)) ([c388a0b](https://github.com/ProteinDeficientsAnonymous/pda/commit/c388a0b8308e4b8635300d2be2fb476565d038b0))
+
 # [0.50.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.49.5...v0.50.0) (2026-07-20)
 
 
