@@ -80,12 +80,12 @@ describe('RsvpSection — before RSVPing', () => {
     expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
   });
 
-  it('shows all three pills and no status line when I have not RSVP’d', () => {
+  it('shows going/maybe pills (no cant go) and no status line when I have not RSVP’d', () => {
     renderSection(makeEvent({ myRsvp: null }));
 
     expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: "can't go" })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "can't go" })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
   });
 

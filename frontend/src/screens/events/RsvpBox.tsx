@@ -21,6 +21,7 @@ interface Props {
   allowPlusOnes: boolean;
   allowComment?: boolean;
   busy?: boolean;
+  statuses?: RsvpInputStatus[];
   onConfirm: (args: ConfirmArgs) => void;
   onRemove?: (() => void) | undefined;
   onClose: () => void;
@@ -34,6 +35,7 @@ export function RsvpBox({
   allowPlusOnes,
   allowComment,
   busy = false,
+  statuses,
   onConfirm,
   onRemove,
   onClose,
@@ -55,7 +57,12 @@ export function RsvpBox({
   return (
     <Dialog open={open} onClose={onClose} title="rsvp">
       <div className="flex flex-col gap-4">
-        <RsvpStatusPicker value={status} onSelect={setStatus} disabled={busy} />
+        <RsvpStatusPicker
+          value={status}
+          onSelect={setStatus}
+          disabled={busy}
+          {...(statuses ? { statuses } : {})}
+        />
 
         {showPlusOne ? (
           <label className="flex items-center gap-2 text-sm">
