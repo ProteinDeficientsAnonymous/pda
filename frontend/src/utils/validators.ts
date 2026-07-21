@@ -1,6 +1,6 @@
 export const nameCharsRe = /^[\p{L}\p{M}' .-]+$/u;
 
-export function displayName(value: string | null | undefined): string | null {
+export function personName(value: string | null | undefined): string | null {
   if (!value || value.trim() === '') {
     return 'Required';
   }
@@ -13,7 +13,7 @@ export function displayName(value: string | null | undefined): string | null {
   return null;
 }
 
-export function optionalDisplayName(value: string | null | undefined): string | null {
+export function optionalPersonName(value: string | null | undefined): string | null {
   if (!value || value.trim() === '') {
     return null;
   }

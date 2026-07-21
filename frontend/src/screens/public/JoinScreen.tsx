@@ -13,7 +13,7 @@ import { PhoneField } from '@/components/ui/PhoneField';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
-import { displayName } from '@/utils/validators';
+import { personName } from '@/utils/validators';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
 
@@ -100,9 +100,9 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
 
   function validate(): boolean {
     const next: Record<string, string> = {};
-    const firstNameErr = displayName(firstName);
+    const firstNameErr = personName(firstName);
     if (firstNameErr) next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
-    const lastNameErr = displayName(lastName);
+    const lastNameErr = personName(lastName);
     if (lastNameErr) next.lastName = lastNameErr === 'Required' ? 'last name required' : lastNameErr;
     if (!phoneNumber.trim()) next.phoneNumber = 'phone required';
     if (!email.trim()) next.email = 'email required';

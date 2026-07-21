@@ -17,7 +17,7 @@ import {
   RsvpStatus,
   spotsLeft,
 } from '@/models/event';
-import { displayName, optionalDisplayName, optionalEmail } from '@/utils/validators';
+import { optionalEmail,optionalPersonName, personName } from '@/utils/validators';
 
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
@@ -72,9 +72,9 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
 
   function validate(): boolean {
     const next: Record<string, string> = {};
-    const firstNameErr = displayName(firstName);
+    const firstNameErr = personName(firstName);
     if (firstNameErr) next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
-    const lastNameErr = optionalDisplayName(lastName);
+    const lastNameErr = optionalPersonName(lastName);
     if (lastNameErr) next.lastName = lastNameErr;
     if (!email.trim()) next.email = 'email required';
     else if (optionalEmail(email)) next.email = 'not a valid email';

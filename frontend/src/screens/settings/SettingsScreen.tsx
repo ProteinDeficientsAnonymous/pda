@@ -10,7 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
-import { displayName, optionalDisplayName } from '@/utils/validators';
+import { optionalPersonName,personName } from '@/utils/validators';
 
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
@@ -43,14 +43,14 @@ export default function SettingsScreen() {
           value={user.firstName}
           onSave={(v) => updateProfile({ firstName: v })}
           required
-          validate={displayName}
+          validate={personName}
         />
         <InlineText
           label="last name"
           value={user.lastName}
           onSave={(v) => updateProfile({ lastName: v })}
           placeholder="add a last name"
-          validate={optionalDisplayName}
+          validate={optionalPersonName}
         />
         <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
         <InlineText
