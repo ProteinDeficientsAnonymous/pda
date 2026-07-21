@@ -1,3 +1,10 @@
+## [0.52.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.0...v0.52.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1034 - recoverable exits for public rsvp form dead-ends ([#1050](https://github.com/ProteinDeficientsAnonymous/pda/issues/1050)) ([18ae838](https://github.com/ProteinDeficientsAnonymous/pda/commit/18ae8380b41db0098294ad7aeac7253f81ea6488))
+
 # [0.52.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.14...v0.52.0) (2026-07-21)
 
 
