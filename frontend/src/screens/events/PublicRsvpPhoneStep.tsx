@@ -11,14 +11,10 @@ export interface PhoneStepResult {
   status: 'new';
 }
 
-export interface AlreadyRsvpdResult {
-  rsvpToken: string;
-}
-
 interface Props {
   onNew: (result: PhoneStepResult) => void;
   onMember: () => void;
-  onAlreadyRsvpd: (result: AlreadyRsvpdResult) => void;
+  onAlreadyRsvpd: () => void;
   onRecognized: () => void;
   eventId: string;
 }
@@ -48,7 +44,7 @@ export function PublicRsvpPhoneStep({
         return;
       }
       if (result.status === 'already_rsvpd') {
-        onAlreadyRsvpd({ rsvpToken: result.rsvp_token });
+        onAlreadyRsvpd();
         return;
       }
       if (result.status === 'recognized') {

@@ -208,13 +208,9 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     if user.is_member:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
     if event.rsvps.filter(user=user).exists():
-        token = NonMemberRsvpToken.issue_or_extend(user)
-        return Status(
-            200,
-            PublicRsvpPhoneCheckOut(
-                status=PublicRsvpPhoneStatus.ALREADY_RSVPD, rsvp_token=token.token
-            ),
-        )
+        if user.email:
+            _send_recognized_login_link(request, user)
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.ALREADY_RSVPD))
     if user.email and user.event_rsvps.exists():
         _send_recognized_login_link(request, user)
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.RECOGNIZED))

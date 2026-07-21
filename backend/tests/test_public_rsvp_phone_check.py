@@ -56,7 +56,9 @@ class TestPublicRsvpPhoneCheck:
         assert body["status"] == "new"
         assert body["rsvp_token"] == ""
 
-    def test_non_member_already_rsvpd_returns_token(self, api_client, official_event):
+    def test_non_member_already_rsvpd_returns_no_token(
+        self, api_client, official_event, fake_email_sender
+    ):
         guest = make_non_member("+14155550199", "guest@example.com")
         EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
 
@@ -65,8 +67,35 @@ class TestPublicRsvpPhoneCheck:
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "already_rsvpd"
-        assert body["rsvp_token"] != ""
-        assert NonMemberRsvpToken.resolve_user(body["rsvp_token"]) == guest
+        assert body["rsvp_token"] == ""
+
+    def test_already_rsvpd_sends_login_link_email(
+        self, api_client, official_event, fake_email_sender
+    ):
+        guest = make_non_member("+14155550199", "guest@example.com")
+        EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
+
+        post(api_client, official_event, phone_number="+14155550199")
+
+        fake_email_sender.send.assert_called_once()
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["to"] == "guest@example.com"
+        token = NonMemberRsvpToken.objects.get(user=guest)
+        assert token.token in sent["text"]
+
+    def test_already_rsvpd_without_email_sends_no_email_and_no_token(
+        self, api_client, official_event, fake_email_sender
+    ):
+        guest = make_non_member("+14155550199", "")
+        EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
+
+        response = post(api_client, official_event, phone_number="+14155550199")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["status"] == "already_rsvpd"
+        assert body["rsvp_token"] == ""
+        fake_email_sender.send.assert_not_called()
 
     def test_already_rsvpd_on_other_event_is_recognized_for_this_one(
         self, api_client, official_event, fake_email_sender

@@ -17,12 +17,7 @@ import { PublicRsvpForm } from './PublicRsvpForm';
 function renderForm(event: Event) {
   return render(
     <MemoryRouter>
-      <PublicRsvpForm
-        event={event}
-        onSuccess={vi.fn()}
-        onMember={vi.fn()}
-        onAlreadyRsvpd={vi.fn()}
-      />
+      <PublicRsvpForm event={event} onSuccess={vi.fn()} onMember={vi.fn()} />
     </MemoryRouter>,
   );
 }

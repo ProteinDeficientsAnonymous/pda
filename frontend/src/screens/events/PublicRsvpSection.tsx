@@ -31,9 +31,6 @@ export function PublicRsvpSection({ event }: Props) {
       onMember={() => {
         setIsMember(true);
       }}
-      onAlreadyRsvpd={(result) => {
-        unlockWithToken(result.rsvpToken);
-      }}
     />
   );
 }
