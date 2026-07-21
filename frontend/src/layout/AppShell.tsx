@@ -33,8 +33,12 @@ export function AppShell() {
       </header>
 
       {/* Pad the bottom so the fixed BottomNav (h-14 + iOS safe area) doesn't
-          cover the end of the scroll. Header already eats its own space. */}
-      <div className="flex-1 overflow-x-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
+          cover the end of the scroll. Header already eats its own space.
+          No overflow-x-hidden here: it makes this div a scroll container,
+          which hijacks position:sticky descendants (they anchor to this
+          non-scrolling box instead of the window). Wide content clamps
+          itself locally with overflow-x-auto instead (see #286). */}
+      <div className="flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
         <Outlet />
       </div>
 

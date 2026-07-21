@@ -10,7 +10,6 @@ import {
   eventToFormValues,
   extractEventError,
   useCreateEvent,
-  useDeleteEventPhoto,
   useUpdateEvent,
   useUploadEventPhoto,
 } from '@/api/eventWrites';
@@ -117,7 +116,6 @@ export function EventForm({ existing }: Props) {
   const create = useCreateEvent();
   const update = useUpdateEvent(existing?.id ?? '');
   const uploadPhoto = useUploadEventPhoto();
-  const deletePhoto = useDeleteEventPhoto(existing?.id ?? '');
   const { confirm, element: confirmElement } = useConfirm();
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
@@ -220,14 +218,6 @@ export function EventForm({ existing }: Props) {
     }
   }
 
-  async function onDeletePhoto() {
-    if (!existing) {
-      setPendingPhoto(null);
-      return;
-    }
-    await deletePhoto.mutateAsync();
-  }
-
   // Summary helpers — small labels shown on collapsed section headers so the
   // user sees what's already filled without expanding.
   const detailsFilled = values.description.trim().length > 0;
@@ -246,130 +236,142 @@ export function EventForm({ existing }: Props) {
         e.preventDefault();
         void submit('active');
       }}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8"
     >
-      <EventFormPhoto
-        photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
-        photoUpdatedAt={existing?.photoUpdatedAt ?? null}
-        onCrop={onCropPhoto}
-        onDelete={existing || pendingPhoto ? onDeletePhoto : undefined}
-        disabled={saving}
-      />
+      <div className="lg:sticky lg:top-20 lg:w-full lg:max-w-sm lg:flex-1 lg:self-start">
+        <EventFormPhoto
+          photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
+          photoUpdatedAt={existing?.photoUpdatedAt ?? null}
+          onCrop={onCropPhoto}
+          disabled={saving}
+        />
+      </div>
 
-      <EventFormBasics
-        values={values}
-        onChange={patch}
-        errors={errors}
-        canTagOfficial={canTagOfficial}
-        canTagClub={canTagClub}
-        timeLocked={!!existing?.hasPoll && !existing.startDatetime}
-        existingEventId={existing?.id}
-        existingHasPoll={!!existing?.hasPoll}
-        bufferedPollOptions={bufferedPollOptions}
-        onBufferPoll={setBufferedPollOptions}
-      />
-
-      <CollapsibleCard
-        title="hosts"
-        summary={
-          hostsCount > 0
-            ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
-            : undefined
-        }
-      >
-        {existing?.isPast ? (
-          <p className="text-foreground-tertiary text-sm">
-            this event is in the past — co-host invites are closed
-          </p>
-        ) : (
-          <MemberPicker
-            label="co-hosts"
-            selected={coHosts}
-            onChange={(next) => {
-              setCoHosts(next);
-              setCoHostsDirty(true);
-            }}
-            excludeIds={user ? [user.id] : []}
-            hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
-          />
-        )}
-      </CollapsibleCard>
-
-      <CollapsibleCard
-        title="details"
-        summary={detailsFilled ? 'filled in' : undefined}
-        error={hasAnyError(errors, DETAILS_FIELDS) ? 'needs attention' : undefined}
-        forceOpen={hasAnyError(errors, DETAILS_FIELDS)}
-      >
-        <EventFormDetails
+      <div className="flex w-full flex-col gap-4 lg:max-w-3xl lg:flex-1">
+        <EventFormBasics
           values={values}
           onChange={patch}
           errors={errors}
-          typeLocked={
-            values.eventType === EventType.Official || values.eventType === EventType.Club
-          }
+          canTagOfficial={canTagOfficial}
+          canTagClub={canTagClub}
+          timeLocked={!!existing?.hasPoll && !existing.startDatetime}
+          existingEventId={existing?.id}
+          existingHasPoll={!!existing?.hasPoll}
+          bufferedPollOptions={bufferedPollOptions}
+          onBufferPoll={setBufferedPollOptions}
         />
-      </CollapsibleCard>
 
-      <CollapsibleCard
-        title="tags"
-        summary={
-          values.tagIds.length > 0
-            ? `${String(values.tagIds.length)} tag${values.tagIds.length === 1 ? '' : 's'}`
-            : undefined
-        }
-      >
-        <EventFormTags values={values} onChange={patch} />
-      </CollapsibleCard>
-
-      <CollapsibleCard
-        title="rsvp"
-        summary={values.rsvpEnabled ? 'enabled' : undefined}
-        error={hasAnyError(errors, RSVP_FIELDS) ? 'needs attention' : undefined}
-        forceOpen={hasAnyError(errors, RSVP_FIELDS)}
-      >
-        <EventFormRsvp values={values} onChange={patch} errors={errors} />
-      </CollapsibleCard>
-
-      <CollapsibleCard
-        title="links"
-        summary={
-          linkCount > 0 ? `${String(linkCount)} link${linkCount === 1 ? '' : 's'}` : undefined
-        }
-        error={hasAnyError(errors, LINK_FIELDS) ? 'needs attention' : undefined}
-        forceOpen={hasAnyError(errors, LINK_FIELDS)}
-      >
-        <EventFormLinks values={values} onChange={patch} errors={errors} />
-      </CollapsibleCard>
-
-      <CollapsibleCard title="money" summary={moneyFilled ? 'added' : undefined}>
-        <EventFormMoney values={values} onChange={patch} errors={errors} />
-      </CollapsibleCard>
-
-      {serverError ? (
-        <p
-          role="alert"
-          className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        <CollapsibleCard
+          title="hosts"
+          summary={
+            hostsCount > 0
+              ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
+              : undefined
+          }
         >
-          {serverError}
-        </p>
-      ) : null}
+          {existing?.isPast ? (
+            <p className="text-foreground-tertiary text-sm">
+              this event is in the past — co-host invites are closed
+            </p>
+          ) : (
+            <MemberPicker
+              label="co-hosts"
+              selected={coHosts}
+              onChange={(next) => {
+                setCoHosts(next);
+                setCoHostsDirty(true);
+              }}
+              excludeIds={user ? [user.id] : []}
+              hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
+            />
+          )}
+        </CollapsibleCard>
 
-      <div className="border-border bg-background/95 fixed inset-x-0 bottom-0 z-50 flex flex-row gap-2 border-t px-4 py-3 backdrop-blur sm:static sm:z-auto sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:pt-2 sm:backdrop-blur-none">
-        {!existing || isDraft ? (
+        <CollapsibleCard
+          title="details"
+          summary={detailsFilled ? 'filled in' : undefined}
+          error={hasAnyError(errors, DETAILS_FIELDS) ? 'needs attention' : undefined}
+          forceOpen={hasAnyError(errors, DETAILS_FIELDS)}
+        >
+          <EventFormDetails
+            values={values}
+            onChange={patch}
+            errors={errors}
+            typeLocked={
+              values.eventType === EventType.Official || values.eventType === EventType.Club
+            }
+          />
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          title="tags"
+          summary={
+            values.tagIds.length > 0
+              ? `${String(values.tagIds.length)} tag${values.tagIds.length === 1 ? '' : 's'}`
+              : undefined
+          }
+        >
+          <EventFormTags values={values} onChange={patch} />
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          title="rsvp"
+          summary={values.rsvpEnabled ? 'enabled' : undefined}
+          error={hasAnyError(errors, RSVP_FIELDS) ? 'needs attention' : undefined}
+          forceOpen={hasAnyError(errors, RSVP_FIELDS)}
+        >
+          <EventFormRsvp values={values} onChange={patch} errors={errors} />
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          title="links"
+          summary={
+            linkCount > 0 ? `${String(linkCount)} link${linkCount === 1 ? '' : 's'}` : undefined
+          }
+          error={hasAnyError(errors, LINK_FIELDS) ? 'needs attention' : undefined}
+          forceOpen={hasAnyError(errors, LINK_FIELDS)}
+        >
+          <EventFormLinks values={values} onChange={patch} errors={errors} />
+        </CollapsibleCard>
+
+        <CollapsibleCard title="money" summary={moneyFilled ? 'added' : undefined}>
+          <EventFormMoney values={values} onChange={patch} errors={errors} />
+        </CollapsibleCard>
+
+        {serverError ? (
+          <p
+            role="alert"
+            className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+          >
+            {serverError}
+          </p>
+        ) : null}
+
+        <div className="border-border bg-background/95 fixed inset-x-0 bottom-0 z-50 flex flex-row gap-2 border-t px-4 py-3 backdrop-blur sm:static sm:z-auto sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:pt-2 sm:backdrop-blur-none">
           <Button
             variant="secondary"
-            onClick={() => void submit('draft')}
+            onClick={() => void navigate(-1)}
             disabled={saving}
             type="button"
             className="flex-1"
           >
-            save draft
+            cancel
           </Button>
-        ) : null}
-        <Button type="submit" disabled={saving} className="flex-1">
-          {saving ? 'saving…' : !existing || isDraft ? 'publish' : 'save'}
-        </Button>
+          {!existing || isDraft ? (
+            <Button
+              variant="secondary"
+              onClick={() => void submit('draft')}
+              disabled={saving}
+              type="button"
+              className="flex-1"
+            >
+              save
+            </Button>
+          ) : null}
+          <Button type="submit" disabled={saving} className="flex-1">
+            {saving ? 'saving…' : !existing || isDraft ? 'publish' : 'save'}
+          </Button>
+        </div>
       </div>
       {confirmElement}
     </form>

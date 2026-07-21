@@ -31,17 +31,14 @@ function makeFile() {
 }
 
 describe('ImageCropDialog accessibility', () => {
+  // The dialog portals to document.body, so scan the body, not the render root.
   it('round mode has no axe violations', async () => {
-    const { container } = render(
-      <ImageCropDialog file={makeFile()} shape="round" onCancel={vi.fn()} onCrop={vi.fn()} />,
-    );
-    expect(await axe(container)).toHaveNoViolations();
+    render(<ImageCropDialog file={makeFile()} shape="round" onCancel={vi.fn()} onCrop={vi.fn()} />);
+    expect(await axe(document.body)).toHaveNoViolations();
   });
 
   it('rect mode has no axe violations', async () => {
-    const { container } = render(
-      <ImageCropDialog file={makeFile()} shape="rect" onCancel={vi.fn()} onCrop={vi.fn()} />,
-    );
-    expect(await axe(container)).toHaveNoViolations();
+    render(<ImageCropDialog file={makeFile()} shape="rect" onCancel={vi.fn()} onCrop={vi.fn()} />);
+    expect(await axe(document.body)).toHaveNoViolations();
   });
 });
