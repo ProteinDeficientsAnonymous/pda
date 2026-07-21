@@ -85,7 +85,7 @@ export default function EventDetailScreen() {
       <EventTagChips tags={event.tags} className="mt-2" />
       <EventActions event={event} />
       {isAuthed ? <CohostInviteBanner event={event} /> : null}
-      <EventPollCard event={event} />
+      <EventPollCard event={event} className="mt-3" />
 
       {event.description ? (
         <section className="mt-6">
