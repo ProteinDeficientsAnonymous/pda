@@ -1,3 +1,10 @@
+# [0.52.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.14...v0.52.0) (2026-07-21)
+
+
+### Features
+
+* **rsvp:** wire up phone-only resend-manage-link ui (Issue 1031) ([#1038](https://github.com/ProteinDeficientsAnonymous/pda/issues/1038)) ([b0e7dcb](https://github.com/ProteinDeficientsAnonymous/pda/commit/b0e7dcbf8eae0495f6294f90399736398ce0bae4))
+
 ## [0.51.14](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.13...v0.51.14) (2026-07-21)
 
 
