@@ -47,8 +47,6 @@ class PublicRsvpIn(BaseModel):
 
 
 class PublicRsvpPhoneStatus(StrEnum):
-    """NEW lets the caller proceed to the rsvp form; EXISTING never reveals why."""
-
     EXISTING = "existing"
     NEW = "new"
 
@@ -194,12 +192,7 @@ def _send_recognized_login_link(request, user: User) -> None:
 )
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
-    """Resolve a phone number's state for this event, before the full rsvp form is shown.
-
-    Member / already-rsvpd / recognized-elsewhere all collapse into EXISTING so an
-    unauthenticated caller can't enumerate membership or attendance by phone number
-    alone — any manage link goes out over email (out-of-band), never inline here.
-    """
+    """Collapses member/already-rsvpd/recognized into EXISTING so an anonymous caller can't enumerate membership or attendance by phone number."""
     event = _load_public_rsvp_event(event_id)
     try:
         phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)

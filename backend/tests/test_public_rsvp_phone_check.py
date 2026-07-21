@@ -2,9 +2,7 @@
 
 POST /api/community/public/events/{event_id}/rsvp-phone-check/ — no auth. Lets
 the frontend ask "what should happen for this phone number" before showing the
-full rsvp form (Issue 881). Member / already-rsvpd / recognized-elsewhere all
-collapse into a single EXISTING status so the response never discloses account
-existence or attendance to an unauthenticated caller (Issue 1001).
+full rsvp form (Issue 881).
 """
 
 import pytest
@@ -159,7 +157,6 @@ class TestPublicRsvpPhoneCheck:
     def test_member_new_and_existing_responses_are_indistinguishable(
         self, api_client, official_event, test_user, fake_email_sender
     ):
-        """The whole point of Issue 1001: a caller can't tell member vs rsvp'd vs unknown apart."""
         guest = make_non_member("+14155550199", "guest@example.com")
         EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
 
