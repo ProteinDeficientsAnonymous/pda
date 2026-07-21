@@ -1,3 +1,10 @@
+## [0.52.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.8...v0.52.9) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** broadcast + invalidate on non-member rsvp comment (Issue 1047) ([#1061](https://github.com/ProteinDeficientsAnonymous/pda/issues/1061)) ([26e5faa](https://github.com/ProteinDeficientsAnonymous/pda/commit/26e5faa9f89092b01191217e1f51b1bf23dbce8c))
+
 ## [0.52.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.7...v0.52.8) (2026-07-21)
 
 
