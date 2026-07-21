@@ -117,6 +117,11 @@
         "params": []
       },
       {
+        "name": "RSVP_COULD_NOT_BE_CREATED",
+        "value": "event.rsvp_could_not_be_created",
+        "params": []
+      },
+      {
         "name": "ATTENDANCE_OPENS_LATER",
         "value": "event.attendance_opens_later",
         "params": []

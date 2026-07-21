@@ -1,5 +1,6 @@
 import logging
 from enum import StrEnum
+from typing import NoReturn
 
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
@@ -70,7 +71,18 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
     )
 
 
-def _backfill_email(phone_match: User, email: str) -> User:
+def _reject_email_collision(request, email: str) -> NoReturn:
+    """Generic rejection — a distinct code here would be an account-existence oracle (Issue 1001)."""
+    audit_log(
+        logging.WARNING,
+        "public_rsvp_email_collision",
+        request,
+        details={"email": email},
+    )
+    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
+
+
+def _backfill_email(request, phone_match: User, email: str) -> User:
     """Backfill the email only if blank — never overwrite an existing one."""
     if email and not phone_match.email:
         try:
@@ -78,16 +90,14 @@ def _backfill_email(phone_match: User, email: str) -> User:
                 phone_match.email = email
                 phone_match.save(update_fields=["email"])
         except IntegrityError:
-            raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+            _reject_email_collision(request, email)
     return phone_match
 
 
-def _create_non_member(first_name: str, last_name: str, email: str, phone: str) -> User:
-    """Get-or-create the non-member User keyed on the unique phone number.
-
-    A unique-email collision (e.g. an archived user still holding that email)
-    raises email.already_exists rather than silently dropping the email.
-    """
+def _create_non_member(
+    request, first_name: str, last_name: str, email: str, phone: str
+) -> tuple[User, bool]:
+    """Get-or-create the non-member User keyed on the unique phone number."""
     defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
         with transaction.atomic():
@@ -95,49 +105,35 @@ def _create_non_member(first_name: str, last_name: str, email: str, phone: str) 
                 phone_number=phone, defaults={**defaults, "email": email or None}
             )
     except IntegrityError:
-        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+        _reject_email_collision(request, email)
     if created:
         user.set_unusable_password()
         user.save(update_fields=["password"])
-    return user
-
-
-def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
-    # Same row → the phone and email belong to one user; reuse it.
-    if phone_match.pk == email_match.pk:
-        return phone_match
-    # Different rows: phone is canonical — reuse it and flag the ambiguity for admins.
-    audit_log(
-        logging.WARNING,
-        "public_rsvp_contact_ambiguous",
-        request,
-        target_type="user",
-        target_id=str(phone_match.pk),
-        details={"email_user_id": str(email_match.pk)},
-    )
-    return phone_match
+    return user, created
 
 
 def _resolve_non_member(
     *, request, first_name: str, last_name: str, email: str, phone: str
-) -> User:
-    """Resolve (or create) the non-member User backing this RSVP; member contact → 409.
+) -> tuple[User, bool]:
+    """Resolve (or create) the non-member User backing this RSVP.
 
-    Must run inside the surrounding transaction.
+    Identity is the phone alone; an email match only enforces uniqueness, never
+    grounds to adopt that row (Issue 1029). Must run inside the surrounding transaction.
+
+    return(tuple[User, bool]): the resolved user, and whether it was newly created.
     """
     phone_match = User.objects.filter(phone_number=phone).first()
     email_match = User.objects.filter(email__iexact=email).first() if email else None
 
-    if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
+    if phone_match and phone_match.is_member:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
-    if phone_match and email_match:
-        return _resolve_both_match(request, phone_match, email_match)
+    if email_match and email_match.pk != (phone_match.pk if phone_match else None):
+        _reject_email_collision(request, email)
+
     if phone_match:
-        return _backfill_email(phone_match, email)
-    if email_match:
-        return email_match
-    return _create_non_member(first_name, last_name, email, phone)
+        return _backfill_email(request, phone_match, email), False
+    return _create_non_member(request, first_name, last_name, email, phone)
 
 
 def _send_confirmation_email(
@@ -244,7 +240,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        user = _resolve_non_member(
+        user, created = _resolve_non_member(
             request=request,
             first_name=first_name,
             last_name=last_name,
@@ -278,11 +274,13 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     )
     broadcast_capacity_change(event.id)
     final_rsvp = user.event_rsvps.get(event=fresh_event)
+    # Withhold token for a pre-existing row; the confirmation email carries it instead.
+    returned_token = token.token if created else ""
     return Status(
         200,
         PublicRsvpOut(
             event=_event_out(fresh_event, user),
             rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
-            rsvp_token=token.token,
+            rsvp_token=returned_token,
         ),
     )

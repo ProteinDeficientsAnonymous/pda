@@ -96,6 +96,7 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event, email="new@example.com")
 
         assert response.status_code == 200
+        assert response.json()["rsvp_token"] == ""
         assert User.objects.filter(phone_number="+14155550123").count() == 1
         existing.refresh_from_db()
         # Email already set → never overwritten.
@@ -112,16 +113,15 @@ class TestPublicRsvpDedup:
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
 
-    def test_returning_by_email_reuses_row(self, api_client, official_event, fake_email_sender):
+    def test_email_match_alone_is_not_adopted(self, api_client, official_event, fake_email_sender):
         existing = make_non_member("+14155550999", "sam@example.com")
 
         response = post(api_client, official_event, phone_number="+14155550123")
 
-        assert response.status_code == 200
-        assert User.objects.filter(email="sam@example.com").count() == 1
-        # Phone already set → not overwritten; no new user for the new phone.
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not User.objects.filter(phone_number="+14155550123").exists()
-        assert EventRSVP.objects.filter(user=existing).count() == 1
+        assert not EventRSVP.objects.filter(user=existing).exists()
 
     def test_both_match_same_row_no_change(self, api_client, official_event, fake_email_sender):
         existing = make_non_member("+14155550123", "sam@example.com")
@@ -129,11 +129,12 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event)
 
         assert response.status_code == 200
+        assert response.json()["rsvp_token"] == ""
         assert User.objects.filter(is_member=False).count() == 1
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
 
-    def test_phone_and_email_match_different_rows_phone_wins(
+    def test_phone_and_email_match_different_rows_is_email_collision(
         self, api_client, official_event, fake_email_sender
     ):
         phone_row = make_non_member("+14155550123", "phone@example.com", name="Phone Row")
@@ -141,9 +142,9 @@ class TestPublicRsvpDedup:
 
         response = post(api_client, official_event)
 
-        assert response.status_code == 200
-        # Phone wins: RSVP attached to the phone-matched row, email untouched.
-        assert EventRSVP.objects.filter(user=phone_row).exists()
+        assert response.status_code == 409
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
+        assert not EventRSVP.objects.filter(user=phone_row).exists()
         assert not EventRSVP.objects.filter(user=email_row).exists()
         phone_row.refresh_from_db()
         assert phone_row.email == "phone@example.com"
@@ -200,14 +201,13 @@ class TestPublicRsvpMemberCollision:
         response = post(api_client, official_event)
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not EventRSVP.objects.exists()
 
-    def test_member_email_match_is_case_insensitive(
+    def test_member_email_match_alone_is_email_collision_not_signin_gate(
         self, api_client, official_event, fake_email_sender
     ):
-        # A member whose email is stored mixed-case must still trip the gate when
-        # the RSVP submits the same address in different case.
+        # Mixed-case stored email still collides case-insensitively.
         User.objects.create_user(
             phone_number="+14155550555",
             first_name="A",
@@ -219,7 +219,7 @@ class TestPublicRsvpMemberCollision:
         response = post(api_client, official_event, email="sam@example.com")
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not EventRSVP.objects.exists()
 
     def test_member_created_with_non_canonical_phone_still_trips_gate(

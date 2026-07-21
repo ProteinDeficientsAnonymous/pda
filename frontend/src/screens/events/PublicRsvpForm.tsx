@@ -2,8 +2,9 @@ import { type SyntheticEvent, useState } from 'react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
+import { extractApiErrorOr, getApiStatus, hasErrorCode } from '@/api/apiErrors';
 import { type PublicRsvpOut, useSubmitPublicRsvp } from '@/api/publicRsvp';
+import { Code } from '@/api/validationCodes.gen';
 import { Button } from '@/components/ui/Button';
 import { Honeypot } from '@/components/ui/Honeypot';
 import { PhoneField } from '@/components/ui/PhoneField';
@@ -35,6 +36,12 @@ interface SubmitError {
 }
 
 function messageForStatus(status: number | null, err: unknown): SubmitError {
+  if (hasErrorCode(err, Code.Event.RsvpCouldNotBeCreated)) {
+    return {
+      text: "we couldn't set up your rsvp with those details — reach out and we'll help",
+      showSignIn: false,
+    };
+  }
   if (status === 409) {
     return { text: 'looks like you already have an account — sign in to rsvp', showSignIn: true };
   }
