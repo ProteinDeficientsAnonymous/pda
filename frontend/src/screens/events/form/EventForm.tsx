@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 
 import { getErrorParams, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
-import { Code } from '@/api/validationCodes';
 import {
   emptyEventFormValues,
   type EventFormValues,
@@ -16,6 +15,7 @@ import {
   useUploadEventPhoto,
 } from '@/api/eventWrites';
 import type { MemberSearchResult } from '@/api/userSearch';
+import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
 import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
