@@ -1,8 +1,10 @@
 """Archived-member/non-member scenarios for the public RSVP flow."""
 
 import pytest
-from community._validation import Code
+from community._public_rsvp_submit import _backfill_email
+from community._validation import Code, ValidationException
 from community.models import EventRSVP
+from django.test import RequestFactory
 from django.utils import timezone
 from users.models import User
 
@@ -67,10 +69,6 @@ class TestArchivedMemberGate:
 @pytest.mark.django_db
 class TestBackfillEmailCollision:
     def test_concurrent_email_claim_is_handled_gracefully(self):
-        from community._public_rsvp_submit import _backfill_email
-        from community._validation import ValidationException
-        from django.test import RequestFactory
-
         phone_match = make_non_member("+14155550123", None)
         User.objects.create_user(
             phone_number="+14155550999", first_name="Other", email="sam@example.com"
