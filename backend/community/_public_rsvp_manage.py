@@ -178,6 +178,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 @rate_limit(key_func=client_ip, rate="30/h")
 def delete_my_rsvp(request, event_id, token: str = ""):
     user = _resolve_token_user(token)
+    promoted_user_ids: list[str] = []
     with transaction.atomic():
         event = (
             Event.objects.select_for_update()
@@ -193,7 +194,7 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:
-            promote_from_waitlist(event)
+            promoted_user_ids = promote_from_waitlist(event)
 
     audit_log(
         logging.INFO,
@@ -203,4 +204,5 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         target_id=str(event_id),
         details={"user_id": str(user.pk)},
     )
+    _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(204, None)

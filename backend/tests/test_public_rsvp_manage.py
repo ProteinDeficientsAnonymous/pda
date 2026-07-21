@@ -230,7 +230,9 @@ class TestDeleteMyRsvps:
         listed = api_client.get(f"{GET_URL}?token={token.token}").json()["rsvps"]
         assert listed == []
 
-    def test_delete_promotes_waitlist(self, api_client, nonmember, official_event):
+    def test_delete_promotes_waitlist(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
         official_event.max_attendees = 1
         official_event.save(update_fields=["max_attendees"])
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
@@ -241,6 +243,10 @@ class TestDeleteMyRsvps:
         assert resp.status_code == 204
         waiter_rsvp = EventRSVP.objects.get(event=official_event, user=waiter)
         assert waiter_rsvp.status == RSVPStatus.ATTENDING
+        fake_email_sender.send.assert_called_once()
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["to"] == waiter.email
+        assert sent["subject"] == "you're off the waitlist for official a"
 
     def test_delete_no_rsvp_404(self, api_client, nonmember, official_event):
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
