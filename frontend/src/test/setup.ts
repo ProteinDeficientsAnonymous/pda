@@ -67,3 +67,6 @@ Object.defineProperty(window, 'matchMedia', {
 // jsdom stops emitting "Not implemented" warnings during component rendering.
 // No test currently inspects canvas output.
 HTMLCanvasElement.prototype.getContext = (() => null) as never;
+
+// jsdom doesn't implement scrollIntoView — provide a no-op stub.
+Element.prototype.scrollIntoView = () => {};

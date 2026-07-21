@@ -129,6 +129,22 @@ describe('PublicRsvpForm', () => {
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });
 
+  it('lets a recognized non-member go back and retry with a different number', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'non_member' });
+    renderForm();
+    fillPhoneStep();
+    await screen.findByText(
+      'we recognized your number — check your email for a link to manage your rsvp',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'use a different number' }));
+    expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        'we recognized your number — check your email for a link to manage your rsvp',
+      ),
+    ).not.toBeInTheDocument();
+  });
+
   it('lets you change the status and go back to step one from the details step', async () => {
     checkPhoneMutate.mockResolvedValue({ status: 'new' });
     renderForm();
@@ -141,6 +157,21 @@ describe('PublicRsvpForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'change' }));
     expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
+  });
+
+  it('preserves the confirmed phone after "change" so the phone step is skipped', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
+    renderForm();
+    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '+14155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'change' }));
+    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+    expect(checkPhoneMutate).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('first name')).toBeInTheDocument();
   });
 
   it('submits maybe status chosen in step one', async () => {
@@ -203,6 +234,15 @@ describe('PublicRsvpForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await screen.findByText('looks like you already have an account — sign in to rsvp');
     expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
+  });
+
+  it('focuses the submit error alert so it is not missed below the fold', async () => {
+    submitMutate.mockRejectedValue({ isAxiosError: true, response: { status: 429 } });
+    renderForm();
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    const alert = await screen.findByRole('alert');
+    await waitFor(() => expect(alert).toHaveFocus());
   });
 
   it('shows a neutral no-oracle error without a sign-in link on a 409 email collision', async () => {
