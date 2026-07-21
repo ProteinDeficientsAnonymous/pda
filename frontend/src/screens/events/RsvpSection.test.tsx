@@ -147,9 +147,11 @@ describe('RsvpSection — after RSVPing', () => {
       }),
     );
 
+    expect(screen.getByText("you're on the waitlist")).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'leave waitlist' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+    expect(screen.queryByText("you're going")).not.toBeInTheDocument();
   });
 });
 
