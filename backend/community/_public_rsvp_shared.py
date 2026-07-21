@@ -28,10 +28,13 @@ class PublicRsvpOut(BaseModel):
     rsvp_token: str
 
 
-def _load_public_rsvp_event(event_id) -> Event:
+def _load_public_rsvp_event(event_id, *, for_update: bool = False) -> Event:
     """Fetch a public-RSVP event: 404 if it can't be seen at all, else 400 with the
     specific reason if it's visible but closed — mirrors _validate_rsvp_access."""
-    event = Event.objects.prefetch_related("co_hosts", "invited_users").filter(id=event_id).first()
+    qs = Event.objects.prefetch_related("co_hosts", "invited_users")
+    if for_update:
+        qs = qs.select_for_update()
+    event = qs.filter(id=event_id).first()
     if event is None or not event.is_public_rsvp_visible:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     if not event.rsvp_enabled:

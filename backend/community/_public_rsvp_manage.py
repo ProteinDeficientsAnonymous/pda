@@ -173,7 +173,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
 @router.delete(
     "/public/my-rsvps/{event_id}/",
-    response={204: None, 404: ErrorOut, 429: ErrorOut},
+    response={204: None, 400: ErrorOut, 404: ErrorOut, 429: ErrorOut},
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="30/h")
@@ -181,19 +181,10 @@ def delete_my_rsvp(request, event_id, token: str = ""):
     user = _resolve_token_user(token)
     promoted_user_ids: list[str] = []
     with transaction.atomic():
-        event = (
-            Event.objects.select_for_update()
-            .prefetch_related("co_hosts", "invited_users")
-            .filter(id=event_id)
-            .first()
-        )
-        if event is None:
-            raise_validation(Code.Event.NOT_FOUND, status_code=404)
+        event = _load_public_rsvp_event(event_id, for_update=True)
         rsvp = EventRSVP.objects.filter(event=event, user=user).first()
         if not rsvp:
             raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
-        if event.is_cancelled:
-            raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:

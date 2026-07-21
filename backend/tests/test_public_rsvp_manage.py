@@ -300,6 +300,37 @@ class TestDeleteMyRsvps:
         assert waiter_rsvp.status == RSVPStatus.WAITLISTED
         fake_email_sender.send.assert_not_called()
 
+    def test_delete_on_past_event_rejected(self, api_client, nonmember, fake_email_sender):
+        past_event = make_official_event(
+            title="Past", start_datetime=past_iso(days=2), end_datetime=past_iso(days=1)
+        )
+        past_event.max_attendees = 1
+        past_event.save(update_fields=["max_attendees"])
+        EventRSVP.objects.create(event=past_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        waiter = make_non_member("+14155550004", "w3@example.com", name="waiter three")
+        EventRSVP.objects.create(event=past_event, user=waiter, status=RSVPStatus.WAITLISTED)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+
+        resp = api_client.delete(f"{_post_url(past_event)}?token={token.token}")
+
+        assert resp.status_code == 400
+        assert first_code(resp) == Code.Event.RSVPS_CLOSED_PAST
+        assert EventRSVP.objects.filter(event=past_event, user=nonmember).exists()
+        assert EventRSVP.objects.get(event=past_event, user=waiter).status == RSVPStatus.WAITLISTED
+        fake_email_sender.send.assert_not_called()
+
+    def test_delete_on_rsvp_disabled_event_rejected(self, api_client, nonmember, fake_email_sender):
+        event = make_official_event(title="No RSVP", rsvp_enabled=False)
+        EventRSVP.objects.create(event=event, user=nonmember, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+
+        resp = api_client.delete(f"{_post_url(event)}?token={token.token}")
+
+        assert resp.status_code == 400
+        assert first_code(resp) == Code.Event.RSVPS_NOT_ENABLED
+        assert EventRSVP.objects.filter(event=event, user=nonmember).exists()
+        fake_email_sender.send.assert_not_called()
+
 
 @pytest.mark.django_db
 class TestPublicRsvpManageComment:
