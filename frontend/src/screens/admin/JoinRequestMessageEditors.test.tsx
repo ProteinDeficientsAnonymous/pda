@@ -71,28 +71,26 @@ describe('JoinRequestMessageEditors', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders a template select with all options with permission', () => {
+  it('renders all edit triggers with permission', () => {
     const user = makeUser({
       roles: [
         { id: 'r1', name: 'vetter', isDefault: false, permissions: ['approve_join_requests'] },
       ],
     });
     renderEditors(user);
-    const select = screen.getByLabelText('message templates');
-    expect(select).toBeInTheDocument();
     expect(
-      screen.getByRole('option', { name: /edit shared welcome template/i }),
+      screen.getByRole('button', { name: /edit shared welcome template/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('option', { name: /edit tentative approval message/i }),
+      screen.getByRole('button', { name: /edit tentative approval message/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('option', { name: /edit member promotion message/i }),
+      screen.getByRole('button', { name: /edit member promotion message/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /edit whatsapp link/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /edit whatsapp link/i })).toBeInTheDocument();
   });
 
-  it('opens the whatsapp link editor dialog when selected', async () => {
+  it('opens the whatsapp link editor dialog when clicked', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     const user = makeUser({
       roles: [
@@ -100,7 +98,7 @@ describe('JoinRequestMessageEditors', () => {
       ],
     });
     renderEditors(user);
-    await userEvent.selectOptions(screen.getByLabelText('message templates'), 'edit whatsapp link');
+    await userEvent.click(screen.getByRole('button', { name: /edit whatsapp link/i }));
     expect(screen.getByLabelText('whatsapp link')).toBeInTheDocument();
   });
 });
