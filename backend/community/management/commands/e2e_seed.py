@@ -102,6 +102,20 @@ def _seed_public_returning() -> dict:
     }
 
 
+def _seed_public_recognized() -> dict:
+    # non-member with an email, no token on this device
+    prior_event = _random_event("public-recognized-prior")
+    target_event = _random_event("public-recognized")
+    phone = _random_phone()
+    user = _non_member_user(phone)
+    EventRSVP.objects.create(event=prior_event, user=user, status=RSVPStatus.ATTENDING)
+    return {
+        "event_id": str(target_event.id),
+        "event_title": target_event.title,
+        "user_phone": phone,
+    }
+
+
 def _seed_comments() -> dict:
     event = _random_event("comments")
     phone = _random_phone()
@@ -138,6 +152,7 @@ def _seed_live_updates() -> dict:
 SCENARIOS = {
     "member": _seed_member,
     "public-new": _seed_public_new,
+    "public-recognized": _seed_public_recognized,
     "public-returning": _seed_public_returning,
     "comments": _seed_comments,
     "my-rsvps": _seed_my_rsvps,
