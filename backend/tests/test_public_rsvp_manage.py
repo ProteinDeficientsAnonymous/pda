@@ -128,6 +128,21 @@ class TestPostMyRsvps:
         rsvp = EventRSVP.objects.get(event=official_event, user=nonmember)
         assert rsvp.status == RSVPStatus.ATTENDING
 
+    def test_ignores_plus_one_parameter(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        resp = api_client.post(
+            f"{_post_url(official_event)}?token={token.token}",
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": True},
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert resp.json()["rsvp"]["has_plus_one"] is False
+        rsvp = EventRSVP.objects.get(event=official_event, user=nonmember)
+        assert rsvp.has_plus_one is False
+
     def test_update_extends_token_keeping_same_string(self, api_client, nonmember, official_event):
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.MAYBE)
         token = NonMemberRsvpToken.issue_or_extend(nonmember)

@@ -6,7 +6,6 @@ import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { Toggle } from '@/components/ui/Toggle';
 import { type Event, type RsvpInputStatus, RsvpServerStatus } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
 import { buildEventLinks } from '@/utils/eventLinks';
@@ -34,26 +33,23 @@ interface Props {
   token: string;
   event: Event;
   status: string;
-  hasPlusOne: boolean;
 }
 
-export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
+export function PublicRsvpCard({ token, event, status }: Props) {
   const update = useUpdatePublicMyRsvp(token);
   const cancel = useCancelPublicMyRsvp(token);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState('');
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
-  // the backend discards a waitlisted +1; every other status can carry one.
-  const canPlusOne = event.allowPlusOnes && status !== RsvpServerStatus.Waitlisted;
 
-  async function applyRsvp(next: RsvpInputStatus, plusOne: boolean, rsvpComment?: string) {
+  async function applyRsvp(next: RsvpInputStatus, rsvpComment?: string) {
     setError(null);
     try {
       await update.mutateAsync({
         eventId: event.id,
         status: next,
-        hasPlusOne: plusOne,
+        hasPlusOne: false,
         ...(rsvpComment !== undefined ? { comment: rsvpComment } : {}),
       });
       toast.success(UPDATED_TOAST);
@@ -64,17 +60,13 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
 
   function changeStatus(next: RsvpInputStatus) {
     if (next === status) return;
-    void applyRsvp(next, hasPlusOne);
-  }
-
-  function togglePlusOne(next: boolean) {
-    void applyRsvp(status as RsvpInputStatus, next);
+    void applyRsvp(next);
   }
 
   function saveComment() {
     const trimmed = comment.trim();
     if (!trimmed) return;
-    void applyRsvp(status as RsvpInputStatus, hasPlusOne, trimmed);
+    void applyRsvp(status as RsvpInputStatus, trimmed);
     setComment('');
   }
 
@@ -126,15 +118,6 @@ export function PublicRsvpCard({ token, event, status, hasPlusOne }: Props) {
       </p>
       <div className="flex flex-col gap-3">
         <RsvpStatusPicker value={status} onSelect={changeStatus} disabled={busy} />
-
-        {canPlusOne ? (
-          <Toggle
-            label="bring a +1"
-            checked={hasPlusOne}
-            onChange={togglePlusOne}
-            disabled={busy}
-          />
-        ) : null}
 
         <RsvpCommentField value={comment} onChange={setComment} disabled={busy} />
         <Button variant="ghost" onClick={saveComment} disabled={busy || !comment.trim()}>
