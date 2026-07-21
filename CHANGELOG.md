@@ -1,3 +1,10 @@
+## [0.51.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.4...v0.51.5) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** broadcast capacity change on non-member rsvp update/cancel ([#1020](https://github.com/ProteinDeficientsAnonymous/pda/issues/1020)) ([cb3da89](https://github.com/ProteinDeficientsAnonymous/pda/commit/cb3da8971dbdf87c7d025b91ef0aa2769465654d))
+
 ## [0.51.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.3...v0.51.4) (2026-07-21)
 
 
