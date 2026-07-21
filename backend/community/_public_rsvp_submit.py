@@ -128,6 +128,14 @@ def _resolve_non_member(
     if phone_match and phone_match.is_member:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
+    # Reject outright rather than excluding archived_at from the lookup above —
+    # phone_number is globally unique, so filtering it out would just let
+    # get_or_create resurrect the row under _create_non_member instead (Issue 1030).
+    # An email-only archived match still 409s below via the generic collision path,
+    # without a distinct code — that stays a no-oracle rejection (Issue 1001).
+    if phone_match and phone_match.archived_at:
+        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
+
     if email_match and email_match.pk != (phone_match.pk if phone_match else None):
         _reject_email_collision(request, email)
 
