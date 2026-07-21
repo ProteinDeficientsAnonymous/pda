@@ -1,3 +1,10 @@
+## [0.52.11](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.10...v0.52.11) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1064 - stop non-member magic-link manage flow from setting +1 ([#1066](https://github.com/ProteinDeficientsAnonymous/pda/issues/1066)) ([cf0b4b9](https://github.com/ProteinDeficientsAnonymous/pda/commit/cf0b4b94d79a436698aa718944433acdd37663bf))
+
 ## [0.52.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.9...v0.52.10) (2026-07-21)
 
 
