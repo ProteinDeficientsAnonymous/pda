@@ -163,6 +163,26 @@ class TestPostMyRsvps:
         # The emailed manage link reuses the still-valid token.
         assert token.token in sent["text"]
 
+    def test_first_rsvp_sends_confirmation_then_change_sends_updated(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        first = api_client.post(
+            f"{_post_url(official_event)}?token={token.token}",
+            {"status": RSVPStatus.ATTENDING},
+            content_type="application/json",
+        )
+        assert first.status_code == 200
+        assert fake_email_sender.send.call_args.kwargs["subject"] == "you're in for official a"
+
+        second = api_client.post(
+            f"{_post_url(official_event)}?token={token.token}",
+            {"status": RSVPStatus.MAYBE},
+            content_type="application/json",
+        )
+        assert second.status_code == 200
+        assert fake_email_sender.send.call_args.kwargs["subject"] == "your rsvp was updated"
+
     def test_email_failure_does_not_roll_back_update(
         self, api_client, nonmember, official_event, fake_email_sender, caplog
     ):
