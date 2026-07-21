@@ -45,9 +45,11 @@ export function RsvpGuestList({ event, canSeeInvited, canManageRsvps = false }: 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'going', label: 'going' },
     { key: 'maybe', label: 'maybe' },
-    { key: 'cant', label: "can't go" },
   ];
-  if (counts.waitlist > 0) tabs.push({ key: 'waitlist', label: 'waitlist' });
+  if (canManageRsvps) {
+    tabs.push({ key: 'cant', label: "can't go" });
+    if (counts.waitlist > 0) tabs.push({ key: 'waitlist', label: 'waitlist' });
+  }
   if (canSeeInvited) tabs.push({ key: 'invited', label: 'invited' });
 
   const defaultTab = tabs.find((t) => counts[t.key] > 0)?.key ?? 'going';
