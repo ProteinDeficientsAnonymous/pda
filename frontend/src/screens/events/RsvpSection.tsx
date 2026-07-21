@@ -190,13 +190,18 @@ function RsvpControls({
 }) {
   if (myInputStatus) {
     return (
-      <div className="flex items-center justify-center gap-3">
-        <span role="status" className="text-foreground-secondary text-sm">
+      <div className="bg-brand-600 text-brand-on flex items-center justify-between gap-3 rounded-lg px-4 py-3">
+        <span role="status" className="text-sm font-medium">
           {STATUS_LINES[myInputStatus]}
         </span>
-        <Button variant="secondary" onClick={onOpenEdit} disabled={busy}>
+        <button
+          type="button"
+          onClick={onOpenEdit}
+          disabled={busy}
+          className="border-brand-on/40 hover:bg-brand-on/10 shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors disabled:opacity-60"
+        >
           edit rsvp
-        </Button>
+        </button>
       </div>
     );
   }
@@ -215,8 +220,8 @@ function RsvpControls({
 
 function WaitlistView({ onLeave, busy }: { onLeave: () => void; busy: boolean }) {
   return (
-    <div className="flex items-center gap-3 rounded-md bg-amber-50 px-3 py-2">
-      <span role="status" className="text-warning text-sm">
+    <div className="bg-warning-subtle flex items-center justify-between gap-3 rounded-lg px-4 py-3">
+      <span role="status" className="text-warning text-sm font-medium">
         you're on the waitlist
       </span>
       <Button variant="ghost" onClick={onLeave} disabled={busy}>
@@ -237,14 +242,22 @@ function SpotsLeft({ event }: { event: Event }) {
 }
 
 function Summary({ event }: { event: Event }) {
-  const parts: string[] = [];
-  if (event.maxAttendees !== null) {
-    parts.push(`${String(event.attendingCount)} / ${String(event.maxAttendees)} going`);
-  } else {
-    parts.push(`${String(event.attendingCount)} going`);
-  }
-  if (event.waitlistedCount > 0) parts.push(`${String(event.waitlistedCount)} waitlisted`);
-  return <p className="text-muted text-xs">{parts.join(' · ')}</p>;
+  const goingLabel =
+    event.maxAttendees !== null
+      ? `${String(event.attendingCount)} / ${String(event.maxAttendees)} going`
+      : `${String(event.attendingCount)} going`;
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <span className="bg-success-subtle text-success inline-flex items-center rounded-full px-2.5 py-0.5 font-medium">
+        {goingLabel}
+      </span>
+      {event.waitlistedCount > 0 ? (
+        <span className="bg-warning-subtle text-warning inline-flex items-center rounded-full px-2.5 py-0.5 font-medium">
+          {event.waitlistedCount} waitlisted
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 function extractError(err: unknown): string {
