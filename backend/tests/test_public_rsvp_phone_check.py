@@ -82,6 +82,21 @@ class TestPublicRsvpPhoneCheck:
         token = NonMemberRsvpToken.objects.get(user=guest)
         assert token.token in sent["text"]
 
+    def test_non_member_repeated_probe_does_not_resend_within_cooldown(
+        self, api_client, official_event, fake_email_sender
+    ):
+        guest = make_non_member("+14155550199", "guest@example.com")
+
+        post(api_client, official_event, phone_number="+14155550199")
+        token_after_first = NonMemberRsvpToken.objects.get(user=guest)
+        original_expires_at = token_after_first.expires_at
+
+        post(api_client, official_event, phone_number="+14155550199")
+
+        fake_email_sender.send.assert_called_once()
+        token_after_first.refresh_from_db()
+        assert token_after_first.expires_at == original_expires_at
+
     def test_non_member_without_email_sends_no_email(
         self, api_client, official_event, fake_email_sender
     ):

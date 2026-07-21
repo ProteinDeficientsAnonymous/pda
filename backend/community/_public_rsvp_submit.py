@@ -4,6 +4,7 @@ from enum import StrEnum
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from ninja import Router
 from ninja.responses import Status
@@ -159,11 +160,16 @@ def _send_confirmation_email(
         _log_email_failure(request, event, user, exc)
 
 
-def _send_recognized_login_link(request, user: User) -> None:
-    """Email a returning non-member their manage link instead of re-asking for contact info.
+_RECOGNIZED_EMAIL_COOLDOWN_SECONDS = 300
 
-    Best-effort — a send failure must not block the phone-check response.
-    """
+
+def _send_recognized_login_link(request, user: User) -> None:
+    """Email a returning non-member their manage link; best-effort, failures don't block the response."""
+    cooldown_key = f"rsvp-phone-check-email:{user.pk}"
+    if not cache.add(cooldown_key, True, timeout=_RECOGNIZED_EMAIL_COOLDOWN_SECONDS):
+        # Per-user cooldown, not just per-IP rate limiting: stops a bare phone-number
+        # probe from spamming an unverified inbox or repeatedly extending the token.
+        return
     token = NonMemberRsvpToken.issue_or_extend(user)
     manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
     try:
