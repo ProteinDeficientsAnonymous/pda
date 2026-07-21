@@ -1,3 +1,10 @@
+## [0.53.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.53.0...v0.53.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1041 - distinguish own rsvp from breakdown, clarify waitlist ([#1069](https://github.com/ProteinDeficientsAnonymous/pda/issues/1069)) ([464f73c](https://github.com/ProteinDeficientsAnonymous/pda/commit/464f73cba07daf78f19f79e081392c44417ab11f))
+
 # [0.53.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.11...v0.53.0) (2026-07-21)
 
 
