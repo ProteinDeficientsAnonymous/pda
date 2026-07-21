@@ -285,4 +285,29 @@ describe('PublicRsvpForm', () => {
       }),
     );
   });
+
+  it('shows an inline error and does not submit when the first name has invalid characters', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    renderForm();
+    fillPhoneStep();
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'John3' } });
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await screen.findByText('letters, spaces, hyphens, and apostrophes only');
+    expect(submitMutate).not.toHaveBeenCalled();
+  });
+
+  it('shows an inline error and does not submit when the phone is edited to an invalid number', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    renderForm();
+    fillPhoneStep();
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
+    fireEvent.change(screen.getByLabelText(/phone/i), { target: { value: '+1 202' } });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await screen.findByText('invalid phone number');
+    expect(submitMutate).not.toHaveBeenCalled();
+  });
 });

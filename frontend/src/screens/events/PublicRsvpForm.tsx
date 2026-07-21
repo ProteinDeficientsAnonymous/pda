@@ -1,4 +1,5 @@
 import { type SyntheticEvent, useState } from 'react';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 import { Link } from 'react-router-dom';
 
 import { getApiStatus } from '@/api/apiErrors';
@@ -16,7 +17,7 @@ import {
   RsvpStatus,
   spotsLeft,
 } from '@/models/event';
-import { optionalEmail } from '@/utils/validators';
+import { nameCharsRe, optionalEmail } from '@/utils/validators';
 
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
@@ -72,9 +73,16 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
   function validate(): boolean {
     const next: Record<string, string> = {};
     if (!firstName.trim()) next.firstName = 'first name required';
+    else if (!nameCharsRe.test(firstName.trim())) {
+      next.firstName = 'letters, spaces, hyphens, and apostrophes only';
+    }
+    if (lastName.trim() && !nameCharsRe.test(lastName.trim())) {
+      next.lastName = 'letters, spaces, hyphens, and apostrophes only';
+    }
     if (!email.trim()) next.email = 'email required';
     else if (optionalEmail(email)) next.email = 'not a valid email';
     if (!phone.trim()) next.phone = 'phone required';
+    else if (!isValidPhoneNumber(phone)) next.phone = 'invalid phone number';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -181,6 +189,7 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
           }}
           maxLength={MAX_NAME}
           autoComplete="family-name"
+          error={errors.lastName}
         />
         <TextField
           label="email"
