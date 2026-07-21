@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Event } from '@/models/event';
+import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
 const setGuestRsvpMutate = vi.fn();
@@ -45,6 +46,32 @@ describe('RsvpGuestList', () => {
     renderList(event);
     expect(screen.queryByRole('link', { name: /sam/i })).not.toBeInTheDocument();
     expect(screen.getByText('Sam')).toBeInTheDocument();
+  });
+});
+
+describe('RsvpGuestList — cant go / waitlist visibility (Issue 1042)', () => {
+  it('hides the cant go and waitlist tabs from a guest', () => {
+    const event = makeEvent({
+      guests: [
+        makeGuest({ userId: 'user-1', status: RsvpServerStatus.CantGo }),
+        makeGuest({ userId: 'user-2', status: RsvpServerStatus.Waitlisted }),
+      ],
+    });
+    renderList(event, false);
+    expect(screen.queryByRole('tab', { name: /can't go/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /waitlist/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the cant go and waitlist tabs to a host', () => {
+    const event = makeEvent({
+      guests: [
+        makeGuest({ userId: 'user-1', status: RsvpServerStatus.CantGo }),
+        makeGuest({ userId: 'user-2', status: RsvpServerStatus.Waitlisted }),
+      ],
+    });
+    renderList(event, true);
+    expect(screen.getByRole('tab', { name: /can't go/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /waitlist/i })).toBeInTheDocument();
   });
 });
 
