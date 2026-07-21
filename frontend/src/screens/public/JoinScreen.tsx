@@ -101,9 +101,11 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
   function validate(): boolean {
     const next: Record<string, string> = {};
     const firstNameErr = personName(firstName);
-    if (firstNameErr) next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
+    if (firstNameErr)
+      next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
     const lastNameErr = personName(lastName);
-    if (lastNameErr) next.lastName = lastNameErr === 'Required' ? 'last name required' : lastNameErr;
+    if (lastNameErr)
+      next.lastName = lastNameErr === 'Required' ? 'last name required' : lastNameErr;
     if (!phoneNumber.trim()) next.phoneNumber = 'phone required';
     if (!email.trim()) next.email = 'email required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';
