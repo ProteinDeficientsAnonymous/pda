@@ -6,11 +6,12 @@ export interface SeedScenarioMap {
   member: {
     event_id: string;
     event_title: string;
+    event_location: string;
     user_phone: string;
     user_password: string;
     access_token: string;
   };
-  'public-new': { event_id: string; event_title: string };
+  'public-new': { event_id: string; event_title: string; event_location: string };
   'public-returning': {
     event_id: string;
     event_title: string;
