@@ -10,6 +10,7 @@ export type PublicRsvpIn = components['schemas']['PublicRsvpIn'];
 export type PublicRsvpOut = components['schemas']['PublicRsvpOut'];
 export type PublicRsvpPhoneStatus = components['schemas']['PublicRsvpPhoneStatus'];
 export type PublicRsvpPhoneCheckOut = components['schemas']['PublicRsvpPhoneCheckOut'];
+export type ResendManageLinkOut = components['schemas']['ResendManageLinkOut'];
 type PublicRsvpManageIn = components['schemas']['PublicRsvpManageIn'];
 
 interface SubmitArgs {
@@ -40,6 +41,22 @@ export function useCheckPublicRsvpPhone() {
       const { data } = await apiClient.post<PublicRsvpPhoneCheckOut>(
         `/api/community/public/events/${eventId}/rsvp-phone-check/`,
         { phone_number: phoneNumber },
+      );
+      return data;
+    },
+  });
+}
+
+interface ResendArgs {
+  phoneNumber: string;
+}
+
+export function useResendPublicRsvpManageLink() {
+  return useMutation({
+    mutationFn: async ({ phoneNumber }: ResendArgs) => {
+      const { data } = await apiClient.post<ResendManageLinkOut>(
+        '/api/community/public/my-rsvps/resend/',
+        { phone_number: phoneNumber, website: '' },
       );
       return data;
     },

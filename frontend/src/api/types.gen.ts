@@ -1430,14 +1430,14 @@ export interface paths {
         put?: never;
         /**
          * Resend Manage Link
-         * @description Public recovery path: re-send a non-member's manage-rsvp link by phone + email.
+         * @description Public recovery path: re-send a non-member's manage-rsvp link by phone.
          *
          *     Honeypot trips, bad phones, unknown contacts, and member contacts all
          *     resolve to the same neutral 200 body; only a matching non-member with an
          *     email on file is actually sent a link. The response body never reveals
-         *     whether an account exists — the one residual signal is that the match+email
-         *     path sends synchronously, so it's marginally slower; the 3/h IP rate limit
-         *     keeps that timing side channel impractical to exploit.
+         *     whether an account exists — the one residual signal is that the match path
+         *     sends synchronously, so it's marginally slower; the 3/h IP rate limit keeps
+         *     that timing side channel impractical to exploit.
          */
         post: operations["community__public_rsvp_resend_resend_manage_link"];
         delete?: never;
@@ -3677,11 +3677,6 @@ export interface components {
         };
         /** ResendManageLinkIn */
         ResendManageLinkIn: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
             /** Phone Number */
             phone_number: string;
             /**
