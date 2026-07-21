@@ -103,9 +103,7 @@ def _seed_public_returning() -> dict:
 
 
 def _seed_public_recognized() -> dict:
-    # A non-member with an email and a prior RSVP on a DIFFERENT eligible event,
-    # but no token on this device — entering their phone should be RECOGNIZED and
-    # trigger a manage-link email rather than the new-contact form.
+    # non-member with an email, no token on this device
     prior_event = _random_event("public-recognized-prior")
     target_event = _random_event("public-recognized")
     phone = _random_phone()

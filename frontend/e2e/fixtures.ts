@@ -38,9 +38,7 @@ const ROOT_DIR = path.resolve(__dirname, '../..');
 const BACKEND_DIR = path.resolve(ROOT_DIR, 'backend');
 
 function resolveDatabaseUrl(): string {
-  // CI sets DATABASE_URL to the shared `pda` database the backend serves from;
-  // honor it directly. Locally it's unset, so fall back to the per-worktree
-  // Postgres name that `make dev-pg` runs against.
+  // falls back to per-worktree postgres (make dev-pg) when DATABASE_URL is unset locally
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
   }

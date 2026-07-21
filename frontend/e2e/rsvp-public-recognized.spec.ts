@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { seed } from './fixtures';
 
-test('recognized non-member (prior rsvp, no stored token) is emailed a link, not re-asked', async ({
+test('non-member with email, no stored token, is emailed a link and not re-asked', async ({
   page,
 }) => {
   const { event_id, event_title, user_phone } = seed('public-recognized');
@@ -15,8 +15,6 @@ test('recognized non-member (prior rsvp, no stored token) is emailed a link, not
   await rsvpSection.getByLabel('phone number').pressSequentially(user_phone.replace('+1', ''));
   await rsvpSection.getByRole('button', { name: 'continue' }).click();
 
-  // Their phone is recognized from a prior rsvp, so the flow stops at the
-  // "check your email" step instead of showing the new-contact form.
   await expect(rsvpSection.getByText('we recognized your number', { exact: false })).toBeVisible();
   await expect(rsvpSection.getByLabel('first name')).toBeHidden();
 });
