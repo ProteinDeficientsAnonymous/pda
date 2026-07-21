@@ -76,13 +76,7 @@ export default function PublicRsvpsScreen() {
       ) : (
         <div className="flex flex-col gap-4">
           {data.rsvps.map((r) => (
-            <PublicRsvpCard
-              key={r.event.id}
-              token={token}
-              event={r.event}
-              status={r.status}
-              hasPlusOne={r.hasPlusOne}
-            />
+            <PublicRsvpCard key={r.event.id} token={token} event={r.event} status={r.status} />
           ))}
         </div>
       )}
