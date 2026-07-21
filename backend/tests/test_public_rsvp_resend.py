@@ -1,7 +1,7 @@
 """Tests for the public "resend my manage link" recovery endpoint.
 
-POST /api/community/public/my-rsvps/resend/ — no auth. Given a phone (email
-optional), re-sends a non-member's scoped manage link so they can recover access
+POST /api/community/public/my-rsvps/resend/ — no auth. Given a phone, re-sends a
+non-member's scoped manage link (to the on-file email) so they can recover access
 without re-submitting an RSVP. Always returns the same neutral 200 (no enumeration).
 """
 
@@ -21,7 +21,7 @@ EMAIL = "sam@example.com"
 
 
 def _payload(**overrides):
-    base = {"email": EMAIL, "phone_number": PHONE}
+    base = {"phone_number": PHONE}
     base.update(overrides)
     return base
 
@@ -58,25 +58,6 @@ class TestResendManageLink:
         sent = fake_email_sender.send.call_args.kwargs
         assert original.token in sent["text"]
 
-    def test_email_match_only_still_resends(self, api_client, fake_email_sender):
-        # Phone doesn't match, but the email does — still a valid recovery.
-        make_non_member("+14155559999", EMAIL)
-
-        response = post(api_client)
-
-        assert response.status_code == 200
-        fake_email_sender.send.assert_called_once()
-
-    def test_phone_only_no_email_field_still_resends(self, api_client, fake_email_sender):
-        # Email is optional; phone alone recovers, link goes to the on-file address.
-        make_non_member(PHONE, EMAIL)
-
-        response = api_client.post(URL, {"phone_number": PHONE}, content_type="application/json")
-
-        assert response.status_code == 200
-        fake_email_sender.send.assert_called_once()
-        assert fake_email_sender.send.call_args.kwargs["to"] == EMAIL
-
     def test_unknown_contact_is_neutral_no_email(self, api_client, fake_email_sender):
         response = post(api_client)
 
@@ -101,16 +82,6 @@ class TestResendManageLink:
         assert response.status_code == 200
         fake_email_sender.send.assert_not_called()
         assert not NonMemberRsvpToken.objects.filter(user=member).exists()
-
-    def test_member_email_match_gets_no_link(self, api_client, fake_email_sender):
-        # Member owns the email; a different phone is supplied. Must not leak a link.
-        member = make_non_member("+14155559999", EMAIL)
-        member.is_member = True
-        member.save(update_fields=["is_member"])
-
-        post(api_client)
-
-        fake_email_sender.send.assert_not_called()
 
     def test_matching_non_member_without_email_gets_nothing(self, api_client, fake_email_sender):
         # No email on file → nothing to send to, still neutral.
