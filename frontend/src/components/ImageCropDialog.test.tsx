@@ -119,9 +119,9 @@ describe('ImageCropDialog', () => {
   it('saves the toggled square aspect even without dragging the crop (issue 598)', async () => {
     const user = userEvent.setup();
     const onCrop = vi.fn();
-    const { container } = renderDialog({ shape: 'rect', onCrop });
+    renderDialog({ shape: 'rect', onCrop });
 
-    const img = container.querySelector('img')!;
+    const img = document.body.querySelector('img')!;
     Object.defineProperty(img, 'width', { value: 400, configurable: true });
     Object.defineProperty(img, 'height', { value: 500, configurable: true });
     Object.defineProperty(img, 'naturalWidth', { value: 400, configurable: true });
@@ -138,12 +138,30 @@ describe('ImageCropDialog', () => {
     expect(area.width).toBeCloseTo(area.height);
   });
 
+  it('enables save on image load without any drag or toggle', async () => {
+    const user = userEvent.setup();
+    const onCrop = vi.fn();
+    renderDialog({ shape: 'rect', onCrop });
+
+    const img = document.body.querySelector('img')!;
+    Object.defineProperty(img, 'width', { value: 400, configurable: true });
+    Object.defineProperty(img, 'height', { value: 500, configurable: true });
+    Object.defineProperty(img, 'naturalWidth', { value: 400, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: 500, configurable: true });
+    fireEvent.load(img);
+
+    const save = screen.getByRole('button', { name: /^save$/i });
+    expect(save).toBeEnabled();
+    await user.click(save);
+    expect(cropImage).toHaveBeenCalledOnce();
+  });
+
   it('surfaces an error and clears saving when cropping fails (issue 580)', async () => {
     const user = userEvent.setup();
     vi.mocked(cropImage).mockRejectedValueOnce(new Error('timed out processing image'));
-    const { container } = renderDialog({ shape: 'rect' });
+    renderDialog({ shape: 'rect' });
 
-    const img = container.querySelector('img')!;
+    const img = document.body.querySelector('img')!;
     Object.defineProperty(img, 'width', { value: 400, configurable: true });
     Object.defineProperty(img, 'height', { value: 400, configurable: true });
     Object.defineProperty(img, 'naturalWidth', { value: 400, configurable: true });

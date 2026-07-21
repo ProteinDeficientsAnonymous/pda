@@ -1,4 +1,4 @@
-import type { ChangeEvent, DragEvent, MouseEvent } from 'react';
+import type { ChangeEvent, DragEvent } from 'react';
 import { useRef, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -29,11 +29,10 @@ interface Props {
   photoUpdatedAt: string | null;
   /** Called with the cropped blob. Callers decide whether to upload now or defer. */
   onCrop: (blob: Blob) => Promise<void>;
-  onDelete?: (() => Promise<void>) | undefined;
   disabled?: boolean | undefined;
 }
 
-export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, disabled }: Props) {
+export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const [file, setFile] = useState<File | null>(null);
@@ -118,17 +117,6 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
     }
   }
 
-  async function handleDelete(e: MouseEvent) {
-    e.stopPropagation();
-    if (!onDelete || locked) return;
-    setBusy(true);
-    try {
-      await onDelete();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="flex flex-col gap-2">
       <input
@@ -148,13 +136,13 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         disabled={locked}
-        aria-label={hasPhoto ? 'change cover photo' : 'add a cover photo'}
+        aria-label={hasPhoto ? 'change event photo' : 'add event photo'}
         className={cn(
           'group relative overflow-hidden rounded-[var(--radius-md)]',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
           hasPhoto
             ? 'mx-auto block w-auto max-w-full'
-            : 'border-brand-200 bg-brand-50 aspect-video w-full border-2 border-dashed',
+            : 'border-brand-200 bg-brand-50 aspect-[4/5] w-full border-2 border-dashed',
           dragOver && 'border-brand-500 ring-brand-300 ring-2',
           locked && 'cursor-not-allowed opacity-60',
         )}
@@ -173,7 +161,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
             <span aria-hidden="true" className="text-3xl">
               📸
             </span>
-            <span className="text-sm font-medium">add a cover photo</span>
+            <span className="text-sm font-medium">add event photo</span>
             <span className="text-brand-600/80 text-xs">tap or drop a photo</span>
           </span>
         )}
@@ -186,19 +174,6 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, onDelete, dis
           </div>
         ) : null}
       </button>
-
-      {hasPhoto && onDelete ? (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={(e) => void handleDelete(e)}
-            disabled={locked}
-            className="text-muted hover:text-destructive text-xs underline decoration-dotted disabled:cursor-not-allowed"
-          >
-            remove photo
-          </button>
-        </div>
-      ) : null}
 
       {error ? (
         <p role="alert" className="text-destructive text-xs">

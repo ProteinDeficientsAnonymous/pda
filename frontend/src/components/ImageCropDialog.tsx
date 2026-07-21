@@ -2,6 +2,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 
 import type { SyntheticEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import ReactCrop, { type Crop, type PercentCrop, type PixelCrop } from 'react-image-crop';
 
 import { cn } from '@/utils/cn';
@@ -56,7 +57,11 @@ export function ImageCropDialog({
 
   function onImageLoad(e: SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    setCrop(initialCrop(width, height, shape));
+    const next = initialCrop(width, height, shape);
+    setCrop(next);
+    // Seed `completed` so save is enabled immediately — ReactCrop's onComplete
+    // only fires after a drag, leaving the untouched default crop unsaveable.
+    setCompleted(percentToPixelCrop(next, width, height));
     if (shape === 'rect') setAspect(defaultCoverAspect(width, height));
   }
 
@@ -106,7 +111,10 @@ export function ImageCropDialog({
     ...(crop !== undefined ? { crop } : {}),
   };
 
-  return (
+  // Portal to <body>: rendered inline, the dialog inherits the sticky photo
+  // column's stacking context, so its z-50 can't cover sibling form fields
+  // (they paint on top). Escaping to body makes fixed/z-50 overlay everything.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -114,7 +122,13 @@ export function ImageCropDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
     >
       <div className="bg-surface flex w-full max-w-md flex-col gap-4 rounded-lg p-4 shadow-xl">
-        <div className="flex items-center justify-center rounded-md bg-neutral-900">
+        {/* minHeight keeps the crop area from collapsing before the image
+            reports its dimensions (otherwise the whole modal shrinks to just
+            the buttons). */}
+        <div
+          className="flex items-center justify-center rounded-md bg-neutral-900"
+          style={{ minHeight: MAX_PREVIEW_PX }}
+        >
           {/* Cap height on .ReactCrop itself — a wrapper cap would clip a tall image
               instead of scaling it, letting the crop drag off-screen (issue 428). */}
           <ReactCrop {...reactCropProps} style={{ maxHeight: MAX_PREVIEW_PX }}>
@@ -157,6 +171,7 @@ export function ImageCropDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
