@@ -1,3 +1,10 @@
+## [0.51.13](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.12...v0.51.13) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** gate delete_my_rsvp on full rsvp eligibility (Issue 1011) ([#1027](https://github.com/ProteinDeficientsAnonymous/pda/issues/1027)) ([c60ac6b](https://github.com/ProteinDeficientsAnonymous/pda/commit/c60ac6b39df4194ff51bd5bdc44183c49263159d)), closes [#1025](https://github.com/ProteinDeficientsAnonymous/pda/issues/1025)
+
 ## [0.51.12](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.11...v0.51.12) (2026-07-21)
 
 
