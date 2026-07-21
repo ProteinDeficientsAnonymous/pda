@@ -1,3 +1,10 @@
+## [0.53.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.53.1...v0.53.2) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** count plus-ones in waitlisted count ([#1072](https://github.com/ProteinDeficientsAnonymous/pda/issues/1072)) ([e74009b](https://github.com/ProteinDeficientsAnonymous/pda/commit/e74009bd79ce5f338dfd9a1c1f10990f18a20573))
+
 ## [0.53.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.53.0...v0.53.1) (2026-07-21)
 
 
