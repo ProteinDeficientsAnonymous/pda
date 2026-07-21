@@ -12,18 +12,34 @@ class TestCreateUser:
     def test_create_user_invalid_phone(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "not-a-phone", "first_name": "Test"},
+            {"phone_number": "not-a-phone", "first_name": "Test", "email": "test@e.com"},
             content_type="application/json",
             **manage_users_headers,
         )
         assert response.status_code == 422
         assert_error_code(response, Code.Phone.INVALID, "phone_number")
 
+    def test_create_user_requires_email(self, api_client, manage_users_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"phone_number": "+12025550910", "first_name": "Noemail"},
+            content_type="application/json",
+            **manage_users_headers,
+        )
+        assert response.status_code == 422
+        assert any(e["field"] == "email" for e in response.json()["detail"])
+        assert not User.objects.filter(phone_number="+12025550910").exists()
+
     def test_create_user_with_role_id(self, api_client, manage_users_headers, db):
         role = Role.objects.create(name="custom_role", permissions=[])
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550901", "first_name": "Roled", "role_id": str(role.id)},
+            {
+                "phone_number": "+12025550901",
+                "first_name": "Roled",
+                "role_id": str(role.id),
+                "email": "roled@e.com",
+            },
             content_type="application/json",
             **manage_users_headers,
         )
@@ -33,7 +49,12 @@ class TestCreateUser:
         admin_role = Role.objects.get(name="admin")
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550950", "first_name": "Nope", "role_id": str(admin_role.id)},
+            {
+                "phone_number": "+12025550950",
+                "first_name": "Nope",
+                "role_id": str(admin_role.id),
+                "email": "nope@e.com",
+            },
             content_type="application/json",
             **manage_users_headers,
         )
@@ -48,6 +69,7 @@ class TestCreateUser:
                 "phone_number": "+12025550902",
                 "first_name": "Badrole",
                 "role_id": "00000000-0000-0000-0000-000000000000",
+                "email": "badrole@e.com",
             },
             content_type="application/json",
             **manage_users_headers,
@@ -58,7 +80,7 @@ class TestCreateUser:
     def test_create_user_sets_needs_onboarding(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550903", "first_name": "Onboard"},
+            {"phone_number": "+12025550903", "first_name": "Onboard", "email": "onboard@e.com"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -69,7 +91,11 @@ class TestCreateUser:
     def test_create_user_keeps_contact_visibility_default(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550907", "first_name": "Newmember"},
+            {
+                "phone_number": "+12025550907",
+                "first_name": "Newmember",
+                "email": "newmember@e.com",
+            },
             content_type="application/json",
             **manage_users_headers,
         )
@@ -94,6 +120,7 @@ class TestCreateUser:
                 "phone_number": "+12025550905",
                 "first_name": "",
                 "last_name": "",
+                "email": "blank@e.com",
             },
             content_type="application/json",
             **manage_users_headers,
@@ -104,7 +131,7 @@ class TestCreateUser:
     def test_create_user_rejects_omitted_name(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550906"},
+            {"phone_number": "+12025550906", "email": "omitted@e.com"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -114,7 +141,11 @@ class TestCreateUser:
     def test_create_user_rejects_whitespace_only_name(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550908", "first_name": "   "},
+            {
+                "phone_number": "+12025550908",
+                "first_name": "   ",
+                "email": "whitespace@e.com",
+            },
             content_type="application/json",
             **manage_users_headers,
         )
@@ -124,7 +155,12 @@ class TestCreateUser:
     def test_create_user_strips_name_whitespace(self, api_client, manage_users_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550909", "first_name": "  Jamie  ", "last_name": "  Rivera  "},
+            {
+                "phone_number": "+12025550909",
+                "first_name": "  Jamie  ",
+                "last_name": "  Rivera  ",
+                "email": "jamie@e.com",
+            },
             content_type="application/json",
             **manage_users_headers,
         )

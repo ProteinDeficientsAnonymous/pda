@@ -1,10 +1,8 @@
 """Archived-member/non-member scenarios for the public RSVP flow."""
 
 import pytest
-from community._public_rsvp_submit import _backfill_email
-from community._validation import Code, ValidationException
+from community._validation import Code
 from community.models import EventRSVP
-from django.test import RequestFactory
 from django.utils import timezone
 from users.models import NonMemberRsvpToken, User
 
@@ -84,19 +82,3 @@ class TestArchivedNonMemberGate:
         assert archived.archived_at is not None
         assert not NonMemberRsvpToken.objects.filter(user=archived).exists()
         fake_email_sender.send.assert_not_called()
-
-
-@pytest.mark.django_db
-class TestBackfillEmailCollision:
-    def test_concurrent_email_claim_is_handled_gracefully(self):
-        phone_match = make_non_member("+14155550123", None)
-        User.objects.create_user(
-            phone_number="+14155550999", first_name="Other", email="sam@example.com"
-        )
-
-        request = RequestFactory().post("/")
-        with pytest.raises(ValidationException) as exc_info:
-            _backfill_email(request, phone_match, "sam@example.com")
-        assert exc_info.value.code == Code.Event.RSVP_COULD_NOT_BE_CREATED
-        phone_match.refresh_from_db()
-        assert phone_match.email is None

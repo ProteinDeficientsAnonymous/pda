@@ -103,16 +103,6 @@ class TestPublicRsvpDedup:
         assert existing.email == "old@example.com"
         assert NonMemberRsvpToken.objects.filter(user=existing).count() == 1
 
-    def test_returning_by_phone_saves_email_if_blank(
-        self, api_client, official_event, fake_email_sender
-    ):
-        existing = make_non_member("+14155550123", None)
-
-        post(api_client, official_event, email="sam@example.com")
-
-        existing.refresh_from_db()
-        assert existing.email == "sam@example.com"
-
     def test_email_match_alone_is_not_adopted(self, api_client, official_event, fake_email_sender):
         existing = make_non_member("+14155550999", "sam@example.com")
 

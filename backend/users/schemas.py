@@ -221,7 +221,7 @@ class UserCreateIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     first_name: str = Field(default="", max_length=FieldLimit.FIRST_NAME)
     last_name: str = Field(default="", max_length=FieldLimit.LAST_NAME)
-    email: OptionalEmail = None
+    email: EmailStr
     role_id: str | None = None
 
 

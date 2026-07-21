@@ -3991,8 +3991,11 @@ export interface components {
         };
         /** UserCreateIn */
         UserCreateIn: {
-            /** Email */
-            email?: string | null;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
             /**
              * First Name
              * @default
