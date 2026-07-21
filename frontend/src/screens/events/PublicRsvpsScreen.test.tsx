@@ -19,12 +19,15 @@ vi.mock('sonner', () => ({
 
 const updateAsync = vi.fn();
 const cancelAsync = vi.fn();
+const resendAsync = vi.fn();
 const usePublicMyRsvps = vi.fn();
+const useResendPublicRsvpManageLink = vi.fn();
 
 vi.mock('@/api/publicRsvp', () => ({
   usePublicMyRsvps: (token: string) => usePublicMyRsvps(token) as unknown,
   useUpdatePublicMyRsvp: () => ({ mutateAsync: updateAsync, isPending: false }),
   useCancelPublicMyRsvp: () => ({ mutateAsync: cancelAsync, isPending: false }),
+  useResendPublicRsvpManageLink: () => useResendPublicRsvpManageLink() as unknown,
 }));
 
 // jsdom's default Storage isn't wired up for get/set round-trips — stub a real one.
@@ -79,6 +82,13 @@ beforeEach(() => {
   localStorage.clear();
   updateAsync.mockResolvedValue({});
   cancelAsync.mockResolvedValue(undefined);
+  resendAsync.mockResolvedValue({ detail: 'sent' });
+  useResendPublicRsvpManageLink.mockReturnValue({
+    mutateAsync: resendAsync,
+    isPending: false,
+    isSuccess: false,
+    data: undefined,
+  });
 });
 
 describe('PublicRsvpsScreen', () => {
@@ -94,6 +104,34 @@ describe('PublicRsvpsScreen', () => {
     usePublicMyRsvps.mockReturnValue({ data: undefined, isPending: false, isError: false });
     renderAt(null);
     expect(screen.getByText(/this link's expired or invalid/)).toBeInTheDocument();
+  });
+
+  it('resends the manage link and shows the backend detail message on success', async () => {
+    usePublicMyRsvps.mockReturnValue({ data: undefined, isPending: false, isError: false });
+    const { rerender } = renderAt(null);
+
+    fireEvent.click(screen.getByRole('button', { name: 'lost your link?' }));
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 's@x.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'resend my link' }));
+
+    await waitFor(() => {
+      expect(resendAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 's@x.com', phoneNumber: '' }),
+      );
+    });
+
+    useResendPublicRsvpManageLink.mockReturnValue({
+      mutateAsync: resendAsync,
+      isPending: false,
+      isSuccess: true,
+      data: { detail: 'sent' },
+    });
+    rerender(
+      <MemoryRouter initialEntries={['/my-rsvps']}>
+        <PublicRsvpsScreen />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('sent')).toBeInTheDocument();
   });
 
   it('persists the token from the url so a later visit can reuse it', () => {

@@ -12,6 +12,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { PublicRsvpCard } from './PublicRsvpCard';
+import { ResendManageLinkForm } from './ResendManageLinkForm';
 
 const INVALID_TOKEN_COPY = "this link's expired or invalid — rsvp again to get a new one";
 
@@ -45,6 +46,7 @@ export default function PublicRsvpsScreen() {
     return (
       <ContentContainer>
         <p className="text-foreground text-base">{INVALID_TOKEN_COPY}</p>
+        <ResendManageLinkForm />
       </ContentContainer>
     );
   }
