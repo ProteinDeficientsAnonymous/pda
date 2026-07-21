@@ -100,10 +100,7 @@ describe('JoinRequestMessageEditors', () => {
       ],
     });
     renderEditors(user);
-    await userEvent.selectOptions(
-      screen.getByLabelText('message templates'),
-      'edit whatsapp link',
-    );
+    await userEvent.selectOptions(screen.getByLabelText('message templates'), 'edit whatsapp link');
     expect(screen.getByLabelText('whatsapp link')).toBeInTheDocument();
   });
 });
