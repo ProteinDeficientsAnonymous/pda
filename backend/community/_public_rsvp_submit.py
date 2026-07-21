@@ -82,18 +82,6 @@ def _reject_email_collision(request, email: str) -> NoReturn:
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
 
-def _backfill_email(request, phone_match: User, email: str) -> User:
-    """Backfill the email only if blank — never overwrite an existing one."""
-    if email and not phone_match.email:
-        try:
-            with transaction.atomic():
-                phone_match.email = email
-                phone_match.save(update_fields=["email"])
-        except IntegrityError:
-            _reject_email_collision(request, email)
-    return phone_match
-
-
 def _create_non_member(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
@@ -135,7 +123,7 @@ def _resolve_non_member(
         _reject_email_collision(request, email)
 
     if phone_match:
-        return _backfill_email(request, phone_match, email), False
+        return phone_match, False
     return _create_non_member(request, first_name, last_name, email, phone)
 
 

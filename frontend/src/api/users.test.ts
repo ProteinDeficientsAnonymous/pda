@@ -201,10 +201,14 @@ describe('useCreateUser', () => {
     const qc = makeQc();
     const { result } = renderHook(() => useCreateUser(), { wrapper: makeWrapper(qc) });
 
-    await result.current.mutateAsync({ phoneNumber: '+15551230003' });
+    await result.current.mutateAsync({
+      phoneNumber: '+15551230003',
+      email: 'grace3@example.com',
+    });
 
     expect(mockedPost).toHaveBeenCalledWith('/api/auth/create-user/', {
       phone_number: '+15551230003',
+      email: 'grace3@example.com',
     });
   });
 });

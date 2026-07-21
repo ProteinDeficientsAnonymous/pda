@@ -172,7 +172,7 @@ class TestUserManagementAPI:
     def test_create_user_requires_permission(self, api_client, auth_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550999", "first_name": "Denied"},
+            {"phone_number": "+12025550999", "first_name": "Denied", "email": "denied@e.com"},
             content_type="application/json",
             **auth_headers,
         )
@@ -181,7 +181,12 @@ class TestUserManagementAPI:
     def test_create_user_success(self, api_client, admin_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025551234", "first_name": "New", "last_name": "Member"},
+            {
+                "phone_number": "+12025551234",
+                "first_name": "New",
+                "last_name": "Member",
+                "email": "new.member@e.com",
+            },
             content_type="application/json",
             **admin_headers,
         )
@@ -191,10 +196,20 @@ class TestUserManagementAPI:
         assert "magic_link_token" in data
         assert len(data["magic_link_token"]) == 36  # UUID format
 
+    def test_create_user_requires_email(self, api_client, admin_headers):
+        response = api_client.post(
+            "/api/auth/create-user/",
+            {"phone_number": "+12025551235", "first_name": "Noemail"},
+            content_type="application/json",
+            **admin_headers,
+        )
+        assert response.status_code == 422
+        assert any(e["field"] == "email" for e in response.json()["detail"])
+
     def test_create_user_duplicate_phone(self, api_client, admin_headers, test_user):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12025550101", "first_name": "Dupe"},
+            {"phone_number": "+12025550101", "first_name": "Dupe", "email": "dupe@e.com"},
             content_type="application/json",
             **admin_headers,
         )
@@ -204,7 +219,11 @@ class TestUserManagementAPI:
     def test_create_user_assigns_member_role_by_default(self, api_client, admin_headers):
         response = api_client.post(
             "/api/auth/create-user/",
-            {"phone_number": "+12125551234", "first_name": "Defaultrole"},
+            {
+                "phone_number": "+12125551234",
+                "first_name": "Defaultrole",
+                "email": "defaultrole@e.com",
+            },
             content_type="application/json",
             **admin_headers,
         )

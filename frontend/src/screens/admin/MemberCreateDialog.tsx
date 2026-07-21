@@ -34,14 +34,17 @@ export function MemberCreateDialog({ open, onClose }: Props) {
       setFormError('phone number is required');
       return;
     }
+    if (!email.trim()) {
+      setFormError('email is required');
+      return;
+    }
     try {
       const trimmedLast = lastName.trim();
-      const trimmedEmail = email.trim();
       const created = await createUser.mutateAsync({
         phoneNumber: phone.trim(),
         firstName: firstName.trim(),
+        email: email.trim(),
         ...(trimmedLast ? { lastName: trimmedLast } : {}),
-        ...(trimmedEmail ? { email: trimmedEmail } : {}),
       });
       setResult(created);
     } catch (err) {
@@ -102,13 +105,13 @@ export function MemberCreateDialog({ open, onClose }: Props) {
           required
         />
         <TextField
-          label="email (optional)"
+          label="email"
           type="email"
-          hint="if you skip, they'll be asked for one at first login"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
           }}
+          required
         />
         {formError ? (
           <p role="alert" className="text-sm text-red-600">

@@ -7,7 +7,7 @@ class TestCreateUserFirstNameRequired:
     def test_create_user_without_any_name_is_rejected(self, api_client, manage_users_headers, db):
         resp = api_client.post(
             "/api/auth/create-user/",
-            data={"phone_number": "+12025550120"},
+            data={"phone_number": "+12025550120", "email": "noname@example.com"},
             content_type="application/json",
             **manage_users_headers,
         )
@@ -18,7 +18,11 @@ class TestCreateUserFirstNameRequired:
     def test_create_user_last_name_only_is_rejected(self, api_client, manage_users_headers, db):
         resp = api_client.post(
             "/api/auth/create-user/",
-            data={"phone_number": "+12025550121", "last_name": "Lovelace"},
+            data={
+                "phone_number": "+12025550121",
+                "last_name": "Lovelace",
+                "email": "lastonly@example.com",
+            },
             content_type="application/json",
             **manage_users_headers,
         )
@@ -28,7 +32,11 @@ class TestCreateUserFirstNameRequired:
     def test_create_user_first_name_only_succeeds(self, api_client, manage_users_headers, db):
         resp = api_client.post(
             "/api/auth/create-user/",
-            data={"phone_number": "+12025550122", "first_name": "Ada"},
+            data={
+                "phone_number": "+12025550122",
+                "first_name": "Ada",
+                "email": "ada@example.com",
+            },
             content_type="application/json",
             **manage_users_headers,
         )

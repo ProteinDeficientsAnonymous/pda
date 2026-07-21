@@ -112,9 +112,9 @@ export function useUsers(includeNonMembers = false) {
 
 export interface CreateUserInput {
   phoneNumber: string;
+  email: string;
   firstName?: string;
   lastName?: string;
-  email?: string;
   roleId?: string;
 }
 
@@ -138,10 +138,12 @@ export function useCreateUser() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateUserInput): Promise<CreateUserResult> => {
-      const body: Record<string, unknown> = { phone_number: input.phoneNumber };
+      const body: Record<string, unknown> = {
+        phone_number: input.phoneNumber,
+        email: input.email,
+      };
       if (input.firstName !== undefined) body.first_name = input.firstName;
       if (input.lastName !== undefined) body.last_name = input.lastName;
-      if (input.email !== undefined) body.email = input.email;
       if (input.roleId !== undefined) body.role_id = input.roleId;
       const { data } = await apiClient.post<WireCreateResult>('/api/auth/create-user/', body);
       return {

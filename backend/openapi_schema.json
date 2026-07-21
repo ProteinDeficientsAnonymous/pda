@@ -5007,16 +5007,9 @@
       "UserCreateIn": {
         "properties": {
           "email": {
-            "anyOf": [
-              {
-                "format": "email",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Email"
+            "format": "email",
+            "title": "Email",
+            "type": "string"
           },
           "first_name": {
             "default": "",
@@ -5048,7 +5041,8 @@
           }
         },
         "required": [
-          "phone_number"
+          "phone_number",
+          "email"
         ],
         "title": "UserCreateIn",
         "type": "object"
