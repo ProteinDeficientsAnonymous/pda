@@ -72,12 +72,7 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
 
 
 def _backfill_email(phone_match: User, email: str) -> User:
-    """Backfill the email only if blank — never overwrite an existing one.
-
-    Guarded like _create_non_member's write: _resolve_non_member's pre-check
-    already rules out a live collision, but a concurrent request can still
-    claim the email between that check and this save.
-    """
+    """Backfill the email only if blank — never overwrite an existing one."""
     if email and not phone_match.email:
         try:
             with transaction.atomic():
@@ -131,21 +126,12 @@ def _resolve_non_member(
 
     Must run inside the surrounding transaction.
     """
-    # Not filtered by archived_at: phone_number is globally unique and
-    # archiving only sets archived_at, never is_member (users/_management.py)
-    # — an archived member still occupies their phone/email. A filtered gate
-    # would miss them here and then _create_non_member's get_or_create would
-    # silently return that same row via the unique phone constraint.
     phone_match = User.objects.filter(phone_number=phone).first()
-    # iexact so a mixed-case stored member email (e.g. admin-created) still trips
-    # the member gate below — the incoming email is already lowercased.
     email_match = User.objects.filter(email__iexact=email).first() if email else None
 
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
-    # Neither match is a member below this point, so an archived match here
-    # is just an archived non-member — safe to reuse like a live one.
     if phone_match and email_match:
         return _resolve_both_match(request, phone_match, email_match)
     if phone_match:

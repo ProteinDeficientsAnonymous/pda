@@ -1,13 +1,4 @@
-"""Archived-member/non-member scenarios for the public RSVP flow (Issue 1002, 1003).
-
-Archiving a user (backend/users/_management.py delete_user) only sets
-archived_at — it never clears is_member. So an archived member row still has
-is_member=True forever, and still occupies its phone number (globally unique)
-and email (partial unique constraint, no archived_at exception). These tests
-prove the member-gate in _resolve_non_member sees archived members (no 500,
-no silent identity takeover) and that _backfill_email degrades gracefully on
-a collision instead of raising an uncaught IntegrityError.
-"""
+"""Archived-member/non-member scenarios for the public RSVP flow."""
 
 import pytest
 from community._validation import Code
@@ -28,10 +19,6 @@ def official_event(db):
 @pytest.mark.django_db
 class TestArchivedMemberGate:
     def test_phone_belongs_to_archived_member(self, api_client, official_event, fake_email_sender):
-        # Without the fix: phone_match's archived_at__isnull=True filter misses
-        # this row, the gate never fires, and _create_non_member's
-        # get_or_create matches it via the unique phone constraint, returning
-        # the member row — issue_or_extend then raises for is_member and 500s.
         member = User.objects.create_user(
             phone_number="+14155550123", first_name="A", last_name="Member", is_member=True
         )
@@ -65,8 +52,6 @@ class TestArchivedMemberGate:
     def test_archived_non_member_email_holder_is_reused(
         self, api_client, official_event, fake_email_sender
     ):
-        # Archived non-members aren't members-in-hiding — same reuse path as a
-        # live non-member, consistent with _join_request_submit's precedent.
         archived = make_non_member("+14155550777", "sam@example.com", name="Archived")
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])
@@ -81,10 +66,6 @@ class TestArchivedMemberGate:
 @pytest.mark.django_db
 class TestBackfillEmailCollision:
     def test_concurrent_email_claim_is_handled_gracefully(self):
-        # _backfill_email had no guard around its save(), so a unique-email
-        # collision raised an uncaught IntegrityError (500). This simulates
-        # the race window between _resolve_non_member's pre-check and the
-        # save: another row claims the email in between.
         from community._public_rsvp_submit import _backfill_email
         from community._validation import ValidationException
 
@@ -96,11 +77,5 @@ class TestBackfillEmailCollision:
         with pytest.raises(ValidationException) as exc_info:
             _backfill_email(phone_match, "sam@example.com")
         assert exc_info.value.code == Code.Email.ALREADY_EXISTS
-        # The failed save must not have persisted — the DB row stays blank.
         phone_match.refresh_from_db()
         assert phone_match.email is None
-
-
-# The resend endpoint (POST /public/my-rsvps/resend/) shares the same
-# archived-member lookup shape — its tests live in test_public_rsvp_resend.py
-# (TestResendManageLink.test_archived_member_contact_gets_no_link).

@@ -213,10 +213,6 @@ class TestPublicRsvpMemberCollision:
         assert not EventRSVP.objects.exists()
 
 
-# Archived-member/non-member scenarios (Issue 1002, 1003) live in
-# test_public_rsvp_archived.py.
-
-
 @pytest.mark.django_db
 class TestPublicRsvpEventGating:
     def test_community_event(self, api_client, fake_email_sender):

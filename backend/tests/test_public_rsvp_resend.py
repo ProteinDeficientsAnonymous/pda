@@ -123,9 +123,6 @@ class TestResendManageLink:
         assert response.json()["detail"] == _NEUTRAL_RESPONSE
 
     def test_archived_non_member_still_gets_link(self, api_client, fake_email_sender):
-        # An archived non-member (not the member archive path — is_member
-        # stays False) still has a legitimate RSVP history; recovery must not
-        # silently withhold their link just because archived_at is set.
         user = make_non_member(PHONE, EMAIL)
         user.archived_at = timezone.now()
         user.save(update_fields=["archived_at"])
@@ -135,9 +132,6 @@ class TestResendManageLink:
         fake_email_sender.send.assert_called_once()
 
     def test_archived_member_contact_gets_no_link(self, api_client, fake_email_sender):
-        # Issue 1002/1003 root cause: archiving sets archived_at but never
-        # clears is_member, so an archived member's contact must still be
-        # treated as a member contact, not fall through as unclaimed.
         member = make_non_member(PHONE, EMAIL)
         member.is_member = True
         member.archived_at = timezone.now()
