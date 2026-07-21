@@ -33,6 +33,7 @@ class Code:
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
+        WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }
 
     class Poll:
         NOT_FOUND = "poll.not_found"

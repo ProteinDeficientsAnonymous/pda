@@ -2021,6 +2021,17 @@
             ],
             "title": "Event Type"
           },
+          "force": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Force"
+          },
           "invite_permission": {
             "anyOf": [
               {
@@ -4146,7 +4157,8 @@
           "attending",
           "maybe",
           "cant_go",
-          "waitlisted"
+          "waitlisted",
+          "removed"
         ],
         "title": "RSVPStatus",
         "type": "string"
@@ -8160,6 +8172,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [

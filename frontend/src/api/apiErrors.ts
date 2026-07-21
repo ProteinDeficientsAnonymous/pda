@@ -51,10 +51,20 @@ export function getApiStatus(err: unknown): number | null {
  * the status (e.g. distinguishing flag_already_flagged from any 409).
  */
 export function hasErrorCode(err: unknown, code: string): boolean {
-  if (!isAxiosError(err)) return false;
+  return getErrorParams(err, code) !== null;
+}
+
+/**
+ * The `params` of the structured-detail entry matching `code`, or null if the
+ * error doesn't carry that code. Use alongside hasErrorCode when the caller
+ * needs the params payload (e.g. a count), not just a yes/no check.
+ */
+export function getErrorParams(err: unknown, code: string): Record<string, unknown> | null {
+  if (!isAxiosError(err)) return null;
   const data = err.response?.data as Record<string, unknown> | undefined;
-  if (!data || !Array.isArray(data.detail)) return false;
-  return data.detail.some(
-    (e) => typeof e === 'object' && e !== null && (e as { code?: unknown }).code === code,
+  if (!data || !Array.isArray(data.detail)) return null;
+  const match = data.detail.find(
+    (e): e is FieldError => typeof e === 'object' && e !== null && (e as FieldError).code === code,
   );
+  return match ? (match.params ?? {}) : null;
 }

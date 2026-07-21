@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{{ event_title|lower }} is no longer open to non-members, so we've removed your rsvp 🌿
+{% if event_when %}
+when: {{ event_when|lower }}{% endif %}
+
+when you join pda you get access to club events and our whatsapp community. click here to join: {{ join_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
