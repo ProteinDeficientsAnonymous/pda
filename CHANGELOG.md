@@ -1,3 +1,38 @@
+## [0.51.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.6...v0.51.7) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1006 - client-validate rsvp name chars and phone ([#1017](https://github.com/ProteinDeficientsAnonymous/pda/issues/1017)) ([7e94840](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e948402a21945e146b92270304b5904aa57e00c))
+
+## [0.51.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.5...v0.51.6) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1010 - surface actionable rsvp submit error messages ([#1021](https://github.com/ProteinDeficientsAnonymous/pda/issues/1021)) ([8ed9ed4](https://github.com/ProteinDeficientsAnonymous/pda/commit/8ed9ed4e86f8ecc6cafb820029159e580ae52e67))
+
+## [0.51.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.4...v0.51.5) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** broadcast capacity change on non-member rsvp update/cancel ([#1020](https://github.com/ProteinDeficientsAnonymous/pda/issues/1020)) ([cb3da89](https://github.com/ProteinDeficientsAnonymous/pda/commit/cb3da8971dbdf87c7d025b91ef0aa2769465654d))
+
+## [0.51.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.3...v0.51.4) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** stop archived members bypassing the member gate ([#1015](https://github.com/ProteinDeficientsAnonymous/pda/issues/1015)) ([431795f](https://github.com/ProteinDeficientsAnonymous/pda/commit/431795f1540a0e7f525a0dfdeead20c9037d9cb7)), closes [#999](https://github.com/ProteinDeficientsAnonymous/pda/issues/999) [#1002](https://github.com/ProteinDeficientsAnonymous/pda/issues/1002) [#1003](https://github.com/ProteinDeficientsAnonymous/pda/issues/1003)
+
+## [0.51.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.2...v0.51.3) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** email promoted non-members on public rsvp cancel (Issue 1005) ([#1016](https://github.com/ProteinDeficientsAnonymous/pda/issues/1016)) ([f4684c3](https://github.com/ProteinDeficientsAnonymous/pda/commit/f4684c32e8cd953da4ab11067463563d62b2a716))
+
 ## [0.51.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.1...v0.51.2) (2026-07-21)
 
 

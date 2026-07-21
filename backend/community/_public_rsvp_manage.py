@@ -12,7 +12,7 @@ from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
 from users.models import NonMemberRsvpToken, User
 
-from community._event_helpers import _event_out, promote_from_waitlist
+from community._event_helpers import _event_out, broadcast_capacity_change, promote_from_waitlist
 from community._event_rsvps import (
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
@@ -156,6 +156,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     _post_rsvp_comment(event.id, user, final_status, payload.comment)
     _send_updated_email(request, event, user, rsvp_token.token)
     _email_promoted_non_members(request, event, promoted_user_ids)
+    broadcast_capacity_change(event.id)
 
     fresh_event = (
         Event.objects.select_related("created_by")
@@ -178,6 +179,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 @rate_limit(key_func=client_ip, rate="30/h")
 def delete_my_rsvp(request, event_id, token: str = ""):
     user = _resolve_token_user(token)
+    promoted_user_ids: list[str] = []
     with transaction.atomic():
         event = (
             Event.objects.select_for_update()
@@ -193,7 +195,7 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:
-            promote_from_waitlist(event)
+            promoted_user_ids = promote_from_waitlist(event)
 
     audit_log(
         logging.INFO,
@@ -203,4 +205,6 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         target_id=str(event_id),
         details={"user_id": str(user.pk)},
     )
+    _email_promoted_non_members(request, event, promoted_user_ids)
+    broadcast_capacity_change(event.id)
     return Status(204, None)

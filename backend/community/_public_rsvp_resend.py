@@ -43,18 +43,10 @@ def _neutral() -> Status:
 def _find_non_member(phone: str, email: str) -> User | None:
     """Find the non-member User matching this phone (canonical) or email.
 
-    Returns None when there's no match OR the match is a member — a member must
-    use the sign-in flow, never a scoped non-member link. Reuses the submit
-    endpoint's lookup filters (phone canonical, iexact email, non-archived); a
-    phone/email split across two rows just picks the phone row without flagging
-    it, since a recovery resend has no ambiguity to reconcile.
+    Returns None when there's no match OR the match is a member.
     """
-    phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
-    email_match = (
-        User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
-        if email
-        else None
-    )
+    phone_match = User.objects.filter(phone_number=phone).first()
+    email_match = User.objects.filter(email__iexact=email).first() if email else None
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
         return None
     return phone_match or email_match

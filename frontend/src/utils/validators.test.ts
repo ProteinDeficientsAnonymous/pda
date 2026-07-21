@@ -1,72 +1,72 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  displayName,
   maxLength,
   minLength,
-  optionalDisplayName,
   optionalEmail,
+  optionalPersonName,
   optionalUrl,
   password,
+  personName,
   required,
   roleName,
 } from './validators';
 
-describe('displayName', () => {
+describe('personName', () => {
   it('accepts ASCII name', () => {
-    expect(displayName('Alex R')).toBeNull();
+    expect(personName('Alex R')).toBeNull();
   });
 
   it('accepts name with hyphen', () => {
-    expect(displayName('Mary-Jane')).toBeNull();
+    expect(personName('Mary-Jane')).toBeNull();
   });
 
   it('accepts name with apostrophe', () => {
-    expect(displayName("O'Brien")).toBeNull();
+    expect(personName("O'Brien")).toBeNull();
   });
 
   it('accepts name with period (initial)', () => {
-    expect(displayName('Alex R.')).toBeNull();
+    expect(personName('Alex R.')).toBeNull();
   });
 
   it('accepts accented Latin characters', () => {
-    expect(displayName('José Müller')).toBeNull();
+    expect(personName('José Müller')).toBeNull();
   });
 
   it('accepts Cyrillic characters', () => {
-    expect(displayName('Юлия К')).toBeNull();
+    expect(personName('Юлия К')).toBeNull();
   });
 
   it('accepts CJK characters', () => {
-    expect(displayName('田中 太郎')).toBeNull();
+    expect(personName('田中 太郎')).toBeNull();
   });
 
   it('rejects empty string', () => {
-    expect(displayName('')).not.toBeNull();
+    expect(personName('')).not.toBeNull();
   });
 
   it('rejects whitespace only', () => {
-    expect(displayName('   ')).not.toBeNull();
+    expect(personName('   ')).not.toBeNull();
   });
 
   it('rejects name with digits', () => {
-    expect(displayName('Alice2')).not.toBeNull();
+    expect(personName('Alice2')).not.toBeNull();
   });
 
   it('rejects email address', () => {
-    expect(displayName('user@example.com')).not.toBeNull();
+    expect(personName('user@example.com')).not.toBeNull();
   });
 
   it('rejects URL', () => {
-    expect(displayName('http://evil.com')).not.toBeNull();
+    expect(personName('http://evil.com')).not.toBeNull();
   });
 
   it('rejects phone number', () => {
-    expect(displayName('5551234567')).not.toBeNull();
+    expect(personName('5551234567')).not.toBeNull();
   });
 
   it('rejects names over 64 characters', () => {
-    expect(displayName('A'.repeat(65))).not.toBeNull();
+    expect(personName('A'.repeat(65))).not.toBeNull();
   });
 });
 
@@ -110,24 +110,24 @@ describe('password', () => {
   });
 });
 
-describe('optionalDisplayName', () => {
+describe('optionalPersonName', () => {
   it('accepts empty/null (optional field)', () => {
-    expect(optionalDisplayName('')).toBeNull();
-    expect(optionalDisplayName(null)).toBeNull();
-    expect(optionalDisplayName('   ')).toBeNull();
+    expect(optionalPersonName('')).toBeNull();
+    expect(optionalPersonName(null)).toBeNull();
+    expect(optionalPersonName('   ')).toBeNull();
   });
 
   it('accepts valid Unicode name when provided', () => {
-    expect(optionalDisplayName("Mary-Jane O'Brien")).toBeNull();
+    expect(optionalPersonName("Mary-Jane O'Brien")).toBeNull();
   });
 
   it('rejects invalid name when provided', () => {
-    expect(optionalDisplayName('user@example.com')).not.toBeNull();
-    expect(optionalDisplayName('Alice2')).not.toBeNull();
+    expect(optionalPersonName('user@example.com')).not.toBeNull();
+    expect(optionalPersonName('Alice2')).not.toBeNull();
   });
 
   it('rejects names over 64 characters', () => {
-    expect(optionalDisplayName('A'.repeat(65))).not.toBeNull();
+    expect(optionalPersonName('A'.repeat(65))).not.toBeNull();
   });
 });
 

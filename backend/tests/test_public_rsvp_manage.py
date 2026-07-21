@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import patch
 
 import pytest
 from community.models import (
@@ -217,6 +218,18 @@ class TestPostMyRsvps:
         )
         assert resp.status_code == 404
 
+    def test_update_broadcasts_capacity_change(self, api_client, nonmember, official_event):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        with patch("community._public_rsvp_manage.broadcast_capacity_change") as mock_broadcast:
+            api_client.post(
+                f"{_post_url(official_event)}?token={token.token}",
+                {"status": RSVPStatus.MAYBE},
+                content_type="application/json",
+            )
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == official_event.id
+
 
 @pytest.mark.django_db
 class TestDeleteMyRsvps:
@@ -230,7 +243,9 @@ class TestDeleteMyRsvps:
         listed = api_client.get(f"{GET_URL}?token={token.token}").json()["rsvps"]
         assert listed == []
 
-    def test_delete_promotes_waitlist(self, api_client, nonmember, official_event):
+    def test_delete_promotes_waitlist(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
         official_event.max_attendees = 1
         official_event.save(update_fields=["max_attendees"])
         EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
@@ -241,6 +256,10 @@ class TestDeleteMyRsvps:
         assert resp.status_code == 204
         waiter_rsvp = EventRSVP.objects.get(event=official_event, user=waiter)
         assert waiter_rsvp.status == RSVPStatus.ATTENDING
+        fake_email_sender.send.assert_called_once()
+        sent = fake_email_sender.send.call_args.kwargs
+        assert sent["to"] == waiter.email
+        assert sent["subject"] == "you're off the waitlist for official a"
 
     def test_delete_no_rsvp_404(self, api_client, nonmember, official_event):
         token = NonMemberRsvpToken.issue_or_extend(nonmember)
@@ -250,6 +269,14 @@ class TestDeleteMyRsvps:
     def test_delete_bad_token_404(self, api_client, official_event):
         resp = api_client.delete(f"{_post_url(official_event)}?token=nope")
         assert resp.status_code == 404
+
+    def test_delete_broadcasts_capacity_change(self, api_client, nonmember, official_event):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        with patch("community._public_rsvp_manage.broadcast_capacity_change") as mock_broadcast:
+            api_client.delete(f"{_post_url(official_event)}?token={token.token}")
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == official_event.id
 
 
 @pytest.mark.django_db

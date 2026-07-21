@@ -1,7 +1,8 @@
 import { type SyntheticEvent, useState } from 'react';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { getApiStatus } from '@/api/apiErrors';
+import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { type PublicRsvpOut, useSubmitPublicRsvp } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
 import { Honeypot } from '@/components/ui/Honeypot';
@@ -16,7 +17,7 @@ import {
   RsvpStatus,
   spotsLeft,
 } from '@/models/event';
-import { optionalEmail } from '@/utils/validators';
+import { optionalEmail, optionalPersonName, personName } from '@/utils/validators';
 
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
@@ -34,7 +35,7 @@ interface SubmitError {
   showSignIn: boolean;
 }
 
-function messageForStatus(status: number | null): SubmitError {
+function messageForStatus(status: number | null, err: unknown): SubmitError {
   if (status === 409) {
     return { text: 'looks like you already have an account — sign in to rsvp', showSignIn: true };
   }
@@ -44,7 +45,7 @@ function messageForStatus(status: number | null): SubmitError {
   if (status === 404) {
     return { text: "this event isn't accepting public rsvps anymore — refresh", showSignIn: false };
   }
-  return { text: 'something went wrong — try again', showSignIn: false };
+  return { text: extractApiErrorOr(err, 'something went wrong — try again'), showSignIn: false };
 }
 
 function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
@@ -71,10 +72,15 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
 
   function validate(): boolean {
     const next: Record<string, string> = {};
-    if (!firstName.trim()) next.firstName = 'first name required';
+    const firstNameErr = personName(firstName);
+    if (firstNameErr)
+      next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
+    const lastNameErr = optionalPersonName(lastName);
+    if (lastNameErr) next.lastName = lastNameErr;
     if (!email.trim()) next.email = 'email required';
     else if (optionalEmail(email)) next.email = 'not a valid email';
     if (!phone.trim()) next.phone = 'phone required';
+    else if (!isValidPhoneNumber(phone)) next.phone = 'invalid phone number';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -99,7 +105,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
       });
       onSuccess(result);
     } catch (err) {
-      setSubmitError(messageForStatus(getApiStatus(err)));
+      setSubmitError(messageForStatus(getApiStatus(err), err));
     }
   }
 
@@ -182,6 +188,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           }}
           maxLength={MAX_NAME}
           autoComplete="family-name"
+          error={errors.lastName}
         />
         <TextField
           label="email"

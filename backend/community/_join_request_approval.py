@@ -116,7 +116,7 @@ def _provision_tentative_user(join_request, requesting_user) -> User:
             phone_number=join_request.phone_number,
             first_name=join_request.first_name,
             last_name=join_request.last_name,
-            email=join_request.email or None,
+            email=join_request.email,
             is_member=False,
         )
         user.set_unusable_password()

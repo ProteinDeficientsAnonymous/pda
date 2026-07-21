@@ -147,23 +147,6 @@ class TestPublicRsvpDedup:
         assert EventRSVP.objects.filter(event=official_event, user=user).count() == 1
         assert EventRSVP.objects.get(event=official_event, user=user).status == RSVPStatus.MAYBE
 
-    def test_archived_email_holder_blocks_create(
-        self, api_client, official_event, fake_email_sender
-    ):
-        # An archived user holding the submitted email is ignored by the lookups,
-        # so create is attempted and trips the DB's unique-email constraint.
-        from django.utils import timezone
-
-        archived = make_non_member("+14155550777", "sam@example.com", name="Archived")
-        archived.archived_at = timezone.now()
-        archived.save(update_fields=["archived_at"])
-
-        response = post(api_client, official_event)
-
-        assert response.status_code == 409
-        assert first_code(response) == Code.Email.ALREADY_EXISTS
-        assert not User.objects.filter(phone_number="+14155550123").exists()
-
     def test_multiple_rsvps_reuse_the_same_token(
         self, api_client, official_event, fake_email_sender
     ):
