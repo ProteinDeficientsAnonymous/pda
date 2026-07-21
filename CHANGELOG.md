@@ -1,3 +1,10 @@
+## [0.51.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.7...v0.51.8) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** gate delete_my_rsvp on cancelled events (Issue 1011) ([#1025](https://github.com/ProteinDeficientsAnonymous/pda/issues/1025)) ([85a67bf](https://github.com/ProteinDeficientsAnonymous/pda/commit/85a67bf34e404e3cf5197980bd7079930696fc4a))
+
 ## [0.51.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.6...v0.51.7) (2026-07-21)
 
 
