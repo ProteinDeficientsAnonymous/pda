@@ -14,13 +14,18 @@ import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessage
 import { WelcomeTemplateEditorDialog } from './WelcomeTemplateEditorDialog';
 import { WhatsAppLinkEditorDialog } from './WhatsAppLinkEditorDialog';
 
-type EditorKey = 'welcome' | 'tentative' | 'memberPromotion' | 'whatsapp';
+enum EditorKey {
+  Welcome = 'welcome',
+  Tentative = 'tentative',
+  MemberPromotion = 'memberPromotion',
+  WhatsApp = 'whatsapp',
+}
 
 const EDITOR_OPTIONS: { value: EditorKey; label: string }[] = [
-  { value: 'welcome', label: 'edit shared welcome template' },
-  { value: 'tentative', label: 'edit tentative approval message' },
-  { value: 'memberPromotion', label: 'edit member promotion message' },
-  { value: 'whatsapp', label: 'edit whatsapp link' },
+  { value: EditorKey.Welcome, label: 'edit shared welcome template' },
+  { value: EditorKey.Tentative, label: 'edit tentative approval message' },
+  { value: EditorKey.MemberPromotion, label: 'edit member promotion message' },
+  { value: EditorKey.WhatsApp, label: 'edit whatsapp link' },
 ];
 
 export function JoinRequestMessageEditors() {
@@ -63,22 +68,22 @@ export function JoinRequestMessageEditors() {
         ))}
       </select>
       <WelcomeTemplateEditorDialog
-        open={openEditor === 'welcome'}
+        open={openEditor === EditorKey.Welcome}
         onClose={closeEditor}
         template={welcomeQ.data ?? null}
       />
       <TentativeApprovalMessageEditorDialog
-        open={openEditor === 'tentative'}
+        open={openEditor === EditorKey.Tentative}
         onClose={closeEditor}
         template={tentativeQ.data ?? null}
       />
       <MemberPromotionMessageEditorDialog
-        open={openEditor === 'memberPromotion'}
+        open={openEditor === EditorKey.MemberPromotion}
         onClose={closeEditor}
         template={memberPromotionQ.data ?? null}
       />
       <WhatsAppLinkEditorDialog
-        open={openEditor === 'whatsapp'}
+        open={openEditor === EditorKey.WhatsApp}
         onClose={closeEditor}
         whatsappLink={whatsappQ.data ?? null}
       />
