@@ -71,13 +71,13 @@ export function EventMemberSection({ event, token }: Props) {
             {...(token ? { token } : {})}
           />
           {canInvite || isCoHost ? (
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
+            <div className="mt-4 flex flex-col items-stretch gap-2">
               {canInvite ? <InviteSection event={event} /> : null}
               {isCoHost ? (
-                <>
+                <div className="flex flex-wrap justify-end gap-2">
                   <EmailBlastButton event={event} />
                   <GroupTextButton event={event} />
-                </>
+                </div>
               ) : null}
             </div>
           ) : null}
