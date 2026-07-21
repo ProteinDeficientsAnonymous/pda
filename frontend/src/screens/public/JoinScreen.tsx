@@ -13,7 +13,7 @@ import { PhoneField } from '@/components/ui/PhoneField';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
-import { nameCharsRe } from '@/utils/validators';
+import { personName } from '@/utils/validators';
 
 import { ContentContainer, ContentError, ContentLoading } from './ContentContainer';
 
@@ -100,10 +100,12 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
 
   function validate(): boolean {
     const next: Record<string, string> = {};
-    if (!firstName.trim()) next.firstName = 'first name required';
-    else if (!nameCharsRe.test(firstName)) next.firstName = 'letters only';
-    if (!lastName.trim()) next.lastName = 'last name required';
-    else if (!nameCharsRe.test(lastName)) next.lastName = 'letters only';
+    const firstNameErr = personName(firstName);
+    if (firstNameErr)
+      next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
+    const lastNameErr = personName(lastName);
+    if (lastNameErr)
+      next.lastName = lastNameErr === 'Required' ? 'last name required' : lastNameErr;
     if (!phoneNumber.trim()) next.phoneNumber = 'phone required';
     if (!email.trim()) next.email = 'email required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'not a valid email';

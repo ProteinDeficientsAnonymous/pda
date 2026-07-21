@@ -12,7 +12,7 @@ vi.mock('@/api/client', () => ({
 vi.mock('@/auth/store', () => {
   const state = {
     status: 'authed',
-    user: { id: 'u-me', displayName: 'Me', profilePhotoUrl: null },
+    user: { id: 'u-me', profilePhotoUrl: null },
   };
   const useAuthStore = vi.fn((selector?: (s: typeof state) => unknown) =>
     selector ? selector(state) : state,
