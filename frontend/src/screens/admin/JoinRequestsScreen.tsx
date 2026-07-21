@@ -158,10 +158,11 @@ export default function JoinRequestsScreen() {
 
       <JoinRequestMessageEditors />
 
-      <div className="mb-4 flex justify-center">
+      <div className="mb-4 overflow-x-auto">
         <SegmentedControl
           name="join-filter"
           ariaLabel="filter"
+          className="mx-auto w-max"
           options={FILTERS}
           value={filter}
           onChange={setFilter}

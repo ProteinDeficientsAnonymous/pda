@@ -28,11 +28,11 @@ export function JoinRequestMessageEditors() {
   if (!hasPermission(currentUser, Permission.ApproveJoinRequests)) return null;
 
   return (
-    <div className="border-border bg-surface-dim mb-4 rounded-md border p-3">
-      <p className="text-muted mb-2 text-xs font-medium tracking-wide uppercase">
+    <details className="border-border bg-surface-dim mb-4 rounded-md border p-3">
+      <summary className="text-muted text-xs font-medium tracking-wide uppercase [&::-webkit-details-marker]:hidden">
         message templates
-      </p>
-      <div className="flex flex-wrap gap-2">
+      </summary>
+      <div className="mt-2 flex flex-wrap gap-2">
         <EditorTrigger
           label="edit shared welcome template"
           onClick={() => {
@@ -86,7 +86,7 @@ export function JoinRequestMessageEditors() {
         }}
         whatsappLink={whatsappQ.data ?? null}
       />
-    </div>
+    </details>
   );
 }
 
