@@ -104,6 +104,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'that audience choice is not valid';
     case Code.Event.BlastNoRecipients:
       return 'no attendees in that audience have an email — nothing to send';
+    case Code.Event.WouldRemoveNonMembers:
+      return "this change would remove non-members rsvp'd on this event";
 
     // Poll
     case Code.Poll.NotFound:

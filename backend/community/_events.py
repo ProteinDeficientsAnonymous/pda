@@ -25,6 +25,10 @@ from community._event_helpers import (
     _tags_out,
     _update_co_hosts,
 )
+from community._event_nonmember_removal import (
+    email_removed_non_members,
+    guard_or_remove_ineligible_non_members,
+)
 from community._event_schemas import (
     EventIn,
     EventListOut,
@@ -401,7 +405,7 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
 
 @router.patch(
     "/events/{event_id}/",
-    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 409: ErrorOut},
     auth=gated_jwt,
 )
 def update_event(request, event_id: UUID, payload: EventPatchIn):
@@ -431,15 +435,24 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     updates = payload.model_dump(exclude_unset=True)
     new_status = updates.pop("status", None)
     notify_attendees = updates.pop("notify_attendees", False) or False
+    force = updates.pop("force", False) or False
+    # Checked before status transitions, which have their own attendee notifications.
+    was_eligible = event.is_public_rsvp_eligible
+    removed_user_ids: list[str] = []
 
     # Field edits before the transition so publish validates the corrected date.
     with transaction.atomic():
         _apply_field_updates(request, event, event_id, updates)
 
+        if was_eligible and not event.is_public_rsvp_eligible:
+            removed_user_ids = guard_or_remove_ineligible_non_members(event, force)
+
         if new_status is not None:
             early = _handle_status_update(request, event, new_status, notify_attendees)
             if early is not None:
                 return early
+
+    email_removed_non_members(request, event, removed_user_ids)
 
     # Re-fetch to pick up any M2M changes
     event.refresh_from_db()

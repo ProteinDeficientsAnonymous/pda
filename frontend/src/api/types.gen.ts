@@ -2772,6 +2772,8 @@ export interface components {
             end_datetime?: string | null;
             /** Event Type */
             event_type?: string | null;
+            /** Force */
+            force?: boolean | null;
             /** Invite Permission */
             invite_permission?: string | null;
             /** Latitude */
@@ -3653,7 +3655,7 @@ export interface components {
          * RSVPStatus
          * @enum {string}
          */
-        RSVPStatus: "attending" | "maybe" | "cant_go" | "waitlisted";
+        RSVPStatus: "attending" | "maybe" | "cant_go" | "waitlisted" | "removed";
         /** ReactionToggleIn */
         ReactionToggleIn: {
             /** Emoji */
@@ -6175,6 +6177,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

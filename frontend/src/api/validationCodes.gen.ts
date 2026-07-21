@@ -35,6 +35,7 @@ export const Code = {
     PermDenied: 'event.perm_denied',
     BlastInvalidAudience: 'event.blast_invalid_audience',
     BlastNoRecipients: 'event.blast_no_recipients',
+    WouldRemoveNonMembers: 'event.would_remove_non_members',
   },
   Poll: {
     NotFound: 'poll.not_found',
@@ -245,6 +246,7 @@ export type ValidationCode =
   | 'event.perm_denied'
   | 'event.blast_invalid_audience'
   | 'event.blast_no_recipients'
+  | 'event.would_remove_non_members'
   | 'poll.not_found'
   | 'poll.options_required'
   | 'poll.options_must_be_future'
@@ -399,6 +401,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.perm_denied': ['action'],
   'event.blast_invalid_audience': [],
   'event.blast_no_recipients': [],
+  'event.would_remove_non_members': ['count'],
   'poll.not_found': [],
   'poll.options_required': [],
   'poll.options_must_be_future': [],
