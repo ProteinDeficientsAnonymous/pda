@@ -12,6 +12,7 @@ export interface SeedScenarioMap {
     access_token: string;
   };
   'public-new': { event_id: string; event_title: string; event_location: string };
+  'public-recognized': { event_id: string; event_title: string; user_phone: string };
   'public-returning': {
     event_id: string;
     event_title: string;
