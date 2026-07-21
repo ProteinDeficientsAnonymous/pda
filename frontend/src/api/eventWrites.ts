@@ -267,24 +267,6 @@ export function useUploadEventPhoto() {
   });
 }
 
-export function useDeleteEventPhoto(eventId: string) {
-  const qc = useQueryClient();
-  const isAuthed = useAuthStore((s) => s.status === 'authed');
-  return useMutation({
-    mutationFn: async () => {
-      const { data } = await apiClient.delete<WireEvent>(`/api/community/events/${eventId}/photo/`);
-      return mapEvent(data);
-    },
-    onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
-      void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
-    },
-    onError: (err) => {
-      void reportError(err, ROUTE, { action: 'delete-event-photo', eventId });
-    },
-  });
-}
-
 export function extractEventError(err: unknown): string {
   // Event-create has a hard daily rate limit; surface that specifically.
   if (getApiStatus(err) === 429) {

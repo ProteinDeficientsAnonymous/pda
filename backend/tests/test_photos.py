@@ -186,24 +186,6 @@ class TestEventPhoto:
         )
         assert response.status_code == 400
 
-    def test_delete_photo(self, api_client, member, event):
-        photo = _make_test_image()
-        api_client.post(
-            f"/api/community/events/{event.id}/photo/",
-            {"photo": photo},
-            **_auth(member),
-        )
-        response = api_client.delete(
-            f"/api/community/events/{event.id}/photo/",
-            **_auth(member),
-        )
-        assert response.status_code == 200
-        body = response.json()
-        assert body["photo_url"] == ""
-        assert body["photo_updated_at"] is None
-        event.refresh_from_db()
-        assert event.photo_updated_at is None
-
     def test_photo_url_in_event_detail(self, api_client, member, event):
         photo = _make_test_image()
         api_client.post(

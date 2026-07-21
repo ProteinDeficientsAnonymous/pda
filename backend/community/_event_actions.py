@@ -1,4 +1,4 @@
-"""Event photo upload/delete endpoints."""
+"""Event photo upload endpoint."""
 
 import logging
 import time
@@ -76,41 +76,5 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
     event.save(update_fields=["photo", "photo_updated_at"])
     audit_log(
         logging.INFO, "event_photo_uploaded", request, target_type="event", target_id=str(event_id)
-    )
-    return Status(200, _event_out(event, request.auth))
-
-
-@router.delete(
-    "/events/{event_id}/photo/",
-    response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def delete_event_photo(request, event_id: UUID):
-    try:
-        event = Event.objects.get(id=event_id)
-    except Event.DoesNotExist:
-        raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type="event",
-            target_id=str(event_id),
-            details={"endpoint": "delete_event_photo"},
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="delete_event_photo")
-    if event.is_cancelled:
-        raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
-    if event.photo:
-        event.photo.delete(save=False)
-        event.photo = ""
-        event.photo_updated_at = None
-        event.save(update_fields=["photo", "photo_updated_at"])
-    audit_log(
-        logging.INFO, "event_photo_deleted", request, target_type="event", target_id=str(event_id)
     )
     return Status(200, _event_out(event, request.auth))
