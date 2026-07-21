@@ -10,12 +10,22 @@ type Handler = (event: MessageEvent<string>) => void;
 
 interface Options {
   url: string;
+  // Null means "not authed yet, don't connect" for the member stream. Pass
+  // `anonymous` for a public/unauthenticated subscription instead — the
+  // backend mints anonymous tickets that only see wildcard broadcasts.
   token: string | null;
+  anonymous?: boolean;
   events: Record<string, Handler>;
   onStatusChange?: (connected: boolean) => void;
 }
 
-export function useEventSource({ url, token, events, onStatusChange }: Options): void {
+export function useEventSource({
+  url,
+  token,
+  anonymous = false,
+  events,
+  onStatusChange,
+}: Options): void {
   // Keep the latest handlers in a ref so we don't tear down the connection
   // every time the caller passes new function identities.
   const eventsRef = useRef(events);
@@ -26,7 +36,7 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
   });
 
   useEffect(() => {
-    if (!token) return;
+    if (!token && !anonymous) return;
 
     let es: EventSource | null = null;
     let retry = 0;
@@ -101,5 +111,5 @@ export function useEventSource({ url, token, events, onStatusChange }: Options):
       es?.close();
       onStatusChangeRef.current?.(false);
     };
-  }, [url, token]);
+  }, [url, token, anonymous]);
 }

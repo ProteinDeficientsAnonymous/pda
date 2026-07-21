@@ -22,6 +22,16 @@ class TestFormatNotifyForUser:
         assert frame is not None
         assert "event: event_updated" in frame
 
+    def test_event_update_wildcard_matches_anonymous_viewer(self):
+        """Issue #1043: an anonymous/non-member connection has no user_id but
+        must still receive wildcard comment broadcasts."""
+        frame = _format_notify_for_user("event_updates", "*:event-1", None)
+        assert frame is not None
+        assert "event: event_updated" in frame
+
+    def test_personal_notification_never_matches_anonymous_viewer(self):
+        assert _format_notify_for_user("notifications", "user-1", None) is None
+
 
 def _auth_headers(user) -> dict:
     refresh = RefreshToken.for_user(user)
@@ -39,10 +49,6 @@ def _clear_rate_limit_cache():
 
 @pytest.mark.django_db
 class TestSseTicketMint:
-    def test_mint_requires_auth(self, api_client):
-        response = api_client.post("/api/notifications/sse-ticket/")
-        assert response.status_code == 401
-
     def test_mint_returns_ticket(self, test_user, api_client):
         response = api_client.post("/api/notifications/sse-ticket/", **_auth_headers(test_user))
         assert response.status_code == 200
@@ -56,6 +62,21 @@ class TestSseTicketMint:
         ticket = SseTicket.objects.get(token=token)
         assert ticket.user_id == test_user.pk
         assert ticket.used is False
+
+    def test_anonymous_mint_returns_ticket(self, api_client):
+        """Issue #1043: a non-member viewing a public event page still needs a
+        ticket to open the live-comment stream."""
+        response = api_client.post("/api/notifications/sse-ticket/")
+        assert response.status_code == 200
+        assert response.json()["ticket"]
+
+    def test_anonymous_ticket_has_no_user(self, api_client):
+        from notifications.models import SseTicket
+
+        response = api_client.post("/api/notifications/sse-ticket/")
+        token = response.json()["ticket"]
+        ticket = SseTicket.objects.get(token=token)
+        assert ticket.user_id is None
 
 
 @pytest.mark.django_db

@@ -17,12 +17,17 @@ _EVENT_UPDATES_CHANNEL = "event_updates"
 _HEARTBEAT_INTERVAL = 30  # seconds
 
 
+_ANONYMOUS = "anonymous"
+
+
 @sync_to_async
-def _consume_ticket(ticket_str: str) -> AbstractBaseUser | None:
-    """Atomically validate + consume a single-use SSE ticket, return its user.
+def _consume_ticket(ticket_str: str) -> AbstractBaseUser | str | None:
+    """Atomically validate + consume a single-use SSE ticket.
 
     Row-locked (select_for_update) so concurrent connections can't both consume
-    one ticket. Returns None for a missing/expired/used ticket.
+    one ticket. Returns the ticket's user, the sentinel string `_ANONYMOUS` for
+    an anonymous ticket (no user attached), or None for a missing/expired/used
+    ticket or one whose user has since been deleted.
     """
     from django.db import transaction
 
@@ -38,6 +43,8 @@ def _consume_ticket(ticket_str: str) -> AbstractBaseUser | None:
         ticket.used = True
         ticket.save(update_fields=["used"])
         user_id = ticket.user_id
+    if user_id is None:
+        return _ANONYMOUS
     User = get_user_model()
     try:
         return User.objects.get(pk=user_id)
@@ -53,24 +60,28 @@ def _build_async_dsn() -> str:
     return f"postgresql://{db['USER']}:{db['PASSWORD']}@{host}:{port}/{db['NAME']}"
 
 
-def _format_notify_for_user(channel: str, payload: str, user_id: str) -> str | None:
-    """Turn a pg_notify payload into an SSE frame for this user, or None to skip."""
+def _format_notify_for_user(channel: str, payload: str, user_id: str | None) -> str | None:
+    """Turn a pg_notify payload into an SSE frame for this user, or None to skip.
+
+    `user_id` is None for an anonymous viewer — they can never own a personal
+    notification, only see wildcard event-comment broadcasts.
+    """
     if channel == _PG_CHANNEL:
-        if payload == user_id:
+        if user_id is not None and payload == user_id:
             return f"event: notification\ndata: {json.dumps({'type': 'notification'})}\n\n"
         return None
     if channel == _EVENT_UPDATES_CHANNEL:
         # Payload format: "<user_id-or-*>:<event_id>". "*" broadcasts to every
         # connected viewer (used for changes visible to any member, e.g. comments).
         target_user, _, event_id = payload.partition(":")
-        if target_user in (user_id, "*") and event_id:
+        if (target_user == "*" or (user_id is not None and target_user == user_id)) and event_id:
             return f"event: event_updated\ndata: {json.dumps({'event_id': event_id})}\n\n"
         return None
     return None
 
 
-async def _sse_generator(user_id: str):
-    """Async generator that yields SSE events for a single user."""
+async def _sse_generator(user_id: str | None):
+    """Async generator that yields SSE events for a single connection."""
     # lazy import: psycopg only needed for the postgres LISTEN path
     import psycopg
 
@@ -112,12 +123,13 @@ async def notification_stream(request):
     if not ticket:
         return JsonResponse({"detail": "ticket required"}, status=401)
 
-    user = await _consume_ticket(ticket)
-    if user is None:
+    consumed = await _consume_ticket(ticket)
+    if consumed is None:
         return JsonResponse({"detail": "invalid ticket"}, status=401)
+    user_id = None if consumed == _ANONYMOUS else str(consumed.pk)
 
     response = StreamingHttpResponse(
-        _sse_generator(str(user.pk)),
+        _sse_generator(user_id),
         content_type="text/event-stream",
     )
     response["Cache-Control"] = "no-cache"

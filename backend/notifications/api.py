@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from community._shared import ErrorOut
+from community._shared import ErrorOut, _optional_jwt
 from community._validation import Code, raise_validation
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
+from django.contrib.auth.models import AnonymousUser
 from ninja import Query, Router
 from ninja.responses import Status
 
@@ -41,15 +42,26 @@ def list_notifications(
     return Status(200, [_notification_out(n) for n in notifications])
 
 
-@router.post("/sse-ticket/", response={200: SseTicketOut, 429: ErrorOut}, auth=gated_jwt)
-@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
+def _sse_ticket_rate_key(request) -> str:
+    if isinstance(request.auth, AnonymousUser):
+        return request.META.get("REMOTE_ADDR", "anon")
+    return str(request.auth.pk)
+
+
+@router.post("/sse-ticket/", response={200: SseTicketOut, 429: ErrorOut}, auth=_optional_jwt)
+@rate_limit(key_func=_sse_ticket_rate_key, rate="30/m")
 def create_sse_ticket(request):
     """Mint a short-lived single-use ticket for opening the SSE stream.
 
     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-    can't send an auth header).
+    can't send an auth header). Anonymous viewers get a ticket too — a public
+    event page's live comment updates broadcast to a wildcard channel that
+    doesn't require a real user id (see broadcast_event_comment_update).
     """
-    ticket = SseTicket.mint_for_user(request.auth)
+    if isinstance(request.auth, AnonymousUser):
+        ticket = SseTicket.mint_anonymous()
+    else:
+        ticket = SseTicket.mint_for_user(request.auth)
     return Status(200, SseTicketOut(ticket=ticket.token))
 
 
