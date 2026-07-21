@@ -1,3 +1,10 @@
+## [0.52.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.9...v0.52.10) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1056 - add spacing between event actions and find-a-time poll ([#1067](https://github.com/ProteinDeficientsAnonymous/pda/issues/1067)) ([812debb](https://github.com/ProteinDeficientsAnonymous/pda/commit/812debb96017abcc2b31b1193da85f20d5ddf93c))
+
 ## [0.52.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.8...v0.52.9) (2026-07-21)
 
 
