@@ -113,6 +113,16 @@ class TestRSVPCommentRouting:
         _rsvp(api_client, member_headers, rsvp_event, RSVPStatus.MAYBE)
         assert EventComment.objects.filter(event=rsvp_event, author=member).count() == 1
 
+    def test_going_comment_broadcasts_live_update(
+        self, api_client, member_headers, member, rsvp_event
+    ):
+        with patch("community._event_rsvps.broadcast_event_comment_update") as mock_broadcast:
+            resp = _rsvp(
+                api_client, member_headers, rsvp_event, RSVPStatus.ATTENDING, "bringing snacks"
+            )
+        assert resp.status_code == 200
+        mock_broadcast.assert_called_once()
+
     def test_comment_post_failure_does_not_fail_the_rsvp(
         self, api_client, member_headers, member, rsvp_event
     ):
