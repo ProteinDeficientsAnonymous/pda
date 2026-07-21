@@ -13,20 +13,10 @@ vi.mock('@/api/publicRsvp', () => ({
 
 import { PublicRsvpForm } from './PublicRsvpForm';
 
-function renderForm(
-  event = makeEvent(),
-  onSuccess = vi.fn(),
-  onMember = vi.fn(),
-  onAlreadyRsvpd = vi.fn(),
-) {
+function renderForm(event = makeEvent(), onSuccess = vi.fn(), onMember = vi.fn()) {
   return render(
     <MemoryRouter>
-      <PublicRsvpForm
-        event={event}
-        onSuccess={onSuccess}
-        onMember={onMember}
-        onAlreadyRsvpd={onAlreadyRsvpd}
-      />
+      <PublicRsvpForm event={event} onSuccess={onSuccess} onMember={onMember} />
     </MemoryRouter>,
   );
 }
@@ -87,7 +77,6 @@ describe('PublicRsvpForm', () => {
           event={makeEvent({ allowPlusOnes: false })}
           onSuccess={vi.fn()}
           onMember={vi.fn()}
-          onAlreadyRsvpd={vi.fn()}
         />
       </MemoryRouter>,
     );
@@ -129,12 +118,14 @@ describe('PublicRsvpForm', () => {
     await waitFor(() => expect(onMember).toHaveBeenCalled());
   });
 
-  it('calls onAlreadyRsvpd with the refreshed token when already rsvpd', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: 'tok-xyz' });
-    const onAlreadyRsvpd = vi.fn();
-    renderForm(makeEvent(), vi.fn(), vi.fn(), onAlreadyRsvpd);
+  it('shows a check-your-email message instead of the contact form when already rsvpd', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: '' });
+    renderForm();
     fillPhoneStep();
-    await waitFor(() => expect(onAlreadyRsvpd).toHaveBeenCalledWith({ rsvpToken: 'tok-xyz' }));
+    await screen.findByText(
+      'we recognized your number — check your email for a link to confirm your rsvp',
+    );
+    expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });
 
   it('shows a check-your-email message instead of the contact form when recognized', async () => {

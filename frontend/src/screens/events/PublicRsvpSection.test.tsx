@@ -110,8 +110,8 @@ describe('PublicRsvpSection', () => {
     expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument();
   });
 
-  it('unlocks the event page when already rsvpd, skipping the form', async () => {
-    mockCheckPhone.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: 'tok-returning' });
+  it('shows a check-your-email message when already rsvpd, without leaking a token', async () => {
+    mockCheckPhone.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: '' });
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -123,8 +123,10 @@ describe('PublicRsvpSection', () => {
     await user.type(screen.getByLabelText(/phone number/i), '4155550123');
     await user.click(screen.getByRole('button', { name: 'continue' }));
 
-    expect(mockNavigate).toHaveBeenCalledWith(0);
+    await screen.findByText(
+      'we recognized your number — check your email for a link to confirm your rsvp',
+    );
     expect(mockSubmit).not.toHaveBeenCalled();
-    expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-returning');
+    expect(localStorage.getItem('pda-rsvp-token')).toBeNull();
   });
 });

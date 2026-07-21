@@ -18,7 +18,7 @@ import {
 } from '@/models/event';
 import { optionalEmail } from '@/utils/validators';
 
-import { type AlreadyRsvpdResult, PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
+import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
 
 const MAX_NAME = 100;
@@ -28,7 +28,6 @@ interface Props {
   event: Event;
   onSuccess: (result: PublicRsvpOut) => void;
   onMember: () => void;
-  onAlreadyRsvpd: (result: AlreadyRsvpdResult) => void;
 }
 
 interface SubmitError {
@@ -54,7 +53,7 @@ function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
   return RSVP_STATUS_LABELS.find((s) => s.status === status)?.label ?? status;
 }
 
-export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: Props) {
+export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
   const submit = useSubmitPublicRsvp();
   const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
@@ -129,7 +128,9 @@ export function PublicRsvpForm({ event, onSuccess, onMember, onAlreadyRsvpd }: P
         <PublicRsvpPhoneStep
           eventId={event.id}
           onMember={onMember}
-          onAlreadyRsvpd={onAlreadyRsvpd}
+          onAlreadyRsvpd={() => {
+            setRecognized(true);
+          }}
           onRecognized={() => {
             setRecognized(true);
           }}
