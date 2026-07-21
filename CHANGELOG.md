@@ -1,3 +1,10 @@
+## [0.52.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.3...v0.52.4) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1042 - hide cant go / waitlist guest lists from non-hosts ([#1052](https://github.com/ProteinDeficientsAnonymous/pda/issues/1052)) ([c424168](https://github.com/ProteinDeficientsAnonymous/pda/commit/c4241681a64412bc99025e1a94835f335f5c15e0))
+
 ## [0.52.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.2...v0.52.3) (2026-07-21)
 
 
