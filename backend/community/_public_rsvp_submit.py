@@ -82,7 +82,9 @@ def _backfill_email(phone_match: User, email: str) -> User:
     return phone_match
 
 
-def _create_non_member(first_name: str, last_name: str, email: str, phone: str) -> User:
+def _create_non_member(
+    first_name: str, last_name: str, email: str, phone: str
+) -> tuple[User, bool]:
     """Get-or-create the non-member User keyed on the unique phone number.
 
     A unique-email collision (e.g. an archived user still holding that email)
@@ -99,7 +101,7 @@ def _create_non_member(first_name: str, last_name: str, email: str, phone: str) 
     if created:
         user.set_unusable_password()
         user.save(update_fields=["password"])
-    return user
+    return user, created
 
 
 def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
@@ -120,10 +122,14 @@ def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
 
 def _resolve_non_member(
     *, request, first_name: str, last_name: str, email: str, phone: str
-) -> User:
+) -> tuple[User, bool]:
     """Resolve (or create) the non-member User backing this RSVP; member contact → 409.
 
-    Must run inside the surrounding transaction.
+    Keyed on the submitted phone only — an email match alone is never proof of
+    ownership, so it's used solely for the member-collision check below, never
+    to adopt a foreign row (Issue 1029). Must run inside the surrounding transaction.
+
+    return(tuple[User, bool]): the resolved user, and whether it was newly created.
     """
     phone_match = User.objects.filter(phone_number=phone).first()
     email_match = User.objects.filter(email__iexact=email).first() if email else None
@@ -132,11 +138,9 @@ def _resolve_non_member(
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if phone_match and email_match:
-        return _resolve_both_match(request, phone_match, email_match)
+        return _resolve_both_match(request, phone_match, email_match), False
     if phone_match:
-        return _backfill_email(phone_match, email)
-    if email_match:
-        return email_match
+        return _backfill_email(phone_match, email), False
     return _create_non_member(first_name, last_name, email, phone)
 
 
@@ -244,7 +248,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        user = _resolve_non_member(
+        user, created = _resolve_non_member(
             request=request,
             first_name=first_name,
             last_name=last_name,
@@ -278,11 +282,15 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     )
     broadcast_capacity_change(event.id)
     final_rsvp = user.event_rsvps.get(event=fresh_event)
+    # A matched pre-existing row never yields its token to an unverified caller
+    # (Issue 1029) — the confirmation email above already carries it to the
+    # address on file, which is the only proof-of-ownership channel we have.
+    returned_token = token.token if created else ""
     return Status(
         200,
         PublicRsvpOut(
             event=_event_out(fresh_event, user),
             rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
-            rsvp_token=token.token,
+            rsvp_token=returned_token,
         ),
     )

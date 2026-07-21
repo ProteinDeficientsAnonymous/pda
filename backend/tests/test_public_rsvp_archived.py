@@ -49,18 +49,21 @@ class TestArchivedMemberGate:
         assert response.json()["detail"][0]["code"] == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
         assert not EventRSVP.objects.exists()
 
-    def test_archived_non_member_email_holder_is_reused(
+    def test_archived_non_member_email_holder_is_not_adopted_by_fresh_phone(
         self, api_client, official_event, fake_email_sender
     ):
+        # Issue 1029: an email match alone is never proof of ownership, so a
+        # fresh phone can't silently take over the archived row via its email.
         archived = make_non_member("+14155550777", "sam@example.com", name="Archived")
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])
 
         response = post(api_client, official_event)
 
-        assert response.status_code == 200
+        assert response.status_code == 409
+        assert response.json()["detail"][0]["code"] == Code.Email.ALREADY_EXISTS
         assert not User.objects.filter(phone_number="+14155550123").exists()
-        assert EventRSVP.objects.filter(event=official_event, user=archived).exists()
+        assert not EventRSVP.objects.filter(event=official_event, user=archived).exists()
 
 
 @pytest.mark.django_db

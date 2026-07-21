@@ -96,6 +96,8 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event, email="new@example.com")
 
         assert response.status_code == 200
+        # Issue 1029: a phone match is a pre-existing row — no token in the body.
+        assert response.json()["rsvp_token"] == ""
         assert User.objects.filter(phone_number="+14155550123").count() == 1
         existing.refresh_from_db()
         # Email already set → never overwritten.
@@ -112,16 +114,17 @@ class TestPublicRsvpDedup:
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
 
-    def test_returning_by_email_reuses_row(self, api_client, official_event, fake_email_sender):
+    def test_email_match_alone_is_not_adopted(self, api_client, official_event, fake_email_sender):
+        # Issue 1029: an email match alone is never proof of ownership, so a
+        # fresh phone can't take over that row — it collides on the unique email.
         existing = make_non_member("+14155550999", "sam@example.com")
 
         response = post(api_client, official_event, phone_number="+14155550123")
 
-        assert response.status_code == 200
-        assert User.objects.filter(email="sam@example.com").count() == 1
-        # Phone already set → not overwritten; no new user for the new phone.
+        assert response.status_code == 409
+        assert first_code(response) == Code.Email.ALREADY_EXISTS
         assert not User.objects.filter(phone_number="+14155550123").exists()
-        assert EventRSVP.objects.filter(user=existing).count() == 1
+        assert not EventRSVP.objects.filter(user=existing).exists()
 
     def test_both_match_same_row_no_change(self, api_client, official_event, fake_email_sender):
         existing = make_non_member("+14155550123", "sam@example.com")
@@ -129,6 +132,7 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event)
 
         assert response.status_code == 200
+        assert response.json()["rsvp_token"] == ""
         assert User.objects.filter(is_member=False).count() == 1
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
@@ -142,6 +146,7 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event)
 
         assert response.status_code == 200
+        assert response.json()["rsvp_token"] == ""
         # Phone wins: RSVP attached to the phone-matched row, email untouched.
         assert EventRSVP.objects.filter(user=phone_row).exists()
         assert not EventRSVP.objects.filter(user=email_row).exists()
