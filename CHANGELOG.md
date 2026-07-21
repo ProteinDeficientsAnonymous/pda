@@ -1,3 +1,10 @@
+## [0.51.14](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.13...v0.51.14) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** stop public rsvp submit leaking manage token for matched rows ([#1037](https://github.com/ProteinDeficientsAnonymous/pda/issues/1037)) ([7b68f43](https://github.com/ProteinDeficientsAnonymous/pda/commit/7b68f435dce22cb772a0645521af6c91c6c3ae49))
+
 ## [0.51.13](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.12...v0.51.13) (2026-07-21)
 
 
