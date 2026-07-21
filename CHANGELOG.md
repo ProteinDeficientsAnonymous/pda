@@ -1,3 +1,10 @@
+## [0.51.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.5...v0.51.6) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1010 - surface actionable rsvp submit error messages ([#1021](https://github.com/ProteinDeficientsAnonymous/pda/issues/1021)) ([8ed9ed4](https://github.com/ProteinDeficientsAnonymous/pda/commit/8ed9ed4e86f8ecc6cafb820029159e580ae52e67))
+
 ## [0.51.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.4...v0.51.5) (2026-07-21)
 
 
