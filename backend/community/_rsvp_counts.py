@@ -94,8 +94,12 @@ def _attending_headcount_db(event: Event, exclude_user=None) -> int:
 
 
 def _waitlisted_count(event: Event) -> int:
-    """Count waitlisted RSVPs from prefetched data."""
-    return sum(1 for r in event.rsvps.all() if r.status == RSVPStatus.WAITLISTED)
+    """Count waitlisted spots incl. plus-ones, matching _attending_headcount."""
+    return sum(
+        1 + (1 if r.has_plus_one else 0)
+        for r in event.rsvps.all()
+        if r.status == RSVPStatus.WAITLISTED
+    )
 
 
 def _maybe_count(event: Event) -> int:

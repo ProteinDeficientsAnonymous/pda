@@ -204,6 +204,16 @@ class TestCapacityCounts:
         assert resp.status_code == 200
         assert resp.json()["waitlisted_count"] == 1
 
+    def test_waitlisted_count_includes_plus_ones(  # noqa: PLR0913
+        self, api_client, capped_event, headers1, headers2, headers3, auth_headers
+    ):
+        _rsvp(api_client, capped_event, headers1)
+        _rsvp(api_client, capped_event, headers2)
+        _rsvp(api_client, capped_event, headers3, has_plus_one=True)  # waitlisted w/ +1
+        resp = api_client.get(f"/api/community/events/{capped_event.id}/", **auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["waitlisted_count"] == 2  # 1 person + 1 guest
+
     def test_counts_in_list_endpoint(self, api_client, capped_event, headers1, auth_headers):
         _rsvp(api_client, capped_event, headers1)
         resp = api_client.get("/api/community/events/", **auth_headers)
