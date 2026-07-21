@@ -1,3 +1,10 @@
+## [0.52.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.2...v0.52.3) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** show reach-out message for archived-account rsvp rejection ([#1051](https://github.com/ProteinDeficientsAnonymous/pda/issues/1051)) ([57de4ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/57de4efb71fc764a547142b2c2fe4b4f49241512))
+
 ## [0.52.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.1...v0.52.2) (2026-07-21)
 
 
