@@ -251,6 +251,23 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('shows an inline error and does not save when first name has invalid characters', async () => {
+    const authApi = await import('@/api/auth');
+    const user = userEvent.setup();
+    renderSettings();
+
+    await user.click(screen.getByRole('button', { name: /edit first name/i }));
+    const field = screen.getByLabelText(/^first name$/i);
+    await user.clear(field);
+    await user.type(field, 'John3');
+    await user.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(
+      await screen.findByText('letters, spaces, hyphens, and apostrophes only'),
+    ).toBeInTheDocument();
+    expect(authApi.updateProfile).not.toHaveBeenCalled();
+  });
+
   it('surfaces the error when saving an email that is already in use', async () => {
     vi.mocked(authApi.updateProfile).mockRejectedValueOnce({
       isAxiosError: true,

@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
+import { displayName, optionalDisplayName } from '@/utils/validators';
 
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
@@ -42,12 +43,14 @@ export default function SettingsScreen() {
           value={user.firstName}
           onSave={(v) => updateProfile({ firstName: v })}
           required
+          validate={displayName}
         />
         <InlineText
           label="last name"
           value={user.lastName}
           onSave={(v) => updateProfile({ lastName: v })}
           placeholder="add a last name"
+          validate={optionalDisplayName}
         />
         <ReadOnly label="phone number" value={formatPhone(user.phoneNumber)} />
         <InlineText
@@ -140,12 +143,14 @@ function InlineText({
   onSave,
   placeholder,
   required = false,
+  validate,
 }: {
   label: string;
   value: string;
   onSave: (v: string) => Promise<void>;
   placeholder?: string;
   required?: boolean;
+  validate?: (v: string) => string | null;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -155,6 +160,11 @@ function InlineText({
   async function commit() {
     if (required && !draft.trim()) {
       setError(`${label} required`);
+      return;
+    }
+    const validationError = validate?.(draft);
+    if (validationError) {
+      setError(validationError === 'Required' ? `${label} required` : validationError);
       return;
     }
     if (draft.trim() === value) {
