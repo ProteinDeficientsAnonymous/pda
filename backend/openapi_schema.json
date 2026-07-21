@@ -4012,11 +4012,6 @@
       },
       "PublicRsvpPhoneCheckOut": {
         "properties": {
-          "rsvp_token": {
-            "default": "",
-            "title": "Rsvp Token",
-            "type": "string"
-          },
           "status": {
             "$ref": "#/components/schemas/PublicRsvpPhoneStatus"
           }
@@ -4030,8 +4025,7 @@
       "PublicRsvpPhoneStatus": {
         "enum": [
           "member",
-          "already_rsvpd",
-          "recognized",
+          "non_member",
           "new"
         ],
         "title": "PublicRsvpPhoneStatus",
@@ -11497,7 +11491,7 @@
     },
     "/api/community/public/events/{event_id}/rsvp-phone-check/": {
       "post": {
-        "description": "Resolve a phone number's state for this event, before the full rsvp form is shown.",
+        "description": "Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended.",
         "operationId": "community__public_rsvp_submit_check_public_rsvp_phone",
         "parameters": [
           {

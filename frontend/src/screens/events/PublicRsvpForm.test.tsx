@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type * as ReactRouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,12 +12,18 @@ vi.mock('@/api/publicRsvp', () => ({
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
 
+const navigateMock = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof ReactRouterDom>();
+  return { ...actual, useNavigate: () => navigateMock };
+});
+
 import { PublicRsvpForm } from './PublicRsvpForm';
 
-function renderForm(event = makeEvent(), onSuccess = vi.fn(), onMember = vi.fn()) {
+function renderForm(event = makeEvent(), onSuccess = vi.fn()) {
   return render(
     <MemoryRouter>
-      <PublicRsvpForm event={event} onSuccess={onSuccess} onMember={onMember} />
+      <PublicRsvpForm event={event} onSuccess={onSuccess} />
     </MemoryRouter>,
   );
 }
@@ -28,7 +35,7 @@ function fillPhoneStep(phone = '4155550123') {
 }
 
 async function fillRequired() {
-  checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+  checkPhoneMutate.mockResolvedValue({ status: 'new' });
   fillPhoneStep();
   await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
   fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
@@ -43,6 +50,7 @@ describe('PublicRsvpForm', () => {
       rsvp: { status: 'attending', has_plus_one: false },
     });
     checkPhoneMutate.mockReset();
+    navigateMock.mockReset();
   });
 
   it('submits the correct payload shape', async () => {
@@ -66,18 +74,14 @@ describe('PublicRsvpForm', () => {
   });
 
   it('renders the plus-one toggle only when allowPlusOnes', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
     const { rerender } = renderForm(makeEvent({ allowPlusOnes: true }));
     fillPhoneStep();
     await waitFor(() => expect(screen.getByRole('switch')).toBeInTheDocument());
     expect(screen.getByText(/your \+1 must be vegan too/i)).toBeInTheDocument();
     rerender(
       <MemoryRouter>
-        <PublicRsvpForm
-          event={makeEvent({ allowPlusOnes: false })}
-          onSuccess={vi.fn()}
-          onMember={vi.fn()}
-        />
+        <PublicRsvpForm event={makeEvent({ allowPlusOnes: false })} onSuccess={vi.fn()} />
       </MemoryRouter>,
     );
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
@@ -99,7 +103,7 @@ describe('PublicRsvpForm', () => {
   });
 
   it('advances to the contact-details step after the phone check resolves new', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
     fireEvent.change(screen.getByLabelText(/phone number/i), {
@@ -110,36 +114,29 @@ describe('PublicRsvpForm', () => {
     expect(screen.getByText('maybe')).toBeInTheDocument();
   });
 
-  it('calls onMember when the phone belongs to a member', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'member', rsvp_token: '' });
-    const onMember = vi.fn();
-    renderForm(makeEvent(), vi.fn(), onMember);
-    fillPhoneStep();
-    await waitFor(() => expect(onMember).toHaveBeenCalled());
-  });
-
-  it('shows a check-your-email message instead of the contact form when already rsvpd', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: '' });
+  it('redirects members to /login with their phone in state', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'member' });
     renderForm();
-    fillPhoneStep();
-    await screen.findByText(
-      'we recognized your number — check your email for a link to confirm your rsvp',
-    );
+    fillPhoneStep('4155550123');
+    await waitFor(() => expect(navigateMock).toHaveBeenCalled());
+    expect(navigateMock).toHaveBeenCalledWith('/login', {
+      state: { phone: '+14155550123', redirect: '/events/ev1' },
+    });
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });
 
-  it('shows a check-your-email message instead of the contact form when recognized', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'recognized', rsvp_token: '' });
+  it('shows a check-your-email message for existing non-members', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'non_member' });
     renderForm();
     fillPhoneStep();
     await screen.findByText(
-      'we recognized your number — check your email for a link to confirm your rsvp',
+      'we recognized your number — check your email for a link to manage your rsvp',
     );
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });
 
   it('lets you change the status and go back to step one from the details step', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
     fireEvent.change(screen.getByLabelText(/phone number/i), {
@@ -153,7 +150,7 @@ describe('PublicRsvpForm', () => {
   });
 
   it('submits maybe status chosen in step one', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
     const onSuccess = vi.fn();
     renderForm(makeEvent(), onSuccess);
     fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
@@ -180,7 +177,7 @@ describe('PublicRsvpForm', () => {
   });
 
   it('submits attending status and shows join the waitlist copy when at capacity', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
     submitMutate.mockResolvedValue({
       event: { id: 'ev1' },
       rsvp: { status: 'waitlisted', has_plus_one: false },
@@ -253,7 +250,7 @@ describe('PublicRsvpForm', () => {
   });
 
   it('renders the hidden honeypot field', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
     renderForm();
     fillPhoneStep();
     await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
@@ -263,7 +260,7 @@ describe('PublicRsvpForm', () => {
   });
 
   it('renders the comment field in step two', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
 
     renderForm();
 

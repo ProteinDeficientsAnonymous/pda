@@ -4,7 +4,7 @@ here's your link to manage your rsvps:
 
 {{ manage_url }}
 
-if you didn't request it, you can ignore this email.
+if you didn't request it, you can ignore this email — or reach out to us if you think it reached you by mistake.
 
 — pda
 

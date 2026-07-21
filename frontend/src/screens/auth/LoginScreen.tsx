@@ -3,7 +3,7 @@ import type { SyntheticEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { isValidPhoneNumber } from 'react-phone-number-input';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -29,11 +29,20 @@ type PasswordValues = z.infer<typeof passwordSchema>;
 export default function LoginScreen() {
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
   const invited = params.get('invited') === 'true';
+  const prefilledPhone =
+    typeof location.state === 'object' && location.state !== null && 'phone' in location.state
+      ? String((location.state as { phone: unknown }).phone)
+      : '';
 
-  const [step, setStep] = useState<Step>('phone');
-  const [phone, setPhone] = useState('');
+  // A member sent here from the public rsvp step already had their number
+  // verified there, so start straight on the password step. The password step
+  // is itself the real gate — a wrong number simply can't authenticate.
+  const startOnPassword = Boolean(prefilledPhone) && isValidPhoneNumber(prefilledPhone);
+  const [step, setStep] = useState<Step>(startOnPassword ? 'password' : 'phone');
+  const [phone, setPhone] = useState(prefilledPhone);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
 
@@ -103,8 +112,15 @@ export default function LoginScreen() {
             void navigate(gateTarget, { replace: true });
             return;
           }
-          // safeRedirect guards against open-redirect via the redirect param.
-          void navigate(safeRedirect(params.get('redirect')), { replace: true });
+          // safeRedirect guards against open-redirect; prefer the state redirect
+          // (set when a member is sent here from the public rsvp step).
+          const stateRedirect =
+            typeof location.state === 'object' &&
+            location.state !== null &&
+            'redirect' in location.state
+              ? String((location.state as { redirect: unknown }).redirect)
+              : null;
+          void navigate(safeRedirect(stateRedirect ?? params.get('redirect')), { replace: true });
         }}
         loginFn={login}
       />

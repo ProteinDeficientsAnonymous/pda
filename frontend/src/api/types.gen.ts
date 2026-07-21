@@ -1376,7 +1376,7 @@ export interface paths {
         put?: never;
         /**
          * Check Public Rsvp Phone
-         * @description Resolve a phone number's state for this event, before the full rsvp form is shown.
+         * @description Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended.
          */
         post: operations["community__public_rsvp_submit_check_public_rsvp_phone"];
         delete?: never;
@@ -3592,18 +3592,13 @@ export interface components {
         };
         /** PublicRsvpPhoneCheckOut */
         PublicRsvpPhoneCheckOut: {
-            /**
-             * Rsvp Token
-             * @default
-             */
-            rsvp_token: string;
             status: components["schemas"]["PublicRsvpPhoneStatus"];
         };
         /**
          * PublicRsvpPhoneStatus
          * @enum {string}
          */
-        PublicRsvpPhoneStatus: "member" | "already_rsvpd" | "recognized" | "new";
+        PublicRsvpPhoneStatus: "member" | "non_member" | "new";
         /** PublicRsvpStateOut */
         PublicRsvpStateOut: {
             /** Has Plus One */

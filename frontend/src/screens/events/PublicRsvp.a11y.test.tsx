@@ -17,7 +17,7 @@ import { PublicRsvpForm } from './PublicRsvpForm';
 function renderForm(event: Event) {
   return render(
     <MemoryRouter>
-      <PublicRsvpForm event={event} onSuccess={vi.fn()} onMember={vi.fn()} />
+      <PublicRsvpForm event={event} onSuccess={vi.fn()} />
     </MemoryRouter>,
   );
 }
@@ -37,7 +37,7 @@ describe('public rsvp a11y', () => {
   }, 15000);
 
   it('form step three (contact details) has no axe violations', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
     const { container } = renderForm(makeEvent());
     fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
     fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '+14155550123' } });

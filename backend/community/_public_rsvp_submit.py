@@ -4,8 +4,8 @@ from enum import StrEnum
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
@@ -31,7 +31,6 @@ from community._public_rsvp_shared import (
 from community._shared import ErrorOut, validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from community.models import Event, RSVPStatus
-from community.models.event import public_rsvp_eligible_q
 
 router = Router()
 
@@ -50,8 +49,7 @@ class PublicRsvpIn(BaseModel):
 
 class PublicRsvpPhoneStatus(StrEnum):
     MEMBER = "member"
-    ALREADY_RSVPD = "already_rsvpd"
-    RECOGNIZED = "recognized"
+    NON_MEMBER = "non_member"
     NEW = "new"
 
 
@@ -61,7 +59,6 @@ class PublicRsvpPhoneCheckIn(BaseModel):
 
 class PublicRsvpPhoneCheckOut(BaseModel):
     status: PublicRsvpPhoneStatus
-    rsvp_token: str = ""
 
 
 def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicRsvpOut:
@@ -161,11 +158,16 @@ def _send_confirmation_email(
         _log_email_failure(request, event, user, exc)
 
 
-def _send_recognized_login_link(request, user: User) -> None:
-    """Email a returning non-member their manage link instead of re-asking for contact info.
+_RECOGNIZED_EMAIL_COOLDOWN_SECONDS = 300
 
-    Best-effort — a send failure must not block the phone-check response.
-    """
+
+def _send_recognized_login_link(request, user: User) -> None:
+    """Email a returning non-member their manage link; best-effort, failures don't block the response."""
+    cooldown_key = f"rsvp-phone-check-email:{user.pk}"
+    if not cache.add(cooldown_key, True, timeout=_RECOGNIZED_EMAIL_COOLDOWN_SECONDS):
+        # Per-user cooldown, not just per-IP rate limiting: stops a bare phone-number
+        # probe from spamming an unverified inbox or repeatedly extending the token.
+        return
     token = NonMemberRsvpToken.issue_or_extend(user)
     manage_url = f"{settings.FRONTEND_BASE_URL}/my-rsvps?token={token.token}"
     try:
@@ -195,8 +197,8 @@ def _send_recognized_login_link(request, user: User) -> None:
 )
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
-    """Resolve a phone number's state for this event, before the full rsvp form is shown."""
-    event = _load_public_rsvp_event(event_id)
+    """Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended."""
+    _load_public_rsvp_event(event_id)  # raises 404/400 if the event isn't open to public rsvp
     try:
         phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
@@ -207,17 +209,9 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     if user.is_member:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
-    if event.rsvps.filter(user=user).exists():
-        if user.email:
-            _send_recognized_login_link(request, user)
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.ALREADY_RSVPD))
-    has_eligible_rsvp = user.event_rsvps.filter(
-        public_rsvp_eligible_q(timezone.now(), prefix="event__")
-    ).exists()
-    if user.email and has_eligible_rsvp:
+    if user.email:
         _send_recognized_login_link(request, user)
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.RECOGNIZED))
-    return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
+    return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NON_MEMBER))
 
 
 @router.post(

@@ -13,19 +13,12 @@ export interface PhoneStepResult {
 
 interface Props {
   onNew: (result: PhoneStepResult) => void;
-  onMember: () => void;
-  onAlreadyRsvpd: () => void;
-  onRecognized: () => void;
+  onMember: (phone: string) => void;
+  onNonMember: () => void;
   eventId: string;
 }
 
-export function PublicRsvpPhoneStep({
-  onNew,
-  onMember,
-  onAlreadyRsvpd,
-  onRecognized,
-  eventId,
-}: Props) {
+export function PublicRsvpPhoneStep({ onNew, onMember, onNonMember, eventId }: Props) {
   const check = useCheckPublicRsvpPhone();
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
@@ -40,15 +33,11 @@ export function PublicRsvpPhoneStep({
     try {
       const result = await check.mutateAsync({ eventId, phoneNumber: phone });
       if (result.status === 'member') {
-        onMember();
+        onMember(phone);
         return;
       }
-      if (result.status === 'already_rsvpd') {
-        onAlreadyRsvpd();
-        return;
-      }
-      if (result.status === 'recognized') {
-        onRecognized();
+      if (result.status === 'non_member') {
+        onNonMember();
         return;
       }
       onNew({ phone, status: 'new' });

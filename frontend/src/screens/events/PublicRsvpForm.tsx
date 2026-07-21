@@ -1,6 +1,6 @@
 import { type SyntheticEvent, useState } from 'react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { type PublicRsvpOut, useSubmitPublicRsvp } from '@/api/publicRsvp';
@@ -28,7 +28,6 @@ const PUBLIC_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatu
 interface Props {
   event: Event;
   onSuccess: (result: PublicRsvpOut) => void;
-  onMember: () => void;
 }
 
 interface SubmitError {
@@ -54,12 +53,13 @@ function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
   return RSVP_STATUS_LABELS.find((s) => s.status === status)?.label ?? status;
 }
 
-export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
+export function PublicRsvpForm({ event, onSuccess }: Props) {
   const submit = useSubmitPublicRsvp();
+  const navigate = useNavigate();
   const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
-  const [recognized, setRecognized] = useState(false);
+  const [isNonMember, setIsNonMember] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -122,10 +122,10 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
         />
       );
     }
-    if (recognized) {
+    if (isNonMember) {
       return (
         <p className="text-foreground-secondary text-sm">
-          we recognized your number — check your email for a link to confirm your rsvp
+          we recognized your number — check your email for a link to manage your rsvp
         </p>
       );
     }
@@ -133,12 +133,13 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
       return (
         <PublicRsvpPhoneStep
           eventId={event.id}
-          onMember={onMember}
-          onAlreadyRsvpd={() => {
-            setRecognized(true);
+          onMember={(memberPhone) => {
+            void navigate('/login', {
+              state: { phone: memberPhone, redirect: `/events/${event.id}` },
+            });
           }}
-          onRecognized={() => {
-            setRecognized(true);
+          onNonMember={() => {
+            setIsNonMember(true);
           }}
           onNew={(result) => {
             setPhone(result.phone);
