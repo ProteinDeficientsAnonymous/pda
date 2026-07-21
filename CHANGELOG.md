@@ -1,3 +1,10 @@
+## [0.52.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.1...v0.52.2) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** reject public rsvp submit when phone matches an archived non-member ([#1049](https://github.com/ProteinDeficientsAnonymous/pda/issues/1049)) ([cdf4f55](https://github.com/ProteinDeficientsAnonymous/pda/commit/cdf4f55df28ef7c29ea4fba13b8f24508236e71e))
+
 ## [0.52.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.0...v0.52.1) (2026-07-21)
 
 
