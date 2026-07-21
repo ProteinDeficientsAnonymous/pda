@@ -15,12 +15,7 @@ def ineligible_non_member_rsvps(event: Event):
 
 
 def guard_or_remove_ineligible_non_members(event: Event, force: bool) -> list[str]:
-    """If eligibility just dropped, remove non-member RSVPs when forced, else 409.
-
-    Returns the list of removed user ids (empty if nothing to remove). Raises
-    ValidationException(WOULD_REMOVE_NON_MEMBERS, 409) when non-members would be
-    removed and the caller hasn't confirmed via `force`.
-    """
+    """Remove non-member RSVPs when forced, else raise 409 with the count."""
     rsvps = list(ineligible_non_member_rsvps(event))
     if not rsvps:
         return []

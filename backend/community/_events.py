@@ -436,9 +436,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     new_status = updates.pop("status", None)
     notify_attendees = updates.pop("notify_attendees", False) or False
     force = updates.pop("force", False) or False
-    # Only a field edit (e.g. toggling official off) triggers non-member removal —
-    # a status transition (cancel/delete) already has its own attendee notification,
-    # so checking eligibility after it would double-notify non-members.
+    # Checked before status transitions, which have their own attendee notifications.
     was_eligible = event.is_public_rsvp_eligible
     removed_user_ids: list[str] = []
 

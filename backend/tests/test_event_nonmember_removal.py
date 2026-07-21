@@ -160,8 +160,7 @@ class TestNonMemberRemovalOnIneligibleEvent:
     def test_cancelling_event_does_not_trigger_removal(
         self, api_client, manage_events_headers, fake_email_sender
     ):
-        """Cancelling also flips is_public_rsvp_eligible false, but it has its own
-        attendee-cancellation notification — the removal check must not double-fire."""
+        """Cancelling also flips eligibility false but must not double-notify."""
         event = make_official_event()
         non_member = make_non_member("+14155559009", "cancelled@e.com")
         EventRSVP.objects.create(event=event, user=non_member, status=RSVPStatus.ATTENDING)
