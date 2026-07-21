@@ -122,11 +122,13 @@ export default function EventDetailScreen() {
   // desktop: photo sticks to the left while the narrow details column scrolls;
   // mobile stays a single stacked column (photo above details).
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 md:py-12">
+    <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4">
-        {/* top matches the photo's natural offset (header 57px + py-12 48px) so
-            it pins with no scroll-up drift. */}
-        <div className="mb-4 lg:sticky lg:top-[105px] lg:mb-0 lg:flex-1 lg:self-start">
+        {/* Sticky at top-[89px] (= header 57px + py-8 32px) so it pins with no
+            scroll-up drift. Height is 100vh minus twice that offset so the flex
+            box centers the photo on the true viewport middle (89 + (100vh-178)/2
+            = 50vh), not the middle of the space below the header. */}
+        <div className="mb-4 lg:sticky lg:top-[89px] lg:mb-0 lg:flex lg:h-[calc(100vh-178px)] lg:flex-1 lg:items-center lg:self-start">
           {photo}
         </div>
         <div className="w-full lg:max-w-3xl lg:flex-1">{body}</div>
