@@ -1,5 +1,3 @@
-"""Issue 1022: removing non-member RSVPs when an event loses public-RSVP eligibility."""
-
 import pytest
 from community._validation import Code
 from community.models import EventRSVP, EventType, RSVPStatus
