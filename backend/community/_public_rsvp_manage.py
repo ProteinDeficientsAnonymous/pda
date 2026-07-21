@@ -192,6 +192,8 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         rsvp = EventRSVP.objects.filter(event=event, user=user).first()
         if not rsvp:
             raise_validation(Code.Event.RSVP_NOT_FOUND, status_code=404)
+        if event.is_cancelled:
+            raise_validation(Code.Event.RSVPS_CLOSED_CANCELLED, status_code=400)
         was_attending = rsvp.status == RSVPStatus.ATTENDING
         rsvp.delete()
         if was_attending:

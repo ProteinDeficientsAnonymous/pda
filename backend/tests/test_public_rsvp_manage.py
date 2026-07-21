@@ -2,6 +2,7 @@ import logging
 from unittest.mock import patch
 
 import pytest
+from community._validation import Code
 from community.models import (
     EventRSVP,
     EventStatus,
@@ -13,7 +14,7 @@ from django.utils import timezone
 from notifications.email_sender import SendResult
 from users.models import NonMemberRsvpToken
 
-from tests._public_rsvp_helpers import make_non_member, make_official_event
+from tests._public_rsvp_helpers import first_code, make_non_member, make_official_event
 from tests.conftest import future_iso, past_iso
 
 GET_URL = "/api/community/public/my-rsvps/"
@@ -277,6 +278,27 @@ class TestDeleteMyRsvps:
             api_client.delete(f"{_post_url(official_event)}?token={token.token}")
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == official_event.id
+
+    def test_delete_on_cancelled_event_rejected(
+        self, api_client, nonmember, official_event, fake_email_sender
+    ):
+        official_event.max_attendees = 1
+        official_event.save(update_fields=["max_attendees"])
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        waiter = make_non_member("+14155550003", "w2@example.com", name="waiter two")
+        EventRSVP.objects.create(event=official_event, user=waiter, status=RSVPStatus.WAITLISTED)
+        official_event.status = EventStatus.CANCELLED
+        official_event.save(update_fields=["status"])
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+
+        resp = api_client.delete(f"{_post_url(official_event)}?token={token.token}")
+
+        assert resp.status_code == 400
+        assert first_code(resp) == Code.Event.RSVPS_CLOSED_CANCELLED
+        assert EventRSVP.objects.filter(event=official_event, user=nonmember).exists()
+        waiter_rsvp = EventRSVP.objects.get(event=official_event, user=waiter)
+        assert waiter_rsvp.status == RSVPStatus.WAITLISTED
+        fake_email_sender.send.assert_not_called()
 
 
 @pytest.mark.django_db
