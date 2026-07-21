@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 
 import { seed } from './fixtures';
 
-test('member phone in the public rsvp form is bounced to sign-in', async ({ page }) => {
+test('member phone in the public rsvp form is redirected to the login password step', async ({
+  page,
+}) => {
   const { event_id, user_phone } = seed('member');
 
   await page.goto(`/events/${event_id}`);
@@ -12,7 +14,10 @@ test('member phone in the public rsvp form is bounced to sign-in', async ({ page
   await rsvpSection.getByLabel('phone number').pressSequentially(user_phone.replace('+1', ''));
   await rsvpSection.getByRole('button', { name: 'continue' }).click();
 
-  await expect(page.getByText('looks like you already have an account')).toBeVisible();
-  await expect(rsvpSection.getByRole('link', { name: 'sign in' })).toBeVisible();
-  await expect(rsvpSection.getByLabel('first name')).toBeHidden();
+  // Lands straight on the password step with the phone already verified —
+  // no re-entering the number, no rsvp contact form.
+  await page.waitForURL('**/login');
+  await expect(page.getByRole('textbox', { name: 'password' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: /phone number/i })).toBeHidden();
+  await expect(page.getByLabel('first name')).toBeHidden();
 });
