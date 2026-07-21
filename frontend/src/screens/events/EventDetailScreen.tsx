@@ -105,6 +105,7 @@ export default function EventDetailScreen() {
     </>
   );
 
+  // TODO(#618): once the photo library picker makes event photos mandatory, drop this check.
   if (!event.photoUrl) {
     return <ContentContainer>{body}</ContentContainer>;
   }
