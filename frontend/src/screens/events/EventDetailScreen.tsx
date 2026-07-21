@@ -123,8 +123,10 @@ export default function EventDetailScreen() {
   // mobile stays a single stacked column (photo above details).
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 md:py-12">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-        <div className="mb-4 lg:sticky lg:top-20 lg:mb-0 lg:flex lg:h-[calc(100vh-6rem)] lg:flex-1 lg:items-center">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4">
+        {/* top matches the photo's natural offset (header 57px + py-12 48px) so
+            it pins with no scroll-up drift. */}
+        <div className="mb-4 lg:sticky lg:top-[105px] lg:mb-0 lg:flex-1 lg:self-start">
           {photo}
         </div>
         <div className="w-full lg:max-w-3xl lg:flex-1">{body}</div>
