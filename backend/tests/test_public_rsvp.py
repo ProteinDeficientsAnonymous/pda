@@ -137,18 +137,20 @@ class TestPublicRsvpDedup:
         existing.refresh_from_db()
         assert existing.email == "sam@example.com"
 
-    def test_phone_and_email_match_different_rows_phone_wins(
+    def test_phone_and_email_match_different_rows_is_email_collision(
         self, api_client, official_event, fake_email_sender
     ):
+        # A recognized phone never resubmits an email through the UI, so phone A
+        # paired with a foreign row's email is a bare uniqueness collision — 409,
+        # no RSVP written to either row.
         phone_row = make_non_member("+14155550123", "phone@example.com", name="Phone Row")
         email_row = make_non_member("+14155550888", "sam@example.com", name="Email Row")
 
         response = post(api_client, official_event)
 
-        assert response.status_code == 200
-        assert response.json()["rsvp_token"] == ""
-        # Phone wins: RSVP attached to the phone-matched row, email untouched.
-        assert EventRSVP.objects.filter(user=phone_row).exists()
+        assert response.status_code == 409
+        assert first_code(response) == Code.Email.ALREADY_EXISTS
+        assert not EventRSVP.objects.filter(user=phone_row).exists()
         assert not EventRSVP.objects.filter(user=email_row).exists()
         phone_row.refresh_from_db()
         assert phone_row.email == "phone@example.com"

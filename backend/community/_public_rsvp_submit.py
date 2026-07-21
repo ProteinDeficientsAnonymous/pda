@@ -104,33 +104,17 @@ def _create_non_member(
     return user, created
 
 
-def _resolve_both_match(request, phone_match: User, email_match: User) -> User:
-    # Same row → the phone and email belong to one user; reuse it.
-    if phone_match.pk == email_match.pk:
-        return phone_match
-    # Different rows: phone is canonical — reuse it and flag the ambiguity for admins.
-    audit_log(
-        logging.WARNING,
-        "public_rsvp_contact_ambiguous",
-        request,
-        target_type="user",
-        target_id=str(phone_match.pk),
-        details={"email_user_id": str(email_match.pk)},
-    )
-    return phone_match
-
-
 def _resolve_non_member(
-    *, request, first_name: str, last_name: str, email: str, phone: str
+    *, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
     """Resolve (or create) the non-member User backing this RSVP; member phone → 409.
 
-    Keyed on the submitted phone only — an email match alone is never proof of
-    ownership, so it's used solely for the same-row check below, never to adopt
-    a foreign row nor to trigger the member-signin 409 (Issue 1029). A member's
-    email colliding with a non-member phone surfaces as a normal email.already_exists
-    conflict, not a signin prompt — the submitter isn't that member.
-    Must run inside the surrounding transaction.
+    Identity is the phone alone. The email lookup only enforces uniqueness: an
+    email owned by any other row is a collision (409 email.already_exists), never
+    grounds to adopt that row or to trigger the member-signin 409 (Issue 1029).
+    The recognized-phone UI never resubmits an email, so a phone+foreign-email
+    request only reaches here via a direct API caller. Must run inside the
+    surrounding transaction.
 
     return(tuple[User, bool]): the resolved user, and whether it was newly created.
     """
@@ -140,12 +124,11 @@ def _resolve_non_member(
     if phone_match and phone_match.is_member:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
-    if phone_match and email_match:
-        return _resolve_both_match(request, phone_match, email_match), False
+    if email_match and email_match.pk != (phone_match.pk if phone_match else None):
+        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+
     if phone_match:
         return _backfill_email(phone_match, email), False
-    if email_match:
-        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
     return _create_non_member(first_name, last_name, email, phone)
 
 
@@ -254,7 +237,6 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
 
     with transaction.atomic():
         user, created = _resolve_non_member(
-            request=request,
             first_name=first_name,
             last_name=last_name,
             email=normalized_email,
