@@ -67,17 +67,8 @@ export default function EventDetailScreen() {
   // this is an exact backend-verified signal, not a guess.
   const hasTokenUnlock = Boolean(rsvpToken) && !isAuthed && event.viewerUserId !== null;
 
-  return (
-    <ContentContainer>
-      {event.photoUrl ? (
-        <img
-          src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
-          alt=""
-          className="mx-auto mb-4 block max-h-[70vh] w-auto max-w-full rounded-lg"
-          loading="lazy"
-        />
-      ) : null}
-
+  const body = (
+    <>
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
           {event.title}
@@ -111,7 +102,31 @@ export default function EventDetailScreen() {
         hasTokenUnlock={hasTokenUnlock}
         rsvpToken={rsvpToken}
       />
-    </ContentContainer>
+    </>
+  );
+
+  if (!event.photoUrl) {
+    return <ContentContainer>{body}</ContentContainer>;
+  }
+
+  const photo = (
+    <img
+      src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
+      alt=""
+      className="mx-auto block max-h-[70vh] w-auto max-w-full rounded-lg"
+      loading="lazy"
+    />
+  );
+
+  // desktop: photo sticks to the left while the narrow details column scrolls;
+  // mobile stays a single stacked column (photo above details).
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-8 md:py-12">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+        <div className="mb-4 lg:sticky lg:top-8 lg:mb-0 lg:flex-1 lg:self-start">{photo}</div>
+        <div className="w-full lg:max-w-3xl lg:flex-1">{body}</div>
+      </div>
+    </main>
   );
 }
 
