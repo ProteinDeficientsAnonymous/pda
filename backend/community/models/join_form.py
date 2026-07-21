@@ -33,7 +33,7 @@ class JoinRequest(models.Model):
     first_name = models.CharField(max_length=64, blank=True, default="")
     last_name = models.CharField(max_length=64, blank=True, default="")
     phone_number = models.CharField(max_length=20)
-    email = models.EmailField(blank=True, default="")
+    email = models.EmailField()
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
