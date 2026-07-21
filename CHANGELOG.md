@@ -1,3 +1,10 @@
+## [0.52.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.6...v0.52.7) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** sticky photo column on desktop event detail (Issue 1046) ([#1060](https://github.com/ProteinDeficientsAnonymous/pda/issues/1060)) ([5e42af7](https://github.com/ProteinDeficientsAnonymous/pda/commit/5e42af7f7998be766eb433ff542db9bedb34f5f5))
+
 ## [0.52.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.5...v0.52.6) (2026-07-21)
 
 
