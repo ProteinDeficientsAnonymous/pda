@@ -1376,10 +1376,7 @@ export interface paths {
         put?: never;
         /**
          * Check Public Rsvp Phone
-         * @description Resolve a phone number's state for this event, before the full rsvp form is shown.
-         *
-         *     Existing non-members always get an emailed manage link (whether or not they've
-         *     rsvp'd), so the response never discloses whether the number attended this event.
+         * @description Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended.
          */
         post: operations["community__public_rsvp_submit_check_public_rsvp_phone"];
         delete?: never;
