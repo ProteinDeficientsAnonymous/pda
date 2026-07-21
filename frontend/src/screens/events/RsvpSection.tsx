@@ -31,9 +31,6 @@ const STATUS_LINES: Record<RsvpInputStatus, string> = {
   [RsvpStatus.CantGo]: "you can't go",
 };
 
-// guests can only pick going/maybe — cant_go stays reachable for hosts editing a guest's rsvp
-const GUEST_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatus.Maybe];
-
 interface BoxState {
   mode: 'create' | 'edit';
   initialStatus: RsvpInputStatus;
@@ -167,7 +164,6 @@ export function RsvpSection({ event, canSeeInvited, canManageRsvps = false, toke
           allowPlusOnes={event.allowPlusOnes}
           allowComment={Boolean(token) || box.mode === 'create'}
           busy={busy}
-          statuses={GUEST_RSVP_STATUSES}
           onConfirm={(args) => void confirmRsvp(args)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}
           onClose={() => {
@@ -210,7 +206,6 @@ function RsvpControls({
       value={null}
       disabled={busy}
       onSelect={onOpenCreate}
-      statuses={GUEST_RSVP_STATUSES}
       labelFor={(status, defaultLabel) =>
         status === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
       }
