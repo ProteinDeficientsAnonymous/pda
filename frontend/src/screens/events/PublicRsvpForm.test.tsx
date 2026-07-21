@@ -222,6 +222,36 @@ describe('PublicRsvpForm', () => {
     await screen.findByText("you're rsvping too fast — try again in a few minutes");
   });
 
+  it('surfaces the backend message from a 400 response', async () => {
+    submitMutate.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 400, data: { detail: "this event is full — you can't bring a +1" } },
+    });
+    renderForm();
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await screen.findByText("this event is full — you can't bring a +1");
+  });
+
+  it('surfaces the backend message from a 422 response', async () => {
+    submitMutate.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 422, data: { detail: 'name contains invalid characters' } },
+    });
+    renderForm();
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await screen.findByText('name contains invalid characters');
+  });
+
+  it('falls back to the generic message when a 400 has no actionable body', async () => {
+    submitMutate.mockRejectedValue({ isAxiosError: true, response: { status: 400 } });
+    renderForm();
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await screen.findByText('something went wrong — try again');
+  });
+
   it('renders the hidden honeypot field', async () => {
     checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
     renderForm();
