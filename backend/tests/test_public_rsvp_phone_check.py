@@ -124,6 +124,21 @@ class TestPublicRsvpPhoneCheck:
         token = NonMemberRsvpToken.objects.get(user=guest)
         assert token.token in sent["text"]
 
+    def test_rsvp_on_ineligible_event_falls_back_to_new(
+        self, api_client, official_event, fake_email_sender
+    ):
+        guest = make_non_member("+14155550199", "guest@example.com")
+        ineligible_event = make_official_event(
+            title="Past Event", start_datetime=future_iso(days=45), rsvp_enabled=False
+        )
+        EventRSVP.objects.create(event=ineligible_event, user=guest, status=RSVPStatus.ATTENDING)
+
+        response = post(api_client, official_event, phone_number="+14155550199")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "new"
+        fake_email_sender.send.assert_not_called()
+
     def test_recognized_without_email_falls_back_to_new(
         self, api_client, official_event, fake_email_sender
     ):

@@ -5,6 +5,7 @@ from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
@@ -30,6 +31,7 @@ from community._public_rsvp_shared import (
 from community._shared import ErrorOut, validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from community.models import Event, RSVPStatus
+from community.models.event import public_rsvp_eligible_q
 
 router = Router()
 
@@ -209,7 +211,10 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
         if user.email:
             _send_recognized_login_link(request, user)
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.ALREADY_RSVPD))
-    if user.email and user.event_rsvps.exists():
+    has_eligible_rsvp = user.event_rsvps.filter(
+        public_rsvp_eligible_q(timezone.now(), prefix="event__")
+    ).exists()
+    if user.email and has_eligible_rsvp:
         _send_recognized_login_link(request, user)
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.RECOGNIZED))
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
