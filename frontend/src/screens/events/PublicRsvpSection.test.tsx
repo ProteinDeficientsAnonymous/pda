@@ -93,8 +93,8 @@ describe('PublicRsvpSection', () => {
     expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-abc');
   });
 
-  it('shows a neutral check-your-email message for an existing phone, without leaking a token or account existence', async () => {
-    mockCheckPhone.mockResolvedValue({ status: 'existing' });
+  it('shows a check-your-email message for an existing non-member, without leaking a token', async () => {
+    mockCheckPhone.mockResolvedValue({ status: 'non_member' });
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -107,7 +107,7 @@ describe('PublicRsvpSection', () => {
     await user.click(screen.getByRole('button', { name: 'continue' }));
 
     await screen.findByText(
-      "if that number's on file, we've emailed you a link to manage your rsvp — check your inbox, including spam. if you have a member account, sign in instead",
+      'we recognized your number — check your email for a link to manage your rsvp',
     );
     expect(mockSubmit).not.toHaveBeenCalled();
     expect(localStorage.getItem('pda-rsvp-token')).toBeNull();

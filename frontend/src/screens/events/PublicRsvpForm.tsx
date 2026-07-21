@@ -57,7 +57,8 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
-  const [existing, setExisting] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  const [isNonMember, setIsNonMember] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -115,11 +116,21 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
         />
       );
     }
-    if (existing) {
+    if (isMember) {
       return (
         <p className="text-foreground-secondary text-sm">
-          if that number's on file, we've emailed you a link to manage your rsvp — check your inbox,
-          including spam. if you have a member account, sign in instead
+          looks like you already have an account —{' '}
+          <Link to="/login" className="text-info hover:underline">
+            sign in
+          </Link>{' '}
+          to rsvp
+        </p>
+      );
+    }
+    if (isNonMember) {
+      return (
+        <p className="text-foreground-secondary text-sm">
+          we recognized your number — check your email for a link to manage your rsvp
         </p>
       );
     }
@@ -127,8 +138,11 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
       return (
         <PublicRsvpPhoneStep
           eventId={event.id}
-          onExisting={() => {
-            setExisting(true);
+          onMember={() => {
+            setIsMember(true);
+          }}
+          onNonMember={() => {
+            setIsNonMember(true);
           }}
           onNew={(result) => {
             setPhone(result.phone);

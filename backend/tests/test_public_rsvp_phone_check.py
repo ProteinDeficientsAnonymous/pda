@@ -40,23 +40,23 @@ class TestPublicRsvpPhoneCheck:
         assert body["status"] == "new"
         assert "rsvp_token" not in body
 
-    def test_member_phone_returns_existing(self, api_client, official_event, test_user):
+    def test_member_phone_returns_member(self, api_client, official_event, test_user):
         response = post(api_client, official_event, phone_number=test_user.phone_number)
 
         assert response.status_code == 200
         body = response.json()
-        assert body["status"] == "existing"
+        assert body["status"] == "member"
         assert "rsvp_token" not in body
 
-    def test_non_member_without_rsvp_is_new(self, api_client, official_event):
+    def test_non_member_without_rsvp_returns_non_member(self, api_client, official_event):
         make_non_member("+14155550199", "guest@example.com")
 
         response = post(api_client, official_event, phone_number="+14155550199")
 
         assert response.status_code == 200
-        assert response.json()["status"] == "new"
+        assert response.json()["status"] == "non_member"
 
-    def test_non_member_already_rsvpd_returns_existing_no_token(
+    def test_non_member_already_rsvpd_returns_non_member_no_token(
         self, api_client, official_event, fake_email_sender
     ):
         guest = make_non_member("+14155550199", "guest@example.com")
@@ -66,14 +66,13 @@ class TestPublicRsvpPhoneCheck:
 
         assert response.status_code == 200
         body = response.json()
-        assert body["status"] == "existing"
+        assert body["status"] == "non_member"
         assert "rsvp_token" not in body
 
-    def test_already_rsvpd_sends_manage_link_email(
+    def test_non_member_with_email_always_gets_manage_link(
         self, api_client, official_event, fake_email_sender
     ):
         guest = make_non_member("+14155550199", "guest@example.com")
-        EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
 
         post(api_client, official_event, phone_number="+14155550199")
 
@@ -83,60 +82,15 @@ class TestPublicRsvpPhoneCheck:
         token = NonMemberRsvpToken.objects.get(user=guest)
         assert token.token in sent["text"]
 
-    def test_already_rsvpd_without_email_sends_no_email_and_no_token(
+    def test_non_member_without_email_sends_no_email(
         self, api_client, official_event, fake_email_sender
     ):
-        guest = make_non_member("+14155550199", "")
-        EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
+        make_non_member("+14155550199", "")
 
         response = post(api_client, official_event, phone_number="+14155550199")
 
         assert response.status_code == 200
-        body = response.json()
-        assert body["status"] == "existing"
-        assert "rsvp_token" not in body
-        fake_email_sender.send.assert_not_called()
-
-    def test_already_rsvpd_on_other_event_returns_existing(
-        self, api_client, official_event, fake_email_sender
-    ):
-        guest = make_non_member("+14155550199", "guest@example.com")
-        other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
-        EventRSVP.objects.create(event=other_event, user=guest, status=RSVPStatus.ATTENDING)
-
-        response = post(api_client, official_event, phone_number="+14155550199")
-
-        assert response.status_code == 200
-        body = response.json()
-        assert body["status"] == "existing"
-        assert "rsvp_token" not in body
-
-    def test_recognized_sends_manage_link_email(
-        self, api_client, official_event, fake_email_sender
-    ):
-        guest = make_non_member("+14155550199", "guest@example.com")
-        other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
-        EventRSVP.objects.create(event=other_event, user=guest, status=RSVPStatus.ATTENDING)
-
-        post(api_client, official_event, phone_number="+14155550199")
-
-        fake_email_sender.send.assert_called_once()
-        sent = fake_email_sender.send.call_args.kwargs
-        assert sent["to"] == "guest@example.com"
-        token = NonMemberRsvpToken.objects.get(user=guest)
-        assert token.token in sent["text"]
-
-    def test_recognized_without_email_falls_back_to_new(
-        self, api_client, official_event, fake_email_sender
-    ):
-        guest = make_non_member("+14155550199", "")
-        other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
-        EventRSVP.objects.create(event=other_event, user=guest, status=RSVPStatus.ATTENDING)
-
-        response = post(api_client, official_event, phone_number="+14155550199")
-
-        assert response.status_code == 200
-        assert response.json()["status"] == "new"
+        assert response.json()["status"] == "non_member"
         fake_email_sender.send.assert_not_called()
 
     def test_invalid_phone_is_new(self, api_client, official_event):
@@ -154,13 +108,20 @@ class TestPublicRsvpPhoneCheck:
 
         assert response.status_code == 404
 
-    def test_member_new_and_existing_responses_are_indistinguishable(
-        self, api_client, official_event, test_user, fake_email_sender
-    ):
-        guest = make_non_member("+14155550199", "guest@example.com")
-        EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
+    def test_non_member_response_hides_attendance(self, api_client, fake_email_sender):
+        this_event = make_official_event()
+        other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
+        rsvpd_here = make_non_member("+14155550111", "here@example.com")
+        rsvpd_elsewhere = make_non_member("+14155550222", "elsewhere@example.com")
+        never_rsvpd = make_non_member("+14155550333", "never@example.com")
+        EventRSVP.objects.create(event=this_event, user=rsvpd_here, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(
+            event=other_event, user=rsvpd_elsewhere, status=RSVPStatus.ATTENDING
+        )
 
-        member_body = post(api_client, official_event, phone_number=test_user.phone_number).json()
-        rsvpd_body = post(api_client, official_event, phone_number="+14155550199").json()
+        bodies = [
+            post(api_client, this_event, phone_number=u.phone_number).json()
+            for u in (rsvpd_here, rsvpd_elsewhere, never_rsvpd)
+        ]
 
-        assert member_body == rsvpd_body == {"status": "existing"}
+        assert bodies == [{"status": "non_member"}] * 3

@@ -47,7 +47,8 @@ class PublicRsvpIn(BaseModel):
 
 
 class PublicRsvpPhoneStatus(StrEnum):
-    EXISTING = "existing"
+    MEMBER = "member"
+    NON_MEMBER = "non_member"
     NEW = "new"
 
 
@@ -192,8 +193,8 @@ def _send_recognized_login_link(request, user: User) -> None:
 )
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
-    """Collapses member/already-rsvpd/recognized into EXISTING so an anonymous caller can't enumerate membership or attendance by phone number."""
-    event = _load_public_rsvp_event(event_id)
+    """Resolve a phone number to member/non-member/new; non-members always get an emailed manage link so the response never reveals whether they attended."""
+    _load_public_rsvp_event(event_id)  # raises 404/400 if the event isn't open to public rsvp
     try:
         phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
@@ -203,15 +204,10 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     if user.is_member:
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.EXISTING))
-    if event.rsvps.filter(user=user).exists():
-        if user.email:
-            _send_recognized_login_link(request, user)
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.EXISTING))
-    if user.email and user.event_rsvps.exists():
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
+    if user.email:
         _send_recognized_login_link(request, user)
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.EXISTING))
-    return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
+    return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NON_MEMBER))
 
 
 @router.post(

@@ -106,12 +106,21 @@ describe('PublicRsvpForm', () => {
     expect(screen.getByText('maybe')).toBeInTheDocument();
   });
 
-  it('shows a neutral check-your-email message instead of the contact form when existing', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'existing' });
+  it('directs members to sign in instead of showing the contact form', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'member' });
+    renderForm();
+    fillPhoneStep();
+    await screen.findByText(/looks like you already have an account/);
+    expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
+    expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
+  });
+
+  it('shows a check-your-email message for existing non-members', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'non_member' });
     renderForm();
     fillPhoneStep();
     await screen.findByText(
-      "if that number's on file, we've emailed you a link to manage your rsvp — check your inbox, including spam. if you have a member account, sign in instead",
+      'we recognized your number — check your email for a link to manage your rsvp',
     );
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });

@@ -4012,9 +4012,9 @@
         "type": "object"
       },
       "PublicRsvpPhoneStatus": {
-        "description": "NEW lets the caller proceed to the rsvp form; EXISTING never reveals why.",
         "enum": [
-          "existing",
+          "member",
+          "non_member",
           "new"
         ],
         "title": "PublicRsvpPhoneStatus",
@@ -11469,7 +11469,7 @@
     },
     "/api/community/public/events/{event_id}/rsvp-phone-check/": {
       "post": {
-        "description": "Resolve a phone number's state for this event, before the full rsvp form is shown.\n\nMember / already-rsvpd / recognized-elsewhere all collapse into EXISTING so an\nunauthenticated caller can't enumerate membership or attendance by phone number\nalone \u2014 any manage link goes out over email (out-of-band), never inline here.",
+        "description": "Resolve a phone number's state for this event, before the full rsvp form is shown.\n\nExisting non-members always get an emailed manage link (whether or not they've\nrsvp'd), so the response never discloses whether the number attended this event.",
         "operationId": "community__public_rsvp_submit_check_public_rsvp_phone",
         "parameters": [
           {
