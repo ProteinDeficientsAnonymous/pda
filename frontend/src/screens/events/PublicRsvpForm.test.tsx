@@ -73,17 +73,11 @@ describe('PublicRsvpForm', () => {
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
   });
 
-  it('renders the plus-one toggle only when allowPlusOnes', async () => {
-    checkPhoneMutate.mockResolvedValue({ status: 'new' });
-    const { rerender } = renderForm(makeEvent({ allowPlusOnes: true }));
+  it('never renders the plus-one toggle even when allowPlusOnes is true', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    renderForm(makeEvent({ allowPlusOnes: true }));
     fillPhoneStep();
-    await waitFor(() => expect(screen.getByRole('switch')).toBeInTheDocument());
-    expect(screen.getByText(/your \+1 must be vegan too/i)).toBeInTheDocument();
-    rerender(
-      <MemoryRouter>
-        <PublicRsvpForm event={makeEvent({ allowPlusOnes: false })} onSuccess={vi.fn()} />
-      </MemoryRouter>,
-    );
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
     expect(screen.queryByText(/your \+1 must be vegan too/i)).not.toBeInTheDocument();
   });

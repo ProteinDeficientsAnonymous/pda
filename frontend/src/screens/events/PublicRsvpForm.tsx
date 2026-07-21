@@ -9,7 +9,6 @@ import { Honeypot } from '@/components/ui/Honeypot';
 import { PhoneField } from '@/components/ui/PhoneField';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { TextField } from '@/components/ui/TextField';
-import { Toggle } from '@/components/ui/Toggle';
 import {
   type Event,
   RSVP_STATUS_LABELS,
@@ -64,7 +63,6 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [hasPlusOne, setHasPlusOne] = useState(false);
   const [comment, setComment] = useState('');
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -98,7 +96,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           email: email.trim(),
           phone_number: phone.trim(),
           status,
-          has_plus_one: hasPlusOne,
+          has_plus_one: false,
           comment: comment.trim() || null,
           website,
         },
@@ -202,20 +200,6 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           required
         />
         <PhoneField label="phone" value={phone} onChange={setPhone} error={errors.phone} />
-
-        {event.allowPlusOnes ? (
-          <div className="flex flex-col gap-1">
-            <Toggle
-              label="bring a +1"
-              checked={hasPlusOne}
-              onChange={setHasPlusOne}
-              className="justify-start gap-2"
-            />
-            <p className="text-foreground-tertiary text-xs">
-              these events are vegan only — your +1 must be vegan too
-            </p>
-          </div>
-        ) : null}
 
         <RsvpCommentField value={comment} onChange={setComment} disabled={submit.isPending} />
 

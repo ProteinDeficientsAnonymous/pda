@@ -232,7 +232,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             target_type="event",
             target_id=str(event_id),
         )
-        return Status(200, _public_rsvp_decoy(event, payload.status, payload.has_plus_one))
+        return Status(200, _public_rsvp_decoy(event, payload.status, False))
 
     first_name = payload.first_name.strip()
     last_name = payload.last_name.strip()
@@ -252,7 +252,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             phone=validated_phone,
         )
         final_status, promoted_user_ids = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, payload.has_plus_one
+            event.id, user, payload.status, False
         )
         token = NonMemberRsvpToken.issue_or_extend(user)
 
