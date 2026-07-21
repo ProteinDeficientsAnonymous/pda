@@ -1,5 +1,3 @@
-"""Tests for profile and event photo upload/delete endpoints."""
-
 import io
 
 import pytest
@@ -63,11 +61,6 @@ def event(db, member):
     )
 
 
-# ---------------------------------------------------------------------------
-# Profile photo tests
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.django_db
 class TestProfilePhoto:
     def test_upload_photo(self, api_client, member):
@@ -121,11 +114,6 @@ class TestProfilePhoto:
         photo = _make_test_image()
         response = api_client.post("/api/auth/me/photo/", {"photo": photo})
         assert response.status_code == 401
-
-
-# ---------------------------------------------------------------------------
-# Event photo tests
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
@@ -208,11 +196,6 @@ class TestEventPhoto:
             **_auth(member),
         )
         assert response.status_code == 404
-
-
-# ---------------------------------------------------------------------------
-# Media proxy tests
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db

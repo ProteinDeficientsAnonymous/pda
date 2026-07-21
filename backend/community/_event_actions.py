@@ -1,5 +1,3 @@
-"""Event photo upload endpoint."""
-
 import logging
 import time
 from uuid import UUID
