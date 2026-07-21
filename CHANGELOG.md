@@ -1,3 +1,11 @@
+## [0.52.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.7...v0.52.8) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** stack host contact buttons on mobile (Issue 1044) ([#1058](https://github.com/ProteinDeficientsAnonymous/pda/issues/1058)) ([261adf4](https://github.com/ProteinDeficientsAnonymous/pda/commit/261adf4c683f0d132094daf20bd6c5bf22373cb0))
+* **rsvp:** send confirmation not update email on new non-member rsvp (Issue 1048) ([#1059](https://github.com/ProteinDeficientsAnonymous/pda/issues/1059)) ([abb731b](https://github.com/ProteinDeficientsAnonymous/pda/commit/abb731b1e2a99d5c9bcefaa3f37bd9b2ce5f7cf2))
+
 ## [0.52.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.6...v0.52.7) (2026-07-21)
 
 
