@@ -1,3 +1,10 @@
+## [0.51.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.3...v0.51.4) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** stop archived members bypassing the member gate ([#1015](https://github.com/ProteinDeficientsAnonymous/pda/issues/1015)) ([431795f](https://github.com/ProteinDeficientsAnonymous/pda/commit/431795f1540a0e7f525a0dfdeead20c9037d9cb7)), closes [#999](https://github.com/ProteinDeficientsAnonymous/pda/issues/999) [#1002](https://github.com/ProteinDeficientsAnonymous/pda/issues/1002) [#1003](https://github.com/ProteinDeficientsAnonymous/pda/issues/1003)
+
 ## [0.51.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.2...v0.51.3) (2026-07-21)
 
 
