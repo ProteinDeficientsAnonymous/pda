@@ -1,3 +1,10 @@
+## [0.52.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.5...v0.52.6) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** submit public rsvp form on cmd/ctrl+enter ([#1055](https://github.com/ProteinDeficientsAnonymous/pda/issues/1055)) ([46d5c72](https://github.com/ProteinDeficientsAnonymous/pda/commit/46d5c721670c2007b2b0e61624ceac6fc390ea98))
+
 ## [0.52.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.4...v0.52.5) (2026-07-21)
 
 
