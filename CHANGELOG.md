@@ -1,3 +1,10 @@
+## [0.51.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.9...v0.51.10) (2026-07-21)
+
+
+### Bug Fixes
+
+* 971 - keep +1 on waitlisted party so promotion seats them together ([#1024](https://github.com/ProteinDeficientsAnonymous/pda/issues/1024)) ([e12ae74](https://github.com/ProteinDeficientsAnonymous/pda/commit/e12ae74d4ef010a8a6f04e76d89481b8dc8f1114))
+
 ## [0.51.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.8...v0.51.9) (2026-07-21)
 
 
