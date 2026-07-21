@@ -33,6 +33,8 @@ class TestArchivedMemberGate:
         fake_email_sender.send.assert_not_called()
 
     def test_email_belongs_to_archived_member(self, api_client, official_event, fake_email_sender):
+        # Issue 1029 follow-up: the submitted phone isn't this member's, so this
+        # is a plain email collision, not proof the submitter is that member.
         member = User.objects.create_user(
             phone_number="+14155550555",
             first_name="A",
@@ -46,7 +48,7 @@ class TestArchivedMemberGate:
         response = post(api_client, official_event)
 
         assert response.status_code == 409
-        assert response.json()["detail"][0]["code"] == Code.Event.MEMBER_CONTACT_MUST_SIGN_IN
+        assert response.json()["detail"][0]["code"] == Code.Email.ALREADY_EXISTS
         assert not EventRSVP.objects.exists()
 
     def test_archived_non_member_email_holder_is_not_adopted_by_fresh_phone(
