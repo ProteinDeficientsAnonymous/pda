@@ -1,3 +1,10 @@
+## [0.51.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.8...v0.51.9) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** remove non-member RSVPs when an event loses public-rsvp eligibility (Issue 1022) ([#1026](https://github.com/ProteinDeficientsAnonymous/pda/issues/1026)) ([443b975](https://github.com/ProteinDeficientsAnonymous/pda/commit/443b97500a993ddac5d5b537d743aedc11cfed25))
+
 ## [0.51.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.7...v0.51.8) (2026-07-21)
 
 
