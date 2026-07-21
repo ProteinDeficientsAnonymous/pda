@@ -1,5 +1,5 @@
 import { type SyntheticEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { getApiStatus } from '@/api/apiErrors';
 import { type PublicRsvpOut, useSubmitPublicRsvp } from '@/api/publicRsvp';
@@ -54,10 +54,10 @@ function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
 
 export function PublicRsvpForm({ event, onSuccess }: Props) {
   const submit = useSubmitPublicRsvp();
+  const navigate = useNavigate();
   const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
-  const [isMember, setIsMember] = useState(false);
   const [isNonMember, setIsNonMember] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -116,17 +116,6 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
         />
       );
     }
-    if (isMember) {
-      return (
-        <p className="text-foreground-secondary text-sm">
-          looks like you already have an account —{' '}
-          <Link to="/login" className="text-info hover:underline">
-            sign in
-          </Link>{' '}
-          to rsvp
-        </p>
-      );
-    }
     if (isNonMember) {
       return (
         <p className="text-foreground-secondary text-sm">
@@ -138,8 +127,10 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
       return (
         <PublicRsvpPhoneStep
           eventId={event.id}
-          onMember={() => {
-            setIsMember(true);
+          onMember={(memberPhone) => {
+            void navigate('/login', {
+              state: { phone: memberPhone, redirect: `/events/${event.id}` },
+            });
           }}
           onNonMember={() => {
             setIsNonMember(true);

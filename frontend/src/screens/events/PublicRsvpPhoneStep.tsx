@@ -13,7 +13,7 @@ export interface PhoneStepResult {
 
 interface Props {
   onNew: (result: PhoneStepResult) => void;
-  onMember: () => void;
+  onMember: (phone: string) => void;
   onNonMember: () => void;
   eventId: string;
 }
@@ -33,7 +33,7 @@ export function PublicRsvpPhoneStep({ onNew, onMember, onNonMember, eventId }: P
     try {
       const result = await check.mutateAsync({ eventId, phoneNumber: phone });
       if (result.status === 'member') {
-        onMember();
+        onMember(phone);
         return;
       }
       if (result.status === 'non_member') {

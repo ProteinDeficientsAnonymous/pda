@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type * as ReactRouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,6 +11,12 @@ vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: submitMutate, isPending: false }),
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
+
+const navigateMock = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof ReactRouterDom>();
+  return { ...actual, useNavigate: () => navigateMock };
+});
 
 import { PublicRsvpForm } from './PublicRsvpForm';
 
@@ -43,6 +50,7 @@ describe('PublicRsvpForm', () => {
       rsvp: { status: 'attending', has_plus_one: false },
     });
     checkPhoneMutate.mockReset();
+    navigateMock.mockReset();
   });
 
   it('submits the correct payload shape', async () => {
@@ -106,12 +114,14 @@ describe('PublicRsvpForm', () => {
     expect(screen.getByText('maybe')).toBeInTheDocument();
   });
 
-  it('directs members to sign in instead of showing the contact form', async () => {
+  it('redirects members to /login with their phone in state', async () => {
     checkPhoneMutate.mockResolvedValue({ status: 'member' });
     renderForm();
-    fillPhoneStep();
-    await screen.findByText(/looks like you already have an account/);
-    expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
+    fillPhoneStep('4155550123');
+    await waitFor(() => expect(navigateMock).toHaveBeenCalled());
+    expect(navigateMock).toHaveBeenCalledWith('/login', {
+      state: { phone: '+14155550123', redirect: '/events/ev1' },
+    });
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });
 
