@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useState } from 'react';
+import { type SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -74,6 +74,13 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<SubmitError | null>(null);
+  const submitErrorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!submitError) return;
+    submitErrorRef.current?.scrollIntoView({ block: 'center' });
+    submitErrorRef.current?.focus();
+  }, [submitError]);
 
   function validate(): boolean {
     const next: Record<string, string> = {};
@@ -129,9 +136,21 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     }
     if (isNonMember) {
       return (
-        <p className="text-foreground-secondary text-sm">
-          we recognized your number — check your email for a link to manage your rsvp
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="text-foreground-secondary text-sm">
+            we recognized your number — check your email for a link to manage your rsvp
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setIsNonMember(false);
+              setPhoneConfirmed(false);
+            }}
+            className="text-info self-start text-sm hover:underline"
+          >
+            use a different number
+          </button>
+        </div>
       );
     }
     if (!phoneConfirmed) {
@@ -166,7 +185,6 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
             type="button"
             onClick={() => {
               setStatus(null);
-              setPhoneConfirmed(false);
             }}
             className="text-info text-sm hover:underline"
           >
@@ -215,7 +233,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
         </Button>
 
         {submitError ? (
-          <div role="alert" className="text-destructive text-sm">
+          <div role="alert" tabIndex={-1} ref={submitErrorRef} className="text-destructive text-sm">
             <p>{submitError.text}</p>
             {submitError.showSignIn ? (
               <Link to="/login" className="text-info hover:underline">
