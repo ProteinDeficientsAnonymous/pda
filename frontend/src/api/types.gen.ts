@@ -1131,6 +1131,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/giphy/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Giphy Search
+         * @description Proxy GIF search to Giphy — keeps GIPHY_API_KEY server-side.
+         */
+        get: operations["community__giphy_giphy_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/guidelines/": {
         parameters: {
             query?: never;
@@ -3025,6 +3045,32 @@ export interface components {
             limit: number;
             /** Q */
             q: string;
+        };
+        /** GiphyQuery */
+        GiphyQuery: {
+            /**
+             * Limit
+             * @default 24
+             */
+            limit: number;
+            /** Q */
+            q: string;
+        };
+        /** GiphyResult */
+        GiphyResult: {
+            /** Id */
+            id: string;
+            /** Original Url */
+            original_url: string;
+            /** Preview Url */
+            preview_url: string;
+            /** Title */
+            title: string;
+        };
+        /** GiphySearchOut */
+        GiphySearchOut: {
+            /** Results */
+            results: components["schemas"]["GiphyResult"][];
         };
         /** GuidelinesOut */
         GuidelinesOut: {
@@ -7777,6 +7823,47 @@ export interface operations {
             };
             /** @description Bad Gateway */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__giphy_giphy_search: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GiphySearchOut"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

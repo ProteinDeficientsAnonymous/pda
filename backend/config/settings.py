@@ -152,6 +152,9 @@ CORS_ALLOW_CREDENTIALS = True
 # Email
 VETTING_EMAIL = os.environ.get("VETTING_EMAIL", "")
 
+# Giphy (event photo library GIF search)
+GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
+
 # Logging
 LOGGING = {
     "version": 1,
