@@ -1,3 +1,10 @@
+## [0.52.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.4...v0.52.5) (2026-07-21)
+
+
+### Bug Fixes
+
+* **users:** require email on admin user creation (Issue 1039) ([#1053](https://github.com/ProteinDeficientsAnonymous/pda/issues/1053)) ([8c901a4](https://github.com/ProteinDeficientsAnonymous/pda/commit/8c901a4f9c1d7df0eb395416c72fda1eaa0eb88b))
+
 ## [0.52.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.3...v0.52.4) (2026-07-21)
 
 
