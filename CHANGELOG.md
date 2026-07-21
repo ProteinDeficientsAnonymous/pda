@@ -1,3 +1,10 @@
+## [0.51.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.1...v0.51.2) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** stop leaking manage tokens from phone-check (Issue 1000) ([#1014](https://github.com/ProteinDeficientsAnonymous/pda/issues/1014)) ([d8d01de](https://github.com/ProteinDeficientsAnonymous/pda/commit/d8d01de08f14762de14b4eb120452dcf7141798e))
+
 ## [0.51.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.0...v0.51.1) (2026-07-21)
 
 
