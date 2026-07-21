@@ -1,7 +1,7 @@
 import { type SyntheticEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getApiStatus } from '@/api/apiErrors';
+import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { type PublicRsvpOut, useSubmitPublicRsvp } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
 import { Honeypot } from '@/components/ui/Honeypot';
@@ -35,7 +35,7 @@ interface SubmitError {
   showSignIn: boolean;
 }
 
-function messageForStatus(status: number | null): SubmitError {
+function messageForStatus(status: number | null, err: unknown): SubmitError {
   if (status === 409) {
     return { text: 'looks like you already have an account — sign in to rsvp', showSignIn: true };
   }
@@ -45,7 +45,8 @@ function messageForStatus(status: number | null): SubmitError {
   if (status === 404) {
     return { text: "this event isn't accepting public rsvps anymore — refresh", showSignIn: false };
   }
-  return { text: 'something went wrong — try again', showSignIn: false };
+  // 400/422 carry an actionable backend message (event full, invalid name, etc.)
+  return { text: extractApiErrorOr(err, 'something went wrong — try again'), showSignIn: false };
 }
 
 function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
@@ -99,7 +100,7 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
       });
       onSuccess(result);
     } catch (err) {
-      setSubmitError(messageForStatus(getApiStatus(err)));
+      setSubmitError(messageForStatus(getApiStatus(err), err));
     }
   }
 
