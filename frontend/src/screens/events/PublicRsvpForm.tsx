@@ -1,4 +1,4 @@
-import { type SyntheticEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -103,8 +103,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     return Object.keys(next).length === 0;
   }
 
-  async function onSubmit(e: SyntheticEvent) {
-    e.preventDefault();
+  async function onSubmit() {
     setSubmitError(null);
     if (!status || !validate()) return;
     try {
@@ -179,7 +178,14 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
       );
     }
     return (
-      <form onSubmit={(e) => void onSubmit(e)} className="flex flex-col gap-4" noValidate>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onSubmit();
+        }}
+        className="flex flex-col gap-4"
+        noValidate
+      >
         <Honeypot value={website} onChange={setWebsite} />
 
         <div className="flex items-center justify-between">
@@ -232,7 +238,12 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
         />
         <PhoneField label="phone" value={phone} onChange={setPhone} error={errors.phone} />
 
-        <RsvpCommentField value={comment} onChange={setComment} disabled={submit.isPending} />
+        <RsvpCommentField
+          value={comment}
+          onChange={setComment}
+          disabled={submit.isPending}
+          onSubmitShortcut={() => void onSubmit()}
+        />
 
         <Button type="submit" disabled={submit.isPending} fullWidth>
           rsvp

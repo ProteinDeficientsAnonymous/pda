@@ -20,4 +20,25 @@ describe('RsvpCommentField', () => {
     render(<RsvpCommentField value="ab" onChange={() => {}} />);
     expect(screen.getByText(`${RSVP_COMMENT_MAX_LENGTH - 2} characters left`)).toBeInTheDocument();
   });
+
+  it('triggers onSubmitShortcut on cmd+enter', () => {
+    const onSubmitShortcut = vi.fn();
+    render(<RsvpCommentField value="hi" onChange={() => {}} onSubmitShortcut={onSubmitShortcut} />);
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', metaKey: true });
+    expect(onSubmitShortcut).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers onSubmitShortcut on ctrl+enter', () => {
+    const onSubmitShortcut = vi.fn();
+    render(<RsvpCommentField value="hi" onChange={() => {}} onSubmitShortcut={onSubmitShortcut} />);
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', ctrlKey: true });
+    expect(onSubmitShortcut).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not throw when onSubmitShortcut is not provided', () => {
+    render(<RsvpCommentField value="hi" onChange={() => {}} />);
+    expect(() => {
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', metaKey: true });
+    }).not.toThrow();
+  });
 });
