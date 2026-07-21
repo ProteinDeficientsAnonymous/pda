@@ -128,11 +128,12 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
 
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], bool]:
     """Execute RSVP upsert inside a locked transaction.
 
-    Returns (final_status, promoted_user_ids). promoted_user_ids is the list of
-    users promoted off the waitlist by this change (empty unless a spot freed).
+    Returns (final_status, promoted_user_ids, created). promoted_user_ids is the
+    list of users promoted off the waitlist by this change (empty unless a spot
+    freed); created is True when this call created the user's first RSVP row.
 
     Raises ValidationException on failure.
     """
@@ -150,6 +151,7 @@ def _apply_rsvp_in_transaction(
     final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
 
     existing = EventRSVP.objects.filter(event=event, user=user).first()
+    created = existing is None
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
 
@@ -158,7 +160,7 @@ def _apply_rsvp_in_transaction(
         and existing.status == final_status
         and existing.has_plus_one == final_plus_one
     ):
-        return final_status, []
+        return final_status, [], False
 
     EventRSVP.objects.update_or_create(
         event=event,
@@ -175,7 +177,7 @@ def _apply_rsvp_in_transaction(
     )
     promoted_user_ids = promote_from_waitlist(event) if spot_freed else []
 
-    return final_status, promoted_user_ids
+    return final_status, promoted_user_ids, created
 
 
 @router.post(
@@ -193,7 +195,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     _validate_rsvp_status(payload.status)
 
     with transaction.atomic():
-        final_status, promoted_user_ids = _apply_rsvp_in_transaction(
+        final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
             event_id, request.auth, payload.status, payload.has_plus_one
         )
 
