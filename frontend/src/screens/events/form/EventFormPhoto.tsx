@@ -138,7 +138,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         disabled={locked}
         aria-label={hasPhoto ? 'change event photo' : 'add event photo'}
         className={cn(
-          'group relative overflow-hidden rounded-[var(--radius-md)]',
+          'group relative overflow-hidden rounded-lg',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
           hasPhoto
             ? 'mx-auto block w-auto max-w-full'

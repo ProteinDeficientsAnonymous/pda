@@ -236,15 +236,21 @@ export function EventForm({ existing }: Props) {
         e.preventDefault();
         void submit('active');
       }}
-      className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8"
+      className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-4"
     >
-      <div className="lg:sticky lg:top-20 lg:w-full lg:max-w-sm lg:flex-1 lg:self-start">
-        <EventFormPhoto
-          photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
-          photoUpdatedAt={existing?.photoUpdatedAt ?? null}
-          onCrop={onCropPhoto}
-          disabled={saving}
-        />
+      {/* Sticky at top-[89px] (= header 57px + py-8 32px) so it pins with no
+          scroll-up drift. Height is 100vh minus twice that offset so the flex
+          box centers the photo on the true viewport middle (89 + (100vh-178)/2
+          = 50vh), not the middle of the space below the header. */}
+      <div className="lg:sticky lg:top-[89px] lg:flex lg:h-[calc(100vh-178px)] lg:w-full lg:flex-1 lg:items-center lg:self-start">
+        <div className="w-full">
+          <EventFormPhoto
+            photoUrl={existing?.photoUrl ?? pendingPhotoUrl ?? ''}
+            photoUpdatedAt={existing?.photoUpdatedAt ?? null}
+            onCrop={onCropPhoto}
+            disabled={saving}
+          />
+        </div>
       </div>
 
       <div className="flex w-full flex-col gap-4 lg:max-w-3xl lg:flex-1">
