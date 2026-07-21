@@ -128,6 +128,9 @@ def _resolve_non_member(
     if phone_match and phone_match.is_member:
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
+    if phone_match and phone_match.archived_at:
+        raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
+
     if email_match and email_match.pk != (phone_match.pk if phone_match else None):
         _reject_email_collision(request, email)
 

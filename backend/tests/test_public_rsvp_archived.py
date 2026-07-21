@@ -6,7 +6,7 @@ from community._validation import Code, ValidationException
 from community.models import EventRSVP
 from django.test import RequestFactory
 from django.utils import timezone
-from users.models import User
+from users.models import NonMemberRsvpToken, User
 
 from tests._public_rsvp_helpers import make_non_member, make_official_event, post
 
@@ -64,6 +64,26 @@ class TestArchivedMemberGate:
         assert response.json()["detail"][0]["code"] == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not User.objects.filter(phone_number="+14155550123").exists()
         assert not EventRSVP.objects.filter(event=official_event, user=archived).exists()
+
+
+@pytest.mark.django_db
+class TestArchivedNonMemberGate:
+    def test_phone_belongs_to_archived_non_member(
+        self, api_client, official_event, fake_email_sender
+    ):
+        archived = make_non_member("+14155550123", "old@example.com", name="Archived NonMember")
+        archived.archived_at = timezone.now()
+        archived.save(update_fields=["archived_at"])
+
+        response = post(api_client, official_event)
+
+        assert response.status_code == 403
+        assert response.json()["detail"][0]["code"] == Code.Auth.ACCOUNT_ARCHIVED
+        assert not EventRSVP.objects.filter(event=official_event, user=archived).exists()
+        archived.refresh_from_db()
+        assert archived.archived_at is not None
+        assert not NonMemberRsvpToken.objects.filter(user=archived).exists()
+        fake_email_sender.send.assert_not_called()
 
 
 @pytest.mark.django_db
