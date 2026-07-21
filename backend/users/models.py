@@ -2,6 +2,8 @@ import secrets
 import uuid
 from datetime import timedelta
 
+import phonenumbers
+from community._validation import Code, raise_validation
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -10,6 +12,33 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from users.roles import Role  # noqa: F401 — re-exported so Django discovers it in the users app
+
+# Fallback for bare digits only — a number with an explicit country code is unaffected.
+ADMIN_ENTERED_PHONE_REGION = "US"
+PUBLIC_FORM_PHONE_REGION = None
+
+
+def _parse_phone(raw: str, default_region: str | None) -> str | None:
+    try:
+        parsed = phonenumbers.parse(raw, default_region)
+    except phonenumbers.phonenumberutil.NumberParseException:
+        return None
+    if not phonenumbers.is_valid_number(parsed):
+        return None
+    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+
+
+def validate_phone(raw: str, default_region: str | None, field: str = "phone_number") -> str:
+    """Parse, validate, and return E.164. Raises ValidationException on invalid."""
+    canonical = _parse_phone(raw, default_region)
+    if canonical is None:
+        raise_validation(Code.Phone.INVALID, field=field)
+    return canonical
+
+
+def normalize_phone_number(raw: str) -> str:
+    """Best-effort canonicalize to E.164 for save() — never raises on bad legacy data."""
+    return _parse_phone(raw, ADMIN_ENTERED_PHONE_REGION) or raw
 
 
 class WeekStart:
@@ -146,6 +175,11 @@ class User(AbstractUser):
         if not self.show_phone or not self.show_email:
             return False
         return self.contact_privacy_consent_at is None
+
+    def save(self, *args, **kwargs):
+        if self.phone_number:
+            self.phone_number = normalize_phone_number(self.phone_number)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.full_name or self.phone_number

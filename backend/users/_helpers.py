@@ -7,11 +7,16 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
-import phonenumbers
 from community._shared import validate_display_name
 from community._validation import Code, raise_validation
 
-from users.models import MagicLoginToken, MagicLoginTokenSource, User
+from users.models import (
+    ADMIN_ENTERED_PHONE_REGION,
+    MagicLoginToken,
+    MagicLoginTokenSource,
+    User,
+    validate_phone,
+)
 from users.roles import Role
 
 
@@ -166,21 +171,6 @@ def _check_and_set_email(
     user.email = normalized
 
 
-def _validate_phone(raw: str, field: str = "phone_number") -> str:
-    """Parse, validate, and return E.164. Raises ValidationException on invalid.
-
-    Defaults to US region so bare 10-digit numbers are accepted.
-    Numbers with an explicit country code (e.g. +44...) are unaffected.
-    """
-    try:
-        parsed = phonenumbers.parse(raw, "US")
-    except phonenumbers.phonenumberutil.NumberParseException:
-        raise_validation(Code.Phone.INVALID, field=field)
-    if not phonenumbers.is_valid_number(parsed):
-        raise_validation(Code.Phone.INVALID, field=field)
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
-
-
 def _guard_admin_role_grant(role_id: str | None, requesting_user: User) -> None:
     """Block assigning the built-in admin role unless the requester is an admin.
 
@@ -214,7 +204,7 @@ def _create_user_with_role(  # noqa: PLR0913
     captured consent — otherwise it defaults to None (e.g. admin-created users
     who have no prior consent record).
     """
-    validated_phone = _validate_phone(phone)
+    validated_phone = validate_phone(phone, ADMIN_ENTERED_PHONE_REGION)
     if User.objects.filter(phone_number=validated_phone).exists():
         raise_validation(Code.Phone.ALREADY_EXISTS, field="phone_number", status_code=409)
     normalized_email = _normalize_email(email)
