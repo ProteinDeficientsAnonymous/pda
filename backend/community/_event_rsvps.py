@@ -73,8 +73,9 @@ def _resolve_rsvp_status(
         # Removing +1 is always fine
         return requested_status, has_plus_one
 
-    # New attending RSVP at capacity — auto-waitlist
-    return RSVPStatus.WAITLISTED, False
+    # New attending RSVP (or +1 party) at capacity — waitlist the whole party.
+    # Keep has_plus_one so promotion seats them together later; never drop the +1.
+    return RSVPStatus.WAITLISTED, has_plus_one
 
 
 def _validate_rsvp_status(status: str) -> None:

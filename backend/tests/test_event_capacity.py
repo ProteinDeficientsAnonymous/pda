@@ -158,7 +158,7 @@ class TestEventCapacity:
         assert resp.status_code == 400
         assert resp.json()["detail"][0]["code"] == "event.no_plus_one_spots"
 
-    def test_waitlisted_has_no_plus_one(  # noqa: PLR0913
+    def test_waitlisted_keeps_plus_one(  # noqa: PLR0913
         self, api_client, capped_event, user3, headers1, headers2, headers3
     ):
         _rsvp(api_client, capped_event, headers1)
@@ -166,7 +166,7 @@ class TestEventCapacity:
         _rsvp(api_client, capped_event, headers3, has_plus_one=True)
         rsvp = EventRSVP.objects.get(event=capped_event, user=user3)
         assert rsvp.status == RSVPStatus.WAITLISTED
-        assert rsvp.has_plus_one is False
+        assert rsvp.has_plus_one is True
 
     def test_cannot_set_waitlisted_directly(self, api_client, capped_event, headers1):
         resp = _rsvp(api_client, capped_event, headers1, status="waitlisted")
@@ -259,6 +259,36 @@ class TestWaitlistPromotion:
         rsvp4 = EventRSVP.objects.get(event=capped_event, user=user4)
         assert rsvp3.status == RSVPStatus.ATTENDING
         assert rsvp4.status == RSVPStatus.WAITLISTED
+
+    def test_waitlisted_plus_one_party_promoted_together(  # noqa: PLR0913
+        self, api_client, capped_event, user3, headers1, headers3
+    ):
+        # max=2; user1 with +1 fills both seats. user3 requests attending +1
+        # (a party of 2) → waitlisted whole, +1 kept — never seated solo.
+        _rsvp(api_client, capped_event, headers1, has_plus_one=True)
+        _rsvp(api_client, capped_event, headers3, has_plus_one=True)
+        rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
+        assert rsvp3.status == RSVPStatus.WAITLISTED
+        assert rsvp3.has_plus_one is True
+
+        # user1 fully cancels → both seats free → user3's party seated together.
+        api_client.delete(f"/api/community/events/{capped_event.id}/rsvp/", **headers1)
+        rsvp3.refresh_from_db()
+        assert rsvp3.status == RSVPStatus.ATTENDING
+        assert rsvp3.has_plus_one is True
+
+    def test_waitlisted_plus_one_party_not_seated_solo_into_one_seat(  # noqa: PLR0913
+        self, api_client, capped_event, user3, headers1, headers3
+    ):
+        # Only one seat frees up — the +1 party must wait, not be seated solo.
+        _rsvp(api_client, capped_event, headers1, has_plus_one=True)
+        _rsvp(api_client, capped_event, headers3, has_plus_one=True)  # waitlisted party of 2
+
+        # user1 drops just their +1 → exactly 1 seat opens.
+        _rsvp(api_client, capped_event, headers1, has_plus_one=False)
+        rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
+        assert rsvp3.status == RSVPStatus.WAITLISTED
+        assert rsvp3.has_plus_one is True
 
     def test_no_promotion_when_no_waitlisted(self, api_client, capped_event, headers1, headers2):
         _rsvp(api_client, capped_event, headers1)
