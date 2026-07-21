@@ -1,3 +1,15 @@
+# [0.53.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.11...v0.53.0) (2026-07-21)
+
+
+### Bug Fixes
+
+* **join-requests:** collapse message template triggers into a select ([#1054](https://github.com/ProteinDeficientsAnonymous/pda/issues/1054)) ([c0e1ddf](https://github.com/ProteinDeficientsAnonymous/pda/commit/c0e1ddf037fb05618f91f051ba212c6ea5585c4e))
+
+
+### Features
+
+* 1062 - remove remove-photo path from event photo form ([#1068](https://github.com/ProteinDeficientsAnonymous/pda/issues/1068)) ([6cd58d3](https://github.com/ProteinDeficientsAnonymous/pda/commit/6cd58d3a85f4b2d592b231bf0f5b63ea8ab32533))
+
 ## [0.52.11](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.52.10...v0.52.11) (2026-07-21)
 
 
