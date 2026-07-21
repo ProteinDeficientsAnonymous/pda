@@ -1,3 +1,10 @@
+## [0.51.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.0...v0.51.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* **users:** normalize phone_number to E.164 at model layer ([#991](https://github.com/ProteinDeficientsAnonymous/pda/issues/991)) ([7d6883d](https://github.com/ProteinDeficientsAnonymous/pda/commit/7d6883d8dcf89852fab31cde3afeeade94e8de2e))
+
 # [0.51.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.50.0...v0.51.0) (2026-07-20)
 
 
