@@ -1,3 +1,10 @@
+## [0.51.11](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.10...v0.51.11) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** stop recognized status firing on ineligible-only rsvp (Issue 1009) ([#1023](https://github.com/ProteinDeficientsAnonymous/pda/issues/1023)) ([39d2ca6](https://github.com/ProteinDeficientsAnonymous/pda/commit/39d2ca6d6a0927573e40b7da5b6d653e792a8da9))
+
 ## [0.51.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.9...v0.51.10) (2026-07-21)
 
 
