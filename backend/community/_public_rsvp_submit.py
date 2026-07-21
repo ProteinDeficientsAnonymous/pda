@@ -72,10 +72,14 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
 
 
 def _backfill_email(phone_match: User, email: str) -> User:
-    # Backfill the email only if blank — never overwrite an existing one.
+    """Backfill the email only if blank — never overwrite an existing one."""
     if email and not phone_match.email:
-        phone_match.email = email
-        phone_match.save(update_fields=["email"])
+        try:
+            with transaction.atomic():
+                phone_match.email = email
+                phone_match.save(update_fields=["email"])
+        except IntegrityError:
+            raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
     return phone_match
 
 
@@ -122,14 +126,8 @@ def _resolve_non_member(
 
     Must run inside the surrounding transaction.
     """
-    phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
-    # iexact so a mixed-case stored member email (e.g. admin-created) still trips
-    # the member gate below — the incoming email is already lowercased.
-    email_match = (
-        User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
-        if email
-        else None
-    )
+    phone_match = User.objects.filter(phone_number=phone).first()
+    email_match = User.objects.filter(email__iexact=email).first() if email else None
 
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
