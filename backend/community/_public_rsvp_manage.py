@@ -12,7 +12,7 @@ from notifications.email_sender import get_email_sender
 from pydantic import BaseModel, Field
 from users.models import NonMemberRsvpToken, User
 
-from community._event_helpers import _event_out, promote_from_waitlist
+from community._event_helpers import _event_out, broadcast_capacity_change, promote_from_waitlist
 from community._event_rsvps import (
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
@@ -156,6 +156,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     _post_rsvp_comment(event.id, user, final_status, payload.comment)
     _send_updated_email(request, event, user, rsvp_token.token)
     _email_promoted_non_members(request, event, promoted_user_ids)
+    broadcast_capacity_change(event.id)
 
     fresh_event = (
         Event.objects.select_related("created_by")
@@ -205,4 +206,5 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         details={"user_id": str(user.pk)},
     )
     _email_promoted_non_members(request, event, promoted_user_ids)
+    broadcast_capacity_change(event.id)
     return Status(204, None)
