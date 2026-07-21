@@ -5,7 +5,12 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from notifications.sse import _format_notify_for_user
+from notifications.sse import (
+    _MAX_ANONYMOUS_CONNECTIONS,
+    _format_notify_for_user,
+    _release_anonymous_slot,
+    _try_acquire_anonymous_slot,
+)
 
 
 class TestFormatNotifyForUser:
@@ -29,6 +34,19 @@ class TestFormatNotifyForUser:
 
     def test_personal_notification_never_matches_anonymous_viewer(self):
         assert _format_notify_for_user("notifications", "user-1", None) is None
+
+
+class TestAnonymousConnectionCap:
+    def test_acquire_fails_once_at_capacity(self):
+        for _ in range(_MAX_ANONYMOUS_CONNECTIONS):
+            assert _try_acquire_anonymous_slot() is True
+        assert _try_acquire_anonymous_slot() is False
+
+    def test_release_frees_a_slot_for_reuse(self):
+        for _ in range(_MAX_ANONYMOUS_CONNECTIONS):
+            assert _try_acquire_anonymous_slot() is True
+        _release_anonymous_slot()
+        assert _try_acquire_anonymous_slot() is True
 
 
 def _auth_headers(user) -> dict:

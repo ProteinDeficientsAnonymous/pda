@@ -50,7 +50,9 @@ export function EventCommentsCard({ eventId, token }: Props) {
   const postComment = usePostComment(eventId, token);
   const qc = useQueryClient();
 
-  // Non-members have no NotificationBell mounted to pick up live comment updates.
+  // Anonymous-only: authed users get live comment updates via NotificationBell's
+  // own subscription instead (no bell is mounted for non-members). With no real
+  // token and anonymous=false, this call no-ops for authed users by design.
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   useEventSource({
     url: '/api/notifications/stream/',

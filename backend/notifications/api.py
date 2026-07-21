@@ -3,7 +3,7 @@ from uuid import UUID
 from community._shared import ErrorOut, _optional_jwt
 from community._validation import Code, raise_validation
 from config.auth import gated_jwt
-from config.ratelimit import rate_limit
+from config.ratelimit import auth_or_ip_key, rate_limit
 from django.contrib.auth.models import AnonymousUser
 from ninja import Query, Router
 from ninja.responses import Status
@@ -42,14 +42,8 @@ def list_notifications(
     return Status(200, [_notification_out(n) for n in notifications])
 
 
-def _sse_ticket_rate_key(request) -> str:
-    if isinstance(request.auth, AnonymousUser):
-        return request.META.get("REMOTE_ADDR", "anon")
-    return str(request.auth.pk)
-
-
 @router.post("/sse-ticket/", response={200: SseTicketOut, 429: ErrorOut}, auth=_optional_jwt)
-@rate_limit(key_func=_sse_ticket_rate_key, rate="30/m")
+@rate_limit(key_func=auth_or_ip_key, rate="30/m")
 def create_sse_ticket(request):
     """Mint a short-lived single-use ticket for opening the SSE stream.
 
