@@ -2,6 +2,9 @@ import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
+// Set by dev.sh to the backend's actual port (auto-picked if 8000 is taken).
+const backendTarget = `http://localhost:${process.env.BACKEND_PORT ?? 8000}`;
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -15,7 +18,7 @@ export default defineConfig({
       // SSE endpoint — disable proxy buffering so events stream through
       // in real time instead of getting held until connection close.
       '/api/notifications/stream': {
-        target: 'http://localhost:8000',
+        target: backendTarget,
         changeOrigin: true,
         selfHandleResponse: false,
         configure: (proxy) => {
@@ -26,11 +29,11 @@ export default defineConfig({
         },
       },
       '/api': {
-        target: 'http://localhost:8000',
+        target: backendTarget,
         changeOrigin: true,
       },
       '/media': {
-        target: 'http://localhost:8000',
+        target: backendTarget,
         changeOrigin: true,
       },
     },
