@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { getErrorParams, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
 import {
   emptyEventFormValues,
@@ -14,10 +15,12 @@ import {
   useUploadEventPhoto,
 } from '@/api/eventWrites';
 import type { MemberSearchResult } from '@/api/userSearch';
+import { Code } from '@/api/validationCodes';
 import { useAuthStore } from '@/auth/store';
 import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
+import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
@@ -115,6 +118,7 @@ export function EventForm({ existing }: Props) {
   const update = useUpdateEvent(existing?.id ?? '');
   const uploadPhoto = useUploadEventPhoto();
   const deletePhoto = useDeleteEventPhoto(existing?.id ?? '');
+  const { confirm, element: confirmElement } = useConfirm();
 
   const saving = create.isPending || update.isPending || uploadPhoto.isPending;
   const isDraft = values.status === 'draft';
@@ -160,7 +164,24 @@ export function EventForm({ existing }: Props) {
             })()
           : { ...merged };
         if (!coHostsDirty) delete patchBody.coHostIds;
-        await update.mutateAsync(patchBody);
+        try {
+          await update.mutateAsync(patchBody);
+        } catch (err) {
+          if (!hasErrorCode(err, Code.Event.WouldRemoveNonMembers)) throw err;
+          const count = getErrorParams(err, Code.Event.WouldRemoveNonMembers)?.count;
+          const message =
+            count === 1
+              ? "1 non-member is rsvp'd or waitlisted on this event — turning this off will remove them and email them that they've been removed."
+              : `${String(count)} non-members are rsvp'd or waitlisted on this event — turning this off will remove them and email them that they've been removed.`;
+          const ok = await confirm({
+            title: 'remove non-members?',
+            message,
+            confirmLabel: 'remove them',
+            destructive: true,
+          });
+          if (!ok) return;
+          await update.mutateAsync({ ...patchBody, force: true });
+        }
         if (nextStatus === 'draft') toast.success('saved draft');
         void navigate(`/events/${existing.id}`);
         return;
@@ -350,6 +371,7 @@ export function EventForm({ existing }: Props) {
           {saving ? 'saving…' : !existing || isDraft ? 'publish' : 'save'}
         </Button>
       </div>
+      {confirmElement}
     </form>
   );
 }

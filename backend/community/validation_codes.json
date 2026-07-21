@@ -142,6 +142,13 @@
         "name": "BLAST_NO_RECIPIENTS",
         "value": "event.blast_no_recipients",
         "params": []
+      },
+      {
+        "name": "WOULD_REMOVE_NON_MEMBERS",
+        "value": "event.would_remove_non_members",
+        "params": [
+          "count"
+        ]
       }
     ],
     "Poll": [

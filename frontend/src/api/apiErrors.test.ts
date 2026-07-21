@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractApiError, extractApiErrorOr, getApiStatus, hasErrorCode } from './apiErrors';
+import {
+  extractApiError,
+  extractApiErrorOr,
+  getApiStatus,
+  getErrorParams,
+  hasErrorCode,
+} from './apiErrors';
 import { Code } from './validationCodes';
 
 function axiosError(status: number, data: unknown) {
@@ -123,5 +129,26 @@ describe('hasErrorCode', () => {
 
   it('returns false for non-axios errors', () => {
     expect(hasErrorCode(new Error('boom'), 'anything')).toBe(false);
+  });
+});
+
+describe('getErrorParams', () => {
+  it('returns the params of the matching entry', () => {
+    const err = axiosError(409, {
+      detail: [{ code: Code.Event.WouldRemoveNonMembers, field: null, params: { count: 3 } }],
+    });
+    expect(getErrorParams(err, Code.Event.WouldRemoveNonMembers)).toEqual({ count: 3 });
+  });
+
+  it('returns an empty object when the entry has no params', () => {
+    const err = axiosError(409, {
+      detail: [{ code: Code.Event.FlagAlreadyFlagged, field: null }],
+    });
+    expect(getErrorParams(err, Code.Event.FlagAlreadyFlagged)).toEqual({});
+  });
+
+  it('returns null when the code is not present', () => {
+    const err = axiosError(409, { detail: [{ code: 'something.else', field: null }] });
+    expect(getErrorParams(err, Code.Event.WouldRemoveNonMembers)).toBeNull();
   });
 });

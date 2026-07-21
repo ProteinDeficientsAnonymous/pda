@@ -1,3 +1,31 @@
+## [0.51.11](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.10...v0.51.11) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** stop recognized status firing on ineligible-only rsvp (Issue 1009) ([#1023](https://github.com/ProteinDeficientsAnonymous/pda/issues/1023)) ([39d2ca6](https://github.com/ProteinDeficientsAnonymous/pda/commit/39d2ca6d6a0927573e40b7da5b6d653e792a8da9))
+
+## [0.51.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.9...v0.51.10) (2026-07-21)
+
+
+### Bug Fixes
+
+* 971 - keep +1 on waitlisted party so promotion seats them together ([#1024](https://github.com/ProteinDeficientsAnonymous/pda/issues/1024)) ([e12ae74](https://github.com/ProteinDeficientsAnonymous/pda/commit/e12ae74d4ef010a8a6f04e76d89481b8dc8f1114))
+
+## [0.51.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.8...v0.51.9) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** remove non-member RSVPs when an event loses public-rsvp eligibility (Issue 1022) ([#1026](https://github.com/ProteinDeficientsAnonymous/pda/issues/1026)) ([443b975](https://github.com/ProteinDeficientsAnonymous/pda/commit/443b97500a993ddac5d5b537d743aedc11cfed25))
+
+## [0.51.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.7...v0.51.8) (2026-07-21)
+
+
+### Bug Fixes
+
+* **rsvp:** gate delete_my_rsvp on cancelled events (Issue 1011) ([#1025](https://github.com/ProteinDeficientsAnonymous/pda/issues/1025)) ([85a67bf](https://github.com/ProteinDeficientsAnonymous/pda/commit/85a67bf34e404e3cf5197980bd7079930696fc4a))
+
 ## [0.51.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.6...v0.51.7) (2026-07-21)
 
 

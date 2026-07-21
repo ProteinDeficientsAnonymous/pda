@@ -76,6 +76,7 @@ class RSVPStatus(models.TextChoices):
     MAYBE = "maybe", "Maybe"
     CANT_GO = "cant_go", "Can't go"
     WAITLISTED = "waitlisted", "Waitlisted"
+    REMOVED = "removed", "Removed"
 
 
 class AttendanceStatus(models.TextChoices):

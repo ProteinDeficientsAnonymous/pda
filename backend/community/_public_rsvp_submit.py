@@ -6,6 +6,7 @@ from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
@@ -31,6 +32,7 @@ from community._public_rsvp_shared import (
 from community._shared import ErrorOut, validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from community.models import Event, RSVPStatus
+from community.models.event import public_rsvp_eligible_q
 
 router = Router()
 

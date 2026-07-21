@@ -79,6 +79,23 @@ def send_rsvp_waitlist_promoted_email(
     )
 
 
+def send_rsvp_removed_email(
+    *,
+    sender: EmailSender,
+    details: RsvpEmailDetails,
+) -> SendResult:
+    """Render and send the non-member "you were removed from this event" email."""
+    context = details.template_context()
+    html = render_to_string("emails/rsvp_removed.html", context)
+    text = render_to_string("emails/rsvp_removed.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"you've been removed from {details.event_title.lower()}",
+        html=html,
+        text=text,
+    )
+
+
 def send_rsvp_manage_link_email(
     *,
     sender: EmailSender,

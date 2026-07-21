@@ -377,6 +377,7 @@ class EventPatchIn(BaseModel):
     tag_ids: list[str] | None = None
     status: str | None = Field(default=None, max_length=FieldLimit.CHOICE)
     notify_attendees: bool | None = None
+    force: bool | None = None
 
     @field_validator("whatsapp_link", mode="before")
     @classmethod
