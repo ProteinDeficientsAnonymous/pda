@@ -15,9 +15,10 @@ import { PollRespondDialog } from './PollRespondDialog';
 
 interface Props {
   event: Event;
+  className?: string;
 }
 
-export function EventPollCard({ event }: Props) {
+export function EventPollCard({ event, className }: Props) {
   const user = useAuthStore((s) => s.user);
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const canManage = canManagePoll(event, user);
@@ -35,11 +36,13 @@ export function EventPollCard({ event }: Props) {
   }
 
   if (isPending) {
-    return <p className="text-foreground-tertiary text-sm">loading poll…</p>;
+    return <p className={`text-foreground-tertiary text-sm ${className ?? ''}`}>loading poll…</p>;
   }
   if (isError || !poll) {
     return (
-      <p className="text-foreground-tertiary text-sm">couldn't load the poll — try refreshing</p>
+      <p className={`text-foreground-tertiary text-sm ${className ?? ''}`}>
+        couldn't load the poll — try refreshing
+      </p>
     );
   }
 
@@ -49,7 +52,9 @@ export function EventPollCard({ event }: Props) {
   }
 
   return (
-    <div className="border-border bg-surface flex flex-col gap-3 rounded-md border p-4">
+    <div
+      className={`border-border bg-surface flex flex-col gap-3 rounded-md border p-4 ${className ?? ''}`}
+    >
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-medium">find a time</h2>
         <span className="text-foreground-tertiary text-xs">
