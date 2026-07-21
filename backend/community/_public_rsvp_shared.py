@@ -80,15 +80,17 @@ def _log_email_failure(request, event: Event, user: User, exc: Exception) -> Non
     )
 
 
-def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[str]) -> None:
-    """Email any promoted non-members their manage link. Best-effort per user.
+def _build_promoted_email_details(event: Event, user: User, token_str: str) -> RsvpEmailDetails:
+    """_email_details, minus member-only location/links once the event is no longer
+    public-RSVP-eligible — matches what _event_out/get_event/my-rsvps already hide."""
+    details = _email_details(event, user, token_str)
+    if not event.is_public_rsvp_eligible:
+        details = replace(details, event_location="", event_links=[])
+    return details
 
-    By the time a spot frees up, the event may have dropped out of public-RSVP
-    eligibility since the non-member first waitlisted. Strip the member-only
-    location/links in that case, matching what _event_out/get_event/my-rsvps
-    already hide from them — the promotion itself is still worth telling them
-    about.
-    """
+
+def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[str]) -> None:
+    """Email any promoted non-members their manage link. Best-effort per user."""
     if not promoted_user_ids:
         return
     promoted = User.objects.filter(id__in=promoted_user_ids, is_member=False, email__isnull=False)
@@ -97,9 +99,7 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
             continue
         try:
             token = NonMemberRsvpToken.issue_or_extend(user)
-            details = _email_details(event, user, token.token)
-            if not event.is_public_rsvp_eligible:
-                details = replace(details, event_location="", event_links=[])
+            details = _build_promoted_email_details(event, user, token.token)
             result = send_rsvp_waitlist_promoted_email(
                 sender=get_email_sender(),
                 details=details,
