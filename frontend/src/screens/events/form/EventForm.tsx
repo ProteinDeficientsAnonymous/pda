@@ -169,9 +169,13 @@ export function EventForm({ existing }: Props) {
         } catch (err) {
           if (!hasErrorCode(err, Code.Event.WouldRemoveNonMembers)) throw err;
           const count = getErrorParams(err, Code.Event.WouldRemoveNonMembers)?.count;
+          const message =
+            count === 1
+              ? "1 non-member is rsvp'd or waitlisted on this event — turning this off will remove them and email them that they've been removed."
+              : `${String(count)} non-members are rsvp'd or waitlisted on this event — turning this off will remove them and email them that they've been removed.`;
           const ok = await confirm({
             title: 'remove non-members?',
-            message: `${String(count)} non-member${count === 1 ? '' : 's'} ${count === 1 ? 'is' : 'are'} rsvp'd or waitlisted on this event — turning this off will remove them and email them that they've been removed.`,
+            message,
             confirmLabel: 'remove them',
             destructive: true,
           });
