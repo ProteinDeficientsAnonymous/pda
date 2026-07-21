@@ -391,6 +391,18 @@ describe('PublicRsvpForm', () => {
     expect(submitMutate).not.toHaveBeenCalled();
   });
 
+  it('submits the form on cmd+enter from the comment field', async () => {
+    const onSuccess = vi.fn();
+    renderForm(makeEvent(), onSuccess);
+    await fillRequired();
+    fireEvent.keyDown(screen.getByLabelText('comment (optional)'), {
+      key: 'Enter',
+      metaKey: true,
+    });
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+  });
+
   it('shows an inline error and does not submit when the phone is edited to an invalid number', async () => {
     checkPhoneMutate.mockResolvedValue({ status: 'new', rsvp_token: '' });
     renderForm();
