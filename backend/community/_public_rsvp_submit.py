@@ -72,12 +72,7 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
 
 
 def _reject_email_collision(request, email: str) -> NoReturn:
-    """Log the real cause, then reject with a generic code.
-
-    The response must not name the email collision — a distinct email.already_exists
-    on this unauthenticated endpoint would enumerate accounts (cf. Issue 1001). The
-    audit log keeps the real reason for support/abuse triage.
-    """
+    """Generic rejection — a distinct code here would be an account-existence oracle (Issue 1001)."""
     audit_log(
         logging.WARNING,
         "public_rsvp_email_collision",
@@ -102,11 +97,7 @@ def _backfill_email(request, phone_match: User, email: str) -> User:
 def _create_non_member(
     request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Get-or-create the non-member User keyed on the unique phone number.
-
-    A unique-email collision (e.g. an archived user still holding that email)
-    is rejected generically rather than silently dropping the email.
-    """
+    """Get-or-create the non-member User keyed on the unique phone number."""
     defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
         with transaction.atomic():
@@ -127,9 +118,7 @@ def _resolve_non_member(
     """Resolve (or create) the non-member User backing this RSVP.
 
     Identity is the phone alone; an email match only enforces uniqueness, never
-    grounds to adopt that row or trigger the member-signin 409 (Issue 1029). A
-    foreign-email collision is rejected generically (no account-existence oracle).
-    Must run inside the surrounding transaction.
+    grounds to adopt that row (Issue 1029). Must run inside the surrounding transaction.
 
     return(tuple[User, bool]): the resolved user, and whether it was newly created.
     """
@@ -285,8 +274,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     )
     broadcast_capacity_change(event.id)
     final_rsvp = user.event_rsvps.get(event=fresh_event)
-    # Withhold the token for a pre-existing row — the confirmation email carries
-    # it to the address on file, our only proof-of-ownership channel (Issue 1029).
+    # Withhold token for a pre-existing row; the confirmation email carries it instead.
     returned_token = token.token if created else ""
     return Status(
         200,
