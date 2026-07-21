@@ -42,6 +42,12 @@ function messageForStatus(status: number | null, err: unknown): SubmitError {
       showSignIn: false,
     };
   }
+  if (hasErrorCode(err, Code.Auth.AccountArchived)) {
+    return {
+      text: "we couldn't set up your rsvp — reach out and we'll help",
+      showSignIn: false,
+    };
+  }
   if (status === 409) {
     return { text: 'looks like you already have an account — sign in to rsvp', showSignIn: true };
   }

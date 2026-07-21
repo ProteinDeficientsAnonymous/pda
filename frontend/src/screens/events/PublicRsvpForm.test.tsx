@@ -262,6 +262,21 @@ describe('PublicRsvpForm', () => {
     expect(screen.queryByRole('link', { name: 'sign in' })).not.toBeInTheDocument();
   });
 
+  it('shows a reach-out message without a sign-in link when the phone matches an archived account', async () => {
+    submitMutate.mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: { detail: [{ code: 'auth.account_archived' }] },
+      },
+    });
+    renderForm();
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await screen.findByText("we couldn't set up your rsvp — reach out and we'll help");
+    expect(screen.queryByRole('link', { name: 'sign in' })).not.toBeInTheDocument();
+  });
+
   it('shows a 429 rate-limit error', async () => {
     submitMutate.mockRejectedValue({ isAxiosError: true, response: { status: 429 } });
     renderForm();
