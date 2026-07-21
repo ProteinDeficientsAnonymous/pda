@@ -210,7 +210,6 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
             _send_recognized_login_link(request, user)
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.ALREADY_RSVPD))
     if user.email and user.event_rsvps.exists():
-        _send_recognized_login_link(request, user)
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.RECOGNIZED))
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
 

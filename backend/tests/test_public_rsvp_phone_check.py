@@ -111,18 +111,34 @@ class TestPublicRsvpPhoneCheck:
         assert body["status"] == "recognized"
         assert body["rsvp_token"] == ""
 
-    def test_recognized_sends_login_link_email(self, api_client, official_event, fake_email_sender):
+    def test_recognized_sends_no_email_and_no_token_on_bare_phone_match(
+        self, api_client, official_event, fake_email_sender
+    ):
         guest = make_non_member("+14155550199", "guest@example.com")
         other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
         EventRSVP.objects.create(event=other_event, user=guest, status=RSVPStatus.ATTENDING)
 
+        response = post(api_client, official_event, phone_number="+14155550199")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "recognized"
+        fake_email_sender.send.assert_not_called()
+        assert not NonMemberRsvpToken.objects.filter(user=guest).exists()
+
+    def test_recognized_does_not_extend_existing_token(
+        self, api_client, official_event, fake_email_sender
+    ):
+        guest = make_non_member("+14155550199", "guest@example.com")
+        other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
+        EventRSVP.objects.create(event=other_event, user=guest, status=RSVPStatus.ATTENDING)
+        existing_token = NonMemberRsvpToken.issue_or_extend(guest)
+        original_expires_at = existing_token.expires_at
+
         post(api_client, official_event, phone_number="+14155550199")
 
-        fake_email_sender.send.assert_called_once()
-        sent = fake_email_sender.send.call_args.kwargs
-        assert sent["to"] == "guest@example.com"
-        token = NonMemberRsvpToken.objects.get(user=guest)
-        assert token.token in sent["text"]
+        existing_token.refresh_from_db()
+        assert existing_token.expires_at == original_expires_at
+        fake_email_sender.send.assert_not_called()
 
     def test_recognized_without_email_falls_back_to_new(
         self, api_client, official_event, fake_email_sender
