@@ -50,9 +50,7 @@ export function EventCommentsCard({ eventId, token }: Props) {
   const postComment = usePostComment(eventId, token);
   const qc = useQueryClient();
 
-  // NotificationBell already runs this stream for authed members. A non-member
-  // (RSVP-token holder) has no bell mounted, so pick up the same live update
-  // here instead of missing it — see issue #1043.
+  // Non-members have no NotificationBell mounted to pick up live comment updates.
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   useEventSource({
     url: '/api/notifications/stream/',

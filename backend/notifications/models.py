@@ -71,8 +71,7 @@ class Notification(models.Model):
 class SseTicket(models.Model):
     """Short-lived, single-use ticket authorizing one SSE stream connection.
 
-    ``user`` is null for anonymous viewers (e.g. a public event page) — they
-    only ever receive wildcard broadcasts, never a personal notification.
+    ``user`` is null for anonymous viewers, who only get wildcard broadcasts.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

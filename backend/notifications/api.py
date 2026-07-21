@@ -54,9 +54,8 @@ def create_sse_ticket(request):
     """Mint a short-lived single-use ticket for opening the SSE stream.
 
     Lets the client open the stream with ?ticket= instead of the JWT (EventSource
-    can't send an auth header). Anonymous viewers get a ticket too — a public
-    event page's live comment updates broadcast to a wildcard channel that
-    doesn't require a real user id (see broadcast_event_comment_update).
+    can't send an auth header). Anonymous viewers get a ticket too, for public
+    event pages' wildcard comment broadcasts.
     """
     if isinstance(request.auth, AnonymousUser):
         ticket = SseTicket.mint_anonymous()

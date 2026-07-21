@@ -25,9 +25,8 @@ def _consume_ticket(ticket_str: str) -> AbstractBaseUser | str | None:
     """Atomically validate + consume a single-use SSE ticket.
 
     Row-locked (select_for_update) so concurrent connections can't both consume
-    one ticket. Returns the ticket's user, the sentinel string `_ANONYMOUS` for
-    an anonymous ticket (no user attached), or None for a missing/expired/used
-    ticket or one whose user has since been deleted.
+    one ticket. Returns the ticket's user, `_ANONYMOUS` for a userless ticket,
+    or None if missing/expired/used/deleted.
     """
     from django.db import transaction
 
@@ -63,8 +62,7 @@ def _build_async_dsn() -> str:
 def _format_notify_for_user(channel: str, payload: str, user_id: str | None) -> str | None:
     """Turn a pg_notify payload into an SSE frame for this user, or None to skip.
 
-    `user_id` is None for an anonymous viewer — they can never own a personal
-    notification, only see wildcard event-comment broadcasts.
+    `user_id` is None for an anonymous viewer, who can only match wildcards.
     """
     if channel == _PG_CHANNEL:
         if user_id is not None and payload == user_id:

@@ -10,9 +10,7 @@ type Handler = (event: MessageEvent<string>) => void;
 
 interface Options {
   url: string;
-  // Null means "not authed yet, don't connect" for the member stream. Pass
-  // `anonymous` for a public/unauthenticated subscription instead — the
-  // backend mints anonymous tickets that only see wildcard broadcasts.
+  // Null means "not authed yet, don't connect" unless `anonymous` is set.
   token: string | null;
   anonymous?: boolean;
   events: Record<string, Handler>;
