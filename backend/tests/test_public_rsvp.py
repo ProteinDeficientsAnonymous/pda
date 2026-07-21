@@ -119,7 +119,7 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event, phone_number="+14155550123")
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Email.ALREADY_EXISTS
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not User.objects.filter(phone_number="+14155550123").exists()
         assert not EventRSVP.objects.filter(user=existing).exists()
 
@@ -143,7 +143,7 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event)
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Email.ALREADY_EXISTS
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not EventRSVP.objects.filter(user=phone_row).exists()
         assert not EventRSVP.objects.filter(user=email_row).exists()
         phone_row.refresh_from_db()
@@ -201,7 +201,7 @@ class TestPublicRsvpMemberCollision:
         response = post(api_client, official_event)
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Email.ALREADY_EXISTS
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not EventRSVP.objects.exists()
 
     def test_member_email_match_alone_is_email_collision_not_signin_gate(
@@ -219,7 +219,7 @@ class TestPublicRsvpMemberCollision:
         response = post(api_client, official_event, email="sam@example.com")
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Email.ALREADY_EXISTS
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not EventRSVP.objects.exists()
 
     def test_member_created_with_non_canonical_phone_still_trips_gate(

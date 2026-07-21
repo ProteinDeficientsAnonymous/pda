@@ -205,6 +205,23 @@ describe('PublicRsvpForm', () => {
     expect(screen.getByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
   });
 
+  it('shows a neutral no-oracle error without a sign-in link on a 409 email collision', async () => {
+    submitMutate.mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 409,
+        data: { detail: [{ code: 'event.rsvp_could_not_be_created' }] },
+      },
+    });
+    renderForm();
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await screen.findByText(
+      "we couldn't set up your rsvp with those details — reach out and we'll help",
+    );
+    expect(screen.queryByRole('link', { name: 'sign in' })).not.toBeInTheDocument();
+  });
+
   it('shows a 429 rate-limit error', async () => {
     submitMutate.mockRejectedValue({ isAxiosError: true, response: { status: 429 } });
     renderForm();

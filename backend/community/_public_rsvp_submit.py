@@ -1,5 +1,6 @@
 import logging
 from enum import StrEnum
+from typing import NoReturn
 
 from config.audit import audit_log
 from config.ratelimit import client_ip, rate_limit
@@ -70,7 +71,23 @@ def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicR
     )
 
 
-def _backfill_email(phone_match: User, email: str) -> User:
+def _reject_email_collision(request, email: str) -> NoReturn:
+    """Log the real cause, then reject with a generic code.
+
+    The response must not name the email collision — a distinct email.already_exists
+    on this unauthenticated endpoint would enumerate accounts (cf. Issue 1001). The
+    audit log keeps the real reason for support/abuse triage.
+    """
+    audit_log(
+        logging.WARNING,
+        "public_rsvp_email_collision",
+        request,
+        details={"email": email},
+    )
+    raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
+
+
+def _backfill_email(request, phone_match: User, email: str) -> User:
     """Backfill the email only if blank — never overwrite an existing one."""
     if email and not phone_match.email:
         try:
@@ -78,17 +95,17 @@ def _backfill_email(phone_match: User, email: str) -> User:
                 phone_match.email = email
                 phone_match.save(update_fields=["email"])
         except IntegrityError:
-            raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+            _reject_email_collision(request, email)
     return phone_match
 
 
 def _create_non_member(
-    first_name: str, last_name: str, email: str, phone: str
+    request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
     """Get-or-create the non-member User keyed on the unique phone number.
 
     A unique-email collision (e.g. an archived user still holding that email)
-    raises email.already_exists rather than silently dropping the email.
+    is rejected generically rather than silently dropping the email.
     """
     defaults = {"first_name": first_name, "last_name": last_name, "is_member": False}
     try:
@@ -97,7 +114,7 @@ def _create_non_member(
                 phone_number=phone, defaults={**defaults, "email": email or None}
             )
     except IntegrityError:
-        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+        _reject_email_collision(request, email)
     if created:
         user.set_unusable_password()
         user.save(update_fields=["password"])
@@ -105,12 +122,13 @@ def _create_non_member(
 
 
 def _resolve_non_member(
-    *, first_name: str, last_name: str, email: str, phone: str
+    *, request, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
     """Resolve (or create) the non-member User backing this RSVP.
 
     Identity is the phone alone; an email match only enforces uniqueness, never
-    grounds to adopt that row or trigger the member-signin 409 (Issue 1029).
+    grounds to adopt that row or trigger the member-signin 409 (Issue 1029). A
+    foreign-email collision is rejected generically (no account-existence oracle).
     Must run inside the surrounding transaction.
 
     return(tuple[User, bool]): the resolved user, and whether it was newly created.
@@ -122,11 +140,11 @@ def _resolve_non_member(
         raise_validation(Code.Event.MEMBER_CONTACT_MUST_SIGN_IN, status_code=409)
 
     if email_match and email_match.pk != (phone_match.pk if phone_match else None):
-        raise_validation(Code.Email.ALREADY_EXISTS, field="email", status_code=409)
+        _reject_email_collision(request, email)
 
     if phone_match:
-        return _backfill_email(phone_match, email), False
-    return _create_non_member(first_name, last_name, email, phone)
+        return _backfill_email(request, phone_match, email), False
+    return _create_non_member(request, first_name, last_name, email, phone)
 
 
 def _send_confirmation_email(
@@ -234,6 +252,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
 
     with transaction.atomic():
         user, created = _resolve_non_member(
+            request=request,
             first_name=first_name,
             last_name=last_name,
             email=normalized_email,

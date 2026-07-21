@@ -30,6 +30,7 @@ export const Code = {
     NoPlusOneSpots: 'event.no_plus_one_spots',
     RsvpNotFound: 'event.rsvp_not_found',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
+    RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     AttendanceOpensLater: 'event.attendance_opens_later',
     AttendanceOnlyForGoingRsvps: 'event.attendance_only_for_going_rsvps',
     PermDenied: 'event.perm_denied',
@@ -241,6 +242,7 @@ export type ValidationCode =
   | 'event.no_plus_one_spots'
   | 'event.rsvp_not_found'
   | 'event.member_contact_must_sign_in'
+  | 'event.rsvp_could_not_be_created'
   | 'event.attendance_opens_later'
   | 'event.attendance_only_for_going_rsvps'
   | 'event.perm_denied'
@@ -396,6 +398,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.no_plus_one_spots': [],
   'event.rsvp_not_found': [],
   'event.member_contact_must_sign_in': [],
+  'event.rsvp_could_not_be_created': [],
   'event.attendance_opens_later': [],
   'event.attendance_only_for_going_rsvps': [],
   'event.perm_denied': ['action'],

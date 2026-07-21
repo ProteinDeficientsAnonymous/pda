@@ -96,6 +96,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvp not found';
     case Code.Event.MemberContactMustSignIn:
       return 'looks like you already have an account — sign in to rsvp';
+    case Code.Event.RsvpCouldNotBeCreated:
+      return "we couldn't set up your rsvp with those details — reach out and we'll help";
     case Code.Event.AttendanceOpensLater:
       return 'check-in opens an hour before the event starts';
     case Code.Event.AttendanceOnlyForGoingRsvps:

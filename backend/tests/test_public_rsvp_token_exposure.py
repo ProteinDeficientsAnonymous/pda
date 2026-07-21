@@ -60,7 +60,7 @@ class TestSubmitTokenExposure:
         )
 
         assert response.status_code == 409
-        assert first_code(response) == Code.Email.ALREADY_EXISTS
+        assert first_code(response) == Code.Event.RSVP_COULD_NOT_BE_CREATED
         assert not EventRSVP.objects.filter(event=official_event, user=victim).exists()
 
     def test_returned_token_grants_manage_access(
