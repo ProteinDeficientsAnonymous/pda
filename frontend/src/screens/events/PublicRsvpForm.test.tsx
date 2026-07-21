@@ -139,7 +139,9 @@ describe('PublicRsvpForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'use a different number' }));
     expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
     expect(
-      screen.queryByText('we recognized your number — check your email for a link to manage your rsvp'),
+      screen.queryByText(
+        'we recognized your number — check your email for a link to manage your rsvp',
+      ),
     ).not.toBeInTheDocument();
   });
 
