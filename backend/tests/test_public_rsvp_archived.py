@@ -52,8 +52,6 @@ class TestArchivedMemberGate:
     def test_archived_non_member_email_holder_is_not_adopted_by_fresh_phone(
         self, api_client, official_event, fake_email_sender
     ):
-        # Issue 1029: an email match alone is never proof of ownership, so a
-        # fresh phone can't silently take over the archived row via its email.
         archived = make_non_member("+14155550777", "sam@example.com", name="Archived")
         archived.archived_at = timezone.now()
         archived.save(update_fields=["archived_at"])

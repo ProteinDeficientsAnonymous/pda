@@ -96,7 +96,6 @@ class TestPublicRsvpDedup:
         response = post(api_client, official_event, email="new@example.com")
 
         assert response.status_code == 200
-        # Issue 1029: a phone match is a pre-existing row — no token in the body.
         assert response.json()["rsvp_token"] == ""
         assert User.objects.filter(phone_number="+14155550123").count() == 1
         existing.refresh_from_db()
@@ -115,8 +114,6 @@ class TestPublicRsvpDedup:
         assert existing.email == "sam@example.com"
 
     def test_email_match_alone_is_not_adopted(self, api_client, official_event, fake_email_sender):
-        # Issue 1029: an email match alone is never proof of ownership, so a
-        # fresh phone can't take over that row — it collides on the unique email.
         existing = make_non_member("+14155550999", "sam@example.com")
 
         response = post(api_client, official_event, phone_number="+14155550123")

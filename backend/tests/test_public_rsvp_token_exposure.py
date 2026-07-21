@@ -50,8 +50,6 @@ class TestSubmitTokenExposure:
     def test_email_only_match_is_rejected_not_adopted(
         self, api_client, official_event, fake_email_sender
     ):
-        # issue 1029: a fresh phone + someone else's email is no longer adopted —
-        # it collides on the unique email instead of handing back their token.
         victim = make_non_member("+14155550999", "victim@example.com", name="Victim Person")
 
         response = post(

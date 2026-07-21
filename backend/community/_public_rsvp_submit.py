@@ -266,9 +266,8 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
     )
     broadcast_capacity_change(event.id)
     final_rsvp = user.event_rsvps.get(event=fresh_event)
-    # A matched pre-existing row never yields its token to an unverified caller
-    # (Issue 1029) — the confirmation email above already carries it to the
-    # address on file, which is the only proof-of-ownership channel we have.
+    # Withhold the token for a pre-existing row — the confirmation email carries
+    # it to the address on file, our only proof-of-ownership channel (Issue 1029).
     returned_token = token.token if created else ""
     return Status(
         200,
