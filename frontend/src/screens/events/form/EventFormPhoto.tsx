@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
+import { PhotoLibraryDialog } from '@/components/PhotoLibraryDialog';
 import { cn } from '@/utils/cn';
 
 const ALLOWED_MIME = [
@@ -39,6 +40,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const displayUrl = photoUrl
     ? photoUpdatedAt
@@ -175,10 +177,34 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         ) : null}
       </button>
 
+      <button
+        type="button"
+        onClick={() => {
+          setLibraryOpen(true);
+        }}
+        disabled={locked}
+        className="text-brand-700 self-center text-xs font-medium underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        choose from library
+      </button>
+
       {error ? (
         <p role="alert" className="text-destructive text-xs">
           {error}
         </p>
+      ) : null}
+
+      {libraryOpen ? (
+        <PhotoLibraryDialog
+          onCancel={() => {
+            setLibraryOpen(false);
+          }}
+          onSelect={(f) => {
+            setLibraryOpen(false);
+            setError(null);
+            setFile(f);
+          }}
+        />
       ) : null}
 
       {file ? (
