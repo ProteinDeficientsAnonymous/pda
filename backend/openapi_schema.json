@@ -4232,9 +4232,16 @@
       "ResendManageLinkIn": {
         "properties": {
           "email": {
-            "format": "email",
-            "title": "Email",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "email",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           },
           "phone_number": {
             "maxLength": 20,
@@ -4249,7 +4256,6 @@
           }
         },
         "required": [
-          "email",
           "phone_number"
         ],
         "title": "ResendManageLinkIn",

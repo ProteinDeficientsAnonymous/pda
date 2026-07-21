@@ -26,7 +26,8 @@ _NEUTRAL_RESPONSE = (
 
 
 class ResendManageLinkIn(BaseModel):
-    email: EmailStr
+    # Phone alone recovers; email is an optional extra match signal.
+    email: EmailStr | None = None
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
@@ -83,7 +84,7 @@ def _send_manage_link(request, user: User) -> None:
 )
 @rate_limit(key_func=client_ip, rate="3/h")
 def resend_manage_link(request, payload: ResendManageLinkIn):
-    """Public recovery path: re-send a non-member's manage-rsvp link by phone + email.
+    """Public recovery path: re-send a non-member's manage-rsvp link by phone (email optional).
 
     Honeypot trips, bad phones, unknown contacts, and member contacts all
     resolve to the same neutral 200 body; only a matching non-member with an
@@ -104,7 +105,7 @@ def resend_manage_link(request, payload: ResendManageLinkIn):
         validated_phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
     except ValidationException:
         return _neutral()
-    normalized_email = payload.email.strip().lower()
+    normalized_email = (payload.email or "").strip().lower()
 
     user = _find_non_member(validated_phone, normalized_email)
     if user is not None and user.email:

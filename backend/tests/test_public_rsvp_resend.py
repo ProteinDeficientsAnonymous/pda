@@ -1,8 +1,8 @@
 """Tests for the public "resend my manage link" recovery endpoint.
 
-POST /api/community/public/my-rsvps/resend/ — no auth. Given phone + email,
-re-sends a non-member's scoped manage link so they can recover access without
-re-submitting an RSVP. Always returns the same neutral 200 (no enumeration).
+POST /api/community/public/my-rsvps/resend/ — no auth. Given a phone (email
+optional), re-sends a non-member's scoped manage link so they can recover access
+without re-submitting an RSVP. Always returns the same neutral 200 (no enumeration).
 """
 
 import pytest
@@ -66,6 +66,16 @@ class TestResendManageLink:
 
         assert response.status_code == 200
         fake_email_sender.send.assert_called_once()
+
+    def test_phone_only_no_email_field_still_resends(self, api_client, fake_email_sender):
+        # Email is optional; phone alone recovers, link goes to the on-file address.
+        make_non_member(PHONE, EMAIL)
+
+        response = api_client.post(URL, {"phone_number": PHONE}, content_type="application/json")
+
+        assert response.status_code == 200
+        fake_email_sender.send.assert_called_once()
+        assert fake_email_sender.send.call_args.kwargs["to"] == EMAIL
 
     def test_unknown_contact_is_neutral_no_email(self, api_client, fake_email_sender):
         response = post(api_client)

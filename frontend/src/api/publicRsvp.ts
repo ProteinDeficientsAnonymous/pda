@@ -48,16 +48,15 @@ export function useCheckPublicRsvpPhone() {
 }
 
 interface ResendArgs {
-  email: string;
   phoneNumber: string;
 }
 
 export function useResendPublicRsvpManageLink() {
   return useMutation({
-    mutationFn: async ({ email, phoneNumber }: ResendArgs) => {
+    mutationFn: async ({ phoneNumber }: ResendArgs) => {
       const { data } = await apiClient.post<ResendManageLinkOut>(
         '/api/community/public/my-rsvps/resend/',
-        { email, phone_number: phoneNumber, website: '' },
+        { phone_number: phoneNumber, website: '' },
       );
       return data;
     },

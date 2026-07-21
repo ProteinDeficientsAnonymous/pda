@@ -3,12 +3,10 @@ import { type SyntheticEvent, useState } from 'react';
 import { useResendPublicRsvpManageLink } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
 import { PhoneField } from '@/components/ui/PhoneField';
-import { TextField } from '@/components/ui/TextField';
 import { extractApiError } from '@/utils/errors';
 
 export function ResendManageLinkForm() {
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
   const resend = useResendPublicRsvpManageLink();
@@ -31,7 +29,7 @@ export function ResendManageLinkForm() {
     e.preventDefault();
     setError(undefined);
     try {
-      await resend.mutateAsync({ email, phoneNumber: phone });
+      await resend.mutateAsync({ phoneNumber: phone });
     } catch (err) {
       setError(extractApiError(err, "couldn't send that — try again").toLowerCase());
     }
@@ -48,19 +46,9 @@ export function ResendManageLinkForm() {
       noValidate
     >
       <p className="text-foreground-secondary text-sm">
-        lost your link? enter your phone + email and we'll resend it
+        enter your phone — if we recognize you, we'll send you an email
       </p>
-      <PhoneField label="phone number" value={phone} onChange={setPhone} />
-      <TextField
-        label="email"
-        type="email"
-        value={email}
-        onChange={(e) => {
-          setEmail(e.target.value);
-        }}
-        error={error}
-        required
-      />
+      <PhoneField label="phone number" value={phone} onChange={setPhone} error={error} />
       <Button type="submit" disabled={resend.isPending} fullWidth>
         {resend.isPending ? 'sending…' : 'resend my link'}
       </Button>

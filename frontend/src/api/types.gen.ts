@@ -3677,11 +3677,8 @@ export interface components {
         };
         /** ResendManageLinkIn */
         ResendManageLinkIn: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
+            /** Email */
+            email?: string | null;
             /** Phone Number */
             phone_number: string;
             /**

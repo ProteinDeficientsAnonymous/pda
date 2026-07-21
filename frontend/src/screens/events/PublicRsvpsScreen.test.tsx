@@ -111,13 +111,13 @@ describe('PublicRsvpsScreen', () => {
     const { rerender } = renderAt(null);
 
     fireEvent.click(screen.getByRole('button', { name: 'lost your link?' }));
-    fireEvent.change(screen.getByLabelText('email'), { target: { value: 's@x.com' } });
+    fireEvent.change(screen.getByLabelText('phone number'), {
+      target: { value: '+14155550001' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'resend my link' }));
 
     await waitFor(() => {
-      expect(resendAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 's@x.com', phoneNumber: '' }),
-      );
+      expect(resendAsync).toHaveBeenCalledWith({ phoneNumber: '+14155550001' });
     });
 
     useResendPublicRsvpManageLink.mockReturnValue({
