@@ -1,3 +1,10 @@
+## [0.51.12](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.11...v0.51.12) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1001 - stop rsvp phone-check enumeration oracle ([#1018](https://github.com/ProteinDeficientsAnonymous/pda/issues/1018)) ([31d93e3](https://github.com/ProteinDeficientsAnonymous/pda/commit/31d93e3c573c66be0a43bd00dde814adebbd9d76)), closes [#1019](https://github.com/ProteinDeficientsAnonymous/pda/issues/1019)
+
 ## [0.51.11](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.10...v0.51.11) (2026-07-21)
 
 
