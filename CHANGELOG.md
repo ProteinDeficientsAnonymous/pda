@@ -1,3 +1,10 @@
+## [0.51.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.6...v0.51.7) (2026-07-21)
+
+
+### Bug Fixes
+
+* 1006 - client-validate rsvp name chars and phone ([#1017](https://github.com/ProteinDeficientsAnonymous/pda/issues/1017)) ([7e94840](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e948402a21945e146b92270304b5904aa57e00c))
+
 ## [0.51.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.5...v0.51.6) (2026-07-21)
 
 
