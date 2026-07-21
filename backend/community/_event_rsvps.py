@@ -8,7 +8,11 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from notifications.service import notify_event_comment, notify_rsvp_declined_note
+from notifications.service import (
+    broadcast_event_comment_update,
+    notify_event_comment,
+    notify_rsvp_declined_note,
+)
 
 from community._event_helpers import (
     _event_out,
@@ -119,6 +123,7 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
                 event=event, author=user, body=cleaned_comment
             )
             notify_event_comment(posted_comment)
+            broadcast_event_comment_update(event)
     except Exception:
         # RSVP already committed — a failure here must not 500 an already-successful RSVP.
         logging.getLogger(__name__).exception(

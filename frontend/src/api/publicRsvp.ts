@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { eventCommentKeys } from '@/api/eventComments';
 import { mapEvent, type WireEvent } from '@/api/eventMapper';
+import { eventKeys } from '@/api/events';
 import type { components } from '@/api/types.gen';
 import type { Event, RsvpInputStatus } from '@/models/event';
 
@@ -110,12 +112,18 @@ interface UpdateArgs {
 
 function useManageInvalidate(token: string) {
   const queryClient = useQueryClient();
-  return () => {
+  return (eventId: string) => {
     void queryClient.invalidateQueries({ queryKey: manageQueryKey(token) });
+    // The event-detail screen renders a token holder's rsvp + comments from
+    // these queries, not the manage list — refresh them so a returning
+    // non-member sees their own rsvp/comment without a reload (issue 1047).
+    void queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId, false, token) });
+    void queryClient.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
   };
 }
 
 export function useUpdatePublicMyRsvp(token: string) {
+  const invalidate = useManageInvalidate(token);
   return useMutation({
     mutationFn: async ({ eventId, status, hasPlusOne, comment }: UpdateArgs) => {
       const body: PublicRsvpManageIn = {
@@ -128,15 +136,21 @@ export function useUpdatePublicMyRsvp(token: string) {
       });
       return data;
     },
-    onSuccess: useManageInvalidate(token),
+    onSuccess: (_data, { eventId }) => {
+      invalidate(eventId);
+    },
   });
 }
 
 export function useCancelPublicMyRsvp(token: string) {
+  const invalidate = useManageInvalidate(token);
   return useMutation({
     mutationFn: async (eventId: string) => {
       await apiClient.delete(`${MANAGE_BASE}${eventId}/`, { params: { token } });
+      return eventId;
     },
-    onSuccess: useManageInvalidate(token),
+    onSuccess: (eventId) => {
+      invalidate(eventId);
+    },
   });
 }
