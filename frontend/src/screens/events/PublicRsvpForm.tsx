@@ -45,7 +45,6 @@ function messageForStatus(status: number | null, err: unknown): SubmitError {
   if (status === 404) {
     return { text: "this event isn't accepting public rsvps anymore — refresh", showSignIn: false };
   }
-  // 400/422 carry an actionable backend message (event full, invalid name, etc.)
   return { text: extractApiErrorOr(err, 'something went wrong — try again'), showSignIn: false };
 }
 
