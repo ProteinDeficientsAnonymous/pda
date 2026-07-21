@@ -1,7 +1,10 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { extractApiError } from '@/api/apiErrors';
-import { useEventComments, usePostComment } from '@/api/eventComments';
+import { eventCommentKeys, useEventComments, usePostComment } from '@/api/eventComments';
+import { useAuthStore } from '@/auth/store';
+import { useEventSource } from '@/hooks/useEventSource';
 import type { CannotPostReason } from '@/models/eventComment';
 
 import { CommentComposer } from './CommentComposer';
@@ -45,6 +48,22 @@ function ComposerOrPrompt({
 export function EventCommentsCard({ eventId, token }: Props) {
   const { data, isPending, isError } = useEventComments(eventId, token);
   const postComment = usePostComment(eventId, token);
+  const qc = useQueryClient();
+
+  // Anonymous-only: authed users get live comment updates via NotificationBell's
+  // own subscription instead (no bell is mounted for non-members). With no real
+  // token and anonymous=false, this call no-ops for authed users by design.
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  useEventSource({
+    url: '/api/notifications/stream/',
+    token: null,
+    anonymous: !isAuthed,
+    events: {
+      event_updated: () => {
+        void qc.invalidateQueries({ queryKey: eventCommentKeys.list(eventId) });
+      },
+    },
+  });
 
   if (isPending) {
     return (

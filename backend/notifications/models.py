@@ -69,13 +69,18 @@ class Notification(models.Model):
 
 
 class SseTicket(models.Model):
-    """Short-lived, single-use ticket authorizing one SSE stream connection."""
+    """Short-lived, single-use ticket authorizing one SSE stream connection.
+
+    ``user`` is null for anonymous viewers, who only get wildcard broadcasts.
+    """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Opaque high-entropy secret passed as ?ticket=. Indexed for fast lookup.
     token = models.CharField(max_length=64, unique=True, db_index=True)
     user = models.ForeignKey(
         "users.User",
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name="sse_tickets",
     )
@@ -95,5 +100,13 @@ class SseTicket(models.Model):
         return cls.objects.create(
             token=secrets.token_urlsafe(32),
             user=user,
+            expires_at=timezone.now() + _SSE_TICKET_TTL,
+        )
+
+    @classmethod
+    def mint_anonymous(cls) -> "SseTicket":
+        return cls.objects.create(
+            token=secrets.token_urlsafe(32),
+            user=None,
             expires_at=timezone.now() + _SSE_TICKET_TTL,
         )
