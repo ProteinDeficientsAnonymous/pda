@@ -1,3 +1,10 @@
+# [0.54.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.53.2...v0.54.0) (2026-07-21)
+
+
+### Features
+
+* **events:** center + enlarge sticky event photo on desktop ([#1065](https://github.com/ProteinDeficientsAnonymous/pda/issues/1065)) ([ae1728d](https://github.com/ProteinDeficientsAnonymous/pda/commit/ae1728d6428062167ff03c858d31522439da6371))
+
 ## [0.53.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.53.1...v0.53.2) (2026-07-21)
 
 
