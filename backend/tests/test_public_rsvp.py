@@ -140,9 +140,6 @@ class TestPublicRsvpDedup:
     def test_phone_and_email_match_different_rows_is_email_collision(
         self, api_client, official_event, fake_email_sender
     ):
-        # A recognized phone never resubmits an email through the UI, so phone A
-        # paired with a foreign row's email is a bare uniqueness collision — 409,
-        # no RSVP written to either row.
         phone_row = make_non_member("+14155550123", "phone@example.com", name="Phone Row")
         email_row = make_non_member("+14155550888", "sam@example.com", name="Email Row")
 
@@ -196,8 +193,6 @@ class TestPublicRsvpMemberCollision:
         fake_email_sender.send.assert_not_called()
 
     def test_email_belongs_to_member(self, api_client, official_event, fake_email_sender):
-        # The submitted phone isn't this member's, so it's a plain email
-        # collision, not proof the submitter is that member.
         User.objects.create_user(
             phone_number="+14155550555",
             first_name="A",
@@ -215,9 +210,7 @@ class TestPublicRsvpMemberCollision:
     def test_member_email_match_alone_is_email_collision_not_signin_gate(
         self, api_client, official_event, fake_email_sender
     ):
-        # A member whose email is stored mixed-case still collides on the same
-        # address in different case — but without a phone match it's just a
-        # uniqueness conflict, not the member-signin gate.
+        # Mixed-case stored email still collides case-insensitively.
         User.objects.create_user(
             phone_number="+14155550555",
             first_name="A",

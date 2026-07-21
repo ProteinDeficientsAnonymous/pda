@@ -33,8 +33,6 @@ class TestArchivedMemberGate:
         fake_email_sender.send.assert_not_called()
 
     def test_email_belongs_to_archived_member(self, api_client, official_event, fake_email_sender):
-        # Issue 1029 follow-up: the submitted phone isn't this member's, so this
-        # is a plain email collision, not proof the submitter is that member.
         member = User.objects.create_user(
             phone_number="+14155550555",
             first_name="A",

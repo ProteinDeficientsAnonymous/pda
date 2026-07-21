@@ -107,14 +107,11 @@ def _create_non_member(
 def _resolve_non_member(
     *, first_name: str, last_name: str, email: str, phone: str
 ) -> tuple[User, bool]:
-    """Resolve (or create) the non-member User backing this RSVP; member phone → 409.
+    """Resolve (or create) the non-member User backing this RSVP.
 
-    Identity is the phone alone. The email lookup only enforces uniqueness: an
-    email owned by any other row is a collision (409 email.already_exists), never
-    grounds to adopt that row or to trigger the member-signin 409 (Issue 1029).
-    The recognized-phone UI never resubmits an email, so a phone+foreign-email
-    request only reaches here via a direct API caller. Must run inside the
-    surrounding transaction.
+    Identity is the phone alone; an email match only enforces uniqueness, never
+    grounds to adopt that row or trigger the member-signin 409 (Issue 1029).
+    Must run inside the surrounding transaction.
 
     return(tuple[User, bool]): the resolved user, and whether it was newly created.
     """
