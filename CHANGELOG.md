@@ -1,3 +1,10 @@
+## [0.51.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.2...v0.51.3) (2026-07-21)
+
+
+### Bug Fixes
+
+* **events:** email promoted non-members on public rsvp cancel (Issue 1005) ([#1016](https://github.com/ProteinDeficientsAnonymous/pda/issues/1016)) ([f4684c3](https://github.com/ProteinDeficientsAnonymous/pda/commit/f4684c32e8cd953da4ab11067463563d62b2a716))
+
 ## [0.51.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.51.1...v0.51.2) (2026-07-21)
 
 
