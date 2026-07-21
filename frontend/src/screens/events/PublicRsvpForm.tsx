@@ -27,7 +27,6 @@ const PUBLIC_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatu
 interface Props {
   event: Event;
   onSuccess: (result: PublicRsvpOut) => void;
-  onMember: () => void;
 }
 
 interface SubmitError {
@@ -53,12 +52,12 @@ function statusLabel(status: RsvpInputStatus, atCapacity: boolean): string {
   return RSVP_STATUS_LABELS.find((s) => s.status === status)?.label ?? status;
 }
 
-export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
+export function PublicRsvpForm({ event, onSuccess }: Props) {
   const submit = useSubmitPublicRsvp();
   const atCapacity = spotsLeft(event) === 0;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
-  const [recognized, setRecognized] = useState(false);
+  const [existing, setExisting] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -116,10 +115,11 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
         />
       );
     }
-    if (recognized) {
+    if (existing) {
       return (
         <p className="text-foreground-secondary text-sm">
-          we recognized your number — check your email for a link to confirm your rsvp
+          if that number's on file, we've emailed you a link to manage your rsvp — check your inbox,
+          including spam. if you have a member account, sign in instead
         </p>
       );
     }
@@ -127,12 +127,8 @@ export function PublicRsvpForm({ event, onSuccess, onMember }: Props) {
       return (
         <PublicRsvpPhoneStep
           eventId={event.id}
-          onMember={onMember}
-          onAlreadyRsvpd={() => {
-            setRecognized(true);
-          }}
-          onRecognized={() => {
-            setRecognized(true);
+          onExisting={() => {
+            setExisting(true);
           }}
           onNew={(result) => {
             setPhone(result.phone);

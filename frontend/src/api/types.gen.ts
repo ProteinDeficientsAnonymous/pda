@@ -1377,6 +1377,10 @@ export interface paths {
         /**
          * Check Public Rsvp Phone
          * @description Resolve a phone number's state for this event, before the full rsvp form is shown.
+         *
+         *     Member / already-rsvpd / recognized-elsewhere all collapse into EXISTING so an
+         *     unauthenticated caller can't enumerate membership or attendance by phone number
+         *     alone — any manage link goes out over email (out-of-band), never inline here.
          */
         post: operations["community__public_rsvp_submit_check_public_rsvp_phone"];
         delete?: never;
@@ -3590,18 +3594,14 @@ export interface components {
         };
         /** PublicRsvpPhoneCheckOut */
         PublicRsvpPhoneCheckOut: {
-            /**
-             * Rsvp Token
-             * @default
-             */
-            rsvp_token: string;
             status: components["schemas"]["PublicRsvpPhoneStatus"];
         };
         /**
          * PublicRsvpPhoneStatus
+         * @description NEW lets the caller proceed to the rsvp form; EXISTING never reveals why.
          * @enum {string}
          */
-        PublicRsvpPhoneStatus: "member" | "already_rsvpd" | "recognized" | "new";
+        PublicRsvpPhoneStatus: "existing" | "new";
         /** PublicRsvpStateOut */
         PublicRsvpStateOut: {
             /** Has Plus One */

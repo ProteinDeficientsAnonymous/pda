@@ -68,7 +68,7 @@ describe('PublicRsvpSection', () => {
   });
 
   it('persists the rsvp token and refreshes without putting it in the url', async () => {
-    mockCheckPhone.mockResolvedValue({ status: 'new', rsvp_token: '' });
+    mockCheckPhone.mockResolvedValue({ status: 'new' });
     mockSubmit.mockResolvedValue({
       event: officialEvent(),
       rsvp: { status: 'attending', has_plus_one: false },
@@ -93,25 +93,8 @@ describe('PublicRsvpSection', () => {
     expect(localStorage.getItem('pda-rsvp-token')).toBe('tok-abc');
   });
 
-  it('prompts sign-in when the phone belongs to a member, without showing the form', async () => {
-    mockCheckPhone.mockResolvedValue({ status: 'member', rsvp_token: '' });
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <PublicRsvpSection event={officialEvent({ id: 'evt-1' })} />
-      </MemoryRouter>,
-    );
-
-    await user.click(screen.getByRole('button', { name: "i'm going" }));
-    await user.type(screen.getByLabelText(/phone number/i), '4155550123');
-    await user.click(screen.getByRole('button', { name: 'continue' }));
-
-    expect(await screen.findByRole('link', { name: 'sign in' })).toHaveAttribute('href', '/login');
-    expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument();
-  });
-
-  it('shows a check-your-email message when already rsvpd, without leaking a token', async () => {
-    mockCheckPhone.mockResolvedValue({ status: 'already_rsvpd', rsvp_token: '' });
+  it('shows a neutral check-your-email message for an existing phone, without leaking a token or account existence', async () => {
+    mockCheckPhone.mockResolvedValue({ status: 'existing' });
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -124,7 +107,7 @@ describe('PublicRsvpSection', () => {
     await user.click(screen.getByRole('button', { name: 'continue' }));
 
     await screen.findByText(
-      'we recognized your number — check your email for a link to confirm your rsvp',
+      "if that number's on file, we've emailed you a link to manage your rsvp — check your inbox, including spam. if you have a member account, sign in instead",
     );
     expect(mockSubmit).not.toHaveBeenCalled();
     expect(localStorage.getItem('pda-rsvp-token')).toBeNull();

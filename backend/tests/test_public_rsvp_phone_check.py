@@ -2,7 +2,9 @@
 
 POST /api/community/public/events/{event_id}/rsvp-phone-check/ — no auth. Lets
 the frontend ask "what should happen for this phone number" before showing the
-full rsvp form (Issue 881).
+full rsvp form (Issue 881). Member / already-rsvpd / recognized-elsewhere all
+collapse into a single EXISTING status so the response never discloses account
+existence or attendance to an unauthenticated caller (Issue 1001).
 """
 
 import pytest
@@ -38,13 +40,15 @@ class TestPublicRsvpPhoneCheck:
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "new"
-        assert body["rsvp_token"] == ""
+        assert "rsvp_token" not in body
 
-    def test_member_phone_returns_member(self, api_client, official_event, test_user):
+    def test_member_phone_returns_existing(self, api_client, official_event, test_user):
         response = post(api_client, official_event, phone_number=test_user.phone_number)
 
         assert response.status_code == 200
-        assert response.json()["status"] == "member"
+        body = response.json()
+        assert body["status"] == "existing"
+        assert "rsvp_token" not in body
 
     def test_non_member_without_rsvp_is_new(self, api_client, official_event):
         make_non_member("+14155550199", "guest@example.com")
@@ -52,11 +56,9 @@ class TestPublicRsvpPhoneCheck:
         response = post(api_client, official_event, phone_number="+14155550199")
 
         assert response.status_code == 200
-        body = response.json()
-        assert body["status"] == "new"
-        assert body["rsvp_token"] == ""
+        assert response.json()["status"] == "new"
 
-    def test_non_member_already_rsvpd_returns_no_token(
+    def test_non_member_already_rsvpd_returns_existing_no_token(
         self, api_client, official_event, fake_email_sender
     ):
         guest = make_non_member("+14155550199", "guest@example.com")
@@ -66,10 +68,10 @@ class TestPublicRsvpPhoneCheck:
 
         assert response.status_code == 200
         body = response.json()
-        assert body["status"] == "already_rsvpd"
-        assert body["rsvp_token"] == ""
+        assert body["status"] == "existing"
+        assert "rsvp_token" not in body
 
-    def test_already_rsvpd_sends_login_link_email(
+    def test_already_rsvpd_sends_manage_link_email(
         self, api_client, official_event, fake_email_sender
     ):
         guest = make_non_member("+14155550199", "guest@example.com")
@@ -93,11 +95,11 @@ class TestPublicRsvpPhoneCheck:
 
         assert response.status_code == 200
         body = response.json()
-        assert body["status"] == "already_rsvpd"
-        assert body["rsvp_token"] == ""
+        assert body["status"] == "existing"
+        assert "rsvp_token" not in body
         fake_email_sender.send.assert_not_called()
 
-    def test_already_rsvpd_on_other_event_is_recognized_for_this_one(
+    def test_already_rsvpd_on_other_event_returns_existing(
         self, api_client, official_event, fake_email_sender
     ):
         guest = make_non_member("+14155550199", "guest@example.com")
@@ -108,10 +110,12 @@ class TestPublicRsvpPhoneCheck:
 
         assert response.status_code == 200
         body = response.json()
-        assert body["status"] == "recognized"
-        assert body["rsvp_token"] == ""
+        assert body["status"] == "existing"
+        assert "rsvp_token" not in body
 
-    def test_recognized_sends_login_link_email(self, api_client, official_event, fake_email_sender):
+    def test_recognized_sends_manage_link_email(
+        self, api_client, official_event, fake_email_sender
+    ):
         guest = make_non_member("+14155550199", "guest@example.com")
         other_event = make_official_event(title="Other Event", start_datetime=future_iso(days=45))
         EventRSVP.objects.create(event=other_event, user=guest, status=RSVPStatus.ATTENDING)
@@ -151,3 +155,15 @@ class TestPublicRsvpPhoneCheck:
         )
 
         assert response.status_code == 404
+
+    def test_member_new_and_existing_responses_are_indistinguishable(
+        self, api_client, official_event, test_user, fake_email_sender
+    ):
+        """The whole point of Issue 1001: a caller can't tell member vs rsvp'd vs unknown apart."""
+        guest = make_non_member("+14155550199", "guest@example.com")
+        EventRSVP.objects.create(event=official_event, user=guest, status=RSVPStatus.ATTENDING)
+
+        member_body = post(api_client, official_event, phone_number=test_user.phone_number).json()
+        rsvpd_body = post(api_client, official_event, phone_number="+14155550199").json()
+
+        assert member_body == rsvpd_body == {"status": "existing"}

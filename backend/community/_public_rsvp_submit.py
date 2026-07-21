@@ -47,9 +47,9 @@ class PublicRsvpIn(BaseModel):
 
 
 class PublicRsvpPhoneStatus(StrEnum):
-    MEMBER = "member"
-    ALREADY_RSVPD = "already_rsvpd"
-    RECOGNIZED = "recognized"
+    """NEW lets the caller proceed to the rsvp form; EXISTING never reveals why."""
+
+    EXISTING = "existing"
     NEW = "new"
 
 
@@ -59,7 +59,6 @@ class PublicRsvpPhoneCheckIn(BaseModel):
 
 class PublicRsvpPhoneCheckOut(BaseModel):
     status: PublicRsvpPhoneStatus
-    rsvp_token: str = ""
 
 
 def _public_rsvp_decoy(event: Event, status: str, has_plus_one: bool) -> PublicRsvpOut:
@@ -195,7 +194,12 @@ def _send_recognized_login_link(request, user: User) -> None:
 )
 @rate_limit(key_func=client_ip, rate="20/h")
 def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
-    """Resolve a phone number's state for this event, before the full rsvp form is shown."""
+    """Resolve a phone number's state for this event, before the full rsvp form is shown.
+
+    Member / already-rsvpd / recognized-elsewhere all collapse into EXISTING so an
+    unauthenticated caller can't enumerate membership or attendance by phone number
+    alone — any manage link goes out over email (out-of-band), never inline here.
+    """
     event = _load_public_rsvp_event(event_id)
     try:
         phone = validate_phone(payload.phone_number, PUBLIC_FORM_PHONE_REGION)
@@ -206,14 +210,14 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
     if user is None:
         return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
     if user.is_member:
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.MEMBER))
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.EXISTING))
     if event.rsvps.filter(user=user).exists():
         if user.email:
             _send_recognized_login_link(request, user)
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.ALREADY_RSVPD))
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.EXISTING))
     if user.email and user.event_rsvps.exists():
         _send_recognized_login_link(request, user)
-        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.RECOGNIZED))
+        return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.EXISTING))
     return Status(200, PublicRsvpPhoneCheckOut(status=PublicRsvpPhoneStatus.NEW))
 
 
