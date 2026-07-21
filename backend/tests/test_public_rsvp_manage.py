@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import patch
 
 import pytest
 from community.models import (
@@ -217,6 +218,18 @@ class TestPostMyRsvps:
         )
         assert resp.status_code == 404
 
+    def test_update_broadcasts_capacity_change(self, api_client, nonmember, official_event):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        with patch("community._public_rsvp_manage.broadcast_capacity_change") as mock_broadcast:
+            api_client.post(
+                f"{_post_url(official_event)}?token={token.token}",
+                {"status": RSVPStatus.MAYBE},
+                content_type="application/json",
+            )
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == official_event.id
+
 
 @pytest.mark.django_db
 class TestDeleteMyRsvps:
@@ -256,6 +269,14 @@ class TestDeleteMyRsvps:
     def test_delete_bad_token_404(self, api_client, official_event):
         resp = api_client.delete(f"{_post_url(official_event)}?token=nope")
         assert resp.status_code == 404
+
+    def test_delete_broadcasts_capacity_change(self, api_client, nonmember, official_event):
+        EventRSVP.objects.create(event=official_event, user=nonmember, status=RSVPStatus.ATTENDING)
+        token = NonMemberRsvpToken.issue_or_extend(nonmember)
+        with patch("community._public_rsvp_manage.broadcast_capacity_change") as mock_broadcast:
+            api_client.delete(f"{_post_url(official_event)}?token={token.token}")
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == official_event.id
 
 
 @pytest.mark.django_db
