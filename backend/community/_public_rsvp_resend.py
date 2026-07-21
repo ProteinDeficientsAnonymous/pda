@@ -45,16 +45,14 @@ def _find_non_member(phone: str, email: str) -> User | None:
 
     Returns None when there's no match OR the match is a member — a member must
     use the sign-in flow, never a scoped non-member link. Reuses the submit
-    endpoint's lookup filters (phone canonical, iexact email, non-archived); a
+    endpoint's lookup filters (phone canonical, iexact email, not filtered by
+    archived_at since an archived member still is_member=True and still holds
+    that phone/email — see _public_rsvp_submit._resolve_non_member); a
     phone/email split across two rows just picks the phone row without flagging
     it, since a recovery resend has no ambiguity to reconcile.
     """
-    phone_match = User.objects.filter(phone_number=phone, archived_at__isnull=True).first()
-    email_match = (
-        User.objects.filter(email__iexact=email, archived_at__isnull=True).first()
-        if email
-        else None
-    )
+    phone_match = User.objects.filter(phone_number=phone).first()
+    email_match = User.objects.filter(email__iexact=email).first() if email else None
     if (phone_match and phone_match.is_member) or (email_match and email_match.is_member):
         return None
     return phone_match or email_match
