@@ -1,8 +1,10 @@
 import { type ReactNode, useEffect } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import { useFlag } from '@/api/featureFlags';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
+import type { FeatureFlagKey } from '@/models/featureFlags';
 import { hasPermission, type PermissionKey } from '@/models/permissions';
 import { consentRedirect, passwordSetupRedirect } from '@/models/user';
 
@@ -123,6 +125,20 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
     return <Navigate to={`/login?redirect=${redirect}`} replace />;
   }
   if (!hasPermission(user, perm)) {
+    return <Navigate to="/calendar" replace />;
+  }
+  return <Outlet />;
+}
+
+// ----------------------------------------------------------------------------
+// RequireFlag — gates a route behind a feature flag. Fail-closed: a flag that
+// is off, missing, or still loading redirects to /calendar, so a dark feature
+// never flashes into view before the flag resolves.
+// ----------------------------------------------------------------------------
+
+export function RequireFlag({ flag }: { flag: FeatureFlagKey }) {
+  const enabled = useFlag(flag);
+  if (!enabled) {
     return <Navigate to="/calendar" replace />;
   }
   return <Outlet />;
