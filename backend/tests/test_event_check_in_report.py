@@ -180,6 +180,44 @@ class TestCheckInReportEndpoint:
         )
         assert response.status_code == 404
 
+    def test_maybe_and_waitlisted_land_in_unmarked(
+        self, api_client, past_event, members, host_user
+    ):
+        EventRSVP.objects.create(event=past_event, user=members[0], status=RSVPStatus.MAYBE)
+        EventRSVP.objects.create(event=past_event, user=members[1], status=RSVPStatus.WAITLISTED)
+        response = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        )
+        data = response.json()
+        assert data["unmarked_count"] == 2
+        assert {r["user_id"] for r in data["unmarked"]} == {
+            str(members[0].pk),
+            str(members[1].pk),
+        }
+
+    def test_removed_rsvps_excluded(self, api_client, past_event, members, host_user):
+        EventRSVP.objects.create(event=past_event, user=members[0], status=RSVPStatus.REMOVED)
+        response = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        )
+        data = response.json()
+        total = (
+            data["attended_count"]
+            + data["no_show_count"]
+            + data["canceled_count"]
+            + data["unmarked_count"]
+        )
+        assert total == 0
+
+    def test_own_row_shows_full_name_despite_hide_last_name(self, api_client, past_event):
+        host = past_event.created_by
+        host.first_name, host.last_name, host.hide_last_name = "Ada", "Lovelace", True
+        host.save(update_fields=["first_name", "last_name", "hide_last_name"])
+        EventRSVP.objects.create(event=past_event, user=host, status=RSVPStatus.ATTENDING)
+        response = api_client.get(f"/api/community/events/{past_event.id}/report/", **_auth(host))
+        row = next(r for r in response.json()["unmarked"] if r["user_id"] == str(host.pk))
+        assert row["name"] == "Ada Lovelace"
+
 
 @pytest.mark.django_db
 class TestCheckInReportCsvEndpoint:
@@ -229,3 +267,37 @@ class TestCheckInReportCsvEndpoint:
             f"/api/community/events/{stocked_event.id}/report.csv", **_auth(host_user)
         )
         assert response.status_code == 404
+
+    def test_csv_matches_report_row_count(self, api_client, past_event, members, host_user):
+        EventRSVP.objects.create(event=past_event, user=members[0], status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=past_event, user=members[1], status=RSVPStatus.MAYBE)
+        EventRSVP.objects.create(event=past_event, user=members[2], status=RSVPStatus.REMOVED)
+        report = api_client.get(
+            f"/api/community/events/{past_event.id}/report/", **_auth(host_user)
+        ).json()
+        csv_body = api_client.get(
+            f"/api/community/events/{past_event.id}/report.csv", **_auth(host_user)
+        ).content.decode()
+        data_rows = [line for line in csv_body.splitlines()[1:] if line]
+        report_total = (
+            report["attended_count"]
+            + report["no_show_count"]
+            + report["canceled_count"]
+            + report["unmarked_count"]
+        )
+        assert len(data_rows) == report_total == 2
+
+    def test_csv_escapes_formula_injection(self, api_client, past_event, host_user):
+        attacker = User.objects.create_user(
+            phone_number="+12025559500",
+            password="x",
+            first_name="=HYPERLINK(1)",
+            is_member=False,
+        )
+        EventRSVP.objects.create(event=past_event, user=attacker, status=RSVPStatus.ATTENDING)
+        response = api_client.get(
+            f"/api/community/events/{past_event.id}/report.csv?columns=name", **_auth(host_user)
+        )
+        body = response.content.decode()
+        assert "'=HYPERLINK(1)" in body
+        assert "\n=HYPERLINK(1)" not in body.replace("\r", "")

@@ -37,10 +37,16 @@ def _load_and_authorize(request, event_id: UUID) -> Event:
     return event
 
 
-def _person(rsvp, can_see_phones: bool) -> CheckInReportPersonOut:
+def _report_rsvps(event: Event):
+    # REMOVED RSVPs are soft-deleted off the guest list; every other status is
+    # a real attendee the report must account for.
+    return [r for r in event.rsvps.all() if r.status != RSVPStatus.REMOVED]
+
+
+def _person(rsvp, viewer, can_see_phones: bool) -> CheckInReportPersonOut:
     return CheckInReportPersonOut(
         user_id=str(rsvp.user_id),
-        name=visible_display_name(rsvp.user, None),
+        name=visible_display_name(rsvp.user, viewer),
         phone=rsvp.user.phone_number if can_see_phones else None,
         is_member=rsvp.user.is_member,
     )
@@ -52,8 +58,8 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
     can_see_phones = _can_see_phones(viewer, creator, co_host_ids)
 
     attended, no_shows, canceled, unmarked = [], [], [], []
-    for rsvp in event.rsvps.all():
-        base = _person(rsvp, can_see_phones)
+    for rsvp in _report_rsvps(event):
+        base = _person(rsvp, viewer, can_see_phones)
         if rsvp.status == RSVPStatus.CANT_GO:
             canceled.append(
                 CanceledPersonOut(
@@ -66,7 +72,7 @@ def _build_report(event: Event, viewer) -> CheckInReportOut:
             )
         elif rsvp.status == RSVPStatus.ATTENDING and rsvp.attendance == AttendanceStatus.NO_SHOW:
             no_shows.append(base)
-        elif rsvp.status == RSVPStatus.ATTENDING:
+        else:
             unmarked.append(base)
 
     return CheckInReportOut(
@@ -91,10 +97,18 @@ def get_check_in_report(request, event_id: UUID):
     return Status(200, _build_report(event, request.auth))
 
 
-def _csv_row(rsvp, can_see_phones: bool, columns: list[str]) -> list[str]:
+def _csv_safe(value: str) -> str:
+    # Prefix a leading apostrophe so spreadsheet apps don't execute
+    # attendee-controlled names/phones as formulas (CSV injection).
+    if value and value[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + value
+    return value
+
+
+def _csv_row(rsvp, viewer, can_see_phones: bool, columns: list[str]) -> list[str]:
     values = {
-        "name": visible_display_name(rsvp.user, None),
-        "phone": (rsvp.user.phone_number or "") if can_see_phones else "",
+        "name": _csv_safe(visible_display_name(rsvp.user, viewer)),
+        "phone": _csv_safe((rsvp.user.phone_number or "") if can_see_phones else ""),
         "rsvp_status": rsvp.status,
         "attendance": rsvp.attendance,
         "checked_in_at": rsvp.checked_in_at.isoformat() if rsvp.checked_in_at else "",
@@ -134,8 +148,8 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(selected)
-    for rsvp in event.rsvps.all():
-        writer.writerow(_csv_row(rsvp, can_see_phones, selected))
+    for rsvp in _report_rsvps(event):
+        writer.writerow(_csv_row(rsvp, request.auth, can_see_phones, selected))
 
     response = HttpResponse(buf.getvalue(), content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="{_report_csv_filename(event)}"'
