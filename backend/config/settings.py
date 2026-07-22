@@ -1,6 +1,6 @@
 import base64
 import os
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -225,3 +225,7 @@ if IS_PRODUCTION and RESEND_API_KEY and not RESEND_FROM_EMAIL:
 # In production, set to the public app URL (e.g. https://pda.example.com).
 # In dev/test, defaults to localhost:3000.
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
+
+# Floor for the attendance-reminder clock — no one's anchor predates this date.
+# Movable until the program announcement date is final (see attendance-analytics-design.md).
+ATTENDANCE_CLOCK_FLOOR = date(2026, 8, 1)

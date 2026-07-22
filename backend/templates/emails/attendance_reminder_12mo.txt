@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+it's been 12 months since you've made it to a qualifying club or official event. an admin will be reviewing your membership status, which may mean pausing it for now.
+
+if you'd like to stay active, the easiest way is to come to something soon. if you want to talk it through first, reach out to an admin directly — we're happy to help you get back in the swing of things.
+
+{{ calendar_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

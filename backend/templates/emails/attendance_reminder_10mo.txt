@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+we miss you at club and official events! membership works best when we see each other in person, so we ask everyone to make it to at least 2 qualifying events a year — it's what keeps this community connected.
+
+it's been a while since your last one. no pressure, just a friendly nudge — take a look at what's coming up.
+
+{{ calendar_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}

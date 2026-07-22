@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<body style="margin: 0; padding: 24px; background: #f5f5f3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #222;">
+  <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
+    <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
+    <p style="margin: 0 0 24px;">it's been 11 months since we've seen you at a club or official event. membership here comes with an expectation of at least 2 qualifying events a year, and you're coming up on that window.</p>
+    <p style="margin: 0 0 24px;">we'd love to see you at something soon — here's what's on the calendar.</p>
+    <p style="margin: 0 0 24px;">
+      <a href="{{ calendar_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">see upcoming events</a>
+    </p>
+  </div>
+  <p style="text-align: center; margin: 16px 0 0; font-size: 12px; color: #888;">— pda</p>
+  {% include "emails/_no_reply_footer.html" %}
+</body>
+</html>

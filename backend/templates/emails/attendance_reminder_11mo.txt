@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+it's been 11 months since we've seen you at a club or official event. membership here comes with an expectation of at least 2 qualifying events a year, and you're coming up on that window.
+
+we'd love to see you at something soon — here's what's on the calendar.
+
+{{ calendar_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
