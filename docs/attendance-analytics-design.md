@@ -14,7 +14,8 @@ attendance-reminder emails:
 2. **Admin attendance analytics** — per-member participation view on the
    existing `/admin/attendance` screen, a 2-in-trailing-12 compliance badge,
    pause candidates, and automated reminder emails at 10 / 11 / 11.5 / 12
-   months since last qualifying attendance.
+   months since last qualifying attendance. Also surfaces attended events on
+   each join request for vetting.
 
 Both features are gated behind feature flags (system designed separately):
 `host_attendance_report` and `admin_attendance_analytics`. All flag checks go
@@ -124,6 +125,21 @@ Extend `/admin/attendance` (`AttendanceReportScreen.tsx`) with two tabs:
   above. Gated `MANAGE_EVENTS` + flag. Members only (`is_member=True`),
   active + paused shown (paused labeled), archived excluded.
 
+### Join request attendance
+
+Each join request in the admin vetting view shows which events the person has
+attended so far (all event types, since this is engagement signal, tagged
+club / official / community).
+
+- Resolve the person: `JoinRequest.user` FK when set; otherwise a unique
+  `phone_number` match against guest `User` rows (covers public RSVPs made
+  before/after the join request without linkage).
+- Data: list of `attendance = attended` RSVPs → event title, date, type.
+- Delivered in the existing join-request list/detail payload (no new
+  endpoint), rendered as a compact list on the request card/detail.
+- Gated by the `admin_attendance_analytics` flag; no permission change (join
+  request viewing keeps its existing gate).
+
 ## Reminder emails
 
 ### Clock
@@ -183,7 +199,7 @@ Management command `send_attendance_reminders`:
 | Flag | Gates |
 |---|---|
 | `host_attendance_report` | kebab item, `/events/:id/report` route, report + CSV endpoints |
-| `admin_attendance_analytics` | members tab, analytics endpoint, `send_attendance_reminders` command |
+| `admin_attendance_analytics` | members tab, analytics endpoint, join-request attended-events list, `send_attendance_reminders` command |
 
 All checks call `is_feature_enabled(key)`; the stub reads env vars
 (`FEATURE_HOST_ATTENDANCE_REPORT=1`) until the real flag system replaces its
@@ -197,7 +213,8 @@ internals. Frontend gets flag state via an existing bootstrap/config response
   selection + unknown-column 422, CSV content assertions.
 - **Phase 2**: compliance math (2-in-trailing-12 boundary cases), qualifying
   vs community separation, pause action perm gating, paused/archived
-  filtering.
+  filtering, join-request attended-events (FK link, phone fallback, no match →
+  empty list).
 - **Phase 3**: anchor math (floor, date_joined, attendance advances it),
   milestone due/idempotency (re-run sends nothing), single-latest-milestone
   rule, active_members recipient filtering, flag-off short-circuit.
@@ -207,7 +224,7 @@ internals. Frontend gets flag state via an existing bootstrap/config response
 1. **Host report** — screen, kebab item, report JSON + CSV endpoints, flag
    stub helper.
 2. **Admin analytics** — members tab, analytics endpoint, pause action,
-   compliance badge.
+   compliance badge, join-request attended-events list.
 3. **Reminders** — `AttendanceReminder` model + migration, templates,
    management command, Railway cron doc note.
 
