@@ -1,3 +1,10 @@
+# [0.59.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.58.0...v0.59.0) (2026-07-22)
+
+
+### Features
+
+* **feature-flags:** admin toggle UI, all environments (Issue 997) ([#1096](https://github.com/ProteinDeficientsAnonymous/pda/issues/1096)) ([9d9b96f](https://github.com/ProteinDeficientsAnonymous/pda/commit/9d9b96f0c36e9fb8c4919de0ecac837d263ab290))
+
 # [0.58.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.57.0...v0.58.0) (2026-07-22)
 
 
