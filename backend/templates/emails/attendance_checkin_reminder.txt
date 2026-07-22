@@ -1,0 +1,11 @@
+hi{% if display_name %} {{ display_name|lower }}{% endif %} —
+
+{{ event_title|lower }} just started — head to check-in to check people in.
+
+go to check-in:
+
+{{ event_url }}
+
+— pda
+
+{% include "emails/_no_reply_footer.txt" %}
