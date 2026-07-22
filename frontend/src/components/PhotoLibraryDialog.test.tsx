@@ -68,10 +68,12 @@ describe('PhotoLibraryDialog', () => {
     await user.click(await screen.findByRole('button', { name: 'sprout dance' }));
 
     expect(onSelect).toHaveBeenCalledOnce();
-    const file = onSelect.mock.calls[0]![0] as File;
+    const [file, opts] = onSelect.mock.calls[0]! as [File, { crop: boolean }];
     expect(file).toBeInstanceOf(File);
     expect(file.name).toBe('a1.gif');
     expect(file.type).toBe('image/gif');
+    // Library picks skip crop so gif animation survives.
+    expect(opts).toEqual({ crop: false });
   });
 
   it('converts a picked photo into a file with the correct extension', async () => {
@@ -90,6 +92,24 @@ describe('PhotoLibraryDialog', () => {
     const file = onSelect.mock.calls[0]![0] as File;
     expect(file.name).toBe('a2.jpeg');
     expect(file.type).toBe('image/jpeg');
+  });
+
+  it('switches to the upload tab and routes a file pick through crop', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(<PhotoLibraryDialog onCancel={vi.fn()} onSelect={onSelect} />);
+
+    await user.click(screen.getByRole('radio', { name: 'upload your own' }));
+    // The library search box is gone once on the upload tab.
+    expect(screen.queryByPlaceholderText('search gifs and photos')).not.toBeInTheDocument();
+
+    const input = screen.getByLabelText('choose event photo');
+    await user.upload(input, new File(['x'], 'mine.png', { type: 'image/png' }));
+
+    expect(onSelect).toHaveBeenCalledOnce();
+    const [file, opts] = onSelect.mock.calls[0]! as [File, { crop: boolean }];
+    expect(file.name).toBe('mine.png');
+    expect(opts).toEqual({ crop: true });
   });
 
   it('shows an error message when search fails', async () => {

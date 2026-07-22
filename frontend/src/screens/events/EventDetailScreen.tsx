@@ -110,13 +110,11 @@ export default function EventDetailScreen() {
     return <ContentContainer>{body}</ContentContainer>;
   }
 
-  // Width capped to what a 4:5 crop would be at the same max-height, so a
-  // square (1:1) photo doesn't sprawl full-bleed on wide screens (issue 1077).
   const photo = (
     <img
       src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
       alt=""
-      className="mx-auto block max-h-[70vh] w-auto max-w-[min(100%,calc(70vh*4/5))] rounded-lg"
+      className="mx-auto block max-h-[70vh] w-full max-w-md rounded-lg object-contain"
       loading="lazy"
     />
   );
