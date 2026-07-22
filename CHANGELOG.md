@@ -1,3 +1,10 @@
+# [0.63.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.62.0...v0.63.0) (2026-07-22)
+
+
+### Features
+
+* **attendance:** milestone reminder emails (10/11/11.5/12mo) (Issue 1094) ([#1100](https://github.com/ProteinDeficientsAnonymous/pda/issues/1100)) ([84da6ef](https://github.com/ProteinDeficientsAnonymous/pda/commit/84da6efc7f4a793c5c82cd9babcc1ad7718db3d9))
+
 # [0.62.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.61.0...v0.62.0) (2026-07-22)
 
 
