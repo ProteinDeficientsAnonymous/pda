@@ -4,6 +4,7 @@ from community.models.choices import (
     EventFlagStatus,
     EventStatus,
     EventType,
+    FeatureFlag,
     FeedbackType,
     InvitePermission,
     JoinFormQuestionType,
@@ -29,6 +30,7 @@ from community.models.content import (
 )
 from community.models.document import DocFolder, Document
 from community.models.event import Event, EventEmailBlast, EventFlag, EventRSVP
+from community.models.feature_flag import FeatureFlagState, flag_enabled, resolve_flags
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.survey import (
@@ -40,12 +42,12 @@ from community.models.survey import (
 from community.models.tag import EventTag
 
 __all__ = [
-    # choices
     "AttendanceStatus",
     "CoHostInviteStatus",
     "EventFlagStatus",
     "EventStatus",
     "EventType",
+    "FeatureFlag",
     "FeedbackType",
     "InvitePermission",
     "JoinFormQuestionType",
@@ -55,9 +57,7 @@ __all__ = [
     "RSVPStatus",
     "SurveyQuestionType",
     "SurveyVisibility",
-    # cohost invite
     "EventCoHostInvite",
-    # content
     "CommunityGuidelines",
     "EditablePage",
     "FAQ",
@@ -67,27 +67,24 @@ __all__ = [
     "TentativeApprovalMessageTemplate",
     "WelcomeMessageTemplate",
     "WhatsAppLinkConfig",
-    # document
     "DocFolder",
     "Document",
-    # event
     "Event",
     "EventEmailBlast",
     "EventFlag",
     "EventRSVP",
     "EventTag",
-    # join form
+    "FeatureFlagState",
+    "flag_enabled",
+    "resolve_flags",
     "JoinFormQuestion",
     "JoinRequest",
-    # comment
     "EventComment",
     "EventCommentReaction",
     "ReactionEmoji",
-    # poll
     "EventPoll",
     "PollOption",
     "PollVote",
-    # survey
     "DatetimePollResult",
     "Survey",
     "SurveyQuestion",

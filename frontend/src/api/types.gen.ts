@@ -1094,6 +1094,40 @@ export interface paths {
         patch: operations["community__guidelines_update_faq"];
         trace?: never;
     };
+    "/api/community/feature-flags/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Feature Flags */
+        get: operations["community__feature_flags_get_feature_flags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/feature-flags/{key}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Feature Flag */
+        patch: operations["community__feature_flags_update_feature_flag"];
+        trace?: never;
+    };
     "/api/community/feedback/": {
         parameters: {
             query?: never;
@@ -2962,6 +2996,18 @@ export interface components {
              * @default 0
              */
             waitlisted_count: number;
+        };
+        /** FeatureFlagPatchIn */
+        FeatureFlagPatchIn: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** FeatureFlagsOut */
+        FeatureFlagsOut: {
+            /** Flags */
+            flags: {
+                [key: string]: boolean;
+            };
         };
         /** FeedbackIn */
         FeedbackIn: {
@@ -7760,6 +7806,70 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__feature_flags_get_feature_flags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagsOut"];
+                };
+            };
+        };
+    };
+    community__feature_flags_update_feature_flag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeatureFlagPatchIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagsOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

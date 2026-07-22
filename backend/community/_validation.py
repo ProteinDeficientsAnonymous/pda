@@ -182,6 +182,9 @@ class Code:
         MEMBERS_ONLY = "page.members_only"
         VISIBILITY_INVALID = "page.visibility_invalid"  # params: { allowed: list[str] }
 
+    class FeatureFlag:
+        NOT_FOUND = "feature_flag.not_found"
+
     class Docs:
         FOLDER_NOT_FOUND = "docs.folder_not_found"
         PARENT_FOLDER_NOT_FOUND = "docs.parent_folder_not_found"

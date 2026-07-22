@@ -22,6 +22,7 @@ from community._event_rsvps import router as event_rsvps_router
 from community._event_schemas import EventPatchIn  # noqa: F401
 from community._event_tags import router as event_tags_router
 from community._events import router as events_router
+from community._feature_flags import router as feature_flags_router
 from community._feedback import router as feedback_router
 from community._geocode import router as geocode_router
 from community._giphy import router as giphy_router
@@ -92,3 +93,4 @@ router.add_router("", docs_documents_router)
 router.add_router("", geocode_router)
 router.add_router("", giphy_router)
 router.add_router("", version_router)
+router.add_router("", feature_flags_router)
