@@ -1,3 +1,10 @@
+# [0.61.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.60.0...v0.61.0) (2026-07-22)
+
+
+### Features
+
+* **attendance:** admin members tab + join-request attendance (Issue 1093) ([#1101](https://github.com/ProteinDeficientsAnonymous/pda/issues/1101)) ([e13fb88](https://github.com/ProteinDeficientsAnonymous/pda/commit/e13fb884ed0580f0940b986777c6a7411225456d))
+
 # [0.60.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.59.0...v0.60.0) (2026-07-22)
 
 
