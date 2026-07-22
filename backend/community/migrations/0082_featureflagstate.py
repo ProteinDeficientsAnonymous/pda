@@ -4,22 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('community', '0081_alter_eventrsvp_status'),
+        ("community", "0081_alter_eventrsvp_status"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='FeatureFlagState',
+            name="FeatureFlagState",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('key', models.CharField(max_length=100, unique=True)),
-                ('enabled', models.BooleanField(default=False)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("key", models.CharField(max_length=100, unique=True)),
+                ("enabled", models.BooleanField(default=False)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['key'],
+                "ordering": ["key"],
             },
         ),
     ]
