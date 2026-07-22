@@ -102,10 +102,7 @@ class FeedbackType(models.TextChoices):
 
 
 class FeatureFlag(models.TextChoices):
-    """Registry of feature flags. Add a member here (+ the frontend ``Feature``
-    mirror) to add a flag; delete both to remove one. Pair each member with a
-    default in ``FLAG_DEFAULTS`` below — the value used when no
-    ``FeatureFlagState`` row exists for the key."""
+    """Registry of feature flags; pair each member with a default in FLAG_DEFAULTS."""
 
     EXAMPLE_FLAG = "example_flag", "Example flag"
 
