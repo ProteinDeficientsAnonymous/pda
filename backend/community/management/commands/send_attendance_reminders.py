@@ -1,9 +1,3 @@
-"""Management command to send attendance-milestone reminder emails.
-
-Schedule this via Railway cron (dashboard-configured) to run daily, e.g.:
-  python manage.py send_attendance_reminders
-"""
-
 import logging
 
 from django.conf import settings

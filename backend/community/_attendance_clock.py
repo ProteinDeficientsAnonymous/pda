@@ -1,8 +1,3 @@
-"""Attendance-reminder clock: anchor date + milestone due-date math.
-
-See docs/attendance-analytics-design.md "Reminder emails" / "Qualifying attendance".
-"""
-
 from dataclasses import dataclass
 from datetime import date
 

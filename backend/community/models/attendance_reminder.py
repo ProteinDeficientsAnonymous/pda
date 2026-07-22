@@ -1,11 +1,3 @@
-"""AttendanceReminder — idempotency log for milestone reminder emails.
-
-See docs/attendance-analytics-design.md "Reminder emails". The anchor date is
-computed fresh on each command run (not stored on the user); a new anchor
-naturally makes prior rows for that (user, milestone) inert history rather
-than blocking future reminders.
-"""
-
 import uuid
 
 from django.db import models
