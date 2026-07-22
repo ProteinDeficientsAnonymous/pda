@@ -108,9 +108,7 @@ export function useCheckInReport(eventId: string | undefined) {
   return useQuery({
     queryKey: checkInReportKeys.detail(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<WireReport>(
-        `/api/community/events/${id}/report/`,
-      );
+      const { data } = await apiClient.get<WireReport>(`/api/community/events/${id}/report/`);
       return mapReport(data);
     },
     enabled: Boolean(eventId),

@@ -140,7 +140,9 @@ function PersonSection<T extends CheckInReportPerson>({
 }
 
 function GuestBadge() {
-  return <span className="bg-surface-dim text-foreground-secondary rounded px-1.5 py-0.5">guest</span>;
+  return (
+    <span className="bg-surface-dim text-foreground-secondary rounded px-1.5 py-0.5">guest</span>
+  );
 }
 
 function PersonRow({ person }: { person: CheckInReportPerson }) {
