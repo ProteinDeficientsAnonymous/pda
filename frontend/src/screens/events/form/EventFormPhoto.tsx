@@ -143,9 +143,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
           'group relative overflow-hidden rounded-[var(--radius-md)]',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
           'aspect-[4/5] w-full',
-          hasPhoto
-            ? 'bg-surface'
-            : 'border-brand-200 bg-brand-50 border-2 border-dashed',
+          hasPhoto ? 'bg-surface' : 'border-brand-200 bg-brand-50 border-2 border-dashed',
           dragOver && 'border-brand-500 ring-brand-300 ring-2',
           locked && 'cursor-not-allowed opacity-60',
         )}

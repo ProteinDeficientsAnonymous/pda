@@ -99,7 +99,9 @@ describe('PhotoLibraryDialog', () => {
 
     await user.type(screen.getByPlaceholderText('search gifs and photos'), 'sprout');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent("couldn't search images — try again");
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "couldn't search images — try again",
+    );
   });
 
   it('cancel button calls onCancel', async () => {
