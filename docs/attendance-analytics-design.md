@@ -63,14 +63,14 @@ the reminder-send log (below).
 
 ### Entry point
 
-New item "attendance report" in `EventDetailKebabMenu`, shown when:
-- `canManageEvent(event, user)` (creator / co-host / `MANAGE_EVENTS`), and
-- the event has ended (`end_datetime < now`), and
-- `host_attendance_report` flag is on.
+`EventDetailKebabMenu` gets a "check-in" group with two items:
+- **check-in** — the existing marking screen at `/events/:id/attendance`,
+  relabeled from "attendance" to "check-in" (route/screen unchanged).
+- **check-in report** (new) — shown when `canManageEvent(event, user)`
+  (creator / co-host / `MANAGE_EVENTS`), the event has ended
+  (`end_datetime < now`), and `host_attendance_report` flag is on.
 
-The existing "attendance" (marking) item is unchanged.
-
-### Screen — `/events/:id/report` (mobile-first)
+### Screen — `/events/:id/report` (mobile-first), titled "check-in report"
 
 - Summary pills: attended / no-show / canceled / unmarked counts.
 - Per-person sections beneath: attended (with check-in time), no-shows,
@@ -205,9 +205,9 @@ Management command `send_attendance_reminders`:
   `notify_*` pattern (`backend/notifications/service.py`), plus an email
   using the standard `EmailSender` + template-pair pattern
   (`attendance_checkin_reminder`). Both link straight to
-  `/events/:id/attendance` (the existing marking screen).
+  `/events/:id/attendance` (the check-in screen).
 - **Copy**: short, lowercase, e.g. "< event title > just started — head to
-  attendance to check people in."
+  check-in to check people in."
 - **Idempotency**: reuses the `AttendanceReminder`-style log shape — a
   `HostCheckinNudge(event, sent_at)` row (unique on `event`), or simply a
   `checkin_nudge_sent_at` field on `Event`; either works since it's a
