@@ -1,3 +1,10 @@
+# [0.55.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.3...v0.55.0) (2026-07-22)
+
+
+### Features
+
+* **events:** add photo library picker for event photos (Issue 618) ([#1074](https://github.com/ProteinDeficientsAnonymous/pda/issues/1074)) ([2484ac8](https://github.com/ProteinDeficientsAnonymous/pda/commit/2484ac88e49a0a1e119834833d84d49c3668c4a9))
+
 ## [0.54.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.2...v0.54.3) (2026-07-22)
 
 
