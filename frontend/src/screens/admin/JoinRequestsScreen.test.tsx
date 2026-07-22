@@ -249,6 +249,7 @@ describe('JoinRequestsScreen pending actions', () => {
       firstName: 'Ada',
       phoneNumber: '+16505550001',
       magicLinkToken: null,
+      rsvpLinkToken: 'rsvp-tok',
     });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
       mutateAsync,
@@ -273,6 +274,7 @@ describe('JoinRequestsScreen pending actions', () => {
       firstName: 'Ada',
       phoneNumber: '+16505550001',
       magicLinkToken: null,
+      rsvpLinkToken: 'rsvp-tok',
     });
     vi.mocked(useDecideJoinRequest).mockReturnValue({
       mutateAsync,

@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { hasPermission, Permission } from '@/models/permissions';
 import { formatPhone } from '@/utils/formatPhone';
-import { buildSmsHref, buildWhatsAppHref, renderWelcomeMessage } from '@/utils/welcomeMessage';
+import {
+  buildRsvpLinkUrl,
+  buildSmsHref,
+  buildWhatsAppHref,
+  renderWelcomeMessage,
+} from '@/utils/welcomeMessage';
 
 import { TentativeApprovalMessageEditorDialog } from './TentativeApprovalMessageEditorDialog';
 
@@ -16,6 +21,7 @@ interface Props {
   fullName: string;
   firstName: string;
   phoneNumber: string;
+  rsvpLinkToken: string | null;
 }
 
 const DEFAULT_TENTATIVE_MESSAGE =
@@ -27,6 +33,7 @@ export function TentativeApprovalMessageDialog({
   fullName,
   firstName,
   phoneNumber,
+  rsvpLinkToken,
 }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
@@ -38,6 +45,7 @@ export function TentativeApprovalMessageDialog({
   const message = renderWelcomeMessage(body, {
     name: firstName,
     senderName,
+    rsvpLink: rsvpLinkToken ? buildRsvpLinkUrl(rsvpLinkToken) : '',
     whatsappLink: whatsappLinkQ.data?.link ?? '',
   });
   const smsHref = buildSmsHref(phoneNumber, message);

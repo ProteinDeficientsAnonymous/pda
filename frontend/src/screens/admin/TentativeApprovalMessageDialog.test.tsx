@@ -17,7 +17,7 @@ vi.mock('@/api/client', () => ({
 vi.mock('@/api/content', () => ({
   useTentativeApprovalMessage: () => ({
     data: {
-      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in',
+      body: 'hi ${FIRST_NAME}, from ${SENDER_NAME} — you are tentatively in. rsvp: ${RSVP_LINK}',
       updatedAt: '2026-01-01',
     },
     isPending: false,
@@ -46,7 +46,7 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
 });
 
-function renderDialog(user: User | null) {
+function renderDialog(user: User | null, rsvpLinkToken: string | null = null) {
   useAuthStore.setState({
     status: user ? 'authed' : 'idle',
     user,
@@ -61,6 +61,7 @@ function renderDialog(user: User | null) {
         fullName="Sam Vetterson"
         firstName="Sam"
         phoneNumber="+12025551234"
+        rsvpLinkToken={rsvpLinkToken}
       />
     </QueryClientProvider>,
   );
@@ -78,6 +79,20 @@ describe('TentativeApprovalMessageDialog', () => {
     expect(wa?.getAttribute('href')).toContain('https://wa.me/12025551234?text=');
     expect(screen.queryByText(/magic-login/i)).toBeNull();
     expect(screen.queryByRole('button', { name: /copy link/i })).toBeNull();
+  });
+
+  it('substitutes ${RSVP_LINK} into the sms body when a token is present', () => {
+    renderDialog(makeUser(), 'tok123');
+    const sms = screen.getByText('send via sms').closest('a');
+    expect(sms?.getAttribute('href')).toContain(
+      encodeURIComponent(`${window.location.origin}/my-rsvps?token=tok123`),
+    );
+  });
+
+  it('renders an empty rsvp link when no token is present', () => {
+    renderDialog(makeUser(), null);
+    const sms = screen.getByText('send via sms').closest('a');
+    expect(sms?.getAttribute('href')).toContain(encodeURIComponent('rsvp: '));
   });
 
   it('hides edit-template trigger without permission', () => {

@@ -321,6 +321,8 @@ export interface JoinRequestDecision {
   status: JoinRequestStatus;
   /** Present only when the decision created a brand-new user. */
   magicLinkToken: string | null;
+  /** Present only on a tentative-approval decision. */
+  rsvpLinkToken: string | null;
   userId: string | null;
 }
 
@@ -331,6 +333,7 @@ interface WireDecision {
   phone_number: string;
   status: JoinRequestStatus;
   magic_link_token: string | null;
+  rsvp_link_token: string | null;
   user_id: string | null;
 }
 
@@ -355,6 +358,7 @@ export function useDecideJoinRequest() {
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
+        rsvpLinkToken: data.rsvp_link_token,
         userId: data.user_id,
       } satisfies JoinRequestDecision;
     },
@@ -389,6 +393,7 @@ export function useResendMagicLink() {
         phoneNumber: data.phone_number,
         status: data.status,
         magicLinkToken: data.magic_link_token,
+        rsvpLinkToken: data.rsvp_link_token,
         userId: data.user_id,
       } satisfies JoinRequestDecision;
     },
