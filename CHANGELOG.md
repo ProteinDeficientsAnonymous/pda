@@ -1,3 +1,10 @@
+# [0.57.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.56.1...v0.57.0) (2026-07-22)
+
+
+### Features
+
+* **feature-flags:** backend foundation — registry, endpoints (Issue 995) ([#1087](https://github.com/ProteinDeficientsAnonymous/pda/issues/1087)) ([c135b18](https://github.com/ProteinDeficientsAnonymous/pda/commit/c135b186d88bbad3c6c34fc8b6164c7be092b43b))
+
 ## [0.56.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.56.0...v0.56.1) (2026-07-22)
 
 
