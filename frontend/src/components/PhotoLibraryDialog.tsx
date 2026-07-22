@@ -221,9 +221,6 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
                 dragOver && 'border-brand-500 ring-brand-300 ring-2',
               )}
             >
-              <span aria-hidden="true" className="text-3xl">
-                📸
-              </span>
               <span className="text-sm font-medium">tap or drop a photo</span>
             </button>
           </>
