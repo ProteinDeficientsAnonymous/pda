@@ -2719,15 +2719,12 @@
             "type": "integer"
           },
           "q": {
+            "default": "celebration",
             "maxLength": 100,
-            "minLength": 1,
             "title": "Q",
             "type": "string"
           }
         },
-        "required": [
-          "q"
-        ],
         "title": "GiphyQuery",
         "type": "object"
       },
@@ -2745,6 +2742,14 @@
             "title": "Preview Url",
             "type": "string"
           },
+          "source": {
+            "enum": [
+              "gif",
+              "photo"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -2754,7 +2759,8 @@
           "id",
           "title",
           "preview_url",
-          "original_url"
+          "original_url",
+          "source"
         ],
         "title": "GiphyResult",
         "type": "object"
@@ -10582,16 +10588,16 @@
     },
     "/api/community/giphy/search/": {
       "get": {
-        "description": "Proxy GIF search to Giphy \u2014 keeps GIPHY_API_KEY server-side.",
+        "description": "Proxy image search \u2014 animated gifs from Giphy + still photos from Pexels.\n\nKeeps both API keys server-side. Each source is optional: whichever key is\nconfigured contributes results, so the picker still works with only one.",
         "operationId": "community__giphy_giphy_search",
         "parameters": [
           {
             "in": "query",
             "name": "q",
-            "required": true,
+            "required": false,
             "schema": {
+              "default": "celebration",
               "maxLength": 100,
-              "minLength": 1,
               "title": "Q",
               "type": "string"
             }

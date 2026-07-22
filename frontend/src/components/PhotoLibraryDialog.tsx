@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { type GiphyResult, searchGifs } from '@/api/giphy';
@@ -13,7 +13,9 @@ interface Props {
 async function toFile(gif: GiphyResult): Promise<File> {
   const res = await fetch(gif.originalUrl);
   const blob = await res.blob();
-  return new File([blob], `${gif.id}.gif`, { type: blob.type || 'image/gif' });
+  const type = blob.type || 'image/gif';
+  const ext = type.split('/')[1] ?? 'gif';
+  return new File([blob], `${gif.id}.${ext}`, { type });
 }
 
 export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
@@ -24,30 +26,31 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
   const [picking, setPicking] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  async function runSearch(text: string) {
+    setSearching(true);
+    try {
+      const found = await searchGifs(text);
+      setResults(found);
+      setError(null);
+    } catch {
+      setResults([]);
+      setError("couldn't search images — try again");
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => void runSearch(''), 0);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
+
   function handleInput(text: string) {
     setQuery(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (text.trim().length === 0) {
-      setResults([]);
-      setSearching(false);
-      setError(null);
-      return;
-    }
-
-    setSearching(true);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const found = await searchGifs(text);
-        setResults(found);
-        setError(null);
-      } catch {
-        setResults([]);
-        setError("couldn't search gifs — try again");
-      } finally {
-        setSearching(false);
-      }
-    }, 400);
+    debounceRef.current = setTimeout(() => void runSearch(text), 400);
   }
 
   async function pick(gif: GiphyResult) {
@@ -56,7 +59,7 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
       const file = await toFile(gif);
       onSelect(file);
     } catch {
-      setError("couldn't load that gif — try another");
+      setError("couldn't load that image — try another");
       setPicking(false);
     }
   }
@@ -65,18 +68,18 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="choose a gif"
+      aria-label="choose an image"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
     >
       <div className="bg-surface flex w-full max-w-md flex-col gap-3 rounded-lg p-4 shadow-xl">
-        <p className="text-foreground text-sm font-medium">choose a gif</p>
+        <p className="text-foreground text-sm font-medium">choose an image</p>
         <input
           type="text"
           value={query}
           onChange={(e) => {
             handleInput(e.target.value);
           }}
-          placeholder="search gifs"
+          placeholder="search gifs and photos"
           disabled={picking}
           className="border-border bg-background text-foreground rounded-[var(--radius-md)] border px-3 py-2 text-sm"
         />
@@ -88,7 +91,7 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
               type="button"
               onClick={() => void pick(gif)}
               disabled={picking}
-              aria-label={gif.title || 'select gif'}
+              aria-label={gif.title || 'select image'}
               className="focus-visible:ring-brand-300 overflow-hidden rounded-[var(--radius-md)] focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             >
               <img src={gif.previewUrl} alt="" className="aspect-[4/5] w-full object-cover" />
@@ -98,7 +101,7 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
 
         {searching ? <p className="text-foreground/60 text-xs">searching…</p> : null}
         {!searching && query.trim().length > 0 && results.length === 0 && !error ? (
-          <p className="text-foreground/60 text-xs">no gifs found — try another search</p>
+          <p className="text-foreground/60 text-xs">nothing found — try another search</p>
         ) : null}
         {error ? (
           <p role="alert" className="text-destructive text-xs">

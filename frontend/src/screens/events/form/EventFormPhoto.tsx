@@ -142,16 +142,17 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         className={cn(
           'group relative overflow-hidden rounded-[var(--radius-md)]',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
+          'aspect-[4/5] w-full',
           hasPhoto
-            ? 'mx-auto block w-auto max-w-full'
-            : 'border-brand-200 bg-brand-50 aspect-[4/5] w-full border-2 border-dashed',
+            ? 'bg-surface'
+            : 'border-brand-200 bg-brand-50 border-2 border-dashed',
           dragOver && 'border-brand-500 ring-brand-300 ring-2',
           locked && 'cursor-not-allowed opacity-60',
         )}
       >
         {hasPhoto ? (
           <>
-            <img src={displayUrl} alt="" className="mx-auto block max-h-[70vh] w-auto max-w-full" />
+            <img src={displayUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
               <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
                 change photo
@@ -202,7 +203,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
           onSelect={(f) => {
             setLibraryOpen(false);
             setError(null);
-            setFile(f);
+            void handleCrop(f);
           }}
         />
       ) : null}

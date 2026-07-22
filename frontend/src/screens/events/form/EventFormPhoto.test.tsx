@@ -21,7 +21,7 @@ vi.mock('@/components/PhotoLibraryDialog', () => ({
       <button
         type="button"
         onClick={() => {
-          onSelect(new File(['lib'], 'sprout.svg', { type: 'image/svg+xml' }));
+          onSelect(new File(['lib'], 'sprout.gif', { type: 'image/gif' }));
         }}
       >
         pick sprout
@@ -40,9 +40,10 @@ describe('EventFormPhoto library picker', () => {
     expect(screen.getByRole('button', { name: 'choose from library' })).toBeInTheDocument();
   });
 
-  it('opens the library dialog and feeds the picked image into the same crop dialog', async () => {
+  it('uploads a library pick directly, skipping the crop dialog so animation survives', async () => {
     const user = userEvent.setup();
-    render(<EventFormPhoto photoUrl="" photoUpdatedAt={null} onCrop={vi.fn()} />);
+    const onCrop = vi.fn().mockResolvedValue(undefined);
+    render(<EventFormPhoto photoUrl="" photoUpdatedAt={null} onCrop={onCrop} />);
 
     await user.click(screen.getByRole('button', { name: 'choose from library' }));
     expect(screen.getByTestId('library-dialog')).toBeInTheDocument();
@@ -50,19 +51,24 @@ describe('EventFormPhoto library picker', () => {
     await user.click(screen.getByRole('button', { name: 'pick sprout' }));
 
     expect(screen.queryByTestId('library-dialog')).not.toBeInTheDocument();
-    expect(screen.getByTestId('crop-dialog')).toHaveAttribute('data-filename', 'sprout.svg');
+    expect(screen.queryByTestId('crop-dialog')).not.toBeInTheDocument();
+    expect(onCrop).toHaveBeenCalledOnce();
+    const uploaded = onCrop.mock.calls[0]![0] as File;
+    expect(uploaded).toBeInstanceOf(File);
+    expect(uploaded.name).toBe('sprout.gif');
+    expect(uploaded.type).toBe('image/gif');
   });
 
-  it('runs the library selection through the same onCrop upload pipeline as an upload', async () => {
+  it('still routes a manual file upload through the crop dialog', async () => {
     const user = userEvent.setup();
     const onCrop = vi.fn().mockResolvedValue(undefined);
     render(<EventFormPhoto photoUrl="" photoUpdatedAt={null} onCrop={onCrop} />);
 
-    await user.click(screen.getByRole('button', { name: 'choose from library' }));
-    await user.click(screen.getByRole('button', { name: 'pick sprout' }));
-    await user.click(screen.getByRole('button', { name: 'confirm crop' }));
+    const input = screen.getByLabelText('choose event photo');
+    await user.upload(input, new File(['x'], 'photo.png', { type: 'image/png' }));
 
+    expect(screen.getByTestId('crop-dialog')).toHaveAttribute('data-filename', 'photo.png');
+    await user.click(screen.getByRole('button', { name: 'confirm crop' }));
     expect(onCrop).toHaveBeenCalledOnce();
-    expect(onCrop.mock.calls[0]![0]).toBeInstanceOf(Blob);
   });
 });

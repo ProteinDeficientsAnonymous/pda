@@ -1140,7 +1140,10 @@ export interface paths {
         };
         /**
          * Giphy Search
-         * @description Proxy GIF search to Giphy — keeps GIPHY_API_KEY server-side.
+         * @description Proxy image search — animated gifs from Giphy + still photos from Pexels.
+         *
+         *     Keeps both API keys server-side. Each source is optional: whichever key is
+         *     configured contributes results, so the picker still works with only one.
          */
         get: operations["community__giphy_giphy_search"];
         put?: never;
@@ -3053,7 +3056,10 @@ export interface components {
              * @default 24
              */
             limit: number;
-            /** Q */
+            /**
+             * Q
+             * @default celebration
+             */
             q: string;
         };
         /** GiphyResult */
@@ -3064,6 +3070,11 @@ export interface components {
             original_url: string;
             /** Preview Url */
             preview_url: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "gif" | "photo";
             /** Title */
             title: string;
         };
@@ -7834,8 +7845,8 @@ export interface operations {
     };
     community__giphy_giphy_search: {
         parameters: {
-            query: {
-                q: string;
+            query?: {
+                q?: string;
                 limit?: number;
             };
             header?: never;
