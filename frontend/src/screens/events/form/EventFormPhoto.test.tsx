@@ -16,15 +16,27 @@ vi.mock('@/components/ImageCropDialog', () => ({
 }));
 
 vi.mock('@/components/PhotoLibraryDialog', () => ({
-  PhotoLibraryDialog: ({ onSelect }: { onSelect: (file: File) => void }) => (
-    <div data-testid="library-dialog">
+  PhotoLibraryDialog: ({
+    onSelect,
+  }: {
+    onSelect: (file: File, opts: { crop: boolean }) => void;
+  }) => (
+    <div data-testid="picker-dialog">
       <button
         type="button"
         onClick={() => {
-          onSelect(new File(['lib'], 'sprout.gif', { type: 'image/gif' }));
+          onSelect(new File(['lib'], 'sprout.gif', { type: 'image/gif' }), { crop: false });
         }}
       >
-        pick sprout
+        pick library gif
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onSelect(new File(['up'], 'photo.png', { type: 'image/png' }), { crop: true });
+        }}
+      >
+        pick upload
       </button>
     </div>
   ),
@@ -32,12 +44,14 @@ vi.mock('@/components/PhotoLibraryDialog', () => ({
 
 import { EventFormPhoto } from './EventFormPhoto';
 
-describe('EventFormPhoto library picker', () => {
-  it('offers a choose from library option alongside upload', () => {
+describe('EventFormPhoto', () => {
+  it('opens the tabbed picker from the change-photo button', async () => {
+    const user = userEvent.setup();
     render(<EventFormPhoto photoUrl="" photoUpdatedAt={null} onCrop={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'add event photo' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'choose from library' })).toBeInTheDocument();
+    expect(screen.queryByTestId('picker-dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'add event photo' }));
+    expect(screen.getByTestId('picker-dialog')).toBeInTheDocument();
   });
 
   it('uploads a library pick directly, skipping the crop dialog so animation survives', async () => {
@@ -45,12 +59,10 @@ describe('EventFormPhoto library picker', () => {
     const onCrop = vi.fn().mockResolvedValue(undefined);
     render(<EventFormPhoto photoUrl="" photoUpdatedAt={null} onCrop={onCrop} />);
 
-    await user.click(screen.getByRole('button', { name: 'choose from library' }));
-    expect(screen.getByTestId('library-dialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'add event photo' }));
+    await user.click(screen.getByRole('button', { name: 'pick library gif' }));
 
-    await user.click(screen.getByRole('button', { name: 'pick sprout' }));
-
-    expect(screen.queryByTestId('library-dialog')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('picker-dialog')).not.toBeInTheDocument();
     expect(screen.queryByTestId('crop-dialog')).not.toBeInTheDocument();
     expect(onCrop).toHaveBeenCalledOnce();
     const uploaded = onCrop.mock.calls[0]![0] as File;
@@ -59,14 +71,15 @@ describe('EventFormPhoto library picker', () => {
     expect(uploaded.type).toBe('image/gif');
   });
 
-  it('still routes a manual file upload through the crop dialog', async () => {
+  it('routes an upload-tab pick through the crop dialog', async () => {
     const user = userEvent.setup();
     const onCrop = vi.fn().mockResolvedValue(undefined);
     render(<EventFormPhoto photoUrl="" photoUpdatedAt={null} onCrop={onCrop} />);
 
-    const input = screen.getByLabelText('choose event photo');
-    await user.upload(input, new File(['x'], 'photo.png', { type: 'image/png' }));
+    await user.click(screen.getByRole('button', { name: 'add event photo' }));
+    await user.click(screen.getByRole('button', { name: 'pick upload' }));
 
+    expect(screen.queryByTestId('picker-dialog')).not.toBeInTheDocument();
     expect(screen.getByTestId('crop-dialog')).toHaveAttribute('data-filename', 'photo.png');
     await user.click(screen.getByRole('button', { name: 'confirm crop' }));
     expect(onCrop).toHaveBeenCalledOnce();
