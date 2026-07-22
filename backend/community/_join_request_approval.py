@@ -103,12 +103,13 @@ def send_join_approval(*, to: str, display_name: str, first_name: str, magic_tok
         logging.getLogger(__name__).warning("join approval email failed", exc_info=True)
 
 
-def _provision_tentative_user(join_request, requesting_user) -> User:
+def _provision_tentative_user(join_request, requesting_user) -> tuple[User, str]:
     """Provision the non-member User backing a tentatively-approved join request.
 
     Reuses a non-member already linked or matched by phone; else creates one. A
-    scoped RSVP token is minted so they can RSVP without being a member. No member
-    role, no login email — those wait for full approval.
+    scoped RSVP token is minted (or reused, if still valid) so they can RSVP
+    without being a member. No member role, no login email — those wait for
+    full approval. Returns the user and the RSVP manage-link token string.
     """
     user = join_request.user or User.objects.filter(phone_number=join_request.phone_number).first()
     if user is None:
@@ -126,8 +127,8 @@ def _provision_tentative_user(join_request, requesting_user) -> User:
         join_request.user = user
         join_request.save(update_fields=["user"])
 
-    NonMemberRsvpToken.issue_or_extend(user)
-    return user
+    rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
+    return user, rsvp_token.token
 
 
 def _maybe_promote_tentative(user, event, actor) -> str | None:

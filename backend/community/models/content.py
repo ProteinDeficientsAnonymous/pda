@@ -134,7 +134,8 @@ class TentativeApprovalMessageTemplate(models.Model):
 
     Plain-text body for the sms/whatsapp message a vetter sends right after
     tentatively approving a join request. Placeholders ${FIRST_NAME},
-    ${SENDER_NAME}, ${WHATSAPP_LINK} are substituted client-side when rendered.
+    ${SENDER_NAME}, ${WHATSAPP_LINK}, ${RSVP_LINK} are substituted client-side
+    when rendered.
     """
 
     body = models.TextField(default="", max_length=4000)

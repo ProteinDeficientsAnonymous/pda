@@ -58,6 +58,17 @@
             "title": "Phone Number",
             "type": "string"
           },
+          "rsvp_link_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsvp Link Token"
+          },
           "status": {
             "title": "Status",
             "type": "string"
