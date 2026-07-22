@@ -1,3 +1,10 @@
+## [0.54.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.2...v0.54.3) (2026-07-22)
+
+
+### Bug Fixes
+
+* **events:** cap photo width to 4:5 and overlay title (Issue 1077) ([#1080](https://github.com/ProteinDeficientsAnonymous/pda/issues/1080)) ([170a294](https://github.com/ProteinDeficientsAnonymous/pda/commit/170a29490910cfde40c4c547dadef786f34a4fa9))
+
 ## [0.54.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.1...v0.54.2) (2026-07-22)
 
 
