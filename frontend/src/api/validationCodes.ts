@@ -108,6 +108,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'no attendees in that audience have an email — nothing to send';
     case Code.Event.WouldRemoveNonMembers:
       return "this change would remove non-members rsvp'd on this event";
+    case Code.Event.CheckInReportNotYetAvailable:
+      return 'the check-in report is available once the event has ended';
+    case Code.Event.CheckInReportInvalidColumn:
+      return "one of those csv columns isn't recognized";
 
     // Poll
     case Code.Poll.NotFound:

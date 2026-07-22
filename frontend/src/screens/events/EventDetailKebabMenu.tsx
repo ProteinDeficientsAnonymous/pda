@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { useFlag } from '@/api/featureFlags';
+import { Feature } from '@/models/featureFlags';
+
 interface Props {
   eventId: string;
+  eventHasEnded: boolean;
 }
 
-export function EventDetailKebabMenu({ eventId }: Props) {
+export function EventDetailKebabMenu({ eventId, eventHasEnded }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const reportFlagOn = useFlag(Feature.HostAttendanceReport);
+  const showCheckInReport = eventHasEnded && reportFlagOn;
 
   useEffect(() => {
     if (!open) return;
@@ -46,19 +52,48 @@ export function EventDetailKebabMenu({ eventId }: Props) {
           role="menu"
           className="border-border bg-surface absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-md border text-sm shadow-lg"
         >
-          <Link
+          <MenuLink
             to={`/events/${eventId}/attendance`}
-            role="menuitem"
-            className="text-foreground hover:bg-surface-dim block px-3 py-2"
-            onClick={() => {
+            onSelect={() => {
               setOpen(false);
             }}
           >
-            attendance
-          </Link>
+            check-in
+          </MenuLink>
+          {showCheckInReport ? (
+            <MenuLink
+              to={`/events/${eventId}/report`}
+              onSelect={() => {
+                setOpen(false);
+              }}
+            >
+              check-in report
+            </MenuLink>
+          ) : null}
         </div>
       ) : null}
     </div>
+  );
+}
+
+function MenuLink({
+  to,
+  onSelect,
+  children,
+}: {
+  to: string;
+  onSelect: () => void;
+  children: string;
+}) {
+  return (
+    <Link
+      to={to}
+      role="menuitem"
+      className="text-foreground hover:bg-surface-dim block px-3 py-2"
+      onClick={onSelect}
+    >
+      {children}
+    </Link>
   );
 }
 

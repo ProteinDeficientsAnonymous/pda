@@ -20,6 +20,10 @@ export function formatDayHeader(date: Date): string {
   return format(date, 'EEEE, MMMM d');
 }
 
+export function formatShortDateTime(date: Date): string {
+  return format(date, 'MMM d, h:mma').toLowerCase();
+}
+
 export function parseIsoDate(iso: string): Date {
   // Backend serializes DateTimeField as ISO 8601 with timezone; Date constructor
   // parses that natively.

@@ -105,8 +105,10 @@ class FeatureFlag(models.TextChoices):
     """Registry of feature flags; pair each member with a default in FLAG_DEFAULTS."""
 
     EXAMPLE_FLAG = "example_flag", "Example flag"
+    HOST_ATTENDANCE_REPORT = "host_attendance_report", "Host attendance report"
 
 
 FLAG_DEFAULTS: dict[str, bool] = {
     FeatureFlag.EXAMPLE_FLAG: False,
+    FeatureFlag.HOST_ATTENDANCE_REPORT: False,
 }
