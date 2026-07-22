@@ -6,10 +6,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Auto-pick a free port starting at BACKEND_PORT (default 8000) so concurrent
-# `make dev`/`make dev-sqlite` instances across worktrees don't collide. Bind
-# (not connect) so an occupied port fails instantly instead of waiting on a
-# connect timeout.
+# bind (not connect) so an occupied port fails instantly, no timeout
 port="${BACKEND_PORT:-8000}"
 port_free() {
   python3 -c "

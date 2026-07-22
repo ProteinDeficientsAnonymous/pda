@@ -10,8 +10,7 @@ export
 SQLITE_DB := $(abspath $(CURDIR)/dev.db)
 SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
 
-# Overridable so multiple `make run*`/`make dev*` instances (e.g. across worktrees)
-# don't collide on the same port. dev.sh exports its own free-port pick for dev targets.
+# dev.sh overrides this with its own free-port pick
 BACKEND_PORT ?= 8000
 
 # DB the agent-* backend targets run against. Locally this overrides .env's shared
