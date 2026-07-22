@@ -1,3 +1,10 @@
+## [0.54.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.0...v0.54.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **dev:** make backend dev port configurable (Issue 1075) ([#1079](https://github.com/ProteinDeficientsAnonymous/pda/issues/1079)) ([15f9508](https://github.com/ProteinDeficientsAnonymous/pda/commit/15f95089e9242528ead2a117c10e1db6ff7c55cc))
+
 # [0.54.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.53.2...v0.54.0) (2026-07-21)
 
 
