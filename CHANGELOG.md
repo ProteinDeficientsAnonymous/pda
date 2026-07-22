@@ -1,3 +1,10 @@
+# [0.58.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.57.0...v0.58.0) (2026-07-22)
+
+
+### Features
+
+* **feature-flags:** frontend read path — useFlag, RequireFlag (Issue 996) ([#1089](https://github.com/ProteinDeficientsAnonymous/pda/issues/1089)) ([4f974d7](https://github.com/ProteinDeficientsAnonymous/pda/commit/4f974d7430e544b8510f9fd252ecfbb39d010693))
+
 # [0.57.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.56.1...v0.57.0) (2026-07-22)
 
 
