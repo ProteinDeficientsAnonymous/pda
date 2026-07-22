@@ -42,7 +42,6 @@ from community.models.survey import (
 from community.models.tag import EventTag
 
 __all__ = [
-    # choices
     "AttendanceStatus",
     "CoHostInviteStatus",
     "EventFlagStatus",
@@ -58,9 +57,7 @@ __all__ = [
     "RSVPStatus",
     "SurveyQuestionType",
     "SurveyVisibility",
-    # cohost invite
     "EventCoHostInvite",
-    # content
     "CommunityGuidelines",
     "EditablePage",
     "FAQ",
@@ -70,31 +67,24 @@ __all__ = [
     "TentativeApprovalMessageTemplate",
     "WelcomeMessageTemplate",
     "WhatsAppLinkConfig",
-    # document
     "DocFolder",
     "Document",
-    # event
     "Event",
     "EventEmailBlast",
     "EventFlag",
     "EventRSVP",
     "EventTag",
-    # feature flag
     "FeatureFlagState",
     "flag_enabled",
     "resolve_flags",
-    # join form
     "JoinFormQuestion",
     "JoinRequest",
-    # comment
     "EventComment",
     "EventCommentReaction",
     "ReactionEmoji",
-    # poll
     "EventPoll",
     "PollOption",
     "PollVote",
-    # survey
     "DatetimePollResult",
     "Survey",
     "SurveyQuestion",
