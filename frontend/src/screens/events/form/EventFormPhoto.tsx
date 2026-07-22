@@ -78,9 +78,6 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
           </>
         ) : (
           <span className="text-brand-700 absolute inset-0 flex flex-col items-center justify-center gap-2">
-            <span aria-hidden="true" className="text-3xl">
-              📸
-            </span>
             <span className="text-sm font-medium">add event photo</span>
             <span className="text-brand-600/80 text-xs">tap to choose</span>
           </span>
