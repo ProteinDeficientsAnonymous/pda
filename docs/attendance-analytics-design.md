@@ -5,8 +5,7 @@ Status: approved (brainstorm complete)
 
 ## Overview
 
-Two features on top of the existing attendance-marking system, plus automated
-attendance-reminder emails:
+Three features on top of the existing attendance-marking system:
 
 1. **Host attendance report** — mobile-first per-event breakdown (attended /
    no-show / canceled with cancel times) reachable from the event kebab menu
@@ -16,6 +15,8 @@ attendance-reminder emails:
    pause candidates, and automated reminder emails at 10 / 11 / 11.5 / 12
    months since last qualifying attendance. Also surfaces attended events on
    each join request for vetting.
+3. **Host check-in nudge** — at start time for club/official events, notify
+   hosts (email + in-app) to go check people in.
 
 Both features are gated behind feature flags (system designed separately):
 `host_attendance_report` and `admin_attendance_analytics`. All flag checks go
@@ -194,11 +195,39 @@ Management command `send_attendance_reminders`:
 - Sends at most the single latest due milestone per user per run (a user who
   crosses 10mo and 11mo while the cron was broken gets one email, not two).
 
+## Feature 3: Host check-in nudge
+
+- **Trigger**: event `start_datetime` reached, `event_type` in (`club`,
+  `official`), `status = active`, `rsvp_enabled`. Fires once per event.
+- **Recipients**: `created_by` + `co_hosts` — the same set `_can_edit_event`
+  authorizes (`_event_host_actions.py`).
+- **Channels**: in-app notification via the existing `_notify_users` /
+  `notify_*` pattern (`backend/notifications/service.py`), plus an email
+  using the standard `EmailSender` + template-pair pattern
+  (`attendance_checkin_reminder`). Both link straight to
+  `/events/:id/attendance` (the existing marking screen).
+- **Copy**: short, lowercase, e.g. "< event title > just started — head to
+  attendance to check people in."
+- **Idempotency**: reuses the `AttendanceReminder`-style log shape — a
+  `HostCheckinNudge(event, sent_at)` row (unique on `event`), or simply a
+  `checkin_nudge_sent_at` field on `Event`; either works since it's a
+  one-shot per event, not a recurring milestone. Picked: a
+  `checkin_nudge_sent_at` nullable field on `Event` — simpler than a new
+  table for a single boolean-ish fact.
+- **Delivery**: same daily-cron shape doesn't fit (needs to fire near start
+  time, not once a day) — runs as a short-interval management command
+  (`send_checkin_nudges`, e.g. every 15 min via Railway cron), selecting
+  events where `start_datetime <= now` and `checkin_nudge_sent_at is null`
+  and `start_datetime >= now - 1h` (skip nudging for long-past events, e.g.
+  after downtime).
+- Gated by `host_attendance_report` flag (same flag as the rest of the host
+  check-in flow).
+
 ## Feature flag integration points
 
 | Flag | Gates |
 |---|---|
-| `host_attendance_report` | kebab item, `/events/:id/report` route, report + CSV endpoints |
+| `host_attendance_report` | kebab item, `/events/:id/report` route, report + CSV endpoints, `send_checkin_nudges` command |
 | `admin_attendance_analytics` | members tab, analytics endpoint, join-request attended-events list, `send_attendance_reminders` command |
 
 All checks call `is_feature_enabled(key)`; the stub reads env vars
@@ -218,6 +247,9 @@ internals. Frontend gets flag state via an existing bootstrap/config response
 - **Phase 3**: anchor math (floor, date_joined, attendance advances it),
   milestone due/idempotency (re-run sends nothing), single-latest-milestone
   rule, active_members recipient filtering, flag-off short-circuit.
+- **Phase 4**: checkin-nudge event selection (event_type filter, start-time
+  window, already-sent skip, non-club/official excluded), recipient set
+  matches `created_by` + `co_hosts`, flag-off short-circuit.
 
 ## Phasing (one PR each)
 
@@ -227,6 +259,9 @@ internals. Frontend gets flag state via an existing bootstrap/config response
    compliance badge, join-request attended-events list.
 3. **Reminders** — `AttendanceReminder` model + migration, templates,
    management command, Railway cron doc note.
+4. **Host check-in nudge** — `checkin_nudge_sent_at` field + migration,
+   notification + email templates, `send_checkin_nudges` command, Railway
+   cron doc note (shorter interval than the daily reminder cron).
 
 ## Out of scope
 
