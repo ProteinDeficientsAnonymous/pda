@@ -1,3 +1,10 @@
+## [0.54.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.1...v0.54.2) (2026-07-22)
+
+
+### Bug Fixes
+
+* **ui:** simplify calendar header and fade footer background (Issue 1076) ([#1078](https://github.com/ProteinDeficientsAnonymous/pda/issues/1078)) ([f4da72a](https://github.com/ProteinDeficientsAnonymous/pda/commit/f4da72a2197fd48693f1cb0dbe48aa9a085db43f))
+
 ## [0.54.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.0...v0.54.1) (2026-07-22)
 
 
