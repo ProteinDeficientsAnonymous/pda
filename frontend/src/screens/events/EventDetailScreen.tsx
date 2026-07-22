@@ -70,11 +70,9 @@ export default function EventDetailScreen() {
   const body = (
     <>
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        {event.photoUrl ? null : (
-          <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
-            {event.title}
-          </h1>
-        )}
+        <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
+          {event.title}
+        </h1>
         <EventBadge event={event} />
         {showKebab ? (
           <div className="ml-auto">
@@ -115,17 +113,12 @@ export default function EventDetailScreen() {
   // Width capped to what a 4:5 crop would be at the same max-height, so a
   // square (1:1) photo doesn't sprawl full-bleed on wide screens (issue 1077).
   const photo = (
-    <div className="relative mx-auto">
-      <img
-        src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
-        alt=""
-        className="mx-auto block max-h-[70vh] w-auto max-w-[min(100%,calc(70vh*4/5))] rounded-lg"
-        loading="lazy"
-      />
-      <h1 className="absolute inset-x-0 top-0 rounded-t-lg bg-gradient-to-b from-black/60 to-transparent p-4 text-2xl font-medium tracking-tight text-white [overflow-wrap:anywhere] break-words">
-        {event.title}
-      </h1>
-    </div>
+    <img
+      src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
+      alt=""
+      className="mx-auto block max-h-[70vh] w-auto max-w-[min(100%,calc(70vh*4/5))] rounded-lg"
+      loading="lazy"
+    />
   );
 
   // desktop: photo sticks to the left while the narrow details column scrolls;
