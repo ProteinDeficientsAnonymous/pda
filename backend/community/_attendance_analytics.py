@@ -21,8 +21,7 @@ def _is_reportable(rsvp: EventRSVP) -> bool:
 
 
 def _is_marked(rsvp: EventRSVP, attendance: str) -> bool:
-    """Attendance mark gated on status=ATTENDING, so a stranded mark left after
-    the rsvp flips to CANT_GO/removed isn't counted. Mirrors attendance_q."""
+    # gated on status=ATTENDING so a stranded mark after the rsvp flips to CANT_GO/removed isn't counted; mirrors attendance_q
     return (
         _is_reportable(rsvp)
         and rsvp.status == RSVPStatus.ATTENDING
@@ -95,6 +94,11 @@ def months_since(last_qualifying_at: datetime | None, now: datetime | None = Non
     return delta.days // 30
 
 
+def is_pause_candidate(stats: MemberAttendanceStats) -> bool:
+    """No qualifying attendance in the trailing window (or ever). Same window as the compliant count, so the two never disagree."""
+    return stats.qualifying_count_12mo == 0
+
+
 class AttendedEvent(NamedTuple):
     event_id: str
     title: str
@@ -126,12 +130,3 @@ def user_rsvps_for_attendance(user) -> list[EventRSVP]:
         if "event_rsvps" in prefetched
         else list(EventRSVP.objects.filter(user_id=user.id).select_related("event"))
     )
-
-
-def resolve_join_request_user(join_request):
-    """JoinRequest.user FK when set, else a unique phone_number match against guest users."""
-    if join_request.user_id:
-        return join_request.user
-    from users.models import User
-
-    return User.objects.filter(is_member=False, phone_number=join_request.phone_number).first()

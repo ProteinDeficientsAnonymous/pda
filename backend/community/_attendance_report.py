@@ -13,6 +13,7 @@ from users.permissions import PermissionKey
 from community._attendance_analytics import (
     compute_member_stats,
     is_compliant,
+    is_pause_candidate,
     member_rsvps_prefetch,
     months_since,
     user_rsvps_for_attendance,
@@ -90,13 +91,9 @@ class MemberAttendanceAnalyticsOut(BaseModel):
     members: list[MemberAttendanceRowOut] = []
 
 
-PAUSE_CANDIDATE_MONTHS = 12
-
-
 def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
     rsvps = user_rsvps_for_attendance(user)
     stats = compute_member_stats(rsvps)
-    months = months_since(stats.last_qualifying_at)
     return MemberAttendanceRowOut(
         user_id=str(user.id),
         full_name=user.full_name,
@@ -108,8 +105,8 @@ def _member_attendance_row(user: User) -> MemberAttendanceRowOut:
         community_count=stats.community_count,
         no_show_count=stats.no_show_count,
         cancel_count=stats.cancel_count,
-        months_since_last_qualifying=months,
-        is_pause_candidate=months is None or months >= PAUSE_CANDIDATE_MONTHS,
+        months_since_last_qualifying=months_since(stats.last_qualifying_at),
+        is_pause_candidate=not user.is_paused and is_pause_candidate(stats),
     )
 
 

@@ -207,6 +207,7 @@ class TestMemberAttendanceAnalyticsEndpoint:
         response = api_client.get(MEMBERS_URL, **_auth(events_admin))
         row = next(r for r in response.json()["members"] if r["user_id"] == str(paused.pk))
         assert row["is_paused"] is True
+        assert row["is_pause_candidate"] is False
 
     def test_archived_member_excluded(self, api_client, flag_on, events_admin):
         from users.models import User

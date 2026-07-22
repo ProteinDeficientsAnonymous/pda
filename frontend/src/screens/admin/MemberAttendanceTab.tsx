@@ -87,6 +87,15 @@ function FilterButton({
   );
 }
 
+function complianceBadge(row: MemberAttendanceRow): {
+  tone: keyof typeof BADGE_TONES;
+  label: string;
+} {
+  if (row.isPauseCandidate) return { tone: 'warning', label: 'pause candidate' };
+  if (row.compliant) return { tone: 'success', label: 'compliant' };
+  return { tone: 'neutral', label: 'not yet compliant' };
+}
+
 function lastQualifyingLine(row: MemberAttendanceRow): string {
   if (!row.lastQualifyingAt) return 'never attended a qualifying event';
   const date = format(row.lastQualifyingAt, 'MMM d, yyyy').toLowerCase();
@@ -98,6 +107,7 @@ function lastQualifyingLine(row: MemberAttendanceRow): string {
 function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
   const currentUser = useAuthStore((s) => s.user);
   const canPause = hasPermission(currentUser, Permission.ManageUsers);
+  const badge = complianceBadge(row);
 
   return (
     <article className="border-border bg-surface rounded-lg border p-3">
@@ -110,13 +120,7 @@ function MemberAttendanceRowCard({ row }: { row: MemberAttendanceRow }) {
         </div>
         <div className="flex flex-wrap items-center gap-1">
           {row.isPaused ? <Badge tone="neutral">paused</Badge> : null}
-          {row.isPauseCandidate ? (
-            <Badge tone="warning">pause candidate</Badge>
-          ) : row.compliant ? (
-            <Badge tone="success">compliant</Badge>
-          ) : (
-            <Badge tone="neutral">not yet compliant</Badge>
-          )}
+          <Badge tone={badge.tone}>{badge.label}</Badge>
         </div>
       </div>
 
