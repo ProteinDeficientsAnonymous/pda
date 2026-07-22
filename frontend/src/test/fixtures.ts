@@ -182,6 +182,7 @@ export function makeRequest(overrides: Partial<JoinRequestSummary> = {}): JoinRe
       upcomingClub: 0,
     },
     rsvpEvents: [],
+    attendedEvents: [],
     ...overrides,
   };
 }

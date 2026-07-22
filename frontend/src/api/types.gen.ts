@@ -644,6 +644,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/attendance-analytics/members/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Member Attendance Analytics
+         * @description Per-member qualifying-attendance analytics for the admin members tab.
+         *
+         *     Pause candidates (no qualifying attendance in the last 12 months, or
+         *     ever) sort first so admins triage them without scrolling.
+         */
+        get: operations["community__attendance_report_member_attendance_analytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/attendance-report/": {
         parameters: {
             query?: never;
@@ -3359,6 +3382,17 @@ export interface components {
             /** Question Id */
             question_id: string;
         };
+        /** JoinRequestAttendedEventOut */
+        JoinRequestAttendedEventOut: {
+            /** Event Id */
+            event_id: string;
+            /** Event Type */
+            event_type: string;
+            /** Start Datetime */
+            start_datetime?: string | null;
+            /** Title */
+            title: string;
+        };
         /** JoinRequestIn */
         JoinRequestIn: {
             /**
@@ -3417,6 +3451,11 @@ export interface components {
              * @default 0
              */
             attended_club_count: number;
+            /**
+             * Attended Events
+             * @default []
+             */
+            attended_events: components["schemas"]["JoinRequestAttendedEventOut"][];
             /**
              * Attended Official Count
              * @default 0
@@ -3537,6 +3576,62 @@ export interface components {
             show_phone?: boolean | null;
             /** Week Start */
             week_start?: ("sunday" | "monday") | null;
+        };
+        /** MemberAttendanceAnalyticsOut */
+        MemberAttendanceAnalyticsOut: {
+            /**
+             * Members
+             * @default []
+             */
+            members: components["schemas"]["MemberAttendanceRowOut"][];
+        };
+        /**
+         * MemberAttendanceRowOut
+         * @description One member's attendance analytics for the admin members tab.
+         */
+        MemberAttendanceRowOut: {
+            /**
+             * Cancel Count
+             * @default 0
+             */
+            cancel_count: number;
+            /**
+             * Community Count
+             * @default 0
+             */
+            community_count: number;
+            /**
+             * Compliant
+             * @default false
+             */
+            compliant: boolean;
+            /** Full Name */
+            full_name: string;
+            /**
+             * Is Pause Candidate
+             * @default false
+             */
+            is_pause_candidate: boolean;
+            /** Is Paused */
+            is_paused: boolean;
+            /** Last Qualifying At */
+            last_qualifying_at?: string | null;
+            /** Months Since Last Qualifying */
+            months_since_last_qualifying?: number | null;
+            /**
+             * No Show Count
+             * @default 0
+             */
+            no_show_count: number;
+            /** Phone Number */
+            phone_number: string;
+            /**
+             * Qualifying Count 12Mo
+             * @default 0
+             */
+            qualifying_count_12mo: number;
+            /** User Id */
+            user_id: string;
         };
         /** MemberDirectoryOut */
         MemberDirectoryOut: {
@@ -6276,6 +6371,35 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__attendance_report_member_attendance_analytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberAttendanceAnalyticsOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

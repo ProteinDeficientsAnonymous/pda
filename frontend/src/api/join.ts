@@ -128,6 +128,13 @@ export interface JoinRequestRsvpEvent {
   startDatetime: string | null;
 }
 
+export interface JoinRequestAttendedEvent {
+  eventId: string;
+  title: string;
+  startDatetime: string | null;
+  eventType: string;
+}
+
 export interface JoinRequestSummary {
   id: string;
   fullName: string;
@@ -145,6 +152,7 @@ export interface JoinRequestSummary {
   onboardedAt: string | null;
   rsvpBreakdown: RsvpBreakdown;
   rsvpEvents: JoinRequestRsvpEvent[];
+  attendedEvents: JoinRequestAttendedEvent[];
 }
 
 interface WireAnswer {
@@ -157,6 +165,13 @@ interface WireRsvpEvent {
   event_id: string;
   title: string;
   start_datetime: string | null;
+}
+
+interface WireAttendedEvent {
+  event_id: string;
+  title: string;
+  start_datetime: string | null;
+  event_type: string;
 }
 
 interface WireJoinRequest {
@@ -179,6 +194,7 @@ interface WireJoinRequest {
   upcoming_official_count?: number;
   upcoming_club_count?: number;
   rsvp_events?: WireRsvpEvent[];
+  attended_events?: WireAttendedEvent[];
 }
 
 function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
@@ -211,6 +227,12 @@ function mapJoinRequest(w: WireJoinRequest): JoinRequestSummary {
       eventId: e.event_id,
       title: e.title,
       startDatetime: e.start_datetime,
+    })),
+    attendedEvents: (w.attended_events ?? []).map((e) => ({
+      eventId: e.event_id,
+      title: e.title,
+      startDatetime: e.start_datetime,
+      eventType: e.event_type,
     })),
   };
 }

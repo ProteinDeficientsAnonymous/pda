@@ -147,6 +147,35 @@ describe('JoinRequestsScreen sort', () => {
     expect(screen.queryByText(/upcoming/)).not.toBeInTheDocument();
   });
 
+  it('shows attended events (all types) for vetting when present', () => {
+    mockResult([
+      makeRequest({
+        status: JoinRequestStatus.PENDING,
+        attendedEvents: [
+          {
+            eventId: 'evt-1',
+            title: 'Community Hang',
+            startDatetime: '2026-02-01T18:00:00Z',
+            eventType: 'community',
+          },
+        ],
+      }),
+    ]);
+
+    renderScreen();
+
+    expect(screen.getByText('events attended')).toBeInTheDocument();
+    expect(screen.getByText(/community hang/)).toBeInTheDocument();
+  });
+
+  it('omits the attended-events section when empty', () => {
+    mockResult([makeRequest({ status: JoinRequestStatus.PENDING, attendedEvents: [] })]);
+
+    renderScreen();
+
+    expect(screen.queryByText('events attended')).not.toBeInTheDocument();
+  });
+
   it('omits the note entirely when every bucket is zero', () => {
     mockResult([makeRequest({ status: JoinRequestStatus.PENDING })]);
 

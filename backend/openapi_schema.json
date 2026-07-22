@@ -3230,6 +3230,41 @@
         "title": "JoinRequestAnswerOut",
         "type": "object"
       },
+      "JoinRequestAttendedEventOut": {
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "start_datetime": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Datetime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "event_type"
+        ],
+        "title": "JoinRequestAttendedEventOut",
+        "type": "object"
+      },
       "JoinRequestIn": {
         "properties": {
           "answers": {
@@ -3323,6 +3358,14 @@
             "default": 0,
             "title": "Attended Club Count",
             "type": "integer"
+          },
+          "attended_events": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/JoinRequestAttendedEventOut"
+            },
+            "title": "Attended Events",
+            "type": "array"
           },
           "attended_official_count": {
             "default": 0,
@@ -3693,6 +3736,102 @@
           }
         },
         "title": "MePatchIn",
+        "type": "object"
+      },
+      "MemberAttendanceAnalyticsOut": {
+        "properties": {
+          "members": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/MemberAttendanceRowOut"
+            },
+            "title": "Members",
+            "type": "array"
+          }
+        },
+        "title": "MemberAttendanceAnalyticsOut",
+        "type": "object"
+      },
+      "MemberAttendanceRowOut": {
+        "description": "One member's attendance analytics for the admin members tab.",
+        "properties": {
+          "cancel_count": {
+            "default": 0,
+            "title": "Cancel Count",
+            "type": "integer"
+          },
+          "community_count": {
+            "default": 0,
+            "title": "Community Count",
+            "type": "integer"
+          },
+          "compliant": {
+            "default": false,
+            "title": "Compliant",
+            "type": "boolean"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "is_pause_candidate": {
+            "default": false,
+            "title": "Is Pause Candidate",
+            "type": "boolean"
+          },
+          "is_paused": {
+            "title": "Is Paused",
+            "type": "boolean"
+          },
+          "last_qualifying_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Qualifying At"
+          },
+          "months_since_last_qualifying": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Months Since Last Qualifying"
+          },
+          "no_show_count": {
+            "default": 0,
+            "title": "No Show Count",
+            "type": "integer"
+          },
+          "phone_number": {
+            "title": "Phone Number",
+            "type": "string"
+          },
+          "qualifying_count_12mo": {
+            "default": 0,
+            "title": "Qualifying Count 12Mo",
+            "type": "integer"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "full_name",
+          "phone_number",
+          "is_paused"
+        ],
+        "title": "MemberAttendanceRowOut",
         "type": "object"
       },
       "MemberDirectoryOut": {
@@ -8269,6 +8408,44 @@
           }
         ],
         "summary": "Create Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/attendance-analytics/members/": {
+      "get": {
+        "description": "Per-member qualifying-attendance analytics for the admin members tab.\n\nPause candidates (no qualifying attendance in the last 12 months, or\never) sort first so admins triage them without scrolling.",
+        "operationId": "community__attendance_report_member_attendance_analytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAttendanceAnalyticsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Member Attendance Analytics",
         "tags": [
           "community"
         ]
