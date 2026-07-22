@@ -1,3 +1,10 @@
+# [0.56.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.55.1...v0.56.0) (2026-07-22)
+
+
+### Features
+
+* **events:** unify event photo picker into library + upload tabs (Issue 1082) ([#1083](https://github.com/ProteinDeficientsAnonymous/pda/issues/1083)) ([4d527dc](https://github.com/ProteinDeficientsAnonymous/pda/commit/4d527dc1c5c36fd04aded35fcf21497f30981334))
+
 ## [0.55.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.55.0...v0.55.1) (2026-07-22)
 
 
