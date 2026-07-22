@@ -4,6 +4,7 @@ from community.models.choices import (
     EventFlagStatus,
     EventStatus,
     EventType,
+    FeatureFlag,
     FeedbackType,
     InvitePermission,
     JoinFormQuestionType,
@@ -29,6 +30,7 @@ from community.models.content import (
 )
 from community.models.document import DocFolder, Document
 from community.models.event import Event, EventEmailBlast, EventFlag, EventRSVP
+from community.models.feature_flag import FeatureFlagState, flag_enabled, resolve_flags
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.survey import (
@@ -46,6 +48,7 @@ __all__ = [
     "EventFlagStatus",
     "EventStatus",
     "EventType",
+    "FeatureFlag",
     "FeedbackType",
     "InvitePermission",
     "JoinFormQuestionType",
@@ -76,6 +79,10 @@ __all__ = [
     "EventFlag",
     "EventRSVP",
     "EventTag",
+    # feature flag
+    "FeatureFlagState",
+    "flag_enabled",
+    "resolve_flags",
     # join form
     "JoinFormQuestion",
     "JoinRequest",

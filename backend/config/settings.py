@@ -11,6 +11,11 @@ load_dotenv(BASE_DIR.parent / ".env")
 
 IS_PRODUCTION = os.environ.get("RAILWAY_ENVIRONMENT") is not None
 
+# Distinct from IS_PRODUCTION (RAILWAY_ENVIRONMENT presence, true on staging too) —
+# this is the display name used to gate flag toggling to non-prod environments.
+ENVIRONMENT_NAME = os.environ.get("RAILWAY_ENVIRONMENT_NAME") or "local"
+FLAG_TOGGLING_ALLOWED = ENVIRONMENT_NAME in ("local", "staging")
+
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     if IS_PRODUCTION:

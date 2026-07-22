@@ -99,3 +99,17 @@ class FeedbackType(models.TextChoices):
 
     BUG = "bug", "Bug"
     FEATURE_REQUEST = "feature request", "Feature request"
+
+
+class FeatureFlag(models.TextChoices):
+    """Registry of feature flags. Add a member here (+ the frontend ``Feature``
+    mirror) to add a flag; delete both to remove one. Pair each member with a
+    default in ``FLAG_DEFAULTS`` below — the value used when no
+    ``FeatureFlagState`` row exists for the key."""
+
+    EXAMPLE_FLAG = "example_flag", "Example flag"
+
+
+FLAG_DEFAULTS: dict[str, bool] = {
+    FeatureFlag.EXAMPLE_FLAG: False,
+}
