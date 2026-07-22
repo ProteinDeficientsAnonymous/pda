@@ -1,3 +1,10 @@
+# [0.60.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.59.0...v0.60.0) (2026-07-22)
+
+
+### Features
+
+* **attendance:** host check-in report + csv export (Issue 1092) ([#1098](https://github.com/ProteinDeficientsAnonymous/pda/issues/1098)) ([0c3c7ba](https://github.com/ProteinDeficientsAnonymous/pda/commit/0c3c7ba227f45a4b8c80b8fb3f7d8391ac1663ab))
+
 # [0.59.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.58.0...v0.59.0) (2026-07-22)
 
 
