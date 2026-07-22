@@ -5,13 +5,17 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
-from users.models import NonMemberRsvpToken, User
+from users.models import NonMemberRsvpToken, Role, User
+from users.permissions import PermissionKey
 
 from community.models import (
+    AttendanceStatus,
     Event,
     EventRSVP,
     EventStatus,
     EventType,
+    FeatureFlag,
+    FeatureFlagState,
     PageVisibility,
     RSVPStatus,
 )
@@ -149,6 +153,96 @@ def _seed_live_updates() -> dict:
     }
 
 
+def _admin_user(phone: str, permissions: list[str]) -> User:
+    user = _member_user(phone)
+    role = Role.objects.create(name=f"e2e-role-{secrets.token_hex(4)}", permissions=permissions)
+    user.roles.add(role)
+    return user
+
+
+def _seed_attendance_report() -> dict:
+    FeatureFlagState.objects.update_or_create(
+        key=FeatureFlag.HOST_ATTENDANCE_REPORT, defaults={"enabled": True}
+    )
+    host_phone = _random_phone()
+    host = _admin_user(host_phone, [PermissionKey.MANAGE_EVENTS])
+    event = _random_event(
+        "attendance-report",
+        start_datetime=timezone.now() - timedelta(days=2),
+        end_datetime=timezone.now() - timedelta(days=2) + timedelta(hours=2),
+        created_by=host,
+    )
+
+    attended = _member_user(_random_phone())
+    no_show = _member_user(_random_phone())
+    canceled = _non_member_user(_random_phone())
+    EventRSVP.objects.create(
+        event=event, user=attended, status=RSVPStatus.ATTENDING, attendance=AttendanceStatus.ATTENDED
+    )
+    EventRSVP.objects.create(
+        event=event, user=no_show, status=RSVPStatus.ATTENDING, attendance=AttendanceStatus.NO_SHOW
+    )
+    EventRSVP.objects.create(
+        event=event,
+        user=canceled,
+        status=RSVPStatus.CANT_GO,
+        cancelled_at=timezone.now() - timedelta(days=3),
+    )
+
+    return {
+        "event_id": str(event.id),
+        "event_title": event.title,
+        "host_phone": host_phone,
+        "host_password": E2E_PASSWORD,
+    }
+
+
+def _seed_attendance_analytics() -> dict:
+    FeatureFlagState.objects.update_or_create(
+        key=FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS, defaults={"enabled": True}
+    )
+    admin_phone = _random_phone()
+    _admin_user(admin_phone, [PermissionKey.MANAGE_EVENTS, PermissionKey.MANAGE_USERS])
+
+    recent_event = _random_event(
+        "analytics-recent",
+        event_type=EventType.OFFICIAL,
+        start_datetime=timezone.now() - timedelta(days=10),
+    )
+    stale_event = _random_event(
+        "analytics-stale",
+        event_type=EventType.CLUB,
+        start_datetime=timezone.now() - timedelta(days=400),
+    )
+
+    compliant = _member_user(_random_phone())
+    compliant.first_name = "Zoe"
+    compliant.save(update_fields=["first_name"])
+    at_risk = _member_user(_random_phone())
+    at_risk.first_name = "Yara"
+    at_risk.save(update_fields=["first_name"])
+
+    EventRSVP.objects.create(
+        event=recent_event,
+        user=compliant,
+        status=RSVPStatus.ATTENDING,
+        attendance=AttendanceStatus.ATTENDED,
+    )
+    EventRSVP.objects.create(
+        event=stale_event,
+        user=at_risk,
+        status=RSVPStatus.ATTENDING,
+        attendance=AttendanceStatus.ATTENDED,
+    )
+
+    return {
+        "admin_phone": admin_phone,
+        "admin_password": E2E_PASSWORD,
+        "compliant_name": "zoe member",
+        "at_risk_name": "yara member",
+    }
+
+
 SCENARIOS = {
     "member": _seed_member,
     "public-new": _seed_public_new,
@@ -157,6 +251,8 @@ SCENARIOS = {
     "comments": _seed_comments,
     "my-rsvps": _seed_my_rsvps,
     "live-updates": _seed_live_updates,
+    "attendance-report": _seed_attendance_report,
+    "attendance-analytics": _seed_attendance_analytics,
 }
 
 
