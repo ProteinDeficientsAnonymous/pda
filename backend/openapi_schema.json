@@ -2497,6 +2497,35 @@
         "title": "EventStatsOut",
         "type": "object"
       },
+      "FeatureFlagPatchIn": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "FeatureFlagPatchIn",
+        "type": "object"
+      },
+      "FeatureFlagsOut": {
+        "properties": {
+          "flags": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Flags",
+            "type": "object"
+          }
+        },
+        "required": [
+          "flags"
+        ],
+        "title": "FeatureFlagsOut",
+        "type": "object"
+      },
       "FeedbackIn": {
         "properties": {
           "description": {
@@ -10462,6 +10491,95 @@
           }
         ],
         "summary": "Update Faq",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/feature-flags/": {
+      "get": {
+        "operationId": "community__feature_flags_get_feature_flags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get Feature Flags",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/feature-flags/{key}/": {
+      "patch": {
+        "operationId": "community__feature_flags_update_feature_flag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureFlagPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Feature Flag",
         "tags": [
           "community"
         ]

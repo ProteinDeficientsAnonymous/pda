@@ -402,6 +402,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'members only';
     case Code.Page.VisibilityInvalid:
       return 'invalid visibility setting';
+    case Code.FeatureFlag.NotFound:
+      return 'feature flag not found';
     case Code.Docs.FolderNotFound:
       return 'folder not found';
     case Code.Docs.ParentFolderNotFound:
