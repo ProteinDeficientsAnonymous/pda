@@ -987,6 +987,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/report.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Check In Report Csv */
+        get: operations["community__event_report_get_check_in_report_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Check In Report */
+        get: operations["community__event_report_get_check_in_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/rsvp/": {
         parameters: {
             query?: never;
@@ -1965,6 +1999,22 @@ export interface components {
          * @enum {string}
          */
         AttendanceStatus: "unknown" | "attended" | "no_show";
+        /** AttendedPersonOut */
+        AttendedPersonOut: {
+            /** Checked In At */
+            checked_in_at?: string | null;
+            /**
+             * Is Member
+             * @default true
+             */
+            is_member: boolean;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+            /** User Id */
+            user_id: string;
+        };
         /** BirthdayIn */
         BirthdayIn: {
             /** Day */
@@ -2017,6 +2067,25 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** CanceledPersonOut */
+        CanceledPersonOut: {
+            /**
+             * Cancelled At
+             * Format: date-time
+             */
+            cancelled_at: string;
+            /**
+             * Is Member
+             * @default true
+             */
+            is_member: boolean;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+            /** User Id */
+            user_id: string;
+        };
         /** CancellationOut */
         CancellationOut: {
             /**
@@ -2037,6 +2106,63 @@ export interface components {
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** CheckInReportOut */
+        CheckInReportOut: {
+            /**
+             * Attended
+             * @default []
+             */
+            attended: components["schemas"]["AttendedPersonOut"][];
+            /**
+             * Attended Count
+             * @default 0
+             */
+            attended_count: number;
+            /**
+             * Canceled
+             * @default []
+             */
+            canceled: components["schemas"]["CanceledPersonOut"][];
+            /**
+             * Canceled Count
+             * @default 0
+             */
+            canceled_count: number;
+            /**
+             * No Show Count
+             * @default 0
+             */
+            no_show_count: number;
+            /**
+             * No Shows
+             * @default []
+             */
+            no_shows: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Unmarked
+             * @default []
+             */
+            unmarked: components["schemas"]["CheckInReportPersonOut"][];
+            /**
+             * Unmarked Count
+             * @default 0
+             */
+            unmarked_count: number;
+        };
+        /** CheckInReportPersonOut */
+        CheckInReportPersonOut: {
+            /**
+             * Is Member
+             * @default true
+             */
+            is_member: boolean;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+            /** User Id */
+            user_id: string;
         };
         /** CheckPhoneIn */
         CheckPhoneIn: {
@@ -7429,6 +7555,106 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_report_get_check_in_report_csv: {
+        parameters: {
+            query?: {
+                columns?: string;
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_report_get_check_in_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckInReportOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

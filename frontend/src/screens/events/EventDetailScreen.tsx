@@ -76,7 +76,7 @@ export default function EventDetailScreen() {
         <EventBadge event={event} />
         {showKebab ? (
           <div className="ml-auto">
-            <EventDetailKebabMenu eventId={event.id} />
+            <EventDetailKebabMenu eventId={event.id} eventHasEnded={event.isPast} />
           </div>
         ) : null}
       </div>

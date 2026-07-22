@@ -154,6 +154,18 @@
         "params": [
           "count"
         ]
+      },
+      {
+        "name": "CHECK_IN_REPORT_NOT_YET_AVAILABLE",
+        "value": "event.check_in_report_not_yet_available",
+        "params": []
+      },
+      {
+        "name": "CHECK_IN_REPORT_INVALID_COLUMN",
+        "value": "event.check_in_report_invalid_column",
+        "params": [
+          "column"
+        ]
       }
     ],
     "Poll": [

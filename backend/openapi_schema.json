@@ -117,6 +117,52 @@
         "title": "AttendanceStatus",
         "type": "string"
       },
+      "AttendedPersonOut": {
+        "properties": {
+          "checked_in_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked In At"
+          },
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name"
+        ],
+        "title": "AttendedPersonOut",
+        "type": "object"
+      },
       "BirthdayIn": {
         "properties": {
           "day": {
@@ -286,6 +332,46 @@
         "title": "CalendarTokenOut",
         "type": "object"
       },
+      "CanceledPersonOut": {
+        "properties": {
+          "cancelled_at": {
+            "format": "date-time",
+            "title": "Cancelled At",
+            "type": "string"
+          },
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "cancelled_at"
+        ],
+        "title": "CanceledPersonOut",
+        "type": "object"
+      },
       "CancellationOut": {
         "properties": {
           "cancelled_at": {
@@ -333,6 +419,98 @@
           "new_password"
         ],
         "title": "ChangePasswordIn",
+        "type": "object"
+      },
+      "CheckInReportOut": {
+        "properties": {
+          "attended": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AttendedPersonOut"
+            },
+            "title": "Attended",
+            "type": "array"
+          },
+          "attended_count": {
+            "default": 0,
+            "title": "Attended Count",
+            "type": "integer"
+          },
+          "canceled": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CanceledPersonOut"
+            },
+            "title": "Canceled",
+            "type": "array"
+          },
+          "canceled_count": {
+            "default": 0,
+            "title": "Canceled Count",
+            "type": "integer"
+          },
+          "no_show_count": {
+            "default": 0,
+            "title": "No Show Count",
+            "type": "integer"
+          },
+          "no_shows": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CheckInReportPersonOut"
+            },
+            "title": "No Shows",
+            "type": "array"
+          },
+          "unmarked": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CheckInReportPersonOut"
+            },
+            "title": "Unmarked",
+            "type": "array"
+          },
+          "unmarked_count": {
+            "default": 0,
+            "title": "Unmarked Count",
+            "type": "integer"
+          }
+        },
+        "title": "CheckInReportOut",
+        "type": "object"
+      },
+      "CheckInReportPersonOut": {
+        "properties": {
+          "is_member": {
+            "default": true,
+            "title": "Is Member",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name"
+        ],
+        "title": "CheckInReportPersonOut",
         "type": "object"
       },
       "CheckPhoneIn": {
@@ -9954,6 +10132,152 @@
           }
         ],
         "summary": "Vote On Event Poll",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/report.csv": {
+      "get": {
+        "operationId": "community__event_report_get_check_in_report_csv",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "columns",
+            "required": false,
+            "schema": {
+              "default": "name,phone,rsvp_status,attendance,checked_in_at,cancelled_at,plus_one",
+              "title": "Columns",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Check In Report Csv",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/report/": {
+      "get": {
+        "operationId": "community__event_report_get_check_in_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckInReportOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Get Check In Report",
         "tags": [
           "community"
         ]

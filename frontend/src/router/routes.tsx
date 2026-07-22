@@ -1,7 +1,15 @@
 import { createBrowserRouter } from 'react-router-dom';
 
-import { AuthBoot, EmailGate, OnboardingGate, RequireAuth, RequirePermission } from '@/auth/guards';
+import {
+  AuthBoot,
+  EmailGate,
+  OnboardingGate,
+  RequireAuth,
+  RequireFlag,
+  RequirePermission,
+} from '@/auth/guards';
 import { AppShell } from '@/layout/AppShell';
+import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 
 import { lazyEl as el, lazyWithRetry } from './lazyRoute';
@@ -26,6 +34,9 @@ const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScre
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
 const EventAttendance = lazyWithRetry(() => import('@/screens/events/EventAttendanceScreen'));
+const EventCheckInReport = lazyWithRetry(
+  () => import('@/screens/events/EventCheckInReportScreen'),
+);
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
 const Notifications = lazyWithRetry(() => import('@/screens/notifications/NotificationsScreen'));
@@ -105,6 +116,13 @@ export const router = createBrowserRouter([
                   { path: '/events/:id/attendance', element: el(<EventAttendance />) },
                   { path: '/members', element: el(<MembersDirectory />) },
                   { path: '/members/:userId', element: el(<MemberProfile />) },
+                ],
+              },
+
+              {
+                element: <RequireFlag flag={Feature.HostAttendanceReport} />,
+                children: [
+                  { path: '/events/:id/report', element: el(<EventCheckInReport />) },
                 ],
               },
 
