@@ -1,3 +1,4 @@
+from community.models.attendance_reminder import AttendanceMilestone, AttendanceReminder
 from community.models.choices import (
     AttendanceStatus,
     CoHostInviteStatus,
@@ -42,6 +43,8 @@ from community.models.survey import (
 from community.models.tag import EventTag
 
 __all__ = [
+    "AttendanceMilestone",
+    "AttendanceReminder",
     "AttendanceStatus",
     "CoHostInviteStatus",
     "EventFlagStatus",
