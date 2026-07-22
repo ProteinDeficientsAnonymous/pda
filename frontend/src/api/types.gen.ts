@@ -1943,6 +1943,8 @@ export interface components {
             magic_link_token?: string | null;
             /** Phone Number */
             phone_number: string;
+            /** Rsvp Link Token */
+            rsvp_link_token?: string | null;
             /** Status */
             status: string;
             /** User Id */
