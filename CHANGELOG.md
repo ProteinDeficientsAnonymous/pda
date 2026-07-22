@@ -1,3 +1,10 @@
+## [0.56.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.56.0...v0.56.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **events:** stop gif thumbnails squishing on mobile (Issue 1085) ([#1088](https://github.com/ProteinDeficientsAnonymous/pda/issues/1088)) ([0bf29ec](https://github.com/ProteinDeficientsAnonymous/pda/commit/0bf29ec1d7d0f1caac68feb3e6653552d01ee73c))
+
 # [0.56.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.55.1...v0.56.0) (2026-07-22)
 
 
