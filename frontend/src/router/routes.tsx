@@ -45,6 +45,7 @@ const JoinFormAdmin = lazyWithRetry(() => import('@/screens/admin/JoinFormAdminS
 const SurveyAdminList = lazyWithRetry(() => import('@/screens/admin/SurveyAdminListScreen'));
 const SurveyBuilder = lazyWithRetry(() => import('@/screens/admin/SurveyBuilderScreen'));
 const SurveyResponses = lazyWithRetry(() => import('@/screens/admin/SurveyResponsesScreen'));
+const FeatureFlags = lazyWithRetry(() => import('@/screens/admin/FeatureFlagsScreen'));
 const Members = lazyWithRetry(() => import('@/screens/admin/MembersScreen'));
 const MemberDetail = lazyWithRetry(() => import('@/screens/admin/MemberDetailScreen'));
 const MemberProfile = lazyWithRetry(() => import('@/screens/members/MemberProfileScreen'));
@@ -152,6 +153,10 @@ export const router = createBrowserRouter([
                   { path: '/admin/surveys/:id', element: el(<SurveyBuilder />) },
                   { path: '/admin/surveys/:id/responses', element: el(<SurveyResponses />) },
                 ],
+              },
+              {
+                element: <RequirePermission perm={Permission.ManageFeatureFlags} />,
+                children: [{ path: '/admin/feature-flags', element: el(<FeatureFlags />) }],
               },
 
               // ---- catch-all ----

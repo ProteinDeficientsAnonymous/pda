@@ -60,6 +60,12 @@ const TILES: Tile[] = [
     description: 'manage the shared document library',
     perm: Permission.ManageDocuments,
   },
+  {
+    to: '/admin/feature-flags',
+    label: 'feature flags',
+    description: 'toggle dark-launched features',
+    perm: Permission.ManageFeatureFlags,
+  },
 ];
 
 export default function AdminHubScreen() {
