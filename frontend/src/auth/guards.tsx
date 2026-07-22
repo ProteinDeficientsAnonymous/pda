@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
-import { useFlag } from '@/api/featureFlags';
+import { useFeatureFlags } from '@/api/featureFlags';
 import { RequireEmail } from '@/components/RequireEmail';
 import { CONSENT_REGISTRY } from '@/models/consent';
 import type { FeatureFlagKey } from '@/models/featureFlags';
@@ -131,14 +131,25 @@ export function RequirePermission({ perm }: { perm: PermissionKey }) {
 }
 
 // ----------------------------------------------------------------------------
-// RequireFlag — gates a route behind a feature flag. Fail-closed: a flag that
-// is off, missing, or still loading redirects to /calendar, so a dark feature
-// never flashes into view before the flag resolves.
+// RequireFlag — authed + feature flag check. Fail-closed: a flag that is off
+// or missing redirects to /calendar. While the flags query is still loading,
+// renders a spinner instead of redirecting, so a flag that resolves true
+// doesn't briefly bounce the user away first.
 // ----------------------------------------------------------------------------
 
 export function RequireFlag({ flag }: { flag: FeatureFlagKey }) {
-  const enabled = useFlag(flag);
-  if (!enabled) {
+  const isAuthed = useAuthStore((s) => s.status === 'authed');
+  const location = useLocation();
+  const { data: flags, isPending } = useFeatureFlags();
+
+  if (!isAuthed) {
+    const redirect = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirect}`} replace />;
+  }
+  if (isPending) {
+    return <BootSpinner />;
+  }
+  if (!(flags?.[flag] ?? false)) {
     return <Navigate to="/calendar" replace />;
   }
   return <Outlet />;

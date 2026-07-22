@@ -14,9 +14,9 @@ function backendFlagKeys(): Set<string> {
   if (!classMatch) throw new Error('FeatureFlag class not found in choices.py');
   const memberRe = /^\s+[A-Z0-9_]+\s*=\s*"([^"]+)"/;
   const keys = new Set<string>();
-  for (const line of classMatch[1].split('\n')) {
+  for (const line of (classMatch[1] ?? '').split('\n')) {
     const m = memberRe.exec(line);
-    if (m) keys.add(m[1]);
+    if (m?.[1]) keys.add(m[1]);
   }
   return keys;
 }

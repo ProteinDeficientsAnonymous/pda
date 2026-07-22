@@ -38,13 +38,14 @@ export function useSetFeatureFlag() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ key, enabled }: SetFeatureFlagInput) => {
-      const { data } = await apiClient.patch<WireFlags>(`/api/community/feature-flags/${key}/`, {
-        enabled,
-      });
+      const { data } = await apiClient.patch<WireFlags>(
+        `/api/community/feature-flags/${encodeURIComponent(key)}/`,
+        { enabled },
+      );
       return data.flags;
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: FLAGS_KEY });
+    onSuccess: (flags) => {
+      qc.setQueryData(FLAGS_KEY, flags);
     },
   });
 }

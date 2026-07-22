@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useFlag } from '@/api/featureFlags';
+import { useFeatureFlags } from '@/api/featureFlags';
 import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
@@ -20,7 +20,7 @@ vi.mock('@/api/client', () => ({
 }));
 
 vi.mock('@/api/featureFlags', () => ({
-  useFlag: vi.fn(),
+  useFeatureFlags: vi.fn(),
 }));
 
 // Prevent any real API calls from the store module.
@@ -171,30 +171,56 @@ describe('RequirePermission', () => {
 // ---------------------------------------------------------------------------
 
 describe('RequireFlag', () => {
-  const mockedUseFlag = vi.mocked(useFlag);
+  const mockedUseFeatureFlags = vi.mocked(useFeatureFlags);
 
-  function renderGuarded() {
+  function mockFlags(overrides: Partial<ReturnType<typeof useFeatureFlags>>) {
+    mockedUseFeatureFlags.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      ...overrides,
+    } as ReturnType<typeof useFeatureFlags>);
+  }
+
+  function renderGuarded(initialEntry = '/beta') {
     return render(
-      <MemoryRouter initialEntries={['/beta']}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route element={<RequireFlag flag={Feature.ExampleFlag} />}>
             <Route path="/beta" element={<div>beta content</div>} />
           </Route>
+          <Route path="/login" element={<div>login page</div>} />
           <Route path="/calendar" element={<div>calendar page</div>} />
         </Routes>
       </MemoryRouter>,
     );
   }
 
-  it('renders the outlet when the flag is on', () => {
-    mockedUseFlag.mockReturnValue(true);
+  it('redirects an unauthed user to /login before checking the flag', () => {
+    mockFlags({ data: { example_flag: true } });
+    renderGuarded();
+    expect(screen.getByText('login page')).toBeInTheDocument();
+    expect(screen.queryByText('beta content')).not.toBeInTheDocument();
+  });
+
+  it('renders a spinner while the flags query is loading, without redirecting', () => {
+    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    mockFlags({ isPending: true });
+    renderGuarded();
+    expect(screen.queryByText('beta content')).not.toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('renders the outlet when authed and the flag is on', () => {
+    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    mockFlags({ data: { example_flag: true } });
     renderGuarded();
     expect(screen.getByText('beta content')).toBeInTheDocument();
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
   });
 
-  it('redirects to /calendar when the flag is off', () => {
-    mockedUseFlag.mockReturnValue(false);
+  it('redirects to /calendar when authed but the flag is off', () => {
+    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    mockFlags({ data: { example_flag: false } });
     renderGuarded();
     expect(screen.getByText('calendar page')).toBeInTheDocument();
     expect(screen.queryByText('beta content')).not.toBeInTheDocument();

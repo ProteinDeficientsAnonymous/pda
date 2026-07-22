@@ -79,4 +79,17 @@ describe('useSetFeatureFlag', () => {
     });
     expect(flags).toEqual({ example_flag: true });
   });
+
+  it('writes the resolved map straight into the flags cache without a refetch', async () => {
+    mockedPatch.mockResolvedValueOnce({ data: { flags: { example_flag: true } } });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrap = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { result } = renderHook(() => useSetFeatureFlag(), { wrapper: wrap });
+    await result.current.mutateAsync({ key: Feature.ExampleFlag, enabled: true });
+
+    expect(qc.getQueryData(['feature-flags'])).toEqual({ example_flag: true });
+    expect(mockedGet).not.toHaveBeenCalled();
+  });
 });
