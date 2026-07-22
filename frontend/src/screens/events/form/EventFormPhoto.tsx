@@ -76,10 +76,10 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
             <img
               src={displayUrl}
               alt=""
-              className="mx-auto block max-h-[70vh] w-auto max-w-[min(100%,calc(70vh*4/5))]"
+              className="mx-auto block max-h-[70vh] w-full object-contain"
             />
             <span className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-              <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
+              <span className="rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white">
                 change photo
               </span>
             </span>
