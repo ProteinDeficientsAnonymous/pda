@@ -121,6 +121,29 @@ class TestSendCheckinNudge:
         assert notifs.count() == 1
         assert not notifs.filter(recipient=other).exists()
 
+    def test_already_claimed_event_is_not_resent(self, test_user, fake_email_sender, db):
+        test_user.email = "creator@example.com"
+        test_user.save(update_fields=["email"])
+        event = _make_event(created_by=test_user, checkin_nudge_sent_at=timezone.now())
+
+        assert send_checkin_nudge(event) is False
+        fake_email_sender.send.assert_not_called()
+        assert (
+            Notification.objects.filter(notification_type=NotificationType.CHECKIN_NUDGE).count()
+            == 0
+        )
+
+    def test_email_links_to_attendance_page(self, test_user, fake_email_sender, db):
+        test_user.email = "creator@example.com"
+        test_user.save(update_fields=["email"])
+        event = _make_event(created_by=test_user)
+
+        send_checkin_nudge(event)
+
+        sent = fake_email_sender.send.call_args.kwargs
+        assert f"/events/{event.pk}/attendance" in sent["html"]
+        assert f"/events/{event.pk}/attendance" in sent["text"]
+
 
 @pytest.mark.django_db
 class TestSendDueCheckinNudges:

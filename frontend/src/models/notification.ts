@@ -13,6 +13,7 @@ export const NotificationType = {
   CommentReply: 'comment_reply',
   EventComment: 'event_comment',
   RsvpDeclinedNote: 'rsvp_declined_note',
+  CheckinNudge: 'checkin_nudge',
 } as const;
 
 export interface AppNotification {
