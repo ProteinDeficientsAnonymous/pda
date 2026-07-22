@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from users.models import User
 from users.permissions import PermissionKey
 
+from community._attendance_analytics import attended_events
 from community._field_limits import FieldLimit
 from community._join_request_approval import (
     _provision_approved_user,
@@ -28,9 +29,11 @@ from community.models import (
     AttendanceStatus,
     EventRSVP,
     EventType,
+    FeatureFlag,
     JoinRequest,
     JoinRequestStatus,
     RSVPStatus,
+    flag_enabled,
 )
 
 router = Router()
@@ -50,6 +53,13 @@ class JoinRequestRsvpOut(BaseModel):
     event_id: str
     title: str
     start_datetime: datetime | None = None
+
+
+class JoinRequestAttendedEventOut(BaseModel):
+    event_id: str
+    title: str
+    start_datetime: datetime | None = None
+    event_type: str
 
 
 class JoinRequestOut(BaseModel):
@@ -77,6 +87,8 @@ class JoinRequestOut(BaseModel):
     upcoming_official_count: int = 0
     upcoming_club_count: int = 0
     rsvp_events: list[JoinRequestRsvpOut] = []
+    # all-event-types attended history for vetting, gated on the analytics flag
+    attended_events: list[JoinRequestAttendedEventOut] = []
 
 
 class JoinRequestStatusIn(BaseModel):
@@ -173,6 +185,30 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
     ]
 
 
+def _attended_events_user(jr: JoinRequest, phone_user: User | None) -> User | None:
+    """FK user when set, else a guest (non-member) phone match. A member sharing the phone isn't a guest match."""
+    if jr.user_id:
+        return jr.user
+    if phone_user is not None and not phone_user.is_member:
+        return phone_user
+    return None
+
+
+def _join_request_attended_events(user: User | None) -> list[JoinRequestAttendedEventOut]:
+    """All-event-types attendance history for vetting, gated on the analytics flag."""
+    if user is None or not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
+        return []
+    return [
+        JoinRequestAttendedEventOut(
+            event_id=e.event_id,
+            title=e.title,
+            start_datetime=e.start_datetime,
+            event_type=e.event_type,
+        )
+        for e in attended_events(_user_event_rsvps(user))
+    ]
+
+
 def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
     answers = [
         JoinRequestAnswerOut(question_id=qid, label=data["label"], answer=data["answer"])
@@ -204,6 +240,7 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         upcoming_official_count=breakdown.upcoming_official,
         upcoming_club_count=breakdown.upcoming_club,
         rsvp_events=_rsvp_events(user),
+        attended_events=_join_request_attended_events(_attended_events_user(jr, phone_user)),
     )
 
 

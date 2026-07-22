@@ -1,18 +1,28 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/attendanceReport', () => ({
   useAttendanceReport: vi.fn(),
 }));
+vi.mock('@/api/featureFlags', () => ({
+  useFeatureFlags: vi.fn(),
+  useFlag: vi.fn(),
+}));
+vi.mock('./MemberAttendanceTab', () => ({
+  MemberAttendanceTab: () => <div>members tab content</div>,
+}));
 
 import { useAttendanceReport } from '@/api/attendanceReport';
+import { useFlag } from '@/api/featureFlags';
 import { makeRow } from '@/test/fixtures';
 
 import AttendanceReportScreen from './AttendanceReportScreen';
 
 const mockUseReport = vi.mocked(useAttendanceReport);
+const mockUseFlag = vi.mocked(useFlag);
 
 function mockResult(overrides: Partial<ReturnType<typeof useAttendanceReport>>) {
   mockUseReport.mockReturnValue({
@@ -36,6 +46,7 @@ function renderScreen() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockUseFlag.mockReturnValue(false);
 });
 
 describe('AttendanceReportScreen', () => {
@@ -49,7 +60,7 @@ describe('AttendanceReportScreen', () => {
     expect(row).toHaveTextContent('4 attended');
     expect(row).toHaveTextContent('1 no-show');
     expect(row).toHaveTextContent('6 going');
-    expect(row).toHaveAttribute('href', '/events/e1');
+    expect(row).toHaveAttribute('href', '/events/e1/report');
   });
 
   it('shows the empty state when nothing is marked', () => {
@@ -74,5 +85,25 @@ describe('AttendanceReportScreen', () => {
     renderScreen();
 
     expect(screen.getByText('loading…')).toBeInTheDocument();
+  });
+
+  it('hides the members tab when the flag is off', () => {
+    mockResult({ data: [] });
+    mockUseFlag.mockReturnValue(false);
+
+    renderScreen();
+
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+  });
+
+  it('switches to the members tab when the flag is on', async () => {
+    mockResult({ data: [] });
+    mockUseFlag.mockReturnValue(true);
+    const user = userEvent.setup();
+
+    renderScreen();
+    await user.click(screen.getByRole('tab', { name: 'members' }));
+
+    expect(screen.getByText('members tab content')).toBeInTheDocument();
   });
 });

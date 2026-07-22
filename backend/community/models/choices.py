@@ -106,9 +106,11 @@ class FeatureFlag(models.TextChoices):
 
     EXAMPLE_FLAG = "example_flag", "Example flag"
     HOST_ATTENDANCE_REPORT = "host_attendance_report", "Host attendance report"
+    ADMIN_ATTENDANCE_ANALYTICS = "admin_attendance_analytics", "Admin attendance analytics"
 
 
 FLAG_DEFAULTS: dict[str, bool] = {
     FeatureFlag.EXAMPLE_FLAG: False,
     FeatureFlag.HOST_ATTENDANCE_REPORT: False,
+    FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS: False,
 }

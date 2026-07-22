@@ -81,6 +81,7 @@ describe('useJoinRequests', () => {
           upcomingClub: 0,
         },
         rsvpEvents: [],
+        attendedEvents: [],
       },
     ]);
 
@@ -111,6 +112,43 @@ describe('useJoinRequests', () => {
 
     expect(result.current.data?.[0]?.rsvpEvents).toEqual([
       { eventId: 'evt-1', title: 'Potluck', startDatetime: '2026-03-01T18:00:00Z' },
+    ]);
+  });
+
+  it('maps attended_events from the wire', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'jr-4',
+          full_name: 'Jo Diaz',
+          phone_number: '+12125550222',
+          answers: [],
+          submitted_at: '2024-04-01T09:00:00Z',
+          status: 'pending',
+          user_id: null,
+          attended_events: [
+            {
+              event_id: 'evt-2',
+              title: 'Community Hang',
+              start_datetime: '2026-02-01T18:00:00Z',
+              event_type: 'community',
+            },
+          ],
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useJoinRequests(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.[0]?.attendedEvents).toEqual([
+      {
+        eventId: 'evt-2',
+        title: 'Community Hang',
+        startDatetime: '2026-02-01T18:00:00Z',
+        eventType: 'community',
+      },
     ]);
   });
 
