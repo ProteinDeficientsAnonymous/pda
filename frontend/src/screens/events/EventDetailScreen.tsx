@@ -114,7 +114,7 @@ export default function EventDetailScreen() {
     <img
       src={photoSrc(event.photoUrl, event.photoUpdatedAt)}
       alt=""
-      className="mx-auto block max-h-[70vh] w-full rounded-lg object-contain"
+      className="mx-auto block max-h-[70vh] w-full max-w-md rounded-lg object-contain"
       loading="lazy"
     />
   );
