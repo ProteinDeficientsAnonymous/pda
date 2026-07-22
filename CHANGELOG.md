@@ -1,3 +1,10 @@
+## [0.55.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.55.0...v0.55.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* cap event form photo column width on desktop ([#1084](https://github.com/ProteinDeficientsAnonymous/pda/issues/1084)) ([8b23c6a](https://github.com/ProteinDeficientsAnonymous/pda/commit/8b23c6a8cc2af8cd39b93055513610fff361c4d4))
+
 # [0.55.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.54.3...v0.55.0) (2026-07-22)
 
 
