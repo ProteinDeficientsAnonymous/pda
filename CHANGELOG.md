@@ -1,3 +1,10 @@
+# [0.62.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.61.0...v0.62.0) (2026-07-22)
+
+
+### Features
+
+* tentative-approval rsvp link (Issue 1103, Issue 1104) ([#1105](https://github.com/ProteinDeficientsAnonymous/pda/issues/1105)) ([3c87afd](https://github.com/ProteinDeficientsAnonymous/pda/commit/3c87afd6b9167d29bc7863552787213dc3c7498a))
+
 # [0.61.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.60.0...v0.61.0) (2026-07-22)
 
 
