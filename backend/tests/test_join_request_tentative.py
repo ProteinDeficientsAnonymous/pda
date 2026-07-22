@@ -86,6 +86,33 @@ class TestTentativeApprove:
         )
         assert response.json()["magic_link_token"] is None
 
+    def test_tentative_response_rsvp_link_token_resolves_to_linked_user(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.TENTATIVE},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        token = response.json()["rsvp_link_token"]
+        assert token
+        sample_join_request.refresh_from_db()
+        resolved = NonMemberRsvpToken.resolve_user(token)
+        assert resolved is not None
+        assert resolved.id == sample_join_request.user_id
+
+    def test_approved_response_has_no_rsvp_link_token(
+        self, api_client, vettor_headers, sample_join_request
+    ):
+        response = api_client.patch(
+            f"/api/community/join-requests/{sample_join_request.id}/",
+            {"status": JoinRequestStatus.APPROVED},
+            content_type="application/json",
+            **vettor_headers,
+        )
+        assert response.json()["rsvp_link_token"] is None
+
     def test_tentative_requires_permission(self, api_client, auth_headers, sample_join_request):
         response = api_client.patch(
             f"/api/community/join-requests/{sample_join_request.id}/",
