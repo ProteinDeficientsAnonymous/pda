@@ -186,9 +186,13 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
                   onClick={() => void pickLibrary(gif)}
                   disabled={picking}
                   aria-label={gif.title || 'select image'}
-                  className="focus-visible:ring-brand-300 overflow-hidden rounded-[var(--radius-md)] focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  className="focus-visible:ring-brand-300 relative aspect-[4/5] w-full overflow-hidden rounded-[var(--radius-md)] focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <img src={gif.previewUrl} alt="" className="aspect-[4/5] w-full object-cover" />
+                  <img
+                    src={gif.previewUrl}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
