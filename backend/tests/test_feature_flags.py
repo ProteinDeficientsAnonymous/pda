@@ -46,8 +46,7 @@ class TestGetFeatureFlags:
 
 @pytest.mark.django_db
 class TestUpdateFeatureFlag:
-    def test_update_flag_with_permission(self, api_client, manage_flags_headers, settings):
-        settings.FLAG_TOGGLING_ALLOWED = True
+    def test_update_flag_with_permission(self, api_client, manage_flags_headers):
         response = api_client.patch(
             f"/api/community/feature-flags/{FeatureFlag.EXAMPLE_FLAG}/",
             data={"enabled": True},
@@ -58,8 +57,7 @@ class TestUpdateFeatureFlag:
         assert response.json()["flags"][FeatureFlag.EXAMPLE_FLAG] is True
         assert FeatureFlagState.objects.get(key=FeatureFlag.EXAMPLE_FLAG).enabled is True
 
-    def test_update_flag_without_permission(self, api_client, auth_headers, settings):
-        settings.FLAG_TOGGLING_ALLOWED = True
+    def test_update_flag_without_permission(self, api_client, auth_headers):
         response = api_client.patch(
             f"/api/community/feature-flags/{FeatureFlag.EXAMPLE_FLAG}/",
             data={"enabled": True},
@@ -76,18 +74,17 @@ class TestUpdateFeatureFlag:
         )
         assert response.status_code == 401
 
-    def test_update_flag_blocked_on_production(self, api_client, manage_flags_headers, settings):
-        settings.FLAG_TOGGLING_ALLOWED = False
+    def test_update_flag_allowed_on_production(self, api_client, manage_flags_headers, monkeypatch):
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT_NAME", "production")
         response = api_client.patch(
             f"/api/community/feature-flags/{FeatureFlag.EXAMPLE_FLAG}/",
             data={"enabled": True},
             content_type="application/json",
             **manage_flags_headers,
         )
-        assert response.status_code == 403
+        assert response.status_code == 200
 
-    def test_update_unknown_flag_404s(self, api_client, manage_flags_headers, settings):
-        settings.FLAG_TOGGLING_ALLOWED = True
+    def test_update_unknown_flag_404s(self, api_client, manage_flags_headers):
         response = api_client.patch(
             "/api/community/feature-flags/not_a_real_flag/",
             data={"enabled": True},

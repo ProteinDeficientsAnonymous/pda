@@ -11,10 +11,6 @@ load_dotenv(BASE_DIR.parent / ".env")
 
 IS_PRODUCTION = os.environ.get("RAILWAY_ENVIRONMENT") is not None
 
-# Distinct from IS_PRODUCTION, which is also true on staging.
-ENVIRONMENT_NAME = os.environ.get("RAILWAY_ENVIRONMENT_NAME") or "local"
-FLAG_TOGGLING_ALLOWED = ENVIRONMENT_NAME in ("local", "staging")
-
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     if IS_PRODUCTION:

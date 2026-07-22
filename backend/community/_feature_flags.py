@@ -2,7 +2,6 @@ import logging
 
 from config.audit import audit_log
 from config.auth import gated_jwt
-from django.conf import settings
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel
@@ -34,14 +33,6 @@ def get_feature_flags(request):
     auth=gated_jwt,
 )
 def update_feature_flag(request, key: str, payload: FeatureFlagPatchIn):
-    if not settings.FLAG_TOGGLING_ALLOWED:
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            details={"endpoint": "update_feature_flag", "reason": "prod_environment"},
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="manage_feature_flags")
     if not request.auth.has_permission(PermissionKey.MANAGE_FEATURE_FLAGS):
         audit_log(
             logging.WARNING,
