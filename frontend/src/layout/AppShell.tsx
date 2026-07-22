@@ -14,8 +14,8 @@ export function AppShell() {
 
   return (
     <div className="bg-background flex min-h-screen flex-col">
-      <header className="border-border bg-surface sticky top-0 z-10 border-b">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+      <header className="sticky top-0 z-10">
+        <div className="mx-auto flex h-10 max-w-6xl items-center justify-between gap-4 px-4">
           <button
             type="button"
             aria-label="open menu"
