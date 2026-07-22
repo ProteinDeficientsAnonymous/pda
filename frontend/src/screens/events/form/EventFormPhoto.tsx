@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { ImageCropDialog } from '@/components/ImageCropDialog';
+import { PhotoLibraryDialog } from '@/components/PhotoLibraryDialog';
 import { cn } from '@/utils/cn';
 
 const ALLOWED_MIME = [
@@ -39,6 +40,7 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const displayUrl = photoUrl
     ? photoUpdatedAt
@@ -140,16 +142,15 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         className={cn(
           'group relative overflow-hidden rounded-lg',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
-          hasPhoto
-            ? 'mx-auto block w-auto max-w-full'
-            : 'border-brand-200 bg-brand-50 aspect-[4/5] w-full border-2 border-dashed',
+          'aspect-[4/5] w-full',
+          hasPhoto ? 'bg-surface' : 'border-brand-200 bg-brand-50 border-2 border-dashed',
           dragOver && 'border-brand-500 ring-brand-300 ring-2',
           locked && 'cursor-not-allowed opacity-60',
         )}
       >
         {hasPhoto ? (
           <>
-            <img src={displayUrl} alt="" className="mx-auto block max-h-[70vh] w-auto max-w-full" />
+            <img src={displayUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
               <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
                 change photo
@@ -175,10 +176,34 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         ) : null}
       </button>
 
+      <button
+        type="button"
+        onClick={() => {
+          setLibraryOpen(true);
+        }}
+        disabled={locked}
+        className="text-brand-700 self-center text-xs font-medium underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        choose from library
+      </button>
+
       {error ? (
         <p role="alert" className="text-destructive text-xs">
           {error}
         </p>
+      ) : null}
+
+      {libraryOpen ? (
+        <PhotoLibraryDialog
+          onCancel={() => {
+            setLibraryOpen(false);
+          }}
+          onSelect={(f) => {
+            setLibraryOpen(false);
+            setError(null);
+            void handleCrop(f);
+          }}
+        />
       ) : null}
 
       {file ? (

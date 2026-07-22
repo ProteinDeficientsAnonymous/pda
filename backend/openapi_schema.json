@@ -2709,6 +2709,78 @@
         "title": "GeocodeQuery",
         "type": "object"
       },
+      "GiphyQuery": {
+        "properties": {
+          "limit": {
+            "default": 24,
+            "maximum": 48,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "q": {
+            "default": "celebration",
+            "maxLength": 100,
+            "title": "Q",
+            "type": "string"
+          }
+        },
+        "title": "GiphyQuery",
+        "type": "object"
+      },
+      "GiphyResult": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "original_url": {
+            "title": "Original Url",
+            "type": "string"
+          },
+          "preview_url": {
+            "title": "Preview Url",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "gif",
+              "photo"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "preview_url",
+          "original_url",
+          "source"
+        ],
+        "title": "GiphyResult",
+        "type": "object"
+      },
+      "GiphySearchOut": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/GiphyResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "GiphySearchOut",
+        "type": "object"
+      },
       "GuidelinesOut": {
         "properties": {
           "content": {
@@ -10509,6 +10581,78 @@
           }
         ],
         "summary": "Geocode",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/giphy/search/": {
+      "get": {
+        "description": "Proxy image search \u2014 animated gifs from Giphy + still photos from Pexels.\n\nKeeps both API keys server-side. Each source is optional: whichever key is\nconfigured contributes results, so the picker still works with only one.",
+        "operationId": "community__giphy_giphy_search",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "celebration",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "maximum": 48,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GiphySearchOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Gateway"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Giphy Search",
         "tags": [
           "community"
         ]
