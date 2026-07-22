@@ -3,11 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useFeatureFlags } from '@/api/featureFlags';
+import { Feature } from '@/models/featureFlags';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
-import { EmailGate, OnboardingGate, RequireAuth, RequirePermission } from './guards';
+import { EmailGate, OnboardingGate, RequireAuth, RequireFlag, RequirePermission } from './guards';
 import { useAuthStore } from './store';
 
 // Prevent the store from wiring up real axios interceptors.
@@ -15,6 +17,10 @@ vi.mock('@/api/client', () => ({
   setAuthBridge: vi.fn(),
   authClient: { post: vi.fn(), get: vi.fn() },
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+}));
+
+vi.mock('@/api/featureFlags', () => ({
+  useFeatureFlags: vi.fn(),
 }));
 
 // Prevent any real API calls from the store module.
@@ -157,6 +163,67 @@ describe('RequirePermission', () => {
 
     expect(screen.getByText('admin content')).toBeInTheDocument();
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// RequireFlag
+// ---------------------------------------------------------------------------
+
+describe('RequireFlag', () => {
+  const mockedUseFeatureFlags = vi.mocked(useFeatureFlags);
+
+  function mockFlags(overrides: Partial<ReturnType<typeof useFeatureFlags>>) {
+    mockedUseFeatureFlags.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      ...overrides,
+    } as ReturnType<typeof useFeatureFlags>);
+  }
+
+  function renderGuarded(initialEntry = '/beta') {
+    return render(
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route element={<RequireFlag flag={Feature.ExampleFlag} />}>
+            <Route path="/beta" element={<div>beta content</div>} />
+          </Route>
+          <Route path="/login" element={<div>login page</div>} />
+          <Route path="/calendar" element={<div>calendar page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  it('redirects an unauthed user to /login before checking the flag', () => {
+    mockFlags({ data: { example_flag: true } });
+    renderGuarded();
+    expect(screen.getByText('login page')).toBeInTheDocument();
+    expect(screen.queryByText('beta content')).not.toBeInTheDocument();
+  });
+
+  it('renders a spinner while the flags query is loading, without redirecting', () => {
+    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    mockFlags({ isPending: true });
+    renderGuarded();
+    expect(screen.queryByText('beta content')).not.toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('renders the outlet when authed and the flag is on', () => {
+    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    mockFlags({ data: { example_flag: true } });
+    renderGuarded();
+    expect(screen.getByText('beta content')).toBeInTheDocument();
+    expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
+  });
+
+  it('redirects to /calendar when authed but the flag is off', () => {
+    useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
+    mockFlags({ data: { example_flag: false } });
+    renderGuarded();
+    expect(screen.getByText('calendar page')).toBeInTheDocument();
+    expect(screen.queryByText('beta content')).not.toBeInTheDocument();
   });
 });
 
