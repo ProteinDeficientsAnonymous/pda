@@ -60,16 +60,24 @@ export function EventFormPhoto({ photoUrl, photoUpdatedAt, onCrop, disabled }: P
         disabled={locked}
         aria-label={hasPhoto ? 'change event photo' : 'add event photo'}
         className={cn(
-          'group relative overflow-hidden rounded-lg',
+          'group relative mx-auto block overflow-hidden rounded-lg',
           'focus-visible:ring-brand-300 focus-visible:ring-2 focus-visible:outline-none',
-          'aspect-[4/5] w-full',
-          hasPhoto ? 'bg-surface' : 'border-brand-200 bg-brand-50 border-2 border-dashed',
+          // With a photo: shrink-wrap the image so it shows at its own
+          // proportions, capped exactly like the detail page (max 70vh tall,
+          // 4:5-equivalent width). Empty: fixed 4:5 dashed box.
+          hasPhoto
+            ? 'w-fit max-w-full'
+            : 'border-brand-200 bg-brand-50 aspect-[4/5] w-full border-2 border-dashed',
           locked && 'cursor-not-allowed opacity-60',
         )}
       >
         {hasPhoto ? (
           <>
-            <img src={displayUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img
+              src={displayUrl}
+              alt=""
+              className="mx-auto block max-h-[70vh] w-auto max-w-[min(100%,calc(70vh*4/5))]"
+            />
             <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/40 via-transparent to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
               <span className="text-foreground rounded-full bg-white/90 px-3 py-1 text-xs font-medium">
                 change photo
