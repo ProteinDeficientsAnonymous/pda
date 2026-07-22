@@ -10,6 +10,9 @@ export
 SQLITE_DB := $(abspath $(CURDIR)/dev.db)
 SQLITE_DATABASE_URL = sqlite:///$(SQLITE_DB)
 
+# dev.sh overrides this with its own free-port pick
+BACKEND_PORT ?= 8000
+
 # DB the agent-* backend targets run against. Locally this overrides .env's shared
 # Postgres with an isolated per-worktree SQLite DB. In GitHub Actions (CI=true,
 # set automatically by Actions) it falls through to the job's own isolated Postgres
@@ -96,7 +99,7 @@ install:
 	cd frontend && pnpm install
 
 run:
-	cd backend && uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+	cd backend && uv run uvicorn config.asgi:application --host 0.0.0.0 --port $(BACKEND_PORT) --reload
 
 test:
 	cd backend && uv run python -m pytest tests/ -v
@@ -168,7 +171,7 @@ dev-db-reset:
 
 # Run the backend against the per-worktree SQLite DB (auto-migrates + seeds).
 run-sqlite: dev-db-ensure
-	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+	cd backend && DATABASE_URL="$(SQLITE_DATABASE_URL)" uv run uvicorn config.asgi:application --host 0.0.0.0 --port $(BACKEND_PORT) --reload
 
 # Concurrent backend (SQLite) + Vite. Same as `make dev` but no Docker/Postgres.
 dev-sqlite: dev-db-ensure
@@ -187,7 +190,7 @@ dev-pg-db-reset:
 
 run-pg: dev-pg-db-ensure
 	@url=$$(./scripts/dev_pg_db.sh url); \
-	cd backend && DATABASE_URL="$$url" uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+	cd backend && DATABASE_URL="$$url" uv run uvicorn config.asgi:application --host 0.0.0.0 --port $(BACKEND_PORT) --reload
 
 dev-pg: dev-pg-db-ensure
 	@url=$$(./scripts/dev_pg_db.sh url); \
