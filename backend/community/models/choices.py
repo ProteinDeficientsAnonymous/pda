@@ -99,6 +99,7 @@ class FeedbackType(models.TextChoices):
 
     BUG = "bug", "Bug"
     FEATURE_REQUEST = "feature request", "Feature request"
+    IMPROVEMENT = "improvement", "Improvement"
 
 
 class FeatureFlag(models.TextChoices):

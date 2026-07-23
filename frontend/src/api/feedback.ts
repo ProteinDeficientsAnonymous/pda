@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { apiClient } from './client';
 
-export type FeedbackType = 'bug' | 'feature request';
+export type FeedbackType = 'bug' | 'feature request' | 'improvement';
 
 export interface SubmitFeedbackPayload {
   title: string;
