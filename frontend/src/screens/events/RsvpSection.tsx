@@ -205,6 +205,7 @@ function RsvpControls({
     <RsvpStatusPicker
       value={null}
       disabled={busy}
+      prominent
       onSelect={onOpenCreate}
       labelFor={(status, defaultLabel) =>
         status === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
