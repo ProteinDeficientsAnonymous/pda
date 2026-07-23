@@ -147,6 +147,8 @@ describe('RsvpBox', () => {
     const confirmButton = buttons.at(-1);
     if (!confirmButton) throw new Error('expected a join the waitlist confirm button');
     fireEvent.click(confirmButton);
-    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ status: RsvpStatus.Attending }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Attending }),
+    );
   });
 });
