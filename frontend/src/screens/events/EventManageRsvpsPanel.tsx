@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import { useRemoveGuestRsvp, useSetGuestRsvp } from '@/api/eventStats';
+import type { MemberSearchResult } from '@/api/userSearch';
+import { MemberPicker } from '@/components/MemberPicker';
+import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import type { Event, EventGuest, RsvpInputStatus } from '@/models/event';
 import { isRsvpInputStatus, RsvpServerStatus } from '@/models/event';
@@ -20,44 +24,93 @@ export function EventManageRsvpsPanel({ event }: { event: Event }) {
   const setGuestRsvp = useSetGuestRsvp(event.id);
   const removeGuestRsvp = useRemoveGuestRsvp(event.id);
 
-  if (event.guests.length === 0) {
-    return <p className="text-muted text-sm">no one yet 🌿</p>;
+  return (
+    <div className="flex flex-col gap-6">
+      <AddMemberSection
+        event={event}
+        isPending={setGuestRsvp.isPending}
+        onAdd={(userId) => {
+          setGuestRsvp.mutate(
+            { userId, status: RsvpServerStatus.Attending, hasPlusOne: false },
+            {
+              onError: (err) => {
+                toast.error(extractApiErrorOr(err, "couldn't add them — try again"));
+              },
+            },
+          );
+        }}
+      />
+      {event.guests.length === 0 ? (
+        <p className="text-muted text-sm">no one yet 🌿</p>
+      ) : (
+        GROUPS.map((group) => {
+          const guests = event.guests.filter((g) => g.status === group.status);
+          if (guests.length === 0) return null;
+          return (
+            <GuestGroup
+              key={group.status}
+              label={group.label}
+              guests={guests}
+              onChangeStatus={(userId, status, hasPlusOne) => {
+                setGuestRsvp.mutate(
+                  { userId, status, hasPlusOne },
+                  {
+                    onError: (err) => {
+                      toast.error(extractApiErrorOr(err, "couldn't update their rsvp — try again"));
+                    },
+                  },
+                );
+              }}
+              onRemove={(userId) => {
+                removeGuestRsvp.mutate(
+                  { userId },
+                  {
+                    onError: (err) => {
+                      toast.error(extractApiErrorOr(err, "couldn't remove them — try again"));
+                    },
+                  },
+                );
+              }}
+              isPending={setGuestRsvp.isPending || removeGuestRsvp.isPending}
+            />
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+function AddMemberSection({
+  event,
+  onAdd,
+  isPending,
+}: {
+  event: Event;
+  onAdd: (userId: string) => void;
+  isPending: boolean;
+}) {
+  const [picked, setPicked] = useState<MemberSearchResult[]>([]);
+
+  function submit() {
+    picked.forEach((m) => {
+      onAdd(m.id);
+    });
+    setPicked([]);
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {GROUPS.map((group) => {
-        const guests = event.guests.filter((g) => g.status === group.status);
-        if (guests.length === 0) return null;
-        return (
-          <GuestGroup
-            key={group.status}
-            label={group.label}
-            guests={guests}
-            onChangeStatus={(userId, status, hasPlusOne) => {
-              setGuestRsvp.mutate(
-                { userId, status, hasPlusOne },
-                {
-                  onError: (err) => {
-                    toast.error(extractApiErrorOr(err, "couldn't update their rsvp — try again"));
-                  },
-                },
-              );
-            }}
-            onRemove={(userId) => {
-              removeGuestRsvp.mutate(
-                { userId },
-                {
-                  onError: (err) => {
-                    toast.error(extractApiErrorOr(err, "couldn't remove them — try again"));
-                  },
-                },
-              );
-            }}
-            isPending={setGuestRsvp.isPending || removeGuestRsvp.isPending}
-          />
-        );
-      })}
+    <div className="border-border flex flex-col gap-2 rounded-md border p-3">
+      <MemberPicker
+        label="add a member"
+        selected={picked}
+        onChange={setPicked}
+        excludeIds={event.guests.map((g) => g.userId)}
+      />
+      {picked.length > 0 ? (
+        <Button onClick={submit} disabled={isPending} className="self-end">
+          {isPending ? 'adding…' : 'add'}
+        </Button>
+      ) : null}
     </div>
   );
 }
