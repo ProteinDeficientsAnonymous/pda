@@ -1,3 +1,10 @@
+## [0.68.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.68.0...v0.68.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **rsvp:** label waitlist join button correctly in rsvp modal (Issue 1130) ([#1134](https://github.com/ProteinDeficientsAnonymous/pda/issues/1134)) ([337149b](https://github.com/ProteinDeficientsAnonymous/pda/commit/337149b3f45b8e980cdd87208d60f723ab741e30))
+
 # [0.68.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.67.0...v0.68.0) (2026-07-23)
 
 
