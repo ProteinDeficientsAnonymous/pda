@@ -95,7 +95,7 @@ export default function CalendarScreen() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
+    <main className="mx-auto max-w-6xl px-4 pt-4 pb-6 md:pt-6">
       <header className="mb-4 flex justify-center">
         <ViewSwitcher value={view} onChange={setView} />
       </header>

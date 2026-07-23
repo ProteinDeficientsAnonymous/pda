@@ -21,7 +21,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="primary"
-      className="from-surface/60 to-surface fixed inset-x-0 bottom-0 z-20 bg-gradient-to-b pb-[env(safe-area-inset-bottom)]"
+      className="from-surface/20 via-surface/85 to-surface fixed inset-x-0 bottom-0 z-20 bg-gradient-to-b pb-[env(safe-area-inset-bottom)]"
     >
       <div className="mx-auto grid h-14 max-w-6xl grid-cols-5">
         <NavItem to="/calendar" label="calendar">
@@ -29,7 +29,7 @@ export function BottomNav() {
         </NavItem>
 
         <NavItem to={myEventsTo} label="my rsvps">
-          {({ active }) => <StarIcon filled={active} />}
+          {({ active }) => <TicketIcon filled={active} />}
         </NavItem>
 
         <div className="flex items-center justify-center">
@@ -134,21 +134,32 @@ function CalendarIcon({ filled }: { filled: boolean }) {
   );
 }
 
-function StarIcon({ filled }: { filled: boolean }) {
-  // Star reads as "events i've starred / am part of".
+function TicketIcon({ filled }: { filled: boolean }) {
   return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill={filled ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 3l2.7 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.8 6.5 20.4l1.1-6.3L3 9.7l6.3-.9L12 3z" />
+    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+      <g transform="rotate(-10 12 12)">
+        <path
+          d="M5.5 10.7q0-2.5 2.5-2.5h9q2.5 0 2.5 2.5v1.2q-2 0-2 1.8t2 1.8v1.2q0 2.5-2.5 2.5h-9q-2.5 0-2.5-2.5v-1.2q2 0 2-1.8t-2-1.8z"
+          fill="var(--color-surface-dim)"
+        />
+        <path
+          d="M4 8.9q0-2.5 2.5-2.5h9q2.5 0 2.5 2.5v1.2q-2 0-2 1.8t2 1.8v1.2q0 2.5-2.5 2.5h-9q-2.5 0-2.5-2.5v-1.2q2 0 2-1.8t-2-1.8z"
+          fill={filled ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <line
+          x1="9.5"
+          y1="6.4"
+          x2="9.5"
+          y2="15.4"
+          stroke={filled ? 'white' : 'currentColor'}
+          strokeWidth="1.3"
+          strokeDasharray="1.4 1.8"
+          strokeLinecap="round"
+        />
+      </g>
     </svg>
   );
 }

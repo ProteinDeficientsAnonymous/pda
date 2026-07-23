@@ -34,8 +34,6 @@ export default function SettingsScreen() {
 
   return (
     <ContentContainer>
-      <h1 className="mb-6 text-2xl font-medium tracking-tight">settings</h1>
-
       <Section label="profile">
         <AvatarUpload />
         <InlineText

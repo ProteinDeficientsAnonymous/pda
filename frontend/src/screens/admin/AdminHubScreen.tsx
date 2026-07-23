@@ -74,7 +74,6 @@ export default function AdminHubScreen() {
 
   return (
     <ContentContainer>
-      <h1 className="mb-6 text-2xl font-medium tracking-tight">admin</h1>
       {visible.length === 0 ? (
         <p className="text-muted text-sm">nothing available to you yet</p>
       ) : (
