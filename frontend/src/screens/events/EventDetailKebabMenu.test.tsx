@@ -6,16 +6,33 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/api/featureFlags', () => ({
   useFlag: vi.fn(),
 }));
+vi.mock('./EmailBlastDialog', () => ({
+  EmailBlastDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="email-blast-dialog" /> : null,
+}));
+vi.mock('./GroupTextDialog', () => ({
+  GroupTextDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="group-text-dialog" /> : null,
+}));
 
 import { useFlag } from '@/api/featureFlags';
+import type { Event } from '@/models/event';
+import { EventStatus } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 
-function renderMenu(overrides: { eventHasEnded?: boolean; canManageRsvps?: boolean } = {}) {
+function renderMenu(
+  overrides: {
+    eventHasEnded?: boolean;
+    canManageRsvps?: boolean;
+    event?: Partial<Event>;
+  } = {},
+) {
   return render(
     <MemoryRouter>
       <EventDetailKebabMenu
-        eventId="ev1"
+        event={makeEvent(overrides.event)}
         eventHasEnded={overrides.eventHasEnded ?? false}
         canManageRsvps={overrides.canManageRsvps ?? false}
       />
@@ -85,5 +102,31 @@ describe('EventDetailKebabMenu', () => {
     await openMenu();
 
     expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+  });
+
+  it('shows email blast and group text for a published event with guests', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu();
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: 'email blast' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'group text' })).toBeInTheDocument();
+  });
+
+  it('hides email blast for a draft event but keeps group text', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({ event: { status: EventStatus.Draft } });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'email blast' })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'group text' })).toBeInTheDocument();
+  });
+
+  it('hides email blast when there are no guests', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({ event: { guests: [] } });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'email blast' })).not.toBeInTheDocument();
   });
 });
