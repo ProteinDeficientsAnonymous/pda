@@ -42,7 +42,9 @@ describe('useFlag', () => {
   it('returns the resolved boolean when the flag is on', async () => {
     mockedGet.mockResolvedValueOnce({ data: { flags: { host_attendance_report: true } } });
 
-    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), { wrapper: wrapper() });
+    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), {
+      wrapper: wrapper(),
+    });
 
     await waitFor(() => expect(result.current).toBe(true));
   });
@@ -50,7 +52,9 @@ describe('useFlag', () => {
   it('fail-closes to false while loading', () => {
     mockedGet.mockReturnValueOnce(new Promise(() => {}));
 
-    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), { wrapper: wrapper() });
+    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), {
+      wrapper: wrapper(),
+    });
 
     expect(result.current).toBe(false);
   });
@@ -58,7 +62,9 @@ describe('useFlag', () => {
   it('fail-closes to false when the key is absent from the resolved map', async () => {
     mockedGet.mockResolvedValueOnce({ data: { flags: {} } });
 
-    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), { wrapper: wrapper() });
+    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), {
+      wrapper: wrapper(),
+    });
 
     // let the query settle, then confirm it stays closed
     await waitFor(() => expect(mockedGet).toHaveBeenCalled());
@@ -72,11 +78,17 @@ describe('useSetFeatureFlag', () => {
 
     const { result } = renderHook(() => useSetFeatureFlag(), { wrapper: wrapper() });
 
-    const flags = await result.current.mutateAsync({ key: Feature.HostAttendanceReport, enabled: true });
-
-    expect(mockedPatch).toHaveBeenCalledWith('/api/community/feature-flags/host_attendance_report/', {
+    const flags = await result.current.mutateAsync({
+      key: Feature.HostAttendanceReport,
       enabled: true,
     });
+
+    expect(mockedPatch).toHaveBeenCalledWith(
+      '/api/community/feature-flags/host_attendance_report/',
+      {
+        enabled: true,
+      },
+    );
     expect(flags).toEqual({ host_attendance_report: true });
   });
 
