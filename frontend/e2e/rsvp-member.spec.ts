@@ -32,5 +32,5 @@ test('member rsvps to an event from event detail', async ({ page }) => {
   const rsvpDialog = page.getByRole('dialog', { name: 'rsvp' });
   await rsvpDialog.getByRole('button', { name: 'confirm' }).click();
 
-  await expect(rsvpSection.getByText("i'm going", { exact: true })).toBeVisible();
+  await expect(rsvpSection.getByRole('status', { name: "i'm going" })).toBeVisible();
 });

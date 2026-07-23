@@ -22,7 +22,7 @@ test('new non-member rsvps via public event link', async ({ page }) => {
   await rsvpSection.getByLabel('email').fill('playwright-new@example.com');
   await rsvpSection.getByRole('button', { name: 'rsvp' }).click();
 
-  await expect(page.getByLabel('rsvp').getByText("i'm going", { exact: true })).toBeVisible();
+  await expect(page.getByLabel('rsvp').getByRole('status', { name: "i'm going" })).toBeVisible();
 
   await expect(page.getByText(event_location)).toBeVisible();
 });
