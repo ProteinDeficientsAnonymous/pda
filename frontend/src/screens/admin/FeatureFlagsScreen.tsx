@@ -5,7 +5,6 @@ import { Feature, type FeatureFlagKey } from '@/models/featureFlags';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 const FLAG_LABELS: Record<FeatureFlagKey, string> = {
-  [Feature.ExampleFlag]: 'example flag',
   [Feature.HostAttendanceReport]: 'host attendance report',
   [Feature.AdminAttendanceAnalytics]: 'admin attendance analytics',
 };

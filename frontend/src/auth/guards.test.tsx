@@ -185,7 +185,7 @@ describe('RequireFlag', () => {
     return render(
       <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
-          <Route element={<RequireFlag flag={Feature.ExampleFlag} />}>
+          <Route element={<RequireFlag flag={Feature.HostAttendanceReport} />}>
             <Route path="/beta" element={<div>beta content</div>} />
           </Route>
           <Route path="/login" element={<div>login page</div>} />
@@ -196,7 +196,7 @@ describe('RequireFlag', () => {
   }
 
   it('redirects an unauthed user to /login before checking the flag', () => {
-    mockFlags({ data: { example_flag: true } });
+    mockFlags({ data: { host_attendance_report: true } });
     renderGuarded();
     expect(screen.getByText('login page')).toBeInTheDocument();
     expect(screen.queryByText('beta content')).not.toBeInTheDocument();
@@ -212,7 +212,7 @@ describe('RequireFlag', () => {
 
   it('renders the outlet when authed and the flag is on', () => {
     useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
-    mockFlags({ data: { example_flag: true } });
+    mockFlags({ data: { host_attendance_report: true } });
     renderGuarded();
     expect(screen.getByText('beta content')).toBeInTheDocument();
     expect(screen.queryByText('calendar page')).not.toBeInTheDocument();
@@ -220,7 +220,7 @@ describe('RequireFlag', () => {
 
   it('redirects to /calendar when authed but the flag is off', () => {
     useAuthStore.setState({ status: 'authed', user: makeUser(), accessToken: 'tok-abc' });
-    mockFlags({ data: { example_flag: false } });
+    mockFlags({ data: { host_attendance_report: false } });
     renderGuarded();
     expect(screen.getByText('calendar page')).toBeInTheDocument();
     expect(screen.queryByText('beta content')).not.toBeInTheDocument();

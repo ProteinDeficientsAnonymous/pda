@@ -28,21 +28,21 @@ beforeEach(() => {
 
 describe('useFeatureFlags', () => {
   it('returns the resolved flags map on success', async () => {
-    mockedGet.mockResolvedValueOnce({ data: { flags: { example_flag: true } } });
+    mockedGet.mockResolvedValueOnce({ data: { flags: { host_attendance_report: true } } });
 
     const { result } = renderHook(() => useFeatureFlags(), { wrapper: wrapper() });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual({ example_flag: true });
+    expect(result.current.data).toEqual({ host_attendance_report: true });
     expect(mockedGet).toHaveBeenCalledWith('/api/community/feature-flags/');
   });
 });
 
 describe('useFlag', () => {
   it('returns the resolved boolean when the flag is on', async () => {
-    mockedGet.mockResolvedValueOnce({ data: { flags: { example_flag: true } } });
+    mockedGet.mockResolvedValueOnce({ data: { flags: { host_attendance_report: true } } });
 
-    const { result } = renderHook(() => useFlag(Feature.ExampleFlag), { wrapper: wrapper() });
+    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), { wrapper: wrapper() });
 
     await waitFor(() => expect(result.current).toBe(true));
   });
@@ -50,7 +50,7 @@ describe('useFlag', () => {
   it('fail-closes to false while loading', () => {
     mockedGet.mockReturnValueOnce(new Promise(() => {}));
 
-    const { result } = renderHook(() => useFlag(Feature.ExampleFlag), { wrapper: wrapper() });
+    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), { wrapper: wrapper() });
 
     expect(result.current).toBe(false);
   });
@@ -58,7 +58,7 @@ describe('useFlag', () => {
   it('fail-closes to false when the key is absent from the resolved map', async () => {
     mockedGet.mockResolvedValueOnce({ data: { flags: {} } });
 
-    const { result } = renderHook(() => useFlag(Feature.ExampleFlag), { wrapper: wrapper() });
+    const { result } = renderHook(() => useFlag(Feature.HostAttendanceReport), { wrapper: wrapper() });
 
     // let the query settle, then confirm it stays closed
     await waitFor(() => expect(mockedGet).toHaveBeenCalled());
@@ -68,28 +68,28 @@ describe('useFlag', () => {
 
 describe('useSetFeatureFlag', () => {
   it('patches the flag and returns the resolved map', async () => {
-    mockedPatch.mockResolvedValueOnce({ data: { flags: { example_flag: true } } });
+    mockedPatch.mockResolvedValueOnce({ data: { flags: { host_attendance_report: true } } });
 
     const { result } = renderHook(() => useSetFeatureFlag(), { wrapper: wrapper() });
 
-    const flags = await result.current.mutateAsync({ key: Feature.ExampleFlag, enabled: true });
+    const flags = await result.current.mutateAsync({ key: Feature.HostAttendanceReport, enabled: true });
 
-    expect(mockedPatch).toHaveBeenCalledWith('/api/community/feature-flags/example_flag/', {
+    expect(mockedPatch).toHaveBeenCalledWith('/api/community/feature-flags/host_attendance_report/', {
       enabled: true,
     });
-    expect(flags).toEqual({ example_flag: true });
+    expect(flags).toEqual({ host_attendance_report: true });
   });
 
   it('writes the resolved map straight into the flags cache without a refetch', async () => {
-    mockedPatch.mockResolvedValueOnce({ data: { flags: { example_flag: true } } });
+    mockedPatch.mockResolvedValueOnce({ data: { flags: { host_attendance_report: true } } });
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrap = ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client: qc }, children);
 
     const { result } = renderHook(() => useSetFeatureFlag(), { wrapper: wrap });
-    await result.current.mutateAsync({ key: Feature.ExampleFlag, enabled: true });
+    await result.current.mutateAsync({ key: Feature.HostAttendanceReport, enabled: true });
 
-    expect(qc.getQueryData(['feature-flags'])).toEqual({ example_flag: true });
+    expect(qc.getQueryData(['feature-flags'])).toEqual({ host_attendance_report: true });
     expect(mockedGet).not.toHaveBeenCalled();
   });
 });
