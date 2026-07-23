@@ -1,3 +1,10 @@
+# [0.65.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.5...v0.65.0) (2026-07-23)
+
+
+### Features
+
+* **events:** dedicated host rsvp management screen ([#1117](https://github.com/ProteinDeficientsAnonymous/pda/issues/1117)) ([2860453](https://github.com/ProteinDeficientsAnonymous/pda/commit/2860453dc8f1f9443aa6b2a6b54ade2ac8eeac76))
+
 ## [0.64.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.4...v0.64.5) (2026-07-23)
 
 
