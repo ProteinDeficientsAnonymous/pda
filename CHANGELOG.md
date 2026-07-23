@@ -1,3 +1,10 @@
+## [0.64.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.3...v0.64.4) (2026-07-23)
+
+
+### Bug Fixes
+
+* **ui:** header/footer edits, hosting filter, ticket icon size (Issue 1076) ([#1116](https://github.com/ProteinDeficientsAnonymous/pda/issues/1116)) ([37437d0](https://github.com/ProteinDeficientsAnonymous/pda/commit/37437d02b6e34c248c500371cbc0cfa608885f05))
+
 ## [0.64.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.2...v0.64.3) (2026-07-23)
 
 
