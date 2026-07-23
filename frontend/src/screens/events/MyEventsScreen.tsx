@@ -81,15 +81,6 @@ export default function MyEventsScreen() {
 
   return (
     <ContentContainer>
-      <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
-        <Link
-          to="/events/add"
-          className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
-        >
-          create event
-        </Link>
-      </div>
-
       <div className="mb-4 flex justify-center">
         <SegmentedControl
           name="my-events-filter"
