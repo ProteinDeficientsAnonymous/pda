@@ -23,8 +23,7 @@ export default function MembersScreen() {
 
   return (
     <ContentContainer>
-      <header className="mb-4">
-        <h1 className="mb-3 text-2xl font-medium tracking-tight">members</h1>
+      <div className="mb-4">
         <SegmentedControl
           name="members-tab"
           ariaLabel="members, non-members, or roles"
@@ -32,7 +31,7 @@ export default function MembersScreen() {
           value={tab}
           onChange={setTab}
         />
-      </header>
+      </div>
 
       {tab === 'roles' ? <RolesTab /> : <MembersTab key={tab} mode={tab} />}
     </ContentContainer>

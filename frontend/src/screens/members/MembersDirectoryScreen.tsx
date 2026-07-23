@@ -26,8 +26,6 @@ export default function MembersDirectoryScreen() {
 
   return (
     <ContentContainer>
-      <h1 className="mb-6 text-2xl font-medium tracking-tight">members</h1>
-
       <div className="mb-4">
         <TextField
           label="search"
