@@ -4,9 +4,6 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
-import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
-import { hasPermission } from '@/models/permissions';
-import { Permission } from '@/models/permissions';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { ensureHttps } from '@/utils/url';
 
@@ -16,10 +13,10 @@ import { EventAdminActions } from './EventAdminActions';
 import { Card } from './EventDetailCard';
 import { EventFlagDialog } from './EventFlagDialog';
 import { EventHostSection } from './EventHostSection';
+import { eventMemberSectionFlags } from './eventMemberFlags';
 import { GroupTextButton } from './GroupTextButton';
 import { InviteDialog } from './InviteDialog';
-import { InvitedList } from './RsvpGuestList';
-import { RsvpSection } from './RsvpSection';
+import { InvitedList, RsvpGuestList } from './RsvpGuestList';
 
 interface Props {
   event: Event;
@@ -30,24 +27,8 @@ export function EventMemberSection({ event, token }: Props) {
   const user = useAuthStore((s) => s.user);
   if (!user && !token) return null;
 
-  // token holders never satisfy host/co-host checks (see backend resolve_event_viewer)
-  const isCoHost =
-    user !== null && (user.id === event.createdById || event.coHostIds.includes(user.id));
-  const canManageEvents = user !== null && hasPermission(user, Permission.ManageEvents);
-  const canSeeInvited = isCoHost || canManageEvents;
-  const isCancelled = event.status === EventStatus.Cancelled;
-  const rsvpDisabled = !event.rsvpEnabled;
-  const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
-  const canInvite =
-    user !== null &&
-    !isCancelled &&
-    !event.isPast &&
-    !rsvpDisabled &&
-    (isCoHost ||
-      canManageEvents ||
-      (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
-  const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
-  const showStandaloneInvited = !showRsvp && canSeeInvited && event.invitedCount > 0;
+  const { isCoHost, canSeeInvited, isCancelled, rsvpDisabled, canInvite, showRsvp, showStandaloneInvited } =
+    eventMemberSectionFlags(event, user);
 
   return (
     <div className="mt-8 flex flex-col gap-6">
@@ -63,8 +44,8 @@ export function EventMemberSection({ event, token }: Props) {
       <LinksSection event={event} />
       <CostSection event={event} />
       {showRsvp ? (
-        <Card label="rsvp">
-          <RsvpSection event={event} canSeeInvited={canSeeInvited} {...(token ? { token } : {})} />
+        <Card label="who's going">
+          <RsvpGuestList event={event} canSeeInvited={canSeeInvited} />
           {canInvite || isCoHost ? (
             <div className="mt-4 flex flex-col items-stretch gap-2">
               {canInvite ? <InviteSection event={event} /> : null}

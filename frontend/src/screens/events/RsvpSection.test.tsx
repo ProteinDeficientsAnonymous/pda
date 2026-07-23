@@ -21,10 +21,6 @@ vi.mock('@/api/publicRsvp', () => ({
   useCancelPublicMyRsvp: () => ({ mutateAsync: cancelPublicRsvpMutate, isPending: false }),
 }));
 
-vi.mock('./RsvpGuestList', () => ({
-  RsvpGuestList: () => <div data-testid="guest-list" />,
-}));
-
 // Covered by RsvpCommentField.test.tsx — stubbed here so the RsvpBox's textarea
 // isn't a factor in assertions that only care about the dialog/pills.
 vi.mock('./RsvpCommentField', () => ({
@@ -56,7 +52,7 @@ function renderSection(event: Event, token?: string) {
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <RsvpSection event={event} canSeeInvited={false} {...(token ? { token } : {})} />
+        <RsvpSection event={event} {...(token ? { token } : {})} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -107,19 +103,19 @@ describe('RsvpSection — after RSVPing', () => {
     expect(screen.getByRole('button', { name: /edit RSVP/i })).toBeInTheDocument();
   });
 
-  it('shows a "you\'re going" status line when attending', () => {
+  it('shows a "going" status badge when attending', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
-    expect(screen.getByText("you're going")).toBeInTheDocument();
+    expect(screen.getByText('going')).toBeInTheDocument();
   });
 
-  it('shows a "you\'re a maybe" status line when maybe', () => {
+  it('shows a "maybe" status badge when maybe', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Maybe }));
-    expect(screen.getByText("you're a maybe")).toBeInTheDocument();
+    expect(screen.getByText('maybe')).toBeInTheDocument();
   });
 
-  it('shows a "you can\'t go" status line when cant_go', () => {
+  it('shows a "can\'t go" status badge when cant_go', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.CantGo }));
-    expect(screen.getByText("you can't go")).toBeInTheDocument();
+    expect(screen.getByText("can't go")).toBeInTheDocument();
   });
 
   it('opens the RSVP box in edit mode when "edit RSVP" is tapped', () => {
@@ -206,7 +202,7 @@ describe('RsvpSection — leave waitlist error handling (issue #633)', () => {
 });
 
 describe('RsvpSection — token-holding viewer (Issue 854)', () => {
-  it('shows the +1 toggle checked using viewerUserId, not useAuthStore (no logged-in user)', () => {
+  it('shows the +1 toggle as "remove +1" using viewerUserId, not useAuthStore (no logged-in user)', () => {
     useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
     renderSection(
       makeEvent({
@@ -222,7 +218,7 @@ describe('RsvpSection — token-holding viewer (Issue 854)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /edit RSVP/i }));
 
-    expect(screen.getByRole('checkbox')).toBeChecked();
+    expect(screen.getByRole('button', { name: /^remove \+1$/i })).toBeInTheDocument();
   });
 });
 

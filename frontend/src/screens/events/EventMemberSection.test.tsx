@@ -31,8 +31,10 @@ vi.mock('@/api/publicRsvp', () => ({
 }));
 
 // Stub heavy sub-sections so we focus on the host row.
-vi.mock('./RsvpSection', () => ({ RsvpSection: () => <div data-testid="rsvp-section" /> }));
-vi.mock('./RsvpGuestList', () => ({ InvitedList: () => null }));
+vi.mock('./RsvpGuestList', () => ({
+  RsvpGuestList: () => <div data-testid="guest-list" />,
+  InvitedList: () => null,
+}));
 vi.mock('./EventAdminActions', () => ({ EventAdminActions: () => null }));
 vi.mock('./EventFlagDialog', () => ({ EventFlagDialog: () => null }));
 vi.mock('./InviteDialog', () => ({ InviteDialog: () => null }));
@@ -296,10 +298,10 @@ describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 
-  it('renders the invite members button inside the rsvp section (#788)', () => {
+  it('renders the invite members button inside the who\'s going section (#788)', () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
     renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
-    const rsvpCard = screen.getByRole('heading', { name: 'rsvp' }).closest('section');
+    const rsvpCard = screen.getByRole('heading', { name: "who's going" }).closest('section');
     expect(rsvpCard).not.toBeNull();
     expect(within(rsvpCard!).getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
@@ -456,10 +458,10 @@ describe('EventMemberSection — token-holding non-member (Issue 904)', () => {
     useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
   });
 
-  it('renders the read experience — location, rsvp, and comments', () => {
+  it('renders the read experience — location, who\'s going, and comments', () => {
     renderSection(TOKEN_EVENT, 'tok-123');
     expect(screen.getByText('123 Main St')).toBeInTheDocument();
-    expect(screen.getByTestId('rsvp-section')).toBeInTheDocument();
+    expect(screen.getByTestId('guest-list')).toBeInTheDocument();
     expect(screen.getByTestId('comments-card')).toBeInTheDocument();
   });
 
