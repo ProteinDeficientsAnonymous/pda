@@ -128,3 +128,64 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(200, _event_out(event, request.auth))
+
+
+@router.delete(
+    "/events/{event_id}/rsvps/{user_id}/rsvp/",
+    response={204: None, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    auth=gated_jwt,
+)
+@rate_limit(key_func=lambda r: str(r.auth.pk), rate="30/m")
+def remove_guest_rsvp(request, event_id: UUID, user_id: UUID):
+    """Let an event host/co-host/manager remove another user's rsvp entirely."""
+    event = (
+        Event.objects.select_related("created_by")
+        .prefetch_related("co_hosts", "invited_users")
+        .filter(id=event_id)
+        .first()
+    )
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if not _can_edit_event(request.auth, event):
+        raise_validation(Code.Perm.DENIED, status_code=403, action="remove_guest_rsvp")
+
+    try:
+        target_user = UserModel.objects.get(id=user_id)
+    except UserModel.DoesNotExist:
+        raise_validation(Code.User.NOT_FOUND, status_code=404)
+
+    with transaction.atomic():
+        promoted_user_ids = _remove_guest_rsvp_in_transaction(event_id, target_user)
+
+    audit_log(
+        logging.INFO,
+        "guest_rsvp_removed",
+        request,
+        target_type="event",
+        target_id=str(event_id),
+        details={"user_id": str(user_id)},
+    )
+    event = load_event_with_stats_prefetch(event_id)
+    if event is None:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
+    _email_promoted_non_members(request, event, promoted_user_ids)
+    return Status(204, None)
+
+
+def _remove_guest_rsvp_in_transaction(event_id, target_user) -> list[str]:
+    """Delete target_user's RSVP inside a locked transaction. No-op if none exists.
+
+    Returns promoted_user_ids (empty unless a spot freed).
+    """
+    event = Event.objects.select_for_update().get(id=event_id)
+    rsvp = EventRSVP.objects.filter(event=event, user=target_user).first()
+    if rsvp is None:
+        return []
+
+    was_attending = rsvp.status == RSVPStatus.ATTENDING
+    rsvp.delete()
+    if not was_attending:
+        return []
+
+    return promote_from_waitlist(event)

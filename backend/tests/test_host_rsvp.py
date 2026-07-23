@@ -238,3 +238,105 @@ class TestSetGuestRsvp:
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == host_rsvp_event.id
         assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(host_user.pk)}
+
+
+@pytest.mark.django_db
+class TestRemoveGuestRsvp:
+    def test_host_removes_guest_rsvp(self, api_client, host_rsvp_event, host_user, guest):
+        EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.ATTENDING)
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+            **_auth(host_user),
+        )
+        assert response.status_code == 204
+        assert not EventRSVP.objects.filter(event=host_rsvp_event, user=guest).exists()
+
+    def test_cohost_can_remove_guest_rsvp(self, api_client, host_rsvp_event, cohost_user, guest):
+        EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+            **_auth(cohost_user),
+        )
+        assert response.status_code == 204
+
+    def test_manage_events_admin_can_remove_guest_rsvp(
+        self, api_client, host_rsvp_event, admin_user, guest
+    ):
+        EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+            **_auth(admin_user),
+        )
+        assert response.status_code == 204
+
+    def test_rejects_non_host(self, api_client, host_rsvp_event, other_member, guest):
+        EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.MAYBE)
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+            **_auth(other_member),
+        )
+        assert response.status_code == 403
+        assert_error_code(response, "perm.denied")
+
+    def test_rejects_unauthenticated(self, api_client, host_rsvp_event, guest):
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+        )
+        assert response.status_code == 401
+
+    def test_event_not_found(self, api_client, host_user, guest):
+        response = api_client.delete(
+            "/api/community/events/00000000-0000-0000-0000-000000000000"
+            f"/rsvps/{guest.pk}/rsvp/",
+            **_auth(host_user),
+        )
+        assert response.status_code == 404
+
+    def test_target_user_not_found(self, api_client, host_rsvp_event, host_user):
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}"
+            "/rsvps/00000000-0000-0000-0000-000000000000/rsvp/",
+            **_auth(host_user),
+        )
+        assert response.status_code == 404
+        assert_error_code(response, "user.not_found")
+
+    def test_no_existing_rsvp_is_a_no_op_success(
+        self, api_client, host_rsvp_event, host_user, guest
+    ):
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+            **_auth(host_user),
+        )
+        assert response.status_code == 204
+
+    def test_removing_attending_guest_promotes_waitlisted_guest(
+        self, api_client, host_rsvp_event, host_user, guest, other_member
+    ):
+        host_rsvp_event.max_attendees = 1
+        host_rsvp_event.save(update_fields=["max_attendees"])
+        EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.ATTENDING)
+        waitlisted = EventRSVP.objects.create(
+            event=host_rsvp_event, user=other_member, status=RSVPStatus.WAITLISTED
+        )
+        response = api_client.delete(
+            f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+            **_auth(host_user),
+        )
+        assert response.status_code == 204
+        waitlisted.refresh_from_db()
+        assert waitlisted.status == RSVPStatus.ATTENDING
+
+    def test_broadcasts_capacity_change_excluding_actor(
+        self, api_client, host_rsvp_event, host_user, guest
+    ):
+        EventRSVP.objects.create(event=host_rsvp_event, user=guest, status=RSVPStatus.ATTENDING)
+        with patch("community._event_host_rsvps.broadcast_capacity_change") as mock_broadcast:
+            api_client.delete(
+                f"/api/community/events/{host_rsvp_event.id}/rsvps/{guest.pk}/rsvp/",
+                **_auth(host_user),
+            )
+        mock_broadcast.assert_called_once()
+        assert mock_broadcast.call_args.args[0] == host_rsvp_event.id
+        assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(host_user.pk)}
+        assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(host_user.pk)}
