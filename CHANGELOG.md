@@ -1,3 +1,10 @@
+## [0.64.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.4...v0.64.5) (2026-07-23)
+
+
+### Bug Fixes
+
+* **events:** remove top border and background from edit-page action bar (Issue 1086) ([#1114](https://github.com/ProteinDeficientsAnonymous/pda/issues/1114)) ([bb4a80b](https://github.com/ProteinDeficientsAnonymous/pda/commit/bb4a80b068eea400687995229838afa13c20bf0d))
+
 ## [0.64.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.3...v0.64.4) (2026-07-23)
 
 
