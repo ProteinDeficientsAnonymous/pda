@@ -1,5 +1,3 @@
-"""Nudge event hosts to check people in right at start time. Scheduled via Railway cron every 15 minutes."""
-
 import logging
 
 from django.core.management.base import BaseCommand
