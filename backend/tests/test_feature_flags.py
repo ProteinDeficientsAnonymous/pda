@@ -32,12 +32,12 @@ class TestGetFeatureFlags:
     def test_get_flags_unauthenticated(self, api_client):
         response = api_client.get("/api/community/feature-flags/")
         assert response.status_code == 200
-        assert response.json()["flags"][FeatureFlag.EXAMPLE_FLAG] is False
+        assert response.json()["flags"][FeatureFlag.HOST_ATTENDANCE_REPORT] is False
 
     def test_get_flags_resolves_db_override(self, api_client, db):
-        FeatureFlagState.objects.create(key=FeatureFlag.EXAMPLE_FLAG, enabled=True)
+        FeatureFlagState.objects.create(key=FeatureFlag.HOST_ATTENDANCE_REPORT, enabled=True)
         response = api_client.get("/api/community/feature-flags/")
-        assert response.json()["flags"][FeatureFlag.EXAMPLE_FLAG] is True
+        assert response.json()["flags"][FeatureFlag.HOST_ATTENDANCE_REPORT] is True
 
     def test_resolve_flags_ignores_unknown_keys(self, db):
         FeatureFlagState.objects.create(key="not_a_real_flag", enabled=True)
@@ -48,18 +48,18 @@ class TestGetFeatureFlags:
 class TestUpdateFeatureFlag:
     def test_update_flag_with_permission(self, api_client, manage_flags_headers):
         response = api_client.patch(
-            f"/api/community/feature-flags/{FeatureFlag.EXAMPLE_FLAG}/",
+            f"/api/community/feature-flags/{FeatureFlag.HOST_ATTENDANCE_REPORT}/",
             data={"enabled": True},
             content_type="application/json",
             **manage_flags_headers,
         )
         assert response.status_code == 200
-        assert response.json()["flags"][FeatureFlag.EXAMPLE_FLAG] is True
-        assert FeatureFlagState.objects.get(key=FeatureFlag.EXAMPLE_FLAG).enabled is True
+        assert response.json()["flags"][FeatureFlag.HOST_ATTENDANCE_REPORT] is True
+        assert FeatureFlagState.objects.get(key=FeatureFlag.HOST_ATTENDANCE_REPORT).enabled is True
 
     def test_update_flag_without_permission(self, api_client, auth_headers):
         response = api_client.patch(
-            f"/api/community/feature-flags/{FeatureFlag.EXAMPLE_FLAG}/",
+            f"/api/community/feature-flags/{FeatureFlag.HOST_ATTENDANCE_REPORT}/",
             data={"enabled": True},
             content_type="application/json",
             **auth_headers,
@@ -68,7 +68,7 @@ class TestUpdateFeatureFlag:
 
     def test_update_flag_unauthenticated(self, api_client):
         response = api_client.patch(
-            f"/api/community/feature-flags/{FeatureFlag.EXAMPLE_FLAG}/",
+            f"/api/community/feature-flags/{FeatureFlag.HOST_ATTENDANCE_REPORT}/",
             data={"enabled": True},
             content_type="application/json",
         )
@@ -77,7 +77,7 @@ class TestUpdateFeatureFlag:
     def test_update_flag_allowed_on_production(self, api_client, manage_flags_headers, monkeypatch):
         monkeypatch.setenv("RAILWAY_ENVIRONMENT_NAME", "production")
         response = api_client.patch(
-            f"/api/community/feature-flags/{FeatureFlag.EXAMPLE_FLAG}/",
+            f"/api/community/feature-flags/{FeatureFlag.HOST_ATTENDANCE_REPORT}/",
             data={"enabled": True},
             content_type="application/json",
             **manage_flags_headers,

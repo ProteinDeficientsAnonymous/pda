@@ -27,7 +27,7 @@ function mockFlagsResult(overrides: Partial<ReturnType<typeof useFeatureFlags>>)
   mockUseFlags.mockReturnValue({
     isPending: false,
     isError: false,
-    data: { example_flag: false },
+    data: { host_attendance_report: false },
     ...overrides,
   } as ReturnType<typeof useFeatureFlags>);
 }
@@ -56,16 +56,16 @@ beforeEach(() => {
 
 describe('FeatureFlagsScreen', () => {
   it('renders a toggle per flag and calls the mutation on change', async () => {
-    mockFlagsResult({ data: { example_flag: false } });
+    mockFlagsResult({ data: { host_attendance_report: false } });
 
     renderScreen();
 
-    const toggle = screen.getByRole('switch', { name: /example flag/i });
+    const toggle = screen.getByRole('switch', { name: /host attendance report/i });
     expect(toggle).toHaveAttribute('aria-checked', 'false');
 
     await userEvent.click(toggle);
 
-    expect(mockMutate).toHaveBeenCalledWith({ key: 'example_flag', enabled: true });
+    expect(mockMutate).toHaveBeenCalledWith({ key: 'host_attendance_report', enabled: true });
   });
 
   it('shows the current environment', () => {

@@ -7,7 +7,7 @@ import { Feature } from '@/models/featureFlags';
 const CHOICES = join(__dirname, '../../..', 'backend/community/models/choices.py');
 
 // Extract the string values of the backend `FeatureFlag(models.TextChoices)`
-// members, e.g. `EXAMPLE_FLAG = "example_flag", "Example flag"` → `example_flag`.
+// members, e.g. `HOST_ATTENDANCE_REPORT = "host_attendance_report", "..."` → `host_attendance_report`.
 function backendFlagKeys(): Set<string> {
   const source = readFileSync(CHOICES, 'utf8');
   const classMatch = /class FeatureFlag\(models\.TextChoices\):([\s\S]*?)(?:\n\S|$)/.exec(source);
