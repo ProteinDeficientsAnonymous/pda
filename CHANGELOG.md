@@ -1,3 +1,10 @@
+# [0.67.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.66.0...v0.67.0) (2026-07-23)
+
+
+### Features
+
+* add email blast and group text to event kebab menu ([#1119](https://github.com/ProteinDeficientsAnonymous/pda/issues/1119)) ([5cc52cc](https://github.com/ProteinDeficientsAnonymous/pda/commit/5cc52cc62a5c3399f9fe7a3b2fcc5b6cef02fabf))
+
 # [0.66.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.65.0...v0.66.0) (2026-07-23)
 
 
