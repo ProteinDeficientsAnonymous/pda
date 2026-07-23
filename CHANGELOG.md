@@ -1,3 +1,10 @@
+# [0.68.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.67.0...v0.68.0) (2026-07-23)
+
+
+### Features
+
+* **events:** make rsvp button more prominent on event detail page (Issue 1090) ([#1115](https://github.com/ProteinDeficientsAnonymous/pda/issues/1115)) ([c73f4aa](https://github.com/ProteinDeficientsAnonymous/pda/commit/c73f4aae705b2b2eeff4d1305a1178a650f3daa5))
+
 # [0.67.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.66.0...v0.67.0) (2026-07-23)
 
 
