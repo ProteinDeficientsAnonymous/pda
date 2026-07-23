@@ -54,7 +54,7 @@ test('admin with manage_users can pause an at-risk member', async ({ page }) => 
     .click();
   await page.getByRole('button', { name: 'at risk' }).click();
 
-  const card = page.locator('li, article, div').filter({ hasText: at_risk_name }).first();
+  const card = page.getByRole('listitem').filter({ hasText: at_risk_name });
   await card.getByRole('button', { name: 'pause member' }).click();
 
   const confirm = page.getByRole('dialog', { name: 'pause this member?' });
