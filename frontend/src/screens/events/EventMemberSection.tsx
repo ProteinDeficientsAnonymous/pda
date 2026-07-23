@@ -67,7 +67,6 @@ export function EventMemberSection({ event, token }: Props) {
           <RsvpSection
             event={event}
             canSeeInvited={canSeeInvited}
-            canManageRsvps={canSeeInvited}
             {...(token ? { token } : {})}
           />
           {canInvite || isCoHost ? (

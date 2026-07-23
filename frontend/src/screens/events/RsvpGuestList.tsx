@@ -1,13 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
-import { useSetGuestRsvp } from '@/api/eventStats';
-import { Dialog } from '@/components/ui/Dialog';
-import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import type { Event, EventGuest, RsvpInputStatus } from '@/models/event';
-import { AttendanceStatus, isRsvpInputStatus, RsvpServerStatus } from '@/models/event';
+import type { Event, EventGuest } from '@/models/event';
+import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
 import { cn } from '@/utils/cn';
 
 type Tab = 'going' | 'maybe' | 'cant' | 'waitlist' | 'invited';
@@ -29,10 +24,9 @@ function bucket(guests: EventGuest[]): Record<Tab, EventGuest[]> {
 interface Props {
   event: Event;
   canSeeInvited: boolean;
-  canManageRsvps?: boolean;
 }
 
-export function RsvpGuestList({ event, canSeeInvited, canManageRsvps = false }: Props) {
+export function RsvpGuestList({ event, canSeeInvited }: Props) {
   const buckets = useMemo(() => bucket(event.guests), [event.guests]);
   const counts: Record<Tab, number> = {
     going: countWithPlusOnes(buckets.going),
@@ -46,11 +40,11 @@ export function RsvpGuestList({ event, canSeeInvited, canManageRsvps = false }: 
     { key: 'going', label: 'going' },
     { key: 'maybe', label: 'maybe' },
   ];
-  if (canManageRsvps) {
+  if (canSeeInvited) {
     tabs.push({ key: 'cant', label: "can't go" });
     if (counts.waitlist > 0) tabs.push({ key: 'waitlist', label: 'waitlist' });
+    tabs.push({ key: 'invited', label: 'invited' });
   }
-  if (canSeeInvited) tabs.push({ key: 'invited', label: 'invited' });
 
   const defaultTab = tabs.find((t) => counts[t.key] > 0)?.key ?? 'going';
   const [active, setActive] = useState<Tab>(defaultTab);
@@ -93,7 +87,7 @@ export function RsvpGuestList({ event, canSeeInvited, canManageRsvps = false }: 
       ) : (
         <div className="flex flex-wrap gap-2">
           {visible.map((g) => (
-            <GuestChip key={g.userId} guest={g} eventId={event.id} canEdit={canManageRsvps} />
+            <GuestChip key={g.userId} guest={g} />
           ))}
         </div>
       )}
@@ -101,17 +95,7 @@ export function RsvpGuestList({ event, canSeeInvited, canManageRsvps = false }: 
   );
 }
 
-function GuestChip({
-  guest,
-  eventId,
-  canEdit = false,
-}: {
-  guest: EventGuest;
-  eventId?: string;
-  canEdit?: boolean;
-}) {
-  const [editOpen, setEditOpen] = useState(false);
-
+function GuestChip({ guest }: { guest: EventGuest }) {
   const content = (
     <>
       {guest.photoUrl ? (
@@ -147,74 +131,13 @@ function GuestChip({
   }
 
   return (
-    <span className="bg-surface-dim hover:bg-surface-dim/70 inline-flex items-center gap-1 rounded-full pr-1 text-xs">
-      <Link
-        to={`/members/${guest.userId}`}
-        className="inline-flex items-center gap-1.5 py-1 pl-2"
-        title={guest.name}
-      >
-        {content}
-      </Link>
-      {canEdit && eventId ? (
-        <>
-          <button
-            type="button"
-            aria-label={`change ${guest.name}'s rsvp`}
-            onClick={() => {
-              setEditOpen(true);
-            }}
-            className="text-muted hover:text-foreground px-1"
-          >
-            edit
-          </button>
-          <EditGuestRsvpDialog
-            eventId={eventId}
-            guest={guest}
-            open={editOpen}
-            onClose={() => {
-              setEditOpen(false);
-            }}
-          />
-        </>
-      ) : null}
-    </span>
-  );
-}
-
-function EditGuestRsvpDialog({
-  eventId,
-  guest,
-  open,
-  onClose,
-}: {
-  eventId: string;
-  guest: EventGuest;
-  open: boolean;
-  onClose: () => void;
-}) {
-  const setGuestRsvp = useSetGuestRsvp(eventId);
-  const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
-
-  function changeStatus(status: RsvpInputStatus) {
-    setGuestRsvp.mutate(
-      { userId: guest.userId, status, hasPlusOne: guest.hasPlusOne },
-      {
-        onSuccess: onClose,
-        onError: (err) => {
-          toast.error(extractApiErrorOr(err, "couldn't update their rsvp — try again"));
-        },
-      },
-    );
-  }
-
-  return (
-    <Dialog open={open} onClose={onClose} title={`${guest.name}'s rsvp`}>
-      <RsvpStatusPicker
-        value={currentStatus}
-        disabled={setGuestRsvp.isPending}
-        onSelect={changeStatus}
-      />
-    </Dialog>
+    <Link
+      to={`/members/${guest.userId}`}
+      className="bg-surface-dim hover:bg-surface-dim/70 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs"
+      title={guest.name}
+    >
+      {content}
+    </Link>
   );
 }
 

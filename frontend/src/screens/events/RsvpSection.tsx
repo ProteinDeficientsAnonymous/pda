@@ -21,7 +21,6 @@ import { RsvpGuestList } from './RsvpGuestList';
 interface Props {
   event: Event;
   canSeeInvited: boolean;
-  canManageRsvps?: boolean;
   token?: string;
 }
 
@@ -36,7 +35,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function RsvpSection({ event, canSeeInvited, canManageRsvps = false, token }: Props) {
+export function RsvpSection({ event, canSeeInvited, token }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -147,11 +146,7 @@ export function RsvpSection({ event, canSeeInvited, canManageRsvps = false, toke
       ) : null}
 
       <div className="mt-2">
-        <RsvpGuestList
-          event={event}
-          canSeeInvited={canSeeInvited}
-          canManageRsvps={canManageRsvps}
-        />
+        <RsvpGuestList event={event} canSeeInvited={canSeeInvited} />
       </div>
 
       {box ? (
