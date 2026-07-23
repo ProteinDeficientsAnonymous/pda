@@ -121,7 +121,7 @@ function AdminActionRow({
             }}
             className="border-red-300 font-medium text-red-700 hover:bg-red-50"
           >
-            ⚠ delete
+            delete
           </Button>
         ) : null}
       </div>
