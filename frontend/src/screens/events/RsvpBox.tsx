@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { type RsvpInputStatus } from '@/models/event';
+import { type RsvpInputStatus, RsvpStatus } from '@/models/event';
 
 import { RsvpCommentField } from './RsvpCommentField';
 
@@ -20,6 +20,7 @@ interface Props {
   initialHasPlusOne: boolean;
   allowPlusOnes: boolean;
   allowComment?: boolean;
+  atCapacity?: boolean;
   busy?: boolean;
   onConfirm: (args: ConfirmArgs) => void;
   onRemove?: (() => void) | undefined;
@@ -33,6 +34,7 @@ export function RsvpBox({
   initialHasPlusOne,
   allowPlusOnes,
   allowComment,
+  atCapacity = false,
   busy = false,
   onConfirm,
   onRemove,
@@ -44,6 +46,7 @@ export function RsvpBox({
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
+  const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
 
   function confirm() {
     const trimmed = comment.trim();
@@ -55,7 +58,14 @@ export function RsvpBox({
   return (
     <Dialog open={open} onClose={onClose} title="rsvp">
       <div className="flex flex-col gap-4">
-        <RsvpStatusPicker value={status} onSelect={setStatus} disabled={busy} />
+        <RsvpStatusPicker
+          value={status}
+          onSelect={setStatus}
+          disabled={busy}
+          labelFor={(s, defaultLabel) =>
+            s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+          }
+        />
 
         {showPlusOne ? (
           <div className="flex justify-center">
@@ -87,11 +97,17 @@ export function RsvpBox({
               cancel
             </Button>
             <Button type="button" onClick={confirm} disabled={busy}>
-              {mode === 'edit' ? 'save' : 'confirm'}
+              {confirmLabel(mode, joiningWaitlist)}
             </Button>
           </div>
         </div>
       </div>
     </Dialog>
   );
+}
+
+function confirmLabel(mode: 'create' | 'edit', joiningWaitlist: boolean): string {
+  if (joiningWaitlist) return 'join the waitlist';
+  if (mode === 'edit') return 'save';
+  return 'confirm';
 }

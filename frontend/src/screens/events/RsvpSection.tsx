@@ -158,6 +158,7 @@ export function RsvpSection({ event, token }: Props) {
           initialHasPlusOne={hasPlusOne}
           allowPlusOnes={event.allowPlusOnes}
           allowComment={Boolean(token) || box.mode === 'create'}
+          atCapacity={atCapacity}
           busy={busy}
           onConfirm={(args) => void confirmRsvp(args)}
           onRemove={box.mode === 'edit' ? () => void removeMyRsvp() : undefined}

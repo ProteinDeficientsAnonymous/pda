@@ -133,4 +133,22 @@ describe('RsvpBox', () => {
     render(<RsvpBox {...base} mode="create" allowComment={false} onConfirm={() => {}} />);
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
+
+  it('shows "join the waitlist" instead of "i\'m going" when at capacity', () => {
+    render(<RsvpBox {...base} mode="create" atCapacity onConfirm={() => {}} />);
+    expect(screen.getAllByRole('button', { name: /^join the waitlist$/i })).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /^i'm going$/i })).not.toBeInTheDocument();
+  });
+
+  it('confirms with the attending status when joining the waitlist', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" atCapacity onConfirm={onConfirm} />);
+    const buttons = screen.getAllByRole('button', { name: /^join the waitlist$/i });
+    const confirmButton = buttons.at(-1);
+    if (!confirmButton) throw new Error('expected a join the waitlist confirm button');
+    fireEvent.click(confirmButton);
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Attending }),
+    );
+  });
 });
