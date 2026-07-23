@@ -24,7 +24,10 @@ E2E_PASSWORD = "e2e-test-pass-123"
 
 
 def _random_phone() -> str:
-    return "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
+    while True:
+        phone = "+1202555" + str(secrets.randbelow(10_000)).zfill(4)
+        if not User.objects.filter(phone_number=phone).exists():
+            return phone
 
 
 def _random_event(scenario: str, **overrides) -> Event:
@@ -177,7 +180,10 @@ def _seed_attendance_report() -> dict:
     no_show = _member_user(_random_phone())
     canceled = _non_member_user(_random_phone())
     EventRSVP.objects.create(
-        event=event, user=attended, status=RSVPStatus.ATTENDING, attendance=AttendanceStatus.ATTENDED
+        event=event,
+        user=attended,
+        status=RSVPStatus.ATTENDING,
+        attendance=AttendanceStatus.ATTENDED,
     )
     EventRSVP.objects.create(
         event=event, user=no_show, status=RSVPStatus.ATTENDING, attendance=AttendanceStatus.NO_SHOW
@@ -215,11 +221,15 @@ def _seed_attendance_analytics() -> dict:
         start_datetime=timezone.now() - timedelta(days=400),
     )
 
+    suffix = secrets.token_hex(4)
+    compliant_first_name = f"Zoe{suffix}"
+    at_risk_first_name = f"Yara{suffix}"
+
     compliant = _member_user(_random_phone())
-    compliant.first_name = "Zoe"
+    compliant.first_name = compliant_first_name
     compliant.save(update_fields=["first_name"])
     at_risk = _member_user(_random_phone())
-    at_risk.first_name = "Yara"
+    at_risk.first_name = at_risk_first_name
     at_risk.save(update_fields=["first_name"])
 
     EventRSVP.objects.create(
@@ -238,8 +248,8 @@ def _seed_attendance_analytics() -> dict:
     return {
         "admin_phone": admin_phone,
         "admin_password": E2E_PASSWORD,
-        "compliant_name": "zoe member",
-        "at_risk_name": "yara member",
+        "compliant_name": f"{compliant_first_name} member".lower(),
+        "at_risk_name": f"{at_risk_first_name} member".lower(),
     }
 
 
