@@ -4,6 +4,7 @@
   <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 32px;">
     <p style="margin: 0 0 16px;">hi{% if display_name %} {{ display_name|lower }}{% endif %} —</p>
     <p style="margin: 0 0 24px;">{{ inviter_name|lower }} invited you to co-host <strong>{{ event_title|lower }}</strong> on pda.</p>
+    <p style="margin: 0 0 24px; color: #666; font-size: 13px;">you won't be added as a co-host until you accept the invite.</p>
     <p style="margin: 0 0 24px;">
       <a href="{{ event_url }}" style="display: inline-block; background: #3c6939; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500;">view invite</a>
     </p>
