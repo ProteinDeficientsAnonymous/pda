@@ -51,7 +51,9 @@ export function ReplyItem({ reply, eventId, token, canReact, reactDisabledReason
         {reply.isDeleted ? (
           <p className="text-foreground-tertiary text-sm italic">[deleted]</p>
         ) : (
-          <p className="text-sm whitespace-pre-wrap">{reply.body}</p>
+          <p className="text-sm [overflow-wrap:anywhere] break-words whitespace-pre-wrap">
+            {reply.body}
+          </p>
         )}
         {!reply.isDeleted ? (
           <div className="mt-1 flex items-center justify-between gap-2">

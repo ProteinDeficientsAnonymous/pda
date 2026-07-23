@@ -72,7 +72,9 @@ export function CommentItem({
       {comment.isDeleted ? (
         <p className="text-foreground-tertiary text-sm italic">[deleted]</p>
       ) : (
-        <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
+        <p className="text-sm [overflow-wrap:anywhere] break-words whitespace-pre-wrap">
+          {comment.body}
+        </p>
       )}
       {!comment.isDeleted ? (
         <div className="flex items-center justify-between gap-2">

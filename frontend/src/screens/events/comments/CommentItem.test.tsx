@@ -49,6 +49,17 @@ describe('CommentItem', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
+  // A long unbroken token (e.g. a pasted url) in a just-submitted comment must
+  // wrap; without it the body pushes the page wider than the phone viewport and
+  // iOS Safari re-zooms in on submit (issue 1131).
+  it('wraps a long unbroken body so it cannot overflow the viewport', () => {
+    const longToken = `https://example.com/${'x'.repeat(200)}`;
+    wrap(
+      <CommentItem comment={{ ...baseComment, body: longToken }} eventId="evt" canReact canReply />,
+    );
+    expect(screen.getByText(longToken)).toHaveClass('break-words', '[overflow-wrap:anywhere]');
+  });
+
   it('renders [deleted] placeholder when isDeleted', () => {
     wrap(
       <CommentItem
