@@ -103,9 +103,9 @@ describe('RsvpSection — after RSVPing', () => {
     expect(screen.getByRole('button', { name: /edit RSVP/i })).toBeInTheDocument();
   });
 
-  it('shows a "going" status badge when attending', () => {
+  it('shows an "i\'m going" status badge when attending', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
-    expect(screen.getByText('going')).toBeInTheDocument();
+    expect(screen.getByText("i'm going")).toBeInTheDocument();
   });
 
   it('shows a "maybe" status badge when maybe', () => {
@@ -113,9 +113,9 @@ describe('RsvpSection — after RSVPing', () => {
     expect(screen.getByText('maybe')).toBeInTheDocument();
   });
 
-  it('shows a "can\'t go" status badge when cant_go', () => {
+  it('shows an "i can\'t go" status badge when cant_go', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.CantGo }));
-    expect(screen.getByText("can't go")).toBeInTheDocument();
+    expect(screen.getByText("i can't go")).toBeInTheDocument();
   });
 
   it('opens the RSVP box in edit mode when "edit RSVP" is tapped', () => {

@@ -29,9 +29,9 @@ const STATUS_LINES: Record<RsvpInputStatus, string> = {
 };
 
 const STATUS_BADGE_LABELS: Record<RsvpInputStatus, string> = {
-  [RsvpStatus.Attending]: 'going',
+  [RsvpStatus.Attending]: "i'm going",
   [RsvpStatus.Maybe]: 'maybe',
-  [RsvpStatus.CantGo]: "can't go",
+  [RsvpStatus.CantGo]: "i can't go",
 };
 
 interface BoxState {
