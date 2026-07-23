@@ -21,5 +21,13 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
       (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
   const showStandaloneInvited = !showRsvp && canSeeInvited && event.invitedCount > 0;
-  return { isCoHost, canSeeInvited, isCancelled, rsvpDisabled, canInvite, showRsvp, showStandaloneInvited };
+  return {
+    isCoHost,
+    canSeeInvited,
+    isCancelled,
+    rsvpDisabled,
+    canInvite,
+    showRsvp,
+    showStandaloneInvited,
+  };
 }

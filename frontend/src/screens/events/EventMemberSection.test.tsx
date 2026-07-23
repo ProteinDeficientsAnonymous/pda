@@ -298,7 +298,7 @@ describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
     expect(screen.getByRole('button', { name: /invite members/i })).toBeInTheDocument();
   });
 
-  it('renders the invite members button inside the who\'s going section (#788)', () => {
+  it("renders the invite members button inside the who's going section (#788)", () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
     renderSection({ ...RSVP_ENABLED_EVENT, myRsvp: RsvpStatus.Attending });
     const rsvpCard = screen.getByRole('heading', { name: "who's going" }).closest('section');
@@ -458,7 +458,7 @@ describe('EventMemberSection — token-holding non-member (Issue 904)', () => {
     useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
   });
 
-  it('renders the read experience — location, who\'s going, and comments', () => {
+  it("renders the read experience — location, who's going, and comments", () => {
     renderSection(TOKEN_EVENT, 'tok-123');
     expect(screen.getByText('123 Main St')).toBeInTheDocument();
     expect(screen.getByTestId('guest-list')).toBeInTheDocument();

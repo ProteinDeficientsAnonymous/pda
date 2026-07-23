@@ -44,7 +44,7 @@ test('member A comment appears live in member B open event view via SSE', async 
       .getByRole('dialog', { name: 'rsvp' })
       .getByRole('button', { name: 'confirm' })
       .click();
-    await expect(rsvpSectionA.getByRole('status', { name: "i'm going" })).toBeVisible();
+    await expect(rsvpSectionA.getByRole('button', { name: /edit rsvp/i })).toBeVisible();
 
     const commentsSectionA = pageA.locator('section', {
       has: pageA.getByRole('heading', { name: 'comments' }),
