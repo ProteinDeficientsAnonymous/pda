@@ -379,6 +379,26 @@ def notify_rsvp_declined_note(event, author, note: str) -> None:
     _notify_users(recipient_id_list)
 
 
+def notify_checkin_reminder(event: Event) -> None:
+    """Notify creator + co-hosts that a club/official event just started — go check people in."""
+    recipient_id_list = _event_recipient_ids(event, exclude="")
+    if not recipient_id_list:
+        return
+    message = f"{event.title} just started — head to check-in to check people in."
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=rid,
+                notification_type=NotificationType.CHECKIN_NUDGE,
+                event=event,
+                message=message,
+            )
+            for rid in recipient_id_list
+        ]
+    )
+    _notify_users(recipient_id_list)
+
+
 def notify_event_comment(comment) -> None:
     """Notify event creator + co-hosts when someone posts a top-level comment. No-op for replies."""
     if comment.parent_id is not None:

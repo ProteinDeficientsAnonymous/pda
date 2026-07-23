@@ -247,6 +247,37 @@ def send_cohost_invite_email(
     )
 
 
+@dataclass(frozen=True)
+class CheckinReminderEmailDetails:
+    """Recipient + event details for the host check-in nudge email."""
+
+    to: str
+    display_name: str
+    event_title: str
+    event_url: str
+
+
+def send_checkin_reminder_email(
+    *,
+    sender: EmailSender,
+    details: CheckinReminderEmailDetails,
+) -> SendResult:
+    """Render and send the "event just started, go check people in" host nudge email."""
+    context = {
+        "display_name": details.display_name or "",
+        "event_title": details.event_title,
+        "event_url": details.event_url,
+    }
+    html = render_to_string("emails/attendance_checkin_reminder.html", context)
+    text = render_to_string("emails/attendance_checkin_reminder.txt", context)
+    return sender.send(
+        to=details.to,
+        subject=f"{details.event_title.lower()} just started — check people in",
+        html=html,
+        text=text,
+    )
+
+
 def send_event_blast_email(
     *,
     sender: EmailSender,

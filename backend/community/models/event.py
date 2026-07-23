@@ -91,6 +91,7 @@ class Event(models.Model):
         default=EventStatus.ACTIVE,
     )
     deleted_at = models.DateTimeField(null=True, blank=True)
+    checkin_nudge_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None

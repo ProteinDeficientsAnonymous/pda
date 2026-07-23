@@ -14,6 +14,8 @@ export function notificationTarget(n: AppNotification): string | null {
     case NotificationType.EventComment:
     case NotificationType.RsvpDeclinedNote:
       return n.eventId ? `/events/${n.eventId}` : null;
+    case NotificationType.CheckinNudge:
+      return n.eventId ? `/events/${n.eventId}/attendance` : null;
     case NotificationType.EventFlagged:
       return '/admin/flagged-events';
     case NotificationType.JoinRequest:
