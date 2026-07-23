@@ -1,3 +1,10 @@
+# [0.64.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.63.0...v0.64.0) (2026-07-23)
+
+
+### Features
+
+* **attendance:** host check-in nudge at event start (Issue 1095) ([#1099](https://github.com/ProteinDeficientsAnonymous/pda/issues/1099)) ([fce7567](https://github.com/ProteinDeficientsAnonymous/pda/commit/fce7567e22c59ef23ab4fb048910f15ebc6e22ed))
+
 # [0.63.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.62.0...v0.63.0) (2026-07-22)
 
 
