@@ -165,10 +165,13 @@ export interface PendingCohostInvite {
   invitedAt: Date;
 }
 
+export function isHosting(event: Event, userId: string): boolean {
+  return event.createdById === userId || event.coHostIds.includes(userId);
+}
+
 export function canManageEvent(event: Event, user: User | null): boolean {
   if (!user) return false;
-  if (user.id === event.createdById) return true;
-  if (event.coHostIds.includes(user.id)) return true;
+  if (isHosting(event, user.id)) return true;
   return hasPermission(user, Permission.ManageEvents);
 }
 

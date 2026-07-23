@@ -25,13 +25,12 @@ export default function MembersDirectoryScreen() {
   if (isError) return <ContentError message="couldn't load members — try refreshing" />;
 
   return (
-    <ContentContainer>
-      <h1 className="mb-6 text-2xl font-medium tracking-tight">members</h1>
-
+    <ContentContainer className="pt-4 md:pt-6">
       <div className="mb-4">
         <TextField
           label="search"
-          placeholder="name, phone, or email"
+          hideLabel
+          placeholder="search name, email, or phone"
           value={query}
           maxLength={100}
           onChange={(e) => {

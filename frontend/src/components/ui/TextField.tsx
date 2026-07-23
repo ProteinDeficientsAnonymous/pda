@@ -4,20 +4,24 @@ import { cn } from '@/utils/cn';
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  hideLabel?: boolean;
   error?: string | undefined;
   hint?: string | undefined;
   rightAdornment?: ReactNode;
 }
 
 export const TextField = forwardRef<HTMLInputElement, Props>(function TextField(
-  { label, error, hint, rightAdornment, className, id, ...rest },
+  { label, hideLabel, error, hint, rightAdornment, className, id, ...rest },
   ref,
 ) {
   const inputId = id ?? `field-${label.replace(/\s+/g, '-').toLowerCase()}`;
   const describedBy = error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined;
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={inputId} className="text-foreground text-sm font-medium">
+      <label
+        htmlFor={inputId}
+        className={cn('text-foreground text-sm font-medium', hideLabel && 'sr-only')}
+      >
         {label}
       </label>
       <div className="relative">

@@ -1,7 +1,15 @@
 import type { ReactNode } from 'react';
 
-export function ContentContainer({ children }: { children: ReactNode }) {
-  return <main className="mx-auto max-w-3xl px-4 py-8 md:py-12">{children}</main>;
+import { cn } from '@/utils/cn';
+
+export function ContentContainer({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <main className={cn('mx-auto max-w-3xl px-4 py-8 md:py-12', className)}>{children}</main>;
 }
 
 export function ContentLoading({ label = 'loading…' }: { label?: string }) {

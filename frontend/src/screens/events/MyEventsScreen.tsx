@@ -6,137 +6,105 @@ import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { Event } from '@/models/event';
-import { EventStatus, EventType, RsvpStatus } from '@/models/event';
+import { EventStatus, EventType, isHosting, RsvpStatus } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventCardBadges } from './EventCardBadges';
 
-type Filter = 'upcoming' | 'past' | 'drafts' | 'cancelled';
-type Scope = 'all' | 'hosting';
+type Filter = 'upcoming' | 'hosting' | 'past' | 'drafts' | 'cancelled';
 
-const FILTERS: { value: Filter; label: string }[] = [
-  { value: 'upcoming', label: 'upcoming' },
-  { value: 'past', label: 'past' },
-  { value: 'drafts', label: 'drafts' },
-  { value: 'cancelled', label: 'cancelled' },
-];
-
-const SCOPES: { value: Scope; label: string }[] = [
-  { value: 'all', label: 'all' },
-  { value: 'hosting', label: 'hosting' },
-];
+const FILTER_LABELS: Record<Filter, string> = {
+  upcoming: 'upcoming',
+  hosting: 'hosting',
+  past: 'past',
+  drafts: 'drafts',
+  cancelled: 'cancelled',
+};
 
 const EMPTY_COPY: Record<Filter, string> = {
   upcoming: "nothing coming up 🌿 — events you're hosting or going to will show up here",
+  hosting: "nothing you're hosting right now 🌿",
   past: 'no past events yet 🌿',
   drafts: 'no drafts saved 🌿 — start one and we\u2019ll keep it here until you publish',
   cancelled: 'no cancelled events 🌿',
 };
 
-type EventsQuery = ReturnType<typeof useEvents>;
-
-function pickSourceQuery(
-  filter: Filter,
-  sources: { active: EventsQuery; drafts: EventsQuery; cancelled: EventsQuery },
-): EventsQuery {
-  if (filter === 'drafts') return sources.drafts;
-  if (filter === 'cancelled') return sources.cancelled;
-  return sources.active;
+function isMine(event: Event, userId: string): boolean {
+  return (
+    isHosting(event, userId) ||
+    event.myRsvp === RsvpStatus.Attending ||
+    event.myRsvp === RsvpStatus.Maybe
+  );
 }
 
 export default function MyEventsScreen() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const [filter, setFilter] = useState<Filter>('upcoming');
-  const [scope, setScope] = useState<Scope>('all');
 
   const activeQuery = useEvents();
   const draftsQuery = useEvents(EventStatus.Draft);
   const cancelledQuery = useEvents(EventStatus.Cancelled);
 
-  const isHostOnlyTab = filter === 'drafts' || filter === 'cancelled';
-  const sourceQuery = pickSourceQuery(filter, {
-    active: activeQuery,
-    drafts: draftsQuery,
-    cancelled: cancelledQuery,
-  });
-  const mine = useMemo(() => {
-    const sourceData = sourceQuery.data ?? [];
-    if (!userId) return [];
-    // Drafts/cancelled tabs: backend already scopes to host/co-host. No
-    // additional filtering needed.
-    if (isHostOnlyTab) {
-      return [...sourceData].sort(
+  const eventsByFilter = useMemo((): Record<Filter, Event[]> => {
+    if (!userId) return { upcoming: [], hosting: [], past: [], drafts: [], cancelled: [] };
+    const mineActive = (activeQuery.data ?? []).filter((e) => isMine(e, userId));
+    const upcoming = mineActive
+      .filter((e) => !e.isPast)
+      .sort((a, b) => (a.startDatetime?.getTime() ?? 0) - (b.startDatetime?.getTime() ?? 0));
+    return {
+      upcoming,
+      hosting: upcoming.filter((e) => isHosting(e, userId)),
+      past: mineActive
+        .filter((e) => e.isPast)
+        .sort((a, b) => (b.startDatetime?.getTime() ?? 0) - (a.startDatetime?.getTime() ?? 0)),
+      drafts: [...(draftsQuery.data ?? [])].sort(
         (a, b) => (b.startDatetime?.getTime() ?? 0) - (a.startDatetime?.getTime() ?? 0),
-      );
-    }
-    const isHost = (e: Event) => e.createdById === userId || e.coHostIds.includes(userId);
-    const mineActive = sourceData.filter((e) => {
-      if (scope === 'hosting') return isHost(e);
-      return isHost(e) || e.myRsvp === RsvpStatus.Attending || e.myRsvp === RsvpStatus.Maybe;
-    });
-    if (filter === 'upcoming') {
-      return mineActive
-        .filter((e) => !e.isPast)
-        .sort((a, b) => (a.startDatetime?.getTime() ?? 0) - (b.startDatetime?.getTime() ?? 0));
-    }
-    return mineActive
-      .filter((e) => e.isPast)
-      .sort((a, b) => (b.startDatetime?.getTime() ?? 0) - (a.startDatetime?.getTime() ?? 0));
-  }, [sourceQuery.data, userId, filter, isHostOnlyTab, scope]);
+      ),
+      cancelled: [...(cancelledQuery.data ?? [])].sort(
+        (a, b) => (b.startDatetime?.getTime() ?? 0) - (a.startDatetime?.getTime() ?? 0),
+      ),
+    };
+  }, [activeQuery.data, draftsQuery.data, cancelledQuery.data, userId]);
 
-  if (sourceQuery.isPending) return <ContentLoading />;
-  if (sourceQuery.isError) return <ContentError message="couldn't load events — try refreshing" />;
+  const availableFilters = (Object.keys(FILTER_LABELS) as Filter[]).filter(
+    (f) => eventsByFilter[f].length > 0,
+  );
+  const activeFilter = availableFilters.includes(filter) ? filter : (availableFilters[0] ?? filter);
+
+  if (activeQuery.isPending || draftsQuery.isPending || cancelledQuery.isPending) {
+    return <ContentLoading />;
+  }
+  if (activeQuery.isError || draftsQuery.isError || cancelledQuery.isError) {
+    return <ContentError message="couldn't load events — try refreshing" />;
+  }
+
+  const mine = eventsByFilter[activeFilter];
 
   return (
-    <ContentContainer>
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-medium tracking-tight">my events</h1>
-        <Link
-          to="/events/add"
-          className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
-        >
-          create event
-        </Link>
-      </header>
-
-      <div className="mb-4 flex justify-center">
-        <SegmentedControl
-          name="my-events-filter"
-          ariaLabel="filter"
-          options={FILTERS}
-          value={filter}
-          onChange={setFilter}
-        />
-      </div>
-
-      <div className={!isHostOnlyTab ? 'pb-24' : undefined}>
-        {mine.length === 0 ? (
-          <p className="text-muted text-sm">{EMPTY_COPY[filter]}</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {mine.map((e) => (
-              <li key={e.id}>
-                <EventRow event={e} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {!isHostOnlyTab ? (
-        <div
-          className="border-border bg-surface/95 fixed inset-x-0 z-10 flex justify-center border-t px-4 py-3 backdrop-blur"
-          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
-        >
+    <ContentContainer className="pt-4 md:pt-6">
+      {availableFilters.length > 1 ? (
+        <div className="mb-4 flex justify-center">
           <SegmentedControl
-            name="my-events-scope"
-            ariaLabel="scope"
-            options={SCOPES}
-            value={scope}
-            onChange={setScope}
+            name="my-events-filter"
+            ariaLabel="filter"
+            options={availableFilters.map((f) => ({ value: f, label: FILTER_LABELS[f] }))}
+            value={activeFilter}
+            onChange={setFilter}
           />
         </div>
       ) : null}
+
+      {mine.length === 0 ? (
+        <p className="text-muted text-sm">{EMPTY_COPY[activeFilter]}</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {mine.map((e) => (
+            <li key={e.id}>
+              <EventRow event={e} />
+            </li>
+          ))}
+        </ul>
+      )}
     </ContentContainer>
   );
 }
