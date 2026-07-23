@@ -1,3 +1,10 @@
+# [0.66.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.65.0...v0.66.0) (2026-07-23)
+
+
+### Features
+
+* **feedback:** add improvement checkbox to feedback form ([#1118](https://github.com/ProteinDeficientsAnonymous/pda/issues/1118)) ([c1525fc](https://github.com/ProteinDeficientsAnonymous/pda/commit/c1525fc463dbee4b93f20df82db73f894b8ad263))
+
 # [0.65.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.5...v0.65.0) (2026-07-23)
 
 
