@@ -37,12 +37,7 @@ def due_checkin_nudge_events(now) -> Iterable[Event]:
 
 
 def _claim_checkin_nudge(event: Event) -> bool:
-    """Atomically stamp the event sent, skipping it if another run already claimed it.
-
-    select_for_update(skip_locked=True) + the isnull re-check serialize concurrent
-    cron runs so exactly one claims (and therefore sends) each event.
-    Returns True if this call won the claim.
-    """
+    """select_for_update(skip_locked=True) serializes concurrent cron runs so exactly one claims each event."""
     with transaction.atomic():
         locked = (
             Event.objects.select_for_update(skip_locked=True)
@@ -57,11 +52,7 @@ def _claim_checkin_nudge(event: Event) -> bool:
 
 
 def send_checkin_nudge(event: Event) -> bool:
-    """Claim the event, then email + in-app notify the host team that check-in is open.
-
-    Claiming before sending makes this at-most-once under overlapping cron runs.
-    Returns True if this call claimed and sent the nudge (False if already claimed).
-    """
+    """Claim the event, then email + in-app notify the host team. Returns False if already claimed."""
     if not _claim_checkin_nudge(event):
         return False
 

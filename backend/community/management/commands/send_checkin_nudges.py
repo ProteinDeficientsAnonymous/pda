@@ -1,10 +1,4 @@
-"""Management command to nudge event hosts to check people in right at start time.
-
-Schedule this via Railway cron (dashboard-configured) to run every 15 minutes —
-much shorter than the daily attendance-reminder cron, since this needs to fire
-close to each event's start time, e.g.:
-  python manage.py send_checkin_nudges
-"""
+"""Nudge event hosts to check people in right at start time. Scheduled via Railway cron every 15 minutes."""
 
 import logging
 
