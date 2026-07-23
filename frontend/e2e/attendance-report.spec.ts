@@ -33,7 +33,7 @@ test('host opens check-in report from the kebab menu and sees the attendance bre
 
   await page.getByRole('button', { name: 'event settings' }).click();
   const menu = page.getByRole('menu');
-  await expect(menu.getByRole('menuitem', { name: 'check-in' })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'check-in', exact: true })).toBeVisible();
   await menu.getByRole('menuitem', { name: 'check-in report' }).click();
 
   await page.waitForURL(`**/events/${event_id}/report`);
