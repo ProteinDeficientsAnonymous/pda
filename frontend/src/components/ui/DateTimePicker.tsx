@@ -139,7 +139,7 @@ export function DateTimePicker({
                 const base = selectedDate ?? new Date();
                 onChange(dateToIso(base, h, m));
               }}
-              className="border-border bg-surface focus:border-brand-500 focus:ring-brand-200 h-8 rounded-md border px-2 text-sm outline-none focus:ring-1"
+              className="border-border bg-surface focus:border-brand-500 focus:ring-brand-200 h-8 rounded-md border px-2 text-base outline-none focus:ring-1 md:text-sm"
             />
           </div>
         </div>

@@ -70,7 +70,7 @@ export function CommentComposer({
             void submit();
           }
         }}
-        className="focus:border-brand-500 focus:ring-brand-200 border-border-strong bg-surface min-h-[80px] w-full rounded-md border px-3 py-2 text-sm transition-colors outline-none focus:ring-2"
+        className="focus:border-brand-500 focus:ring-brand-200 border-border-strong bg-surface min-h-[80px] w-full rounded-md border px-3 py-2 text-base transition-colors outline-none focus:ring-2 md:text-sm"
       />
       <div className="flex items-center justify-between">
         <span

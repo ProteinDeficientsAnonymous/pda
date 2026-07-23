@@ -133,7 +133,7 @@ export function LocationField({
           maxLength={maxLength}
           placeholder={placeholder}
           className={[
-            'bg-surface h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none focus:ring-2',
+            'bg-surface h-10 w-full rounded-md border px-3 text-base transition-colors outline-none focus:ring-2 md:text-sm',
             'border-border-strong focus:border-brand-500 focus:ring-brand-200',
             error && 'border-destructive-border focus:border-red-500 focus:ring-red-100',
             disabled && 'bg-surface-dim text-muted-foreground',
