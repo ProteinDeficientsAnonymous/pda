@@ -77,7 +77,7 @@ export default function EventDetailScreen() {
         {showKebab ? (
           <div className="ml-auto">
             <EventDetailKebabMenu
-              eventId={event.id}
+              event={event}
               eventHasEnded={event.isPast}
               canManageRsvps={showKebab}
             />
