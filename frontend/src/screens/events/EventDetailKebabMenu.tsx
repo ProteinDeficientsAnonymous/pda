@@ -7,13 +7,15 @@ import { Feature } from '@/models/featureFlags';
 interface Props {
   eventId: string;
   eventHasEnded: boolean;
+  canManageRsvps: boolean;
 }
 
-export function EventDetailKebabMenu({ eventId, eventHasEnded }: Props) {
+export function EventDetailKebabMenu({ eventId, eventHasEnded, canManageRsvps }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const reportFlagOn = useFlag(Feature.HostAttendanceReport);
   const showCheckInReport = eventHasEnded && reportFlagOn;
+  const showManageRsvps = canManageRsvps && !eventHasEnded;
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +54,16 @@ export function EventDetailKebabMenu({ eventId, eventHasEnded }: Props) {
           role="menu"
           className="border-border bg-surface absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-md border text-sm shadow-lg"
         >
+          {showManageRsvps ? (
+            <MenuLink
+              to={`/events/${eventId}/manage-rsvps`}
+              onSelect={() => {
+                setOpen(false);
+              }}
+            >
+              manage rsvps
+            </MenuLink>
+          ) : null}
           <MenuLink
             to={`/events/${eventId}/attendance`}
             onSelect={() => {
