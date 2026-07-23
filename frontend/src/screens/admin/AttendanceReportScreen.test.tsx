@@ -17,12 +17,21 @@ vi.mock('./MemberAttendanceTab', () => ({
 
 import { useAttendanceReport } from '@/api/attendanceReport';
 import { useFlag } from '@/api/featureFlags';
+import { Feature } from '@/models/featureFlags';
 import { makeRow } from '@/test/fixtures';
 
 import AttendanceReportScreen from './AttendanceReportScreen';
 
 const mockUseReport = vi.mocked(useAttendanceReport);
 const mockUseFlag = vi.mocked(useFlag);
+
+function mockFlags({ analytics = false, report = false } = {}) {
+  mockUseFlag.mockImplementation((key) => {
+    if (key === Feature.AdminAttendanceAnalytics) return analytics;
+    if (key === Feature.HostAttendanceReport) return report;
+    return false;
+  });
+}
 
 function mockResult(overrides: Partial<ReturnType<typeof useAttendanceReport>>) {
   mockUseReport.mockReturnValue({
@@ -46,12 +55,13 @@ function renderScreen() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockUseFlag.mockReturnValue(false);
+  mockFlags();
 });
 
 describe('AttendanceReportScreen', () => {
   it('renders per-event attended / no-show / going counts', () => {
     mockResult({ data: [makeRow()] });
+    mockFlags({ report: true });
 
     renderScreen();
 
@@ -61,6 +71,25 @@ describe('AttendanceReportScreen', () => {
     expect(row).toHaveTextContent('1 no-show');
     expect(row).toHaveTextContent('6 going');
     expect(row).toHaveAttribute('href', '/events/e1/report');
+  });
+
+  it('links each event row to its check-in report when host_attendance_report is on', () => {
+    mockResult({ data: [makeRow()] });
+    mockFlags({ analytics: true, report: true });
+
+    renderScreen();
+
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/events/e1/report');
+  });
+
+  it('renders event rows as plain text (no link) when host_attendance_report is off', () => {
+    mockResult({ data: [makeRow()] });
+    mockFlags({ analytics: true, report: false });
+
+    renderScreen();
+
+    expect(screen.getByText('potluck')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('shows the empty state when nothing is marked', () => {
@@ -89,7 +118,7 @@ describe('AttendanceReportScreen', () => {
 
   it('hides the members tab when the flag is off', () => {
     mockResult({ data: [] });
-    mockUseFlag.mockReturnValue(false);
+    mockFlags({ analytics: false });
 
     renderScreen();
 
@@ -98,7 +127,7 @@ describe('AttendanceReportScreen', () => {
 
   it('switches to the members tab when the flag is on', async () => {
     mockResult({ data: [] });
-    mockUseFlag.mockReturnValue(true);
+    mockFlags({ analytics: true });
     const user = userEvent.setup();
 
     renderScreen();

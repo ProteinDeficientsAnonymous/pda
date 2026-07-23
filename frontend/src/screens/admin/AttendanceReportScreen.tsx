@@ -80,6 +80,9 @@ function TabButton({
 
 function EventsTab() {
   const { data = [], isPending, isError } = useAttendanceReport();
+  // The per-event report at /events/:id/report is behind its own flag; only
+  // link rows there when it's on, otherwise the row dead-links to /calendar.
+  const reportEnabled = useFlag(Feature.HostAttendanceReport);
 
   if (isPending) return <ContentLoading />;
   if (isError) return <ContentError message="couldn't load attendance — try refreshing" />;
@@ -90,19 +93,16 @@ function EventsTab() {
     <ul className="flex flex-col gap-2">
       {data.map((row) => (
         <li key={row.eventId}>
-          <AttendanceRow row={row} />
+          <AttendanceRow row={row} linkable={reportEnabled} />
         </li>
       ))}
     </ul>
   );
 }
 
-function AttendanceRow({ row }: { row: EventAttendanceRow }) {
-  return (
-    <Link
-      to={`/events/${row.eventId}/report`}
-      className="border-border bg-surface hover:bg-surface-dim flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors"
-    >
+function AttendanceRow({ row, linkable }: { row: EventAttendanceRow; linkable: boolean }) {
+  const content = (
+    <>
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-sm font-medium">{row.title.toLowerCase()}</p>
         <p className="text-foreground-tertiary truncate text-xs">
@@ -116,6 +116,23 @@ function AttendanceRow({ row }: { row: EventAttendanceRow }) {
         <Stat label="no-show" value={row.noShowCount} />
         <Stat label="going (heads)" value={row.goingCount} />
       </div>
+    </>
+  );
+
+  if (!linkable) {
+    return (
+      <div className="border-border bg-surface flex items-center justify-between gap-3 rounded-lg border p-3">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={`/events/${row.eventId}/report`}
+      className="border-border bg-surface hover:bg-surface-dim flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors"
+    >
+      {content}
     </Link>
   );
 }
