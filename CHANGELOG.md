@@ -1,3 +1,10 @@
+## [0.64.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.2...v0.64.3) (2026-07-23)
+
+
+### Bug Fixes
+
+* **attendance:** render events-tab rows as links only when host_attendance_report is on (Issue 1106) ([#1113](https://github.com/ProteinDeficientsAnonymous/pda/issues/1113)) ([dc72dd8](https://github.com/ProteinDeficientsAnonymous/pda/commit/dc72dd86d43011b5b8ab6b82a6eb3ba823882981))
+
 ## [0.64.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.1...v0.64.2) (2026-07-23)
 
 
