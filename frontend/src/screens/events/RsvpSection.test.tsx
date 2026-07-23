@@ -67,29 +67,41 @@ beforeEach(() => {
 });
 
 describe('RsvpSection — before RSVPing', () => {
-  it('opens the RSVP box when a pill is tapped (not yet RSVP’d)', () => {
+  it('opens the RSVP box when the rsvp button is tapped (not yet RSVP’d)', () => {
     renderSection(makeEvent({ myRsvp: null }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: "i'm going" }));
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
 
     expect(screen.getByRole('dialog', { name: /RSVP/i })).toBeInTheDocument();
   });
 
-  it('shows all three pills and no status line when I have not RSVP’d', () => {
+  it('shows a single rsvp button and no status line when I have not RSVP’d', () => {
     renderSection(makeEvent({ myRsvp: null }));
 
-    expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'maybe' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: "can't go" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'rsvp' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'maybe' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "can't go" })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
   });
 
-  it('shows "join the waitlist" instead of "i\'m going" when the event is full', () => {
+  it('shows "join the waitlist" instead of "rsvp" when the event is full', () => {
     renderSection(makeEvent({ maxAttendees: 2, attendingCount: 2, myRsvp: null }));
 
     expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'rsvp' })).not.toBeInTheDocument();
+  });
+
+  it('opens the RSVP box defaulted to "going" when the rsvp button is tapped', () => {
+    renderSection(makeEvent({ myRsvp: null }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+
+    expect(screen.getByRole('button', { name: "i'm going" })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 });
 
@@ -271,7 +283,7 @@ describe('RsvpSection — comments in public manage vs member flows', () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /going/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     expect(screen.getByTestId('rsvp-comment-field')).toBeInTheDocument();
   });
 });

@@ -5,7 +5,6 @@ import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import {
   type Event,
   isRsvpInputStatus,
@@ -198,15 +197,16 @@ function RsvpControls({
   }
 
   return (
-    <RsvpStatusPicker
-      value={null}
+    <button
+      type="button"
+      onClick={() => {
+        onOpenCreate(RsvpStatus.Attending);
+      }}
       disabled={busy}
-      prominent
-      onSelect={onOpenCreate}
-      labelFor={(status, defaultLabel) =>
-        status === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
-      }
-    />
+      className="bg-brand-600 text-brand-on hover:bg-brand-700 mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium transition-colors disabled:opacity-60"
+    >
+      {atCapacity ? 'join the waitlist' : 'rsvp'}
+    </button>
   );
 }
 

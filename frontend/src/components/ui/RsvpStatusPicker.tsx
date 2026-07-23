@@ -8,7 +8,6 @@ interface Props {
   disabled?: boolean;
   labelFor?: (status: RsvpInputStatus, defaultLabel: string) => string;
   statuses?: RsvpInputStatus[];
-  prominent?: boolean;
 }
 
 export function RsvpStatusPicker({
@@ -17,7 +16,6 @@ export function RsvpStatusPicker({
   disabled = false,
   labelFor,
   statuses,
-  prominent = false,
 }: Props) {
   const options = statuses
     ? RSVP_STATUS_LABELS.filter((p) => statuses.includes(p.status))
@@ -37,8 +35,7 @@ export function RsvpStatusPicker({
               onSelect(p.status);
             }}
             className={cn(
-              'inline-flex shrink-0 items-center justify-center rounded-full font-medium transition-colors disabled:cursor-not-allowed',
-              prominent ? 'h-12 flex-1 px-5 text-base' : 'h-10 px-4 text-sm',
+              'inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed',
               active
                 ? 'bg-brand-600 text-brand-on'
                 : 'border-border-strong text-foreground-secondary hover:bg-background border',
