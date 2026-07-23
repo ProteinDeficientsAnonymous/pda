@@ -186,15 +186,6 @@ def _rsvp_events(user: User | None) -> list[JoinRequestRsvpOut]:
     ]
 
 
-def _attended_events_user(jr: JoinRequest, phone_user: User | None) -> User | None:
-    """FK user when set, else a guest (non-member) phone match. A member sharing the phone isn't a guest match."""
-    if jr.user_id:
-        return jr.user
-    if phone_user is not None and not phone_user.is_member:
-        return phone_user
-    return None
-
-
 def _join_request_attended_events(user: User | None) -> list[JoinRequestAttendedEventOut]:
     """All-event-types attendance history for vetting, gated on the analytics flag."""
     if user is None or not flag_enabled(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS):
@@ -241,7 +232,9 @@ def _join_request_out(jr: JoinRequest) -> JoinRequestOut:
         upcoming_official_count=breakdown.upcoming_official,
         upcoming_club_count=breakdown.upcoming_club,
         rsvp_events=_rsvp_events(user),
-        attended_events=_join_request_attended_events(_attended_events_user(jr, phone_user)),
+        # Only attribute per-event attendance history to a confidently-linked
+        # account. A bare phone match could be a different guest (Issue 1107).
+        attended_events=_join_request_attended_events(jr.user),
     )
 
 

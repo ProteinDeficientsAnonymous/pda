@@ -70,12 +70,12 @@ class TestJoinRequestAttendedEvents:
         row = response.json()[0]
         assert row["attended_events"] == []
 
-    def test_all_event_types_included_via_phone_fallback(
+    def test_all_event_types_included_when_account_linked(
         self, api_client, vettor_headers, flag_on, host_user
     ):
         from users.models import User
 
-        guest = User.objects.create_user(
+        applicant = User.objects.create_user(
             phone_number="+16505551234", password="x", first_name="Guest", is_member=False
         )
         community_event = _make_event(
@@ -85,18 +85,71 @@ class TestJoinRequestAttendedEvents:
         for ev in (community_event, club_event):
             EventRSVP.objects.create(
                 event=ev,
-                user=guest,
+                user=applicant,
                 status=RSVPStatus.ATTENDING,
                 attendance=AttendanceStatus.ATTENDED,
             )
         JoinRequest.objects.create(
-            first_name="Sprout", last_name="Seedling", phone_number="+16505551234"
+            first_name="Sprout",
+            last_name="Seedling",
+            phone_number="+16505551234",
+            user=applicant,
         )
 
         response = api_client.get(JOIN_REQUESTS_URL, **vettor_headers)
         row = response.json()[0]
         titles = {e["title"]: e["event_type"] for e in row["attended_events"]}
         assert titles == {"Community Meetup": "community", "Club Night": "club"}
+
+    def test_no_history_without_linked_account(
+        self, api_client, vettor_headers, flag_on, host_user
+    ):
+        """A bare phone match to a guest row must not surface that guest's history."""
+        from users.models import User
+
+        guest = User.objects.create_user(
+            phone_number="+16505551234", password="x", first_name="Guest", is_member=False
+        )
+        event = _make_event(
+            host_user, "Community Meetup", days_ago=5, event_type=EventType.COMMUNITY
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=guest,
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+        JoinRequest.objects.create(
+            first_name="Sprout", last_name="Seedling", phone_number="+16505551234"
+        )
+
+        response = api_client.get(JOIN_REQUESTS_URL, **vettor_headers)
+        row = response.json()[0]
+        assert row["attended_events"] == []
+
+    def test_two_guests_same_phone_not_attributed(
+        self, api_client, vettor_headers, flag_on, host_user
+    ):
+        """Guest A's attendance must not appear on unlinked applicant B who shares A's phone."""
+        from users.models import User
+
+        guest_a = User.objects.create_user(
+            phone_number="+16505551234", password="x", first_name="GuestA", is_member=False
+        )
+        event = _make_event(host_user, "Club Night", days_ago=10, event_type=EventType.CLUB)
+        EventRSVP.objects.create(
+            event=event,
+            user=guest_a,
+            status=RSVPStatus.ATTENDING,
+            attendance=AttendanceStatus.ATTENDED,
+        )
+        JoinRequest.objects.create(
+            first_name="Applicant", last_name="Bee", phone_number="+16505551234"
+        )
+
+        response = api_client.get(JOIN_REQUESTS_URL, **vettor_headers)
+        row = response.json()[0]
+        assert row["attended_events"] == []
 
     def test_resolves_via_join_request_user_fk(
         self, api_client, vettor_headers, flag_on, host_user
