@@ -286,8 +286,7 @@ class TestRemoveGuestRsvp:
 
     def test_event_not_found(self, api_client, host_user, guest):
         response = api_client.delete(
-            "/api/community/events/00000000-0000-0000-0000-000000000000"
-            f"/rsvps/{guest.pk}/rsvp/",
+            f"/api/community/events/00000000-0000-0000-0000-000000000000/rsvps/{guest.pk}/rsvp/",
             **_auth(host_user),
         )
         assert response.status_code == 404
