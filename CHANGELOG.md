@@ -1,3 +1,10 @@
+## [0.64.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.1...v0.64.2) (2026-07-23)
+
+
+### Bug Fixes
+
+* **attendance:** don't attribute a different guest's attendance to a join-request applicant (Issue 1107) ([#1112](https://github.com/ProteinDeficientsAnonymous/pda/issues/1112)) ([82ea754](https://github.com/ProteinDeficientsAnonymous/pda/commit/82ea75438fe6c0abbc5ca67850d3fd3cab8193a1))
+
 ## [0.64.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.0...v0.64.1) (2026-07-23)
 
 
