@@ -353,7 +353,7 @@ export function EventForm({ existing }: Props) {
           </p>
         ) : null}
 
-        <div className="fixed inset-x-0 bottom-0 z-50 flex flex-row gap-2 px-4 py-3 sm:static sm:z-auto sm:mx-0 sm:justify-end sm:p-0 sm:pt-2">
+        <div className="bg-background fixed inset-x-0 bottom-0 z-50 flex flex-row gap-2 px-4 py-3 sm:static sm:z-auto sm:mx-0 sm:justify-end sm:bg-transparent sm:p-0 sm:pt-2">
           <Button
             variant="secondary"
             onClick={() => void navigate(-1)}
