@@ -3204,7 +3204,7 @@ export interface components {
          *     in ``community._feedback``.
          * @enum {string}
          */
-        FeedbackType: "bug" | "feature request";
+        FeedbackType: "bug" | "feature request" | "improvement";
         /** FinalizePollIn */
         FinalizePollIn: {
             /**

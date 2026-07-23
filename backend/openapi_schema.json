@@ -2795,7 +2795,8 @@
         "description": "Categories a user can tag feedback with. Not DB-backed \u2014 these are the\naccepted values on the feedback API payload, mapped to GitHub issue labels\nin ``community._feedback``.",
         "enum": [
           "bug",
-          "feature request"
+          "feature request",
+          "improvement"
         ],
         "title": "FeedbackType",
         "type": "string"

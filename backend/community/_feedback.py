@@ -156,6 +156,7 @@ def _build_issue_body(payload: FeedbackIn, auth_user) -> str:
 _FEEDBACK_TYPE_LABELS: dict[FeedbackType, str] = {
     FeedbackType.BUG: "bug",
     FeedbackType.FEATURE_REQUEST: "feature",
+    FeedbackType.IMPROVEMENT: "enhancement",
 }
 
 

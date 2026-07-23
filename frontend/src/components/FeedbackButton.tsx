@@ -25,6 +25,7 @@ export function FeedbackButton() {
   const [description, setDescription] = useState('');
   const [isBug, setIsBug] = useState(false);
   const [isFeature, setIsFeature] = useState(false);
+  const [isImprovement, setIsImprovement] = useState(false);
   const [titleError, setTitleError] = useState<string | undefined>(undefined);
   const [descriptionError, setDescriptionError] = useState<string | undefined>(undefined);
 
@@ -47,6 +48,7 @@ export function FeedbackButton() {
     setDescription('');
     setIsBug(false);
     setIsFeature(false);
+    setIsImprovement(false);
     setTitleError(undefined);
     setDescriptionError(undefined);
   }
@@ -73,6 +75,7 @@ export function FeedbackButton() {
     const feedbackTypes: FeedbackType[] = [];
     if (isBug) feedbackTypes.push('bug');
     if (isFeature) feedbackTypes.push('feature request');
+    if (isImprovement) feedbackTypes.push('improvement');
 
     try {
       const result = await mutateAsync({
@@ -186,6 +189,17 @@ export function FeedbackButton() {
                     className="accent-brand-600 h-4 w-4 cursor-pointer rounded"
                   />
                   feature request
+                </label>
+                <label className="text-foreground flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isImprovement}
+                    onChange={(e) => {
+                      setIsImprovement(e.target.checked);
+                    }}
+                    className="accent-brand-600 h-4 w-4 cursor-pointer rounded"
+                  />
+                  improvement
                 </label>
               </div>
               <div className="flex justify-end gap-2 pt-2">
