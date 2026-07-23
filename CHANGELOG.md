@@ -1,3 +1,10 @@
+## [0.64.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.64.0...v0.64.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **events:** remove caution icon from delete button ([#1111](https://github.com/ProteinDeficientsAnonymous/pda/issues/1111)) ([a5f796f](https://github.com/ProteinDeficientsAnonymous/pda/commit/a5f796ff8f5d551c2c80ac8e23ba3d9aa2073202))
+
 # [0.64.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.63.0...v0.64.0) (2026-07-23)
 
 
