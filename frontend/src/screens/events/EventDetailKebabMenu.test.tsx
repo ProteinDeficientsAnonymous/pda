@@ -11,9 +11,7 @@ import { useFlag } from '@/api/featureFlags';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 
-function renderMenu(
-  overrides: { eventHasEnded?: boolean; canManageRsvps?: boolean } = {},
-) {
+function renderMenu(overrides: { eventHasEnded?: boolean; canManageRsvps?: boolean } = {}) {
   return render(
     <MemoryRouter>
       <EventDetailKebabMenu

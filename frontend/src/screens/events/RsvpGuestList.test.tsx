@@ -49,7 +49,9 @@ describe('RsvpGuestList — cant go / waitlist visibility (Issue 1042)', () => {
       ],
     });
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
         <MemoryRouter>
           <RsvpGuestList event={event} canSeeInvited={false} />
         </MemoryRouter>
@@ -67,7 +69,9 @@ describe('RsvpGuestList — cant go / waitlist visibility (Issue 1042)', () => {
       ],
     });
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
         <MemoryRouter>
           <RsvpGuestList event={event} canSeeInvited={true} />
         </MemoryRouter>
