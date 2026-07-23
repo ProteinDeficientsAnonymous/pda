@@ -14,10 +14,12 @@ import { CohostInviteBanner } from './CohostInviteBanner';
 import { EventActions } from './EventActions';
 import { EventBadge } from './EventBadge';
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
+import { eventMemberSectionFlags } from './eventMemberFlags';
 import { EventMemberSection } from './EventMemberSection';
 import { EventTagChips } from './EventTagChips';
 import { EventPollCard } from './poll/EventPollCard';
 import { PublicRsvpSection } from './PublicRsvpSection';
+import { RsvpSection } from './RsvpSection';
 
 function photoSrc(url: string, updatedAt: string | null): string {
   if (!updatedAt) return url;
@@ -88,6 +90,14 @@ export default function EventDetailScreen() {
       <WhenLine event={event} />
       <EventTagChips tags={event.tags} className="mt-2" />
       <EventActions event={event} />
+      <div className="mt-3">
+        <MemberRsvpControl
+          event={event}
+          isAuthed={isAuthed}
+          hasTokenUnlock={hasTokenUnlock}
+          rsvpToken={rsvpToken}
+        />
+      </div>
       {isAuthed ? <CohostInviteBanner event={event} /> : null}
       <EventPollCard event={event} className="mt-3" />
 
@@ -192,6 +202,28 @@ function DetailSection({
   if (isAuthed) return <EventMemberSection event={event} />;
   if (hasTokenUnlock) return <EventMemberSection event={event} token={rsvpToken ?? ''} />;
   return <AnonSection event={event} />;
+}
+
+// Placed right under the photo/title (not in the lower member section) so the
+// primary "am I going" action is the visually dominant thing on the page.
+function MemberRsvpControl({
+  event,
+  isAuthed,
+  hasTokenUnlock,
+  rsvpToken,
+}: {
+  event: Event;
+  isAuthed: boolean;
+  hasTokenUnlock: boolean;
+  rsvpToken: string | undefined;
+}) {
+  const user = useAuthStore((s) => s.user);
+  if (!isAuthed && !hasTokenUnlock) return null;
+
+  const { showRsvp } = eventMemberSectionFlags(event, isAuthed ? user : null);
+  if (!showRsvp) return null;
+
+  return <RsvpSection event={event} {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})} />;
 }
 
 function AnonSection({ event }: { event: Event }) {

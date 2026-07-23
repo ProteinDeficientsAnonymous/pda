@@ -16,11 +16,9 @@ import {
 } from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
-import { RsvpGuestList } from './RsvpGuestList';
 
 interface Props {
   event: Event;
-  canSeeInvited: boolean;
   token?: string;
 }
 
@@ -30,12 +28,18 @@ const STATUS_LINES: Record<RsvpInputStatus, string> = {
   [RsvpStatus.CantGo]: "you can't go",
 };
 
+const STATUS_BADGE_LABELS: Record<RsvpInputStatus, string> = {
+  [RsvpStatus.Attending]: "i'm going",
+  [RsvpStatus.Maybe]: 'maybe',
+  [RsvpStatus.CantGo]: "i can't go",
+};
+
 interface BoxState {
   mode: 'create' | 'edit';
   initialStatus: RsvpInputStatus;
 }
 
-export function RsvpSection({ event, canSeeInvited, token }: Props) {
+export function RsvpSection({ event, token }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -145,10 +149,6 @@ export function RsvpSection({ event, canSeeInvited, token }: Props) {
         </p>
       ) : null}
 
-      <div className="mt-2">
-        <RsvpGuestList event={event} canSeeInvited={canSeeInvited} />
-      </div>
-
       {box ? (
         <RsvpBox
           key={box.mode + box.initialStatus}
@@ -185,19 +185,15 @@ function RsvpControls({
 }) {
   if (myInputStatus) {
     return (
-      <div className="bg-brand-600 text-brand-on flex items-center justify-between gap-3 rounded-lg px-4 py-3">
-        <span role="status" className="text-sm font-medium">
-          {STATUS_LINES[myInputStatus]}
-        </span>
-        <button
-          type="button"
-          onClick={onOpenEdit}
-          disabled={busy}
-          className="border-brand-on/40 hover:bg-brand-on/10 shrink-0 rounded-full border px-3 py-1 text-sm font-medium transition-colors disabled:opacity-60"
-        >
-          edit rsvp
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onOpenEdit}
+        disabled={busy}
+        aria-label={`${STATUS_LINES[myInputStatus]} — edit rsvp`}
+        className="bg-brand-600 text-brand-on hover:bg-brand-700 mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium transition-colors disabled:opacity-60"
+      >
+        <span role="status">{STATUS_BADGE_LABELS[myInputStatus]}</span>
+      </button>
     );
   }
 
@@ -205,6 +201,7 @@ function RsvpControls({
     <RsvpStatusPicker
       value={null}
       disabled={busy}
+      prominent
       onSelect={onOpenCreate}
       labelFor={(status, defaultLabel) =>
         status === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel

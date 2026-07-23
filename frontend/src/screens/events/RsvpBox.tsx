@@ -58,30 +58,32 @@ export function RsvpBox({
         <RsvpStatusPicker value={status} onSelect={setStatus} disabled={busy} />
 
         {showPlusOne ? (
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={hasPlusOne}
-              onChange={(e) => {
-                setHasPlusOne(e.target.checked);
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              variant={hasPlusOne ? 'primary' : 'secondary'}
+              onClick={() => {
+                setHasPlusOne(!hasPlusOne);
               }}
-            />
-            bringing a +1
-          </label>
+              disabled={busy}
+            >
+              {hasPlusOne ? 'remove +1' : 'add +1'}
+            </Button>
+          </div>
         ) : null}
 
         {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
 
         <div className="flex items-center justify-between gap-2">
           {mode === 'edit' && onRemove ? (
-            <Button type="button" variant="ghost" onClick={onRemove} disabled={busy}>
+            <Button type="button" variant="secondary" onClick={onRemove} disabled={busy}>
               remove rsvp
             </Button>
           ) : (
             <span />
           )}
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
               cancel
             </Button>
             <Button type="button" onClick={confirm} disabled={busy}>

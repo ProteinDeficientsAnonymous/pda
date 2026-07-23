@@ -71,17 +71,17 @@ describe('RsvpBox', () => {
     expect(screen.getByRole('button', { name: /remove rsvp/i })).toBeDisabled();
   });
 
-  it('toggling only the +1 checkbox in edit mode preserves the initial status', () => {
+  it('toggling only the +1 button in edit mode preserves the initial status', () => {
     const onConfirm = vi.fn();
     render(<RsvpBox {...base} mode="edit" initialHasPlusOne={false} onConfirm={onConfirm} />);
-    fireEvent.click(screen.getByRole('checkbox', { name: /bringing a \+1/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add \+1$/i }));
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Attending, hasPlusOne: true }),
     );
   });
 
-  it('keeps the +1 checkbox visible and checked after switching to maybe', () => {
+  it('keeps the +1 button showing "remove +1" after switching to maybe', () => {
     const onConfirm = vi.fn();
     render(
       <RsvpBox
@@ -93,15 +93,14 @@ describe('RsvpBox', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
-    const checkbox = screen.getByRole('checkbox', { name: /bringing a \+1/i });
-    expect(checkbox).toBeChecked();
+    expect(screen.getByRole('button', { name: /^remove \+1$/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Maybe, hasPlusOne: true }),
     );
   });
 
-  it('allows unchecking the +1 checkbox after switching to can’t go', () => {
+  it('allows removing the +1 after switching to can’t go', () => {
     const onConfirm = vi.fn();
     render(
       <RsvpBox
@@ -113,16 +112,16 @@ describe('RsvpBox', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
-    fireEvent.click(screen.getByRole('checkbox', { name: /bringing a \+1/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^remove \+1$/i }));
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.CantGo, hasPlusOne: false }),
     );
   });
 
-  it('hides the +1 checkbox when the event does not allow plus ones', () => {
+  it('hides the +1 button when the event does not allow plus ones', () => {
     render(<RsvpBox {...base} mode="edit" allowPlusOnes={false} onConfirm={() => {}} />);
-    expect(screen.queryByRole('checkbox', { name: /bringing a \+1/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /\+1/i })).not.toBeInTheDocument();
   });
 
   it('shows the comment field in edit mode when allowComment is true', () => {

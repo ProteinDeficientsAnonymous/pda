@@ -14,9 +14,9 @@ test('returning non-member with stored token skips phone-check', async ({ page }
 
   const rsvpSection = page.getByLabel('rsvp');
   await expect(rsvpSection.getByLabel('phone number')).not.toBeVisible();
-  await expect(rsvpSection.getByText("you're going")).toBeVisible();
+  await expect(rsvpSection.getByText("i'm going", { exact: true })).toBeVisible();
 
-  await rsvpSection.getByRole('button', { name: 'edit rsvp' }).click();
+  await rsvpSection.getByRole('button', { name: /edit rsvp/i }).click();
 
   const rsvpDialog = page.getByRole('dialog', { name: 'rsvp' });
   await expect(rsvpDialog).toBeVisible();
