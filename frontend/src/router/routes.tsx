@@ -34,6 +34,7 @@ const EventDetail = lazyWithRetry(() => import('@/screens/events/EventDetailScre
 const EventCreate = lazyWithRetry(() => import('@/screens/events/EventCreateScreen'));
 const EventEdit = lazyWithRetry(() => import('@/screens/events/EventEditScreen'));
 const EventAttendance = lazyWithRetry(() => import('@/screens/events/EventAttendanceScreen'));
+const EventManageRsvps = lazyWithRetry(() => import('@/screens/events/EventManageRsvpsScreen'));
 const EventCheckInReport = lazyWithRetry(() => import('@/screens/events/EventCheckInReportScreen'));
 const MyEvents = lazyWithRetry(() => import('@/screens/events/MyEventsScreen'));
 const PublicRsvps = lazyWithRetry(() => import('@/screens/events/PublicRsvpsScreen'));
@@ -112,6 +113,7 @@ export const router = createBrowserRouter([
                   { path: '/events/add', element: el(<EventCreate />) },
                   { path: '/events/:id/edit', element: el(<EventEdit />) },
                   { path: '/events/:id/attendance', element: el(<EventAttendance />) },
+                  { path: '/events/:id/manage-rsvps', element: el(<EventManageRsvps />) },
                   { path: '/members', element: el(<MembersDirectory />) },
                   { path: '/members/:userId', element: el(<MemberProfile />) },
                 ],

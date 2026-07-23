@@ -64,12 +64,7 @@ export function EventMemberSection({ event, token }: Props) {
       <CostSection event={event} />
       {showRsvp ? (
         <Card label="rsvp">
-          <RsvpSection
-            event={event}
-            canSeeInvited={canSeeInvited}
-            canManageRsvps={canSeeInvited}
-            {...(token ? { token } : {})}
-          />
+          <RsvpSection event={event} canSeeInvited={canSeeInvited} {...(token ? { token } : {})} />
           {canInvite || isCoHost ? (
             <div className="mt-4 flex flex-col items-stretch gap-2">
               {canInvite ? <InviteSection event={event} /> : null}

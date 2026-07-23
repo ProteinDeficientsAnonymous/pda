@@ -1092,8 +1092,12 @@ export interface paths {
          * Set Guest Rsvp
          * @description Let an event host/co-host/manager change another user's rsvp on their behalf (Issue 872).
          */
-        post: operations["community__event_host_actions_set_guest_rsvp"];
-        delete?: never;
+        post: operations["community__event_host_rsvps_set_guest_rsvp"];
+        /**
+         * Remove Guest Rsvp
+         * @description Let an event host/co-host/manager remove another user's rsvp entirely.
+         */
+        delete: operations["community__event_host_rsvps_remove_guest_rsvp"];
         options?: never;
         head?: never;
         patch?: never;
@@ -7971,7 +7975,7 @@ export interface operations {
             };
         };
     };
-    community__event_host_actions_set_guest_rsvp: {
+    community__event_host_rsvps_set_guest_rsvp: {
         parameters: {
             query?: never;
             header?: never;
@@ -8004,6 +8008,54 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_host_rsvps_remove_guest_rsvp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Forbidden */
             403: {

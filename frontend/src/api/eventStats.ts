@@ -108,3 +108,16 @@ export function useSetGuestRsvp(eventId: string) {
     },
   });
 }
+
+export function useRemoveGuestRsvp(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { userId: string }) => {
+      await apiClient.delete(`/api/community/events/${eventId}/rsvps/${args.userId}/rsvp/`);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, true) });
+      void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
+    },
+  });
+}

@@ -10727,9 +10727,79 @@
       }
     },
     "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/": {
+      "delete": {
+        "description": "Let an event host/co-host/manager remove another user's rsvp entirely.",
+        "operationId": "community__event_host_rsvps_remove_guest_rsvp",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Remove Guest Rsvp",
+        "tags": [
+          "community"
+        ]
+      },
       "post": {
         "description": "Let an event host/co-host/manager change another user's rsvp on their behalf (Issue 872).",
-        "operationId": "community__event_host_actions_set_guest_rsvp",
+        "operationId": "community__event_host_rsvps_set_guest_rsvp",
         "parameters": [
           {
             "in": "path",
