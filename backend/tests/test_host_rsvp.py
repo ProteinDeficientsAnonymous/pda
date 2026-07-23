@@ -338,4 +338,3 @@ class TestRemoveGuestRsvp:
         mock_broadcast.assert_called_once()
         assert mock_broadcast.call_args.args[0] == host_rsvp_event.id
         assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(host_user.pk)}
-        assert mock_broadcast.call_args.kwargs["exclude_user_ids"] == {str(host_user.pk)}
