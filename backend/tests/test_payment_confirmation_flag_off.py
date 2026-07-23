@@ -1,9 +1,3 @@
-"""Baseline: with EVENT_PAYMENT_CONFIRMATION off, RSVP on a paid event behaves
-exactly as it does today — no confirmation required, no gate. Guards against
-regressions while the gate (Issue 1045) is built behind the flag. Must pass on
-main before any gate code exists, and keep passing after.
-"""
-
 import pytest
 from community.models import (
     Event,
@@ -45,8 +39,6 @@ class TestFlagRegistered:
 
 @pytest.mark.django_db
 class TestMemberPathFlagOff:
-    """Signed-in member RSVPing 'attending' to a paid event: no gate either way."""
-
     def test_default_off_attending_paid_succeeds_without_confirmation(
         self, api_client, auth_headers, paid_event, test_user
     ):
@@ -78,8 +70,6 @@ class TestMemberPathFlagOff:
 
 @pytest.mark.django_db
 class TestPublicPathFlagOff:
-    """Brand-new person RSVPing 'attending' to a paid event: no gate either way."""
-
     def _paid_official_event(self):
         return make_official_event(price="$10", venmo_link="https://venmo.com/host")
 
