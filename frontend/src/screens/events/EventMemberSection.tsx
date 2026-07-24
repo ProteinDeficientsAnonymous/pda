@@ -126,7 +126,7 @@ export function LocationSection({ event }: { event: Event }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`open ${event.location} in maps`}
-        className="text-brand-700 hover:text-brand-900 text-sm"
+        className="text-brand-700 hover:text-brand-900 text-sm [overflow-wrap:anywhere] break-words"
       >
         {primary}
       </a>
@@ -148,7 +148,7 @@ export function LinksSection({ event }: { event: Event }) {
               href={l.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-700 hover:text-brand-900"
+              className="text-brand-700 hover:text-brand-900 [overflow-wrap:anywhere] break-words"
             >
               {l.label}
             </a>
@@ -183,12 +183,14 @@ export function CostSection({ event }: { event: Event }) {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-brand-700 hover:text-brand-900"
+                className="text-brand-700 hover:text-brand-900 [overflow-wrap:anywhere] break-words"
               >
                 {item.label}
               </a>
             ) : (
-              <span className="text-foreground">{item.label}</span>
+              <span className="text-foreground [overflow-wrap:anywhere] break-words">
+                {item.label}
+              </span>
             )}
           </li>
         ))}

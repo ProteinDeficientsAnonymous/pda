@@ -49,6 +49,14 @@ describe('CommentItem', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
+  it('wraps a long unbroken body so it cannot overflow the viewport', () => {
+    const longToken = `https://example.com/${'x'.repeat(200)}`;
+    wrap(
+      <CommentItem comment={{ ...baseComment, body: longToken }} eventId="evt" canReact canReply />,
+    );
+    expect(screen.getByText(longToken)).toHaveClass('break-words', '[overflow-wrap:anywhere]');
+  });
+
   it('renders [deleted] placeholder when isDeleted', () => {
     wrap(
       <CommentItem

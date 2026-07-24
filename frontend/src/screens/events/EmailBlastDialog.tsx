@@ -170,7 +170,7 @@ export function EmailBlastDialog({ event, open, onClose }: Props) {
             onChange={(e) => {
               setMessage(e.target.value);
             }}
-            className="border-border-strong bg-surface focus:ring-brand-200 focus:border-brand-500 h-32 w-full rounded-md border px-3 py-2 text-sm transition-colors outline-none focus:ring-2"
+            className="border-border-strong bg-surface focus:ring-brand-200 focus:border-brand-500 h-32 w-full rounded-md border px-3 py-2 text-base transition-colors outline-none focus:ring-2 md:text-sm"
           />
         </div>
         <div className="flex flex-col gap-1.5">
