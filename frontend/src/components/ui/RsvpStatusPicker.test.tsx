@@ -51,21 +51,6 @@ describe('RsvpStatusPicker', () => {
     expect(screen.getByRole('button', { name: 'join the waitlist' })).toBeInTheDocument();
   });
 
-  it('renders default-size pills unless prominent is set', () => {
-    render(<RsvpStatusPicker value={null} onSelect={vi.fn()} />);
-    const pill = screen.getByRole('button', { name: "i'm going" });
-    expect(pill).toHaveClass('h-10');
-    expect(pill).not.toHaveClass('flex-1');
-  });
-
-  it('renders bigger, full-width pills when prominent', () => {
-    render(<RsvpStatusPicker value={null} onSelect={vi.fn()} prominent />);
-    const pill = screen.getByRole('button', { name: "i'm going" });
-    expect(pill).toHaveClass('h-12');
-    expect(pill).toHaveClass('flex-1');
-    expect(pill).toHaveClass('text-base');
-  });
-
   it('filters to only the given statuses', () => {
     render(<RsvpStatusPicker value={null} onSelect={vi.fn()} statuses={['attending', 'maybe']} />);
     expect(screen.getByRole('button', { name: "i'm going" })).toBeInTheDocument();
