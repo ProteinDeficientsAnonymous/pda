@@ -14,7 +14,7 @@ export function AppShell() {
 
   return (
     <div className="bg-background flex min-h-screen flex-col">
-      <header className="from-surface to-surface/60 sticky top-0 z-10 bg-gradient-to-b">
+      <header className="from-surface via-surface/85 to-surface/20 sticky top-0 z-10 bg-gradient-to-b">
         <div className="mx-auto flex h-10 max-w-6xl items-center justify-between gap-4 px-4">
           <button
             type="button"
