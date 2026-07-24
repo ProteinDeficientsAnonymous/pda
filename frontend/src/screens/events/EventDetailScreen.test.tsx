@@ -348,12 +348,24 @@ describe('EventDetailScreen', () => {
       } as unknown as ReturnType<typeof useEvent>);
     }
 
-    it('shows a "nothing here" notice on 404 instead of a refresh prompt', () => {
+    it('prompts an unauthenticated visitor to log in on 404 instead of a dead end (issue 1150)', () => {
+      mockError(404);
+      renderScreen('ev1');
+
+      expect(screen.getByText(/log in to see this event/i)).toBeInTheDocument();
+      expect(screen.queryByText(/try refreshing/i)).not.toBeInTheDocument();
+
+      const loginLink = screen.getByRole('link', { name: /log in/i });
+      expect(loginLink).toHaveAttribute('href', '/login?redirect=%2Fevents%2Fev1');
+    });
+
+    it('shows a "nothing here" notice on 404 for an authed member instead of a login prompt', () => {
+      useAuthStore.setState({ status: 'authed', user: AUTHED_USER, accessToken: 'tok' });
       mockError(404);
       renderScreen('ev1');
 
       expect(screen.getByText(/nothing here/i)).toBeInTheDocument();
-      expect(screen.queryByText(/try refreshing/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /^log in$/i })).not.toBeInTheDocument();
     });
 
     it('shows a refresh prompt on a generic error', () => {
