@@ -1,3 +1,10 @@
+## [0.68.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.68.1...v0.68.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* **notifications:** clarify cohost invite isn't accepted yet ([#1142](https://github.com/ProteinDeficientsAnonymous/pda/issues/1142)) ([4146686](https://github.com/ProteinDeficientsAnonymous/pda/commit/4146686aeb72883b852cbbb579d58caf8ea082e3))
+
 ## [0.68.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.68.0...v0.68.1) (2026-07-23)
 
 
