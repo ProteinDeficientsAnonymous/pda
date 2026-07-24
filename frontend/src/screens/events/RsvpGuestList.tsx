@@ -59,7 +59,7 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
       <div
         role="tablist"
         aria-label="guest status"
-        className="border-border-strong bg-surface mb-2 flex w-full rounded-full border p-1"
+        className="border-border-strong bg-surface mb-2 flex w-full gap-1 overflow-x-auto rounded-full border p-1"
       >
         {tabs.map((t) => (
           <button
@@ -71,7 +71,7 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
               setActive(t.key);
             }}
             className={cn(
-              'inline-flex flex-1 flex-col items-center justify-center rounded-full px-2 py-1 text-sm leading-tight whitespace-nowrap transition-colors',
+              'inline-flex grow shrink-0 basis-auto flex-col items-center justify-center rounded-full px-2 py-1 text-sm leading-tight whitespace-nowrap transition-colors',
               active === t.key
                 ? 'bg-brand-600 text-brand-on'
                 : 'text-foreground-secondary hover:bg-surface-dim',
