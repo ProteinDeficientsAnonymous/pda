@@ -12,10 +12,6 @@ function renderIn(node: React.ReactElement) {
   return render(<MemoryRouter>{node}</MemoryRouter>);
 }
 
-// A long unbroken user-entered string (url/location/zelle) has no break
-// opportunity; without overflow-wrap it pushes the layout wider than the phone
-// viewport and iOS Safari renders the whole page zoomed in (issue 1131, same
-// class as issue 611 which only covered the title + description).
 describe('event detail — long user content wraps (issue 1131)', () => {
   it('wraps a long location so it cannot overflow the viewport', () => {
     const event = { location: `somewhere/${LONG_TOKEN}` } as Event;
