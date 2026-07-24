@@ -10,13 +10,7 @@ interface Props {
   statuses?: RsvpInputStatus[];
 }
 
-export function RsvpStatusPicker({
-  value,
-  onSelect,
-  disabled = false,
-  labelFor,
-  statuses,
-}: Props) {
+export function RsvpStatusPicker({ value, onSelect, disabled = false, labelFor, statuses }: Props) {
   const options = statuses
     ? RSVP_STATUS_LABELS.filter((p) => statuses.includes(p.status))
     : RSVP_STATUS_LABELS;
