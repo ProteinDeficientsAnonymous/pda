@@ -12,15 +12,20 @@ web push (so notifications work before any app store exists) and per-type user p
 1. Real push notifications when the app is closed — **web push first** (no app store, ships in
    days), Capacitor iOS/Android later. All backend infrastructure is shared between the two.
 2. Per-type notification opt-outs (e.g. "comments on events i'm going to", "invitations to
-   events"), managed from the settings screen.
+   events"), managed from the settings screen — with a separate **email** toggle for the types
+   that also send an email (event invites, co-host invites, check-in nudges).
 3. Split `EVENT_COMMENT` into **hosting** vs **attending** variants so those are separately
    toggleable — and add the attending notification, which **does not exist today** (attendees
    currently get only a silent `event_updated` cache-refresh ping, no bell row).
 
 ## non-goals
 
-- Email preferences. Transactional/blast emails (invites, milestones, blasts) have their own
-  flows and are untouched. The opt-out model doesn't preclude adding an email channel later.
+- Preferences for **transactional/account emails** (login links, join approval, onboarding) —
+  always on. Likewise emails to **non-members** (public RSVP confirmations/removals): no
+  account, no prefs.
+- Preferences for **event blasts** and **attendance-milestone reminder emails** — neither maps
+  to a `NotificationType`. The channel model doesn't preclude adding email-only pref keys for
+  them later (see open questions).
 - Per-event mute ("stop notifying me about *this* event"). Future work; the model doesn't
   block it.
 - Quiet hours, digests, batching.
@@ -47,18 +52,25 @@ switch should exist before the new noise does.
 `backend/notifications/models.py` (append):
 
 ```python
+class OptOutChannel(models.TextChoices):
+    APP = "app", "App"        # bell row + SSE + (future) push
+    EMAIL = "email", "Email"  # the email mirror of this notification type
+
+
 class NotificationOptOut(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         "users.User", on_delete=models.CASCADE, related_name="notification_opt_outs"
     )
     notification_type = models.CharField(max_length=32, choices=NotificationType.choices)
+    channel = models.CharField(max_length=8, choices=OptOutChannel.choices)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "notification_type"], name="uniq_user_notification_opt_out"
+                fields=["user", "notification_type", "channel"],
+                name="uniq_user_notification_opt_out",
             )
         ]
 ```
@@ -66,22 +78,24 @@ class NotificationOptOut(models.Model):
 Opt-outs only — absence of a row means enabled. No default rows to backfill, and new
 notification types are automatically on for everyone.
 
-**Deliberate scope cut:** no `channel` column. An opt-out suppresses the notification entirely
-(no bell row, no SSE announce, no future push). This matches the user-visible promise ("turn
-off notifications by type") and keeps enforcement in one place.
-`# ponytail: whole-type opt-out; add a channel column when someone asks for "push off, bell on"`
+Two channels, not three: an `app` opt-out suppresses the notification entirely (no bell row,
+no SSE announce, no future push — one switch, since push is just delivery of the same row).
+An `email` opt-out suppresses the email mirror where one exists.
+`# ponytail: bell+push share one channel; split them only if "push off, bell on" is requested`
 
 ### enforcement — one helper in `service.py`
 
 ```python
-def _after_opt_outs(user_ids: Iterable[str], ntype: str) -> list[str]:
+def _after_opt_outs(
+    user_ids: Iterable[str], ntype: str, channel: str = OptOutChannel.APP
+) -> list[str]:
     ids = [str(u) for u in user_ids]
     if not ids:
         return ids
     opted_out = set(
         str(u)
         for u in NotificationOptOut.objects.filter(
-            user_id__in=ids, notification_type=ntype
+            user_id__in=ids, notification_type=ntype, channel=channel
         ).values_list("user_id", flat=True)
     )
     return [u for u in ids if u not in opted_out]
@@ -89,8 +103,17 @@ def _after_opt_outs(user_ids: Iterable[str], ntype: str) -> list[str]:
 
 Each `create_*`/`notify_*` function filters its recipient list through this before
 `bulk_create`. One added line per function (~13 sites). Because rows are never created for
-opted-out users, SSE and (later) push inherit the preference for free — no per-channel checks
-anywhere.
+opted-out users, SSE and (later) push inherit the `app` preference for free — no per-channel
+checks in the delivery layer.
+
+**Email call sites** — the three member-facing emails that mirror a notification type check
+the `email` channel before sending (same helper, `channel=OptOutChannel.EMAIL`):
+
+| email | call site | notification type |
+|---|---|---|
+| event invite email | `community/_event_invite_email.py` | `event_invite` |
+| co-host invite email | `community/_cohost_invite_helpers.py` | `cohost_invite` |
+| check-in nudge email | `community/_checkin_nudge.py` | `checkin_nudge` |
 
 Types **exempt from the settings UI** (but not from the mechanism): `join_request`,
 `event_flagged`, `magic_link_request` — these are permission-routed operational notifications
@@ -101,13 +124,14 @@ legacy values that no longer get created; they never appear in the UI.
 
 ```python
 class PreferencesOut(Schema):
-    opted_out: list[str]
+    opted_out_app: list[str]
+    opted_out_email: list[str]
 
 @router.get("/preferences/", auth=JWTAuth(), response=PreferencesOut)
 @router.put("/preferences/", auth=JWTAuth(), response={200: PreferencesOut, 400: ErrorOut})
 ```
 
-- `GET` returns the user's opted-out type list.
+- `GET` returns the user's opted-out types per channel.
 - `PUT` replaces the full set (validate every value against `NotificationType.values` → 400 on
   unknown; then `transaction.atomic()`: delete user's rows, `bulk_create` the new set).
   Full-replace beats per-toggle endpoints: one round trip, idempotent, trivial to test.
@@ -121,29 +145,35 @@ Regenerate types: `make frontend-types`.
 - Query + mutation hooks in `frontend/src/api/notifications.ts`
   (`useNotificationPreferences`, `useUpdateNotificationPreferences`), optimistic toggle.
 - The UI renders **groups**, each mapping to one or more enum values. Toggling a group writes
-  all of its types. Lowercase copy per house style:
+  all of its types. Each group has an "app" toggle; groups whose type also sends an email get
+  a second "email" toggle. Lowercase copy per house style:
 
-| group label | notification types |
-|---|---|
-| invitations to events | `event_invite` |
-| event cancellations | `event_cancelled` |
-| waitlist promotions | `waitlist_promoted` |
-| co-hosting (invites & changes) | `cohost_invite`, `cohost_invite_accepted`, `cohost_invite_declined`, `cohost_removed` |
-| replies to your comments | `comment_reply` |
-| comments on events you host | `event_comment_hosting` *(phase 2)* |
-| comments on events you're going to | `event_comment_attending` *(phase 2)* |
-| can't-go notes on your events | `rsvp_declined_note` |
-| check-in reminders for events you host | `checkin_nudge` |
+| group label | notification types | email toggle |
+|---|---|---|
+| invitations to events | `event_invite` | yes |
+| event cancellations | `event_cancelled` | — |
+| waitlist promotions | `waitlist_promoted` | — |
+| co-hosting (invites & changes) | `cohost_invite`, `cohost_invite_accepted`, `cohost_invite_declined`, `cohost_removed` | yes (`cohost_invite` only) |
+| replies to your comments | `comment_reply` | — |
+| comments on events you host | `event_comment_hosting` *(phase 2)* | — |
+| comments on events you're going to | `event_comment_attending` *(phase 2)* | — |
+| can't-go notes on your events | `rsvp_declined_note` | — |
+| check-in reminders for events you host | `checkin_nudge` | yes |
 
-A group renders "on" only when *none* of its types are opted out. Section intro copy, e.g.:
-"choose what you get notified about — everything's on unless you turn it off".
+A toggle renders "on" only when *none* of its group's types are opted out on that channel.
+Section intro copy, e.g.: "choose what you get notified about — everything's on unless you
+turn it off".
 
 ### tests
 
-- API: get empty default, put + re-get roundtrip, unknown type → 400, replace semantics.
+- API: get empty default, put + re-get roundtrip, unknown type → 400, replace semantics,
+  channels independent.
 - Service: opted-out user excluded from `bulk_create` and `_notify_users`; other recipients
-  unaffected; opt-out of one type doesn't touch another.
-- Frontend: prefs section renders groups, toggle fires PUT with the full type set.
+  unaffected; opt-out of one type/channel doesn't touch another.
+- Email: each of the three email call sites skips opted-out recipients; `app` opt-out alone
+  doesn't suppress the email (and vice versa).
+- Frontend: prefs section renders groups with app/email toggles, toggle fires PUT with the
+  full per-channel type sets.
 
 ---
 
@@ -321,3 +351,7 @@ VAPID keys needed). PR 4 is verifiable on any Chrome profile against localhost.
    to flat; per-type titles are a string map away.
 3. iOS home-screen-install friction: worth an in-app banner nudging install, or leave it to
    the settings hint? Spec says settings hint only, for now.
+4. Attendance-milestone reminder emails and event blasts have no `NotificationType`, so they
+   have no toggle in v1. If members should be able to opt out of those emails too, add
+   email-only pref keys (e.g. `milestone_reminder`, `event_blast`) — the model's key column
+   would loosen from enum-validated to a known-keys list. Deferred until asked for.
