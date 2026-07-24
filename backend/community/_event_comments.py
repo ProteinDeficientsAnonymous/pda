@@ -23,6 +23,7 @@ from community._event_comment_schemas import (
     EventCommentOut,
     EventCommentReplyOut,
     ReactionToggleIn,
+    ReactorOut,
 )
 from community._event_viewer import resolve_event_viewer
 from community._events import _enforce_event_read_visibility
@@ -89,17 +90,27 @@ def _can_delete_comment(
 
 
 def _reactions_summary(
-    reactions: list[EventCommentReaction], viewer_id
+    reactions: list[EventCommentReaction], viewer
 ) -> list[CommentReactionSummaryOut]:
-    """Aggregate prefetched reactions into per-emoji counts + reacted_by_me."""
+    """Aggregate prefetched reactions into per-emoji counts + reactor names."""
+    viewer_id = viewer.pk if viewer else None
     by_emoji: dict[str, dict] = {}
     for r in reactions:
-        bucket = by_emoji.setdefault(r.emoji, {"count": 0, "reacted_by_me": False})
+        bucket = by_emoji.setdefault(r.emoji, {"count": 0, "reacted_by_me": False, "reactors": []})
         bucket["count"] += 1
         if viewer_id is not None and str(r.user_id) == str(viewer_id):
             bucket["reacted_by_me"] = True
+        bucket["reactors"].append(
+            ReactorOut(
+                user_id=str(r.user_id),
+                name=visible_display_name(r.user, viewer),
+                photo_url=_safe_photo_url(r.user),
+            )
+        )
     return [
-        CommentReactionSummaryOut(emoji=e, count=v["count"], reacted_by_me=v["reacted_by_me"])
+        CommentReactionSummaryOut(
+            emoji=e, count=v["count"], reacted_by_me=v["reacted_by_me"], reactors=v["reactors"]
+        )
         for e, v in by_emoji.items()
     ]
 
@@ -116,14 +127,7 @@ def _comment_reply_out(
     co_host_pks: set[str] | None = None,
 ) -> EventCommentReplyOut:
     is_deleted = comment.deleted_at is not None
-    reactions = (
-        []
-        if is_deleted
-        else _reactions_summary(
-            list(comment.reactions.all()),
-            viewer.pk if viewer else None,
-        )
-    )
+    reactions = [] if is_deleted else _reactions_summary(list(comment.reactions.all()), viewer)
     return EventCommentReplyOut(
         id=str(comment.id),
         author_id=str(comment.author_id),
@@ -156,7 +160,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
     comments = (
         EventComment.objects.filter(event=event, parent__isnull=True)
         .select_related("author")
-        .prefetch_related("replies__author", "reactions", "replies__reactions")
+        .prefetch_related("replies__author", "reactions__user", "replies__reactions__user")
         .order_by("-created_at")
     )
     can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
@@ -346,7 +350,7 @@ def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: Reaction
     target_id = comment.id if comment.parent_id is None else comment.parent_id
     target = (
         EventComment.objects.select_related("author")
-        .prefetch_related("replies__author", "reactions", "replies__reactions")
+        .prefetch_related("replies__author", "reactions__user", "replies__reactions__user")
         .get(id=target_id)
     )
     return Status(200, _comment_out(target, event, user))

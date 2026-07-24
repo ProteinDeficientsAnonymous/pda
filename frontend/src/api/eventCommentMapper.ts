@@ -1,15 +1,23 @@
 import type {
   CommentReactionSummary,
+  CommentReactor,
   EventComment,
   EventCommentList,
   EventCommentReply,
   ReactionEmojiValue,
 } from '@/models/eventComment';
 
+interface WireReactor {
+  user_id: string;
+  name: string;
+  photo_url: string;
+}
+
 interface WireSummary {
   emoji: string;
   count: number;
   reacted_by_me: boolean;
+  reactors: WireReactor[];
 }
 
 interface WireReply {
@@ -34,11 +42,20 @@ export interface WireCommentList {
   cannot_post_reason?: ('login_required' | 'rsvp_required') | null;
 }
 
+function mapReactor(wire: WireReactor): CommentReactor {
+  return {
+    userId: wire.user_id,
+    name: wire.name,
+    photoUrl: wire.photo_url,
+  };
+}
+
 function mapSummary(wire: WireSummary): CommentReactionSummary {
   return {
     emoji: wire.emoji as ReactionEmojiValue,
     count: wire.count,
     reactedByMe: wire.reacted_by_me,
+    reactors: wire.reactors.map(mapReactor),
   };
 }
 
