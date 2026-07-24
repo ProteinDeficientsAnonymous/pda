@@ -142,7 +142,6 @@ export function RsvpSection({ event, token }: Props) {
       )}
 
       <SpotsLeft event={event} />
-      <Summary event={event} />
       {error ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
@@ -231,25 +230,6 @@ function SpotsLeft({ event }: { event: Event }) {
     <p className="text-warning text-center text-xs">
       {left === 1 ? '1 spot left' : `${String(left)} spots left`}
     </p>
-  );
-}
-
-function Summary({ event }: { event: Event }) {
-  const goingLabel =
-    event.maxAttendees !== null
-      ? `${String(event.attendingCount)} / ${String(event.maxAttendees)} going`
-      : `${String(event.attendingCount)} going`;
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-      <span className="bg-success-subtle text-success inline-flex items-center rounded-full px-2.5 py-0.5 font-medium">
-        {goingLabel}
-      </span>
-      {event.waitlistedCount > 0 ? (
-        <span className="bg-warning-subtle text-warning inline-flex items-center rounded-full px-2.5 py-0.5 font-medium">
-          {event.waitlistedCount} waitlisted
-        </span>
-      ) : null}
-    </div>
   );
 }
 
