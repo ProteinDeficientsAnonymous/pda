@@ -1,3 +1,11 @@
+## [0.69.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.1...v0.69.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* 1145 - remove x going tag under rsvp button ([#1158](https://github.com/ProteinDeficientsAnonymous/pda/issues/1158)) ([7295563](https://github.com/ProteinDeficientsAnonymous/pda/commit/729556342a864fe74396af8f6f6d90e60120c666))
+* 1146 - match header gradient to footer's 3-stop treatment ([#1157](https://github.com/ProteinDeficientsAnonymous/pda/issues/1157)) ([0e6849c](https://github.com/ProteinDeficientsAnonymous/pda/commit/0e6849ca9c5e672a526df35980e32824ed9557ec))
+
 ## [0.69.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.0...v0.69.1) (2026-07-24)
 
 
