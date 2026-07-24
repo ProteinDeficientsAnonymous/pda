@@ -16,10 +16,17 @@ import { eventKeys } from './events';
 // Wire types for write responses (not exported by the mapper)
 // ---------------------------------------------------------------------------
 
+interface WireReactor {
+  user_id: string;
+  name: string;
+  photo_url: string;
+}
+
 interface WireReactionSummary {
   emoji: string;
   count: number;
   reacted_by_me: boolean;
+  reactors: WireReactor[];
 }
 
 interface WireReplyResponse {
@@ -207,7 +214,8 @@ function toggleOnRow<T extends EventCommentReply>(
       r.emoji === emoji ? { ...r, count: r.count + 1, reactedByMe: true } : r,
     );
   } else {
-    next = [...next, { emoji, count: 1, reactedByMe: true }];
+    // reactors stays empty here; the settle-time refetch fills in the real name/photo.
+    next = [...next, { emoji, count: 1, reactedByMe: true, reactors: [] }];
   }
   return { ...row, reactions: next };
 }

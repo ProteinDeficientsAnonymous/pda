@@ -18,10 +18,17 @@ export const REACTION_EMOJI_ORDER: ReactionEmojiValue[] = [
   ReactionEmoji.Sob,
 ];
 
+export interface CommentReactor {
+  userId: string;
+  name: string;
+  photoUrl: string;
+}
+
 export interface CommentReactionSummary {
   emoji: ReactionEmojiValue;
   count: number;
   reactedByMe: boolean;
+  reactors: readonly CommentReactor[];
 }
 
 export interface EventCommentReply {
