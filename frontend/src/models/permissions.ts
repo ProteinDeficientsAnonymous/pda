@@ -45,13 +45,14 @@ export function normalizePermissions(value: readonly string[] | null | undefined
   return value.filter((v): v is string => typeof v === 'string');
 }
 
+export function isAdmin(user: UserLike | null): boolean {
+  if (!user) return false;
+  return user.roles.some((r) => r.name === ADMIN_ROLE_NAME && r.isDefault);
+}
+
 export function hasPermission(user: UserLike | null, key: PermissionKey): boolean {
   if (!user) return false;
-  return user.roles.some(
-    (r) =>
-      (r.name === ADMIN_ROLE_NAME && r.isDefault) ||
-      normalizePermissions(r.permissions).includes(key),
-  );
+  return isAdmin(user) || user.roles.some((r) => normalizePermissions(r.permissions).includes(key));
 }
 
 export function hasAnyAdminPermission(user: UserLike | null): boolean {

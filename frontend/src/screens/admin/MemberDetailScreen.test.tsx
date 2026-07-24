@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useRoles } from '@/api/roles';
 import {
@@ -12,6 +12,7 @@ import {
   useUpdateUser,
   useUsers,
 } from '@/api/users';
+import { useAuthStore } from '@/auth/store';
 
 import MemberDetailScreen from './MemberDetailScreen';
 
@@ -130,5 +131,78 @@ describe('MemberDetailScreen edit form', () => {
     expect(updateMutateAsync).not.toHaveBeenCalledWith(
       expect.objectContaining({ firstName: expect.anything() }),
     );
+  });
+});
+
+describe('MemberDetailScreen roles section permission gating', () => {
+  afterEach(() => {
+    useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
+  });
+
+  beforeEach(() => {
+    vi.mocked(useUsers).mockReturnValue({
+      data: [member],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useUsers>);
+
+    vi.mocked(useRoles).mockReturnValue({
+      data: [{ id: 'role-1', name: 'admin', isDefault: true, permissions: [], userCount: 1 }],
+      isPending: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useRoles>);
+
+    vi.mocked(useArchiveUser).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useArchiveUser>);
+
+    vi.mocked(useSendMemberMagicLink).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useSendMemberMagicLink>);
+
+    vi.mocked(useUpdateMemberRoles).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateMemberRoles>);
+
+    vi.mocked(useUpdateUser).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateUser>);
+  });
+
+  it('hides the role checkboxes from a non-admin user', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: { roles: [{ name: 'vetter', isDefault: false, permissions: ['manage_users'] }] },
+    } as unknown as ReturnType<typeof useAuthStore.getState>);
+
+    renderScreen();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save roles/i })).not.toBeInTheDocument();
+  });
+
+  it('hides the role checkboxes from a non-admin user even with manage_roles', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: { roles: [{ name: 'super_vetter', isDefault: false, permissions: ['manage_roles'] }] },
+    } as unknown as ReturnType<typeof useAuthStore.getState>);
+
+    renderScreen();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save roles/i })).not.toBeInTheDocument();
+  });
+
+  it('shows editable role checkboxes to the built-in admin role', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: { roles: [{ name: 'admin', isDefault: true, permissions: [] }] },
+    } as unknown as ReturnType<typeof useAuthStore.getState>);
+
+    renderScreen();
+    expect(screen.getByRole('checkbox')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save roles/i })).toBeInTheDocument();
   });
 });

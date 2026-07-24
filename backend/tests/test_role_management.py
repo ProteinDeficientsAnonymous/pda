@@ -29,6 +29,19 @@ def manage_users_headers(manage_users_user):
     return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
 
 
+@pytest.fixture
+def admin_user(db):
+    user = User.objects.create_user(phone_number="+12025550003", password="adminpass123")
+    user.roles.add(Role.objects.get(name="admin"))
+    return user
+
+
+@pytest.fixture
+def admin_headers(admin_user):
+    refresh = RefreshToken.for_user(admin_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
 @pytest.mark.django_db
 class TestRoleManagementAPI:
     def test_list_roles_authenticated(self, api_client, manage_users_headers):
@@ -233,14 +246,14 @@ class TestNonMemberCannotHoldRole:
         names = set(test_user.roles.values_list("name", flat=True))
         assert names == {"second"}
 
-    def test_update_user_roles_404s_for_non_member(self, api_client, manage_users_headers):
+    def test_update_user_roles_404s_for_non_member(self, api_client, admin_headers):
         non_member = self._make_non_member()
         member_role = Role.objects.get(name="member")
         response = api_client.patch(
             f"/api/auth/users/{non_member.id}/roles/",
             {"role_ids": [str(member_role.id)]},
             content_type="application/json",
-            **manage_users_headers,
+            **admin_headers,
         )
         assert response.status_code == 404
         assert_error_code(response, Code.User.NOT_FOUND)

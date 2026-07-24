@@ -451,7 +451,9 @@ def hard_delete_user(request, user_id: str):
     auth=gated_jwt,
 )
 def update_user_roles(request, user_id: str, payload: UserRolesIn):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
+    # role reassignment is admin-only, not just MANAGE_ROLES — a non-admin role
+    # could itself be granted manage_roles, reopening the escalation (Issue 1152)
+    if not _is_admin(request.auth):
         audit_log(
             logging.WARNING,
             "permission_denied",
@@ -460,7 +462,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
             target_id=user_id,
             details={
                 "endpoint": "update_user_roles",
-                "required_permission": PermissionKey.MANAGE_USERS,
+                "required_permission": "is_admin",
             },
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user_roles")
