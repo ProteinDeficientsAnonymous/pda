@@ -12,6 +12,7 @@ export function notificationTarget(n: AppNotification): string | null {
     case NotificationType.EventCancelled:
     case NotificationType.CommentReply:
     case NotificationType.EventComment:
+    case NotificationType.CommentReaction:
     case NotificationType.RsvpDeclinedNote:
       return n.eventId ? `/events/${n.eventId}` : null;
     case NotificationType.CheckinNudge:
