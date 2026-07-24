@@ -39,7 +39,7 @@ test('member A comment appears live in member B open event view via SSE', async 
     await pageB.goto(`/events/${event_id}`);
 
     const rsvpSectionA = pageA.getByLabel('rsvp');
-    await rsvpSectionA.getByRole('button', { name: "i'm going" }).click();
+    await rsvpSectionA.getByRole('button', { name: 'rsvp' }).click();
     await pageA
       .getByRole('dialog', { name: 'rsvp' })
       .getByRole('button', { name: 'confirm' })

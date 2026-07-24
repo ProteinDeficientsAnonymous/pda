@@ -27,7 +27,7 @@ test('member rsvps to an event from event detail', async ({ page }) => {
   await expect(page.getByRole('heading', { name: event_title })).toBeVisible();
 
   const rsvpSection = page.getByLabel('rsvp');
-  await rsvpSection.getByRole('button', { name: "i'm going" }).click();
+  await rsvpSection.getByRole('button', { name: 'rsvp' }).click();
 
   const rsvpDialog = page.getByRole('dialog', { name: 'rsvp' });
   await rsvpDialog.getByRole('button', { name: 'confirm' }).click();
