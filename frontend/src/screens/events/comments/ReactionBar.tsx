@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { CommentReactionSummary, ReactionEmojiValue } from '@/models/eventComment';
 import { REACTION_EMOJI_ORDER } from '@/models/eventComment';
 
+import { ReactionVoterPopover } from './ReactionVoterPopover';
+
 interface Props {
   reactions: CommentReactionSummary[];
   onToggle: (emoji: ReactionEmojiValue) => void;
@@ -10,6 +12,7 @@ interface Props {
 
 export function ReactionBar({ reactions, onToggle }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [openVotersEmoji, setOpenVotersEmoji] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,23 +41,46 @@ export function ReactionBar({ reactions, onToggle }: Props) {
       ref={containerRef}
     >
       {reactions.map((r) => (
-        <button
+        <div
           key={r.emoji}
-          type="button"
-          aria-pressed={r.reactedByMe}
-          onClick={() => {
-            onToggle(r.emoji);
-          }}
           className={[
-            'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm transition',
+            'relative inline-flex items-center gap-1 rounded-full border pl-2 text-sm transition',
             r.reactedByMe
               ? 'bg-brand-50 border-brand-500 text-foreground'
               : 'border-border-strong bg-surface text-foreground hover:bg-surface-dim',
           ].join(' ')}
         >
-          <span>{r.emoji}</span>
-          <span className="text-xs">{r.count}</span>
-        </button>
+          <button
+            type="button"
+            aria-pressed={r.reactedByMe}
+            aria-label={`react with ${r.emoji}`}
+            onClick={() => {
+              onToggle(r.emoji);
+            }}
+            className="py-0.5"
+          >
+            {r.emoji}
+          </button>
+          <button
+            type="button"
+            aria-label={`who reacted with ${r.emoji}`}
+            aria-expanded={openVotersEmoji === r.emoji}
+            className="py-0.5 pr-2 text-xs underline decoration-dotted underline-offset-2"
+            onClick={() => {
+              setOpenVotersEmoji((cur) => (cur === r.emoji ? null : r.emoji));
+            }}
+          >
+            {r.count}
+          </button>
+          {openVotersEmoji === r.emoji ? (
+            <ReactionVoterPopover
+              reaction={r}
+              onClose={() => {
+                setOpenVotersEmoji(null);
+              }}
+            />
+          ) : null}
+        </div>
       ))}
       <button
         type="button"

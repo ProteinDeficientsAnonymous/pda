@@ -2220,6 +2220,11 @@ export interface components {
             emoji: string;
             /** Reacted By Me */
             reacted_by_me: boolean;
+            /**
+             * Reactors
+             * @default []
+             */
+            reactors: components["schemas"]["ReactorOut"][];
         };
         /**
          * ConsentType
@@ -3984,6 +3989,15 @@ export interface components {
         ReactionToggleIn: {
             /** Emoji */
             emoji: string;
+        };
+        /** ReactorOut */
+        ReactorOut: {
+            /** Name */
+            name: string;
+            /** Photo Url */
+            photo_url: string;
+            /** User Id */
+            user_id: string;
         };
         /** ReorderIn */
         ReorderIn: {

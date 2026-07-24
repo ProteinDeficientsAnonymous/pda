@@ -8,10 +8,17 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class ReactorOut(BaseModel):
+    user_id: str
+    name: str
+    photo_url: str
+
+
 class CommentReactionSummaryOut(BaseModel):
     emoji: str
     count: int
     reacted_by_me: bool
+    reactors: list[ReactorOut] = []
 
 
 class EventCommentReplyOut(BaseModel):

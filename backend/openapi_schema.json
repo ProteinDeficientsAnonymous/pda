@@ -587,6 +587,14 @@
           "reacted_by_me": {
             "title": "Reacted By Me",
             "type": "boolean"
+          },
+          "reactors": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReactorOut"
+            },
+            "title": "Reactors",
+            "type": "array"
           }
         },
         "required": [
@@ -4598,6 +4606,29 @@
           "emoji"
         ],
         "title": "ReactionToggleIn",
+        "type": "object"
+      },
+      "ReactorOut": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photo_url": {
+            "title": "Photo Url",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "photo_url"
+        ],
+        "title": "ReactorOut",
         "type": "object"
       },
       "ReorderIn": {
