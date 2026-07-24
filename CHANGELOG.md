@@ -1,3 +1,10 @@
+## [0.70.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.1...v0.70.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* **events:** stop iOS Safari zoom by wrapping long user content (Issue 1131) ([#1136](https://github.com/ProteinDeficientsAnonymous/pda/issues/1136)) ([84fe0bf](https://github.com/ProteinDeficientsAnonymous/pda/commit/84fe0bf1a998c6f788b96909c5e288b657e68657))
+
 ## [0.70.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.0...v0.70.1) (2026-07-24)
 
 
