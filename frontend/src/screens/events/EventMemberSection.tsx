@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
+import { spotsLeft } from '@/models/event';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { ensureHttps } from '@/utils/url';
 
@@ -52,6 +53,7 @@ export function EventMemberSection({ event, token }: Props) {
       <CostSection event={event} />
       {showRsvp ? (
         <Card label="who's going">
+          <CapacityNote event={event} />
           <RsvpGuestList event={event} canSeeInvited={canSeeInvited} />
           {canInvite || isCoHost ? (
             <div className="mt-4 flex flex-col items-stretch gap-2">
@@ -75,6 +77,17 @@ export function EventMemberSection({ event, token }: Props) {
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
     </div>
+  );
+}
+
+function CapacityNote({ event }: { event: Event }) {
+  const { maxAttendees } = event;
+  const left = spotsLeft(event);
+  if (left === null || maxAttendees === null) return null;
+  return (
+    <p className="text-muted -mt-2 mb-3 text-xs">
+      {left}/{maxAttendees} spots left
+    </p>
   );
 }
 

@@ -307,6 +307,20 @@ describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
   });
 });
 
+describe('EventMemberSection — capacity note', () => {
+  it('shows spots left under "who\'s going" when the event has a capacity', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...BASE_EVENT, rsvpEnabled: true, maxAttendees: 20, attendingCount: 8 });
+    expect(screen.getByText('12/20 spots left')).toBeInTheDocument();
+  });
+
+  it('hides the capacity note when the event has no capacity limit', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...BASE_EVENT, rsvpEnabled: true, maxAttendees: null, attendingCount: 8 });
+    expect(screen.queryByText(/spots left/i)).not.toBeInTheDocument();
+  });
+});
+
 describe('EventMemberSection — invite gating on member rsvp (#688)', () => {
   const ALL_MEMBERS_EVENT: Event = {
     ...BASE_EVENT,
