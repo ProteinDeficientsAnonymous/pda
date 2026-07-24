@@ -256,6 +256,18 @@ def test_seed_staging_reset_removes_non_member_band():
 
 
 @pytest.mark.django_db
+def test_seed_staging_reset_removes_approval_created_join_request_users():
+    call_command("seed_staging")
+    # approving a join request creates a member user at the request's phone, which
+    # then collides with the reseeded pending request and suppresses the welcome
+    # modal (no token minted). --reset must clear the join-request band's users too.
+    orphan = User.objects.create(phone_number=joinreq_phone(0), is_member=True)
+    call_command("seed_staging", "--reset")
+    assert not User.objects.filter(phone_number=joinreq_phone(0)).exists()
+    assert orphan.pk not in User.objects.values_list("pk", flat=True)
+
+
+@pytest.mark.django_db
 def test_seed_staging_non_members_idempotent():
     call_command("seed_staging")
     call_command("seed_staging")
