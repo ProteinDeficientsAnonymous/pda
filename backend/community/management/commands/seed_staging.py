@@ -89,6 +89,9 @@ class Command(BaseCommand):
         User.objects.filter(phone_number__startswith="+170255501").delete()
         User.objects.filter(phone_number__startswith="+170255502").delete()
         User.objects.filter(phone_number__startswith="+170255503").delete()
+        # +170255504 is the join-request range: approving a request creates a user
+        # at that phone, so reset must clear those too or reseeds re-orphan them.
+        User.objects.filter(phone_number__startswith="+170255504").delete()
         User.objects.filter(phone_number__startswith="+170255505").delete()
         User.objects.filter(phone_number__startswith="+170255506").delete()
         Role.objects.filter(name__startswith="perm: ").delete()
