@@ -1,3 +1,10 @@
+## [0.69.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.0...v0.69.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **events:** prompt login on members-only event 404 (Issue 1150) ([#1159](https://github.com/ProteinDeficientsAnonymous/pda/issues/1159)) ([732d8b9](https://github.com/ProteinDeficientsAnonymous/pda/commit/732d8b9f4c558644ece4ae8d6a8ab650ca0d2c5b))
+
 # [0.69.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.68.2...v0.69.0) (2026-07-24)
 
 
