@@ -7,6 +7,7 @@ import { ContentContainer, ContentError, ContentLoading } from '@/screens/public
 const FLAG_LABELS: Record<FeatureFlagKey, string> = {
   [Feature.HostAttendanceReport]: 'host attendance report',
   [Feature.AdminAttendanceAnalytics]: 'admin attendance analytics',
+  [Feature.EventPaymentConfirmation]: 'event payment confirmation',
 };
 
 export default function FeatureFlagsScreen() {
