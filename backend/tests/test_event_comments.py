@@ -15,6 +15,7 @@ from community.models import (
 from django.core.cache import cache
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from notifications.models import Notification, NotificationType
 from users.models import User
 from users.roles import Role
 
@@ -397,6 +398,74 @@ class TestReactionToggle:
             **headers,
         )
         assert response.status_code == 403
+
+    def test_reaction_notifies_comment_author(
+        self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
+    ):
+        other_user = User.objects.create_user(
+            phone_number="+12025552020",
+            password="otherpass123",
+            first_name="Other",
+            last_name="Member",
+        )
+        EventRSVP.objects.create(
+            event=event_with_rsvp, user=other_user, status=RSVPStatus.ATTENDING
+        )
+        other_refresh = RefreshToken.for_user(other_user)
+        other_headers = {"HTTP_AUTHORIZATION": f"Bearer {other_refresh.access_token}"}  # type: ignore
+        comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="hi")
+        response = api_client.post(
+            f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/reactions/",
+            data=json.dumps({"emoji": "❤️"}),
+            content_type="application/json",
+            **other_headers,
+        )
+        assert response.status_code == 200, response.content
+        notification = Notification.objects.get(recipient=rsvp_user)
+        assert notification.notification_type == NotificationType.COMMENT_REACTION
+        assert notification.related_user_id == other_user.id  # ty: ignore[unresolved-attribute]
+
+    def test_self_reaction_does_not_notify(
+        self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
+    ):
+        comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="hi")
+        response = api_client.post(
+            f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/reactions/",
+            data=json.dumps({"emoji": "❤️"}),
+            content_type="application/json",
+            **rsvp_headers,
+        )
+        assert response.status_code == 200, response.content
+        assert not Notification.objects.filter(
+            recipient=rsvp_user, notification_type=NotificationType.COMMENT_REACTION
+        ).exists()
+
+    def test_removing_reaction_does_not_notify(
+        self, api_client, rsvp_headers, event_with_rsvp, rsvp_user
+    ):
+        other_user = User.objects.create_user(
+            phone_number="+12025552021",
+            password="otherpass123",
+            first_name="Other",
+            last_name="Member",
+        )
+        EventRSVP.objects.create(
+            event=event_with_rsvp, user=other_user, status=RSVPStatus.ATTENDING
+        )
+        other_refresh = RefreshToken.for_user(other_user)
+        other_headers = {"HTTP_AUTHORIZATION": f"Bearer {other_refresh.access_token}"}  # type: ignore
+        comment = EventComment.objects.create(event=event_with_rsvp, author=rsvp_user, body="hi")
+        EventCommentReaction.objects.create(comment=comment, user=other_user, emoji="❤️")
+        response = api_client.post(
+            f"/api/community/events/{event_with_rsvp.id}/comments/{comment.id}/reactions/",
+            data=json.dumps({"emoji": "❤️"}),
+            content_type="application/json",
+            **other_headers,
+        )
+        assert response.status_code == 200, response.content
+        assert not Notification.objects.filter(
+            recipient=rsvp_user, notification_type=NotificationType.COMMENT_REACTION
+        ).exists()
 
     def test_rate_limit_kicks_in(self, api_client, rsvp_headers, event_with_rsvp, rsvp_user):
         """11th write in 60s should 429. Toggles back-and-forth to avoid the

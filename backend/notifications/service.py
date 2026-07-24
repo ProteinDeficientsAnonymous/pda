@@ -343,6 +343,22 @@ def notify_comment_reply(reply) -> None:
     _notify_users([str(parent_author_id)])
 
 
+def notify_comment_reaction(comment, reactor: User) -> None:
+    """Notify a comment's author that someone reacted to it. No-op for self-reactions."""
+    if str(comment.author_id) == str(reactor.pk):
+        return
+    reactor_name = visible_display_name(reactor, None)
+    event_title = comment.event.title
+    Notification.objects.create(
+        recipient_id=comment.author_id,
+        notification_type=NotificationType.COMMENT_REACTION,
+        event=comment.event,
+        related_user=reactor,
+        message=f"{reactor_name} reacted to your comment on {event_title}",
+    )
+    _notify_users([str(comment.author_id)])
+
+
 def _event_recipient_ids(event, *, exclude: str) -> list[str]:
     """Host + co-hosts, excluding `exclude` (usually the actor triggering the notification)."""
     recipient_ids: set[str] = set()

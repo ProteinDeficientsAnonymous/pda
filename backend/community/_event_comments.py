@@ -10,6 +10,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications.service import (
     broadcast_event_comment_update,
+    notify_comment_reaction,
     notify_comment_reply,
     notify_event_comment,
 )
@@ -340,6 +341,8 @@ def toggle_reaction(request, event_id: UUID, comment_id: UUID, payload: Reaction
             existing.delete()
         else:
             EventCommentReaction.objects.create(comment=comment, user=user, emoji=payload.emoji)
+            comment.event = event
+            notify_comment_reaction(comment, user)
     # The toggle endpoint returns the parent top-level comment so the FE can
     # update either a top-level row (when comment is top-level) or the reply's
     # row (when comment is a reply). When it's a reply, we return the parent.
