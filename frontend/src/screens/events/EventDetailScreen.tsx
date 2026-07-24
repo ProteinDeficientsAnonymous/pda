@@ -51,9 +51,7 @@ export default function EventDetailScreen() {
       const message = extractApiError(error) ?? "you don't have permission to see this event";
       return <ForbiddenNotice message={message} />;
     }
-    // members-only events 404 for signed-out visitors (indistinguishable from a
-    // truly missing event, by design — the backend won't confirm existence), so
-    // a login prompt is the most useful next step rather than a dead end.
+    // members-only events 404 for signed-out visitors, indistinguishable from a missing one
     if (status === 404) {
       if (!isAuthed) {
         const redirect = encodeURIComponent(location.pathname + location.search);

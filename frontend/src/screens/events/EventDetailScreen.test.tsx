@@ -348,7 +348,7 @@ describe('EventDetailScreen', () => {
       } as unknown as ReturnType<typeof useEvent>);
     }
 
-    it('prompts an unauthenticated visitor to log in on 404 instead of a dead end (issue 1150)', () => {
+    it('prompts an unauthenticated visitor to log in on 404 instead of a dead end', () => {
       mockError(404);
       renderScreen('ev1');
 
