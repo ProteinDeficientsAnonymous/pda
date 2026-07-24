@@ -1,3 +1,10 @@
+## [0.69.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.2...v0.69.3) (2026-07-24)
+
+
+### Bug Fixes
+
+* **seed:** reset join-request-range users so welcome modal reappears ([#1155](https://github.com/ProteinDeficientsAnonymous/pda/issues/1155)) ([9811ff1](https://github.com/ProteinDeficientsAnonymous/pda/commit/9811ff1bbab151a63c109d1833f7486b9790d38d))
+
 ## [0.69.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.1...v0.69.2) (2026-07-24)
 
 
