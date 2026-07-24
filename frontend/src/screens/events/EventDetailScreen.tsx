@@ -1,4 +1,4 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
@@ -29,6 +29,7 @@ function photoSrc(url: string, updatedAt: string | null): string {
 export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
   // The emailed link carries ?rsvp_token=…; a returning non-member arrives with
@@ -50,8 +51,18 @@ export default function EventDetailScreen() {
       const message = extractApiError(error) ?? "you don't have permission to see this event";
       return <ForbiddenNotice message={message} />;
     }
-    // members-only events 404 for signed-out visitors, so refreshing never helps
+    // members-only events 404 for signed-out visitors, indistinguishable from a missing one
     if (status === 404) {
+      if (!isAuthed) {
+        const redirect = encodeURIComponent(location.pathname + location.search);
+        return (
+          <ForbiddenNotice
+            message="log in to see this event"
+            subtext="this link may go to a members-only event — sign in to check"
+            loginRedirect={redirect}
+          />
+        );
+      }
       return (
         <ForbiddenNotice
           message="there's nothing here"
@@ -168,21 +179,33 @@ function WhenLine({ event }: { event: Event }) {
 function ForbiddenNotice({
   message,
   subtext = 'if you think this is a mistake, reach out to the host',
+  loginRedirect,
 }: {
   message: string;
   subtext?: string;
+  loginRedirect?: string;
 }) {
   return (
     <ContentContainer>
       <section className="border-border bg-surface mt-8 rounded-lg border p-6">
         <h2 className="mb-2 text-base font-medium">{message}</h2>
         <p className="text-foreground-tertiary mb-4 text-sm">{subtext}</p>
-        <Link
-          to="/calendar"
-          className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
-        >
-          back to calendar
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          {loginRedirect ? (
+            <Link
+              to={`/login?redirect=${loginRedirect}`}
+              className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
+            >
+              log in
+            </Link>
+          ) : null}
+          <Link
+            to="/calendar"
+            className="border-border-strong text-foreground-secondary hover:bg-background inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium"
+          >
+            back to calendar
+          </Link>
+        </div>
       </section>
     </ContentContainer>
   );
