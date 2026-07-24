@@ -1,3 +1,10 @@
+# [0.70.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.3...v0.70.0) (2026-07-24)
+
+
+### Features
+
+* **events:** show spots left under who's going for capacity-limited events ([#1163](https://github.com/ProteinDeficientsAnonymous/pda/issues/1163)) ([e958111](https://github.com/ProteinDeficientsAnonymous/pda/commit/e95811152ed08d22ca0cc7b37f209062978db23b))
+
 ## [0.69.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.2...v0.69.3) (2026-07-24)
 
 
