@@ -1,3 +1,11 @@
+## [0.70.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.0...v0.70.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* 1147 - notify comment author when someone reacts ([#1161](https://github.com/ProteinDeficientsAnonymous/pda/issues/1161)) ([49fc68e](https://github.com/ProteinDeficientsAnonymous/pda/commit/49fc68e56aa99328644150e83f09572f57f8edcf))
+* **events:** collapse rsvp picker into single button ([#1135](https://github.com/ProteinDeficientsAnonymous/pda/issues/1135)) ([5d4077c](https://github.com/ProteinDeficientsAnonymous/pda/commit/5d4077cffa80e663f9879b2ce7aa46a460a6732d))
+
 # [0.70.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.69.3...v0.70.0) (2026-07-24)
 
 
