@@ -1,3 +1,10 @@
+# [0.69.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.68.2...v0.69.0) (2026-07-24)
+
+
+### Features
+
+* 1121 - add EVENT_PAYMENT_CONFIRMATION feature flag + flag-off baseline ([#1132](https://github.com/ProteinDeficientsAnonymous/pda/issues/1132)) ([21fbb81](https://github.com/ProteinDeficientsAnonymous/pda/commit/21fbb81ca3aa41f36396d72b3d44500490475cbb))
+
 ## [0.68.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.68.1...v0.68.2) (2026-07-24)
 
 
