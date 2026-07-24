@@ -85,7 +85,7 @@ function CapacityNote({ event }: { event: Event }) {
   const left = spotsLeft(event);
   if (left === null || maxAttendees === null) return null;
   return (
-    <p className="text-muted mb-3 -mt-2 text-xs">
+    <p className="text-muted -mt-2 mb-3 text-xs">
       {left}/{maxAttendees} spots left
     </p>
   );
