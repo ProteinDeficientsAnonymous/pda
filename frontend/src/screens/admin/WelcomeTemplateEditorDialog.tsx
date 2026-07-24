@@ -68,7 +68,7 @@ function EditorForm({ initialBody, onClose }: { initialBody: string; onClose: ()
           setBody(e.target.value);
         }}
         rows={14}
-        className="border-border bg-background text-foreground focus-visible:ring-brand-200 w-full rounded-md border p-3 font-mono text-sm focus-visible:ring-2 focus-visible:outline-none"
+        className="border-border bg-background text-foreground focus-visible:ring-brand-200 w-full rounded-md border p-3 font-mono text-base focus-visible:ring-2 focus-visible:outline-none md:text-sm"
         aria-label="welcome message body"
       />
       <div

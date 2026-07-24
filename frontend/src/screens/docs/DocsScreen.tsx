@@ -94,7 +94,7 @@ export default function DocsScreen() {
             <label className="text-muted flex min-w-[10rem] flex-col gap-1 text-xs">
               folder
               <select
-                className="border-border bg-background text-foreground rounded-md border px-2 py-2 text-sm"
+                className="border-border bg-background text-foreground rounded-md border px-2 py-2 text-base md:text-sm"
                 value={effectiveDocFolderId}
                 onChange={(e) => {
                   setNewDocFolderId(e.target.value);
