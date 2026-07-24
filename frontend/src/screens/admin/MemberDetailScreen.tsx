@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { ADMIN_ROLE_NAME, hasPermission, Permission } from '@/models/permissions';
+import { ADMIN_ROLE_NAME, isAdmin } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
@@ -132,7 +132,7 @@ function MemberDetailView({ member }: { member: Member }) {
 
 function MemberRolesSection({ member }: { member: Member }) {
   const user = useAuthStore((s) => s.user);
-  const canManageRoles = hasPermission(user, Permission.ManageRoles);
+  const canManageRoles = isAdmin(user);
   const { data: allRoles = [], isPending, isError } = useRoles();
   const updateRoles = useUpdateMemberRoles(member.id);
   const [selected, setSelected] = useState(() => new Set(member.roles.map((r) => r.id)));
@@ -154,7 +154,7 @@ function MemberRolesSection({ member }: { member: Member }) {
   }
   if (isError) return null;
 
-  // only role managers can reassign roles — everyone else (e.g. a vetter who
+  // only full admins can reassign roles — everyone else (e.g. a vetter who
   // can add members) sees the current roles read-only (Issue 1152)
   if (!canManageRoles) {
     return (

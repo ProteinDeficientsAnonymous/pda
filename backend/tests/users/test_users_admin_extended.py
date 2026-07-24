@@ -472,7 +472,7 @@ class TestUpdateUserRoles:
     def test_manage_users_only_cannot_update_roles(
         self, api_client, manage_users_headers, other_user
     ):
-        """MANAGE_USERS alone (a vetter) cannot reassign roles — needs MANAGE_ROLES (Issue 1152)."""
+        """MANAGE_USERS alone (a vetter) cannot reassign roles — needs admin (Issue 1152)."""
         member_role = Role.objects.get(name="member")
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/roles/",
@@ -483,18 +483,19 @@ class TestUpdateUserRoles:
         assert response.status_code == 403
         assert_error_code(response, Code.Perm.DENIED)
 
-    def test_non_admin_cannot_grant_admin_role(self, api_client, manage_roles_headers, other_user):
-        admin_role = Role.objects.get(name="admin")
+    def test_manage_roles_alone_cannot_update_roles(
+        self, api_client, manage_roles_headers, other_user
+    ):
+        """A non-admin role holding MANAGE_ROLES still cannot reassign roles (Issue 1152)."""
         member_role = Role.objects.get(name="member")
         response = api_client.patch(
             f"/api/auth/users/{other_user.pk}/roles/",
-            {"role_ids": [str(member_role.id), str(admin_role.id)]},
+            {"role_ids": [str(member_role.id)]},
             content_type="application/json",
             **manage_roles_headers,
         )
         assert response.status_code == 403
-        assert_error_code(response, Code.Role.CANNOT_GRANT_ADMIN)
-        assert not other_user.roles.filter(name="admin").exists()
+        assert_error_code(response, Code.Perm.DENIED)
 
     def test_admin_can_grant_admin_role(self, api_client, other_user):
         admin_role = Role.objects.get(name="admin")
