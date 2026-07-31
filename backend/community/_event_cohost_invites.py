@@ -125,8 +125,6 @@ def _remove_accepted(invite: EventCoHostInvite, requester, is_host: bool, is_sel
     if not (is_host or is_self):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
     event = invite.event
-    # Guards the event, not the actor — a kick that empties co_hosts is as bad
-    # as a step-down, even though only a co-host can currently reach this.
     if _would_leave_event_hostless(event, str(invite.user_id)):
         raise_validation(Code.CoHostInvite.WOULD_LEAVE_HOSTLESS, status_code=400)
     with transaction.atomic():
@@ -147,8 +145,7 @@ def step_down_as_host(request, event_id: UUID):
     """Any host removes themselves from co_hosts, keeping created_by intact.
 
     Exists because the creator has no invite row to DELETE; invited co-hosts
-    can use either path. Blocked if it would leave the event hostless, or on a
-    past event.
+    can use either path.
     """
     event = get_object_or_404(Event, id=event_id)
     if event.is_deleted:
@@ -162,8 +159,7 @@ def step_down_as_host(request, event_id: UUID):
 
     with transaction.atomic():
         event.co_hosts.remove(request.auth)
-        # An invited co-host leaves an ACCEPTED row behind; left open it blocks
-        # re-invites via _upsert_pending_invite. The creator has no row to close.
+        # Close the invite row too, or _upsert_pending_invite refuses to re-invite them.
         EventCoHostInvite.objects.filter(
             event=event, user=request.auth, status=CoHostInviteStatus.ACCEPTED
         ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())

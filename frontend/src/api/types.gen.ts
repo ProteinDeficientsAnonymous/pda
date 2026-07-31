@@ -719,8 +719,7 @@ export interface paths {
          * @description Any host removes themselves from co_hosts, keeping created_by intact.
          *
          *     Exists because the creator has no invite row to DELETE; invited co-hosts
-         *     can use either path. Blocked if it would leave the event hostless, or on a
-         *     past event.
+         *     can use either path.
          */
         post: operations["community__event_cohost_invites_step_down_as_host"];
         delete?: never;
