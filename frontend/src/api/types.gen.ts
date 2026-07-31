@@ -705,29 +705,6 @@ export interface paths {
         patch: operations["community__events_update_event"];
         trace?: never;
     };
-    "/api/community/events/{event_id}/cohost-invites/step-down/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Step Down As Host
-         * @description Any host removes themselves from co_hosts, keeping created_by intact.
-         *
-         *     Exists because the creator has no invite row to DELETE; invited co-hosts
-         *     can use either path.
-         */
-        post: operations["community__event_cohost_invites_step_down_as_host"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/community/events/{event_id}/cohost-invites/{invite_id}/": {
         parameters: {
             query?: never;
@@ -740,12 +717,8 @@ export interface paths {
         post?: never;
         /**
          * Rescind Cohost Invite
-         * @description Rescind a pending invite OR remove an accepted co-host.
-         *
-         *     PENDING → host-only, flips to RESCINDED.
-         *     ACCEPTED → host or the co-host themselves, flips to REMOVED and drops
-         *     the user from event.co_hosts. Blocked if it would leave the event hostless.
-         *     Other statuses (DECLINED / RESCINDED / EXPIRED / REMOVED) → 400.
+         * @description Rescind a pending invite. Removing an accepted co-host is a co_hosts
+         *     operation — see the user-keyed DELETE .../cohosts/{user_id}/.
          */
         delete: operations["community__event_cohost_invites_rescind_cohost_invite"];
         options?: never;
@@ -782,6 +755,29 @@ export interface paths {
         /** Decline Cohost Invite */
         post: operations["community__event_cohost_invites_decline_cohost_invite"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/cohosts/{user_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Cohost
+         * @description Remove a host from co_hosts — a kick by another host, or stepping down.
+         *
+         *     Keyed on the user, not an invite: the creator has no invite row, so an
+         *     invite-keyed route can't address them. created_by is left intact.
+         */
+        delete: operations["community__event_cohost_invites_remove_cohost"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2811,11 +2807,6 @@ export interface components {
              * @default []
              */
             co_host_ids: string[];
-            /**
-             * Co Host Invite Ids
-             * @default []
-             */
-            co_host_invite_ids: (string | null)[];
             /**
              * Co Host Names
              * @default []
@@ -6568,55 +6559,6 @@ export interface operations {
             };
         };
     };
-    community__event_cohost_invites_step_down_as_host: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventOut"];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
     community__event_cohost_invites_rescind_cohost_invite: {
         parameters: {
             query?: never;
@@ -6724,6 +6666,56 @@ export interface operations {
             path: {
                 event_id: string;
                 invite_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_cohost_invites_remove_cohost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                user_id: string;
             };
             cookie?: never;
         };

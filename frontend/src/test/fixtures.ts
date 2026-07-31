@@ -61,7 +61,6 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     coHostIds: [],
     coHostNames: [],
     coHostPhotoUrls: [],
-    coHostInviteIds: [],
     guests: [
       {
         userId: 'a',

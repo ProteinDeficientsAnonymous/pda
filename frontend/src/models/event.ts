@@ -128,7 +128,6 @@ export interface Event {
   coHostIds: string[];
   coHostNames: string[];
   coHostPhotoUrls: string[];
-  coHostInviteIds: (string | null)[];
 
   guests: EventGuest[];
   myRsvp: string | null;

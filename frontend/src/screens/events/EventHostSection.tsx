@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiError } from '@/api/apiErrors';
-import { useRescindCohostInvite, useStepDownAsHost } from '@/api/cohostInvites';
+import { useRemoveCohost, useRescindCohostInvite } from '@/api/cohostInvites';
 import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event, PendingCohostInvite } from '@/models/event';
 
@@ -14,7 +14,6 @@ interface HostRow {
   userId: string;
   name: string;
   photoUrl: string;
-  inviteId: string | null; // null for the creator (not a co-host invite)
 }
 
 export function EventHostSection({
@@ -30,26 +29,13 @@ export function EventHostSection({
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const { confirm, element: confirmElement } = useConfirm();
-  const remove = useRescindCohostInvite();
-  const stepDown = useStepDownAsHost();
+  const remove = useRemoveCohost();
 
-  const hosts: HostRow[] = [];
-  if (event.createdById && event.createdByName) {
-    hosts.push({
-      userId: event.createdById,
-      name: event.createdByName,
-      photoUrl: event.createdByPhotoUrl,
-      inviteId: null,
-    });
-  }
-  event.coHostIds.forEach((id, i) => {
-    hosts.push({
-      userId: id,
-      name: event.coHostNames[i] ?? 'member',
-      photoUrl: event.coHostPhotoUrls[i] ?? '',
-      inviteId: event.coHostInviteIds[i] ?? null,
-    });
-  });
+  const hosts: HostRow[] = event.coHostIds.map((id, i) => ({
+    userId: id,
+    name: event.coHostNames[i] ?? 'member',
+    photoUrl: event.coHostPhotoUrls[i] ?? '',
+  }));
   // backend already scopes pending invites to creator/accepted co-hosts; others get []
   const pending = event.pendingCohostInvites;
   if (hosts.length === 0 && pending.length === 0 && !canEdit) return null;
@@ -66,24 +52,15 @@ export function EventHostSection({
         destructive: true,
       });
       if (!ok) return;
-      stepDown.mutate(
-        { eventId: event.id },
-        {
-          onError: (err) => {
-            const message = extractApiError(err) ?? "couldn't step down — try again";
-            toast.error(message);
-          },
-        },
-      );
-      return;
     }
-    if (host.inviteId === null) return;
     remove.mutate(
-      { eventId: event.id, inviteId: host.inviteId },
+      { eventId: event.id, userId: host.userId },
       {
         onError: (err) => {
-          const message = extractApiError(err) ?? "couldn't remove — try again";
-          toast.error(message);
+          const fallback = isSelf
+            ? "couldn't step down — try again"
+            : "couldn't remove — try again";
+          toast.error(extractApiError(err) ?? fallback);
         },
       },
     );
@@ -94,9 +71,7 @@ export function EventHostSection({
       <div className="flex flex-wrap items-center gap-2">
         {hosts.map((h) => {
           const isSelf = h.userId === viewerId;
-          const canKick = h.inviteId !== null && canEdit;
-          const canStepDown = isSelf;
-          const canRemove = (canKick || canStepDown) && !remove.isPending && !stepDown.isPending;
+          const canRemove = (canEdit || isSelf) && !remove.isPending;
           return (
             <HostChip
               key={h.userId}

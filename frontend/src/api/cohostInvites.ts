@@ -34,9 +34,15 @@ async function deleteRescind({ eventId, inviteId }: CohostInviteArgs): Promise<E
   return mapEvent(data);
 }
 
-async function postStepDown({ eventId }: { eventId: string }): Promise<Event> {
-  const { data } = await apiClient.post<WireEvent>(
-    `/api/community/events/${eventId}/cohost-invites/step-down/`,
+async function deleteCohost({
+  eventId,
+  userId,
+}: {
+  eventId: string;
+  userId: string;
+}): Promise<Event> {
+  const { data } = await apiClient.delete<WireEvent>(
+    `/api/community/events/${eventId}/cohosts/${userId}/`,
   );
   return mapEvent(data);
 }
@@ -67,6 +73,6 @@ export function useRescindCohostInvite() {
   return useCohostInviteMutation(deleteRescind);
 }
 
-export function useStepDownAsHost() {
-  return useCohostInviteMutation(postStepDown);
+export function useRemoveCohost() {
+  return useCohostInviteMutation(deleteCohost);
 }

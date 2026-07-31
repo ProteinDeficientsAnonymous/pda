@@ -78,7 +78,6 @@ const BASE_EVENT: Event = {
   coHostIds: [],
   coHostNames: [],
   coHostPhotoUrls: [],
-  coHostInviteIds: [],
   guests: [],
   myRsvp: null,
   viewerUserId: null,
@@ -170,7 +169,6 @@ const ACCEPTED_COHOST_EVENT: Event = {
   coHostIds: ['user-bob'],
   coHostNames: ['Bob'],
   coHostPhotoUrls: [''],
-  coHostInviteIds: ['inv-accepted-1'],
 };
 
 const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
