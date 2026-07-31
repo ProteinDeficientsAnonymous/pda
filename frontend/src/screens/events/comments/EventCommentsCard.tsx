@@ -63,8 +63,8 @@ export function EventCommentsCard({ eventId, token }: Props) {
     );
   }
 
-  const canReact = data.canPost;
   const reactDisabledReason = disabledReasonFor(data.cannotPostReason);
+  const isGated = data.cannotPostReason !== null;
 
   return (
     <section className="border-border-strong bg-surface rounded-lg border p-4">
@@ -81,14 +81,16 @@ export function EventCommentsCard({ eventId, token }: Props) {
         }}
         submitting={postComment.isPending}
       />
-      <CommentThread
-        comments={data.items}
-        eventId={eventId}
-        {...(token ? { token } : {})}
-        canReact={canReact}
-        canReply={data.canPost}
-        reactDisabledReason={reactDisabledReason}
-      />
+      {isGated ? null : (
+        <CommentThread
+          comments={data.items}
+          eventId={eventId}
+          {...(token ? { token } : {})}
+          canReact={data.canPost}
+          canReply={data.canPost}
+          reactDisabledReason={reactDisabledReason}
+        />
+      )}
     </section>
   );
 }

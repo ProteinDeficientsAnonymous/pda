@@ -154,12 +154,6 @@ def _comment_out(
 
 def _build_list_out(event: Event, viewer) -> EventCommentListOut:
     co_host_pks = {str(u.pk) for u in event.co_hosts.all()}  # uses prefetch cache
-    comments = (
-        EventComment.objects.filter(event=event, parent__isnull=True)
-        .select_related("author")
-        .prefetch_related("replies__author", "reactions", "replies__reactions")
-        .order_by("-created_at")
-    )
     can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
     if viewer is None:
         reason: str | None = "login_required"
@@ -167,6 +161,17 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
         reason = "rsvp_required"
     else:
         reason = None
+    # Reading comment content requires the same standing as posting them — an
+    # active RSVP (or host/co-host/admin) — so a bystander can't see the thread
+    # just by being logged in (Issue 1168).
+    if not can_post:
+        return EventCommentListOut(items=[], can_post=can_post, cannot_post_reason=reason)
+    comments = (
+        EventComment.objects.filter(event=event, parent__isnull=True)
+        .select_related("author")
+        .prefetch_related("replies__author", "reactions", "replies__reactions")
+        .order_by("-created_at")
+    )
     return EventCommentListOut(
         items=[_comment_out(c, event, viewer, co_host_pks=co_host_pks) for c in comments],
         can_post=can_post,
