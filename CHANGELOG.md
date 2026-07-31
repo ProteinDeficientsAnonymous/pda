@@ -1,3 +1,10 @@
+## [0.70.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.4...v0.70.5) (2026-07-31)
+
+
+### Bug Fixes
+
+* **events:** gate comment visibility on active rsvp ([#1174](https://github.com/ProteinDeficientsAnonymous/pda/issues/1174)) ([09af0d5](https://github.com/ProteinDeficientsAnonymous/pda/commit/09af0d5ed062a6e4259f82fef96df7f78c8080c4))
+
 ## [0.70.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.3...v0.70.4) (2026-07-31)
 
 
