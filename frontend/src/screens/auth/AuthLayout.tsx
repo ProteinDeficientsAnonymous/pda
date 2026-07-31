@@ -11,8 +11,6 @@ export function AuthLayout({
 }: {
   title: string;
   subtitle?: string;
-  // Off by default: onboarding/new-password/consent are required steps, and nav
-  // would let users wander out of them mid-flow.
   showBottomNav?: boolean;
   children: ReactNode;
 }) {
