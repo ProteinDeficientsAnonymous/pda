@@ -1,3 +1,10 @@
+## [0.70.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.3...v0.70.4) (2026-07-31)
+
+
+### Bug Fixes
+
+* **nav:** link signed-out ticket button to login (Issue 1166) ([#1175](https://github.com/ProteinDeficientsAnonymous/pda/issues/1175)) ([0f8dfc9](https://github.com/ProteinDeficientsAnonymous/pda/commit/0f8dfc9a5b1cfa76baa5482536f40c3ad52a44d8))
+
 ## [0.70.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.2...v0.70.3) (2026-07-31)
 
 
