@@ -228,11 +228,12 @@ class TestPollVotersHideLastName:
 
 @pytest.mark.django_db
 class TestCommentAuthorHidesLastName:
-    def test_non_admin_sees_first_name_only(self, api_client, auth_headers, hidden_user):
+    def test_non_admin_sees_first_name_only(self, api_client, auth_headers, test_user, hidden_user):
         event = Event.objects.create(
             title="Comment Event", start_datetime=future_iso(days=10), created_by=hidden_user
         )
         EventRSVP.objects.create(event=event, user=hidden_user, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
         EventComment.objects.create(event=event, author=hidden_user, body="hello")
         response = api_client.get(f"/api/community/events/{event.id}/comments/", **auth_headers)
         assert response.status_code == 200
