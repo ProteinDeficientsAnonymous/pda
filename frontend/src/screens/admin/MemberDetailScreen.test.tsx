@@ -184,15 +184,15 @@ describe('MemberDetailScreen roles section permission gating', () => {
     expect(screen.queryByRole('button', { name: /save roles/i })).not.toBeInTheDocument();
   });
 
-  it('hides the role checkboxes from a non-admin user even with manage_roles', () => {
+  it('shows editable role checkboxes to a non-admin user with manage_roles', () => {
     useAuthStore.setState({
       status: 'authed',
       user: { roles: [{ name: 'super_vetter', isDefault: false, permissions: ['manage_roles'] }] },
     } as unknown as ReturnType<typeof useAuthStore.getState>);
 
     renderScreen();
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /save roles/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save roles/i })).toBeInTheDocument();
   });
 
   it('shows editable role checkboxes to the built-in admin role', () => {
@@ -204,5 +204,25 @@ describe('MemberDetailScreen roles section permission gating', () => {
     renderScreen();
     expect(screen.getByRole('checkbox')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /save roles/i })).toBeInTheDocument();
+  });
+
+  it('disables the admin checkbox for a manage_roles holder who is not admin themself', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: { roles: [{ name: 'super_vetter', isDefault: false, permissions: ['manage_roles'] }] },
+    } as unknown as ReturnType<typeof useAuthStore.getState>);
+
+    renderScreen();
+    expect(screen.getByRole('checkbox')).toBeDisabled();
+  });
+
+  it('leaves the admin checkbox enabled for an admin user', () => {
+    useAuthStore.setState({
+      status: 'authed',
+      user: { roles: [{ name: 'admin', isDefault: true, permissions: [] }] },
+    } as unknown as ReturnType<typeof useAuthStore.getState>);
+
+    renderScreen();
+    expect(screen.getByRole('checkbox')).not.toBeDisabled();
   });
 });
