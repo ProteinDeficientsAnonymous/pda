@@ -69,4 +69,59 @@ describe('EventCommentsCard', () => {
     });
     expect(screen.queryByRole('button', { name: /post/i })).not.toBeInTheDocument();
   });
+
+  it('hides the comment thread when the viewer has no active rsvp', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: 'c1',
+            author_id: 'other',
+            author_display_name: 'someone',
+            author_photo_url: '',
+            body: 'leaked comment',
+            is_deleted: false,
+            created_at: new Date().toISOString(),
+            reactions: [],
+            can_delete: false,
+            replies: [],
+          },
+        ],
+        can_post: false,
+        cannot_post_reason: 'rsvp_required',
+      },
+    });
+    renderCard();
+    await waitFor(() => {
+      expect(screen.getByText(/rsvp to join the conversation/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText('leaked comment')).not.toBeInTheDocument();
+  });
+
+  it('shows the comment thread when the viewer can post', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: 'c1',
+            author_id: 'other',
+            author_display_name: 'someone',
+            author_photo_url: '',
+            body: 'visible comment',
+            is_deleted: false,
+            created_at: new Date().toISOString(),
+            reactions: [],
+            can_delete: false,
+            replies: [],
+          },
+        ],
+        can_post: true,
+        cannot_post_reason: null,
+      },
+    });
+    renderCard();
+    await waitFor(() => {
+      expect(screen.getByText('visible comment')).toBeInTheDocument();
+    });
+  });
 });

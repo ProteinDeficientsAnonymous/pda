@@ -150,23 +150,27 @@ def _comment_out(
 
 def _build_list_out(event: Event, viewer) -> EventCommentListOut:
     co_host_pks = {str(u.pk) for u in event.co_hosts.all()}  # uses prefetch cache
+    can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
+    # Reading requires the same standing as posting — no peeking without an active rsvp.
+    if not can_post:
+        # A signed-out visitor can still rsvp themselves onto a public event, so
+        # prompt for that rather than for a login they don't need.
+        reason = (
+            "rsvp_required"
+            if viewer is not None or event.is_public_rsvp_eligible
+            else "login_required"
+        )
+        return EventCommentListOut(items=[], can_post=False, cannot_post_reason=reason)
     comments = (
         EventComment.objects.filter(event=event, parent__isnull=True)
         .select_related("author")
         .prefetch_related("replies__author", "reactions", "replies__reactions")
         .order_by("-created_at")
     )
-    can_post = _can_post_comments(event, viewer, co_host_pks=co_host_pks)
-    if viewer is None:
-        reason: str | None = "login_required"
-    elif not can_post:
-        reason = "rsvp_required"
-    else:
-        reason = None
     return EventCommentListOut(
         items=[_comment_out(c, event, viewer, co_host_pks=co_host_pks) for c in comments],
-        can_post=can_post,
-        cannot_post_reason=reason,
+        can_post=True,
+        cannot_post_reason=None,
     )
 
 

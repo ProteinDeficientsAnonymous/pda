@@ -5,12 +5,10 @@ import { REACTION_EMOJI_ORDER } from '@/models/eventComment';
 
 interface Props {
   reactions: CommentReactionSummary[];
-  canReact: boolean;
   onToggle: (emoji: ReactionEmojiValue) => void;
-  disabledReason?: string | undefined;
 }
 
-export function ReactionBar({ reactions, canReact, onToggle, disabledReason }: Props) {
+export function ReactionBar({ reactions, onToggle }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -44,8 +42,6 @@ export function ReactionBar({ reactions, canReact, onToggle, disabledReason }: P
           key={r.emoji}
           type="button"
           aria-pressed={r.reactedByMe}
-          disabled={!canReact}
-          title={!canReact ? disabledReason : undefined}
           onClick={() => {
             onToggle(r.emoji);
           }}
@@ -54,29 +50,26 @@ export function ReactionBar({ reactions, canReact, onToggle, disabledReason }: P
             r.reactedByMe
               ? 'bg-brand-50 border-brand-500 text-foreground'
               : 'border-border-strong bg-surface text-foreground hover:bg-surface-dim',
-            !canReact ? 'cursor-not-allowed opacity-50' : '',
           ].join(' ')}
         >
           <span>{r.emoji}</span>
           <span className="text-xs">{r.count}</span>
         </button>
       ))}
-      {canReact ? (
-        <button
-          type="button"
-          aria-label="add reaction"
-          aria-expanded={pickerOpen}
-          onClick={() => {
-            setPickerOpen((v) => !v);
-          }}
-          className="border-border-strong bg-surface text-foreground-tertiary hover:bg-surface-dim inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-sm transition"
-        >
-          <span aria-hidden="true" className="text-xs leading-none">
-            +
-          </span>
-          <AddReactionIcon />
-        </button>
-      ) : null}
+      <button
+        type="button"
+        aria-label="add reaction"
+        aria-expanded={pickerOpen}
+        onClick={() => {
+          setPickerOpen((v) => !v);
+        }}
+        className="border-border-strong bg-surface text-foreground-tertiary hover:bg-surface-dim inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-sm transition"
+      >
+        <span aria-hidden="true" className="text-xs leading-none">
+          +
+        </span>
+        <AddReactionIcon />
+      </button>
       {pickerOpen ? (
         <div className="border-border-strong bg-surface absolute top-full left-0 z-10 mt-1 flex gap-1 rounded-md border p-1 shadow-md">
           {REACTION_EMOJI_ORDER.map((emoji) => (

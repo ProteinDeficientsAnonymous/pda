@@ -274,10 +274,10 @@ describe('EventMemberSection — past event gates (#385)', () => {
 describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
   const RSVP_ENABLED_EVENT: Event = { ...BASE_EVENT, rsvpEnabled: true };
 
-  it('hides the comments section when rsvp is disabled (#666)', () => {
+  it("renders the comments card regardless of rsvpEnabled — gating is the card's own job", () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
     renderSection({ ...BASE_EVENT, rsvpEnabled: false });
-    expect(screen.queryByTestId('comments-card')).not.toBeInTheDocument();
+    expect(screen.getByTestId('comments-card')).toBeInTheDocument();
   });
 
   it('shows the comments section when rsvp is enabled', () => {

@@ -15,19 +15,9 @@ interface Props {
   comment: EventComment;
   eventId: string;
   token?: string;
-  canReact: boolean;
-  canReply: boolean;
-  reactDisabledReason?: string | undefined;
 }
 
-export function CommentItem({
-  comment,
-  eventId,
-  token,
-  canReact,
-  canReply,
-  reactDisabledReason,
-}: Props) {
+export function CommentItem({ comment, eventId, token }: Props) {
   const toggleReaction = useToggleReaction(eventId, token);
   const deleteComment = useDeleteComment(eventId, token);
   const postReply = usePostReply(eventId, token);
@@ -78,24 +68,17 @@ export function CommentItem({
       )}
       {!comment.isDeleted ? (
         <div className="flex items-center justify-between gap-2">
-          <ReactionBar
-            reactions={comment.reactions}
-            canReact={canReact}
-            onToggle={handleToggle}
-            disabledReason={reactDisabledReason}
-          />
+          <ReactionBar reactions={comment.reactions} onToggle={handleToggle} />
           <div className="flex items-center gap-3">
-            {canReply ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setReplyOpen((v) => !v);
-                }}
-                className="text-foreground-tertiary text-xs hover:underline"
-              >
-                {replyOpen ? 'cancel' : 'reply'}
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setReplyOpen((v) => !v);
+              }}
+              className="text-foreground-tertiary text-xs hover:underline"
+            >
+              {replyOpen ? 'cancel' : 'reply'}
+            </button>
             {comment.canDelete ? (
               <button
                 type="button"
@@ -130,8 +113,6 @@ export function CommentItem({
               reply={reply}
               eventId={eventId}
               {...(token ? { token } : {})}
-              canReact={canReact}
-              reactDisabledReason={reactDisabledReason}
             />
           ))}
         </div>

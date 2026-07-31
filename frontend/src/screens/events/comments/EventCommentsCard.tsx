@@ -12,12 +12,6 @@ interface Props {
   token?: string;
 }
 
-function disabledReasonFor(cannot: CannotPostReason | null): string | undefined {
-  if (cannot === 'login_required') return 'log in to react';
-  if (cannot === 'rsvp_required') return 'rsvp to react';
-  return undefined;
-}
-
 function ComposerOrPrompt({
   canPost,
   cannotPostReason,
@@ -63,9 +57,6 @@ export function EventCommentsCard({ eventId, token }: Props) {
     );
   }
 
-  const canReact = data.canPost;
-  const reactDisabledReason = disabledReasonFor(data.cannotPostReason);
-
   return (
     <section className="border-border-strong bg-surface rounded-lg border p-4">
       <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">comments</h2>
@@ -81,14 +72,9 @@ export function EventCommentsCard({ eventId, token }: Props) {
         }}
         submitting={postComment.isPending}
       />
-      <CommentThread
-        comments={data.items}
-        eventId={eventId}
-        {...(token ? { token } : {})}
-        canReact={canReact}
-        canReply={data.canPost}
-        reactDisabledReason={reactDisabledReason}
-      />
+      {data.canPost ? (
+        <CommentThread comments={data.items} eventId={eventId} {...(token ? { token } : {})} />
+      ) : null}
     </section>
   );
 }
