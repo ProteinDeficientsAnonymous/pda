@@ -76,7 +76,7 @@ export default function LoginScreen() {
 
   if (step === 'pending') {
     return (
-      <AuthLayout title="under review" subtitle="your join request is in the queue" showBottomNav>
+      <AuthLayout title="under review" subtitle="your join request is in the queue">
         <p className="text-foreground-secondary text-sm">
           thanks for your patience — someone will reach out once your request has been reviewed.
         </p>
@@ -128,7 +128,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <AuthLayout title="welcome back" subtitle="sign in to your pda account" showBottomNav>
+    <AuthLayout title="welcome back" subtitle="sign in to your pda account">
       {invited ? (
         <div
           role="status"
@@ -213,7 +213,7 @@ function PasswordStep({
   }
 
   return (
-    <AuthLayout title="welcome back" subtitle={phone} showBottomNav>
+    <AuthLayout title="welcome back" subtitle={phone}>
       {invited ? (
         <div
           role="status"
