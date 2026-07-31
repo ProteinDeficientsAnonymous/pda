@@ -132,8 +132,6 @@ function MemberDetailView({ member }: { member: Member }) {
 
 function MemberRolesSection({ member }: { member: Member }) {
   const user = useAuthStore((s) => s.user);
-  // page access already requires manage_users (see router guard); admin is
-  // the only role assignment that needs the stricter check
   const canAssignAdminRole = isAdmin(user);
   const { data: allRoles = [], isPending, isError } = useRoles();
   const updateRoles = useUpdateMemberRoles(member.id);
