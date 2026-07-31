@@ -7,6 +7,7 @@ from config.ratelimit import rate_limit
 from django.conf import settings
 from django.http import HttpRequest
 from ninja import Query, Router
+from ninja.responses import Status
 from pydantic import BaseModel, Field
 
 from community._shared import ErrorOut
@@ -112,7 +113,7 @@ def giphy_search(request: HttpRequest, params: Query[GiphyQuery]):
     giphy_key = getattr(settings, "GIPHY_API_KEY", "")
     pexels_key = getattr(settings, "PEXELS_API_KEY", "")
     if not giphy_key and not pexels_key:
-        return 503, {"detail": "image search is not configured"}
+        return Status(503, {"detail": "image search is not configured"})
 
     query = params.q.strip() or _DEFAULT_QUERY
     gif_limit = params.limit - params.limit // 3
@@ -123,7 +124,7 @@ def giphy_search(request: HttpRequest, params: Query[GiphyQuery]):
         photos = _fetch_photos(pexels_key, query, photo_limit) if pexels_key else []
     except (httpx.HTTPError, ValueError) as e:
         logger.warning("image proxy error: q_len=%s error=%s", len(query), e)
-        return 502, {"detail": "image search unavailable — try again"}
+        return Status(502, {"detail": "image search unavailable — try again"})
 
     results = [
         r
@@ -133,4 +134,4 @@ def giphy_search(request: HttpRequest, params: Query[GiphyQuery]):
         )
         if r is not None
     ]
-    return 200, {"results": results}
+    return Status(200, {"results": results})
