@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { extractApiError } from '@/api/apiErrors';
-import { useRescindCohostInvite } from '@/api/cohostInvites';
+import { useRescindCohostInvite, useStepDownAsHost } from '@/api/cohostInvites';
 import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event, PendingCohostInvite } from '@/models/event';
 
@@ -31,6 +31,7 @@ export function EventHostSection({
   const [addOpen, setAddOpen] = useState(false);
   const { confirm, element: confirmElement } = useConfirm();
   const remove = useRescindCohostInvite();
+  const stepDown = useStepDownAsHost();
 
   const hosts: HostRow[] = [];
   if (event.createdById && event.createdByName) {
@@ -56,8 +57,28 @@ export function EventHostSection({
   const label = totalChips > 1 ? 'hosts' : 'host';
 
   async function removeCohost(host: HostRow) {
-    if (!host.inviteId) return; // creator can't be removed via this flow
     const isSelf = host.userId === viewerId;
+    if (host.inviteId === null) {
+      // The creator stepping down — a different endpoint (no invite row exists).
+      if (!isSelf) return;
+      const ok = await confirm({
+        title: 'step down as host?',
+        message: "you'll lose host access — someone else will need to add you back later.",
+        confirmLabel: 'step down',
+        destructive: true,
+      });
+      if (!ok) return;
+      stepDown.mutate(
+        { eventId: event.id },
+        {
+          onError: (err) => {
+            const message = extractApiError(err) ?? "couldn't step down — try again";
+            toast.error(message);
+          },
+        },
+      );
+      return;
+    }
     if (isSelf) {
       const ok = await confirm({
         title: 'step down as co-host?',
@@ -81,19 +102,24 @@ export function EventHostSection({
   return (
     <Card label={label}>
       <div className="flex flex-wrap items-center gap-2">
-        {hosts.map((h) => (
-          <HostChip
-            key={h.userId}
-            host={h}
-            canRemove={
-              h.inviteId !== null && (canEdit || h.userId === viewerId) && !remove.isPending
-            }
-            onRemove={() => {
-              void removeCohost(h);
-            }}
-            isSelf={h.userId === viewerId}
-          />
-        ))}
+        {hosts.map((h) => {
+          const isSelf = h.userId === viewerId;
+          const canRemove =
+            h.inviteId !== null
+              ? (canEdit || isSelf) && !remove.isPending
+              : isSelf && hosts.length > 1 && !stepDown.isPending;
+          return (
+            <HostChip
+              key={h.userId}
+              host={h}
+              canRemove={canRemove}
+              onRemove={() => {
+                void removeCohost(h);
+              }}
+              isSelf={isSelf}
+            />
+          );
+        })}
         {pending.map((inv) => (
           <PendingHostChip key={inv.id} eventId={event.id} invite={inv} canRescind={canEdit} />
         ))}
@@ -171,7 +197,11 @@ function HostChip({
       {canRemove ? (
         <button
           type="button"
-          aria-label={isSelf ? 'step down as co-host' : `remove ${host.name} as co-host`}
+          aria-label={
+            isSelf
+              ? `step down as ${host.inviteId === null ? 'host' : 'co-host'}`
+              : `remove ${host.name} as co-host`
+          }
           onClick={onRemove}
           className="text-muted hover:text-foreground ms-1"
         >

@@ -140,6 +140,34 @@ def _remove_accepted(invite: EventCoHostInvite, requester, is_host: bool, is_sel
         create_cohost_removed_notification(event, invite.user, requester)
 
 
+@router.post(
+    "/events/{event_id}/cohost-invites/step-down/",
+    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
+    auth=gated_jwt,
+)
+def step_down_as_host(request, event_id: UUID):
+    """The creator removes themselves from co_hosts, keeping created_by intact.
+
+    Only the creator can call this (self-removal only — no host-kicks-creator).
+    Blocked if it would leave the event hostless, or on a past event.
+    """
+    event = get_object_or_404(Event, id=event_id)
+    if event.is_deleted:
+        raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if event.created_by_id != request.auth.pk:
+        raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
+    if event.is_past:
+        raise_validation(Code.CoHostInvite.EVENT_IS_PAST, status_code=400)
+    if _would_leave_event_hostless(event, str(request.auth.pk)):
+        raise_validation(Code.CoHostInvite.WOULD_LEAVE_HOSTLESS, status_code=400)
+
+    event.co_hosts.remove(request.auth)
+
+    event = _reload_event_for_response(event_id)
+    broadcast_cohost_change(event, exclude_user_ids={str(request.auth.pk)})
+    return Status(200, _event_out(event, request.auth))
+
+
 @router.delete(
     "/events/{event_id}/cohost-invites/{invite_id}/",
     response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},

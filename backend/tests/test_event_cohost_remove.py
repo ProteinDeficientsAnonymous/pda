@@ -20,7 +20,7 @@ from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from users.models import User
 
-from tests.conftest import future_iso
+from tests.conftest import future_iso, past_iso
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -185,3 +185,83 @@ class TestRemoveAcceptedCoHost:
             **_auth_headers(creator),
         )
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestStepDownAsCreator:
+    def test_creator_can_step_down_with_cohost_present(
+        self, api_client, creator, cohost, event_with_accepted_cohost
+    ):
+        event, _invite = event_with_accepted_cohost
+        response = api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/step-down/",
+            **_auth_headers(creator),
+        )
+        assert response.status_code == 200
+        event.refresh_from_db()
+        assert event.created_by_id == creator.pk  # audit field untouched
+        assert not event.co_hosts.filter(pk=creator.pk).exists()
+        assert event.co_hosts.filter(pk=cohost.pk).exists()
+
+    def test_creator_cannot_step_down_as_last_host(self, api_client, creator, db):
+        event_id = _create_event(api_client, creator, co_host_ids=[])
+        response = api_client.post(
+            f"/api/community/events/{event_id}/cohost-invites/step-down/",
+            **_auth_headers(creator),
+        )
+        assert response.status_code == 400
+        event = Event.objects.get(id=event_id)
+        assert event.co_hosts.filter(pk=creator.pk).exists()
+
+    def test_cohost_cannot_step_down_via_creator_endpoint(
+        self, api_client, cohost, event_with_accepted_cohost
+    ):
+        event, _invite = event_with_accepted_cohost
+        response = api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/step-down/",
+            **_auth_headers(cohost),
+        )
+        assert response.status_code == 403
+
+    def test_stranger_cannot_step_down(self, api_client, stranger, event_with_accepted_cohost):
+        event, _invite = event_with_accepted_cohost
+        response = api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/step-down/",
+            **_auth_headers(stranger),
+        )
+        assert response.status_code == 403
+
+    def test_creator_cannot_step_down_on_past_event(self, api_client, creator, cohost, db):
+        event = Event.objects.create(
+            title="Past Potluck",
+            start_datetime=past_iso(days=2),
+            end_datetime=past_iso(days=2),
+            created_by=creator,
+        )
+        event.co_hosts.add(cohost)
+        response = api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/step-down/",
+            **_auth_headers(creator),
+        )
+        assert response.status_code == 400
+        assert event.co_hosts.filter(pk=creator.pk).exists()
+
+    def test_remaining_cohost_can_uncancel_after_creator_steps_down(
+        self, api_client, creator, cohost, event_with_accepted_cohost
+    ):
+        event, _invite = event_with_accepted_cohost
+        api_client.post(
+            f"/api/community/events/{event.id}/cohost-invites/step-down/",
+            **_auth_headers(creator),
+        )
+        event.status = EventStatus.CANCELLED
+        event.save(update_fields=["status"])
+
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            data=json.dumps({"status": EventStatus.ACTIVE}),
+            content_type="application/json",
+            **_auth_headers(cohost),
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == EventStatus.ACTIVE

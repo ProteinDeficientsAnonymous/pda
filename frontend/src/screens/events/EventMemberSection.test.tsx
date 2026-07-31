@@ -16,6 +16,7 @@ import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
 const rescindMutate = vi.fn();
+const stepDownMutate = vi.fn();
 const updatePublicRsvpMutate = vi.fn();
 const cancelPublicRsvpMutate = vi.fn();
 
@@ -23,6 +24,7 @@ vi.mock('@/api/cohostInvites', () => ({
   useAcceptCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useDeclineCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useRescindCohostInvite: () => ({ mutate: rescindMutate, isPending: false }),
+  useStepDownAsHost: () => ({ mutate: stepDownMutate, isPending: false }),
 }));
 
 vi.mock('@/api/publicRsvp', () => ({
@@ -160,6 +162,7 @@ function renderSection(event: Event, token?: string) {
 
 beforeEach(() => {
   rescindMutate.mockReset();
+  stepDownMutate.mockReset();
 });
 
 const ACCEPTED_COHOST_EVENT: Event = {
@@ -179,13 +182,21 @@ describe('EventMemberSection — accepted host row', () => {
     expect(screen.getByRole('button', { name: /remove bob as co-host/i })).toBeInTheDocument();
   });
 
-  it('does NOT render × on creator chip', () => {
+  it('renders a step-down × on the creator chip when viewing self and a co-host exists', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
-    // Creator chip is "Alice" — no × should appear next to it.
+    // The creator can step down as host now that Bob is a co-host — but there's
+    // no "remove" affordance for a creator, only a self "step down".
+    expect(screen.getByRole('button', { name: /step down as host/i })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /remove alice as co-host/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('does NOT render a step-down × on the creator chip for outsider', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection(ACCEPTED_COHOST_EVENT);
+    expect(screen.queryByRole('button', { name: /step down as host/i })).not.toBeInTheDocument();
   });
 
   it('does NOT render × on accepted co-host chip for outsider', () => {
@@ -237,6 +248,24 @@ describe('EventMemberSection — accepted host row', () => {
     // Give the promise chain a tick to resolve before asserting "didn't fire".
     await Promise.resolve();
     expect(rescindMutate).not.toHaveBeenCalled();
+  });
+
+  it('creator self-step-down shows confirm dialog and fires the step-down mutation', async () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection(ACCEPTED_COHOST_EVENT);
+    fireEvent.click(screen.getByRole('button', { name: /step down as host/i }));
+    expect(stepDownMutate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /^step down$/i }));
+    await waitFor(() => {
+      expect(stepDownMutate).toHaveBeenCalledWith({ eventId: 'ev1' }, expect.any(Object));
+    });
+    expect(rescindMutate).not.toHaveBeenCalled();
+  });
+
+  it('does NOT offer creator step-down when no co-host exists', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection(BASE_EVENT);
+    expect(screen.queryByRole('button', { name: /step down as host/i })).not.toBeInTheDocument();
   });
 });
 

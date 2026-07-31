@@ -34,7 +34,16 @@ async function deleteRescind({ eventId, inviteId }: CohostInviteArgs): Promise<E
   return mapEvent(data);
 }
 
-function useCohostInviteMutation(fn: (args: CohostInviteArgs) => Promise<Event>) {
+async function postStepDown({ eventId }: { eventId: string }): Promise<Event> {
+  const { data } = await apiClient.post<WireEvent>(
+    `/api/community/events/${eventId}/cohost-invites/step-down/`,
+  );
+  return mapEvent(data);
+}
+
+function useCohostInviteMutation<TArgs extends { eventId: string }>(
+  fn: (args: TArgs) => Promise<Event>,
+) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
@@ -56,4 +65,8 @@ export function useDeclineCohostInvite() {
 
 export function useRescindCohostInvite() {
   return useCohostInviteMutation(deleteRescind);
+}
+
+export function useStepDownAsHost() {
+  return useCohostInviteMutation(postStepDown);
 }
