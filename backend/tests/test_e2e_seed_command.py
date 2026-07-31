@@ -57,7 +57,9 @@ def test_e2e_seed_live_updates(capsys):
     for key in ("user_a_phone", "user_a_password", "user_b_phone", "user_b_password"):
         assert out[key]
     assert User.objects.get(phone_number=out["user_a_phone"]).is_member is True
-    assert User.objects.get(phone_number=out["user_b_phone"]).is_member is True
+    user_b = User.objects.get(phone_number=out["user_b_phone"])
+    assert user_b.is_member is True
+    assert EventRSVP.objects.filter(event_id=out["event_id"], user=user_b).exists()
 
 
 @pytest.mark.django_db

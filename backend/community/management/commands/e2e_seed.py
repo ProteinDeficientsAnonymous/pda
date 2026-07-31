@@ -138,7 +138,8 @@ def _seed_live_updates() -> dict:
     event = _random_event("live-updates")
     phone_a, phone_b = _random_phone(), _random_phone()
     _member_user(phone_a)
-    _member_user(phone_b)
+    user_b = _member_user(phone_b)
+    EventRSVP.objects.create(event=event, user=user_b, status=RSVPStatus.ATTENDING)
     return {
         "event_id": str(event.id),
         "event_title": event.title,
