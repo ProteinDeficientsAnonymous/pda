@@ -77,7 +77,7 @@ export function EventHostSection({
       );
       return;
     }
-    if (host.inviteId === null) return; // kicking the creator isn't supported
+    if (host.inviteId === null) return;
     remove.mutate(
       { eventId: event.id, inviteId: host.inviteId },
       {
