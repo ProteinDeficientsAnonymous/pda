@@ -59,8 +59,6 @@ def _can_post_comments(
         return False
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    if event.created_by_id == user.pk:
-        return True
     if co_host_pks is not None:
         if str(user.pk) in co_host_pks:
             return True
@@ -75,14 +73,12 @@ def _can_delete_comment(
     user,
     co_host_pks: set[str] | None = None,
 ) -> bool:
-    """Authors can always delete their own; creator / co-host / MANAGE_EVENTS can delete others'."""
+    """Authors can always delete their own; host / MANAGE_EVENTS can delete others'."""
     if user is None:
         return False
     if comment.author_id == user.pk:
         return True
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
-        return True
-    if event.created_by_id == user.pk:
         return True
     if co_host_pks is not None:
         return str(user.pk) in co_host_pks

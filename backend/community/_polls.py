@@ -77,11 +77,7 @@ def _can_manage_poll(user, event: Event) -> bool:
         return True
     if user.has_permission(PermissionKey.MANAGE_SURVEYS):
         return True
-    if event.created_by_id == user.pk:
-        return True
-    if event.co_hosts.filter(pk=user.pk).exists():
-        return True
-    return False
+    return event.co_hosts.filter(pk=user.pk).exists()
 
 
 def _voter_out(user, viewer=None) -> VoterOut:

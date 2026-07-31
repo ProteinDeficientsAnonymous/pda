@@ -150,11 +150,10 @@ def _handle_status_update(request, event: Event, new_status: str, notify: bool):
     with the event representation), or None to continue processing field edits.
     Raises ValidationException on validation failures.
     """
-    # Uncancel requires creator/manager — co-hosts cannot uncancel
     if new_status == EventStatus.ACTIVE and event.is_cancelled:
         is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-        is_creator = event.created_by_id == request.auth.pk
-        if not is_creator and not is_manager:
+        is_host = event.co_hosts.filter(pk=request.auth.pk).exists()
+        if not is_host and not is_manager:
             raise_validation(Code.Perm.DENIED, status_code=403, action="uncancel_event")
 
     _apply_status_transition(request, event, new_status, notify)

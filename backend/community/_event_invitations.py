@@ -41,8 +41,6 @@ def _can_invite_to_event(user, event: Event) -> bool:
     intentionally not enforced here (Issue 688)."""
     if user.has_permission(PermissionKey.MANAGE_EVENTS):
         return True
-    if event.created_by_id == user.pk:
-        return True
     if event.co_hosts.filter(pk=user.pk).exists():
         return True
     return event.invite_permission == InvitePermission.ALL_MEMBERS

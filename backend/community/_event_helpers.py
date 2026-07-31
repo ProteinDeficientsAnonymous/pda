@@ -205,18 +205,16 @@ def _can_see_invited(
 
 def _can_manage_cohost_invites(
     requesting_user,
-    creator,
     co_host_ids: set[str],
 ) -> bool:
-    """Creator + accepted co-hosts can see pending invites and rescind them.
+    """Accepted co-hosts (which includes the creator) can see pending invites
+    and rescind them.
 
     Admins are intentionally excluded — co-host management is a host-only
     workflow, not an admin moderation surface.
     """
     if requesting_user is None:
         return False
-    if creator is not None and requesting_user.pk == creator.pk:
-        return True
     return str(requesting_user.pk) in co_host_ids
 
 
@@ -270,9 +268,9 @@ def _get_datetime_poll_slug(event: Event) -> str | None:
 
 
 def _pending_cohost_invites_out(
-    event: Event, auth_user, creator, co_host_ids: set[str]
+    event: Event, auth_user, co_host_ids: set[str]
 ) -> list[PendingCoHostInviteOut]:
-    if not _can_manage_cohost_invites(auth_user, creator, co_host_ids):
+    if not _can_manage_cohost_invites(auth_user, co_host_ids):
         return []
     return [
         PendingCoHostInviteOut(
@@ -324,7 +322,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 
-    pending_invites_out = _pending_cohost_invites_out(event, auth_user, creator, co_host_ids)
+    pending_invites_out = _pending_cohost_invites_out(event, auth_user, co_host_ids)
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     co_host_invite_ids = _accepted_invite_ids_for_co_hosts(event, co_hosts)
