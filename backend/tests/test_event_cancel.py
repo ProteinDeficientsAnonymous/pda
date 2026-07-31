@@ -277,11 +277,21 @@ class TestUncancel:
         assert response.status_code == 200
         assert response.json()["status"] == "active"
 
-    def test_cohost_cannot_uncancel(
+    def test_cohost_can_uncancel(
         self, api_client, auth_headers, test_user, manage_events_user, upcoming_event_with_rsvp
     ):
         upcoming_event_with_rsvp.created_by = manage_events_user
         upcoming_event_with_rsvp.co_hosts.add(test_user)
+        upcoming_event_with_rsvp.status = EventStatus.CANCELLED
+        upcoming_event_with_rsvp.save(update_fields=["created_by", "status"])
+        response = _patch_status(api_client, auth_headers, upcoming_event_with_rsvp.id, "active")
+        assert response.status_code == 200
+        assert response.json()["status"] == "active"
+
+    def test_stranger_cannot_uncancel(
+        self, api_client, auth_headers, manage_events_user, upcoming_event_with_rsvp
+    ):
+        upcoming_event_with_rsvp.created_by = manage_events_user
         upcoming_event_with_rsvp.status = EventStatus.CANCELLED
         upcoming_event_with_rsvp.save(update_fields=["created_by", "status"])
         response = _patch_status(api_client, auth_headers, upcoming_event_with_rsvp.id, "active")

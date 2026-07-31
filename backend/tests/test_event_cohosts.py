@@ -38,10 +38,9 @@ def other_headers(other_user):
 @pytest.mark.django_db
 class TestCreateEventWithCohosts:
     def test_create_event_with_cohosts_creates_pending_invite(
-        self, api_client, auth_headers, other_user
+        self, api_client, auth_headers, test_user, other_user
     ):
-        # With the invite-approval flow (#363), passing ``co_host_ids`` queues
-        # a PENDING invite — the user is NOT in event.co_hosts until they accept.
+        # co_host_ids queues a PENDING invite (#363) — invitee isn't in co_hosts until accepted.
         response = api_client.post(
             "/api/community/events/",
             {
@@ -55,7 +54,7 @@ class TestCreateEventWithCohosts:
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["co_host_ids"] == []
+        assert data["co_host_ids"] == [str(test_user.pk)]
         assert any(inv["user_id"] == str(other_user.pk) for inv in data["pending_cohost_invites"])
 
     def test_create_event_with_rsvp_enabled(self, api_client, auth_headers):

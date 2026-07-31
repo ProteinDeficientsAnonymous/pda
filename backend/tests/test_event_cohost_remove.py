@@ -156,10 +156,12 @@ class TestRemoveAcceptedCoHost:
         )
         assert response.status_code == 403
 
-    def test_last_host_cannot_step_down(self, api_client, event_with_accepted_cohost, cohost):
-        # Set the scene: cohost is accepted, then creator deletes their account
-        # so created_by gets nulled (SET_NULL). cohost is now the only host.
+    def test_last_host_cannot_step_down(
+        self, api_client, event_with_accepted_cohost, creator, cohost
+    ):
+        # Simulate creator account deletion (SET_NULL + M2M cascade) — cohost is now the only host.
         event, invite = event_with_accepted_cohost
+        event.co_hosts.remove(creator)
         Event.objects.filter(pk=event.pk).update(created_by=None)
         response = api_client.delete(
             f"/api/community/events/{event.id}/cohost-invites/{invite.id}/",

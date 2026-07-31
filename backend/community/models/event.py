@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 
 from django.db import models
 from django.db.models import Q
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 from community.models.choices import (
@@ -179,6 +181,14 @@ class Event(models.Model):
     def __str__(self):
         dt = self.start_datetime
         return f"{self.title} — {dt:%Y-%m-%d %H:%M}" if dt else f"{self.title} — TBD"
+
+
+@receiver(post_save, sender=Event)
+def seed_creator_as_host(sender, instance, created, **kwargs):
+    """co_hosts is the sole source of truth for hosts; seed the creator so
+    they can step down later. created_by is a separate, permanent audit field."""
+    if created and instance.created_by_id is not None:
+        instance.co_hosts.add(instance.created_by_id)
 
 
 class EventRSVP(models.Model):

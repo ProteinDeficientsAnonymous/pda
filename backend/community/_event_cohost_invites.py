@@ -108,16 +108,9 @@ def decline_cohost_invite(request, event_id: UUID, invite_id: UUID):
 
 
 def _would_leave_event_hostless(event: Event, removing_user_id: str) -> bool:
-    """True if removing this user would leave the event with zero hosts.
-
-    The creator is a host. If they're set, removing any co-host is fine. If
-    they're None (e.g. SET_NULL after deletion) and we'd be removing the only
-    accepted co-host, refuse — the event needs at least one host.
-    """
-    if event.created_by_id is not None:
-        return False
+    """True if removing this user would leave the event with zero hosts."""
     co_host_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
-    return co_host_ids == {str(removing_user_id)}
+    return co_host_ids <= {str(removing_user_id)}
 
 
 def _rescind_pending(invite: EventCoHostInvite, is_host: bool) -> None:
@@ -160,7 +153,7 @@ def rescind_cohost_invite(request, event_id: UUID, invite_id: UUID):
     invite = _get_invite_or_404(event_id, invite_id)
     event = invite.event
     co_host_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
-    is_host = _can_manage_cohost_invites(request.auth, event.created_by, co_host_ids)
+    is_host = _can_manage_cohost_invites(request.auth, co_host_ids)
     is_self = invite.user_id == request.auth.pk
 
     if invite.status == CoHostInviteStatus.PENDING:

@@ -176,8 +176,6 @@ def _has_finalize_permission(request, survey: Survey, event: Event | None) -> bo
         return True
     if survey.created_by_id == request.auth.pk:
         return True
-    if event and event.created_by_id == request.auth.pk:
-        return True
     if event and event.co_hosts.filter(pk=request.auth.pk).exists():
         return True
     return False

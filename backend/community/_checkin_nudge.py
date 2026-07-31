@@ -60,9 +60,8 @@ def send_checkin_nudge(event: Event) -> bool:
 
     sender = get_email_sender()
     event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.pk}/attendance"
-    recipients = [event.created_by, *event.co_hosts.all()]
-    for user in recipients:
-        if user is None or not user.email:
+    for user in event.co_hosts.all():
+        if not user.email:
             continue
         try:
             result = send_checkin_reminder_email(

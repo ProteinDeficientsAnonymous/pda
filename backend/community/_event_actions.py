@@ -50,9 +50,8 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
     is_manager = request.auth.has_permission(PermissionKey.MANAGE_EVENTS)
-    is_creator = event.created_by_id == request.auth.pk
-    is_cohost = event.co_hosts.filter(pk=request.auth.pk).exists()
-    if not is_manager and not is_creator and not is_cohost:
+    is_host = event.co_hosts.filter(pk=request.auth.pk).exists()
+    if not is_manager and not is_host:
         audit_log(
             logging.WARNING,
             "permission_denied",
