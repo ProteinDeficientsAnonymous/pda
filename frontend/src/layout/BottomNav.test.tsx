@@ -66,11 +66,35 @@ describe('BottomNav', () => {
     expect(link).toHaveAttribute('href', '/my-rsvps');
   });
 
-  it('logged-out users with no stored rsvp token get a my rsvps icon with no link', () => {
+  it('logged-out users with no stored rsvp token get a my rsvps button instead of a link', () => {
     renderNav('/');
 
     expect(screen.queryByRole('link', { name: /^my rsvps$/i })).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/^my rsvps$/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^my rsvps$/i })).toBeInTheDocument();
+  });
+
+  it('pressing my rsvps while signed out opens the login modal instead of doing nothing', async () => {
+    const user = userEvent.setup();
+    renderNav('/profile');
+
+    await user.click(screen.getByRole('button', { name: /^my rsvps$/i }));
+
+    expect(screen.getByRole('dialog', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByTestId('pathname').textContent).toBe('/profile');
+  });
+
+  it('keeps the nav visible and clickable while the login modal is open', async () => {
+    const user = userEvent.setup();
+    renderNav('/profile');
+
+    await user.click(screen.getByRole('button', { name: /^my rsvps$/i }));
+    expect(screen.getByRole('dialog', { name: /sign in/i })).toBeInTheDocument();
+
+    const membersLink = screen.getByRole('link', { name: /^members$/i });
+    expect(membersLink).toBeVisible();
+    await user.click(membersLink);
+
+    expect(screen.getByTestId('pathname').textContent).toBe('/members');
   });
 
   it('members link points at /members', () => {
