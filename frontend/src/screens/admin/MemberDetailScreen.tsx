@@ -155,8 +155,6 @@ function MemberRolesSection({ member }: { member: Member }) {
   }
   if (isError) return null;
 
-  // only members with manage_roles can reassign roles — everyone else sees
-  // the current roles read-only (Issue 1152)
   if (!canManageRoles) {
     return (
       <section className="mb-4">
