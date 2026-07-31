@@ -130,13 +130,16 @@ def list_my_rsvps(request, token: str = ""):
                 has_plus_one=rsvp.has_plus_one,
             )
         )
-    return 200, PublicRsvpManageOut(
-        user=PublicRsvpManageUserOut(
-            display_name=user.full_name,
-            email=user.email or "",
-            phone_number=user.phone_number,
+    return Status(
+        200,
+        PublicRsvpManageOut(
+            user=PublicRsvpManageUserOut(
+                display_name=user.full_name,
+                email=user.email or "",
+                phone_number=user.phone_number,
+            ),
+            rsvps=items,
         ),
-        rsvps=items,
     )
 
 
@@ -180,10 +183,13 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         .get(id=event.id)
     )
     final_rsvp = user.event_rsvps.get(event=fresh_event)
-    return 200, PublicRsvpOut(
-        event=_event_out(fresh_event, user),
-        rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
-        rsvp_token=rsvp_token.token,
+    return Status(
+        200,
+        PublicRsvpOut(
+            event=_event_out(fresh_event, user),
+            rsvp=PublicRsvpStateOut(status=final_rsvp.status, has_plus_one=final_rsvp.has_plus_one),
+            rsvp_token=rsvp_token.token,
+        ),
     )
 
 

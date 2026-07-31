@@ -7,6 +7,7 @@ import httpx
 from config.auth import gated_jwt
 from django.http import HttpRequest
 from ninja import Query, Router
+from ninja.responses import Status
 from pydantic import BaseModel, ConfigDict, Field
 
 from community._shared import ErrorOut
@@ -52,11 +53,11 @@ def geocode(request: HttpRequest, params: Query[GeocodeQuery]):
             timeout=5.0,
         )
         resp.raise_for_status()
-        return 200, resp.json()
+        return Status(200, resp.json())
     except (httpx.HTTPError, ValueError) as e:
         # Expected upstream failures: httpx.HTTPError covers timeout, connection
         # error, and non-2xx (TimeoutException is a subclass); ValueError covers
         # JSON-decode failures when a 2xx response carries a non-JSON body.
         # Log with request context but no PII — the query text is user input.
         logger.warning("geocode proxy error: limit=%s error=%s", params.limit, e)
-        return 502, {"detail": "geocoding service unavailable — try again"}
+        return Status(502, {"detail": "geocoding service unavailable — try again"})
