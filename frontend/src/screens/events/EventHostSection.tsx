@@ -60,11 +60,8 @@ export function EventHostSection({
     const isSelf = host.userId === viewerId;
     if (isSelf) {
       const ok = await confirm({
-        title: host.inviteId === null ? 'step down as host?' : 'step down as co-host?',
-        message:
-          host.inviteId === null
-            ? "you'll lose host access — someone else will need to add you back later."
-            : "you'll lose co-host access — the host can re-invite you later.",
+        title: 'step down as host?',
+        message: "you'll lose host access — someone else will need to add you back later.",
         confirmLabel: 'step down',
         destructive: true,
       });
@@ -189,11 +186,7 @@ function HostChip({
       {canRemove ? (
         <button
           type="button"
-          aria-label={
-            isSelf
-              ? `step down as ${host.inviteId === null ? 'host' : 'co-host'}`
-              : `remove ${host.name} as co-host`
-          }
+          aria-label={isSelf ? 'step down as host' : `remove ${host.name} as co-host`}
           onClick={onRemove}
           className="text-muted hover:text-foreground ms-1"
         >
