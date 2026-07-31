@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { ADMIN_ROLE_NAME, hasPermission, isAdmin, Permission } from '@/models/permissions';
+import { ADMIN_ROLE_NAME, isAdmin } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
@@ -132,7 +132,8 @@ function MemberDetailView({ member }: { member: Member }) {
 
 function MemberRolesSection({ member }: { member: Member }) {
   const user = useAuthStore((s) => s.user);
-  const canManageRoles = hasPermission(user, Permission.ManageUsers);
+  // page access already requires manage_users (see router guard); admin is
+  // the only role assignment that needs the stricter check
   const canAssignAdminRole = isAdmin(user);
   const { data: allRoles = [], isPending, isError } = useRoles();
   const updateRoles = useUpdateMemberRoles(member.id);
@@ -154,15 +155,6 @@ function MemberRolesSection({ member }: { member: Member }) {
     return <p className="text-muted mb-4 text-sm">loading roles…</p>;
   }
   if (isError) return null;
-
-  if (!canManageRoles) {
-    return (
-      <section className="mb-4">
-        <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">roles</h2>
-        <p className="text-sm">{member.roles.map((r) => r.name).join(', ') || 'none'}</p>
-      </section>
-    );
-  }
 
   return (
     <section className="mb-4">

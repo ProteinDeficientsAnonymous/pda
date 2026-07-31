@@ -134,7 +134,7 @@ describe('MemberDetailScreen edit form', () => {
   });
 });
 
-describe('MemberDetailScreen roles section permission gating', () => {
+describe('MemberDetailScreen roles section admin lock', () => {
   afterEach(() => {
     useAuthStore.setState({ status: 'idle', user: null, accessToken: null });
   });
@@ -171,17 +171,6 @@ describe('MemberDetailScreen roles section permission gating', () => {
       mutateAsync: vi.fn(),
       isPending: false,
     } as unknown as ReturnType<typeof useUpdateUser>);
-  });
-
-  it('hides the role checkboxes from a user without manage_users', () => {
-    useAuthStore.setState({
-      status: 'authed',
-      user: { roles: [{ name: 'vetter', isDefault: false, permissions: ['manage_roles'] }] },
-    } as unknown as ReturnType<typeof useAuthStore.getState>);
-
-    renderScreen();
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /save roles/i })).not.toBeInTheDocument();
   });
 
   it('shows editable role checkboxes to a non-admin user with manage_users', () => {
