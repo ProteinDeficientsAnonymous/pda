@@ -54,4 +54,11 @@ describe('LoginScreen phone prefill', () => {
     expect(screen.getByRole('textbox', { name: /phone number/i })).toBeInTheDocument();
     expect(screen.queryByLabelText('password')).not.toBeInTheDocument();
   });
+
+  it('keeps the bottom nav so signed-out users can navigate away', () => {
+    renderAt({ pathname: '/login' });
+
+    expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^calendar$/i })).toBeInTheDocument();
+  });
 });

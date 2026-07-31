@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
-import { LoginPromptDialog } from '@/auth/LoginPromptDialog';
 import { useAuthStore } from '@/auth/store';
 import { cn } from '@/utils/cn';
 
@@ -13,42 +11,26 @@ export function BottomNav() {
   const onEventsAdd = location.pathname === '/events/add';
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
-  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const photoUrl = user?.profilePhotoUrl
     ? user.photoUpdatedAt
       ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
       : user.profilePhotoUrl
     : '';
-  const storedRsvpToken = getStoredRsvpToken();
-  const myEventsTo = isAuthed ? '/events/mine' : storedRsvpToken ? '/my-rsvps' : null;
+  const myEventsTo = myRsvpsDestination(isAuthed);
 
   return (
     <nav
       aria-label="primary"
-      className="from-surface/20 via-surface/85 to-surface fixed inset-x-0 bottom-0 z-[25] bg-gradient-to-b pb-[env(safe-area-inset-bottom)]"
+      className="from-surface/20 via-surface/85 to-surface fixed inset-x-0 bottom-0 z-20 bg-gradient-to-b pb-[env(safe-area-inset-bottom)]"
     >
       <div className="mx-auto grid h-14 max-w-6xl grid-cols-5">
         <NavItem to="/calendar" label="calendar">
           {({ active }) => <CalendarIcon filled={active} />}
         </NavItem>
 
-        {myEventsTo ? (
-          <NavItem to={myEventsTo} label="my rsvps">
-            {({ active }) => <TicketIcon filled={active} />}
-          </NavItem>
-        ) : (
-          <button
-            type="button"
-            aria-label="my rsvps"
-            className="text-muted hover:bg-background flex flex-col items-center justify-center gap-0.5 transition-colors"
-            onClick={() => {
-              setLoginPromptOpen(true);
-            }}
-          >
-            <TicketIcon filled={false} />
-            <span aria-hidden="true" className="h-1 w-1 rounded-full opacity-0" />
-          </button>
-        )}
+        <NavItem to={myEventsTo} label="my rsvps">
+          {({ active }) => <TicketIcon filled={active} />}
+        </NavItem>
 
         <div className="flex items-center justify-center">
           <button
@@ -80,14 +62,14 @@ export function BottomNav() {
           }
         </NavItem>
       </div>
-      <LoginPromptDialog
-        open={loginPromptOpen}
-        onClose={() => {
-          setLoginPromptOpen(false);
-        }}
-      />
     </nav>
   );
+}
+
+function myRsvpsDestination(isAuthed: boolean) {
+  if (isAuthed) return '/events/mine';
+  if (getStoredRsvpToken()) return '/my-rsvps';
+  return `/login?redirect=${encodeURIComponent('/events/mine')}`;
 }
 
 interface NavItemProps {
