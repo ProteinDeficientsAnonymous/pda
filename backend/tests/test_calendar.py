@@ -81,7 +81,7 @@ class TestCalendarFeed:
         resp = api_client.post("/api/community/calendar/token/", **auth_headers)
         token = resp.json()["token"]
 
-        start = dt.datetime(2026, 7, 1, 18, 0, tzinfo=dt.UTC)
+        start = timezone.now()
         Event.objects.create(
             title="No End Time",
             start_datetime=start,
@@ -91,8 +91,8 @@ class TestCalendarFeed:
         resp = api_client.get(f"/api/community/calendar/feed/?token={token}")
         content = resp.content.decode()
         assert "DTEND" in content
-        # start + 2h = 20:00 UTC
-        assert "20260701T200000" in content
+        expected_end = (start + dt.timedelta(hours=2)).strftime("%Y%m%dT%H%M%S")
+        assert expected_end in content
 
     def test_feed_includes_links_in_description(self, api_client, auth_headers, test_user):
         resp = api_client.post("/api/community/calendar/token/", **auth_headers)

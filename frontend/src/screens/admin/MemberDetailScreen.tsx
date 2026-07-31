@@ -12,11 +12,12 @@ import {
   useUpdateUser,
   useUsers,
 } from '@/api/users';
+import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { Toggle } from '@/components/ui/Toggle';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { ADMIN_ROLE_NAME } from '@/models/permissions';
+import { ADMIN_ROLE_NAME, isAdmin } from '@/models/permissions';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
 import { buildMagicLinkUrl, buildSmsHref, buildWelcomeMessage } from '@/utils/welcomeMessage';
@@ -130,6 +131,8 @@ function MemberDetailView({ member }: { member: Member }) {
 }
 
 function MemberRolesSection({ member }: { member: Member }) {
+  const user = useAuthStore((s) => s.user);
+  const canAssignAdminRole = isAdmin(user);
   const { data: allRoles = [], isPending, isError } = useRoles();
   const updateRoles = useUpdateMemberRoles(member.id);
   const [selected, setSelected] = useState(() => new Set(member.roles.map((r) => r.id)));
@@ -155,24 +158,32 @@ function MemberRolesSection({ member }: { member: Member }) {
     <section className="mb-4">
       <h2 className="text-muted mb-2 text-xs font-medium tracking-wide">roles</h2>
       <div className="flex flex-col gap-2">
-        {allRoles.map((r) => (
-          <label key={r.id} className="flex cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={selected.has(r.id)}
-              onChange={(e) => {
-                setSelected((prev) => {
-                  const next = new Set(prev);
-                  if (e.target.checked) next.add(r.id);
-                  else next.delete(r.id);
-                  return next;
-                });
-              }}
-              className="accent-brand-600 h-4 w-4 cursor-pointer rounded"
-            />
-            <span>{r.name}</span>
-          </label>
-        ))}
+        {allRoles.map((r) => {
+          const isAdminRole = r.name === ADMIN_ROLE_NAME && r.isDefault;
+          const locked = isAdminRole && !canAssignAdminRole;
+          return (
+            <label
+              key={r.id}
+              className={`flex items-center gap-2 text-sm ${locked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+            >
+              <input
+                type="checkbox"
+                checked={selected.has(r.id)}
+                disabled={locked}
+                onChange={(e) => {
+                  setSelected((prev) => {
+                    const next = new Set(prev);
+                    if (e.target.checked) next.add(r.id);
+                    else next.delete(r.id);
+                    return next;
+                  });
+                }}
+                className="accent-brand-600 h-4 w-4 cursor-pointer rounded disabled:cursor-not-allowed"
+              />
+              <span>{r.name}</span>
+            </label>
+          );
+        })}
       </div>
       <Button
         type="button"
