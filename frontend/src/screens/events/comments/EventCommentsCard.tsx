@@ -57,8 +57,6 @@ export function EventCommentsCard({ eventId, token }: Props) {
     );
   }
 
-  const isGated = data.cannotPostReason !== null;
-
   return (
     <section className="border-border-strong bg-surface rounded-lg border p-4">
       <h2 className="text-muted mb-3 text-xs font-medium tracking-wide">comments</h2>
@@ -74,9 +72,9 @@ export function EventCommentsCard({ eventId, token }: Props) {
         }}
         submitting={postComment.isPending}
       />
-      {isGated ? null : (
+      {data.canPost ? (
         <CommentThread comments={data.items} eventId={eventId} {...(token ? { token } : {})} />
-      )}
+      ) : null}
     </section>
   );
 }

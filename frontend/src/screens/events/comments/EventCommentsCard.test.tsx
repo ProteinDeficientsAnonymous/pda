@@ -70,7 +70,7 @@ describe('EventCommentsCard', () => {
     expect(screen.queryByRole('button', { name: /post/i })).not.toBeInTheDocument();
   });
 
-  it('hides the comment thread when the viewer has no active rsvp, even if the backend still sent items (Issue 1168)', async () => {
+  it('hides the comment thread when the viewer has no active rsvp', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({
       data: {
         items: [

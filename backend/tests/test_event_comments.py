@@ -8,6 +8,7 @@ from community.models import (
     Event,
     EventComment,
     EventRSVP,
+    EventType,
     PageVisibility,
     RSVPStatus,
 )
@@ -38,8 +39,25 @@ class TestGetComments:
         assert body["can_post"] is False
         assert body["cannot_post_reason"] == "login_required"
 
+    def test_unauthed_on_public_rsvp_event_is_prompted_to_rsvp_not_login(
+        self, api_client, db, test_user
+    ):
+        event = Event.objects.create(
+            title="Public Event",
+            start_datetime=future_iso(days=30),
+            created_by=test_user,
+            event_type=EventType.OFFICIAL,
+            visibility=PageVisibility.PUBLIC,
+            rsvp_enabled=True,
+        )
+        response = api_client.get(f"/api/community/events/{event.id}/comments/")
+        assert response.status_code == 200, response.content
+        body = response.json()
+        assert body["items"] == []
+        assert body["can_post"] is False
+        assert body["cannot_post_reason"] == "rsvp_required"
+
     def test_bystander_without_rsvp_cannot_see_comment_content(self, api_client, event, test_user):
-        # event fixture defaults to rsvp_enabled=False
         EventComment.objects.create(event=event, author=test_user, body="host comment")
         bystander = User.objects.create_user(
             phone_number="+12025550910",
