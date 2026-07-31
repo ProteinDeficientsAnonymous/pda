@@ -39,9 +39,7 @@ class TestGetComments:
         assert body["cannot_post_reason"] == "login_required"
 
     def test_bystander_without_rsvp_cannot_see_comment_content(self, api_client, event, test_user):
-        # event fixture has rsvp_enabled=False (the default) — this is exactly
-        # the reporter's scenario: rsvp "appeared disabled" but comments were
-        # still visible (Issue 1168).
+        # event fixture defaults to rsvp_enabled=False
         EventComment.objects.create(event=event, author=test_user, body="host comment")
         bystander = User.objects.create_user(
             phone_number="+12025550910",

@@ -161,9 +161,7 @@ def _build_list_out(event: Event, viewer) -> EventCommentListOut:
         reason = "rsvp_required"
     else:
         reason = None
-    # Reading comment content requires the same standing as posting them — an
-    # active RSVP (or host/co-host/admin) — so a bystander can't see the thread
-    # just by being logged in (Issue 1168).
+    # Reading requires the same standing as posting — no peeking without an active rsvp.
     if not can_post:
         return EventCommentListOut(items=[], can_post=can_post, cannot_post_reason=reason)
     comments = (

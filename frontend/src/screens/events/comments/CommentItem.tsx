@@ -15,19 +15,11 @@ interface Props {
   comment: EventComment;
   eventId: string;
   token?: string;
-  canReact: boolean;
-  canReply: boolean;
+  canComment: boolean;
   reactDisabledReason?: string | undefined;
 }
 
-export function CommentItem({
-  comment,
-  eventId,
-  token,
-  canReact,
-  canReply,
-  reactDisabledReason,
-}: Props) {
+export function CommentItem({ comment, eventId, token, canComment, reactDisabledReason }: Props) {
   const toggleReaction = useToggleReaction(eventId, token);
   const deleteComment = useDeleteComment(eventId, token);
   const postReply = usePostReply(eventId, token);
@@ -80,12 +72,12 @@ export function CommentItem({
         <div className="flex items-center justify-between gap-2">
           <ReactionBar
             reactions={comment.reactions}
-            canReact={canReact}
+            canReact={canComment}
             onToggle={handleToggle}
             disabledReason={reactDisabledReason}
           />
           <div className="flex items-center gap-3">
-            {canReply ? (
+            {canComment ? (
               <button
                 type="button"
                 onClick={() => {
@@ -130,7 +122,7 @@ export function CommentItem({
               reply={reply}
               eventId={eventId}
               {...(token ? { token } : {})}
-              canReact={canReact}
+              canReact={canComment}
               reactDisabledReason={reactDisabledReason}
             />
           ))}

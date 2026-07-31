@@ -86,8 +86,7 @@ export function EventCommentsCard({ eventId, token }: Props) {
           comments={data.items}
           eventId={eventId}
           {...(token ? { token } : {})}
-          canReact={data.canPost}
-          canReply={data.canPost}
+          canComment={data.canPost}
           reactDisabledReason={reactDisabledReason}
         />
       )}

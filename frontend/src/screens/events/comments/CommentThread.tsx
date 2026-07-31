@@ -6,8 +6,7 @@ interface Props {
   comments: EventComment[];
   eventId: string;
   token?: string;
-  canReact: boolean;
-  canReply: boolean;
+  canComment: boolean;
   reactDisabledReason?: string | undefined;
 }
 
@@ -15,8 +14,7 @@ export function CommentThread({
   comments,
   eventId,
   token,
-  canReact,
-  canReply,
+  canComment,
   reactDisabledReason,
 }: Props) {
   if (comments.length === 0) {
@@ -30,8 +28,7 @@ export function CommentThread({
           comment={c}
           eventId={eventId}
           {...(token ? { token } : {})}
-          canReact={canReact}
-          canReply={canReply}
+          canComment={canComment}
           reactDisabledReason={reactDisabledReason}
         />
       ))}

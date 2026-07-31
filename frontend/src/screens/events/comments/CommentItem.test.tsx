@@ -42,7 +42,7 @@ const baseComment: EventComment = {
 
 describe('CommentItem', () => {
   it('renders the body and author', () => {
-    wrap(<CommentItem comment={baseComment} eventId="evt" canReact canReply />);
+    wrap(<CommentItem comment={baseComment} eventId="evt" canComment />);
     expect(screen.getByText('hello')).toBeInTheDocument();
     // Rendered lowercase via CSS text-transform, not string mutation — the DOM
     // text content stays the real display name.
@@ -51,9 +51,7 @@ describe('CommentItem', () => {
 
   it('wraps a long unbroken body so it cannot overflow the viewport', () => {
     const longToken = `https://example.com/${'x'.repeat(200)}`;
-    wrap(
-      <CommentItem comment={{ ...baseComment, body: longToken }} eventId="evt" canReact canReply />,
-    );
+    wrap(<CommentItem comment={{ ...baseComment, body: longToken }} eventId="evt" canComment />);
     expect(screen.getByText(longToken)).toHaveClass('break-words', '[overflow-wrap:anywhere]');
   });
 
@@ -62,8 +60,7 @@ describe('CommentItem', () => {
       <CommentItem
         comment={{ ...baseComment, isDeleted: true, body: '' }}
         eventId="evt"
-        canReact
-        canReply
+        canComment
       />,
     );
     expect(screen.getByText('[deleted]')).toBeInTheDocument();
@@ -71,21 +68,14 @@ describe('CommentItem', () => {
   });
 
   it('shows delete only when canDelete is true', () => {
-    wrap(
-      <CommentItem
-        comment={{ ...baseComment, canDelete: false }}
-        eventId="evt"
-        canReact
-        canReply
-      />,
-    );
+    wrap(<CommentItem comment={{ ...baseComment, canDelete: false }} eventId="evt" canComment />);
     expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 
   it('includes the rsvp token when a non-member posts a reply', async () => {
     mockPost.mockClear();
     const user = userEvent.setup();
-    wrap(<CommentItem comment={baseComment} eventId="evt" token="rsvp-token" canReact canReply />);
+    wrap(<CommentItem comment={baseComment} eventId="evt" token="rsvp-token" canComment />);
     await user.click(screen.getByRole('button', { name: 'reply' }));
     await user.type(screen.getByPlaceholderText('reply…'), 'hi there');
     await user.click(screen.getByRole('button', { name: 'post' }));
