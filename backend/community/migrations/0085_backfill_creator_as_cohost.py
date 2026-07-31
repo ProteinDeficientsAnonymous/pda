@@ -16,11 +16,8 @@ def add_creators_to_cohosts(apps, schema_editor):
 
 
 def noop_reverse(apps, schema_editor):
-    """Irreversible in practice: once creators are co-hosts they're
-    indistinguishable from co-hosts added by hand, so removing them on reverse
-    would strip legitimately-invited creators. Leaving the rows is harmless —
-    pre-migration code treats the creator as a host anyway.
-    """
+    """Irreversible in practice: seeded creators are indistinguishable from
+    hand-added co-hosts, so reverse can't safely strip them. Harmless to leave."""
 
 
 class Migration(migrations.Migration):

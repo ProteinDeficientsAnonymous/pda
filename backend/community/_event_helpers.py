@@ -207,12 +207,8 @@ def _can_manage_cohost_invites(
     requesting_user,
     co_host_ids: set[str],
 ) -> bool:
-    """Accepted co-hosts (which includes the creator) can see pending invites
-    and rescind them.
-
-    Admins are intentionally excluded — co-host management is a host-only
-    workflow, not an admin moderation surface.
-    """
+    """Accepted co-hosts can see and rescind pending invites. Admins are
+    intentionally excluded — this is a host-only workflow, not admin moderation."""
     if requesting_user is None:
         return False
     return str(requesting_user.pk) in co_host_ids
