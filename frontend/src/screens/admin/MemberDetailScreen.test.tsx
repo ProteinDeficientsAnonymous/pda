@@ -173,10 +173,10 @@ describe('MemberDetailScreen roles section permission gating', () => {
     } as unknown as ReturnType<typeof useUpdateUser>);
   });
 
-  it('hides the role checkboxes from a non-admin user', () => {
+  it('hides the role checkboxes from a user without manage_users', () => {
     useAuthStore.setState({
       status: 'authed',
-      user: { roles: [{ name: 'vetter', isDefault: false, permissions: ['manage_users'] }] },
+      user: { roles: [{ name: 'vetter', isDefault: false, permissions: ['manage_roles'] }] },
     } as unknown as ReturnType<typeof useAuthStore.getState>);
 
     renderScreen();
@@ -184,10 +184,10 @@ describe('MemberDetailScreen roles section permission gating', () => {
     expect(screen.queryByRole('button', { name: /save roles/i })).not.toBeInTheDocument();
   });
 
-  it('shows editable role checkboxes to a non-admin user with manage_roles', () => {
+  it('shows editable role checkboxes to a non-admin user with manage_users', () => {
     useAuthStore.setState({
       status: 'authed',
-      user: { roles: [{ name: 'super_vetter', isDefault: false, permissions: ['manage_roles'] }] },
+      user: { roles: [{ name: 'super_vetter', isDefault: false, permissions: ['manage_users'] }] },
     } as unknown as ReturnType<typeof useAuthStore.getState>);
 
     renderScreen();
@@ -206,10 +206,10 @@ describe('MemberDetailScreen roles section permission gating', () => {
     expect(screen.getByRole('button', { name: /save roles/i })).toBeInTheDocument();
   });
 
-  it('disables the admin checkbox for a manage_roles holder who is not admin themself', () => {
+  it('disables the admin checkbox for a manage_users holder who is not admin themself', () => {
     useAuthStore.setState({
       status: 'authed',
-      user: { roles: [{ name: 'super_vetter', isDefault: false, permissions: ['manage_roles'] }] },
+      user: { roles: [{ name: 'super_vetter', isDefault: false, permissions: ['manage_users'] }] },
     } as unknown as ReturnType<typeof useAuthStore.getState>);
 
     renderScreen();

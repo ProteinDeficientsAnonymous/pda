@@ -132,7 +132,7 @@ function MemberDetailView({ member }: { member: Member }) {
 
 function MemberRolesSection({ member }: { member: Member }) {
   const user = useAuthStore((s) => s.user);
-  const canManageRoles = hasPermission(user, Permission.ManageRoles);
+  const canManageRoles = hasPermission(user, Permission.ManageUsers);
   const canAssignAdminRole = isAdmin(user);
   const { data: allRoles = [], isPending, isError } = useRoles();
   const updateRoles = useUpdateMemberRoles(member.id);

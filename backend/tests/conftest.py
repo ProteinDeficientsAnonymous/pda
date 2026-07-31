@@ -166,6 +166,25 @@ def manage_roles_headers(manage_roles_user):
 
 
 @pytest.fixture
+def manage_roles_only_user(db):
+    user = User.objects.create_user(
+        phone_number="+12025550012",
+        password="rolemgrpass123",
+        first_name="Role",
+        last_name="OnlyManager",
+    )
+    role = Role.objects.create(name="role_mgr_only", permissions=[PermissionKey.MANAGE_ROLES])
+    user.roles.add(role)
+    return user
+
+
+@pytest.fixture
+def manage_roles_only_headers(manage_roles_only_user):
+    refresh = RefreshToken.for_user(manage_roles_only_user)
+    return {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+
+
+@pytest.fixture
 def needs_onboarding_user(db):
     return User.objects.create_user(
         phone_number="+12025550110",
