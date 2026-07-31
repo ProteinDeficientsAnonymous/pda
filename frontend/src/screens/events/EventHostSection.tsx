@@ -58,12 +58,13 @@ export function EventHostSection({
 
   async function removeCohost(host: HostRow) {
     const isSelf = host.userId === viewerId;
-    if (host.inviteId === null) {
-      // The creator stepping down — a different endpoint (no invite row exists).
-      if (!isSelf) return;
+    if (isSelf) {
       const ok = await confirm({
-        title: 'step down as host?',
-        message: "you'll lose host access — someone else will need to add you back later.",
+        title: host.inviteId === null ? 'step down as host?' : 'step down as co-host?',
+        message:
+          host.inviteId === null
+            ? "you'll lose host access — someone else will need to add you back later."
+            : "you'll lose co-host access — the host can re-invite you later.",
         confirmLabel: 'step down',
         destructive: true,
       });
@@ -79,15 +80,7 @@ export function EventHostSection({
       );
       return;
     }
-    if (isSelf) {
-      const ok = await confirm({
-        title: 'step down as co-host?',
-        message: "you'll lose co-host access — the host can re-invite you later.",
-        confirmLabel: 'step down',
-        destructive: true,
-      });
-      if (!ok) return;
-    }
+    if (host.inviteId === null) return; // kicking the creator isn't supported
     remove.mutate(
       { eventId: event.id, inviteId: host.inviteId },
       {
@@ -104,10 +97,9 @@ export function EventHostSection({
       <div className="flex flex-wrap items-center gap-2">
         {hosts.map((h) => {
           const isSelf = h.userId === viewerId;
-          const canRemove =
-            h.inviteId !== null
-              ? (canEdit || isSelf) && !remove.isPending
-              : isSelf && hosts.length > 1 && !stepDown.isPending;
+          const canKick = h.inviteId !== null && canEdit;
+          const canStepDown = isSelf;
+          const canRemove = (canKick || canStepDown) && !remove.isPending && !stepDown.isPending;
           return (
             <HostChip
               key={h.userId}
