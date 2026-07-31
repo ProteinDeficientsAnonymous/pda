@@ -15,11 +15,9 @@ interface Props {
   comment: EventComment;
   eventId: string;
   token?: string;
-  canComment: boolean;
-  reactDisabledReason?: string | undefined;
 }
 
-export function CommentItem({ comment, eventId, token, canComment, reactDisabledReason }: Props) {
+export function CommentItem({ comment, eventId, token }: Props) {
   const toggleReaction = useToggleReaction(eventId, token);
   const deleteComment = useDeleteComment(eventId, token);
   const postReply = usePostReply(eventId, token);
@@ -70,24 +68,17 @@ export function CommentItem({ comment, eventId, token, canComment, reactDisabled
       )}
       {!comment.isDeleted ? (
         <div className="flex items-center justify-between gap-2">
-          <ReactionBar
-            reactions={comment.reactions}
-            canReact={canComment}
-            onToggle={handleToggle}
-            disabledReason={reactDisabledReason}
-          />
+          <ReactionBar reactions={comment.reactions} onToggle={handleToggle} />
           <div className="flex items-center gap-3">
-            {canComment ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setReplyOpen((v) => !v);
-                }}
-                className="text-foreground-tertiary text-xs hover:underline"
-              >
-                {replyOpen ? 'cancel' : 'reply'}
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setReplyOpen((v) => !v);
+              }}
+              className="text-foreground-tertiary text-xs hover:underline"
+            >
+              {replyOpen ? 'cancel' : 'reply'}
+            </button>
             {comment.canDelete ? (
               <button
                 type="button"
@@ -122,8 +113,6 @@ export function CommentItem({ comment, eventId, token, canComment, reactDisabled
               reply={reply}
               eventId={eventId}
               {...(token ? { token } : {})}
-              canReact={canComment}
-              reactDisabledReason={reactDisabledReason}
             />
           ))}
         </div>

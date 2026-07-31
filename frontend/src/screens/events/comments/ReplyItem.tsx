@@ -11,11 +11,9 @@ interface Props {
   reply: EventCommentReply;
   eventId: string;
   token?: string;
-  canReact: boolean;
-  reactDisabledReason?: string | undefined;
 }
 
-export function ReplyItem({ reply, eventId, token, canReact, reactDisabledReason }: Props) {
+export function ReplyItem({ reply, eventId, token }: Props) {
   const toggleReaction = useToggleReaction(eventId, token);
   const deleteComment = useDeleteComment(eventId, token);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -57,12 +55,7 @@ export function ReplyItem({ reply, eventId, token, canReact, reactDisabledReason
         )}
         {!reply.isDeleted ? (
           <div className="mt-1 flex items-center justify-between gap-2">
-            <ReactionBar
-              reactions={reply.reactions}
-              canReact={canReact}
-              onToggle={handleToggle}
-              disabledReason={reactDisabledReason}
-            />
+            <ReactionBar reactions={reply.reactions} onToggle={handleToggle} />
             {reply.canDelete ? (
               <button
                 type="button"
