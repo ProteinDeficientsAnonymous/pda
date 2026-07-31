@@ -185,10 +185,8 @@ class Event(models.Model):
 
 @receiver(post_save, sender=Event)
 def seed_creator_as_host(sender, instance, created, **kwargs):
-    """co_hosts is the sole source of truth for "who is a host" — seed the
-    creator into it so they can later step down without losing authorship
-    (created_by stays a permanent audit field, untouched by step-down).
-    """
+    """co_hosts is the sole source of truth for hosts; seed the creator so
+    they can step down later. created_by is a separate, permanent audit field."""
     if created and instance.created_by_id is not None:
         instance.co_hosts.add(instance.created_by_id)
 

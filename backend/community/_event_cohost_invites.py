@@ -108,11 +108,7 @@ def decline_cohost_invite(request, event_id: UUID, invite_id: UUID):
 
 
 def _would_leave_event_hostless(event: Event, removing_user_id: str) -> bool:
-    """True if removing this user would leave the event with zero hosts.
-
-    co_hosts is the sole source of truth for "who is a host" (the creator is
-    seeded into it at creation) — refuse if they're the only one left.
-    """
+    """True if removing this user would leave the event with zero hosts."""
     co_host_ids = {str(uid) for uid in event.co_hosts.values_list("pk", flat=True)}
     return co_host_ids <= {str(removing_user_id)}
 
