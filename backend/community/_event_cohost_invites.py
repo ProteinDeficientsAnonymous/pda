@@ -125,7 +125,9 @@ def _remove_accepted(invite: EventCoHostInvite, requester, is_host: bool, is_sel
     if not (is_host or is_self):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
     event = invite.event
-    if is_self and _would_leave_event_hostless(event, str(invite.user_id)):
+    # Guards the event, not the actor — a kick that empties co_hosts is as bad
+    # as a step-down, even though only a co-host can currently reach this.
+    if _would_leave_event_hostless(event, str(invite.user_id)):
         raise_validation(Code.CoHostInvite.WOULD_LEAVE_HOSTLESS, status_code=400)
     with transaction.atomic():
         invite.status = CoHostInviteStatus.REMOVED
@@ -142,22 +144,29 @@ def _remove_accepted(invite: EventCoHostInvite, requester, is_host: bool, is_sel
     auth=gated_jwt,
 )
 def step_down_as_host(request, event_id: UUID):
-    """The creator removes themselves from co_hosts, keeping created_by intact.
+    """Any host removes themselves from co_hosts, keeping created_by intact.
 
-    Only the creator can call this (self-removal only — no host-kicks-creator).
-    Blocked if it would leave the event hostless, or on a past event.
+    Exists because the creator has no invite row to DELETE; invited co-hosts
+    can use either path. Blocked if it would leave the event hostless, or on a
+    past event.
     """
     event = get_object_or_404(Event, id=event_id)
     if event.is_deleted:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    if event.created_by_id != request.auth.pk:
+    if not event.co_hosts.filter(pk=request.auth.pk).exists():
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
     if event.is_past:
         raise_validation(Code.CoHostInvite.EVENT_IS_PAST, status_code=400)
     if _would_leave_event_hostless(event, str(request.auth.pk)):
         raise_validation(Code.CoHostInvite.WOULD_LEAVE_HOSTLESS, status_code=400)
 
-    event.co_hosts.remove(request.auth)
+    with transaction.atomic():
+        event.co_hosts.remove(request.auth)
+        # An invited co-host leaves an ACCEPTED row behind; left open it blocks
+        # re-invites via _upsert_pending_invite. The creator has no row to close.
+        EventCoHostInvite.objects.filter(
+            event=event, user=request.auth, status=CoHostInviteStatus.ACCEPTED
+        ).update(status=CoHostInviteStatus.REMOVED, decided_at=timezone.now())
 
     event = _reload_event_for_response(event_id)
     broadcast_cohost_change(event, exclude_user_ids={str(request.auth.pk)})
@@ -174,8 +183,7 @@ def rescind_cohost_invite(request, event_id: UUID, invite_id: UUID):
 
     PENDING → host-only, flips to RESCINDED.
     ACCEPTED → host or the co-host themselves, flips to REMOVED and drops
-    the user from event.co_hosts. Blocks self-step-down that would leave
-    the event without any host.
+    the user from event.co_hosts. Blocked if it would leave the event hostless.
     Other statuses (DECLINED / RESCINDED / EXPIRED / REMOVED) → 400.
     """
     invite = _get_invite_or_404(event_id, invite_id)

@@ -716,10 +716,11 @@ export interface paths {
         put?: never;
         /**
          * Step Down As Host
-         * @description The creator removes themselves from co_hosts, keeping created_by intact.
+         * @description Any host removes themselves from co_hosts, keeping created_by intact.
          *
-         *     Only the creator can call this (self-removal only — no host-kicks-creator).
-         *     Blocked if it would leave the event hostless, or on a past event.
+         *     Exists because the creator has no invite row to DELETE; invited co-hosts
+         *     can use either path. Blocked if it would leave the event hostless, or on a
+         *     past event.
          */
         post: operations["community__event_cohost_invites_step_down_as_host"];
         delete?: never;
@@ -744,8 +745,7 @@ export interface paths {
          *
          *     PENDING → host-only, flips to RESCINDED.
          *     ACCEPTED → host or the co-host themselves, flips to REMOVED and drops
-         *     the user from event.co_hosts. Blocks self-step-down that would leave
-         *     the event without any host.
+         *     the user from event.co_hosts. Blocked if it would leave the event hostless.
          *     Other statuses (DECLINED / RESCINDED / EXPIRED / REMOVED) → 400.
          */
         delete: operations["community__event_cohost_invites_rescind_cohost_invite"];

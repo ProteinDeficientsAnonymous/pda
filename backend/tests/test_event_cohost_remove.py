@@ -211,15 +211,20 @@ class TestStepDownAsCreator:
         event = Event.objects.get(id=event_id)
         assert event.co_hosts.filter(pk=creator.pk).exists()
 
-    def test_cohost_cannot_step_down_via_creator_endpoint(
-        self, api_client, cohost, event_with_accepted_cohost
+    def test_invited_cohost_can_step_down_via_endpoint(
+        self, api_client, creator, cohost, event_with_accepted_cohost
     ):
-        event, _invite = event_with_accepted_cohost
+        event, invite = event_with_accepted_cohost
         response = api_client.post(
             f"/api/community/events/{event.id}/cohost-invites/step-down/",
             **_auth_headers(cohost),
         )
-        assert response.status_code == 403
+        assert response.status_code == 200
+        assert not event.co_hosts.filter(pk=cohost.pk).exists()
+        assert event.co_hosts.filter(pk=creator.pk).exists()
+        # Row must close out, else _upsert_pending_invite refuses to re-invite them.
+        invite.refresh_from_db()
+        assert invite.status == CoHostInviteStatus.REMOVED
 
     def test_stranger_cannot_step_down(self, api_client, stranger, event_with_accepted_cohost):
         event, _invite = event_with_accepted_cohost
