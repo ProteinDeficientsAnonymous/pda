@@ -66,11 +66,20 @@ describe('BottomNav', () => {
     expect(link).toHaveAttribute('href', '/my-rsvps');
   });
 
-  it('logged-out users with no stored rsvp token get a my rsvps icon with no link', () => {
+  it('logged-out users with no stored rsvp token get a my rsvps link pointing at login', () => {
     renderNav('/');
 
-    expect(screen.queryByRole('link', { name: /^my rsvps$/i })).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/^my rsvps$/i)).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /^my rsvps$/i });
+    expect(link).toHaveAttribute('href', '/login?redirect=%2Fevents%2Fmine');
+  });
+
+  it('pressing my rsvps while signed out navigates to login instead of doing nothing', async () => {
+    const user = userEvent.setup();
+    renderNav('/profile');
+
+    await user.click(screen.getByRole('link', { name: /^my rsvps$/i }));
+
+    expect(screen.getByTestId('pathname').textContent).toBe('/login');
   });
 
   it('members link points at /members', () => {

@@ -16,7 +16,7 @@ export function BottomNav() {
       ? `${user.profilePhotoUrl}?v=${encodeURIComponent(user.photoUpdatedAt)}`
       : user.profilePhotoUrl
     : '';
-  const myEventsTo = isAuthed ? '/events/mine' : getStoredRsvpToken() ? '/my-rsvps' : null;
+  const myEventsTo = myRsvpsDestination(isAuthed);
 
   return (
     <nav
@@ -66,26 +66,19 @@ export function BottomNav() {
   );
 }
 
+function myRsvpsDestination(isAuthed: boolean) {
+  if (isAuthed) return '/events/mine';
+  if (getStoredRsvpToken()) return '/my-rsvps';
+  return `/login?redirect=${encodeURIComponent('/events/mine')}`;
+}
+
 interface NavItemProps {
-  to: string | null;
+  to: string;
   label: string;
   children: (state: { active: boolean }) => ReactNode;
 }
 
 function NavItem({ to, label, children }: NavItemProps) {
-  if (!to) {
-    return (
-      <div
-        aria-label={label}
-        className="text-muted flex flex-col items-center justify-center gap-0.5"
-      >
-        {children({ active: false })}
-        <span aria-hidden="true" className="h-1 w-1 rounded-full opacity-0" />
-        <span className="sr-only">{label}</span>
-      </div>
-    );
-  }
-
   return (
     <NavLink
       to={to}
