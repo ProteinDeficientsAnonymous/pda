@@ -91,11 +91,17 @@ class TestGetComments:
         assert body["can_post"] is True
         assert body["cannot_post_reason"] is None
 
-    def test_event_creator_can_see_comment_content_without_rsvp(
-        self, api_client, auth_headers, event, test_user
-    ):
+    def test_cohost_can_see_comment_content_without_rsvp(self, api_client, event, test_user):
         EventComment.objects.create(event=event, author=test_user, body="host comment")
-        response = api_client.get(f"/api/community/events/{event.id}/comments/", **auth_headers)
+        cohost = User.objects.create_user(
+            phone_number="+12025550912",
+            password="cohostpass",
+            first_name="Cohost",
+        )
+        event.co_hosts.add(cohost)
+        refresh = RefreshToken.for_user(cohost)
+        headers = {"HTTP_AUTHORIZATION": f"Bearer {refresh.access_token}"}  # type: ignore
+        response = api_client.get(f"/api/community/events/{event.id}/comments/", **headers)
         assert response.status_code == 200, response.content
         body = response.json()
         assert len(body["items"]) == 1
