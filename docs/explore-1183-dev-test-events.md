@@ -125,33 +125,34 @@ interface, so a dev hook should do the same and never touch generated types.
 
 ## Relevant code
 
-| Area                | Location                                                             | Role                                                                          |
-| ------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Env gate (correct)  | `backend/community/management/commands/_seed_staging_data.py:92-96`  | `is_seed_allowed` — allow local/unset + staging, deny else                    |
-| Env gate (wrong)    | `backend/config/settings.py:12`                                      | `IS_PRODUCTION` — **true on staging**, do not use                             |
-| Env name source     | `backend/community/_version.py:18-30`                                | `GET /version/`, `auth=None`, returns `RAILWAY_ENVIRONMENT_NAME` or `"local"` |
-| Frontend env hook   | `frontend/src/api/version.ts:17-30`                                  | `useVersion()`, `staleTime: Infinity`                                         |
-| Frontend config     | `frontend/src/config/env.ts:1-5`                                     | Only `import.meta.env` usage; `VITE_API_URL` never set                        |
-| Shared build        | `Dockerfile:10`                                                      | `pnpm build:docker`, no build args — staging == prod bundle                   |
-| Event create API    | `backend/community/_events.py:303-372`                               | `POST /events/`, `auth=gated_jwt`                                             |
-| Rate limit          | `backend/community/_events.py:308`                                   | `10/d` per user — blocks endpoint reuse                                       |
-| Cohost fan-out      | `backend/community/_event_transitions.py:72-87`                      | Notifications + **real emails**; only if `co_host_ids` non-empty              |
-| Event model         | `backend/community/models/event.py:53`                               | `title` the only required field; `status`/`visibility` default ACTIVE/PUBLIC  |
-| Host auto-seed      | `backend/community/models/event.py:186-191`                          | `post_save` adds `created_by` to `co_hosts`                                   |
-| Seed defaults       | `backend/community/management/commands/_seed_shared.py:12-42`        | `SeedEvent` dataclass + `seed_events()`, `get_or_create` by title             |
-| Test-data prefix    | `backend/community/management/commands/seed_staging.py:87`           | `title__startswith="[staging] "` cleanup convention                           |
-| Random test event   | `backend/community/management/commands/e2e_seed.py:26-37`            | `_random_event` with `secrets.token_hex` titles                               |
-| Permission check    | `backend/community/_feature_flags.py:30-46`                          | House pattern: `audit_log` then `raise_validation(403)`                       |
-| Auth                | `backend/config/auth.py:42,80`                                       | `GatedJWTAuth` / `gated_jwt`; no global `auth=` on the API                    |
-| Router registration | `backend/community/api.py:56-101`                                    | All `add_router("", ...)`, none conditional                                   |
-| Codegen check       | `backend/community/management/commands/dump_openapi_schema.py:33-42` | `--check` exits 1 on schema drift                                             |
-| Route guards        | `frontend/src/auth/guards.tsx:103-161`                               | `RequireAuth` / `RequirePermission` / `RequireFlag`; no env guard exists      |
-| Routes              | `frontend/src/router/routes.tsx:58,173-176`                          | Lazy import + guard block pattern                                             |
-| Admin hub           | `frontend/src/screens/admin/AdminHubScreen.tsx:14-73`                | Tile array filtered by `hasPermission`; `perm` required                       |
-| Menu sheet          | `frontend/src/layout/PdaMenuSheet.tsx:19-30,51`                      | Array-driven, cheapest conditional-append surface                             |
-| Bottom nav          | `frontend/src/layout/BottomNav.tsx:26-63`                            | Hardcoded `grid-cols-5`, inline JSX — poor fit                                |
-| FE test pattern     | `frontend/src/screens/admin/FeatureFlagsScreen.test.tsx:7-50`        | `vi.mock` API module; already mocks `useVersion` env                          |
-| BE test pattern     | `backend/tests/test_feature_flags.py:47-94`                          | 200/403/401/404 matrix + `monkeypatch.setenv` env idiom                       |
+| Area                | Location                                                                                      | Role                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Env gate (correct)  | `backend/community/management/commands/_seed_staging_data.py:92-96`                           | `is_seed_allowed` — allow local/unset + staging, deny else                    |
+| Env gate (wrong)    | `backend/config/settings.py:12`                                                               | `IS_PRODUCTION` — **true on staging**, do not use                             |
+| Env name source     | `backend/community/_version.py:18-30`                                                         | `GET /version/`, `auth=None`, returns `RAILWAY_ENVIRONMENT_NAME` or `"local"` |
+| Frontend env hook   | `frontend/src/api/version.ts:17-30`                                                           | `useVersion()`, `staleTime: Infinity`                                         |
+| Frontend config     | `frontend/src/config/env.ts:1-5`                                                              | Only `import.meta.env` usage; `VITE_API_URL` never set                        |
+| Shared build        | `Dockerfile:10`                                                                               | `pnpm build:docker`, no build args — staging == prod bundle                   |
+| Event create API    | `backend/community/_events.py:303-372`                                                        | `POST /events/`, `auth=gated_jwt`                                             |
+| Rate limit          | `backend/community/_events.py:308`                                                            | `10/d` per user — blocks endpoint reuse                                       |
+| Cohost fan-out      | `backend/community/_event_transitions.py:72-87`                                               | Notifications + **real emails**; only if `co_host_ids` non-empty              |
+| Event model         | `backend/community/models/event.py:53`                                                        | `title` the only required field; `status`/`visibility` default ACTIVE/PUBLIC  |
+| Host auto-seed      | `backend/community/models/event.py:186-191`                                                   | `post_save` adds `created_by` to `co_hosts`                                   |
+| Seed defaults       | `backend/community/management/commands/_seed_shared.py:12-42`                                 | `SeedEvent` dataclass + `seed_events()`, `get_or_create` by title             |
+| Test-data prefix    | `backend/community/management/commands/seed_staging.py:87`                                    | `title__startswith="[staging] "` cleanup convention                           |
+| Random test event   | `backend/community/management/commands/e2e_seed.py:26-37`                                     | `_random_event` with `secrets.token_hex` titles                               |
+| Permission check    | `backend/community/_feature_flags.py:30-46`                                                   | House pattern: `audit_log` then `raise_validation(403)`                       |
+| Auth                | `backend/config/auth.py:42,80`                                                                | `GatedJWTAuth` / `gated_jwt`; no global `auth=` on the API                    |
+| Router registration | `backend/community/api.py:56-101`                                                             | All `add_router("", ...)`, none conditional                                   |
+| Codegen check       | `backend/community/management/commands/dump_openapi_schema.py:33-42`                          | `--check` exits 1 on schema drift                                             |
+| Route guards        | `frontend/src/auth/guards.tsx:103-161`                                                        | `RequireAuth` / `RequirePermission` / `RequireFlag`; no env guard exists      |
+| Routes              | `frontend/src/router/routes.tsx:58,173-176`                                                   | Lazy import + guard block pattern                                             |
+| Floating button     | `frontend/src/layout/AppShell.tsx:53`, `frontend/src/components/FeedbackButton.tsx:17-19,119` | **Recommended surface** — `position: fixed`, self-gates and returns null      |
+| Admin hub           | `frontend/src/screens/admin/AdminHubScreen.tsx:14-73`                                         | Tile array filtered by `hasPermission`; `perm` required                       |
+| Menu sheet          | `frontend/src/layout/PdaMenuSheet.tsx:19-30,51`                                               | Array-driven, cheapest conditional-append surface                             |
+| Bottom nav          | `frontend/src/layout/BottomNav.tsx:26-63`                                                     | Hardcoded `grid-cols-5`, inline JSX — poor fit                                |
+| FE test pattern     | `frontend/src/screens/admin/FeatureFlagsScreen.test.tsx:7-50`                                 | `vi.mock` API module; already mocks `useVersion` env                          |
+| BE test pattern     | `backend/tests/test_feature_flags.py:47-94`                                                   | 200/403/401/404 matrix + `monkeypatch.setenv` env idiom                       |
 
 ## Options
 
@@ -161,8 +162,8 @@ normally in `community/api.py`. In the handler, check
 `is_seed_allowed(os.environ.get("RAILWAY_ENVIRONMENT_NAME"), force=False)` and return
 404 if refused, plus `auth=gated_jwt`. Build events from `SeedEvent` + `seed_events()`
 with a `[test]` title prefix, `co_host_ids=[]`, and an optional `count` for bulk
-creation. Frontend: a screen gated on `useVersion().data.environment`, reached from
-AdminHub or PdaMenuSheet, with a hand-written wire type.
+creation. Frontend: a floating corner button self-gating on
+`useVersion().data.environment` (see Decisions #1), with a hand-written wire type.
 
 _Pros:_ schema stays deterministic across environments so `check-codes` stays green;
 reuses the existing tested gate; no rate limit; skips the only email fan-out; the
@@ -202,46 +203,72 @@ this is mostly assembly, not new design. Specifically:
   (`_event_transitions.py:72-87`), the only real spam vector on the create path.
 - Title prefix `[test] ` (or `[dev] `) for identifiability, matching
   `seed_staging.py:87`'s `[staging] ` precedent.
-- Frontend: gate on `useVersion().data.environment !== 'production'`, handling the
-  async pending state the way `RequireFlag` does (`guards.tsx:149-151`) so the tab
-  does not flicker in. Place it behind AdminHub or PdaMenuSheet, not BottomNav.
+- Frontend: a floating corner button in `AppShell`, self-gating on
+  `useVersion().data.environment !== 'production'` — see Decisions #1 below.
 - Hand-write the wire type; do not touch `types.gen.ts`.
 - All new strings lowercase — already universal house style.
 
 The frontend gate is cosmetic in every option; the backend 404 is the real gate.
 
+## Decisions
+
+Resolved with the issue author on 2026-07-31. These supersede the open questions
+this exploration originally raised.
+
+1. **Surface: a floating corner button, not a nav tab.** `AppShell.tsx:53` already
+   renders `<FeedbackButton />` as a floating element (`position: 'fixed'`,
+   `FeedbackButton.tsx:119`) outside the nav grid, and that component **self-gates
+   internally** — it computes `canShowFeedback` from auth state
+   (`FeedbackButton.tsx:17-19`) and returns null when it shouldn't render, so
+   `AppShell` renders it unconditionally with no wrapper logic.
+
+   A dev button copies that shape exactly: render it unconditionally in `AppShell`,
+   and have the component itself return null unless
+   `useVersion().data?.environment !== 'production'`. This avoids the
+   `BottomNav.tsx:26` `grid-cols-5` reflow problem entirely, needs no change to
+   `AdminHubScreen`'s required `Tile.perm` (`:11`), and needs no route guard.
+   Because `useVersion` is async, return null (not a spinner) while pending — a
+   dev affordance popping in a beat late is fine; a flicker in the corner is not.
+
+2. **Auth only, no permission.** `auth=gated_jwt` on the endpoint; no new
+   `PermissionKey`. This deliberately avoids the three-place sync burden (backend
+   enum `users/permissions.py:4-18`, frontend mirror `models/permissions.ts:1-16`,
+   `PERMISSION_LABELS` in `RoleFormDialog.tsx:16-31`), which has no parity test to
+   catch drift. On staging any logged-in member sees the button; that is acceptable.
+
+3. **404 in production**, not 403 — production should not confirm the route exists.
+   Note this intentionally departs from the house
+   `raise_validation(Code.Perm.DENIED, status_code=403)` pattern
+   (`_feature_flags.py:30-46`); worth a one-line comment at the call site so a
+   future reader doesn't "fix" it to 403.
+
+4. **OpenAPI disclosure accepted.** `/dev/test-events/` stays in production's public
+   schema returning 404. The alternative (Option C, conditional registration) breaks
+   `dump_openapi_schema --check` in CI (`Makefile:243-246`), and what leaks is a path
+   name that 404s — not a trade worth CI fragility.
+
+5. **Bulk create is in scope.** A `count` parameter, but titles **must be unique**:
+   `seed_events()` uses `get_or_create(title=...)` (`_seed_shared.py:33`), so N
+   identical titles would silently collapse into one event. Use the existing
+   `secrets.token_hex(4)` suffix idiom from `e2e_seed.py:29`.
+
+6. **Cleanup affordance is in scope** — delete-by-title-prefix, mirroring
+   `seed_staging.py:87`'s `Event.objects.filter(title__startswith=...).delete()`.
+   Nearly free given the prefix convention.
+
+7. **ACTIVE by default, with overrides behind a disclosure.** The governing
+   constraint is "as few clicks as possible": the primary button creates a sensible
+   ACTIVE event immediately with zero configuration, and an optional expandable panel
+   exposes overrides (status, visibility, date, type, RSVP) for the cases that need
+   them. No click cost on the common path.
+
 ## Open questions
 
-1. **Which surface should host the tab?** AdminHub needs `Tile.perm` widened to
-   optional (`AdminHubScreen.tsx:11`) or a dev tile reusing an existing permission;
-   PdaMenuSheet is a cheaper conditional append. The issue says "tab," which literally
-   suggests BottomNav — but that is a hardcoded `grid-cols-5` and reflows badly.
-   Recommending AdminHub/PdaMenuSheet over a literal tab is an interpretation of the
-   ask, not a certainty.
-
-2. **Should the dev screen require a permission at all, or is the env gate enough?**
-   On staging, any authenticated member would otherwise see it. A permission adds the
-   three-place sync burden (backend enum, frontend mirror, `PERMISSION_LABELS`) with
-   no parity test to catch drift.
-
-3. **404 vs 403 in production.** 404 hides the route's existence; 403 is more honest
-   and matches the house `raise_validation(Code.Perm.DENIED, status_code=403)` pattern
-   (`_feature_flags.py:30-46`). Recommended 404, but this is a judgment call.
-
-4. **Is the OpenAPI disclosure acceptable?** Option A leaves `/dev/test-events/` in
-   production's public schema (returning 404). Option C hides it but breaks CI's
-   schema check. Assumed acceptable; worth confirming.
-
-5. **Bulk creation shape.** A `count` parameter is cheap, but `seed_events()` uses
-   `get_or_create(title=...)` (`_seed_shared.py:33`), so identical titles silently
-   dedupe. Bulk creation needs unique titles — `e2e_seed.py:29`'s
-   `secrets.token_hex(4)` suffix is the existing answer. Not specified whether bulk
-   events should vary in date/type or be near-identical.
-
-6. **Cleanup affordance.** `seed_staging --reset` deletes by title prefix
-   (`seed_staging.py:87`). The issue does not ask for a delete-all-test-events action,
-   but the prefix makes it nearly free. Out of scope unless requested.
-
-7. **Should created test events be `DRAFT` or `ACTIVE`?** ACTIVE satisfies the
-   "shows up on the calendar" acceptance criterion, which is why it is assumed — but
-   ACTIVE public events on staging are visible to anyone browsing the public calendar.
+1. **Default `visibility` for test events.** ACTIVE + `PUBLIC` (the `SeedEvent`
+   default, `_seed_shared.py:19`) means test events are visible to **anonymous
+   visitors browsing staging's public calendar**, since the calendar is public by
+   design. `MEMBERS_ONLY` (`choices.py:8`) still satisfies the "shows up on the
+   calendar" acceptance criterion for a logged-in dev while keeping test noise off
+   the public view. Recommend defaulting to `MEMBERS_ONLY` with `PUBLIC` available as
+   an override (per Decision #7), but the author may prefer `PUBLIC` to match what
+   real events look like. Flagged, not blocking.
