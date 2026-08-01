@@ -1,3 +1,10 @@
+## [0.71.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.7...v0.71.8) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1187 - stop showing today's ended events in calendar list view ([#1199](https://github.com/ProteinDeficientsAnonymous/pda/issues/1199)) ([c3071ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/c3071ac98e84167936a9715ac1f78dc6a767651b))
+
 ## [0.71.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.6...v0.71.7) (2026-08-01)
 
 
