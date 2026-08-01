@@ -203,6 +203,8 @@ this is mostly assembly, not new design. Specifically:
   (`_event_transitions.py:72-87`), the only real spam vector on the create path.
 - Title prefix `[test] ` (or `[dev] `) for identifiability, matching
   `seed_staging.py:87`'s `[staging] ` precedent.
+- Create as `DRAFT`, not `ACTIVE`/`PUBLIC` — keeps test events off staging's public
+  calendar (Decisions #7, #8). No overrides UI in v1.
 - Frontend: a floating corner button in `AppShell`, self-gating on
   `useVersion().data.environment !== 'production'` — see Decisions #1 below.
 - Hand-write the wire type; do not touch `types.gen.ts`.
@@ -256,24 +258,36 @@ this exploration originally raised.
    `seed_staging.py:87`'s `Event.objects.filter(title__startswith=...).delete()`.
    Nearly free given the prefix convention.
 
-7. **ACTIVE by default, with overrides behind a disclosure.** The governing
-   constraint is "as few clicks as possible": the primary button creates a sensible
-   ACTIVE event immediately with zero configuration, and an optional expandable panel
-   exposes overrides (status, visibility per #8, date, type, RSVP) for the cases that
-   need them. No click cost on the common path.
+7. **No overrides panel — one button, plus `count`.** The governing constraint is "as
+   few clicks as possible", and the defaults below cover the case the issue actually
+   describes. A disclosure panel exposing status/visibility/date/type/RSVP is the
+   largest piece of frontend work in this feature and is speculative until a concrete
+   case shows the defaults falling short. Ship the button and `count`; add overrides
+   when something needs them.
 
-8. **`visibility` defaults to `PUBLIC`, exposed as an override control.** This
-   matches the `SeedEvent` default (`_seed_shared.py:19`) and what real events look
-   like. Accepted consequence: ACTIVE + PUBLIC test events appear on staging's
-   **public** calendar, visible to anonymous visitors — the `[test] ` title prefix
-   (Decision #6) is what keeps them identifiable, and the cleanup affordance is what
-   keeps them from accumulating.
+8. **`status` defaults to `EventStatus.DRAFT`, not `ACTIVE`.** Note these are two
+   distinct fields: `status` (`EventStatus`, `choices.py:18-22`) and `visibility`
+   (`PageVisibility`, `choices.py:6-9`). `DRAFT` is a **status** value; there is no
+   draft visibility.
 
-   Expose all three `PageVisibility` values (`choices.py:6-9`) in the overrides
-   panel. There is an existing three-option control to match at
-   `SurveyAdminListScreen.tsx:202` (`{ value: 'members_only', label: 'members only' }`)
-   — note the lowercase, space-separated labels, per house style. A dropdown handles
-   all three cleanly; a checkbox would only cover two.
+   `SeedEvent` produces `ACTIVE + PUBLIC` (`_seed_shared.py:19`), but that serves a
+   different purpose: seeding a staging environment that should look populated. A dev
+   button firing off arbitrary numbers of events is not that — `ACTIVE + PUBLIC` puts
+   every test event on staging's **public** calendar, visible to anonymous visitors,
+   leaning entirely on the `[test] ` prefix and manual cleanup to stay tidy.
+
+   Creating as `DRAFT` is free, removes the public-surface concern outright, and still
+   exercises every path a test event is created to exercise. `visibility` can stay at
+   the model default (`PUBLIC`, `event.py:53`) since `DRAFT` status is what keeps the
+   event off the calendar. If a case needs a publicly visible test event, publish it
+   through the normal flow — that is itself the thing worth testing.
+
+   Verified: the shared event queryset filters `status=EventStatus.ACTIVE`
+   (`_events.py:169`) before the `visibility=PUBLIC` narrowing for anonymous callers
+   (`:171`), and `list_events` additionally rejects anonymous `DRAFT` queries with a
+   403 (`:198-199`). DRAFT events are therefore unreachable anonymously regardless of
+   `visibility`. `create_event` already accepts DRAFT (`:313`), so no new status
+   handling is needed.
 
 ## Open questions
 
