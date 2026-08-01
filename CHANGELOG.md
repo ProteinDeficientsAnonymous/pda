@@ -1,3 +1,10 @@
+## [0.71.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.0...v0.71.1) (2026-08-01)
+
+
+### Bug Fixes
+
+* **calendar:** give event tag pills contrast on colored cards (Issue 1172) ([#1179](https://github.com/ProteinDeficientsAnonymous/pda/issues/1179)) ([552978b](https://github.com/ProteinDeficientsAnonymous/pda/commit/552978b93fee83948bda6b13c0fa130cb39cfb95))
+
 # [0.71.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.5...v0.71.0) (2026-08-01)
 
 
