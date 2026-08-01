@@ -46,13 +46,19 @@ class TestEventOgPreview:
             '<meta property="og:description" content="Bring a dish to share at the park."' in html
         )
         assert (
-            f'<meta property="og:url" content="https://pda.example.com/events/{public_event.id}"'
+            f'<meta property="og:url" content="https://pda.example.com/events/{public_event.slug}"'
             in html
         )
         assert (
             '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
         )
         assert '<meta name="twitter:card" content="summary_large_image"' in html
+
+    def test_preview_resolves_by_slug(self, api_client, public_event):
+        response = api_client.get(_preview_url(public_event.slug))
+
+        assert response.status_code == 200
+        assert '<meta property="og:title" content="Vegan Potluck"' in response.content.decode()
 
     def test_event_without_photo_uses_summary_card(self, api_client, db, settings):
         settings.FRONTEND_BASE_URL = "https://pda.example.com"

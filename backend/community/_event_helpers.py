@@ -307,6 +307,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     comment_count = _resolve_comment_count(event)
     return EventOut(
         id=str(event.id),
+        slug=event.slug,
         title=event.title,
         description=event.description,
         start_datetime=event.start_datetime,

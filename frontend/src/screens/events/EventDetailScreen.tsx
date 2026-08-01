@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
@@ -37,6 +38,17 @@ export default function EventDetailScreen() {
   const urlToken = searchParams.get('rsvp_token') ?? undefined;
   const rsvpToken = isAuthed ? undefined : (urlToken ?? getStoredRsvpToken() ?? undefined);
   const { data: event, isPending, isError, error } = useEvent(id, undefined, rsvpToken);
+
+  // Canonicalize /events/<uuid> to /events/<slug> in the address bar once the
+  // event resolves — old UUID links (emails, ICS files predating slugs) still
+  // work but settle on the pretty URL. Uses history.replaceState directly
+  // instead of react-router's navigate(): navigate() would change the :id
+  // route param, re-keying useEvent's query and remounting this screen mid-view.
+  useEffect(() => {
+    if (event?.slug && id !== event.slug) {
+      window.history.replaceState(null, '', `/events/${event.slug}${location.search}`);
+    }
+  }, [event, id, location.search]);
 
   // We never clear the stored token here: viewerUserId is null both for a dead
   // token AND for a live token on an event that isn't public-rsvp-eligible, so

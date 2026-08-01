@@ -12,6 +12,7 @@ import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { TextField } from '@/components/ui/TextField';
 import {
   type Event,
+  eventPath,
   RSVP_STATUS_LABELS,
   type RsvpInputStatus,
   RsvpStatus,
@@ -164,7 +165,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           eventId={event.id}
           onMember={(memberPhone) => {
             void navigate('/login', {
-              state: { phone: memberPhone, redirect: `/events/${event.id}` },
+              state: { phone: memberPhone, redirect: eventPath(event) },
             });
           }}
           onNonMember={() => {

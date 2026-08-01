@@ -92,8 +92,14 @@ export interface EventStats {
   cancellations: EventCancellation[];
 }
 
+/** Slug when the event has one, else the uuid — both resolve on the backend. */
+export function eventPath(event: Pick<Event, 'id' | 'slug'>): string {
+  return `/events/${event.slug || event.id}`;
+}
+
 export interface Event {
   id: string;
+  slug: string;
   title: string;
   description: string;
   startDatetime: Date | null;

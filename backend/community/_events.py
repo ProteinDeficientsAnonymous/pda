@@ -48,6 +48,7 @@ from community.models import (
     EventStatus,
     EventType,
     PageVisibility,
+    parse_event_ref,
 )
 
 router = Router()
@@ -206,6 +207,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
         [
             EventListOut(
                 id=str(e.id),
+                slug=e.slug,
                 title=e.title,
                 description=e.description,
                 start_datetime=e.start_datetime,
@@ -279,7 +281,8 @@ def _enforce_event_read_visibility(event: Event, auth_user) -> None:
     response={200: EventOut, 403: ErrorOut, 404: ErrorOut},
     auth=_optional_jwt,
 )
-def get_event(request, event_id: UUID):
+def get_event(request, event_id: str):
+    ref = parse_event_ref(event_id)
     try:
         event = (
             Event.objects.select_related("created_by")
@@ -291,11 +294,11 @@ def get_event(request, event_id: UUID):
                     distinct=True,
                 )
             )
-            .get(id=event_id)
+            .get(ref.as_q())
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
-    viewer = resolve_event_viewer(request, event_id)
+    viewer = resolve_event_viewer(request, event.id)
     _enforce_event_read_visibility(event, viewer)
     return Status(200, _event_out(event, viewer))
 

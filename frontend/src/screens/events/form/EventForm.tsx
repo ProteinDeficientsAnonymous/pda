@@ -20,7 +20,7 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type Event, EventType } from '@/models/event';
+import { type Event, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { EventFormBasics } from './EventFormBasics';
@@ -177,7 +177,7 @@ export function EventForm({ existing }: Props) {
           await update.mutateAsync({ ...patchBody, force: true });
         }
         if (nextStatus === 'draft') toast.success('saved draft');
-        void navigate(`/events/${existing.id}`);
+        void navigate(eventPath(existing));
         return;
       }
       const created = await create.mutateAsync(merged);
@@ -200,7 +200,7 @@ export function EventForm({ existing }: Props) {
         }
       }
       if (nextStatus === 'draft') toast.success('saved draft');
-      void navigate(`/events/${created.id}`);
+      void navigate(eventPath(created));
     } catch (err) {
       setServerError(extractEventError(err));
     }

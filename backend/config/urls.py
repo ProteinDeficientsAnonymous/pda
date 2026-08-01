@@ -23,5 +23,5 @@ urlpatterns = [
     re_path(r"^media/(?P<path>.+)$", serve_media),
     # OG/Twitter meta tags for link scrapers. nginx routes /events/<id> here
     # only for scraper user-agents; real browsers get the SPA (see nginx.conf).
-    path("events/<uuid:event_id>/preview/", event_og_preview),
+    path("events/<str:event_id>/preview/", event_og_preview),
 ]

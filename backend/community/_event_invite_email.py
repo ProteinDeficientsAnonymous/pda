@@ -33,7 +33,7 @@ def email_invited_members(request, event: Event, new_user_ids: list[str], invite
     sender = get_email_sender()
     inviter_name = visible_display_name(inviter, None)
     event_when = _format_event_when(event)
-    event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.id}"
+    event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.id}"
 
     for user in recipients:
         try:

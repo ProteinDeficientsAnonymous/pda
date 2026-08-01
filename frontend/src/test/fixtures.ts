@@ -32,6 +32,7 @@ export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
 export function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
     id: 'ev1',
+    slug: 'test-event',
     title: 'Test Event',
     description: '',
     startDatetime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { useIsWideScreen } from '@/hooks/useResponsive';
-import { type Event as PdaEvent, eventClass } from '@/models/event';
+import { type Event as PdaEvent, eventClass, eventPath } from '@/models/event';
 
 import { AgendaList } from './AgendaList';
 import { makeLocalizer } from './calendarLocalizer';
@@ -91,7 +91,7 @@ export default function CalendarScreen() {
   };
 
   const goToEvent = (e: PdaEvent) => {
-    void navigate(`/events/${e.id}`);
+    void navigate(eventPath(e));
   };
 
   return (

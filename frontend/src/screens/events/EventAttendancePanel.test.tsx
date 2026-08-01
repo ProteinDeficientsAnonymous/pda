@@ -3,14 +3,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Event, EventStats } from '@/models/event';
-import {
-  AttendanceStatus,
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-  RsvpServerStatus,
-} from '@/models/event';
+import { AttendanceStatus } from '@/models/event';
+import { makeEvent, makeGuest } from '@/test/fixtures';
 
 const setAttendanceMutate = vi.fn();
 const toastError = vi.fn();
@@ -32,70 +26,10 @@ import { useEventStats } from '@/api/eventStats';
 
 import { EventAttendancePanel } from './EventAttendancePanel';
 
-const BASE_EVENT: Event = {
-  id: 'ev1',
-  title: 'Test Event',
-  description: '',
-  // Anchored well into the future relative to "now" so the check-in window
-  // (opens an hour before start) stays closed regardless of when the suite runs.
-  // A hardcoded calendar date rots — once it passes, the "hides check-in until
-  // an hour before" test starts seeing the buttons.
-  startDatetime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  endDatetime: null,
-  location: '',
-  latitude: null,
-  longitude: null,
-  whatsappLink: '',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
-  rsvpEnabled: true,
-  allowPlusOnes: false,
-  maxAttendees: null,
-  attendingCount: 1,
-  waitlistedCount: 0,
+const BASE_EVENT = makeEvent({
   invitedCount: 2,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
-  createdById: 'creator',
-  createdByName: 'Creator',
-  createdByPhotoUrl: '',
-  coHostIds: ['creator'],
-  coHostNames: [],
-  coHostPhotoUrls: [],
-  guests: [
-    {
-      userId: 'alice',
-      name: 'alice',
-      status: RsvpServerStatus.Attending,
-      phone: null,
-      photoUrl: '',
-      hasPlusOne: false,
-      attendance: AttendanceStatus.Unknown,
-      isMember: true,
-    },
-  ],
-  myRsvp: null,
-  viewerUserId: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
-  invitePermission: InvitePermission.AllMembers,
-  pendingCohostInvites: [],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  photoUpdatedAt: null,
-  tags: [],
-  isPast: false,
-  status: EventStatus.Active,
-};
+  guests: [makeGuest({ userId: 'alice', name: 'alice' })],
+});
 
 const BASE_STATS: EventStats = {
   goingCount: 1,
