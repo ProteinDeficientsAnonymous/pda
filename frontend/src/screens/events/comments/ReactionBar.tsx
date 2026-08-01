@@ -118,7 +118,7 @@ function ReactionPill({
       <button
         type="button"
         aria-pressed={r.reactedByMe}
-        aria-label={`react with ${r.emoji}`}
+        aria-label={`react with ${r.emoji} ${String(r.count)}`}
         {...longPress.handlers}
         onClick={() => {
           if (longPress.didLongPress()) return;

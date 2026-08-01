@@ -27,7 +27,8 @@ const summary = (
 describe('ReactionBar', () => {
   it('renders only existing reactions with their counts', () => {
     render(<ReactionBar reactions={[summary(ReactionEmoji.Heart, 3, true)]} onToggle={vi.fn()} />);
-    const heart = screen.getByRole('button', { name: /react with ❤️/u });
+    // the count rides in the label so screen readers announce it with the emoji
+    const heart = screen.getByRole('button', { name: 'react with ❤️ 3' });
     expect(heart).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /who reacted with ❤️/u })).toHaveTextContent('3');
     // Other emojis are not in the bar; they're only in the picker (closed).
@@ -175,5 +176,16 @@ describe('ReactionBar', () => {
     render(<ReactionBar reactions={[summary(ReactionEmoji.Heart, 1, true)]} onToggle={onToggle} />);
     fireEvent.click(screen.getByRole('button', { name: /react with ❤️/u }));
     expect(onToggle).toHaveBeenCalledWith(ReactionEmoji.Heart);
+  });
+
+  // guards the e2e selectors: the picker option is the only button named
+  // exactly '❤️', so an existing pill can't shadow it
+  it('keeps the picker emoji distinct from the pill buttons', () => {
+    render(<ReactionBar reactions={[summary(ReactionEmoji.Heart, 1, true)]} onToggle={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /add reaction/i }));
+
+    expect(screen.getByRole('button', { name: '❤️' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'react with ❤️ 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'who reacted with ❤️' })).toBeInTheDocument();
   });
 });
