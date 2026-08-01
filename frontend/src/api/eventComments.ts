@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/auth/store';
 import type {
+  CommentReactor,
   EventComment,
   EventCommentList,
   EventCommentReply,
@@ -201,27 +202,46 @@ function toggleOnRow<T extends EventCommentReply>(
   row: T,
   commentId: string,
   emoji: ReactionEmojiValue,
+  self: CommentReactor | null,
 ): T {
   if (row.id !== commentId) return row;
   const existing = row.reactions.find((r) => r.emoji === emoji);
   let next = row.reactions.slice();
   if (existing?.reactedByMe) {
     next = next
-      .map((r) => (r.emoji === emoji ? { ...r, count: r.count - 1, reactedByMe: false } : r))
+      .map((r) =>
+        r.emoji === emoji
+          ? {
+              ...r,
+              count: r.count - 1,
+              reactedByMe: false,
+              reactors: self
+                ? r.reactors.filter((reactor) => reactor.userId !== self.userId)
+                : r.reactors,
+            }
+          : r,
+      )
       .filter((r) => r.count > 0);
   } else if (existing) {
     next = next.map((r) =>
-      r.emoji === emoji ? { ...r, count: r.count + 1, reactedByMe: true } : r,
+      r.emoji === emoji
+        ? {
+            ...r,
+            count: r.count + 1,
+            reactedByMe: true,
+            reactors: self ? [...r.reactors, self] : r.reactors,
+          }
+        : r,
     );
   } else {
-    // reactors stays empty here; the settle-time refetch fills in the real name/photo.
-    next = [...next, { emoji, count: 1, reactedByMe: true, reactors: [] }];
+    next = [...next, { emoji, count: 1, reactedByMe: true, reactors: self ? [self] : [] }];
   }
   return { ...row, reactions: next };
 }
 
 export function useToggleReaction(eventId: string, token?: string) {
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   return useMutation({
     mutationFn: async ({ commentId, emoji }: ToggleReactionVars): Promise<EventComment> => {
       const { data } = await apiClient.post<WireCommentResponse>(
@@ -234,14 +254,17 @@ export function useToggleReaction(eventId: string, token?: string) {
     onMutate: async ({ commentId, emoji }) => {
       await qc.cancelQueries({ queryKey: eventCommentKeys.list(eventId) });
       const prev = qc.getQueryData<EventCommentList>(eventCommentKeys.list(eventId));
+      const self: CommentReactor | null = user
+        ? { userId: user.id, name: user.fullName, photoUrl: user.profilePhotoUrl }
+        : null;
       if (prev) {
         const nextList: EventCommentList = {
           ...prev,
           items: prev.items.map((c) => {
-            const updated = toggleOnRow(c, commentId, emoji);
+            const updated = toggleOnRow(c, commentId, emoji, self);
             return {
               ...updated,
-              replies: updated.replies.map((r) => toggleOnRow(r, commentId, emoji)),
+              replies: updated.replies.map((r) => toggleOnRow(r, commentId, emoji, self)),
             };
           }),
         };
