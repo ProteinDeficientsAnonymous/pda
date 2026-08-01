@@ -115,7 +115,10 @@ export default function CalendarScreen() {
         </div>
       ) : null}
 
-      <div className="flex flex-col p-1" style={{ height: 'calc(100dvh - 14rem)' }}>
+      <div
+        className="flex flex-col p-1"
+        style={useAgendaList ? undefined : { height: 'calc(100dvh - 14rem)' }}
+      >
         {useNarrowWeek ? (
           <>
             <NarrowWeekToolbar date={date} weekStartsOn={weekStartsOn} onNavigate={setDate} />
@@ -144,14 +147,12 @@ export default function CalendarScreen() {
         ) : useDayList ? (
           <>
             <DayToolbar date={date} onNavigate={setDate} />
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
               <DayEventList date={date} events={datedEvents} onSelectEvent={goToEvent} />
             </div>
           </>
         ) : useAgendaList ? (
-          <div className="flex-1 overflow-y-auto">
-            <AgendaList events={datedEvents} onSelectEvent={goToEvent} />
-          </div>
+          <AgendaList events={datedEvents} onSelectEvent={goToEvent} />
         ) : (
           <Calendar<BigCalEvent>
             localizer={localizer}

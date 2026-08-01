@@ -127,4 +127,19 @@ describe('CalendarScreen', () => {
       expect(screen.getByRole('button', { name: /go to today/i })).toBeInTheDocument();
     });
   });
+
+  it('lets the list view grow with the page instead of boxing it to the viewport', async () => {
+    const user = userEvent.setup();
+    const { container } = renderCalendar();
+
+    const viewBox = container.querySelector<HTMLElement>('main > div.flex.flex-col.p-1');
+    expect(viewBox).not.toBeNull();
+    expect(viewBox?.style.height).toBe('calc(100dvh - 14rem)');
+
+    await user.click(screen.getByRole('radio', { name: /^list$/i }));
+
+    await waitFor(() => {
+      expect(viewBox?.style.height).toBe('');
+    });
+  });
 });
