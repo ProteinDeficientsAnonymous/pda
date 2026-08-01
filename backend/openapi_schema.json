@@ -614,6 +614,138 @@
         "title": "ConsentType",
         "type": "string"
       },
+      "DevTestEventIn": {
+        "properties": {
+          "allow_plus_ones": {
+            "default": false,
+            "title": "Allow Plus Ones",
+            "type": "boolean"
+          },
+          "cant_go_count": {
+            "default": 5,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Cant Go Count",
+            "type": "integer"
+          },
+          "cashapp_link": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Cashapp Link",
+            "type": "string"
+          },
+          "cohost_count": {
+            "default": 5,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Cohost Count",
+            "type": "integer"
+          },
+          "going_count": {
+            "default": 5,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Going Count",
+            "type": "integer"
+          },
+          "invited_cohost_count": {
+            "default": 5,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Invited Cohost Count",
+            "type": "integer"
+          },
+          "invited_count": {
+            "default": 5,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Invited Count",
+            "type": "integer"
+          },
+          "is_canceled": {
+            "default": false,
+            "title": "Is Canceled",
+            "type": "boolean"
+          },
+          "is_club": {
+            "default": false,
+            "title": "Is Club",
+            "type": "boolean"
+          },
+          "is_official": {
+            "default": false,
+            "title": "Is Official",
+            "type": "boolean"
+          },
+          "is_past": {
+            "default": false,
+            "title": "Is Past",
+            "type": "boolean"
+          },
+          "make_me_host": {
+            "default": false,
+            "title": "Make Me Host",
+            "type": "boolean"
+          },
+          "max_attendees": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Attendees"
+          },
+          "maybe_count": {
+            "default": 5,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Maybe Count",
+            "type": "integer"
+          },
+          "non_member_going_count": {
+            "default": 0,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Non Member Going Count",
+            "type": "integer"
+          },
+          "price": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Price",
+            "type": "string"
+          },
+          "rsvp_enabled": {
+            "default": true,
+            "title": "Rsvp Enabled",
+            "type": "boolean"
+          },
+          "venmo_link": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Venmo Link",
+            "type": "string"
+          },
+          "visibility": {
+            "default": "public",
+            "maxLength": 20,
+            "title": "Visibility",
+            "type": "string"
+          },
+          "zelle_info": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Zelle Info",
+            "type": "string"
+          }
+        },
+        "title": "DevTestEventIn",
+        "type": "object"
+      },
       "DocFolderOut": {
         "properties": {
           "children": {
@@ -7460,6 +7592,53 @@
           }
         },
         "summary": "Check Phone",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/dev/test-events/": {
+      "post": {
+        "operationId": "community__dev_tools_create_dev_test_event",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevTestEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Dev Test Event",
         "tags": [
           "community"
         ]

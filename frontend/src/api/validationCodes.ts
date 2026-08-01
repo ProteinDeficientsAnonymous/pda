@@ -408,6 +408,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'invalid visibility setting';
     case Code.FeatureFlag.NotFound:
       return 'feature flag not found';
+    case Code.DevTools.NotFound:
+      return "couldn't find that — try refreshing";
     case Code.Docs.FolderNotFound:
       return 'folder not found';
     case Code.Docs.ParentFolderNotFound:

@@ -434,6 +434,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/dev/test-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Dev Test Event */
+        post: operations["community__dev_tools_create_dev_test_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/docs/": {
         parameters: {
             query?: never;
@@ -2249,6 +2266,106 @@ export interface components {
          * @enum {string}
          */
         ConsentType: "guidelines" | "sms" | "contact_privacy";
+        /** DevTestEventIn */
+        DevTestEventIn: {
+            /**
+             * Allow Plus Ones
+             * @default false
+             */
+            allow_plus_ones: boolean;
+            /**
+             * Cant Go Count
+             * @default 5
+             */
+            cant_go_count: number;
+            /**
+             * Cashapp Link
+             * @default
+             */
+            cashapp_link: string;
+            /**
+             * Cohost Count
+             * @default 5
+             */
+            cohost_count: number;
+            /**
+             * Going Count
+             * @default 5
+             */
+            going_count: number;
+            /**
+             * Invited Cohost Count
+             * @default 5
+             */
+            invited_cohost_count: number;
+            /**
+             * Invited Count
+             * @default 5
+             */
+            invited_count: number;
+            /**
+             * Is Canceled
+             * @default false
+             */
+            is_canceled: boolean;
+            /**
+             * Is Club
+             * @default false
+             */
+            is_club: boolean;
+            /**
+             * Is Official
+             * @default false
+             */
+            is_official: boolean;
+            /**
+             * Is Past
+             * @default false
+             */
+            is_past: boolean;
+            /**
+             * Make Me Host
+             * @default false
+             */
+            make_me_host: boolean;
+            /** Max Attendees */
+            max_attendees?: number | null;
+            /**
+             * Maybe Count
+             * @default 5
+             */
+            maybe_count: number;
+            /**
+             * Non Member Going Count
+             * @default 0
+             */
+            non_member_going_count: number;
+            /**
+             * Price
+             * @default
+             */
+            price: string;
+            /**
+             * Rsvp Enabled
+             * @default true
+             */
+            rsvp_enabled: boolean;
+            /**
+             * Venmo Link
+             * @default
+             */
+            venmo_link: string;
+            /**
+             * Visibility
+             * @default public
+             */
+            visibility: string;
+            /**
+             * Zelle Info
+             * @default
+             */
+            zelle_info: string;
+        };
         /** DocFolderOut */
         DocFolderOut: {
             /** Children */
@@ -5720,6 +5837,39 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__dev_tools_create_dev_test_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevTestEventIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

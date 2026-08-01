@@ -775,6 +775,13 @@
         "params": []
       }
     ],
+    "DevTools": [
+      {
+        "name": "NOT_FOUND",
+        "value": "dev_tools.not_found",
+        "params": []
+      }
+    ],
     "Docs": [
       {
         "name": "FOLDER_NOT_FOUND",

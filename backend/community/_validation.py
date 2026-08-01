@@ -189,6 +189,9 @@ class Code:
     class FeatureFlag:
         NOT_FOUND = "feature_flag.not_found"
 
+    class DevTools:
+        NOT_FOUND = "dev_tools.not_found"  # 404 in prod — route must not confirm it exists
+
     class Docs:
         FOLDER_NOT_FOUND = "docs.folder_not_found"
         PARENT_FOLDER_NOT_FOUND = "docs.parent_folder_not_found"
