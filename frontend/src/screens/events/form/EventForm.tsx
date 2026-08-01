@@ -20,7 +20,7 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
-import { type Event, eventPath,EventType } from '@/models/event';
+import { type Event, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
 import { EventFormBasics } from './EventFormBasics';

@@ -1,4 +1,4 @@
-import { type Event,eventPath } from '@/models/event';
+import { type Event, eventPath } from '@/models/event';
 
 export function googleCalendarUrl(event: Event): string | null {
   if (!event.startDatetime) return null;

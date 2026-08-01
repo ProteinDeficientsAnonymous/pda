@@ -6,7 +6,7 @@ import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { type Event, eventPath,type RsvpInputStatus, RsvpServerStatus } from '@/models/event';
+import { type Event, eventPath, type RsvpInputStatus, RsvpServerStatus } from '@/models/event';
 import { formatEventDateTime } from '@/utils/datetime';
 import { buildEventLinks } from '@/utils/eventLinks';
 
@@ -82,10 +82,7 @@ export function PublicRsvpCard({ token, event, status }: Props) {
 
   return (
     <section aria-label={event.title} className="border-border bg-surface rounded-lg border p-6">
-      <Link
-        to={eventPath(event)}
-        className="text-foreground text-lg font-medium hover:underline"
-      >
+      <Link to={eventPath(event)} className="text-foreground text-lg font-medium hover:underline">
         <h2>{event.title}</h2>
       </Link>
       {event.startDatetime ? (

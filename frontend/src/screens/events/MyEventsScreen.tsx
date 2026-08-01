@@ -6,7 +6,7 @@ import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { Event } from '@/models/event';
-import { eventPath,EventStatus, EventType, isHosting, RsvpStatus } from '@/models/event';
+import { eventPath, EventStatus, EventType, isHosting, RsvpStatus } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventCardBadges } from './EventCardBadges';

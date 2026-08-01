@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { type Event, eventPath,EventType } from '@/models/event';
+import { type Event, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import { TagManagerDialog } from '@/screens/events/TagManagerDialog';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';

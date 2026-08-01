@@ -36,7 +36,10 @@ describe('PublicRsvpCard', () => {
       status: RsvpServerStatus.Attending,
       event: { id: 'ev1', slug: 'potluck', title: 'Potluck' },
     });
-    expect(screen.getByRole('link', { name: 'Potluck' })).toHaveAttribute('href', '/events/potluck');
+    expect(screen.getByRole('link', { name: 'Potluck' })).toHaveAttribute(
+      'href',
+      '/events/potluck',
+    );
   });
 
   it('falls back to the event id when the event has no slug', () => {
