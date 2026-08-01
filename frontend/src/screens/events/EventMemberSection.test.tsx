@@ -319,18 +319,18 @@ describe('EventMemberSection — host actions gating', () => {
     expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
   });
 
-  it('hides them on a past event', () => {
+  it('keeps them on a past event — hosts still follow up with attendees', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection({ ...RSVP_ON, isPast: true });
-    expect(screen.queryByRole('button', { name: /email blast/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /group text/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
   });
 
-  it('hides them on a cancelled event', () => {
+  it('keeps them on a cancelled event', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection({ ...RSVP_ON, status: EventStatus.Cancelled });
-    expect(screen.queryByRole('button', { name: /email blast/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /group text/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
   });
 
   it('hides them from a plain member', () => {

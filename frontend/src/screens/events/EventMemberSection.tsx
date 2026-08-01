@@ -48,10 +48,10 @@ export function EventMemberSection({ event, token }: Props) {
         <Card label="who's going">
           <CapacityNote event={event} />
           <RsvpGuestList event={event} canSeeInvited={isHostOrEventManager} />
-          {canInvite || canEdit ? (
+          {canInvite || isHostOrEventManager ? (
             <div className="mt-4 flex flex-col items-stretch gap-2">
               {canInvite ? <InviteSection event={event} /> : null}
-              {canEdit ? (
+              {isHostOrEventManager ? (
                 <div className="flex flex-wrap justify-end gap-2">
                   <EmailBlastButton event={event} />
                   <GroupTextButton event={event} />
