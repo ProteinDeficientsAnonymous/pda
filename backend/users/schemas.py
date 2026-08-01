@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 from community._field_limits import FieldLimit
 from community._validation import Code, raise_validation
+from community.models.choices import EventType
 from config.media_proxy import media_path
 from pydantic import BaseModel, BeforeValidator, EmailStr, Field, field_validator
 
@@ -277,7 +278,9 @@ class MePatchIn(BaseModel):
     hide_last_name: bool | None = None
     week_start: Literal["sunday", "monday"] | None = None
     calendar_feed_scope: Literal["all", "mine"] | None = None
-    calendar_feed_excluded_types: list[Literal["official", "community", "club"]] | None = None
+    calendar_feed_excluded_types: (
+        list[Literal[EventType.OFFICIAL, EventType.COMMUNITY, EventType.CLUB]] | None
+    ) = None
 
     @field_validator("calendar_feed_excluded_types")
     @classmethod
