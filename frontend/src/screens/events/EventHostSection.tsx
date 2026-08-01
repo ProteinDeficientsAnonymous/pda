@@ -18,13 +18,13 @@ interface HostRow {
 
 export function EventHostSection({
   event,
+  isHostOrEventManager,
   canEdit,
-  canInviteCohost,
   viewerId,
 }: {
   event: Event;
+  isHostOrEventManager: boolean;
   canEdit: boolean;
-  canInviteCohost: boolean;
   viewerId: string | null;
 }) {
   const [addOpen, setAddOpen] = useState(false);
@@ -38,7 +38,7 @@ export function EventHostSection({
   }));
   // backend already scopes pending invites to creator/accepted co-hosts; others get []
   const pending = event.pendingCohostInvites;
-  if (hosts.length === 0 && pending.length === 0 && !canEdit) return null;
+  if (hosts.length === 0 && pending.length === 0 && !isHostOrEventManager) return null;
   const totalChips = hosts.length + pending.length;
   const label = totalChips > 1 ? 'hosts' : 'host';
 
@@ -89,33 +89,33 @@ export function EventHostSection({
         {pending.map((inv) => (
           <PendingHostChip key={inv.id} eventId={event.id} invite={inv} canRescind={canEdit} />
         ))}
-        {canEdit ? (
+        {isHostOrEventManager ? (
           <span className="group relative inline-flex">
             <button
               type="button"
               onClick={() => {
-                if (canInviteCohost) setAddOpen(true);
+                if (canEdit) setAddOpen(true);
               }}
-              disabled={!canInviteCohost}
+              disabled={!canEdit}
               aria-label="add co-host"
-              aria-describedby={canInviteCohost ? undefined : 'add-cohost-disabled-reason'}
+              aria-describedby={canEdit ? undefined : 'add-cohost-disabled-reason'}
               className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 disabled:hover:bg-surface-dim inline-flex h-8 w-8 items-center justify-center rounded-full pb-0.5 text-xl leading-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               +
             </button>
-            {!canInviteCohost ? (
+            {!canEdit ? (
               <span
                 id="add-cohost-disabled-reason"
                 role="tooltip"
                 className="bg-foreground text-surface pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded px-2 py-1 text-xs whitespace-nowrap opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
               >
-                can't invite co-hosts to a past event
+                can't edit hosts on a past or cancelled event
               </span>
             ) : null}
           </span>
         ) : null}
       </div>
-      {canInviteCohost ? (
+      {canEdit ? (
         <AddCoHostDialog
           event={event}
           open={addOpen}
