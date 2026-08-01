@@ -1,3 +1,10 @@
+# [0.71.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.5...v0.71.0) (2026-08-01)
+
+
+### Features
+
+* **events:** let the creator step down as host (Issue 425) ([#1177](https://github.com/ProteinDeficientsAnonymous/pda/issues/1177)) ([fa41668](https://github.com/ProteinDeficientsAnonymous/pda/commit/fa41668fa0efb13482e0712cb8da2dfe51b18ed5))
+
 ## [0.70.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.70.4...v0.70.5) (2026-07-31)
 
 
