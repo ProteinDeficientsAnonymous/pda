@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="event",
             name="slug",
-            field=models.SlugField(blank=True, default="", max_length=80),
+            field=models.SlugField(blank=True, db_index=False, default="", max_length=80),
             preserve_default=False,
         ),
         migrations.RunPython(backfill_slugs, noop_reverse),
