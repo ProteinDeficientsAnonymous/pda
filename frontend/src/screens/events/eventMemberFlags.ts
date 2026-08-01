@@ -14,10 +14,10 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   const canEdit = isHostOrEventManager && isOpen;
   const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
   const canInvite =
-    user !== null &&
     isOpen &&
     event.rsvpEnabled &&
-    (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
+    (isHostOrEventManager ||
+      (user !== null && event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = event.rsvpEnabled;
   const rsvpLocked = !isOpen;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
