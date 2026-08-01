@@ -259,16 +259,23 @@ this exploration originally raised.
 7. **ACTIVE by default, with overrides behind a disclosure.** The governing
    constraint is "as few clicks as possible": the primary button creates a sensible
    ACTIVE event immediately with zero configuration, and an optional expandable panel
-   exposes overrides (status, visibility, date, type, RSVP) for the cases that need
-   them. No click cost on the common path.
+   exposes overrides (status, visibility per #8, date, type, RSVP) for the cases that
+   need them. No click cost on the common path.
+
+8. **`visibility` defaults to `PUBLIC`, exposed as an override control.** This
+   matches the `SeedEvent` default (`_seed_shared.py:19`) and what real events look
+   like. Accepted consequence: ACTIVE + PUBLIC test events appear on staging's
+   **public** calendar, visible to anonymous visitors — the `[test] ` title prefix
+   (Decision #6) is what keeps them identifiable, and the cleanup affordance is what
+   keeps them from accumulating.
+
+   Expose all three `PageVisibility` values (`choices.py:6-9`) in the overrides
+   panel. There is an existing three-option control to match at
+   `SurveyAdminListScreen.tsx:202` (`{ value: 'members_only', label: 'members only' }`)
+   — note the lowercase, space-separated labels, per house style. A dropdown handles
+   all three cleanly; a checkbox would only cover two.
 
 ## Open questions
 
-1. **Default `visibility` for test events.** ACTIVE + `PUBLIC` (the `SeedEvent`
-   default, `_seed_shared.py:19`) means test events are visible to **anonymous
-   visitors browsing staging's public calendar**, since the calendar is public by
-   design. `MEMBERS_ONLY` (`choices.py:8`) still satisfies the "shows up on the
-   calendar" acceptance criterion for a logged-in dev while keeping test noise off
-   the public view. Recommend defaulting to `MEMBERS_ONLY` with `PUBLIC` available as
-   an override (per Decision #7), but the author may prefer `PUBLIC` to match what
-   real events look like. Flagged, not blocking.
+None — all design questions resolved with the issue author. Implementation notes
+live in the Decisions section above.
