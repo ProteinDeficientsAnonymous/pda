@@ -94,13 +94,10 @@ def create_dev_test_event(request, payload: DevTestEventIn):
     start, end = _event_datetimes(payload)
     status = EventStatus.CANCELLED if payload.is_canceled else EventStatus.ACTIVE
     event_type = _event_type(payload)
-    # OFFICIAL/CLUB must be PUBLIC (see _is_invalid_typed_visibility) — this dev
-    # endpoint bypasses that validator, so mirror the constraint here directly.
+    # Mirrors _is_invalid_typed_visibility, which this dev endpoint bypasses.
     is_public_only_type = event_type in (EventType.OFFICIAL, EventType.CLUB)
     visibility = PageVisibility.PUBLIC if is_public_only_type else payload.visibility
-    # Non-member RSVPs mirror Event.is_public_rsvp_eligible: OFFICIAL + ACTIVE +
-    # rsvp_enabled. This dev endpoint bypasses the real tag-permission check
-    # (_enforce_type_tag_permission) since the env + auth gate is the boundary here.
+    # Mirrors Event.is_public_rsvp_eligible.
     non_member_going_count = (
         payload.non_member_going_count
         if (payload.is_official and status == EventStatus.ACTIVE and payload.rsvp_enabled)
@@ -128,10 +125,7 @@ def create_dev_test_event(request, payload: DevTestEventIn):
     event.photo_updated_at = timezone.now()
     event.save(update_fields=["photo", "photo_updated_at"])
 
-    # seed_creator_as_host (post_save on Event) auto-adds created_by to
-    # co_hosts. Reverse that here unless the caller opted in — a dev testing
-    # attendee-facing flows usually doesn't want to be a host of their own
-    # throwaway test event.
+    # Undo seed_creator_as_host's auto-add unless the caller opted in.
     if not payload.make_me_host:
         event.co_hosts.remove(request.auth)
 

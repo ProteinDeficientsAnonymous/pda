@@ -246,9 +246,7 @@ class TestCreateDevTestEvent:
     def test_non_member_going_adds_alongside_member_going(
         self, api_client, dev_tools_headers, monkeypatch
     ):
-        """non_member_going_count must ADD non-member RSVPs, not replace the
-        member `going_count` pool — regression test for a bug where turning on
-        non-member fillers made every going RSVP non-member."""
+        """Regression: non_member_going_count must add, not replace, member fillers."""
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
         response = api_client.post(
             "/api/community/dev/test-events/",

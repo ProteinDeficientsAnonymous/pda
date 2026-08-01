@@ -80,8 +80,6 @@ def _create_filler_user(*, is_member: bool) -> User:
 
 
 def pick_filler_users(count: int, *, is_member: bool, exclude_ids: set) -> list[User]:
-    """Fill `count` distinct users from the existing pool (members or non-members),
-    creating new ones once the pool runs out."""
     pool = list(User.objects.filter(is_member=is_member).exclude(id__in=exclude_ids)[: count * 2])
     picked: list[User] = []
     for _ in range(count):
@@ -114,23 +112,16 @@ def populate_cohosts(event, *, accepted_count: int, invited_count: int, invited_
 
 
 def _split_by_capacity(going: int, max_attendees: int | None) -> tuple[int, int]:
-    """Returns (attending, waitlisted). Overflow past max_attendees waitlists,
-    mirroring the real capacity-check outcome (_apply_rsvp_in_transaction)
-    without going through that endpoint."""
+    """Returns (attending, waitlisted), mirroring _apply_rsvp_in_transaction."""
     if max_attendees is not None and going > max_attendees:
         return max_attendees, going - max_attendees
     return going, 0
 
 
 def populate_rsvps(event, counts: RsvpCounts) -> None:
-    """Fill RSVPs. `non_member_going` draws from a separate non-member pool —
-    non-members are RSVP-only, never cohosts or invitees (see
-    populate_cohosts/populate_invited_users)."""
     exclude_ids = {event.created_by_id} if event.created_by_id else set()
     total_going = counts.going + counts.non_member_going
     attending_total, waitlisted_total = _split_by_capacity(total_going, counts.max_attendees)
-    # Fill non-member going/waitlisted slots first so the member split absorbs
-    # any capacity overflow consistently regardless of which pool is larger.
     non_member_attending = min(counts.non_member_going, attending_total)
     non_member_waitlisted = counts.non_member_going - non_member_attending
     member_attending = attending_total - non_member_attending
