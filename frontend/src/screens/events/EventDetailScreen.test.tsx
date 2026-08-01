@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
@@ -84,16 +84,11 @@ function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function LocationProbe() {
-  const location = useLocation();
-  return <div data-testid="location-probe">{location.pathname + location.search}</div>;
-}
-
 function renderScreen(eventId = 'ev1', search = '') {
+  window.history.replaceState(null, '', `/events/${eventId}${search}`);
   return render(
     <QueryClientProvider client={makeQc()}>
       <MemoryRouter initialEntries={[`/events/${eventId}${search}`]}>
-        <LocationProbe />
         <Routes>
           <Route path="/events/:id" element={<EventDetailScreen />} />
           <Route path="/login" element={<div>login page</div>} />
@@ -349,25 +344,25 @@ describe('EventDetailScreen', () => {
     it('replaces a uuid url with the slug once the event loads', async () => {
       renderScreen(BASE_EVENT.id);
 
-      expect(await screen.findByTestId('location-probe')).toHaveTextContent(
-        `/events/${BASE_EVENT.slug}`,
-      );
+      await waitFor(() => {
+        expect(window.location.pathname).toBe(`/events/${BASE_EVENT.slug}`);
+      });
     });
 
     it('preserves the query string across the redirect', async () => {
       renderScreen(BASE_EVENT.id, '?rsvp_token=abc123');
 
-      expect(await screen.findByTestId('location-probe')).toHaveTextContent(
-        `/events/${BASE_EVENT.slug}?rsvp_token=abc123`,
-      );
+      await waitFor(() => {
+        expect(window.location.pathname + window.location.search).toBe(
+          `/events/${BASE_EVENT.slug}?rsvp_token=abc123`,
+        );
+      });
     });
 
     it('does not redirect when the url already uses the slug', () => {
       renderScreen(BASE_EVENT.slug);
 
-      expect(screen.getByTestId('location-probe')).toHaveTextContent(
-        `/events/${BASE_EVENT.slug}`,
-      );
+      expect(window.location.pathname).toBe(`/events/${BASE_EVENT.slug}`);
     });
   });
 });
