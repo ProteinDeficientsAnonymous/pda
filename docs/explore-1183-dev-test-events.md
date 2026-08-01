@@ -61,7 +61,7 @@ effects beyond the ORM write: `_set_event_participants`, `_set_event_tags`, and
 `audit_log`. It does **not** call `broadcast_event_update` — the production call
 sites are `_event_helpers.py:71` (the PATCH/update path) and `notifications/service.py:63`
 (a comment-related live-update ping), neither on create. Membership-wide notification
-fan-out happens at *publish* (`_event_transitions.py:104-106`) and *cancel*
+fan-out happens at _publish_ (`_event_transitions.py:104-106`) and _cancel_
 (`_event_transitions.py:30`), not create.
 
 The one real spam vector is `_set_event_participants`
@@ -106,7 +106,7 @@ skill for this path.
 main (`backend/community/models/choices.py:105-117`, `_feature_flags.py`,
 `frontend/src/models/featureFlags.ts`), but it is deliberately environment-agnostic:
 `backend/tests/test_feature_flags.py:77-85` is literally named
-`test_update_flag_allowed_on_production` and asserts a flag *can* be enabled in prod.
+`test_update_flag_allowed_on_production` and asserts a flag _can_ be enabled in prod.
 Anyone with `manage_feature_flags` could switch a dev-tools flag on in production. A
 flag may be AND-ed with an env check, never used in place of one.
 
@@ -125,33 +125,33 @@ interface, so a dev hook should do the same and never touch generated types.
 
 ## Relevant code
 
-| Area | Location | Role |
-|---|---|---|
-| Env gate (correct) | `backend/community/management/commands/_seed_staging_data.py:92-96` | `is_seed_allowed` — allow local/unset + staging, deny else |
-| Env gate (wrong) | `backend/config/settings.py:12` | `IS_PRODUCTION` — **true on staging**, do not use |
-| Env name source | `backend/community/_version.py:18-30` | `GET /version/`, `auth=None`, returns `RAILWAY_ENVIRONMENT_NAME` or `"local"` |
-| Frontend env hook | `frontend/src/api/version.ts:17-30` | `useVersion()`, `staleTime: Infinity` |
-| Frontend config | `frontend/src/config/env.ts:1-5` | Only `import.meta.env` usage; `VITE_API_URL` never set |
-| Shared build | `Dockerfile:10` | `pnpm build:docker`, no build args — staging == prod bundle |
-| Event create API | `backend/community/_events.py:303-372` | `POST /events/`, `auth=gated_jwt` |
-| Rate limit | `backend/community/_events.py:308` | `10/d` per user — blocks endpoint reuse |
-| Cohost fan-out | `backend/community/_event_transitions.py:72-87` | Notifications + **real emails**; only if `co_host_ids` non-empty |
-| Event model | `backend/community/models/event.py:53` | `title` the only required field; `status`/`visibility` default ACTIVE/PUBLIC |
-| Host auto-seed | `backend/community/models/event.py:186-191` | `post_save` adds `created_by` to `co_hosts` |
-| Seed defaults | `backend/community/management/commands/_seed_shared.py:12-42` | `SeedEvent` dataclass + `seed_events()`, `get_or_create` by title |
-| Test-data prefix | `backend/community/management/commands/seed_staging.py:87` | `title__startswith="[staging] "` cleanup convention |
-| Random test event | `backend/community/management/commands/e2e_seed.py:26-37` | `_random_event` with `secrets.token_hex` titles |
-| Permission check | `backend/community/_feature_flags.py:30-46` | House pattern: `audit_log` then `raise_validation(403)` |
-| Auth | `backend/config/auth.py:42,80` | `GatedJWTAuth` / `gated_jwt`; no global `auth=` on the API |
-| Router registration | `backend/community/api.py:56-101` | All `add_router("", ...)`, none conditional |
-| Codegen check | `backend/community/management/commands/dump_openapi_schema.py:33-42` | `--check` exits 1 on schema drift |
-| Route guards | `frontend/src/auth/guards.tsx:103-161` | `RequireAuth` / `RequirePermission` / `RequireFlag`; no env guard exists |
-| Routes | `frontend/src/router/routes.tsx:58,173-176` | Lazy import + guard block pattern |
-| Admin hub | `frontend/src/screens/admin/AdminHubScreen.tsx:14-73` | Tile array filtered by `hasPermission`; `perm` required |
-| Menu sheet | `frontend/src/layout/PdaMenuSheet.tsx:19-30,51` | Array-driven, cheapest conditional-append surface |
-| Bottom nav | `frontend/src/layout/BottomNav.tsx:26-63` | Hardcoded `grid-cols-5`, inline JSX — poor fit |
-| FE test pattern | `frontend/src/screens/admin/FeatureFlagsScreen.test.tsx:7-50` | `vi.mock` API module; already mocks `useVersion` env |
-| BE test pattern | `backend/tests/test_feature_flags.py:47-94` | 200/403/401/404 matrix + `monkeypatch.setenv` env idiom |
+| Area                | Location                                                             | Role                                                                          |
+| ------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Env gate (correct)  | `backend/community/management/commands/_seed_staging_data.py:92-96`  | `is_seed_allowed` — allow local/unset + staging, deny else                    |
+| Env gate (wrong)    | `backend/config/settings.py:12`                                      | `IS_PRODUCTION` — **true on staging**, do not use                             |
+| Env name source     | `backend/community/_version.py:18-30`                                | `GET /version/`, `auth=None`, returns `RAILWAY_ENVIRONMENT_NAME` or `"local"` |
+| Frontend env hook   | `frontend/src/api/version.ts:17-30`                                  | `useVersion()`, `staleTime: Infinity`                                         |
+| Frontend config     | `frontend/src/config/env.ts:1-5`                                     | Only `import.meta.env` usage; `VITE_API_URL` never set                        |
+| Shared build        | `Dockerfile:10`                                                      | `pnpm build:docker`, no build args — staging == prod bundle                   |
+| Event create API    | `backend/community/_events.py:303-372`                               | `POST /events/`, `auth=gated_jwt`                                             |
+| Rate limit          | `backend/community/_events.py:308`                                   | `10/d` per user — blocks endpoint reuse                                       |
+| Cohost fan-out      | `backend/community/_event_transitions.py:72-87`                      | Notifications + **real emails**; only if `co_host_ids` non-empty              |
+| Event model         | `backend/community/models/event.py:53`                               | `title` the only required field; `status`/`visibility` default ACTIVE/PUBLIC  |
+| Host auto-seed      | `backend/community/models/event.py:186-191`                          | `post_save` adds `created_by` to `co_hosts`                                   |
+| Seed defaults       | `backend/community/management/commands/_seed_shared.py:12-42`        | `SeedEvent` dataclass + `seed_events()`, `get_or_create` by title             |
+| Test-data prefix    | `backend/community/management/commands/seed_staging.py:87`           | `title__startswith="[staging] "` cleanup convention                           |
+| Random test event   | `backend/community/management/commands/e2e_seed.py:26-37`            | `_random_event` with `secrets.token_hex` titles                               |
+| Permission check    | `backend/community/_feature_flags.py:30-46`                          | House pattern: `audit_log` then `raise_validation(403)`                       |
+| Auth                | `backend/config/auth.py:42,80`                                       | `GatedJWTAuth` / `gated_jwt`; no global `auth=` on the API                    |
+| Router registration | `backend/community/api.py:56-101`                                    | All `add_router("", ...)`, none conditional                                   |
+| Codegen check       | `backend/community/management/commands/dump_openapi_schema.py:33-42` | `--check` exits 1 on schema drift                                             |
+| Route guards        | `frontend/src/auth/guards.tsx:103-161`                               | `RequireAuth` / `RequirePermission` / `RequireFlag`; no env guard exists      |
+| Routes              | `frontend/src/router/routes.tsx:58,173-176`                          | Lazy import + guard block pattern                                             |
+| Admin hub           | `frontend/src/screens/admin/AdminHubScreen.tsx:14-73`                | Tile array filtered by `hasPermission`; `perm` required                       |
+| Menu sheet          | `frontend/src/layout/PdaMenuSheet.tsx:19-30,51`                      | Array-driven, cheapest conditional-append surface                             |
+| Bottom nav          | `frontend/src/layout/BottomNav.tsx:26-63`                            | Hardcoded `grid-cols-5`, inline JSX — poor fit                                |
+| FE test pattern     | `frontend/src/screens/admin/FeatureFlagsScreen.test.tsx:7-50`        | `vi.mock` API module; already mocks `useVersion` env                          |
+| BE test pattern     | `backend/tests/test_feature_flags.py:47-94`                          | 200/403/401/404 matrix + `monkeypatch.setenv` env idiom                       |
 
 ## Options
 
@@ -164,17 +164,17 @@ with a `[test]` title prefix, `co_host_ids=[]`, and an optional `count` for bulk
 creation. Frontend: a screen gated on `useVersion().data.environment`, reached from
 AdminHub or PdaMenuSheet, with a hand-written wire type.
 
-*Pros:* schema stays deterministic across environments so `check-codes` stays green;
+_Pros:_ schema stays deterministic across environments so `check-codes` stays green;
 reuses the existing tested gate; no rate limit; skips the only email fan-out; the
 `[test]` prefix satisfies the identifiability criterion and mirrors the existing
-`[staging] ` cleanup convention. *Cons:* the endpoint appears in the public OpenAPI
+`[staging] ` cleanup convention. _Cons:_ the endpoint appears in the public OpenAPI
 schema in production (returning 404) — cosmetic disclosure only.
 
 **B. Reuse `POST /events/` from a dev-gated UI.**
 No new endpoint; the dev screen just posts to the existing create endpoint with
 prefilled defaults.
 
-*Pros:* smallest possible backend diff — zero. *Cons:* **fails the issue's explicit
+_Pros:_ smallest possible backend diff — zero. _Cons:_ **fails the issue's explicit
 requirement** that the backing endpoint be gated in production, since the existing
 endpoint must stay available in prod. Also capped at `10/d` per user
 (`_events.py:308`), which defeats the purpose. Not viable as specified.
@@ -182,7 +182,7 @@ endpoint must stay available in prod. Also capped at `10/d` per user
 **C. Conditionally register the dev router.**
 Wrap `add_router` in an environment check so the routes do not exist in production.
 
-*Pros:* strongest possible gate — the path genuinely does not exist. *Cons:*
+_Pros:_ strongest possible gate — the path genuinely does not exist. _Cons:_
 breaks `dump_openapi_schema --check` in CI (`Makefile:243-246`), because the committed
 schema and CI's regeneration will differ by environment. Establishes a new
 conditional-registration pattern where none exists today.
