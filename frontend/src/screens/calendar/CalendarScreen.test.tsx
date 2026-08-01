@@ -128,18 +128,15 @@ describe('CalendarScreen', () => {
     });
   });
 
-  it('lets the list view grow with the page instead of boxing it to the viewport', async () => {
+  it('scrolls the list inside the view box so the toggles stay put', async () => {
     const user = userEvent.setup();
     const { container } = renderCalendar();
-
-    const viewBox = container.querySelector<HTMLElement>('main > div.flex.flex-col.p-1');
-    expect(viewBox).not.toBeNull();
-    expect(viewBox?.style.height).toBe('calc(100dvh - 14rem)');
 
     await user.click(screen.getByRole('radio', { name: /^list$/i }));
 
     await waitFor(() => {
-      expect(viewBox?.style.height).toBe('');
+      expect(container.querySelector('main > div.min-h-0.flex-1')).not.toBeNull();
     });
+    expect(container.querySelector('.overflow-y-auto')).not.toBeNull();
   });
 });

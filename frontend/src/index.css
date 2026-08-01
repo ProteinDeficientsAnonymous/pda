@@ -434,6 +434,7 @@ body {
 }
 .rdp-chevron {
   color: var(--color-brand-600);
+  fill: var(--color-brand-600);
 }
 .rdp-weekdays {
   font-weight: 500;
