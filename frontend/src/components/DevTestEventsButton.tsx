@@ -1,38 +1,51 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { useCreateDevTestEvents, useDeleteDevTestEvents } from '@/api/devTools';
+import { type DevTestEventOptions, useCreateDevTestEvents } from '@/api/devTools';
 import { useVersion } from '@/api/version';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
+
+import { DevTestEventOverrides } from './DevTestEventOverrides';
+
+const DEFAULT_OPTIONS: DevTestEventOptions = {
+  isPast: false,
+  isCanceled: false,
+  isOfficial: false,
+  isClub: false,
+  price: '',
+  venmoLink: '',
+  cashappLink: '',
+  zelleInfo: '',
+  cohostCount: 5,
+  invitedCohostCount: 5,
+  goingCount: 5,
+  maybeCount: 5,
+  cantGoCount: 5,
+  invitedCount: 5,
+  allowNonMemberFillers: false,
+  rsvpEnabled: true,
+  visibility: 'public',
+  maxAttendees: null,
+  allowPlusOnes: false,
+};
 
 export function DevTestEventsButton() {
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const { data: version } = useVersion();
   const [open, setOpen] = useState(false);
-  const [count, setCount] = useState(1);
+  const [options, setOptions] = useState<DevTestEventOptions>(DEFAULT_OPTIONS);
   const createEvents = useCreateDevTestEvents();
-  const deleteEvents = useDeleteDevTestEvents();
 
   if (!isAuthed || version?.environment === 'production') return null;
 
   async function onCreate() {
     try {
-      const result = await createEvents.mutateAsync(count);
-      const n = result.events.length;
-      toast.success(`created ${String(n)} test event${n === 1 ? '' : 's'} 🌱`);
+      await createEvents.mutateAsync(options);
+      toast.success('created 1 test event 🌱');
       setOpen(false);
     } catch {
-      toast.error("couldn't create test events — try again");
-    }
-  }
-
-  async function onCleanup() {
-    try {
-      await deleteEvents.mutateAsync();
-      toast.success('test events cleared 🌱');
-    } catch {
-      toast.error("couldn't clear test events — try again");
+      toast.error("couldn't create test event — try again");
     }
   }
 
@@ -71,26 +84,15 @@ export function DevTestEventsButton() {
             }}
             className="absolute inset-0 cursor-default bg-black/60"
           />
-          <div className="bg-surface text-foreground relative w-full max-w-xs rounded-lg p-5 shadow-xl">
+          <div className="bg-surface text-foreground relative flex max-h-[85vh] w-full max-w-sm flex-col rounded-lg p-5 shadow-xl">
             <h2 className="mb-1 text-base font-medium">dev test events</h2>
             <p className="text-muted-foreground mb-4 text-sm">
-              creates draft events titled <code>[test] ...</code> —{' '}
-              {version?.environment ?? 'local'} only
+              creates an event — {version?.environment ?? 'local'} only
             </p>
-            <label className="mb-4 flex items-center gap-2 text-sm">
-              count
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={count}
-                onChange={(e) => {
-                  setCount(Number(e.target.value));
-                }}
-                className="border-border w-16 rounded-md border px-2 py-1"
-              />
-            </label>
-            <div className="flex flex-col gap-2">
+
+            <DevTestEventOverrides options={options} onChange={setOptions} />
+
+            <div className="mt-4 flex flex-col gap-2">
               <Button
                 onClick={() => {
                   void onCreate();
@@ -99,16 +101,6 @@ export function DevTestEventsButton() {
                 fullWidth
               >
                 {createEvents.isPending ? 'creating...' : 'create'}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  void onCleanup();
-                }}
-                disabled={deleteEvents.isPending}
-                fullWidth
-              >
-                {deleteEvents.isPending ? 'clearing...' : 'clear all test events'}
               </Button>
             </div>
           </div>

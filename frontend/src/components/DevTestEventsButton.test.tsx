@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/devTools', () => ({
   useCreateDevTestEvents: vi.fn(),
-  useDeleteDevTestEvents: vi.fn(),
 }));
 
 vi.mock('@/api/version', () => ({
@@ -16,7 +15,7 @@ vi.mock('@/auth/store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-import { useCreateDevTestEvents, useDeleteDevTestEvents } from '@/api/devTools';
+import { useCreateDevTestEvents } from '@/api/devTools';
 import { useVersion } from '@/api/version';
 import { useAuthStore } from '@/auth/store';
 
@@ -25,7 +24,6 @@ import { DevTestEventsButton } from './DevTestEventsButton';
 const mockUseVersion = vi.mocked(useVersion);
 const mockUseAuthStore = vi.mocked(useAuthStore);
 const mockUseCreate = vi.mocked(useCreateDevTestEvents);
-const mockUseDelete = vi.mocked(useDeleteDevTestEvents);
 
 function renderButton() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -40,13 +38,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockUseAuthStore.mockImplementation((selector) => selector({ status: 'authed' } as never));
   mockUseCreate.mockReturnValue({
-    mutateAsync: vi.fn().mockResolvedValue({ events: [{ id: '1' }] }),
+    mutateAsync: vi.fn().mockResolvedValue({ id: '1' }),
     isPending: false,
   } as unknown as ReturnType<typeof useCreateDevTestEvents>);
-  mockUseDelete.mockReturnValue({
-    mutateAsync: vi.fn().mockResolvedValue(undefined),
-    isPending: false,
-  } as unknown as ReturnType<typeof useDeleteDevTestEvents>);
 });
 
 describe('DevTestEventsButton', () => {
@@ -75,12 +69,12 @@ describe('DevTestEventsButton', () => {
     expect(screen.queryByLabelText('dev test events')).not.toBeInTheDocument();
   });
 
-  it('creates events with the chosen count', async () => {
+  it('creates events with the default options', async () => {
     const user = userEvent.setup();
     mockUseVersion.mockReturnValue({
       data: { commitSha: 'a', commitShaShort: 'a', environment: 'local' },
     } as ReturnType<typeof useVersion>);
-    const mutateAsync = vi.fn().mockResolvedValue({ events: [{ id: '1' }] });
+    const mutateAsync = vi.fn().mockResolvedValue({ id: '1' });
     mockUseCreate.mockReturnValue({
       mutateAsync,
       isPending: false,
@@ -90,6 +84,20 @@ describe('DevTestEventsButton', () => {
     await user.click(screen.getByLabelText('dev test events'));
     await user.click(screen.getByRole('button', { name: 'create' }));
 
-    expect(mutateAsync).toHaveBeenCalledWith(1);
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ goingCount: 5, isOfficial: false, rsvpEnabled: true }),
+    );
+  });
+
+  it('disables non-member fillers toggle unless official is on', async () => {
+    const user = userEvent.setup();
+    mockUseVersion.mockReturnValue({
+      data: { commitSha: 'a', commitShaShort: 'a', environment: 'local' },
+    } as ReturnType<typeof useVersion>);
+
+    renderButton();
+    await user.click(screen.getByLabelText('dev test events'));
+
+    expect(screen.getByRole('switch', { name: 'allow non-member fillers' })).toBeDisabled();
   });
 });

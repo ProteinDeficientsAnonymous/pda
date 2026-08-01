@@ -443,10 +443,9 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create Dev Test Events */
-        post: operations["community__dev_tools_create_dev_test_events"];
-        /** Delete Dev Test Events */
-        delete: operations["community__dev_tools_delete_dev_test_events"];
+        /** Create Dev Test Event */
+        post: operations["community__dev_tools_create_dev_test_event"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2270,15 +2269,97 @@ export interface components {
         /** DevTestEventIn */
         DevTestEventIn: {
             /**
-             * Count
-             * @default 1
+             * Allow Non Member Fillers
+             * @default false
              */
-            count: number;
-        };
-        /** DevTestEventsOut */
-        DevTestEventsOut: {
-            /** Events */
-            events: components["schemas"]["EventOut"][];
+            allow_non_member_fillers: boolean;
+            /**
+             * Allow Plus Ones
+             * @default false
+             */
+            allow_plus_ones: boolean;
+            /**
+             * Cant Go Count
+             * @default 5
+             */
+            cant_go_count: number;
+            /**
+             * Cashapp Link
+             * @default
+             */
+            cashapp_link: string;
+            /**
+             * Cohost Count
+             * @default 5
+             */
+            cohost_count: number;
+            /**
+             * Going Count
+             * @default 5
+             */
+            going_count: number;
+            /**
+             * Invited Cohost Count
+             * @default 5
+             */
+            invited_cohost_count: number;
+            /**
+             * Invited Count
+             * @default 5
+             */
+            invited_count: number;
+            /**
+             * Is Canceled
+             * @default false
+             */
+            is_canceled: boolean;
+            /**
+             * Is Club
+             * @default false
+             */
+            is_club: boolean;
+            /**
+             * Is Official
+             * @default false
+             */
+            is_official: boolean;
+            /**
+             * Is Past
+             * @default false
+             */
+            is_past: boolean;
+            /** Max Attendees */
+            max_attendees?: number | null;
+            /**
+             * Maybe Count
+             * @default 5
+             */
+            maybe_count: number;
+            /**
+             * Price
+             * @default
+             */
+            price: string;
+            /**
+             * Rsvp Enabled
+             * @default true
+             */
+            rsvp_enabled: boolean;
+            /**
+             * Venmo Link
+             * @default
+             */
+            venmo_link: string;
+            /**
+             * Visibility
+             * @default public
+             */
+            visibility: string;
+            /**
+             * Zelle Info
+             * @default
+             */
+            zelle_info: string;
         };
         /** DocFolderOut */
         DocFolderOut: {
@@ -5750,7 +5831,7 @@ export interface operations {
             };
         };
     };
-    community__dev_tools_create_dev_test_events: {
+    community__dev_tools_create_dev_test_event: {
         parameters: {
             query?: never;
             header?: never;
@@ -5769,36 +5850,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DevTestEventsOut"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorOut"];
-                };
-            };
-        };
-    };
-    community__dev_tools_delete_dev_test_events: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DevTestEventsOut"];
+                    "application/json": components["schemas"]["EventOut"];
                 };
             };
             /** @description Not Found */
