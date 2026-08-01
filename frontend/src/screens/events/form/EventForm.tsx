@@ -79,17 +79,7 @@ export function EventForm({ existing }: Props) {
   const [values, setValues] = useState<EventFormValues>(() =>
     existing ? eventToFormValues(existing) : emptyEventFormValues(),
   );
-  // coHosts is picker-driven local state. We can't fully reconstruct
-  // MemberSearchResult from `existing` (no phone numbers in the event-out wire
-  // shape, by design), so it starts empty even on edit. To avoid clobbering
-  // server-side relations on edit-PATCH, we track whether the picker has been
-  // touched and only include co_host_ids in the payload when dirty. Untouched
-  // → key is omitted, BE preserves the existing list.
-  //
-  // Member invites are handled out-of-band by InviteDialog on the event page;
-  // the form doesn't manage invited_user_ids anymore.
   const [coHosts, setCoHosts] = useState<MemberSearchResult[]>([]);
-  const [coHostsDirty, setCoHostsDirty] = useState(false);
   // On edit, pre-run validation so issues in the loaded values (e.g. a stale
   // draft whose start is now in the past) are visible immediately instead of
   // waiting for the first save attempt.
@@ -128,9 +118,10 @@ export function EventForm({ existing }: Props) {
   async function submit(nextStatus: 'active' | 'draft') {
     setServerError(null);
     const timeLocked = !!existing?.hasPoll && !existing.startDatetime;
+    const coHostIds = coHosts.map((m) => m.id);
     const merged: EventFormValues = {
       ...values,
-      coHostIds: coHosts.map((m) => m.id),
+      coHostIds,
       status: nextStatus,
     };
     const errs = validateEventForm(merged);
@@ -151,17 +142,18 @@ export function EventForm({ existing }: Props) {
         // While a poll is active, the poll owns the time. Send a Partial
         // that omits start/end/tbd so useUpdateEvent's undefined-filter drops
         // them from the PATCH body (backend rejects those edits).
-        // Also drop coHostIds when the picker hasn't been touched: it's a
-        // many-to-many relation the form can't fully reconstruct from
-        // EventOut (no phone numbers on the wire), so an empty list would
-        // clobber whatever's already on the BE.
+        // On edit, never send coHostIds — co-host management happens on the
+        // event detail page only, not in this form. Omitting the key ensures
+        // the backend preserves existing invites and accepted co-hosts.
         const patchBody: Partial<EventFormValues> = timeLocked
           ? (() => {
-              const { startDatetime: _s, endDatetime: _e, datetimeTbd: _t, ...rest } = merged;
+              const { startDatetime: _s, endDatetime: _e, datetimeTbd: _t, coHostIds: _c, ...rest } = merged;
               return rest;
             })()
-          : { ...merged };
-        if (!coHostsDirty) delete patchBody.coHostIds;
+          : (() => {
+              const { coHostIds: _c, ...rest } = merged;
+              return rest;
+            })();
         try {
           await update.mutateAsync(patchBody);
         } catch (err) {
@@ -267,31 +259,31 @@ export function EventForm({ existing }: Props) {
           onBufferPoll={setBufferedPollOptions}
         />
 
-        <CollapsibleCard
-          title="hosts"
-          summary={
-            hostsCount > 0
-              ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
-              : undefined
-          }
-        >
-          {existing?.isPast ? (
-            <p className="text-foreground-tertiary text-sm">
-              this event is in the past — co-host invites are closed
-            </p>
-          ) : (
+        {!existing && (
+          <CollapsibleCard
+            title="hosts"
+            summary={
+              hostsCount > 0
+                ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
+                : undefined
+            }
+          >
             <MemberPicker
               label="co-hosts"
               selected={coHosts}
-              onChange={(next) => {
-                setCoHosts(next);
-                setCoHostsDirty(true);
-              }}
+              onChange={setCoHosts}
               excludeIds={user ? [user.id] : []}
               hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
             />
-          )}
-        </CollapsibleCard>
+          </CollapsibleCard>
+        )}
+        {existing && (
+          <CollapsibleCard title="hosts">
+            <p className="text-foreground-tertiary text-sm">
+              manage co-hosts on the event page
+            </p>
+          </CollapsibleCard>
+        )}
 
         <CollapsibleCard
           title="details"
