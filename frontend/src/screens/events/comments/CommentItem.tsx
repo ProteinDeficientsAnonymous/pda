@@ -67,30 +67,28 @@ export function CommentItem({ comment, eventId, token }: Props) {
         </p>
       )}
       {!comment.isDeleted ? (
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <ReactionBar reactions={comment.reactions} onToggle={handleToggle} />
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setReplyOpen((v) => !v);
+            }}
+            className="text-foreground-tertiary text-xs hover:underline"
+          >
+            {replyOpen ? 'cancel' : 'reply'}
+          </button>
+          {comment.canDelete ? (
             <button
               type="button"
               onClick={() => {
-                setReplyOpen((v) => !v);
+                setConfirmOpen(true);
               }}
               className="text-foreground-tertiary text-xs hover:underline"
             >
-              {replyOpen ? 'cancel' : 'reply'}
+              delete
             </button>
-            {comment.canDelete ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmOpen(true);
-                }}
-                className="text-foreground-tertiary text-xs hover:underline"
-              >
-                delete
-              </button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       ) : null}
       {replyOpen ? (
