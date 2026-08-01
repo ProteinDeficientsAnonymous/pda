@@ -18,8 +18,8 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     isOpen &&
     event.rsvpEnabled &&
     (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
-  const showRsvp = event.rsvpEnabled && !isCancelled;
-  const rsvpLocked = event.isPast;
+  const showRsvp = event.rsvpEnabled;
+  const rsvpLocked = !isOpen;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
     isHostOrEventManager,

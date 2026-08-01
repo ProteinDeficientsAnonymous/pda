@@ -341,6 +341,35 @@ describe('EventMemberSection — host actions gating', () => {
   });
 });
 
+describe("EventMemberSection — who's going stays visible once closed", () => {
+  const RSVP_ON: Event = {
+    ...BASE_EVENT,
+    rsvpEnabled: true,
+    guests: [makeGuest({ userId: 'user-guest', name: 'Guest' })],
+  };
+
+  it('shows the guest list on a past event', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, isPast: true });
+    expect(screen.getByRole('heading', { name: "who's going" })).toBeInTheDocument();
+    expect(screen.getByTestId('guest-list')).toBeInTheDocument();
+  });
+
+  it('shows the guest list on a cancelled event', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, status: EventStatus.Cancelled });
+    expect(screen.getByRole('heading', { name: "who's going" })).toBeInTheDocument();
+    expect(screen.getByTestId('guest-list')).toBeInTheDocument();
+  });
+
+  it('falls back to the standalone invited card only when rsvp is off', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, rsvpEnabled: false, invitedCount: 3 });
+    expect(screen.queryByRole('heading', { name: "who's going" })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'invited' })).toBeInTheDocument();
+  });
+});
+
 describe('EventMemberSection — capacity note', () => {
   it('shows spots left under "who\'s going" when the event has a capacity', () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
