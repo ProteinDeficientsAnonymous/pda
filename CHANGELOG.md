@@ -1,3 +1,10 @@
+## [0.71.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.5...v0.71.6) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1141 - keep search bar sticky on members page ([#1188](https://github.com/ProteinDeficientsAnonymous/pda/issues/1188)) ([5df97c8](https://github.com/ProteinDeficientsAnonymous/pda/commit/5df97c80805a614881b1d6f3cfcdb95efe6c1183))
+
 ## [0.71.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.4...v0.71.5) (2026-08-01)
 
 
