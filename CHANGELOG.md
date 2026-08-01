@@ -1,3 +1,10 @@
+## [0.71.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.2...v0.71.3) (2026-08-01)
+
+
+### Bug Fixes
+
+* **events:** keep reactors list in sync during optimistic reaction toggle ([#1186](https://github.com/ProteinDeficientsAnonymous/pda/issues/1186)) ([237fc6b](https://github.com/ProteinDeficientsAnonymous/pda/commit/237fc6bc7c50287ab880c606a068b08201a90e50))
+
 ## [0.71.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.1...v0.71.2) (2026-08-01)
 
 
