@@ -1,3 +1,11 @@
+## [0.71.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.1...v0.71.2) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1148 - show who reacted to a comment ([#1160](https://github.com/ProteinDeficientsAnonymous/pda/issues/1160)) ([2682ad2](https://github.com/ProteinDeficientsAnonymous/pda/commit/2682ad2cf10e8d6ec93b8754188c5e0825eb9dc9))
+* 1165 - attendance report back-link points to attendance ([#1184](https://github.com/ProteinDeficientsAnonymous/pda/issues/1184)) ([5433801](https://github.com/ProteinDeficientsAnonymous/pda/commit/5433801cb31232316eea6688e7f35a25de2adc0e))
+
 ## [0.71.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.0...v0.71.1) (2026-08-01)
 
 
