@@ -19,12 +19,10 @@ interface HostRow {
 export function EventHostSection({
   event,
   canEdit,
-  canInviteCohost,
   viewerId,
 }: {
   event: Event;
   canEdit: boolean;
-  canInviteCohost: boolean;
   viewerId: string | null;
 }) {
   const [addOpen, setAddOpen] = useState(false);
@@ -90,32 +88,19 @@ export function EventHostSection({
           <PendingHostChip key={inv.id} eventId={event.id} invite={inv} canRescind={canEdit} />
         ))}
         {canEdit ? (
-          <span className="group relative inline-flex">
-            <button
-              type="button"
-              onClick={() => {
-                if (canInviteCohost) setAddOpen(true);
-              }}
-              disabled={!canInviteCohost}
-              aria-label="add co-host"
-              aria-describedby={canInviteCohost ? undefined : 'add-cohost-disabled-reason'}
-              className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 disabled:hover:bg-surface-dim inline-flex h-8 w-8 items-center justify-center rounded-full pb-0.5 text-xl leading-none disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              +
-            </button>
-            {!canInviteCohost ? (
-              <span
-                id="add-cohost-disabled-reason"
-                role="tooltip"
-                className="bg-foreground text-surface pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded px-2 py-1 text-xs whitespace-nowrap opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
-              >
-                can't invite co-hosts to a past event
-              </span>
-            ) : null}
-          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setAddOpen(true);
+            }}
+            aria-label="add co-host"
+            className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 inline-flex h-8 w-8 items-center justify-center rounded-full pb-0.5 text-xl leading-none"
+          >
+            +
+          </button>
         ) : null}
       </div>
-      {canInviteCohost ? (
+      {canEdit ? (
         <AddCoHostDialog
           event={event}
           open={addOpen}
