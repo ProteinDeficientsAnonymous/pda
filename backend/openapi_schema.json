@@ -1826,6 +1826,11 @@
             "title": "Price",
             "type": "string"
           },
+          "slug": {
+            "default": "",
+            "title": "Slug",
+            "type": "string"
+          },
           "start_datetime": {
             "anyOf": [
               {
@@ -2158,6 +2163,11 @@
             "default": false,
             "title": "Rsvp Enabled",
             "type": "boolean"
+          },
+          "slug": {
+            "default": "",
+            "title": "Slug",
+            "type": "string"
           },
           "start_datetime": {
             "anyOf": [
@@ -8698,7 +8708,6 @@
             "name": "event_id",
             "required": true,
             "schema": {
-              "format": "uuid",
               "title": "Event Id",
               "type": "string"
             }
@@ -10036,6 +10045,16 @@
               }
             },
             "description": "OK"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
           },
           "404": {
             "content": {

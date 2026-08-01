@@ -179,7 +179,7 @@ def send_cohost_invite_emails(
     invited_by_name = visible_display_name(inviter, None)
     recipients = User.objects.filter(pk__in=[uid for uid in new_user_ids if str(uid) != inviter_id])
     sender = get_email_sender()
-    event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.pk}"
+    event_url = f"{settings.FRONTEND_BASE_URL}/events/{event.slug or event.pk}"
     for user in recipients:
         if not user.email:
             continue

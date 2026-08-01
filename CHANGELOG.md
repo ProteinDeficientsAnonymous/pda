@@ -1,3 +1,43 @@
+## [0.72.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.0...v0.72.1) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1139 - move reply/delete buttons next to reactions ([#1200](https://github.com/ProteinDeficientsAnonymous/pda/issues/1200)) ([d1f69cb](https://github.com/ProteinDeficientsAnonymous/pda/commit/d1f69cb0340697c41d9dd39bc99c062a534f7597))
+
+# [0.72.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.8...v0.72.0) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1190 - exclude pending cohost invitees from add-cohost picker ([#1197](https://github.com/ProteinDeficientsAnonymous/pda/issues/1197)) ([85a093b](https://github.com/ProteinDeficientsAnonymous/pda/commit/85a093bd15dacc1ff5325d71cd7e3175deaed1e0))
+
+
+### Features
+
+* 1171 - add human-readable slug urls for events ([#1193](https://github.com/ProteinDeficientsAnonymous/pda/issues/1193)) ([e6ade7c](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6ade7c612cdae09d458b827d1e74c1724c03488))
+
+## [0.71.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.7...v0.71.8) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1187 - stop showing today's ended events in calendar list view ([#1199](https://github.com/ProteinDeficientsAnonymous/pda/issues/1199)) ([c3071ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/c3071ac98e84167936a9715ac1f78dc6a767651b))
+
+## [0.71.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.6...v0.71.7) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1192 - gate poll endpoints behind event visibility ([#1194](https://github.com/ProteinDeficientsAnonymous/pda/issues/1194)) ([221c749](https://github.com/ProteinDeficientsAnonymous/pda/commit/221c7498ba8bdf762c270f4de6eb67be07735516))
+
+## [0.71.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.5...v0.71.6) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1141 - keep search bar sticky on members page ([#1188](https://github.com/ProteinDeficientsAnonymous/pda/issues/1188)) ([5df97c8](https://github.com/ProteinDeficientsAnonymous/pda/commit/5df97c80805a614881b1d6f3cfcdb95efe6c1183))
+
 ## [0.71.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.4...v0.71.5) (2026-08-01)
 
 

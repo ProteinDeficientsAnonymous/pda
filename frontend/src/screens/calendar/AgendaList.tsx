@@ -41,7 +41,6 @@ function buildWhenLabel(event: PdaEvent): string {
 
 function upcomingEvents(events: PdaEvent[]): PdaEvent[] {
   const now = new Date();
-  now.setHours(0, 0, 0, 0);
   return events
     .filter((e) => {
       if (!e.startDatetime) return false;

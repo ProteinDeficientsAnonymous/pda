@@ -7,7 +7,7 @@ import { useCheckInReport } from '@/api/eventCheckInReport';
 import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
-import { canManageEvent } from '@/models/event';
+import { canManageEvent, eventPath } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatShortDateTime } from '@/utils/datetime';
 
@@ -47,7 +47,7 @@ export default function EventCheckInReportScreen() {
         <div>
           <h1 className="mb-1 text-2xl font-medium tracking-tight">check-in report</h1>
           <Link
-            to={`/events/${event.id}`}
+            to={eventPath(event)}
             className="text-foreground-secondary hover:text-foreground text-sm"
           >
             {event.title}

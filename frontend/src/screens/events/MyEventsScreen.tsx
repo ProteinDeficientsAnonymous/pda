@@ -6,7 +6,7 @@ import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import type { Event } from '@/models/event';
-import { EventStatus, EventType, isHosting, RsvpStatus } from '@/models/event';
+import { eventPath, EventStatus, EventType, isHosting, RsvpStatus } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 
 import { EventCardBadges } from './EventCardBadges';
@@ -112,7 +112,7 @@ export default function MyEventsScreen() {
 function EventRow({ event }: { event: Event }) {
   return (
     <Link
-      to={`/events/${event.id}`}
+      to={eventPath(event)}
       className="border-border bg-surface hover:bg-surface-dim flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors"
     >
       <div className="min-w-0">

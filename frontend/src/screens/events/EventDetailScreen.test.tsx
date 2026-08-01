@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
-import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import { EventType, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
+import { makeEvent } from '@/test/fixtures';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -37,55 +37,19 @@ import EventDetailScreen from './EventDetailScreen';
 
 const mockUseEvent = vi.mocked(useEvent);
 
-const BASE_EVENT: Event = {
-  id: 'ev1',
-  title: 'Test Event',
+const BASE_EVENT = makeEvent({
   description: 'A test event description',
   startDatetime: new Date('2024-06-01T18:00:00Z'),
   endDatetime: new Date('2024-06-01T20:00:00Z'),
   location: '123 Main St, Brooklyn, NY',
-  latitude: null,
-  longitude: null,
   whatsappLink: 'https://chat.whatsapp.com/abc',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
-  rsvpEnabled: true,
-  allowPlusOnes: false,
-  maxAttendees: null,
   attendingCount: 0,
-  waitlistedCount: 0,
-  invitedCount: 0,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
   createdById: 'user1',
   createdByName: 'Alice',
-  createdByPhotoUrl: '',
   coHostIds: ['user1'],
-  coHostNames: [],
-  coHostPhotoUrls: [],
   guests: [],
-  myRsvp: null,
-  viewerUserId: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
   invitePermission: InvitePermission.CoHostsOnly,
-  pendingCohostInvites: [],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  photoUpdatedAt: null,
-  tags: [],
-  isPast: false,
-  status: EventStatus.Active,
-};
+});
 
 const AUTHED_USER: User = {
   id: 'user-me',
@@ -121,6 +85,7 @@ function makeQc() {
 }
 
 function renderScreen(eventId = 'ev1', search = '') {
+  window.history.replaceState(null, '', `/events/${eventId}${search}`);
   return render(
     <QueryClientProvider client={makeQc()}>
       <MemoryRouter initialEntries={[`/events/${eventId}${search}`]}>
@@ -372,6 +337,32 @@ describe('EventDetailScreen', () => {
       renderScreen('ev1');
 
       expect(screen.getByText(/try refreshing/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('slug redirect', () => {
+    it('replaces a uuid url with the slug once the event loads', async () => {
+      renderScreen(BASE_EVENT.id);
+
+      await waitFor(() => {
+        expect(window.location.pathname).toBe(`/events/${BASE_EVENT.slug}`);
+      });
+    });
+
+    it('preserves the query string across the redirect', async () => {
+      renderScreen(BASE_EVENT.id, '?rsvp_token=abc123');
+
+      await waitFor(() => {
+        expect(window.location.pathname + window.location.search).toBe(
+          `/events/${BASE_EVENT.slug}?rsvp_token=abc123`,
+        );
+      });
+    });
+
+    it('does not redirect when the url already uses the slug', () => {
+      renderScreen(BASE_EVENT.slug);
+
+      expect(window.location.pathname).toBe(`/events/${BASE_EVENT.slug}`);
     });
   });
 });

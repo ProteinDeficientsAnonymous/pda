@@ -1,4 +1,4 @@
-import type { Event } from '@/models/event';
+import { type Event, eventPath } from '@/models/event';
 
 export function googleCalendarUrl(event: Event): string | null {
   if (!event.startDatetime) return null;
@@ -31,7 +31,7 @@ export function appleCalendarUrl(eventId: string): string {
 }
 
 export async function shareEventUrl(event: Event): Promise<void> {
-  const url = `${window.location.origin}/events/${event.id}`;
+  const url = `${window.location.origin}${eventPath(event)}`;
   const nav = window.navigator;
   const data: ShareData = { url, title: event.title };
   if (typeof nav.share === 'function' && nav.canShare(data)) {
@@ -55,7 +55,7 @@ function buildDescription(event: Event): string {
   if (event.whatsappLink) parts.push(`WhatsApp: ${event.whatsappLink}`);
   if (event.partifulLink) parts.push(`Partiful: ${event.partifulLink}`);
   if (event.otherLink) parts.push(`Link: ${event.otherLink}`);
-  parts.push(`View on PDA: ${window.location.origin}/events/${event.id}`);
+  parts.push(`View on PDA: ${window.location.origin}${eventPath(event)}`);
   return parts.join('\n');
 }
 
