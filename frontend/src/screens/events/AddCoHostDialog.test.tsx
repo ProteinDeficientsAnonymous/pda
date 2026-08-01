@@ -2,12 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Event } from '@/models/event';
-import {
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-} from '@/models/event';
+import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
 
 const updateMutateAsync = vi.fn();
 
