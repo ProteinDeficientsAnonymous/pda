@@ -2323,6 +2323,11 @@ export interface components {
              * @default false
              */
             is_past: boolean;
+            /**
+             * Make Me Host
+             * @default false
+             */
+            make_me_host: boolean;
             /** Max Attendees */
             max_attendees?: number | null;
             /**

@@ -9,6 +9,7 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from pydantic import BaseModel, Field
+from users.permissions import PermissionKey
 
 from community._dev_tools_content import generate_placeholder_photo, random_event_title
 from community._dev_tools_populate import (
@@ -35,6 +36,7 @@ class DevTestEventIn(BaseModel):
     is_canceled: bool = False
     is_official: bool = False
     is_club: bool = False
+    make_me_host: bool = False
     price: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
     venmo_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
@@ -58,6 +60,8 @@ def _dev_tools_allowed() -> bool:
 
 def _require_dev_tools(request) -> None:
     if not _dev_tools_allowed():
+        raise_validation(Code.DevTools.NOT_FOUND, status_code=404)
+    if not request.auth.has_permission(PermissionKey.MANAGE_EVENTS):
         raise_validation(Code.DevTools.NOT_FOUND, status_code=404)
 
 
@@ -123,6 +127,13 @@ def create_dev_test_event(request, payload: DevTestEventIn):
     event.photo.save(f"{event.id}.jpg", generate_placeholder_photo(), save=False)
     event.photo_updated_at = timezone.now()
     event.save(update_fields=["photo", "photo_updated_at"])
+
+    # seed_creator_as_host (post_save on Event) auto-adds created_by to
+    # co_hosts. Reverse that here unless the caller opted in — a dev testing
+    # attendee-facing flows usually doesn't want to be a host of their own
+    # throwaway test event.
+    if not payload.make_me_host:
+        event.co_hosts.remove(request.auth)
 
     populate_cohosts(
         event,

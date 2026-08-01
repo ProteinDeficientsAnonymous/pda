@@ -682,6 +682,11 @@
             "title": "Is Past",
             "type": "boolean"
           },
+          "make_me_host": {
+            "default": false,
+            "title": "Make Me Host",
+            "type": "boolean"
+          },
           "max_attendees": {
             "anyOf": [
               {

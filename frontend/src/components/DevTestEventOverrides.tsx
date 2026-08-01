@@ -79,6 +79,13 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
           }}
         />
         <Toggle
+          label="make me a host"
+          checked={options.makeMeHost}
+          onChange={(v) => {
+            set('makeMeHost', v);
+          }}
+        />
+        <Toggle
           label="rsvps enabled"
           checked={options.rsvpEnabled}
           onChange={(v) => {
