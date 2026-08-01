@@ -1,3 +1,17 @@
+## [0.72.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.2...v0.72.3) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1189 - let manage_events permission holders add hosts ([#1198](https://github.com/ProteinDeficientsAnonymous/pda/issues/1198)) ([8d73cf7](https://github.com/ProteinDeficientsAnonymous/pda/commit/8d73cf7dd2113b5b5982d12e5190463b21a99fc1))
+
+## [0.72.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.1...v0.72.2) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1138 - broadcast event_updated so new events refresh the calendar live ([#1202](https://github.com/ProteinDeficientsAnonymous/pda/issues/1202)) ([1fa0470](https://github.com/ProteinDeficientsAnonymous/pda/commit/1fa0470079953de80665491a74c2b7d3a9f52a3b))
+
 ## [0.72.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.0...v0.72.1) (2026-08-01)
 
 

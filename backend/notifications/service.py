@@ -65,6 +65,20 @@ def broadcast_event_comment_update(event: Event) -> None:
     _ping_event_update(["*"], str(event.pk))
 
 
+def broadcast_event_created(event: Event) -> None:
+    """Live-update ping so a newly-created event shows up on connected calendars.
+
+    Same visibility split as `broadcast_event_comment_update`: a fresh event has
+    no co-hosts/invites/RSVPs yet, so the stakeholder-scoped `broadcast_event_update`
+    would only ping the creator — public/members-only events need the "*" ping to
+    reach everyone already viewing the calendar.
+    """
+    if event.visibility == PageVisibility.INVITE_ONLY:
+        broadcast_event_update(event)
+        return
+    _ping_event_update(["*"], str(event.pk))
+
+
 def broadcast_cohost_change(
     event: Event,
     *,
