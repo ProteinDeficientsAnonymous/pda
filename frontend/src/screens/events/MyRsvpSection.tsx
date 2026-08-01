@@ -19,6 +19,7 @@ import { RsvpBox } from './RsvpBox';
 interface Props {
   event: Event;
   token?: string;
+  locked?: boolean;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -33,12 +34,18 @@ const STATUS_BADGE_LABELS: Record<RsvpInputStatus, string> = {
   [RsvpStatus.CantGo]: "i can't go",
 };
 
+const PAST_STATUS_LABELS: Record<RsvpInputStatus, string> = {
+  [RsvpStatus.Attending]: 'you went',
+  [RsvpStatus.Maybe]: 'you were a maybe',
+  [RsvpStatus.CantGo]: "you couldn't go",
+};
+
 interface BoxState {
   mode: 'create' | 'edit';
   initialStatus: RsvpInputStatus;
 }
 
-export function RsvpSection({ event, token }: Props) {
+export function MyRsvpSection({ event, token, locked = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -123,13 +130,14 @@ export function RsvpSection({ event, token }: Props) {
 
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
-      {onWaitlist ? (
+      {!locked && onWaitlist ? (
         <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
       ) : (
         <RsvpControls
           myInputStatus={myInputStatus}
           atCapacity={atCapacity}
           busy={busy}
+          locked={locked}
           onOpenCreate={(status) => {
             setBox({ mode: 'create', initialStatus: status });
           }}
@@ -169,29 +177,44 @@ export function RsvpSection({ event, token }: Props) {
   );
 }
 
+const RSVP_PILL_CLASSES =
+  'mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium bg-brand-600 text-brand-on';
+
 function RsvpControls({
   myInputStatus,
   atCapacity,
   busy,
+  locked,
   onOpenCreate,
   onOpenEdit,
 }: {
   myInputStatus: RsvpInputStatus | null;
   atCapacity: boolean;
   busy: boolean;
+  locked?: boolean;
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
-  if (myInputStatus) {
+  if (locked) {
+    if (!myInputStatus) return null;
+    return (
+      <span className={RSVP_PILL_CLASSES}>
+        <span role="status">{PAST_STATUS_LABELS[myInputStatus]}</span>
+      </span>
+    );
+  }
+
+  if (!myInputStatus) {
     return (
       <button
         type="button"
-        onClick={onOpenEdit}
+        onClick={() => {
+          onOpenCreate(RsvpStatus.Attending);
+        }}
         disabled={busy}
-        aria-label={`${STATUS_LINES[myInputStatus]} — edit rsvp`}
-        className="bg-brand-600 text-brand-on hover:bg-brand-700 mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium transition-colors disabled:opacity-60"
+        className={`${RSVP_PILL_CLASSES} hover:bg-brand-700 transition-colors disabled:opacity-60`}
       >
-        <span role="status">{STATUS_BADGE_LABELS[myInputStatus]}</span>
+        {atCapacity ? 'join the waitlist' : 'rsvp'}
       </button>
     );
   }
@@ -199,13 +222,12 @@ function RsvpControls({
   return (
     <button
       type="button"
-      onClick={() => {
-        onOpenCreate(RsvpStatus.Attending);
-      }}
+      onClick={onOpenEdit}
       disabled={busy}
-      className="bg-brand-600 text-brand-on hover:bg-brand-700 mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium transition-colors disabled:opacity-60"
+      aria-label={`${STATUS_LINES[myInputStatus]} — edit rsvp`}
+      className={`${RSVP_PILL_CLASSES} hover:bg-brand-700 transition-colors disabled:opacity-60`}
     >
-      {atCapacity ? 'join the waitlist' : 'rsvp'}
+      <span role="status">{STATUS_BADGE_LABELS[myInputStatus]}</span>
     </button>
   );
 }

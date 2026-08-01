@@ -19,8 +19,8 @@ vi.mock('@/api/events', () => ({
 }));
 
 // Stub sub-components that make their own mutations/queries
-vi.mock('./RsvpSection', () => ({
-  RsvpSection: () => <div data-testid="rsvp-section" />,
+vi.mock('./MyRsvpSection', () => ({
+  MyRsvpSection: () => <div data-testid="rsvp-section" />,
 }));
 
 vi.mock('./InviteDialog', () => ({

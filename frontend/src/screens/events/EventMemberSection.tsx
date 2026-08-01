@@ -28,7 +28,7 @@ export function EventMemberSection({ event, token }: Props) {
   const user = useAuthStore((s) => s.user);
   if (!user && !token) return null;
 
-  const { isCoHost, isHostOrEventManager, canEdit, canInvite, showRsvp, showStandaloneInvited } =
+  const { isHostOrEventManager, canEdit, canInvite, showRsvp, showStandaloneInvited } =
     eventMemberSectionFlags(event, user);
 
   return (
@@ -48,10 +48,10 @@ export function EventMemberSection({ event, token }: Props) {
         <Card label="who's going">
           <CapacityNote event={event} />
           <RsvpGuestList event={event} canSeeInvited={isHostOrEventManager} />
-          {canInvite || isCoHost ? (
+          {canInvite || isHostOrEventManager ? (
             <div className="mt-4 flex flex-col items-stretch gap-2">
               {canInvite ? <InviteSection event={event} /> : null}
-              {isCoHost ? (
+              {isHostOrEventManager ? (
                 <div className="flex flex-wrap justify-end gap-2">
                   <EmailBlastButton event={event} />
                   <GroupTextButton event={event} />

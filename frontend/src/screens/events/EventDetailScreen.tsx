@@ -18,9 +18,9 @@ import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { eventMemberSectionFlags } from './eventMemberFlags';
 import { EventMemberSection } from './EventMemberSection';
 import { EventTagChips } from './EventTagChips';
+import { MyRsvpSection } from './MyRsvpSection';
 import { EventPollCard } from './poll/EventPollCard';
 import { PublicRsvpSection } from './PublicRsvpSection';
-import { RsvpSection } from './RsvpSection';
 
 function photoSrc(url: string, updatedAt: string | null): string {
   if (!updatedAt) return url;
@@ -255,10 +255,16 @@ function MemberRsvpControl({
   const user = useAuthStore((s) => s.user);
   if (!isAuthed && !hasTokenUnlock) return null;
 
-  const { showRsvp } = eventMemberSectionFlags(event, isAuthed ? user : null);
+  const { showRsvp, rsvpLocked } = eventMemberSectionFlags(event, isAuthed ? user : null);
   if (!showRsvp) return null;
 
-  return <RsvpSection event={event} {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})} />;
+  return (
+    <MyRsvpSection
+      event={event}
+      locked={rsvpLocked}
+      {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})}
+    />
+  );
 }
 
 function AnonSection({ event }: { event: Event }) {

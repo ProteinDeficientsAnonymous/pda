@@ -5,10 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { InvitePermission, RsvpStatus } from '@/models/event';
+import { EventStatus, InvitePermission, RsvpStatus } from '@/models/event';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
-import { makeEvent } from '@/test/fixtures';
+import { makeEvent, makeGuest } from '@/test/fixtures';
 
 const rescindMutate = vi.fn();
 const removeCohostMutate = vi.fn();
@@ -295,6 +295,78 @@ describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
     const rsvpCard = screen.getByRole('heading', { name: "who's going" }).closest('section');
     expect(rsvpCard).not.toBeNull();
     expect(within(rsvpCard!).getByRole('button', { name: /invite members/i })).toBeInTheDocument();
+  });
+});
+
+describe('EventMemberSection — host actions gating', () => {
+  const RSVP_ON: Event = {
+    ...BASE_EVENT,
+    rsvpEnabled: true,
+    guests: [makeGuest({ userId: 'user-guest', name: 'Guest' })],
+  };
+
+  it('shows email blast and group text to a co-host', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection(RSVP_ON);
+    expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
+  });
+
+  it('shows email blast and group text to a manage_events holder', () => {
+    useAuthStore.setState({ status: 'authed', user: MANAGER, accessToken: 'tok' });
+    renderSection(RSVP_ON);
+    expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
+  });
+
+  it('keeps them on a past event — hosts still follow up with attendees', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, isPast: true });
+    expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
+  });
+
+  it('keeps them on a cancelled event', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, status: EventStatus.Cancelled });
+    expect(screen.getByRole('button', { name: /email blast/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /group text/i })).toBeInTheDocument();
+  });
+
+  it('hides them from a plain member', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection(RSVP_ON);
+    expect(screen.queryByRole('button', { name: /email blast/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /group text/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("EventMemberSection — who's going stays visible once closed", () => {
+  const RSVP_ON: Event = {
+    ...BASE_EVENT,
+    rsvpEnabled: true,
+    guests: [makeGuest({ userId: 'user-guest', name: 'Guest' })],
+  };
+
+  it('shows the guest list on a past event', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, isPast: true });
+    expect(screen.getByRole('heading', { name: "who's going" })).toBeInTheDocument();
+    expect(screen.getByTestId('guest-list')).toBeInTheDocument();
+  });
+
+  it('shows the guest list on a cancelled event', () => {
+    useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, status: EventStatus.Cancelled });
+    expect(screen.getByRole('heading', { name: "who's going" })).toBeInTheDocument();
+    expect(screen.getByTestId('guest-list')).toBeInTheDocument();
+  });
+
+  it('falls back to the standalone invited card only when rsvp is off', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...RSVP_ON, rsvpEnabled: false, invitedCount: 3 });
+    expect(screen.queryByRole('heading', { name: "who's going" })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'invited' })).toBeInTheDocument();
   });
 });
 
