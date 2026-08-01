@@ -149,6 +149,9 @@ migrate:
 createsuperuser:
 	cd backend && uv run python manage.py createsuperuser
 
+shell:
+	cd backend && PYTHONSTARTUP=shell_startup.py uv run python manage.py shell
+
 seed:
 	cd backend && uv run python manage.py seed
 
