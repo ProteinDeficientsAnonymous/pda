@@ -37,7 +37,7 @@ export function AddCoHostDialog({ event, open, onClose }: Props) {
         label="search members"
         selected={added}
         onChange={setAdded}
-        excludeIds={[...(event.createdById ? [event.createdById] : []), ...event.coHostIds]}
+        excludeIds={event.coHostIds}
       />
       {error ? (
         <p role="alert" className="text-destructive mt-2 text-sm">

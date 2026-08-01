@@ -27,6 +27,7 @@ import EventCheckInReportScreen from './EventCheckInReportScreen';
 const BASE_EVENT = makeEvent({
   title: 'Spring Potluck',
   createdById: 'user-creator',
+  coHostIds: ['user-creator'],
   isPast: true,
   guests: [],
 });

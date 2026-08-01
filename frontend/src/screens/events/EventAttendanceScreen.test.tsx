@@ -23,6 +23,7 @@ import EventAttendanceScreen from './EventAttendanceScreen';
 const BASE_EVENT = makeEvent({
   title: 'Spring Potluck',
   createdById: 'user-creator',
+  coHostIds: ['user-creator'],
   guests: [],
 });
 
@@ -70,7 +71,12 @@ describe('EventAttendanceScreen', () => {
 
   it('blocks even the creator when rsvp is disabled', () => {
     vi.mocked(useEvent).mockReturnValue({
-      data: makeEvent({ createdById: 'user-creator', guests: [], rsvpEnabled: false }),
+      data: makeEvent({
+        createdById: 'user-creator',
+        coHostIds: ['user-creator'],
+        guests: [],
+        rsvpEnabled: false,
+      }),
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);

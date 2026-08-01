@@ -137,7 +137,6 @@ export function EventPollCard({ event, className }: Props) {
 
 function canManagePoll(event: Event, user: (UserLike & { id: string }) | null): boolean {
   if (!user) return false;
-  if (event.createdById === user.id) return true;
   if (event.coHostIds.includes(user.id)) return true;
   return hasPermission(user, Permission.ManageEvents);
 }

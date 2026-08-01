@@ -4,8 +4,9 @@ import { hasPermission, Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
 export function eventMemberSectionFlags(event: Event, user: User | null) {
-  const isCoHost =
-    user !== null && (user.id === event.createdById || event.coHostIds.includes(user.id));
+  // co_hosts is the sole source of truth — created_by is a permanent audit
+  // field and stays set after the creator steps down.
+  const isCoHost = user !== null && event.coHostIds.includes(user.id);
   const canManageEvents = user !== null && hasPermission(user, Permission.ManageEvents);
   const canSeeInvited = isCoHost || canManageEvents;
   const isCancelled = event.status === EventStatus.Cancelled;

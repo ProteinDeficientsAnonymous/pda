@@ -18,6 +18,7 @@ import EventManageRsvpsScreen from './EventManageRsvpsScreen';
 const BASE_EVENT = makeEvent({
   title: 'Spring Potluck',
   createdById: 'user-creator',
+  coHostIds: ['user-creator'],
   guests: [],
 });
 
@@ -56,7 +57,12 @@ describe('EventManageRsvpsScreen', () => {
 
   it('shows a forbidden notice for a past event', () => {
     vi.mocked(useEvent).mockReturnValue({
-      data: makeEvent({ createdById: 'user-creator', guests: [], isPast: true }),
+      data: makeEvent({
+        createdById: 'user-creator',
+        coHostIds: ['user-creator'],
+        guests: [],
+        isPast: true,
+      }),
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);
@@ -68,7 +74,12 @@ describe('EventManageRsvpsScreen', () => {
 
   it('shows a forbidden notice when rsvps are disabled', () => {
     vi.mocked(useEvent).mockReturnValue({
-      data: makeEvent({ createdById: 'user-creator', guests: [], rsvpEnabled: false }),
+      data: makeEvent({
+        createdById: 'user-creator',
+        coHostIds: ['user-creator'],
+        guests: [],
+        rsvpEnabled: false,
+      }),
       isPending: false,
       isError: false,
     } as ReturnType<typeof useEvent>);

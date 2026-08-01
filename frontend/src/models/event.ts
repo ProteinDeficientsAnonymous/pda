@@ -165,7 +165,7 @@ export interface PendingCohostInvite {
 }
 
 export function isHosting(event: Event, userId: string): boolean {
-  return event.createdById === userId || event.coHostIds.includes(userId);
+  return event.coHostIds.includes(userId);
 }
 
 export function canManageEvent(event: Event, user: User | null): boolean {

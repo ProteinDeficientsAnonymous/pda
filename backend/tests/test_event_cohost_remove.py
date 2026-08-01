@@ -195,6 +195,24 @@ class TestRemoveAcceptedCoHost:
         event.refresh_from_db()
         assert event.created_by_id == creator.pk  # audit field untouched
 
+    def test_stepped_down_creator_can_be_reinvited(
+        self, api_client, creator, cohost, event_with_accepted_cohost
+    ):
+        event, _invite = event_with_accepted_cohost
+        api_client.delete(
+            f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
+            **_auth_headers(creator),
+        )
+        assert not event.co_hosts.filter(pk=creator.pk).exists()
+        response = api_client.patch(
+            f"/api/community/events/{event.id}/",
+            data=json.dumps({"co_host_ids": [str(creator.pk), str(cohost.pk)]}),
+            content_type="application/json",
+            **_auth_headers(cohost),
+        )
+        assert response.status_code == 200
+        assert event.cohost_invites.filter(user=creator, status=CoHostInviteStatus.PENDING).exists()
+
 
 @pytest.mark.django_db
 class TestStepDown:

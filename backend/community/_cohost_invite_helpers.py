@@ -136,10 +136,12 @@ def diff_cohost_invites(
 
 
 def _next_ids_excluding_creator(event: Event, co_host_ids: Iterable[str]) -> set[str]:
-    """Normalize requested ids and drop the creator (they're already a host)."""
+    """Normalize requested ids, dropping the creator only while they're still a
+    host — once they step down they're re-invitable like anyone else."""
     next_ids = {str(uid) for uid in co_host_ids}
-    if event.created_by_id is not None:
-        next_ids.discard(str(event.created_by_id))
+    creator_id = event.created_by_id
+    if creator_id is not None and event.co_hosts.filter(pk=creator_id).exists():
+        next_ids.discard(str(creator_id))
     return next_ids
 
 

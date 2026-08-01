@@ -64,7 +64,7 @@ const BASE_EVENT: Event = {
   createdById: 'creator',
   createdByName: 'Creator',
   createdByPhotoUrl: '',
-  coHostIds: [],
+  coHostIds: ['creator'],
   coHostNames: [],
   coHostPhotoUrls: [],
   guests: [

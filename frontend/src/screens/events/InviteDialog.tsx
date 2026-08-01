@@ -36,11 +36,7 @@ export function InviteDialog({ event, open, onClose }: Props) {
         label="search members"
         selected={added}
         onChange={setAdded}
-        excludeIds={[
-          ...event.invitedUserIds,
-          ...(event.createdById ? [event.createdById] : []),
-          ...event.coHostIds,
-        ]}
+        excludeIds={[...event.invitedUserIds, ...event.coHostIds]}
       />
       {error ? (
         <p role="alert" className="text-destructive mt-2 text-sm">
