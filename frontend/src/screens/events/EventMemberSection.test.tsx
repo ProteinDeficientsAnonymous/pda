@@ -16,7 +16,7 @@ import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 
 const rescindMutate = vi.fn();
-const stepDownMutate = vi.fn();
+const removeCohostMutate = vi.fn();
 const updatePublicRsvpMutate = vi.fn();
 const cancelPublicRsvpMutate = vi.fn();
 
@@ -24,7 +24,7 @@ vi.mock('@/api/cohostInvites', () => ({
   useAcceptCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useDeclineCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useRescindCohostInvite: () => ({ mutate: rescindMutate, isPending: false }),
-  useStepDownAsHost: () => ({ mutate: stepDownMutate, isPending: false }),
+  useRemoveCohost: () => ({ mutate: removeCohostMutate, isPending: false }),
 }));
 
 vi.mock('@/api/publicRsvp', () => ({
@@ -161,14 +161,14 @@ function renderSection(event: Event, token?: string) {
 
 beforeEach(() => {
   rescindMutate.mockReset();
-  stepDownMutate.mockReset();
+  removeCohostMutate.mockReset();
 });
 
 const ACCEPTED_COHOST_EVENT: Event = {
   ...BASE_EVENT,
-  coHostIds: ['user-bob'],
-  coHostNames: ['Bob'],
-  coHostPhotoUrls: [''],
+  coHostIds: ['user-creator', 'user-bob'],
+  coHostNames: ['Alice', 'Bob'],
+  coHostPhotoUrls: ['', ''],
 };
 
 const COHOST_BOB: User = { ...CREATOR, id: 'user-bob', firstName: 'Bob', fullName: 'Bob' };
@@ -180,11 +180,9 @@ describe('EventMemberSection — accepted host row', () => {
     expect(screen.getByRole('button', { name: /remove bob as co-host/i })).toBeInTheDocument();
   });
 
-  it('renders a step-down × on the creator chip when viewing self and a co-host exists', () => {
+  it('renders a step-down × on the creator chip when viewing self', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
-    // The creator can step down as host now that Bob is a co-host — but there's
-    // no "remove" affordance for a creator, only a self "step down".
     expect(screen.getByRole('button', { name: /step down as host/i })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /remove alice as co-host/i }),
@@ -209,8 +207,8 @@ describe('EventMemberSection — accepted host row', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
     fireEvent.click(screen.getByRole('button', { name: /remove bob as co-host/i }));
-    expect(rescindMutate).toHaveBeenCalledWith(
-      { eventId: 'ev1', inviteId: 'inv-accepted-1' },
+    expect(removeCohostMutate).toHaveBeenCalledWith(
+      { eventId: 'ev1', userId: 'user-bob' },
       expect.any(Object),
     );
   });
@@ -218,21 +216,21 @@ describe('EventMemberSection — accepted host row', () => {
   it('shows step-down × when viewer is the cohost themselves', () => {
     useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
-    expect(screen.getByRole('button', { name: /step down as co-host/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /step down as host/i })).toBeInTheDocument();
   });
 
   it('self-step-down shows confirm dialog and does NOT fire mutation until confirmed', async () => {
     useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
-    fireEvent.click(screen.getByRole('button', { name: /step down as co-host/i }));
+    fireEvent.click(screen.getByRole('button', { name: /step down as host/i }));
     // Dialog appears; mutation has NOT fired yet.
-    expect(rescindMutate).not.toHaveBeenCalled();
+    expect(removeCohostMutate).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /^step down$/i })).toBeInTheDocument();
     // Confirm.
     fireEvent.click(screen.getByRole('button', { name: /^step down$/i }));
     await waitFor(() => {
-      expect(rescindMutate).toHaveBeenCalledWith(
-        { eventId: 'ev1', inviteId: 'inv-accepted-1' },
+      expect(removeCohostMutate).toHaveBeenCalledWith(
+        { eventId: 'ev1', userId: 'user-bob' },
         expect.any(Object),
       );
     });
@@ -241,29 +239,26 @@ describe('EventMemberSection — accepted host row', () => {
   it('cancelling the step-down confirm does NOT fire the mutation', async () => {
     useAuthStore.setState({ status: 'authed', user: COHOST_BOB, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
-    fireEvent.click(screen.getByRole('button', { name: /step down as co-host/i }));
+    fireEvent.click(screen.getByRole('button', { name: /step down as host/i }));
     fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
     // Give the promise chain a tick to resolve before asserting "didn't fire".
     await Promise.resolve();
-    expect(rescindMutate).not.toHaveBeenCalled();
+    expect(removeCohostMutate).not.toHaveBeenCalled();
   });
 
-  it('creator self-step-down shows confirm dialog and fires the step-down mutation', async () => {
+  it('creator self-step-down shows confirm dialog and fires the removal mutation', async () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);
     fireEvent.click(screen.getByRole('button', { name: /step down as host/i }));
-    expect(stepDownMutate).not.toHaveBeenCalled();
+    expect(removeCohostMutate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /^step down$/i }));
     await waitFor(() => {
-      expect(stepDownMutate).toHaveBeenCalledWith({ eventId: 'ev1' }, expect.any(Object));
+      expect(removeCohostMutate).toHaveBeenCalledWith(
+        { eventId: 'ev1', userId: 'user-creator' },
+        expect.any(Object),
+      );
     });
     expect(rescindMutate).not.toHaveBeenCalled();
-  });
-
-  it('does NOT offer creator step-down when no co-host exists', () => {
-    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
-    renderSection(BASE_EVENT);
-    expect(screen.queryByRole('button', { name: /step down as host/i })).not.toBeInTheDocument();
   });
 });
 
