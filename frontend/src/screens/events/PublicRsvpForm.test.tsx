@@ -114,7 +114,7 @@ describe('PublicRsvpForm', () => {
     fillPhoneStep('4155550123');
     await waitFor(() => expect(navigateMock).toHaveBeenCalled());
     expect(navigateMock).toHaveBeenCalledWith('/login', {
-      state: { phone: '+14155550123', redirect: '/events/ev1' },
+      state: { phone: '+14155550123', redirect: '/events/test-event' },
     });
     expect(screen.queryByLabelText('first name')).not.toBeInTheDocument();
   });

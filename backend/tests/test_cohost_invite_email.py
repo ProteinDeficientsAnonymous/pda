@@ -124,5 +124,5 @@ class TestCohostInviteEmail:
         event = Event.objects.get(id=data["id"])
 
         call_kwargs = fake_email_sender.send.call_args.kwargs
-        assert f"/events/{event.pk}" in call_kwargs["text"]
-        assert f"/events/{event.pk}" in call_kwargs["html"]
+        assert f"/events/{event.slug}" in call_kwargs["text"]
+        assert f"/events/{event.slug}" in call_kwargs["html"]

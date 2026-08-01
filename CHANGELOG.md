@@ -1,3 +1,22 @@
+# [0.72.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.8...v0.72.0) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1190 - exclude pending cohost invitees from add-cohost picker ([#1197](https://github.com/ProteinDeficientsAnonymous/pda/issues/1197)) ([85a093b](https://github.com/ProteinDeficientsAnonymous/pda/commit/85a093bd15dacc1ff5325d71cd7e3175deaed1e0))
+
+
+### Features
+
+* 1171 - add human-readable slug urls for events ([#1193](https://github.com/ProteinDeficientsAnonymous/pda/issues/1193)) ([e6ade7c](https://github.com/ProteinDeficientsAnonymous/pda/commit/e6ade7c612cdae09d458b827d1e74c1724c03488))
+
+## [0.71.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.7...v0.71.8) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1187 - stop showing today's ended events in calendar list view ([#1199](https://github.com/ProteinDeficientsAnonymous/pda/issues/1199)) ([c3071ac](https://github.com/ProteinDeficientsAnonymous/pda/commit/c3071ac98e84167936a9715ac1f78dc6a767651b))
+
 ## [0.71.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.6...v0.71.7) (2026-08-01)
 
 

@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 const acceptMutate = vi.fn();
 const declineMutate = vi.fn();
@@ -16,55 +16,17 @@ vi.mock('@/api/cohostInvites', () => ({
 
 import { CohostInviteBanner } from './CohostInviteBanner';
 
-const BASE_EVENT: Event = {
-  id: 'ev1',
+const BASE_EVENT = makeEvent({
+  slug: 'spring-potluck',
   title: 'Spring Potluck',
-  description: '',
   startDatetime: new Date('2099-06-01T18:00:00Z'),
-  endDatetime: null,
-  location: '',
-  latitude: null,
-  longitude: null,
-  whatsappLink: '',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
   rsvpEnabled: false,
-  allowPlusOnes: false,
-  maxAttendees: null,
   attendingCount: 0,
-  waitlistedCount: 0,
-  invitedCount: 0,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
   createdById: 'user-creator',
   createdByName: 'Alice',
-  createdByPhotoUrl: '',
   coHostIds: ['user-creator'],
-  coHostNames: [],
-  coHostPhotoUrls: [],
   guests: [],
-  myRsvp: null,
-  viewerUserId: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
-  invitePermission: InvitePermission.AllMembers,
-  pendingCohostInvites: [],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  photoUpdatedAt: null,
-  tags: [],
-  isPast: false,
-  status: EventStatus.Active,
-};
+});
 
 function renderBanner(event: Event) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

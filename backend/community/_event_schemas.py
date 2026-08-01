@@ -128,6 +128,7 @@ class PendingCoHostInviteOut(BaseModel):
 
 class EventListOut(BaseModel):
     id: str
+    slug: str = ""
     title: str
     description: str
     start_datetime: datetime | None = None
@@ -168,6 +169,7 @@ class EventListOut(BaseModel):
 
 class EventOut(BaseModel):
     id: str
+    slug: str = ""
     title: str
     description: str
     start_datetime: datetime | None = None

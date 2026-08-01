@@ -2750,6 +2750,11 @@ export interface components {
              * @default
              */
             price: string;
+            /**
+             * Slug
+             * @default
+             */
+            slug: string;
             /** Start Datetime */
             start_datetime?: string | null;
             /**
@@ -2938,6 +2943,11 @@ export interface components {
              * @default false
              */
             rsvp_enabled: boolean;
+            /**
+             * Slug
+             * @default
+             */
+            slug: string;
             /** Start Datetime */
             start_datetime?: string | null;
             /**
