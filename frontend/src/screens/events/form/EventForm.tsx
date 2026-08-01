@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { getErrorParams, hasErrorCode } from '@/api/apiErrors';
 import { apiClient } from '@/api/client';
+import { syncEventRsvpQuestions } from '@/api/eventRsvpQuestions';
 import {
   emptyEventFormValues,
   type EventFormValues,
@@ -23,16 +24,32 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
+import {
+  questionsSectionSummary,
+  type RsvpQuestionDraft,
+  rsvpSectionSummary,
+} from '../rsvpQuestions';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
 import { EventFormPhoto } from './EventFormPhoto';
+import { EventFormQuestions } from './EventFormQuestions';
 import { EventFormRsvp } from './EventFormRsvp';
 import { EventFormTags } from './EventFormTags';
 import { validateEventForm } from './validateEventForm';
 
 interface Props {
   existing?: Event;
+}
+
+function mapEventQuestions(existing?: Event): RsvpQuestionDraft[] {
+  return (existing?.rsvpQuestions ?? []).map((q) => ({
+    id: q.id,
+    label: q.label,
+    fieldType: q.fieldType,
+    options: q.options,
+    required: q.required,
+  }));
 }
 
 // Field → section map. Drives which CollapsibleCard opens on validation
@@ -102,6 +119,12 @@ export function EventForm({ existing }: Props) {
   // then POST the poll. If the poll POST fails we still land on the new
   // event's detail page and the host can retry from there.
   const [bufferedPollOptions, setBufferedPollOptions] = useState<Date[] | null>(null);
+  const [rsvpQuestions, setRsvpQuestions] = useState<RsvpQuestionDraft[]>(() =>
+    mapEventQuestions(existing),
+  );
+  const [savedRsvpQuestions, setSavedRsvpQuestions] = useState<RsvpQuestionDraft[]>(() =>
+    mapEventQuestions(existing),
+  );
 
   const create = useCreateEvent();
   const update = useUpdateEvent(existing?.id ?? '');
@@ -176,6 +199,17 @@ export function EventForm({ existing }: Props) {
           if (!ok) return;
           await update.mutateAsync({ ...patchBody, force: true });
         }
+        try {
+          const synced = await syncEventRsvpQuestions(
+            existing.id,
+            rsvpQuestions,
+            savedRsvpQuestions,
+          );
+          setRsvpQuestions(synced);
+          setSavedRsvpQuestions(synced);
+        } catch {
+          toast.error("event saved, but couldn't update questions — try again from edit");
+        }
         if (nextStatus === 'draft') toast.success('saved draft');
         void navigate(eventPath(existing));
         return;
@@ -197,6 +231,13 @@ export function EventForm({ existing }: Props) {
           });
         } catch {
           toast.error("event saved, but couldn't create the poll — try from the event page");
+        }
+      }
+      if (rsvpQuestions.length > 0) {
+        try {
+          await syncEventRsvpQuestions(created.id, rsvpQuestions, []);
+        } catch {
+          toast.error("event saved, but couldn't save questions — add them again from edit");
         }
       }
       if (nextStatus === 'draft') toast.success('saved draft');
@@ -316,11 +357,19 @@ export function EventForm({ existing }: Props) {
 
         <CollapsibleCard
           title="rsvp"
-          summary={values.rsvpEnabled ? 'enabled' : undefined}
+          summary={rsvpSectionSummary(values.rsvpEnabled)}
           error={hasAnyError(errors, RSVP_FIELDS) ? 'needs attention' : undefined}
           forceOpen={hasAnyError(errors, RSVP_FIELDS)}
         >
           <EventFormRsvp values={values} onChange={patch} errors={errors} />
+        </CollapsibleCard>
+
+        <CollapsibleCard title="questions" summary={questionsSectionSummary(rsvpQuestions.length)}>
+          <EventFormQuestions
+            rsvpEnabled={values.rsvpEnabled}
+            questions={rsvpQuestions}
+            onQuestionsChange={setRsvpQuestions}
+          />
         </CollapsibleCard>
 
         <CollapsibleCard

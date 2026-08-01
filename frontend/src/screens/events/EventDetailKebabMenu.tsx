@@ -8,6 +8,7 @@ import { Feature } from '@/models/featureFlags';
 
 import { EmailBlastDialog } from './EmailBlastDialog';
 import { GroupTextDialog } from './GroupTextDialog';
+import { QuestionResponsesDialog } from './QuestionResponsesDialog';
 
 interface Props {
   event: Event;
@@ -20,10 +21,12 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
   const [open, setOpen] = useState(false);
   const [emailBlastOpen, setEmailBlastOpen] = useState(false);
   const [groupTextOpen, setGroupTextOpen] = useState(false);
+  const [responsesOpen, setResponsesOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const reportFlagOn = useFlag(Feature.HostAttendanceReport);
   const showCheckInReport = eventHasEnded && reportFlagOn;
   const showManageRsvps = canManageRsvps && !eventHasEnded;
+  const showQuestionResponses = canManageRsvps && event.rsvpQuestions.length > 0;
   const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
 
   useEffect(() => {
@@ -72,6 +75,16 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
             >
               manage rsvps
             </MenuLink>
+          ) : null}
+          {showQuestionResponses ? (
+            <MenuButton
+              onSelect={() => {
+                setOpen(false);
+                setResponsesOpen(true);
+              }}
+            >
+              question responses
+            </MenuButton>
           ) : null}
           <MenuLink
             to={`/events/${eventId}/attendance`}
@@ -123,6 +136,13 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
         open={groupTextOpen}
         onClose={() => {
           setGroupTextOpen(false);
+        }}
+      />
+      <QuestionResponsesDialog
+        event={event}
+        open={responsesOpen}
+        onClose={() => {
+          setResponsesOpen(false);
         }}
       />
     </div>

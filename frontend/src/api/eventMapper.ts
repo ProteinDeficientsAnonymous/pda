@@ -2,6 +2,8 @@ import type {
   AttendanceStatusValue,
   Event,
   EventGuest,
+  EventRsvpQuestion,
+  EventRsvpQuestionType,
   EventTag,
   PendingCohostInvite,
 } from '@/models/event';
@@ -16,6 +18,7 @@ interface WireGuest {
   has_plus_one?: boolean;
   attendance?: string;
   is_member?: boolean;
+  answers?: Record<string, { label?: string; answer?: string | string[] }>;
 }
 
 export interface WireEvent {
@@ -58,6 +61,8 @@ export interface WireEvent {
 
   guests?: WireGuest[];
   my_rsvp?: string | null;
+  my_rsvp_answers?: Record<string, { label?: string; answer?: string | string[] }>;
+  rsvp_questions?: WireRsvpQuestion[];
   viewer_user_id?: string | null;
   survey_slugs?: string[];
   invited_user_ids?: string[];
@@ -77,6 +82,15 @@ export interface WireEvent {
 
   is_past?: boolean;
   status?: string;
+}
+
+interface WireRsvpQuestion {
+  id: string;
+  label: string;
+  field_type: string;
+  options?: string[];
+  required: boolean;
+  display_order?: number;
 }
 
 interface WireTag {
@@ -105,6 +119,7 @@ function mapGuest(g: WireGuest): EventGuest {
     name: g.name,
     status: g.status,
     phone: g.phone ?? null,
+    answers: mapMyRsvpAnswers(g.answers),
     photoUrl: g.photo_url ?? '',
     hasPlusOne: g.has_plus_one ?? false,
     attendance: mapAttendance(g.attendance),
@@ -124,6 +139,30 @@ function mapPendingCohostInvite(w: WirePendingCohostInvite): PendingCohostInvite
     userPhotoUrl: w.user_photo_url ?? '',
     invitedAt: new Date(w.invited_at),
   };
+}
+
+function mapRsvpQuestion(w: WireRsvpQuestion): EventRsvpQuestion {
+  return {
+    id: w.id,
+    label: w.label,
+    fieldType: w.field_type as EventRsvpQuestionType,
+    options: w.options ?? [],
+    required: w.required,
+  };
+}
+
+function mapMyRsvpAnswers(
+  raw: Record<string, { label?: string; answer?: string | string[] }> | undefined,
+): Event['myRsvpAnswers'] {
+  if (!raw) return {};
+  const out: Event['myRsvpAnswers'] = {};
+  for (const [id, snap] of Object.entries(raw)) {
+    out[id] = {
+      label: snap.label ?? '',
+      answer: snap.answer ?? '',
+    };
+  }
+  return out;
 }
 
 export function mapEvent(e: WireEvent): Event {
@@ -167,6 +206,8 @@ export function mapEvent(e: WireEvent): Event {
 
     guests: (e.guests ?? []).map(mapGuest),
     myRsvp: e.my_rsvp ?? null,
+    myRsvpAnswers: mapMyRsvpAnswers(e.my_rsvp_answers),
+    rsvpQuestions: (e.rsvp_questions ?? []).map(mapRsvpQuestion),
     viewerUserId: e.viewer_user_id ?? null,
     surveySlugs: e.survey_slugs ?? [],
     invitedUserIds: e.invited_user_ids ?? [],

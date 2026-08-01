@@ -1079,6 +1079,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/rsvp-questions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Event Rsvp Question */
+        post: operations["community__event_rsvp_questions_create_event_rsvp_question"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/community/events/{event_id}/rsvp-questions/{question_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Event Rsvp Question */
+        delete: operations["community__event_rsvp_questions_delete_event_rsvp_question"];
+        options?: never;
+        head?: never;
+        /** Update Event Rsvp Question */
+        patch: operations["community__event_rsvp_questions_update_event_rsvp_question"];
+        trace?: never;
+    };
     "/api/community/events/{event_id}/rsvp/": {
         parameters: {
             query?: never;
@@ -3034,6 +3069,13 @@ export interface components {
             /** My Rsvp */
             my_rsvp?: string | null;
             /**
+             * My Rsvp Answers
+             * @default {}
+             */
+            my_rsvp_answers: {
+                [key: string]: unknown;
+            };
+            /**
              * Other Link
              * @default
              */
@@ -3065,6 +3107,11 @@ export interface components {
              * @default false
              */
             rsvp_enabled: boolean;
+            /**
+             * Rsvp Questions
+             * @default []
+             */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionOut"][];
             /**
              * Slug
              * @default
@@ -3254,6 +3301,45 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** EventRsvpQuestionIn */
+        EventRsvpQuestionIn: {
+            field_type: components["schemas"]["EventRsvpQuestionType"];
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionOut */
+        EventRsvpQuestionOut: {
+            /** Display Order */
+            display_order: number;
+            /** Field Type */
+            field_type: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /** Required */
+            required: boolean;
+        };
+        /**
+         * EventRsvpQuestionType
+         * @enum {string}
+         */
+        EventRsvpQuestionType: "free_response" | "select_one" | "select_multiple";
         /** EventStatsOut */
         EventStatsOut: {
             /**
@@ -4087,6 +4173,13 @@ export interface components {
         };
         /** RSVPGuestOut */
         RSVPGuestOut: {
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: unknown;
+            };
             /** @default unknown */
             attendance: components["schemas"]["AttendanceStatus"];
             /** Checked In At */
@@ -4116,6 +4209,13 @@ export interface components {
         };
         /** RSVPIn */
         RSVPIn: {
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: string | string[];
+            };
             /** Comment */
             comment?: string | null;
             /**
@@ -8014,6 +8114,152 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CheckInReportOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_rsvp_questions_create_event_rsvp_question: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRsvpQuestionIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventRsvpQuestionOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_rsvp_questions_delete_event_rsvp_question: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_rsvp_questions_update_event_rsvp_question: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRsvpQuestionIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventRsvpQuestionOut"];
                 };
             };
             /** @description Bad Request */

@@ -20,6 +20,7 @@ from community._event_helpers import (
     load_event_with_stats_prefetch,
     promote_from_waitlist,
 )
+from community._event_rsvp_answers import answers_required_for_status, build_rsvp_answers
 from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._public_rsvp_shared import _email_promoted_non_members
@@ -132,7 +133,11 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
 
 
 def _apply_rsvp_in_transaction(
-    event_id, user, status: str, has_plus_one: bool
+    event_id,
+    user,
+    status: str,
+    has_plus_one: bool,
+    answers: dict[str, str | list[str]] | None = None,
 ) -> tuple[str, list[str], bool]:
     """Execute RSVP upsert inside a locked transaction.
 
@@ -147,7 +152,7 @@ def _apply_rsvp_in_transaction(
     # is locked under select_for_update.
     event = (
         Event.objects.select_for_update()
-        .prefetch_related("co_hosts", "invited_users")
+        .prefetch_related("co_hosts", "invited_users", "rsvp_questions")
         .get(id=event_id)
     )
 
@@ -160,10 +165,18 @@ def _apply_rsvp_in_transaction(
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
 
+    questions = list(event.rsvp_questions.all())
+    require_answers = answers_required_for_status(final_status)
+    if require_answers:
+        answers_snapshot = build_rsvp_answers(questions, answers, require_answers=True)
+    else:
+        answers_snapshot = dict(existing.answers or {}) if existing is not None else {}
+
     if (
         existing is not None
         and existing.status == final_status
         and existing.has_plus_one == final_plus_one
+        and dict(existing.answers or {}) == answers_snapshot
     ):
         return final_status, [], False
 
@@ -174,6 +187,7 @@ def _apply_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
+            "answers": answers_snapshot,
         },
     )
 
@@ -201,7 +215,11 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
 
     with transaction.atomic():
         final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
-            event_id, request.auth, payload.status, payload.has_plus_one
+            event_id,
+            request.auth,
+            payload.status,
+            payload.has_plus_one,
+            answers=payload.answers,
         )
 
     _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)

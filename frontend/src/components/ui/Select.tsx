@@ -62,7 +62,7 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
         </svg>
       </div>
       {error ? (
-        <p id={`${inputId}-error`} className="text-destructive text-xs">
+        <p id={`${inputId}-error`} role="alert" className="text-destructive text-xs">
           {error}
         </p>
       ) : null}

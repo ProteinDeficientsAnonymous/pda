@@ -55,7 +55,7 @@ describe('EventManageRsvpsScreen', () => {
     expect(screen.getByText(/only the host or a co-host/i)).toBeInTheDocument();
   });
 
-  it('shows a forbidden notice for a past event', () => {
+  it('shows a forbidden notice for a past event with no questions', () => {
     vi.mocked(useEvent).mockReturnValue({
       data: makeEvent({
         createdById: 'user-creator',
@@ -70,6 +70,33 @@ describe('EventManageRsvpsScreen', () => {
     renderScreen();
 
     expect(screen.getByText(/event has already happened/i)).toBeInTheDocument();
+  });
+
+  it('lets a host review question responses on a past event', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: makeEvent({
+        createdById: 'user-creator',
+        guests: [],
+        isPast: true,
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'free_response',
+            options: [],
+            required: false,
+          },
+        ],
+      }),
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByText(/guest edits are closed/i)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /question responses/i })).toBeInTheDocument();
   });
 
   it('shows a forbidden notice when rsvps are disabled', () => {

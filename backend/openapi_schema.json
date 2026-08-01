@@ -2132,6 +2132,12 @@
             ],
             "title": "My Rsvp"
           },
+          "my_rsvp_answers": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "My Rsvp Answers",
+            "type": "object"
+          },
           "other_link": {
             "default": "",
             "title": "Other Link",
@@ -2175,6 +2181,14 @@
             "default": false,
             "title": "Rsvp Enabled",
             "type": "boolean"
+          },
+          "rsvp_questions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionOut"
+            },
+            "title": "Rsvp Questions",
+            "type": "array"
           },
           "slug": {
             "default": "",
@@ -2771,6 +2785,87 @@
         ],
         "title": "EventPollVoteIn",
         "type": "object"
+      },
+      "EventRsvpQuestionIn": {
+        "properties": {
+          "field_type": {
+            "$ref": "#/components/schemas/EventRsvpQuestionType"
+          },
+          "label": {
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "field_type"
+        ],
+        "title": "EventRsvpQuestionIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionOut": {
+        "properties": {
+          "display_order": {
+            "title": "Display Order",
+            "type": "integer"
+          },
+          "field_type": {
+            "title": "Field Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "field_type",
+          "required",
+          "display_order"
+        ],
+        "title": "EventRsvpQuestionOut",
+        "type": "object"
+      },
+      "EventRsvpQuestionType": {
+        "enum": [
+          "free_response",
+          "select_one",
+          "select_multiple"
+        ],
+        "title": "EventRsvpQuestionType",
+        "type": "string"
       },
       "EventStatsOut": {
         "properties": {
@@ -4621,6 +4716,12 @@
       },
       "RSVPGuestOut": {
         "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Answers",
+            "type": "object"
+          },
           "attendance": {
             "allOf": [
               {
@@ -4689,6 +4790,24 @@
       },
       "RSVPIn": {
         "properties": {
+          "answers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ]
+            },
+            "default": {},
+            "title": "Answers",
+            "type": "object"
+          },
           "comment": {
             "anyOf": [
               {
@@ -10765,6 +10884,231 @@
           }
         ],
         "summary": "Get Check In Report",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/rsvp-questions/": {
+      "post": {
+        "operationId": "community__event_rsvp_questions_create_event_rsvp_question",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventRsvpQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRsvpQuestionOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Event Rsvp Question",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/rsvp-questions/{question_id}/": {
+      "delete": {
+        "operationId": "community__event_rsvp_questions_delete_event_rsvp_question",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Event Rsvp Question",
+        "tags": [
+          "community"
+        ]
+      },
+      "patch": {
+        "operationId": "community__event_rsvp_questions_update_event_rsvp_question",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Question Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventRsvpQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRsvpQuestionOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Update Event Rsvp Question",
         "tags": [
           "community"
         ]

@@ -36,7 +36,7 @@ endif
 AGENT_XDIST_N = $${PYTEST_XDIST_AUTO_NUM_WORKERS:-3}
 
 .PHONY: help install run test test-since lint lint-check format typecheck lint-file typecheck-file check migrate \
-        createsuperuser seed db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
+        createsuperuser seed seed-users db-start db-stop dev-db-init dev-db-ensure dev-db-reset run-sqlite dev-sqlite dev-pg-db-init dev-pg-db-ensure dev-pg-db-reset run-pg dev-pg ci backend-ci frontend-ci agent-ci agent-backend-ci agent-frontend-ci dev complexity \
         frontend-install frontend-run frontend-build frontend-lint \
         frontend-format frontend-format-check frontend-test frontend-typecheck frontend-types \
         dump-codes generate-codes check-codes dump-openapi frontend-types-check \
@@ -56,17 +56,18 @@ help:
 	@echo "  make migrate          makemigrations + migrate"
 	@echo "  make createsuperuser  Create Django admin user"
 	@echo "  make seed             Seed database with sample data"
+	@echo "  make seed-users       List seed login phones (password: testpass123)"
 	@echo "  make complexity       Run Python cognitive complexity check"
 	@echo "  make db-start         Start local PostgreSQL (Docker)"
 	@echo "  make db-stop          Stop local PostgreSQL (Docker)"
 	@echo "  make dev-db-init      Migrate + seed a per-worktree SQLite dev.db (no Docker)"
 	@echo "  make dev-db-reset     Delete and re-init the SQLite dev.db"
 	@echo "  make run-sqlite       Run Django against SQLite dev.db (auto-migrates + seeds)"
-	@echo "  make dev-sqlite       Run Django (SQLite) + Vite concurrently (no Docker)"
+	@echo "  make dev-sqlite       ★ everyday local app: Django (SQLite) + Vite (no Docker)"
 	@echo "  make dev-pg-db-init   Create per-worktree Postgres DB + migrate + seed"
 	@echo "  make dev-pg-db-reset  Drop and re-init the per-worktree Postgres DB"
 	@echo "  make run-pg           Run Django against per-worktree Postgres (auto-migrates + seeds)"
-	@echo "  make dev-pg           Run Django (Postgres) + Vite with per-worktree DB isolation"
+	@echo "  make dev-pg           Postgres + Vite — only when you need live SSE (pg_notify)"
 	@echo ""
 	@echo "Frontend commands:"
 	@echo "  make frontend-install   pnpm install (frontend)"
@@ -84,7 +85,7 @@ help:
 	@echo "  make check-codes          Fail if any generated artifact is stale (CI)"
 	@echo ""
 	@echo "Workflow commands:"
-	@echo "  make dev              Run Django + Vite concurrently (default)"
+	@echo "  make dev              Django + Vite using DATABASE_URL from .env (shared Postgres)"
 	@echo "  make ci               Run all pre-commit checks (backend-ci + frontend-ci)"
 	@echo "  make backend-ci       Backend-only pre-commit checks"
 	@echo "  make frontend-ci      Frontend-only pre-commit checks"
@@ -92,6 +93,9 @@ help:
 	@echo "  make agent-backend-ci   agent-ci backend portion only"
 	@echo "  make agent-frontend-ci  agent-ci frontend portion only"
 	@echo "  make agent-test-since Quiet test-since (same selection rules)"
+	@echo ""
+	@echo "Local testing tip: prefer make dev-sqlite. Switching between dev / dev-sqlite /"
+	@echo "dev-pg changes databases — log out and back in (seed: +17025550001 / testpass123)."
 
 # Backend + Frontend
 install:
@@ -154,6 +158,9 @@ shell:
 
 seed:
 	cd backend && uv run python manage.py seed
+
+seed-users:
+	cd backend && uv run python manage.py seed --list
 
 # Database
 db-start:

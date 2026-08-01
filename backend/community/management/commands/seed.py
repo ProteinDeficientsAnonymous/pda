@@ -40,7 +40,17 @@ def _seed_singleton(model_cls, seed_data: dict, fields: tuple[str, ...], cmd: "C
 class Command(BaseCommand):
     help = "Seed the database with sample users, events, and join requests"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--list",
+            action="store_true",
+            help="List seed user credentials and exit (does not write to the database)",
+        )
+
     def handle(self, *args, **options):
+        if options["list"]:
+            self._print_credentials()
+            return
         admin_user = self._seed_users()
         self._seed_non_members()
         questions = self._seed_join_form_questions()
@@ -223,6 +233,10 @@ class Command(BaseCommand):
         self.stdout.write(f"  Join requests: {JoinRequest.objects.count()}")
         self.stdout.write(f"  Join form questions: {JoinFormQuestion.objects.count()}")
         self.stdout.write("")
-        self.stdout.write("Credentials (all seed users):")
+        self._print_credentials()
+
+    def _print_credentials(self) -> None:
+        self.stdout.write(f"Seed users (password for all: {PASSWORD}):")
         for data in SEED_USERS:
-            self.stdout.write(f"  {data.full_name}: {data.phone_number} / {PASSWORD}")
+            role = "admin" if data.is_superuser else "member"
+            self.stdout.write(f"  {data.full_name} ({role}): {data.phone_number}")

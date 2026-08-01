@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 import phonenumbers
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from community._event_rsvp_question_schemas import EventRsvpQuestionOut
 from community._field_limits import FieldLimit
 from community._shared import require_url_path, validate_whatsapp_url
 from community._validation import Code, raise_validation
@@ -116,6 +117,8 @@ class RSVPGuestOut(BaseModel):
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     checked_in_at: datetime | None = None
     is_member: bool = True
+    # Host/co-host/manage-events only — empty for other viewers.
+    answers: dict = {}
 
 
 class PendingCoHostInviteOut(BaseModel):
@@ -193,6 +196,7 @@ class EventOut(BaseModel):
     co_host_photo_urls: list[str] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
+    my_rsvp_answers: dict = {}
     # Same gating as my_rsvp (both derive from the resolved viewer in
     # _event_out) — lets a token-holding, not-logged-in viewer identify their
     # own entry in `guests` without a real auth session to key off of.
@@ -220,6 +224,7 @@ class EventOut(BaseModel):
     pending_cohost_invites: list[PendingCoHostInviteOut] = []
     my_pending_cohost_invite_id: str | None = None
     tags: list[TagOut] = []
+    rsvp_questions: list[EventRsvpQuestionOut] = []
 
 
 class RSVPIn(BaseModel):
@@ -228,6 +233,8 @@ class RSVPIn(BaseModel):
     # Not persisted on the RSVP — a non-empty value is a one-time post: a
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    # question_id → free text or selected option(s)
+    answers: dict[str, str | list[str]] = {}
 
 
 class HostRSVPIn(BaseModel):

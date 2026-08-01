@@ -14,6 +14,10 @@ vi.mock('./GroupTextDialog', () => ({
   GroupTextDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="group-text-dialog" /> : null,
 }));
+vi.mock('./QuestionResponsesDialog', () => ({
+  QuestionResponsesDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="question-responses-dialog" /> : null,
+}));
 
 import { useFlag } from '@/api/featureFlags';
 import type { Event } from '@/models/event';
@@ -94,6 +98,54 @@ describe('EventDetailKebabMenu', () => {
     await openMenu();
 
     expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+  });
+
+  it('shows "question responses" below manage rsvps when the event has questions', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: false,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'free_response',
+            options: [],
+            required: false,
+          },
+        ],
+      },
+    });
+    await openMenu();
+
+    expect(screen.getByRole('menuitem', { name: /manage rsvps/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('menuitem', { name: /question responses/i }));
+    expect(screen.getByTestId('question-responses-dialog')).toBeInTheDocument();
+  });
+
+  it('shows "question responses" for a past event that has questions', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: true,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'free_response',
+            options: [],
+            required: false,
+          },
+        ],
+      },
+    });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('menuitem', { name: /question responses/i }));
+    expect(screen.getByTestId('question-responses-dialog')).toBeInTheDocument();
   });
 
   it('hides "manage rsvps" when the viewer cannot manage rsvps', async () => {

@@ -19,6 +19,7 @@ interface SetRsvpArgs {
   // Not persisted server-side — a non-empty comment is posted once, as a
   // public EventComment or a host-only decline notification.
   comment?: string;
+  answers?: Record<string, string | string[]>;
 }
 
 function updateCaches(qc: ReturnType<typeof useQueryClient>, event: Event, isAuthed: boolean) {
@@ -35,10 +36,17 @@ export function useSetRsvp() {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
-    mutationFn: async ({ eventId, status, hasPlusOne = false, comment }: SetRsvpArgs) => {
+    mutationFn: async ({
+      eventId,
+      status,
+      hasPlusOne = false,
+      comment,
+      answers = {},
+    }: SetRsvpArgs) => {
       const { data } = await apiClient.post<WireEvent>(`/api/community/events/${eventId}/rsvp/`, {
         status,
         has_plus_one: hasPlusOne,
+        answers,
         ...(comment === undefined ? {} : { comment }),
       });
       return mapEvent(data);

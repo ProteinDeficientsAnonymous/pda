@@ -27,9 +27,6 @@ export default function EventManageRsvpsScreen() {
       <ForbiddenNotice eventId={event.id} message="only the host or a co-host can manage rsvps" />
     );
   }
-  if (event.isPast) {
-    return <ForbiddenNotice eventId={event.id} message="this event has already happened" />;
-  }
   if (!event.rsvpEnabled) {
     return (
       <ForbiddenNotice
@@ -38,13 +35,21 @@ export default function EventManageRsvpsScreen() {
       />
     );
   }
+  // Past events stay open so hosts can review question responses; guest
+  // editing is disabled in the panel.
+  if (event.isPast && event.rsvpQuestions.length === 0) {
+    return <ForbiddenNotice eventId={event.id} message="this event has already happened" />;
+  }
 
   return (
     <ContentContainer>
       <BackLink eventId={event.id} />
       <h1 className="mb-1 text-2xl font-medium tracking-tight">manage rsvps</h1>
       <p className="text-foreground-secondary mb-6 text-sm">{event.title}</p>
-      <EventManageRsvpsPanel event={event} />
+      {event.isPast ? (
+        <p className="text-muted mb-4 text-sm">this event is over — guest edits are closed</p>
+      ) : null}
+      <EventManageRsvpsPanel event={event} readOnly={event.isPast} />
     </ContentContainer>
   );
 }

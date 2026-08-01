@@ -287,7 +287,7 @@ def get_event(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .annotate(
                 comment_count=Count(
                     "comments",
@@ -416,7 +416,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .get(id=event_id)
         )
     except Event.DoesNotExist:

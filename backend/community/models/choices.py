@@ -49,6 +49,12 @@ class JoinFormQuestionType(models.TextChoices):
     SELECT = "select", "Select"
 
 
+class EventRsvpQuestionType(models.TextChoices):
+    FREE_RESPONSE = "free_response", "Free response"
+    SELECT_ONE = "select_one", "Select one"
+    SELECT_MULTIPLE = "select_multiple", "Select multiple"
+
+
 class SurveyVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"

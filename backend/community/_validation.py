@@ -29,6 +29,10 @@ class Code:
         RSVP_NOT_FOUND = "event.rsvp_not_found"
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
+        RSVP_QUESTION_NOT_FOUND = "event.rsvp_question_not_found"
+        RSVP_QUESTION_OPTIONS_REQUIRED = "event.rsvp_question_options_required"
+        RSVP_ANSWER_REQUIRED = "event.rsvp_answer_required"  # params: { label: str }
+        RSVP_ANSWER_INVALID_OPTION = "event.rsvp_answer_invalid_option"  # params: { label: str }
         ATTENDANCE_OPENS_LATER = "event.attendance_opens_later"
         ATTENDANCE_ONLY_FOR_GOING_RSVPS = "event.attendance_only_for_going_rsvps"
         PERM_DENIED = "event.perm_denied"  # params: { action?: str }

@@ -75,6 +75,16 @@ export interface EventTag {
   slug: string;
 }
 
+export type EventRsvpQuestionType = 'free_response' | 'select_one' | 'select_multiple';
+
+export interface EventRsvpQuestion {
+  id: string;
+  label: string;
+  fieldType: EventRsvpQuestionType;
+  options: string[];
+  required: boolean;
+}
+
 export interface EventGuest {
   userId: string;
   name: string;
@@ -84,6 +94,8 @@ export interface EventGuest {
   hasPlusOne: boolean;
   attendance: AttendanceStatusValue;
   isMember: boolean;
+  /** Host-only RSVP question snapshots; empty for non-hosts. */
+  answers: Record<string, { label: string; answer: string | string[] }>;
 }
 
 export interface EventCancellation {
@@ -150,6 +162,9 @@ export interface Event {
 
   guests: EventGuest[];
   myRsvp: string | null;
+  /** Snapshot answers for the viewer's RSVP: questionId → { label, answer }. */
+  myRsvpAnswers: Record<string, { label: string; answer: string | string[] }>;
+  rsvpQuestions: EventRsvpQuestion[];
   // The resolved viewer's own user id — carried from the backend so a
   // token-holding (logged-out) viewer can find their own entry in `guests`,
   // since useAuthStore has no user for them.

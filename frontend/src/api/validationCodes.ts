@@ -96,6 +96,18 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'rsvp not found';
     case Code.Event.MemberContactMustSignIn:
       return 'looks like you already have an account — sign in to rsvp';
+    case Code.Event.RsvpQuestionNotFound:
+      return "that question wasn't found";
+    case Code.Event.RsvpQuestionOptionsRequired:
+      return 'add at least one option';
+    case Code.Event.RsvpAnswerRequired: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `answer required: ${label}` : 'answer required';
+    }
+    case Code.Event.RsvpAnswerInvalidOption: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `invalid answer for ${label}` : 'invalid answer';
+    }
     case Code.Event.RsvpCouldNotBeCreated:
       return "we couldn't set up your rsvp with those details — reach out and we'll help";
     case Code.Event.AttendanceOpensLater:

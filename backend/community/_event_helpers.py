@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
     return (
         Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user", "rsvp_questions")
         .filter(id=event_id)
         .first()
     )
@@ -63,7 +63,7 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
     def _run() -> None:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "rsvp_questions")
             .filter(id=event_id)
             .first()
         )
@@ -82,8 +82,21 @@ def _can_see_phones(requesting_user, creator, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 
-def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGuestOut]:
-    """Build guest list with optional phone visibility."""
+def _can_see_guest_answers(requesting_user, creator, co_host_ids: set[str]) -> bool:
+    """Hosts, co-hosts, and event managers can see RSVP question answers."""
+    if requesting_user is None:
+        return False
+    if requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    if creator is not None and requesting_user.pk == creator.pk:
+        return True
+    return str(requesting_user.pk) in co_host_ids
+
+
+def _build_guest_list(
+    rsvps, can_see_phones: bool, viewer=None, *, include_answers: bool = False
+) -> list[RSVPGuestOut]:
+    """Build guest list with optional phone / answer visibility."""
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -95,6 +108,7 @@ def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGues
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             is_member=r.user.is_member,
+            answers=dict(r.answers or {}) if include_answers else {},
         )
         for r in rsvps
     ]
@@ -108,6 +122,31 @@ def _find_my_rsvp(rsvps, user) -> str | None:
         if r.user_id == user.pk:
             return r.status
     return None
+
+
+def _find_my_rsvp_answers(rsvps, user) -> dict:
+    if user is None:
+        return {}
+    for r in rsvps:
+        if r.user_id == user.pk:
+            return dict(r.answers or {})
+    return {}
+
+
+def _rsvp_questions_out(event: Event) -> list:
+    from community._event_rsvp_question_schemas import EventRsvpQuestionOut
+
+    return [
+        EventRsvpQuestionOut(
+            id=str(q.id),
+            label=q.label,
+            field_type=q.field_type,
+            options=list(q.options or []),
+            required=q.required,
+            display_order=q.display_order,
+        )
+        for q in event.rsvp_questions.all()
+    ]
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
@@ -297,6 +336,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     is_authed = auth_user is not None
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
+    answers_visible = _can_see_guest_answers(auth_user, creator, co_host_ids)
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
@@ -336,8 +376,13 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
-        guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
+        guests=_members_only(
+            _build_guest_list(rsvps, phones_visible, auth_user, include_answers=answers_visible),
+            [],
+            is_authed,
+        ),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
+        my_rsvp_answers=_find_my_rsvp_answers(rsvps, auth_user),
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
         visibility=event.visibility,
@@ -355,6 +400,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
         tags=_tags_out(event),
+        rsvp_questions=_rsvp_questions_out(event),
     )
 
 
