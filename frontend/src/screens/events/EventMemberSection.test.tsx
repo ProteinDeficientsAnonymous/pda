@@ -299,6 +299,14 @@ describe('EventMemberSection — past event gates (#385)', () => {
   });
 });
 
+describe('EventMemberSection — manage events permission holder (Issue 1189)', () => {
+  it('shows the enabled + button for a non-cohost with manage events permission', () => {
+    useAuthStore.setState({ status: 'authed', user: MANAGER, accessToken: 'tok' });
+    renderSection(BASE_EVENT);
+    expect(screen.getByRole('button', { name: /add co-host/i })).toBeEnabled();
+  });
+});
+
 describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
   const RSVP_ENABLED_EVENT: Event = { ...BASE_EVENT, rsvpEnabled: true };
 

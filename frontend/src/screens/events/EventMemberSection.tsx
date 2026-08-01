@@ -28,16 +28,23 @@ export function EventMemberSection({ event, token }: Props) {
   const user = useAuthStore((s) => s.user);
   if (!user && !token) return null;
 
-  const { isCoHost, canSeeInvited, isCancelled, canInvite, showRsvp, showStandaloneInvited } =
-    eventMemberSectionFlags(event, user);
+  const {
+    isCoHost,
+    canSeeInvited,
+    isCancelled,
+    canInvite,
+    showRsvp,
+    showStandaloneInvited,
+    canInviteCohost,
+  } = eventMemberSectionFlags(event, user);
 
   return (
     <div className="mt-8 flex flex-col gap-6">
       {user ? (
         <EventHostSection
           event={event}
-          canEdit={isCoHost && !isCancelled}
-          canInviteCohost={isCoHost && !isCancelled && !event.isPast}
+          canEdit={canSeeInvited && !isCancelled}
+          canInviteCohost={canInviteCohost}
           viewerId={user.id}
         />
       ) : null}

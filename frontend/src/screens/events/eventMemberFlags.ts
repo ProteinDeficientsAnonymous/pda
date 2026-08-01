@@ -22,6 +22,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
       (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
   const showStandaloneInvited = !showRsvp && canSeeInvited && event.invitedCount > 0;
+  const canInviteCohost = (isCoHost || canManageEvents) && !isCancelled && !event.isPast;
   return {
     isCoHost,
     canSeeInvited,
@@ -30,5 +31,6 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     canInvite,
     showRsvp,
     showStandaloneInvited,
+    canInviteCohost,
   };
 }
