@@ -54,7 +54,6 @@ export interface WireEvent {
   co_host_ids?: string[];
   co_host_names?: string[];
   co_host_photo_urls?: string[];
-  co_host_invite_ids?: (string | null)[];
 
   guests?: WireGuest[];
   my_rsvp?: string | null;
@@ -163,7 +162,6 @@ export function mapEvent(e: WireEvent): Event {
     coHostIds: e.co_host_ids ?? [],
     coHostNames: e.co_host_names ?? [],
     coHostPhotoUrls: e.co_host_photo_urls ?? [],
-    coHostInviteIds: e.co_host_invite_ids ?? [],
 
     guests: (e.guests ?? []).map(mapGuest),
     myRsvp: e.my_rsvp ?? null,

@@ -40,7 +40,9 @@ class TestCreateEventWithCohosts:
     def test_create_event_with_cohosts_creates_pending_invite(
         self, api_client, auth_headers, test_user, other_user
     ):
-        # co_host_ids queues a PENDING invite (#363) — invitee isn't in co_hosts until accepted.
+        # With the invite-approval flow (#363), passing ``co_host_ids`` queues
+        # a PENDING invite for the invitee — they're NOT in event.co_hosts until
+        # they accept. The creator IS already in co_hosts (seeded on creation).
         response = api_client.post(
             "/api/community/events/",
             {

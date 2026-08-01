@@ -18,22 +18,22 @@ export function EventAdminActions({ event }: Props) {
   const user = useAuthStore((s) => s.user);
   if (!user) return null;
 
-  const isCreator = user.id === event.createdById;
+  // co_hosts is the sole source of truth for hosts; created_by is a permanent
+  // audit field that outlives a step-down.
   const isCoHost = event.coHostIds.includes(user.id);
   const canManage = hasPermission(user, Permission.ManageEvents);
-  const canEdit = isCreator || isCoHost || canManage;
-  if (!canEdit) return null;
+  if (!isCoHost && !canManage) return null;
 
-  return <AdminActionRow event={event} isCreator={isCreator} canManage={canManage} />;
+  return <AdminActionRow event={event} isHost={isCoHost} canManage={canManage} />;
 }
 
 function AdminActionRow({
   event,
-  isCreator,
+  isHost,
   canManage,
 }: {
   event: Event;
-  isCreator: boolean;
+  isHost: boolean;
   canManage: boolean;
 }) {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ function AdminActionRow({
   const isCancelled = event.status === EventStatus.Cancelled;
   const isDraft = event.status === EventStatus.Draft;
   const hasNoAttendees = event.attendingCount === 0;
-  const canDelete = (isCreator || canManage) && (isDraft || isCancelled || hasNoAttendees);
+  const canDelete = (isHost || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees;
   // Drafts are always editable — the edit-window cutoff protects the
   // historical record of published events, which drafts don't have.

@@ -34,7 +34,22 @@ async function deleteRescind({ eventId, inviteId }: CohostInviteArgs): Promise<E
   return mapEvent(data);
 }
 
-function useCohostInviteMutation(fn: (args: CohostInviteArgs) => Promise<Event>) {
+async function deleteCohost({
+  eventId,
+  userId,
+}: {
+  eventId: string;
+  userId: string;
+}): Promise<Event> {
+  const { data } = await apiClient.delete<WireEvent>(
+    `/api/community/events/${eventId}/cohosts/${userId}/`,
+  );
+  return mapEvent(data);
+}
+
+function useCohostInviteMutation<TArgs extends { eventId: string }>(
+  fn: (args: TArgs) => Promise<Event>,
+) {
   const qc = useQueryClient();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   return useMutation({
@@ -56,4 +71,8 @@ export function useDeclineCohostInvite() {
 
 export function useRescindCohostInvite() {
   return useCohostInviteMutation(deleteRescind);
+}
+
+export function useRemoveCohost() {
+  return useCohostInviteMutation(deleteCohost);
 }
