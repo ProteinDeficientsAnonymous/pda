@@ -12,6 +12,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
+from notifications.service import broadcast_event_created
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -359,6 +360,8 @@ def create_event(request, payload: EventIn):
     )
     _set_event_participants(request, event, payload.co_host_ids)
     _set_event_tags(event, payload.tag_ids)
+    if event.status == EventStatus.ACTIVE:
+        transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
         logging.INFO,
         "event_created_draft" if event.is_draft else "event_created",
