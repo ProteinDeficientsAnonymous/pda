@@ -46,7 +46,12 @@ export default function EventCheckInReportScreen() {
       <div className="mb-6 flex items-start justify-between gap-2">
         <div>
           <h1 className="mb-1 text-2xl font-medium tracking-tight">check-in report</h1>
-          <p className="text-foreground-secondary text-sm">{event.title}</p>
+          <Link
+            to={`/events/${event.id}`}
+            className="text-foreground-secondary hover:text-foreground text-sm"
+          >
+            {event.title}
+          </Link>
         </div>
         <Button
           variant="secondary"
@@ -185,10 +190,10 @@ function CanceledRow({ person }: { person: CanceledPerson }) {
 function BackLink({ eventId }: { eventId: string }) {
   return (
     <Link
-      to={`/events/${eventId}`}
+      to={`/events/${eventId}/attendance`}
       className="text-foreground-secondary hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
     >
-      ← back to event
+      ← back to attendance
     </Link>
   );
 }
