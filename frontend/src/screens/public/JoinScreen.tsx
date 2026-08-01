@@ -6,12 +6,12 @@ import { toast } from 'sonner';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion } from '@/api/join';
 import { AlreadyInvitedError, useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+import type { SurveyQuestion } from '@/api/surveys';
 import { useAuthStore } from '@/auth/store';
+import { QuestionField } from '@/components/questions/QuestionField';
 import { Button } from '@/components/ui/Button';
 import { Honeypot } from '@/components/ui/Honeypot';
 import { PhoneField } from '@/components/ui/PhoneField';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
 import { personName } from '@/utils/validators';
 
@@ -21,9 +21,17 @@ import { ContentContainer, ContentError, ContentLoading } from './ContentContain
 const MAX_NAME = 64;
 const MAX_ANSWER = 2000;
 
-// Heuristic from join_screen.dart: multi-line if the label mentions "why".
-function isMultiline(q: JoinQuestion): boolean {
-  return q.fieldType === 'text' && q.label.toLowerCase().includes('why');
+/** Join select is a dropdown; shared QuestionField uses `dropdown` for that UX. */
+function toSurveyQuestion(q: JoinQuestion): SurveyQuestion {
+  return {
+    id: q.id,
+    label: q.label,
+    fieldType: q.fieldType === 'select' ? 'dropdown' : 'text',
+    options: q.options,
+    required: q.required,
+    displayOrder: q.displayOrder,
+    rows: q.rows,
+  };
 }
 
 export default function JoinScreen() {
@@ -201,10 +209,10 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
         {questions.map((q) => (
           <QuestionField
             key={q.id}
-            question={q}
+            question={toSurveyQuestion(q)}
             value={answers[q.id] ?? ''}
             onChange={(val) => {
-              setAnswers((a) => ({ ...a, [q.id]: val }));
+              setAnswers((a) => ({ ...a, [q.id]: typeof val === 'string' ? val : '' }));
             }}
             error={errors[q.id]}
           />
@@ -269,59 +277,6 @@ function JoinForm({ questions }: { questions: readonly JoinQuestion[] }) {
         </Button>
       </form>
     </ContentContainer>
-  );
-}
-
-function QuestionField({
-  question,
-  value,
-  onChange,
-  error,
-}: {
-  question: JoinQuestion;
-  value: string;
-  onChange: (v: string) => void;
-  error?: string | undefined;
-}) {
-  const label = question.required ? question.label : `${question.label} (optional)`;
-  if (question.fieldType === 'select') {
-    return (
-      <Select
-        label={label}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-        options={question.options.map((o) => ({ value: o, label: o }))}
-        placeholder="select one"
-        error={error}
-      />
-    );
-  }
-  if (isMultiline(question)) {
-    return (
-      <Textarea
-        label={label}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-        maxLength={MAX_ANSWER}
-        rows={5}
-        error={error}
-      />
-    );
-  }
-  return (
-    <TextField
-      label={label}
-      value={value}
-      onChange={(e) => {
-        onChange(e.target.value);
-      }}
-      maxLength={MAX_ANSWER}
-      error={error}
-    />
   );
 }
 

@@ -13,6 +13,7 @@ export interface JoinQuestion {
   options: string[];
   required: boolean;
   displayOrder: number;
+  rows: number;
 }
 
 interface WireQuestion {
@@ -22,6 +23,7 @@ interface WireQuestion {
   options?: string[];
   required?: boolean;
   display_order: number;
+  rows?: number;
 }
 
 async function fetchJoinQuestions(): Promise<JoinQuestion[]> {
@@ -34,6 +36,7 @@ async function fetchJoinQuestions(): Promise<JoinQuestion[]> {
       options: q.options ?? [],
       required: q.required ?? false,
       displayOrder: q.display_order,
+      rows: q.rows ?? 1,
     }))
     .sort((a, b) => a.displayOrder - b.displayOrder);
 }
@@ -254,6 +257,7 @@ export interface JoinQuestionInput {
   fieldType: JoinQuestionType;
   options: string[];
   required: boolean;
+  rows: number;
 }
 
 function fromWire(w: WireQuestion): JoinQuestion {
@@ -264,6 +268,7 @@ function fromWire(w: WireQuestion): JoinQuestion {
     options: w.options ?? [],
     required: w.required ?? false,
     displayOrder: w.display_order,
+    rows: w.rows ?? 1,
   };
 }
 
@@ -276,6 +281,7 @@ export function useCreateJoinQuestion() {
         field_type: input.fieldType,
         options: input.options,
         required: input.required,
+        rows: input.rows,
       });
       return fromWire(data);
     },
@@ -289,7 +295,7 @@ export function useUpdateJoinQuestion(questionId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: JoinQuestionInput) => {
-      // Backend PATCH has PUT semantics — send all four fields every time.
+      // Backend PATCH has PUT semantics — send all fields every time.
       const { data } = await apiClient.patch<WireQuestion>(
         `/api/community/join-form/questions/${questionId}/`,
         {
@@ -297,6 +303,7 @@ export function useUpdateJoinQuestion(questionId: string) {
           field_type: input.fieldType,
           options: input.options,
           required: input.required,
+          rows: input.rows,
         },
       );
       return fromWire(data);

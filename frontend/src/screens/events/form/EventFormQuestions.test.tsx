@@ -57,11 +57,7 @@ describe('EventFormQuestions', () => {
     const onQuestionsChange = vi.fn();
     render(
       <form onSubmit={onParentSubmit}>
-        <EventFormQuestions
-          rsvpEnabled
-          questions={[]}
-          onQuestionsChange={onQuestionsChange}
-        />
+        <EventFormQuestions rsvpEnabled questions={[]} onQuestionsChange={onQuestionsChange} />
       </form>,
     );
     fireEvent.click(screen.getByRole('button', { name: /add question/i }));

@@ -19,6 +19,8 @@ class JoinFormQuestion(models.Model):
     options = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)
+    # Text input height: 1 = single-line field; >1 = multiline textarea.
+    rows = models.PositiveSmallIntegerField(default=1)
 
     class Meta:
         app_label = "community"

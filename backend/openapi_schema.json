@@ -3390,6 +3390,13 @@
             "default": false,
             "title": "Required",
             "type": "boolean"
+          },
+          "rows": {
+            "default": 1,
+            "maximum": 30,
+            "minimum": 1,
+            "title": "Rows",
+            "type": "integer"
           }
         },
         "required": [
@@ -3443,6 +3450,11 @@
           "required": {
             "title": "Required",
             "type": "boolean"
+          },
+          "rows": {
+            "default": 1,
+            "title": "Rows",
+            "type": "integer"
           }
         },
         "required": [

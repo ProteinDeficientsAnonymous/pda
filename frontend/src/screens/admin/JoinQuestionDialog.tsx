@@ -29,6 +29,7 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
   const [label, setLabel] = useState(() => existing?.label ?? '');
   const [fieldType, setFieldType] = useState<JoinQuestionType>(() => existing?.fieldType ?? 'text');
   const [required, setRequired] = useState(() => existing?.required ?? false);
+  const [rows, setRows] = useState(() => String(existing?.rows ?? 1));
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
   const [error, setError] = useState<string | null>(null);
 
@@ -52,7 +53,21 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
       setError('add at least one option for a select question');
       return;
     }
-    const input: JoinQuestionInput = { label: label.trim(), fieldType, options, required };
+    const parsedRows = fieldType === 'text' ? Number.parseInt(rows, 10) : 1;
+    if (
+      fieldType === 'text' &&
+      (!Number.isInteger(parsedRows) || parsedRows < 1 || parsedRows > 30)
+    ) {
+      setError('rows must be a whole number from 1 to 30');
+      return;
+    }
+    const input: JoinQuestionInput = {
+      label: label.trim(),
+      fieldType,
+      options,
+      required,
+      rows: parsedRows,
+    };
     try {
       if (existing) await update.mutateAsync(input);
       else await create.mutateAsync(input);
@@ -94,7 +109,19 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
             hint="one per line"
             rows={5}
           />
-        ) : null}
+        ) : (
+          <TextField
+            label="rows"
+            type="number"
+            value={rows}
+            onChange={(e) => {
+              setRows(e.target.value);
+            }}
+            hint="1 = single line; higher values show a taller text box"
+            min={1}
+            max={30}
+          />
+        )}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

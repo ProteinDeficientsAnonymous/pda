@@ -3592,6 +3592,11 @@ export interface components {
              * @default false
              */
             required: boolean;
+            /**
+             * Rows
+             * @default 1
+             */
+            rows: number;
         };
         /** JoinFormQuestionOrderIn */
         JoinFormQuestionOrderIn: {
@@ -3615,6 +3620,11 @@ export interface components {
             options: string[];
             /** Required */
             required: boolean;
+            /**
+             * Rows
+             * @default 1
+             */
+            rows: number;
         };
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {

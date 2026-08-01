@@ -26,7 +26,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           onChange={(e) => {
             onChange(e.target.value);
           }}
-          rows={5}
+          rows={question.rows ?? 5}
           maxLength={2000}
         />
       );
@@ -105,7 +105,21 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
         />
       );
     case 'text':
-    default:
+    default: {
+      const rows = question.rows ?? 1;
+      if (rows > 1) {
+        return (
+          <Textarea
+            {...common}
+            value={asString(value)}
+            onChange={(e) => {
+              onChange(e.target.value);
+            }}
+            rows={rows}
+            maxLength={2000}
+          />
+        );
+      }
       return (
         <TextField
           {...common}
@@ -116,6 +130,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           maxLength={2000}
         />
       );
+    }
   }
 }
 

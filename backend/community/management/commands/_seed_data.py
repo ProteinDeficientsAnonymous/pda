@@ -73,6 +73,7 @@ class SeedJoinFormQuestion:
     required: bool = True
     options: list[str] = field(default_factory=list)
     display_order: int = 0
+    rows: int = 1
 
 
 SEED_USERS = [
@@ -123,6 +124,7 @@ SEED_JOIN_FORM_QUESTIONS = [
         field_type=JoinFormQuestionType.TEXT,
         required=True,
         display_order=0,
+        rows=5,
     ),
     SeedJoinFormQuestion(
         label="How did you hear about us?",

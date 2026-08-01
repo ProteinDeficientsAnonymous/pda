@@ -52,7 +52,7 @@ export function Dialog({ open, onClose, title, children, wide = false }: Props) 
             type="button"
             aria-label="close"
             onClick={onClose}
-            className="text-foreground-secondary hover:bg-surface-dim hover:text-foreground -mt-1 -me-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors"
+            className="text-foreground-secondary hover:bg-surface-dim hover:text-foreground -me-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors"
           >
             <CloseIcon />
           </button>
@@ -67,12 +67,7 @@ export function Dialog({ open, onClose, title, children, wide = false }: Props) 
 function CloseIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M4 4l8 8M12 4l-8 8"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
+      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
     </svg>
   );
 }
