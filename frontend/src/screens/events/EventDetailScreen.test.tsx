@@ -5,9 +5,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
-import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import { EventType, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
+import { makeEvent } from '@/test/fixtures';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -37,56 +37,19 @@ import EventDetailScreen from './EventDetailScreen';
 
 const mockUseEvent = vi.mocked(useEvent);
 
-const BASE_EVENT: Event = {
-  id: 'ev1',
-  slug: 'test-event',
-  title: 'Test Event',
+const BASE_EVENT = makeEvent({
   description: 'A test event description',
   startDatetime: new Date('2024-06-01T18:00:00Z'),
   endDatetime: new Date('2024-06-01T20:00:00Z'),
   location: '123 Main St, Brooklyn, NY',
-  latitude: null,
-  longitude: null,
   whatsappLink: 'https://chat.whatsapp.com/abc',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
-  rsvpEnabled: true,
-  allowPlusOnes: false,
-  maxAttendees: null,
   attendingCount: 0,
-  waitlistedCount: 0,
-  invitedCount: 0,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
   createdById: 'user1',
   createdByName: 'Alice',
-  createdByPhotoUrl: '',
   coHostIds: ['user1'],
-  coHostNames: [],
-  coHostPhotoUrls: [],
   guests: [],
-  myRsvp: null,
-  viewerUserId: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
   invitePermission: InvitePermission.CoHostsOnly,
-  pendingCohostInvites: [],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  photoUpdatedAt: null,
-  tags: [],
-  isPast: false,
-  status: EventStatus.Active,
-};
+});
 
 const AUTHED_USER: User = {
   id: 'user-me',

@@ -35,6 +35,8 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     slug: 'test-event',
     title: 'Test Event',
     description: '',
+    // Relative to "now", not a fixed date: a hardcoded date rots once it passes,
+    // silently flipping time-gated tests (check-in windows, isPast) to the wrong branch.
     startDatetime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     endDatetime: null,
     location: '',

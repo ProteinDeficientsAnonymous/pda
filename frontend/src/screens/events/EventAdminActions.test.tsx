@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import { EventStatus, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
-import { makeUser as makeBaseUser } from '@/test/fixtures';
+import { makeEvent, makeUser as makeBaseUser } from '@/test/fixtures';
 
 // Mock network-touching dependencies
 vi.mock('@/api/eventWrites', () => ({
@@ -31,57 +31,17 @@ function makeUser(id: string, permissions: string[] = []): User {
   });
 }
 
-const BASE_EVENT: Event = {
-  id: 'ev1',
-  slug: 'test-event',
-  title: 'Test Event',
-  description: '',
-  // Upcoming by default — individual tests override for past/just-ended cases.
-  startDatetime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  endDatetime: null,
-  location: '',
-  latitude: null,
-  longitude: null,
-  whatsappLink: '',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
+const BASE_EVENT = makeEvent({
   rsvpEnabled: false,
-  allowPlusOnes: false,
-  maxAttendees: null,
   attendingCount: 3,
-  waitlistedCount: 0,
-  invitedCount: 0,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
   createdById: CREATOR_ID,
   createdByName: 'Creator',
-  createdByPhotoUrl: '',
   coHostIds: [CREATOR_ID, COHOST_ID],
   coHostNames: ['Co-Host'],
   coHostPhotoUrls: [''],
   guests: [],
-  myRsvp: null,
-  viewerUserId: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
   invitePermission: InvitePermission.CoHostsOnly,
-  pendingCohostInvites: [],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  photoUpdatedAt: null,
-  tags: [],
-  isPast: false,
-  status: EventStatus.Active,
-};
+});
 
 function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });

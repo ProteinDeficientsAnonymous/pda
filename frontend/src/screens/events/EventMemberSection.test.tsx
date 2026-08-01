@@ -5,15 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import {
-  EventStatus,
-  EventType,
-  EventVisibility,
-  InvitePermission,
-  RsvpStatus,
-} from '@/models/event';
+import { InvitePermission, RsvpStatus } from '@/models/event';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
+import { makeEvent } from '@/test/fixtures';
 
 const rescindMutate = vi.fn();
 const removeCohostMutate = vi.fn();
@@ -47,56 +42,17 @@ vi.mock('./comments/EventCommentsCard', () => ({
 
 import { EventMemberSection } from './EventMemberSection';
 
-const BASE_EVENT: Event = {
-  id: 'ev1',
+const BASE_EVENT = makeEvent({
   slug: 'spring-potluck',
   title: 'Spring Potluck',
-  description: '',
   startDatetime: new Date('2099-06-01T18:00:00Z'),
-  endDatetime: null,
-  location: '',
-  latitude: null,
-  longitude: null,
-  whatsappLink: '',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
   rsvpEnabled: false,
-  allowPlusOnes: false,
-  maxAttendees: null,
   attendingCount: 0,
-  waitlistedCount: 0,
-  invitedCount: 0,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
   createdById: 'user-creator',
   createdByName: 'Alice',
-  createdByPhotoUrl: '',
   coHostIds: ['user-creator'],
-  coHostNames: [],
-  coHostPhotoUrls: [],
   guests: [],
-  myRsvp: null,
-  viewerUserId: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
-  invitePermission: InvitePermission.AllMembers,
-  pendingCohostInvites: [],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  photoUpdatedAt: null,
-  tags: [],
-  isPast: false,
-  status: EventStatus.Active,
-};
+});
 
 const CREATOR: User = {
   id: 'user-creator',
