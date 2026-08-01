@@ -1,3 +1,10 @@
+## [0.71.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.6...v0.71.7) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1192 - gate poll endpoints behind event visibility ([#1194](https://github.com/ProteinDeficientsAnonymous/pda/issues/1194)) ([221c749](https://github.com/ProteinDeficientsAnonymous/pda/commit/221c7498ba8bdf762c270f4de6eb67be07735516))
+
 ## [0.71.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.5...v0.71.6) (2026-08-01)
 
 
