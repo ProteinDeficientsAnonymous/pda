@@ -20,6 +20,7 @@ interface WireGuest {
 
 export interface WireEvent {
   id: string;
+  slug?: string;
   title: string;
   description?: string;
   start_datetime?: string | null;
@@ -128,6 +129,7 @@ function mapPendingCohostInvite(w: WirePendingCohostInvite): PendingCohostInvite
 export function mapEvent(e: WireEvent): Event {
   return {
     id: e.id,
+    slug: e.slug ?? '',
     title: e.title,
     description: e.description ?? '',
     startDatetime: e.start_datetime ? new Date(e.start_datetime) : null,

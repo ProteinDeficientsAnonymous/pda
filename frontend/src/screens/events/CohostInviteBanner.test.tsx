@@ -18,6 +18,7 @@ import { CohostInviteBanner } from './CohostInviteBanner';
 
 const BASE_EVENT: Event = {
   id: 'ev1',
+  slug: 'spring-potluck',
   title: 'Spring Potluck',
   description: '',
   startDatetime: new Date('2099-06-01T18:00:00Z'),

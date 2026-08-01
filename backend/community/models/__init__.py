@@ -30,7 +30,13 @@ from community.models.content import (
     WhatsAppLinkConfig,
 )
 from community.models.document import DocFolder, Document
-from community.models.event import Event, EventEmailBlast, EventFlag, EventRSVP
+from community.models.event import (
+    Event,
+    EventEmailBlast,
+    EventFlag,
+    EventRSVP,
+    event_lookup_q,
+)
 from community.models.feature_flag import FeatureFlagState, flag_enabled, resolve_flags
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.poll import EventPoll, PollOption, PollVote
@@ -77,6 +83,7 @@ __all__ = [
     "EventFlag",
     "EventRSVP",
     "EventTag",
+    "event_lookup_q",
     "FeatureFlagState",
     "flag_enabled",
     "resolve_flags",

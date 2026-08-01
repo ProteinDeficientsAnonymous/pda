@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.text import slugify
 
 from community.models.choices import (
     AttendanceStatus,
@@ -24,6 +25,10 @@ if TYPE_CHECKING:
     from community.models.comment import EventComment
     from community.models.poll import EventPoll
     from community.models.survey import Survey
+
+
+# Leaves room inside SlugField(max_length=80) for a "-<n>" dedupe suffix.
+SLUG_BASE_MAX = 70
 
 
 def _is_past_q(now, prefix: str = "") -> Q:
@@ -50,9 +55,44 @@ def public_rsvp_eligible_q(now, prefix: str = "") -> Q:
     )
 
 
+def event_lookup_q(event_ref: str) -> Q:
+    """Match an event by slug, or by UUID so pre-slug shared links keep resolving.
+
+    param event_ref(str): the {event_id} path segment — a slug or a UUID
+    return(Q): lookup for exactly one of the two identifier forms
+    """
+    try:
+        return Q(id=uuid.UUID(str(event_ref)))
+    except ValueError:
+        return Q(slug=event_ref)
+
+
+def build_event_slug(title: str, manager, exclude_pk=None) -> str:
+    """Slugify `title`, appending -2, -3, … until unique in `manager`.
+
+    param title(str): event title to slugify
+    param manager(Manager): Event manager to check uniqueness against (the historical
+        model's in a migration, Event.objects otherwise)
+    param exclude_pk(UUID | None): row to ignore when checking, for re-saves
+    return(str): a slug unique across events
+    """
+    base = slugify(title)[:SLUG_BASE_MAX] or "event"
+    taken = manager.filter(slug__startswith=base)
+    if exclude_pk is not None:
+        taken = taken.exclude(pk=exclude_pk)
+    taken = set(taken.values_list("slug", flat=True))
+    if base not in taken:
+        return base
+    suffix = 2
+    while f"{base}-{suffix}" in taken:
+        suffix += 1
+    return f"{base}-{suffix}"
+
+
 class Event(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=300)
+    slug = models.SlugField(max_length=80, unique=True, blank=True)
     description = models.TextField(blank=True, max_length=2000)
     start_datetime = models.DateTimeField(null=True, blank=True)
     end_datetime = models.DateTimeField(null=True, blank=True)
@@ -128,6 +168,14 @@ class Event(models.Model):
     class Meta:
         app_label = "community"
         ordering = ["start_datetime"]
+
+    def save(self, *args, **kwargs):
+        # Assigned once and never regenerated on title edits, so shared links never break.
+        if not self.slug:
+            self.slug = build_event_slug(self.title, Event.objects, exclude_pk=self.pk)
+            if (update_fields := kwargs.get("update_fields")) is not None:
+                kwargs["update_fields"] = {*update_fields, "slug"}
+        super().save(*args, **kwargs)
 
     @property
     def is_public_rsvp_visible(self) -> bool:

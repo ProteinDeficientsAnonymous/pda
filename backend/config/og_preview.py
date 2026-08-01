@@ -1,6 +1,4 @@
-from uuid import UUID
-
-from community.models import Event, EventStatus, PageVisibility
+from community.models import Event, EventStatus, PageVisibility, event_lookup_q
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
@@ -31,14 +29,14 @@ def _truncate(text: str, limit: int) -> str:
     return text[: limit - 1].rstrip() + "…"
 
 
-def event_og_preview(request, event_id: UUID):
+def event_og_preview(request, event_id: str):
     """Render OG/Twitter meta tags for a PUBLIC event so link scrapers can unfurl it.
 
     Only public, non-draft, non-deleted events are previewed — mirroring what an
     anonymous user may see. Anything else 404s so member-only details never leak.
     """
     try:
-        event = Event.objects.get(id=event_id)
+        event = Event.objects.get(event_lookup_q(event_id))
     except Event.DoesNotExist:
         raise Http404
 
@@ -48,7 +46,7 @@ def event_og_preview(request, event_id: UUID):
     if not is_previewable:
         raise Http404
 
-    url = _absolute(f"/events/{event.id}")
+    url = _absolute(f"/events/{event.slug or event.id}")
     image = _absolute(media_path(event.photo))
 
     response = render(

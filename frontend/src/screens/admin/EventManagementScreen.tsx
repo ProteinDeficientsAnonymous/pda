@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Select } from '@/components/ui/Select';
 import { TextField } from '@/components/ui/TextField';
-import { type Event, EventType } from '@/models/event';
+import { type Event, eventPath,EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 import { TagManagerDialog } from '@/screens/events/TagManagerDialog';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
@@ -166,7 +166,7 @@ export default function EventManagementScreen() {
 function EventRow({ event }: { event: Event }) {
   return (
     <Link
-      to={`/events/${event.id}`}
+      to={eventPath(event)}
       className="border-border bg-surface hover:bg-background flex items-center justify-between gap-3 rounded-lg border p-3"
     >
       <div className="min-w-0 flex-1">

@@ -33,6 +33,7 @@ function makeUser(id: string, permissions: string[] = []): User {
 
 const BASE_EVENT: Event = {
   id: 'ev1',
+  slug: 'test-event',
   title: 'Test Event',
   description: '',
   // Upcoming by default — individual tests override for past/just-ended cases.

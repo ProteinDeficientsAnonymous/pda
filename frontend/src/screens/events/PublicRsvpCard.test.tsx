@@ -34,7 +34,15 @@ describe('PublicRsvpCard', () => {
   it('links the event title to the event detail page', () => {
     renderCard({
       status: RsvpServerStatus.Attending,
-      event: { id: 'ev1', title: 'Potluck' },
+      event: { id: 'ev1', slug: 'potluck', title: 'Potluck' },
+    });
+    expect(screen.getByRole('link', { name: 'Potluck' })).toHaveAttribute('href', '/events/potluck');
+  });
+
+  it('falls back to the event id when the event has no slug', () => {
+    renderCard({
+      status: RsvpServerStatus.Attending,
+      event: { id: 'ev1', slug: '', title: 'Potluck' },
     });
     expect(screen.getByRole('link', { name: 'Potluck' })).toHaveAttribute('href', '/events/ev1');
   });

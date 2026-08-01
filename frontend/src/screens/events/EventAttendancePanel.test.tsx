@@ -34,6 +34,7 @@ import { EventAttendancePanel } from './EventAttendancePanel';
 
 const BASE_EVENT: Event = {
   id: 'ev1',
+  slug: 'test-event',
   title: 'Test Event',
   description: '',
   // Anchored well into the future relative to "now" so the check-in window

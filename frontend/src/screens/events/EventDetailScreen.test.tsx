@@ -39,6 +39,7 @@ const mockUseEvent = vi.mocked(useEvent);
 
 const BASE_EVENT: Event = {
   id: 'ev1',
+  slug: 'test-event',
   title: 'Test Event',
   description: 'A test event description',
   startDatetime: new Date('2024-06-01T18:00:00Z'),
