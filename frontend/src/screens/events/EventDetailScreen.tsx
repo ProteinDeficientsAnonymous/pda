@@ -94,19 +94,19 @@ export default function EventDetailScreen() {
 
   const body = (
     <>
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
-          {event.title}
-        </h1>
-        <EventBadge event={event} />
+      <div className="mb-2 flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-medium tracking-tight [overflow-wrap:anywhere] break-words">
+            {event.title}
+          </h1>
+          <EventBadge event={event} />
+        </div>
         {showKebab ? (
-          <div className="ml-auto">
-            <EventDetailKebabMenu
-              event={event}
-              eventHasEnded={event.isPast}
-              canManageRsvps={showKebab}
-            />
-          </div>
+          <EventDetailKebabMenu
+            event={event}
+            eventHasEnded={event.isPast}
+            canManageRsvps={showKebab}
+          />
         ) : null}
       </div>
 
