@@ -6,7 +6,6 @@ import { extractApiError } from '@/api/apiErrors';
 import { useRemoveCohost, useRescindCohostInvite } from '@/api/cohostInvites';
 import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event, PendingCohostInvite } from '@/models/event';
-import { EventStatus } from '@/models/event';
 
 import { AddCoHostDialog } from './AddCoHostDialog';
 import { Card } from './EventDetailCard';
@@ -19,19 +18,18 @@ interface HostRow {
 
 export function EventHostSection({
   event,
+  isHostOrEventManager,
   canEdit,
   viewerId,
 }: {
   event: Event;
+  isHostOrEventManager: boolean;
   canEdit: boolean;
   viewerId: string | null;
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const { confirm, element: confirmElement } = useConfirm();
   const remove = useRemoveCohost();
-
-  const isCancelled = event.status === EventStatus.Cancelled;
-  const actionsEnabled = canEdit && !isCancelled && !event.isPast;
 
   const hosts: HostRow[] = event.coHostIds.map((id, i) => ({
     userId: id,
@@ -40,7 +38,7 @@ export function EventHostSection({
   }));
   // backend already scopes pending invites to creator/accepted co-hosts; others get []
   const pending = event.pendingCohostInvites;
-  if (hosts.length === 0 && pending.length === 0 && !canEdit) return null;
+  if (hosts.length === 0 && pending.length === 0 && !isHostOrEventManager) return null;
   const totalChips = hosts.length + pending.length;
   const label = totalChips > 1 ? 'hosts' : 'host';
 
@@ -75,7 +73,7 @@ export function EventHostSection({
           const isSelf = h.userId === viewerId;
           // hosts.length > 1 mirrors the backend's hostless guard — without it
           // the × is offered on an action that can only fail.
-          const canRemove = (actionsEnabled || isSelf) && hosts.length > 1 && !remove.isPending;
+          const canRemove = (canEdit || isSelf) && hosts.length > 1 && !remove.isPending;
           return (
             <HostChip
               key={h.userId}
@@ -89,28 +87,23 @@ export function EventHostSection({
           );
         })}
         {pending.map((inv) => (
-          <PendingHostChip
-            key={inv.id}
-            eventId={event.id}
-            invite={inv}
-            canRescind={actionsEnabled}
-          />
+          <PendingHostChip key={inv.id} eventId={event.id} invite={inv} canRescind={canEdit} />
         ))}
-        {canEdit ? (
+        {isHostOrEventManager ? (
           <span className="group relative inline-flex">
             <button
               type="button"
               onClick={() => {
-                if (actionsEnabled) setAddOpen(true);
+                if (canEdit) setAddOpen(true);
               }}
-              disabled={!actionsEnabled}
+              disabled={!canEdit}
               aria-label="add co-host"
-              aria-describedby={actionsEnabled ? undefined : 'add-cohost-disabled-reason'}
+              aria-describedby={canEdit ? undefined : 'add-cohost-disabled-reason'}
               className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 disabled:hover:bg-surface-dim inline-flex h-8 w-8 items-center justify-center rounded-full pb-0.5 text-xl leading-none disabled:cursor-not-allowed disabled:opacity-50"
             >
               +
             </button>
-            {!actionsEnabled ? (
+            {!canEdit ? (
               <span
                 id="add-cohost-disabled-reason"
                 role="tooltip"
@@ -122,7 +115,7 @@ export function EventHostSection({
           </span>
         ) : null}
       </div>
-      {actionsEnabled ? (
+      {canEdit ? (
         <AddCoHostDialog
           event={event}
           open={addOpen}

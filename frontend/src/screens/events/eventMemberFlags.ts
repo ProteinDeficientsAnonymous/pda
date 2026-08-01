@@ -10,6 +10,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   const canManageEvents = user !== null && hasPermission(user, Permission.ManageEvents);
   const isHostOrEventManager = isCoHost || canManageEvents;
   const isCancelled = event.status === EventStatus.Cancelled;
+  const canEdit = isHostOrEventManager && !isCancelled && !event.isPast;
   const rsvpDisabled = !event.rsvpEnabled;
   const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
   const canInvite =
@@ -25,6 +26,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   return {
     isCoHost,
     isHostOrEventManager,
+    canEdit,
     isCancelled,
     rsvpDisabled,
     canInvite,
