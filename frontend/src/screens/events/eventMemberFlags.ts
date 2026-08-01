@@ -8,9 +8,8 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   // field and stays set after the creator steps down.
   const isCoHost = user !== null && event.coHostIds.includes(user.id);
   const canManageEvents = user !== null && hasPermission(user, Permission.ManageEvents);
-  const canSeeInvited = isCoHost || canManageEvents;
-  const isCancelled = event.status === EventStatus.Cancelled;
   const isHostOrEventManager = isCoHost || canManageEvents;
+  const isCancelled = event.status === EventStatus.Cancelled;
   const canEdit = isHostOrEventManager && !isCancelled && !event.isPast;
   const rsvpDisabled = !event.rsvpEnabled;
   const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
@@ -23,10 +22,9 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
       canManageEvents ||
       (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
-  const showStandaloneInvited = !showRsvp && canSeeInvited && event.invitedCount > 0;
+  const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
     isCoHost,
-    canSeeInvited,
     isHostOrEventManager,
     canEdit,
     isCancelled,
