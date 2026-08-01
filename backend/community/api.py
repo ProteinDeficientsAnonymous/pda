@@ -2,6 +2,7 @@ from ninja import Router
 
 from community._attendance_report import router as attendance_report_router
 from community._calendar import router as calendar_router
+from community._dev_tools import router as dev_tools_router
 from community._docs import router as docs_router
 from community._docs_documents import router as docs_documents_router
 from community._event_actions import router as event_actions_router
@@ -99,3 +100,4 @@ router.add_router("", geocode_router)
 router.add_router("", giphy_router)
 router.add_router("", version_router)
 router.add_router("", feature_flags_router)
+router.add_router("", dev_tools_router)

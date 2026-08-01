@@ -434,6 +434,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/dev/test-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Dev Test Events */
+        post: operations["community__dev_tools_create_dev_test_events"];
+        /** Delete Dev Test Events */
+        delete: operations["community__dev_tools_delete_dev_test_events"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/docs/": {
         parameters: {
             query?: never;
@@ -2249,6 +2267,19 @@ export interface components {
          * @enum {string}
          */
         ConsentType: "guidelines" | "sms" | "contact_privacy";
+        /** DevTestEventIn */
+        DevTestEventIn: {
+            /**
+             * Count
+             * @default 1
+             */
+            count: number;
+        };
+        /** DevTestEventsOut */
+        DevTestEventsOut: {
+            /** Events */
+            events: components["schemas"]["EventOut"][];
+        };
         /** DocFolderOut */
         DocFolderOut: {
             /** Children */
@@ -5710,6 +5741,68 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__dev_tools_create_dev_test_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevTestEventIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevTestEventsOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__dev_tools_delete_dev_test_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DevTestEventsOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

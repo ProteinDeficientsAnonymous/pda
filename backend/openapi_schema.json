@@ -614,6 +614,35 @@
         "title": "ConsentType",
         "type": "string"
       },
+      "DevTestEventIn": {
+        "properties": {
+          "count": {
+            "default": 1,
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "title": "DevTestEventIn",
+        "type": "object"
+      },
+      "DevTestEventsOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "DevTestEventsOut",
+        "type": "object"
+      },
       "DocFolderOut": {
         "properties": {
           "children": {
@@ -7450,6 +7479,88 @@
           }
         },
         "summary": "Check Phone",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/dev/test-events/": {
+      "delete": {
+        "operationId": "community__dev_tools_delete_dev_test_events",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevTestEventsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Delete Dev Test Events",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "community__dev_tools_create_dev_test_events",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevTestEventIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevTestEventsOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Create Dev Test Events",
         "tags": [
           "community"
         ]
