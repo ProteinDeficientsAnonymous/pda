@@ -34,12 +34,18 @@ const STATUS_BADGE_LABELS: Record<RsvpInputStatus, string> = {
   [RsvpStatus.CantGo]: "i can't go",
 };
 
+const PAST_STATUS_LABELS: Record<RsvpInputStatus, string> = {
+  [RsvpStatus.Attending]: 'you went',
+  [RsvpStatus.Maybe]: 'you were a maybe',
+  [RsvpStatus.CantGo]: "you couldn't go",
+};
+
 interface BoxState {
   mode: 'create' | 'edit';
   initialStatus: RsvpInputStatus;
 }
 
-export function RsvpSection({ event, token, locked = false }: Props) {
+export function MyRsvpSection({ event, token, locked = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -189,8 +195,16 @@ function RsvpControls({
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
+  if (locked) {
+    if (!myInputStatus) return null;
+    return (
+      <span className={RSVP_PILL_CLASSES}>
+        <span role="status">{PAST_STATUS_LABELS[myInputStatus]}</span>
+      </span>
+    );
+  }
+
   if (!myInputStatus) {
-    if (locked) return null;
     return (
       <button
         type="button"
@@ -202,14 +216,6 @@ function RsvpControls({
       >
         {atCapacity ? 'join the waitlist' : 'rsvp'}
       </button>
-    );
-  }
-
-  if (locked) {
-    return (
-      <span className={RSVP_PILL_CLASSES}>
-        <span role="status">{STATUS_BADGE_LABELS[myInputStatus]}</span>
-      </span>
     );
   }
 

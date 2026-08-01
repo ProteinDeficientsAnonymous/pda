@@ -18,9 +18,9 @@ import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 import { eventMemberSectionFlags } from './eventMemberFlags';
 import { EventMemberSection } from './EventMemberSection';
 import { EventTagChips } from './EventTagChips';
+import { MyRsvpSection } from './MyRsvpSection';
 import { EventPollCard } from './poll/EventPollCard';
 import { PublicRsvpSection } from './PublicRsvpSection';
-import { RsvpSection } from './RsvpSection';
 
 function photoSrc(url: string, updatedAt: string | null): string {
   if (!updatedAt) return url;
@@ -259,7 +259,7 @@ function MemberRsvpControl({
   if (!showRsvp) return null;
 
   return (
-    <RsvpSection
+    <MyRsvpSection
       event={event}
       locked={rsvpLocked}
       {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})}

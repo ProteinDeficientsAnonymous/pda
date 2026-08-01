@@ -33,7 +33,7 @@ vi.mock('./RsvpCommentField', () => ({
   ),
 }));
 
-import { RsvpSection } from './RsvpSection';
+import { MyRsvpSection } from './MyRsvpSection';
 
 const ME = makeUser({ id: 'user-me', firstName: 'Me', lastName: '', fullName: 'Me' });
 
@@ -52,7 +52,11 @@ function renderSection(event: Event, token?: string, locked?: boolean) {
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <RsvpSection event={event} {...(token ? { token } : {})} {...(locked ? { locked } : {})} />
+        <MyRsvpSection
+          event={event}
+          {...(token ? { token } : {})}
+          {...(locked ? { locked } : {})}
+        />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -66,7 +70,7 @@ beforeEach(() => {
   useAuthStore.setState({ status: 'authed', user: ME, accessToken: 'tok' });
 });
 
-describe('RsvpSection — before RSVPing', () => {
+describe('MyRsvpSection — before RSVPing', () => {
   it('opens the RSVP box when the rsvp button is tapped (not yet RSVP’d)', () => {
     renderSection(makeEvent({ myRsvp: null }));
 
@@ -105,7 +109,7 @@ describe('RsvpSection — before RSVPing', () => {
   });
 });
 
-describe('RsvpSection — after RSVPing', () => {
+describe('MyRsvpSection — after RSVPing', () => {
   it('shows an edit RSVP button and no status pills once the member has responded', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }));
 
@@ -163,13 +167,23 @@ describe('RsvpSection — after RSVPing', () => {
   });
 });
 
-describe('RsvpSection — locked (past event)', () => {
-  it('shows the same status badge as normal, but not clickable', () => {
+describe('MyRsvpSection — locked (past event)', () => {
+  it('shows a past-tense status badge that is not clickable', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }), undefined, true);
 
-    expect(screen.getByText("i'm going")).toBeInTheDocument();
+    expect(screen.getByText('you went')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /you went/i })).not.toBeInTheDocument();
+  });
+
+  it('shows "you were a maybe" for a past maybe', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Maybe }), undefined, true);
+    expect(screen.getByText('you were a maybe')).toBeInTheDocument();
+  });
+
+  it('shows "you couldn\'t go" for a past cant_go', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.CantGo }), undefined, true);
+    expect(screen.getByText("you couldn't go")).toBeInTheDocument();
   });
 
   it('shows nothing when the member never rsvp’d', () => {
@@ -192,7 +206,7 @@ describe('RsvpSection — locked (past event)', () => {
   });
 });
 
-describe('RsvpSection — spots left indicator', () => {
+describe('MyRsvpSection — spots left indicator', () => {
   it('shows spots left when the event has a cap and room remains', () => {
     renderSection(makeEvent({ maxAttendees: 4, attendingCount: 2, myRsvp: null }));
     expect(screen.getByText('2 spots left')).toBeInTheDocument();
@@ -209,7 +223,7 @@ describe('RsvpSection — spots left indicator', () => {
   });
 });
 
-describe('RsvpSection — spots left', () => {
+describe('MyRsvpSection — spots left', () => {
   it('shows "x spots left" for a capacity-limited event with room', () => {
     renderSection(makeEvent({ maxAttendees: 10, attendingCount: 7, myRsvp: null }));
     expect(screen.getByText('3 spots left')).toBeInTheDocument();
@@ -231,7 +245,7 @@ describe('RsvpSection — spots left', () => {
   });
 });
 
-describe('RsvpSection — leave waitlist error handling (issue #633)', () => {
+describe('MyRsvpSection — leave waitlist error handling (issue #633)', () => {
   it('surfaces an error when leaving the waitlist fails', async () => {
     removeRsvpMutate.mockRejectedValue(new Error('boom'));
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }));
@@ -242,7 +256,7 @@ describe('RsvpSection — leave waitlist error handling (issue #633)', () => {
   });
 });
 
-describe('RsvpSection — token-holding viewer (Issue 854)', () => {
+describe('MyRsvpSection — token-holding viewer (Issue 854)', () => {
   it('shows the +1 toggle as "remove +1" using viewerUserId, not useAuthStore (no logged-in user)', () => {
     useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
     renderSection(
@@ -263,7 +277,7 @@ describe('RsvpSection — token-holding viewer (Issue 854)', () => {
   });
 });
 
-describe('RsvpSection — comments in public manage vs member flows', () => {
+describe('MyRsvpSection — comments in public manage vs member flows', () => {
   beforeEach(() => {
     updatePublicRsvpMutate.mockReset();
     setRsvpMutate.mockReset();
