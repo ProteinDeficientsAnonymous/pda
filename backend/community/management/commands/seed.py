@@ -52,12 +52,16 @@ class Command(BaseCommand):
         self._print_summary()
 
     def _backfill_user(self, user: User, data: "SeedUser") -> None:
-        """Fill in email/bio on existing users so reseeding picks up changes."""
-        updates: dict[str, str] = {}
+        """Fill in email/bio/consent on existing users so reseeding picks up changes."""
+        updates: dict[str, object] = {}
         if data.email and not user.email:
             updates["email"] = data.email
         if data.bio and not user.bio:
             updates["bio"] = data.bio
+        if user.guidelines_consent_at is None:
+            updates["guidelines_consent_at"] = timezone.now()
+        if user.sms_consent_at is None:
+            updates["sms_consent_at"] = timezone.now()
         if not updates:
             self.stdout.write(f"  Already exists: {user.full_name}")
             return
@@ -68,12 +72,15 @@ class Command(BaseCommand):
 
     def _create_or_skip_user(self, data, admin_role, member_role) -> tuple[User, bool]:
         """Create user from seed data or return existing. Returns (user, created)."""
+        now = timezone.now()
         defaults: dict[str, object] = {
             "first_name": data.first_name,
             "last_name": data.last_name,
             "email": data.email,
             "bio": data.bio,
             "is_member": True,
+            "guidelines_consent_at": now,
+            "sms_consent_at": now,
         }
         if data.is_superuser:
             defaults["is_superuser"] = True
