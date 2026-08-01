@@ -269,10 +269,16 @@ describe('EventMemberSection — accepted host row', () => {
 });
 
 describe('EventMemberSection — past event gates (#385)', () => {
-  it('hides the + button on past events', () => {
+  it('disables the + button on past events with a tooltip explaining why', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection({ ...BASE_EVENT, isPast: true });
-    expect(screen.queryByRole('button', { name: /add co-host/i })).not.toBeInTheDocument();
+    const addBtn = screen.getByRole('button', { name: /add co-host/i });
+    expect(addBtn).toBeDisabled();
+    // Custom CSS tooltip: a sibling span with role="tooltip" that's revealed
+    // on hover via group-hover. Native title= doesn't fire on disabled buttons.
+    const tooltip = screen.getByRole('tooltip');
+    expect(tooltip).toHaveTextContent("can't edit hosts on a past or cancelled event");
+    expect(addBtn).toHaveAttribute('aria-describedby', tooltip.id);
   });
 
   it('+ button is enabled on non-past events for host viewer', () => {

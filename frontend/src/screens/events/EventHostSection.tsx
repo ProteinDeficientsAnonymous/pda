@@ -6,6 +6,7 @@ import { extractApiError } from '@/api/apiErrors';
 import { useRemoveCohost, useRescindCohostInvite } from '@/api/cohostInvites';
 import { useConfirm } from '@/components/ui/useConfirm';
 import type { Event, PendingCohostInvite } from '@/models/event';
+import { EventStatus } from '@/models/event';
 
 import { AddCoHostDialog } from './AddCoHostDialog';
 import { Card } from './EventDetailCard';
@@ -28,6 +29,9 @@ export function EventHostSection({
   const [addOpen, setAddOpen] = useState(false);
   const { confirm, element: confirmElement } = useConfirm();
   const remove = useRemoveCohost();
+
+  const isCancelled = event.status === EventStatus.Cancelled;
+  const actionsEnabled = canEdit && !isCancelled && !event.isPast;
 
   const hosts: HostRow[] = event.coHostIds.map((id, i) => ({
     userId: id,
@@ -71,7 +75,7 @@ export function EventHostSection({
           const isSelf = h.userId === viewerId;
           // hosts.length > 1 mirrors the backend's hostless guard — without it
           // the × is offered on an action that can only fail.
-          const canRemove = (canEdit || isSelf) && hosts.length > 1 && !remove.isPending;
+          const canRemove = (actionsEnabled || isSelf) && hosts.length > 1 && !remove.isPending;
           return (
             <HostChip
               key={h.userId}
@@ -85,22 +89,40 @@ export function EventHostSection({
           );
         })}
         {pending.map((inv) => (
-          <PendingHostChip key={inv.id} eventId={event.id} invite={inv} canRescind={canEdit} />
+          <PendingHostChip
+            key={inv.id}
+            eventId={event.id}
+            invite={inv}
+            canRescind={actionsEnabled}
+          />
         ))}
         {canEdit ? (
-          <button
-            type="button"
-            onClick={() => {
-              setAddOpen(true);
-            }}
-            aria-label="add co-host"
-            className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 inline-flex h-8 w-8 items-center justify-center rounded-full pb-0.5 text-xl leading-none"
-          >
-            +
-          </button>
+          <span className="group relative inline-flex">
+            <button
+              type="button"
+              onClick={() => {
+                if (actionsEnabled) setAddOpen(true);
+              }}
+              disabled={!actionsEnabled}
+              aria-label="add co-host"
+              aria-describedby={actionsEnabled ? undefined : 'add-cohost-disabled-reason'}
+              className="bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70 disabled:hover:bg-surface-dim inline-flex h-8 w-8 items-center justify-center rounded-full pb-0.5 text-xl leading-none disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              +
+            </button>
+            {!actionsEnabled ? (
+              <span
+                id="add-cohost-disabled-reason"
+                role="tooltip"
+                className="bg-foreground text-surface pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded px-2 py-1 text-xs whitespace-nowrap opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+              >
+                can't edit hosts on a past or cancelled event
+              </span>
+            ) : null}
+          </span>
         ) : null}
       </div>
-      {canEdit ? (
+      {actionsEnabled ? (
         <AddCoHostDialog
           event={event}
           open={addOpen}
