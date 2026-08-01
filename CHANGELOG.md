@@ -1,3 +1,10 @@
+## [0.72.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.3...v0.72.4) (2026-08-01)
+
+
+### Bug Fixes
+
+* set guidelines/sms consent on seeded users ([#1203](https://github.com/ProteinDeficientsAnonymous/pda/issues/1203)) ([5e46cc6](https://github.com/ProteinDeficientsAnonymous/pda/commit/5e46cc6674975a4d0d53343723775a679b2a7efd))
+
 ## [0.72.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.2...v0.72.3) (2026-08-01)
 
 
