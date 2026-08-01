@@ -147,7 +147,13 @@ export function EventForm({ existing }: Props) {
         // the backend preserves existing invites and accepted co-hosts.
         const patchBody: Partial<EventFormValues> = timeLocked
           ? (() => {
-              const { startDatetime: _s, endDatetime: _e, datetimeTbd: _t, coHostIds: _c, ...rest } = merged;
+              const {
+                startDatetime: _s,
+                endDatetime: _e,
+                datetimeTbd: _t,
+                coHostIds: _c,
+                ...rest
+              } = merged;
               return rest;
             })()
           : (() => {
@@ -279,9 +285,7 @@ export function EventForm({ existing }: Props) {
         )}
         {existing && (
           <CollapsibleCard title="hosts">
-            <p className="text-foreground-tertiary text-sm">
-              manage co-hosts on the event page
-            </p>
+            <p className="text-foreground-tertiary text-sm">manage co-hosts on the event page</p>
           </CollapsibleCard>
         )}
 
