@@ -164,25 +164,25 @@ describe('RsvpSection — after RSVPing', () => {
 });
 
 describe('RsvpSection — locked (past event)', () => {
-  it('shows a read-only status badge instead of an editable rsvp button', () => {
+  it('shows the same status badge as normal, but not clickable', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }), undefined, true);
 
-    expect(screen.getByText("you're going")).toBeInTheDocument();
+    expect(screen.getByText("i'm going")).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'rsvp' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
   });
 
-  it("shows a fallback status when the member didn't rsvp", () => {
+  it('shows nothing when the member never rsvp’d', () => {
     renderSection(makeEvent({ myRsvp: null }), undefined, true);
 
-    expect(screen.getByText("you didn't rsvp")).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'rsvp' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/rsvp/i)).not.toBeInTheDocument();
   });
 
-  it('shows a locked waitlist status with no "leave waitlist" action', () => {
+  it('shows nothing and no "leave waitlist" action for a locked waitlist entry', () => {
     renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }), undefined, true);
 
-    expect(screen.getByText('you were on the waitlist')).toBeInTheDocument();
+    expect(screen.queryByText(/waitlist/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'leave waitlist' })).not.toBeInTheDocument();
   });
 

@@ -39,7 +39,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function RsvpSection({ event, token, locked }: Props) {
+export function RsvpSection({ event, token, locked = false }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -122,23 +122,16 @@ export function RsvpSection({ event, token, locked }: Props) {
     updatePublicRsvp.isPending ||
     cancelPublicRsvp.isPending;
 
-  if (locked) {
-    return (
-      <section aria-label="rsvp" className="flex flex-col gap-3">
-        <LockedRsvpStatus onWaitlist={onWaitlist} myInputStatus={myInputStatus} />
-      </section>
-    );
-  }
-
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
-      {onWaitlist ? (
+      {!locked && onWaitlist ? (
         <WaitlistView onLeave={() => void leaveWaitlist()} busy={busy} />
       ) : (
         <RsvpControls
           myInputStatus={myInputStatus}
           atCapacity={atCapacity}
           busy={busy}
+          locked={locked}
           onOpenCreate={(status) => {
             setBox({ mode: 'create', initialStatus: status });
           }}
@@ -178,75 +171,58 @@ export function RsvpSection({ event, token, locked }: Props) {
   );
 }
 
+const RSVP_PILL_CLASSES =
+  'mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium bg-brand-600 text-brand-on';
+
 function RsvpControls({
   myInputStatus,
   atCapacity,
   busy,
+  locked,
   onOpenCreate,
   onOpenEdit,
 }: {
   myInputStatus: RsvpInputStatus | null;
   atCapacity: boolean;
   busy: boolean;
+  locked?: boolean;
   onOpenCreate: (status: RsvpInputStatus) => void;
   onOpenEdit: () => void;
 }) {
-  if (myInputStatus) {
+  if (!myInputStatus) {
+    if (locked) return null;
     return (
       <button
         type="button"
-        onClick={onOpenEdit}
+        onClick={() => {
+          onOpenCreate(RsvpStatus.Attending);
+        }}
         disabled={busy}
-        aria-label={`${STATUS_LINES[myInputStatus]} — edit rsvp`}
-        className="bg-brand-600 text-brand-on hover:bg-brand-700 mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium transition-colors disabled:opacity-60"
+        className={`${RSVP_PILL_CLASSES} hover:bg-brand-700 transition-colors disabled:opacity-60`}
       >
-        <span role="status">{STATUS_BADGE_LABELS[myInputStatus]}</span>
+        {atCapacity ? 'join the waitlist' : 'rsvp'}
       </button>
+    );
+  }
+
+  if (locked) {
+    return (
+      <span className={RSVP_PILL_CLASSES}>
+        <span role="status">{STATUS_BADGE_LABELS[myInputStatus]}</span>
+      </span>
     );
   }
 
   return (
     <button
       type="button"
-      onClick={() => {
-        onOpenCreate(RsvpStatus.Attending);
-      }}
+      onClick={onOpenEdit}
       disabled={busy}
-      className="bg-brand-600 text-brand-on hover:bg-brand-700 mx-auto inline-flex h-12 min-w-28 items-center justify-center rounded-full px-5 text-base font-medium transition-colors disabled:opacity-60"
+      aria-label={`${STATUS_LINES[myInputStatus]} — edit rsvp`}
+      className={`${RSVP_PILL_CLASSES} hover:bg-brand-700 transition-colors disabled:opacity-60`}
     >
-      {atCapacity ? 'join the waitlist' : 'rsvp'}
+      <span role="status">{STATUS_BADGE_LABELS[myInputStatus]}</span>
     </button>
-  );
-}
-
-function lockedRsvpLabel(onWaitlist: boolean, myInputStatus: RsvpInputStatus | null): string {
-  if (onWaitlist) return 'you were on the waitlist';
-  if (myInputStatus) return STATUS_LINES[myInputStatus];
-  return "you didn't rsvp";
-}
-
-function LockedRsvpStatus({
-  onWaitlist,
-  myInputStatus,
-}: {
-  onWaitlist: boolean;
-  myInputStatus: RsvpInputStatus | null;
-}) {
-  const label = lockedRsvpLabel(onWaitlist, myInputStatus);
-  return (
-    <div className="bg-surface-dim text-foreground-secondary mx-auto flex h-12 min-w-28 items-center justify-center gap-2 rounded-full px-5 text-base font-medium">
-      <LockIcon />
-      <span role="status">{label}</span>
-    </div>
-  );
-}
-
-function LockIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="5" y="11" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="2" />
-      <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="2" />
-    </svg>
   );
 }
 
