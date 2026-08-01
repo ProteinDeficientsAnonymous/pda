@@ -18,6 +18,10 @@ export function AddCoHostDialog({ event, open, onClose }: Props) {
   const update = useUpdateEvent(event.id);
   const [added, setAdded] = useState<MemberSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const excludeIds = [
+    ...event.coHostIds,
+    ...event.pendingCohostInvites.map((invite) => invite.userId),
+  ];
 
   async function submit() {
     setError(null);
@@ -37,7 +41,7 @@ export function AddCoHostDialog({ event, open, onClose }: Props) {
         label="search members"
         selected={added}
         onChange={setAdded}
-        excludeIds={event.coHostIds}
+        excludeIds={excludeIds}
       />
       {error ? (
         <p role="alert" className="text-destructive mt-2 text-sm">
