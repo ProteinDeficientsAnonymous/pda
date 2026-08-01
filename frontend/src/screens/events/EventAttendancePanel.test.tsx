@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Event, EventStats } from '@/models/event';
-import { AttendanceStatus } from '@/models/event';
+import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
 const setAttendanceMutate = vi.fn();
@@ -49,6 +49,15 @@ const BASE_STATS: EventStats = {
     },
   ],
 };
+
+const MIXED_RSVP_EVENT = makeEvent({
+  isPast: true,
+  guests: [
+    makeGuest({ userId: 'alice', name: 'alice', status: RsvpServerStatus.Attending }),
+    makeGuest({ userId: 'mabel', name: 'mabel', status: RsvpServerStatus.Maybe }),
+    makeGuest({ userId: 'cassie', name: 'cassie', status: RsvpServerStatus.CantGo }),
+  ],
+});
 
 function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -143,6 +152,38 @@ describe('EventAttendancePanel', () => {
     const pastEvent: Event = { ...BASE_EVENT, isPast: true };
     renderPanel(pastEvent);
     expect(screen.getByRole('button', { name: /^attended$/i })).toBeInTheDocument();
+  });
+
+  it('lists guests of every rsvp status by default', () => {
+    mockStats(BASE_STATS);
+    renderPanel(MIXED_RSVP_EVENT);
+
+    expect(screen.getByText('alice')).toBeInTheDocument();
+    expect(screen.getByText('mabel')).toBeInTheDocument();
+    expect(screen.getByText('cassie')).toBeInTheDocument();
+  });
+
+  it('narrows the list to one rsvp status when a filter chip is picked', () => {
+    mockStats(BASE_STATS);
+    renderPanel(MIXED_RSVP_EVENT);
+
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+
+    expect(screen.getByText('mabel')).toBeInTheDocument();
+    expect(screen.queryByText('alice')).not.toBeInTheDocument();
+    expect(screen.queryByText('cassie')).not.toBeInTheDocument();
+  });
+
+  it('restores the full list when the "all" chip is picked again', () => {
+    mockStats(BASE_STATS);
+    renderPanel(MIXED_RSVP_EVENT);
+
+    fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^all$/i }));
+
+    expect(screen.getByText('alice')).toBeInTheDocument();
+    expect(screen.getByText('mabel')).toBeInTheDocument();
+    expect(screen.getByText('cassie')).toBeInTheDocument();
   });
 
   it('renders cancellations list before the event opens for check-in', () => {

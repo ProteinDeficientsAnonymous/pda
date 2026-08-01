@@ -280,6 +280,7 @@ class EventRSVP(models.Model):
 
     class Meta:
         app_label = "community"
+        ordering = ["created_at", "pk"]
         constraints = [
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
         ]

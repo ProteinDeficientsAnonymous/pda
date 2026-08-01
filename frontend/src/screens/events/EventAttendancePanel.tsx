@@ -2,15 +2,9 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { useEventStats, useSetAttendance } from '@/api/eventStats';
-import type {
-  AttendanceStatusValue,
-  Event,
-  EventCancellation,
-  EventGuest,
-  EventStats,
-} from '@/models/event';
-import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
-import { cn } from '@/utils/cn';
+import type { Event, EventCancellation, EventStats } from '@/models/event';
+
+import { EventCheckInList } from './EventCheckInList';
 
 interface Props {
   event: Event;
@@ -28,7 +22,6 @@ export function EventAttendancePanel({ event }: Props) {
   const stats = useEventStats(event.id, true);
   const setAttendance = useSetAttendance(event.id);
 
-  const goingGuests = event.guests.filter((g) => g.status === RsvpServerStatus.Attending);
   const checkInOpen = isCheckInOpen(event);
 
   if (stats.isLoading) {
@@ -41,8 +34,8 @@ export function EventAttendancePanel({ event }: Props) {
     <div className="flex flex-col gap-4">
       <StatsRow stats={stats.data} />
       {checkInOpen ? (
-        <CheckInList
-          guests={goingGuests}
+        <EventCheckInList
+          guests={event.guests}
           onMark={(userId, attendance) => {
             setAttendance.mutate(
               { userId, attendance },
@@ -76,83 +69,6 @@ function Chip({ label, value }: { label: string; value: number }) {
     <span className="bg-surface-dim text-foreground-secondary rounded-full px-3 py-1">
       <span className="text-foreground font-medium">{value}</span> {label}
     </span>
-  );
-}
-
-function CheckInList({
-  guests,
-  onMark,
-  isPending,
-}: {
-  guests: EventGuest[];
-  onMark: (userId: string, attendance: AttendanceStatusValue) => void;
-  isPending: boolean;
-}) {
-  if (guests.length === 0) {
-    return <p className="text-muted text-xs">no going rsvps to check in</p>;
-  }
-  return (
-    <div className="flex flex-col gap-2">
-      <h3 className="text-muted text-xs font-medium">check-in</h3>
-      <ul className="flex flex-col gap-2">
-        {guests.map((g) => (
-          <li
-            key={g.userId}
-            className="border-border flex items-center justify-between gap-2 rounded-md border p-2"
-          >
-            <span className="text-foreground text-sm">{g.name}</span>
-            <div className="flex gap-1">
-              <AttendanceButton
-                active={g.attendance === AttendanceStatus.Attended}
-                label="attended"
-                onClick={() => {
-                  onMark(g.userId, AttendanceStatus.Attended);
-                }}
-                disabled={isPending}
-              />
-              <AttendanceButton
-                active={g.attendance === AttendanceStatus.NoShow}
-                label="no-show"
-                onClick={() => {
-                  onMark(g.userId, AttendanceStatus.NoShow);
-                }}
-                disabled={isPending}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function AttendanceButton({
-  active,
-  label,
-  onClick,
-  disabled,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  disabled: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={active}
-      className={cn(
-        'rounded-full px-3 py-1 text-xs transition-colors',
-        active
-          ? 'bg-brand-600 text-white'
-          : 'bg-surface-dim text-foreground-secondary hover:bg-surface-dim/70',
-        disabled && 'opacity-60',
-      )}
-    >
-      {label}
-    </button>
   );
 }
 
