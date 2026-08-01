@@ -16,4 +16,14 @@ describe('EventBadge', () => {
     render(<EventBadge event={makeEvent({ eventType: EventType.Club })} />);
     expect(screen.getByText('pda club')).toBeInTheDocument();
   });
+
+  it.each([
+    ['official', EventType.Official],
+    ['pda club', EventType.Club],
+  ])('uses a contrasting overlay for %s on a card', (label, eventType) => {
+    render(<EventBadge event={makeEvent({ eventType })} onCard />);
+    const badge = screen.getByText(label);
+    expect(badge).toHaveClass('bg-black/10', 'dark:bg-white/15');
+    expect(badge).not.toHaveAttribute('style');
+  });
 });

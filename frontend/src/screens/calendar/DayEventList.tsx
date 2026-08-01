@@ -85,7 +85,7 @@ function DayEventCard({ event, onSelect }: CardProps) {
       <div className="text-[15px] font-semibold">{event.title}</div>
       {event.eventType === EventType.Official || event.eventType === EventType.Club ? (
         <div className="mt-1 flex flex-wrap gap-1.5">
-          <EventBadge event={event} />
+          <EventBadge event={event} onCard />
         </div>
       ) : null}
       {timeRange ? <div className="mt-1 text-[13px] opacity-90">{timeRange}</div> : null}
