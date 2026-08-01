@@ -127,4 +127,16 @@ describe('CalendarScreen', () => {
       expect(screen.getByRole('button', { name: /go to today/i })).toBeInTheDocument();
     });
   });
+
+  it('scrolls the list inside the view box so the toggles stay put', async () => {
+    const user = userEvent.setup();
+    const { container } = renderCalendar();
+
+    await user.click(screen.getByRole('radio', { name: /^list$/i }));
+
+    await waitFor(() => {
+      expect(container.querySelector('main > div.min-h-0.flex-1')).not.toBeNull();
+    });
+    expect(container.querySelector('.overflow-y-auto')).not.toBeNull();
+  });
 });

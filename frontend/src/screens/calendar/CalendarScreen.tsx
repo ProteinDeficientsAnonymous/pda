@@ -95,7 +95,9 @@ export default function CalendarScreen() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-4 pb-6 md:pt-6">
+    // Bound to the viewport minus the AppShell header (h-10) and bottom nav
+    // (h-14) so each view scrolls inside its own box and the toggles stay put.
+    <main className="mx-auto flex h-[calc(100dvh-2.5rem-3.5rem-env(safe-area-inset-bottom))] max-w-6xl flex-col px-4 pt-4 md:pt-6">
       <header className="mb-4 flex justify-center">
         <ViewSwitcher value={view} onChange={setView} />
       </header>
@@ -115,7 +117,7 @@ export default function CalendarScreen() {
         </div>
       ) : null}
 
-      <div className="flex flex-col p-1" style={{ height: 'calc(100dvh - 14rem)' }}>
+      <div className="flex min-h-0 flex-1 flex-col p-1">
         {useNarrowWeek ? (
           <>
             <NarrowWeekToolbar date={date} weekStartsOn={weekStartsOn} onNavigate={setDate} />
@@ -144,12 +146,12 @@ export default function CalendarScreen() {
         ) : useDayList ? (
           <>
             <DayToolbar date={date} onNavigate={setDate} />
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
               <DayEventList date={date} events={datedEvents} onSelectEvent={goToEvent} />
             </div>
           </>
         ) : useAgendaList ? (
-          <div className="flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
             <AgendaList events={datedEvents} onSelectEvent={goToEvent} />
           </div>
         ) : (
