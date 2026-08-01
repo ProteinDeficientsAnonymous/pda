@@ -1,40 +1,19 @@
-/** Draft / wire-aligned RSVP question shape used by authoring + RSVP dialog. */
+/** Draft / wire-aligned RSVP question helpers used by authoring + RSVP dialog. */
 
 import {
   questionTypeWantsOptions,
   RSVP_QUESTION_TYPE_OPTIONS,
   type RsvpQuestionType,
 } from '@/components/questions/questionTypeOptions';
+import type { EventRsvpQuestion } from '@/models/event';
 
 export type { RsvpQuestionType };
-
-export interface RsvpQuestionDraft {
-  id: string;
-  label: string;
-  fieldType: RsvpQuestionType;
-  options: string[];
-  required: boolean;
-}
-
-/** Free text, single selected option, or multi-select list. */
-export type RsvpAnswerValue = string | string[];
+export type RsvpQuestionDraft = EventRsvpQuestion;
+export type RsvpAnswerValue = string;
 
 export const RSVP_QUESTION_TYPE_LABELS: Record<RsvpQuestionType, string> = Object.fromEntries(
   RSVP_QUESTION_TYPE_OPTIONS.map((o) => [o.value, o.label]),
 ) as Record<RsvpQuestionType, string>;
-
-export function rsvpSectionSummary(rsvpEnabled: boolean): string | undefined {
-  return rsvpEnabled ? 'enabled' : undefined;
-}
-
-export function questionsSectionSummary(questionCount: number): string | undefined {
-  if (questionCount === 0) return undefined;
-  return `${String(questionCount)} question${questionCount === 1 ? '' : 's'}`;
-}
-
-export function wantsOptions(fieldType: RsvpQuestionType): boolean {
-  return questionTypeWantsOptions(fieldType);
-}
 
 export function parseOptionsText(text: string): string[] {
   return text
@@ -44,9 +23,7 @@ export function parseOptionsText(text: string): string[] {
 }
 
 export function isAnswerFilled(value: RsvpAnswerValue | undefined): boolean {
-  if (value === undefined) return false;
-  if (Array.isArray(value)) return value.length > 0;
-  return value.trim().length > 0;
+  return Boolean(value?.trim());
 }
 
 export function missingRequiredQuestionIds(
@@ -59,3 +36,5 @@ export function missingRequiredQuestionIds(
 export function newQuestionId(): string {
   return `q-${crypto.randomUUID()}`;
 }
+
+export { questionTypeWantsOptions as wantsOptions };

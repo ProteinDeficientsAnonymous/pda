@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useFlag } from '@/api/featureFlags';
+import { Dialog } from '@/components/ui/Dialog';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
 import { Feature } from '@/models/featureFlags';
 
 import { EmailBlastDialog } from './EmailBlastDialog';
+import { EventRsvpResponsesSection } from './EventRsvpResponsesSection';
 import { GroupTextDialog } from './GroupTextDialog';
-import { QuestionResponsesDialog } from './QuestionResponsesDialog';
 
 interface Props {
   event: Event;
@@ -138,13 +139,18 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
           setGroupTextOpen(false);
         }}
       />
-      <QuestionResponsesDialog
-        event={event}
-        open={responsesOpen}
-        onClose={() => {
-          setResponsesOpen(false);
-        }}
-      />
+      {responsesOpen && event.rsvpQuestions.length > 0 ? (
+        <Dialog
+          open={responsesOpen}
+          onClose={() => {
+            setResponsesOpen(false);
+          }}
+          title="question responses"
+          wide
+        >
+          <EventRsvpResponsesSection event={event} embedded />
+        </Dialog>
+      ) : null}
     </div>
   );
 }

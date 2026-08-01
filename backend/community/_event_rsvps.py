@@ -132,12 +132,23 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
         )
 
 
+def _snapshot_rsvp_answers(
+    event: Event,
+    existing: EventRSVP | None,
+    final_status: str,
+    answers: dict[str, str] | None,
+) -> dict:
+    if answers_required_for_status(final_status):
+        return build_rsvp_answers(list(event.rsvp_questions.all()), answers, require_answers=True)
+    return dict(existing.answers or {}) if existing is not None else {}
+
+
 def _apply_rsvp_in_transaction(
     event_id,
     user,
     status: str,
     has_plus_one: bool,
-    answers: dict[str, str | list[str]] | None = None,
+    answers: dict[str, str] | None = None,
 ) -> tuple[str, list[str], bool]:
     """Execute RSVP upsert inside a locked transaction.
 
@@ -164,13 +175,7 @@ def _apply_rsvp_in_transaction(
     created = existing is None
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
-
-    questions = list(event.rsvp_questions.all())
-    require_answers = answers_required_for_status(final_status)
-    if require_answers:
-        answers_snapshot = build_rsvp_answers(questions, answers, require_answers=True)
-    else:
-        answers_snapshot = dict(existing.answers or {}) if existing is not None else {}
+    answers_snapshot = _snapshot_rsvp_answers(event, existing, final_status, answers)
 
     if (
         existing is not None

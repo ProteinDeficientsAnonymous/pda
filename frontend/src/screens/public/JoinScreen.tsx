@@ -21,16 +21,14 @@ import { ContentContainer, ContentError, ContentLoading } from './ContentContain
 const MAX_NAME = 64;
 const MAX_ANSWER = 2000;
 
-/** Join select is a dropdown; shared QuestionField uses `dropdown` for that UX. */
 function toSurveyQuestion(q: JoinQuestion): SurveyQuestion {
   return {
     id: q.id,
     label: q.label,
-    fieldType: q.fieldType === 'select' ? 'dropdown' : 'text',
+    fieldType: q.fieldType,
     options: q.options,
     required: q.required,
     displayOrder: q.displayOrder,
-    rows: q.rows,
   };
 }
 

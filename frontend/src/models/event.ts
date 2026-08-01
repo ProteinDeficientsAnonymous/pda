@@ -95,7 +95,7 @@ export interface EventGuest {
   attendance: AttendanceStatusValue;
   isMember: boolean;
   /** Host-only RSVP question snapshots; empty for non-hosts. */
-  answers: Record<string, { label: string; answer: string | string[] }>;
+  answers: Record<string, { label: string; answer: string }>;
 }
 
 export interface EventCancellation {
@@ -163,7 +163,7 @@ export interface Event {
   guests: EventGuest[];
   myRsvp: string | null;
   /** Snapshot answers for the viewer's RSVP: questionId → { label, answer }. */
-  myRsvpAnswers: Record<string, { label: string; answer: string | string[] }>;
+  myRsvpAnswers: Record<string, { label: string; answer: string }>;
   rsvpQuestions: EventRsvpQuestion[];
   // The resolved viewer's own user id — carried from the backend so a
   // token-holding (logged-out) viewer can find their own entry in `guests`,

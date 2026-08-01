@@ -1,9 +1,10 @@
 from community.models.attendance_reminder import AttendanceMilestone, AttendanceReminder
 from community.models.choices import (
+    RSVP_CHOICE_TYPES,
+    RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     CoHostInviteStatus,
     EventFlagStatus,
-    EventRsvpQuestionType,
     EventStatus,
     EventType,
     FeatureFlag,
@@ -58,8 +59,9 @@ __all__ = [
     "AttendanceStatus",
     "CoHostInviteStatus",
     "EventFlagStatus",
-    "EventRsvpQuestionType",
     "EventStatus",
+    "RSVP_CHOICE_TYPES",
+    "RSVP_QUESTION_TYPE_CHOICES",
     "EventType",
     "FeatureFlag",
     "FeedbackType",

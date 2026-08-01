@@ -12,8 +12,10 @@ interface Props {
 }
 
 export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }: Props) {
-  const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<RsvpQuestionDraft | null>(null);
+  const [dialogQuestion, setDialogQuestion] = useState<RsvpQuestionDraft | null | undefined>(
+    undefined,
+  );
+  const dialogOpen = dialogQuestion !== undefined;
 
   if (!rsvpEnabled) {
     return (
@@ -29,7 +31,7 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
           type="button"
           variant="secondary"
           onClick={() => {
-            setCreating(true);
+            setDialogQuestion(null);
           }}
         >
           add question
@@ -59,7 +61,7 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
                     type="button"
                     variant="ghost"
                     onClick={() => {
-                      setEditing(q);
+                      setDialogQuestion(q);
                     }}
                   >
                     edit
@@ -81,22 +83,17 @@ export function EventFormQuestions({ rsvpEnabled, questions, onQuestionsChange }
       )}
 
       <EventRsvpQuestionDialog
-        open={creating}
+        open={dialogOpen}
+        existing={dialogQuestion ?? undefined}
         onClose={() => {
-          setCreating(false);
+          setDialogQuestion(undefined);
         }}
         onSave={(question) => {
-          onQuestionsChange([...questions, question]);
-        }}
-      />
-      <EventRsvpQuestionDialog
-        open={editing !== null}
-        existing={editing ?? undefined}
-        onClose={() => {
-          setEditing(null);
-        }}
-        onSave={(question) => {
-          onQuestionsChange(questions.map((item) => (item.id === question.id ? question : item)));
+          if (dialogQuestion) {
+            onQuestionsChange(questions.map((item) => (item.id === question.id ? question : item)));
+          } else {
+            onQuestionsChange([...questions, question]);
+          }
         }}
       />
     </div>

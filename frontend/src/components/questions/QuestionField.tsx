@@ -12,7 +12,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-/** Shared answer field for surveys, RSVP questions, and any other typed questions. */
+/** Shared answer field for surveys, RSVP questions, and join form questions. */
 export function QuestionField({ question, value, onChange, error, readOnly }: Props) {
   const label = question.required ? question.label : `${question.label} (optional)`;
   const common = { label, error, disabled: readOnly };
@@ -26,7 +26,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           onChange={(e) => {
             onChange(e.target.value);
           }}
-          rows={question.rows ?? 5}
+          rows={5}
           maxLength={2000}
         />
       );
@@ -105,21 +105,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
         />
       );
     case 'text':
-    default: {
-      const rows = question.rows ?? 1;
-      if (rows > 1) {
-        return (
-          <Textarea
-            {...common}
-            value={asString(value)}
-            onChange={(e) => {
-              onChange(e.target.value);
-            }}
-            rows={rows}
-            maxLength={2000}
-          />
-        );
-      }
+    default:
       return (
         <TextField
           {...common}
@@ -130,7 +116,6 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           maxLength={2000}
         />
       );
-    }
   }
 }
 
@@ -143,6 +128,15 @@ function asCsv(v: AnswerValue | undefined): string[] {
 }
 function asAvailabilityMap(v: AnswerValue | undefined): Record<string, string> {
   return typeof v === 'object' ? v : {};
+}
+
+function FieldError({ error }: { error?: string | undefined }) {
+  if (!error) return null;
+  return (
+    <p role="alert" className="text-xs text-red-600">
+      {error}
+    </p>
+  );
 }
 
 function RadioGroup({
@@ -178,11 +172,7 @@ function RadioGroup({
           <span>{o}</span>
         </label>
       ))}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -222,11 +212,7 @@ function CheckboxGroup({
           <span>{o}</span>
         </label>
       ))}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -273,11 +259,7 @@ function StarRating({
           );
         })}
       </div>
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }
@@ -341,11 +323,7 @@ function DatetimePoll({
           </div>
         );
       })}
-      {error ? (
-        <p role="alert" className="text-xs text-red-600">
-          {error}
-        </p>
-      ) : null}
+      <FieldError error={error} />
     </fieldset>
   );
 }

@@ -1,11 +1,11 @@
 import re
 from datetime import datetime
+from typing import Literal
 from urllib.parse import urlparse
 
 import phonenumbers
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from community._event_rsvp_question_schemas import EventRsvpQuestionOut
 from community._field_limits import FieldLimit
 from community._shared import require_url_path, validate_whatsapp_url
 from community._validation import Code, raise_validation
@@ -21,6 +21,37 @@ from community.models import (
 # Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
 # overkill for a free-text payment field, and we don't need DNS lookups.
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+RsvpQuestionFieldType = Literal["textarea", "dropdown", "multiselect"]
+
+
+class EventRsvpQuestionOut(BaseModel):
+    id: str
+    label: str
+    field_type: str
+    options: list[str] = []
+    required: bool
+    display_order: int
+
+
+class EventRsvpQuestionIn(BaseModel):
+    label: str = Field(max_length=FieldLimit.SHORT_TEXT)
+    field_type: RsvpQuestionFieldType
+    options: list[str] = []
+    required: bool = False
+
+    @field_validator("label")
+    @classmethod
+    def label_not_blank(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("label required")
+        return trimmed
+
+    @field_validator("options")
+    @classmethod
+    def trim_options(cls, value: list[str]) -> list[str]:
+        return [o.strip() for o in value if o.strip()]
 
 
 def _looks_like_email(s: str) -> bool:
@@ -234,7 +265,7 @@ class RSVPIn(BaseModel):
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     # question_id → free text or selected option(s)
-    answers: dict[str, str | list[str]] = {}
+    answers: dict[str, str] = {}
 
 
 class HostRSVPIn(BaseModel):

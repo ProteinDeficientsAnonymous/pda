@@ -46,20 +46,20 @@ describe('RsvpQuestionFields', () => {
     expect(onChange).toHaveBeenCalledWith('q-one', 'car');
   });
 
-  it('toggles multiselect options', () => {
+  it('toggles multiselect options as csv', () => {
     const onChange = vi.fn();
     render(
       <RsvpQuestionFields
         questions={questions}
-        answers={{ 'q-multi': ['setup'] }}
+        answers={{ 'q-multi': 'setup' }}
         onChange={onChange}
         errors={{}}
       />,
     );
     fireEvent.click(screen.getByRole('checkbox', { name: 'cleanup' }));
-    expect(onChange).toHaveBeenCalledWith('q-multi', ['setup', 'cleanup']);
+    expect(onChange).toHaveBeenCalledWith('q-multi', 'setup,cleanup');
     fireEvent.click(screen.getByRole('checkbox', { name: 'setup' }));
-    expect(onChange).toHaveBeenCalledWith('q-multi', []);
+    expect(onChange).toHaveBeenCalledWith('q-multi', '');
   });
 
   it('shows per-question errors', () => {

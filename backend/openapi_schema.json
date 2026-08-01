@@ -2789,7 +2789,13 @@
       "EventRsvpQuestionIn": {
         "properties": {
           "field_type": {
-            "$ref": "#/components/schemas/EventRsvpQuestionType"
+            "enum": [
+              "textarea",
+              "dropdown",
+              "multiselect"
+            ],
+            "title": "Field Type",
+            "type": "string"
           },
           "label": {
             "maxLength": 300,
@@ -2857,16 +2863,6 @@
         ],
         "title": "EventRsvpQuestionOut",
         "type": "object"
-      },
-      "EventRsvpQuestionType": {
-        "description": "Subset of SurveyQuestionType wire values \u2014 keep names aligned for shared UI.",
-        "enum": [
-          "textarea",
-          "dropdown",
-          "multiselect"
-        ],
-        "title": "EventRsvpQuestionType",
-        "type": "string"
       },
       "EventStatsOut": {
         "properties": {
@@ -3368,10 +3364,12 @@
       "JoinFormQuestionIn": {
         "properties": {
           "field_type": {
-            "default": "text",
-            "maxLength": 20,
-            "title": "Field Type",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JoinFormQuestionType"
+              }
+            ],
+            "default": "text"
           },
           "label": {
             "maxLength": 300,
@@ -3390,13 +3388,6 @@
             "default": false,
             "title": "Required",
             "type": "boolean"
-          },
-          "rows": {
-            "default": 1,
-            "maximum": 30,
-            "minimum": 1,
-            "title": "Rows",
-            "type": "integer"
           }
         },
         "required": [
@@ -3450,11 +3441,6 @@
           "required": {
             "title": "Required",
             "type": "boolean"
-          },
-          "rows": {
-            "default": 1,
-            "title": "Rows",
-            "type": "integer"
           }
         },
         "required": [
@@ -3466,6 +3452,16 @@
         ],
         "title": "JoinFormQuestionOut",
         "type": "object"
+      },
+      "JoinFormQuestionType": {
+        "description": "Subset of SurveyQuestionType wire values used on the join form.",
+        "enum": [
+          "text",
+          "textarea",
+          "dropdown"
+        ],
+        "title": "JoinFormQuestionType",
+        "type": "string"
       },
       "JoinRequestAnswerOut": {
         "properties": {
@@ -4805,17 +4801,7 @@
         "properties": {
           "answers": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                }
-              ]
+              "type": "string"
             },
             "default": {},
             "title": "Answers",

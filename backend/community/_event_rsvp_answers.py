@@ -1,10 +1,9 @@
 """Validate and snapshot RSVP question answers."""
 
 from community._validation import Code, raise_validation
-from community.models import EventRsvpQuestion, EventRsvpQuestionType, RSVPStatus
+from community.models import EventRsvpQuestion, RSVPStatus, SurveyQuestionType
 
-AnswerRaw = str | list[str]
-AnswersIn = dict[str, AnswerRaw]
+AnswersIn = dict[str, str]
 
 
 def answers_required_for_status(status: str) -> bool:
@@ -15,18 +14,13 @@ def answers_required_for_status(status: str) -> bool:
     }
 
 
-def _is_empty(answer: AnswerRaw | None) -> bool:
-    if answer is None:
-        return True
-    if isinstance(answer, list):
-        return len(answer) == 0
-    return not str(answer).strip()
+def _is_empty(answer: str | None) -> bool:
+    return answer is None or not str(answer).strip()
 
 
-def _normalize_answer(q: EventRsvpQuestion, answer: AnswerRaw) -> str | list[str]:
-    if q.field_type == EventRsvpQuestionType.MULTISELECT:
-        values = answer if isinstance(answer, list) else [answer]
-        cleaned = [str(v).strip() for v in values if str(v).strip()]
+def _normalize_answer(q: EventRsvpQuestion, answer: str) -> str:
+    if q.field_type == SurveyQuestionType.MULTISELECT:
+        cleaned = [v.strip() for v in str(answer).split(",") if v.strip()]
         options = set(q.options or [])
         for val in cleaned:
             if val not in options:
@@ -35,16 +29,10 @@ def _normalize_answer(q: EventRsvpQuestion, answer: AnswerRaw) -> str | list[str
                     field=f"answers.{q.id}",
                     label=q.label,
                 )
-        return cleaned
+        return ",".join(cleaned)
 
-    if isinstance(answer, list):
-        raise_validation(
-            Code.Event.RSVP_ANSWER_INVALID_OPTION,
-            field=f"answers.{q.id}",
-            label=q.label,
-        )
     text = str(answer).strip()
-    if q.field_type == EventRsvpQuestionType.DROPDOWN and text not in (q.options or []):
+    if q.field_type == SurveyQuestionType.DROPDOWN and text not in (q.options or []):
         raise_validation(
             Code.Event.RSVP_ANSWER_INVALID_OPTION,
             field=f"answers.{q.id}",

@@ -2,12 +2,12 @@ import type {
   AttendanceStatusValue,
   Event,
   EventGuest,
-  EventRsvpQuestion,
-  EventRsvpQuestionType,
   EventTag,
   PendingCohostInvite,
 } from '@/models/event';
 import { AttendanceStatus } from '@/models/event';
+
+import { mapRsvpQuestion } from './eventRsvpQuestions';
 
 interface WireGuest {
   user_id: string;
@@ -18,7 +18,7 @@ interface WireGuest {
   has_plus_one?: boolean;
   attendance?: string;
   is_member?: boolean;
-  answers?: Record<string, { label?: string; answer?: string | string[] }>;
+  answers?: Record<string, { label?: string; answer?: string }>;
 }
 
 export interface WireEvent {
@@ -61,8 +61,15 @@ export interface WireEvent {
 
   guests?: WireGuest[];
   my_rsvp?: string | null;
-  my_rsvp_answers?: Record<string, { label?: string; answer?: string | string[] }>;
-  rsvp_questions?: WireRsvpQuestion[];
+  my_rsvp_answers?: Record<string, { label?: string; answer?: string }>;
+  rsvp_questions?: {
+    id: string;
+    label: string;
+    field_type: 'textarea' | 'dropdown' | 'multiselect';
+    options?: string[];
+    required: boolean;
+    display_order?: number;
+  }[];
   viewer_user_id?: string | null;
   survey_slugs?: string[];
   invited_user_ids?: string[];
@@ -82,15 +89,6 @@ export interface WireEvent {
 
   is_past?: boolean;
   status?: string;
-}
-
-interface WireRsvpQuestion {
-  id: string;
-  label: string;
-  field_type: string;
-  options?: string[];
-  required: boolean;
-  display_order?: number;
 }
 
 interface WireTag {
@@ -141,18 +139,8 @@ function mapPendingCohostInvite(w: WirePendingCohostInvite): PendingCohostInvite
   };
 }
 
-function mapRsvpQuestion(w: WireRsvpQuestion): EventRsvpQuestion {
-  return {
-    id: w.id,
-    label: w.label,
-    fieldType: w.field_type as EventRsvpQuestionType,
-    options: w.options ?? [],
-    required: w.required,
-  };
-}
-
 function mapMyRsvpAnswers(
-  raw: Record<string, { label?: string; answer?: string | string[] }> | undefined,
+  raw: Record<string, { label?: string; answer?: string }> | undefined,
 ): Event['myRsvpAnswers'] {
   if (!raw) return {};
   const out: Event['myRsvpAnswers'] = {};
@@ -207,7 +195,16 @@ export function mapEvent(e: WireEvent): Event {
     guests: (e.guests ?? []).map(mapGuest),
     myRsvp: e.my_rsvp ?? null,
     myRsvpAnswers: mapMyRsvpAnswers(e.my_rsvp_answers),
-    rsvpQuestions: (e.rsvp_questions ?? []).map(mapRsvpQuestion),
+    rsvpQuestions: (e.rsvp_questions ?? []).map((q) =>
+      mapRsvpQuestion({
+        id: q.id,
+        label: q.label,
+        field_type: q.field_type,
+        options: q.options ?? [],
+        required: q.required,
+        display_order: q.display_order ?? 0,
+      }),
+    ),
     viewerUserId: e.viewer_user_id ?? null,
     surveySlugs: e.survey_slugs ?? [],
     invitedUserIds: e.invited_user_ids ?? [],

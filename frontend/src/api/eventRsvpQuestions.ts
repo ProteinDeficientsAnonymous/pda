@@ -1,17 +1,17 @@
-import type { RsvpQuestionDraft, RsvpQuestionType } from '@/screens/events/rsvpQuestions';
+import type { EventRsvpQuestion, EventRsvpQuestionType } from '@/models/event';
 
 import { apiClient } from './client';
 
 interface WireQuestion {
   id: string;
   label: string;
-  field_type: RsvpQuestionType;
+  field_type: EventRsvpQuestionType;
   options: string[];
   required: boolean;
   display_order: number;
 }
 
-export function mapRsvpQuestion(w: WireQuestion): RsvpQuestionDraft {
+export function mapRsvpQuestion(w: WireQuestion): EventRsvpQuestion {
   return {
     id: w.id,
     label: w.label,
@@ -21,7 +21,7 @@ export function mapRsvpQuestion(w: WireQuestion): RsvpQuestionDraft {
   };
 }
 
-async function createQuestion(eventId: string, q: RsvpQuestionDraft): Promise<RsvpQuestionDraft> {
+async function createQuestion(eventId: string, q: EventRsvpQuestion): Promise<EventRsvpQuestion> {
   const { data } = await apiClient.post<WireQuestion>(
     `/api/community/events/${eventId}/rsvp-questions/`,
     {
@@ -34,7 +34,7 @@ async function createQuestion(eventId: string, q: RsvpQuestionDraft): Promise<Rs
   return mapRsvpQuestion(data);
 }
 
-async function updateQuestion(eventId: string, q: RsvpQuestionDraft): Promise<RsvpQuestionDraft> {
+async function updateQuestion(eventId: string, q: EventRsvpQuestion): Promise<EventRsvpQuestion> {
   const { data } = await apiClient.patch<WireQuestion>(
     `/api/community/events/${eventId}/rsvp-questions/${q.id}/`,
     {
@@ -55,9 +55,9 @@ async function deleteQuestion(eventId: string, questionId: string): Promise<void
  * Returns the canonical list with server-assigned ids. */
 export async function syncEventRsvpQuestions(
   eventId: string,
-  next: readonly RsvpQuestionDraft[],
-  previous: readonly RsvpQuestionDraft[],
-): Promise<RsvpQuestionDraft[]> {
+  next: readonly EventRsvpQuestion[],
+  previous: readonly EventRsvpQuestion[],
+): Promise<EventRsvpQuestion[]> {
   const prevIds = new Set(previous.map((q) => q.id));
   const nextIds = new Set(next.map((q) => q.id));
 
@@ -67,7 +67,7 @@ export async function syncEventRsvpQuestions(
     }
   }
 
-  const synced: RsvpQuestionDraft[] = [];
+  const synced: EventRsvpQuestion[] = [];
   for (const q of next) {
     if (prevIds.has(q.id)) {
       const before = previous.find((p) => p.id === q.id);

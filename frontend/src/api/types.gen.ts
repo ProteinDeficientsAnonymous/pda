@@ -3303,7 +3303,11 @@ export interface components {
         };
         /** EventRsvpQuestionIn */
         EventRsvpQuestionIn: {
-            field_type: components["schemas"]["EventRsvpQuestionType"];
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
             /** Label */
             label: string;
             /**
@@ -3335,12 +3339,6 @@ export interface components {
             /** Required */
             required: boolean;
         };
-        /**
-         * EventRsvpQuestionType
-         * @description Subset of SurveyQuestionType wire values — keep names aligned for shared UI.
-         * @enum {string}
-         */
-        EventRsvpQuestionType: "textarea" | "dropdown" | "multiselect";
         /** EventStatsOut */
         EventStatsOut: {
             /**
@@ -3575,11 +3573,8 @@ export interface components {
         };
         /** JoinFormQuestionIn */
         JoinFormQuestionIn: {
-            /**
-             * Field Type
-             * @default text
-             */
-            field_type: string;
+            /** @default text */
+            field_type: components["schemas"]["JoinFormQuestionType"];
             /** Label */
             label: string;
             /**
@@ -3592,11 +3587,6 @@ export interface components {
              * @default false
              */
             required: boolean;
-            /**
-             * Rows
-             * @default 1
-             */
-            rows: number;
         };
         /** JoinFormQuestionOrderIn */
         JoinFormQuestionOrderIn: {
@@ -3620,12 +3610,13 @@ export interface components {
             options: string[];
             /** Required */
             required: boolean;
-            /**
-             * Rows
-             * @default 1
-             */
-            rows: number;
         };
+        /**
+         * JoinFormQuestionType
+         * @description Subset of SurveyQuestionType wire values used on the join form.
+         * @enum {string}
+         */
+        JoinFormQuestionType: "text" | "textarea" | "dropdown";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */
@@ -4225,7 +4216,7 @@ export interface components {
              * @default {}
              */
             answers: {
-                [key: string]: string | string[];
+                [key: string]: string;
             };
             /** Comment */
             comment?: string | null;

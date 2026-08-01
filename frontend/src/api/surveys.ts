@@ -20,8 +20,6 @@ export interface SurveyQuestion {
   options: string[];
   required: boolean;
   displayOrder: number;
-  /** Optional input height; 1 = single-line, >1 = textarea rows. */
-  rows?: number;
 }
 
 export interface Survey {

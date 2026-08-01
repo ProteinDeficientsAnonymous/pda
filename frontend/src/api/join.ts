@@ -4,7 +4,7 @@ import { hasErrorCode } from './apiErrors';
 import { apiClient } from './client';
 import { Code } from './validationCodes.gen';
 
-export type JoinQuestionType = 'text' | 'select';
+export type JoinQuestionType = 'text' | 'textarea' | 'dropdown';
 
 export interface JoinQuestion {
   id: string;
@@ -13,7 +13,6 @@ export interface JoinQuestion {
   options: string[];
   required: boolean;
   displayOrder: number;
-  rows: number;
 }
 
 interface WireQuestion {
@@ -23,7 +22,6 @@ interface WireQuestion {
   options?: string[];
   required?: boolean;
   display_order: number;
-  rows?: number;
 }
 
 async function fetchJoinQuestions(): Promise<JoinQuestion[]> {
@@ -36,7 +34,6 @@ async function fetchJoinQuestions(): Promise<JoinQuestion[]> {
       options: q.options ?? [],
       required: q.required ?? false,
       displayOrder: q.display_order,
-      rows: q.rows ?? 1,
     }))
     .sort((a, b) => a.displayOrder - b.displayOrder);
 }
@@ -257,7 +254,6 @@ export interface JoinQuestionInput {
   fieldType: JoinQuestionType;
   options: string[];
   required: boolean;
-  rows: number;
 }
 
 function fromWire(w: WireQuestion): JoinQuestion {
@@ -268,7 +264,6 @@ function fromWire(w: WireQuestion): JoinQuestion {
     options: w.options ?? [],
     required: w.required ?? false,
     displayOrder: w.display_order,
-    rows: w.rows ?? 1,
   };
 }
 
@@ -281,7 +276,6 @@ export function useCreateJoinQuestion() {
         field_type: input.fieldType,
         options: input.options,
         required: input.required,
-        rows: input.rows,
       });
       return fromWire(data);
     },
@@ -303,7 +297,6 @@ export function useUpdateJoinQuestion(questionId: string) {
           field_type: input.fieldType,
           options: input.options,
           required: input.required,
-          rows: input.rows,
         },
       );
       return fromWire(data);

@@ -7,12 +7,13 @@ from django.db import migrations, models
 from django.db.models.functions import Lower
 
 
-def backfill_multiline_why_questions(apps, schema_editor):
-    """Former FE heuristic: labels containing 'why' rendered as a 5-row textarea."""
+def migrate_join_question_types(apps, schema_editor):
+    """Align join wire types with surveys; promote former 'why' text heuristics to textarea."""
     JoinFormQuestion = apps.get_model("community", "JoinFormQuestion")
+    JoinFormQuestion.objects.filter(field_type="select").update(field_type="dropdown")
     JoinFormQuestion.objects.annotate(label_l=Lower("label")).filter(
-        field_type="text", label_l__contains="why", rows=1
-    ).update(rows=5)
+        field_type="text", label_l__contains="why"
+    ).update(field_type="textarea")
 
 
 class Migration(migrations.Migration):
@@ -63,10 +64,18 @@ class Migration(migrations.Migration):
                 "ordering": ["display_order"],
             },
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name="joinformquestion",
-            name="rows",
-            field=models.PositiveSmallIntegerField(default=1),
+            name="field_type",
+            field=models.CharField(
+                choices=[
+                    ("text", "Text"),
+                    ("textarea", "Text area"),
+                    ("dropdown", "Dropdown"),
+                ],
+                default="text",
+                max_length=10,
+            ),
         ),
-        migrations.RunPython(backfill_multiline_why_questions, migrations.RunPython.noop),
+        migrations.RunPython(migrate_join_question_types, migrations.RunPython.noop),
     ]

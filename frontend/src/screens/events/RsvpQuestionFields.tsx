@@ -1,7 +1,7 @@
-import type { AnswerValue, SurveyQuestion } from '@/api/surveys';
+import type { SurveyQuestion } from '@/api/surveys';
 import { QuestionField } from '@/components/questions/QuestionField';
 
-import type { RsvpAnswerValue, RsvpQuestionDraft, RsvpQuestionType } from './rsvpQuestions';
+import type { RsvpAnswerValue, RsvpQuestionDraft } from './rsvpQuestions';
 
 interface Props {
   questions: readonly RsvpQuestionDraft[];
@@ -27,9 +27,9 @@ export function RsvpQuestionFields({
         <QuestionField
           key={question.id}
           question={toSurveyQuestion(question)}
-          value={toSurveyValue(question.fieldType, answers[question.id])}
+          value={answers[question.id] ?? ''}
           onChange={(v) => {
-            onChange(question.id, fromSurveyValue(question.fieldType, v));
+            onChange(question.id, typeof v === 'string' ? v : '');
           }}
           error={errors[question.id]}
           readOnly={disabled}
@@ -48,23 +48,4 @@ function toSurveyQuestion(q: RsvpQuestionDraft): SurveyQuestion {
     required: q.required,
     displayOrder: 0,
   };
-}
-
-function toSurveyValue(
-  fieldType: RsvpQuestionType,
-  value: RsvpAnswerValue | undefined,
-): AnswerValue | undefined {
-  if (value === undefined) return undefined;
-  if (fieldType === 'multiselect') {
-    return Array.isArray(value) ? value.join(',') : value;
-  }
-  return typeof value === 'string' ? value : '';
-}
-
-function fromSurveyValue(fieldType: RsvpQuestionType, value: AnswerValue): RsvpAnswerValue {
-  if (fieldType === 'multiselect') {
-    if (typeof value !== 'string' || !value) return [];
-    return value.split(',').filter(Boolean);
-  }
-  return typeof value === 'string' ? value : '';
 }

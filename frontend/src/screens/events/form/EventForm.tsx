@@ -24,11 +24,7 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
-import {
-  questionsSectionSummary,
-  type RsvpQuestionDraft,
-  rsvpSectionSummary,
-} from '../rsvpQuestions';
+import { type RsvpQuestionDraft } from '../rsvpQuestions';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
@@ -40,16 +36,6 @@ import { validateEventForm } from './validateEventForm';
 
 interface Props {
   existing?: Event;
-}
-
-function mapEventQuestions(existing?: Event): RsvpQuestionDraft[] {
-  return (existing?.rsvpQuestions ?? []).map((q) => ({
-    id: q.id,
-    label: q.label,
-    fieldType: q.fieldType,
-    options: q.options,
-    required: q.required,
-  }));
 }
 
 // Field → section map. Drives which CollapsibleCard opens on validation
@@ -119,11 +105,11 @@ export function EventForm({ existing }: Props) {
   // then POST the poll. If the poll POST fails we still land on the new
   // event's detail page and the host can retry from there.
   const [bufferedPollOptions, setBufferedPollOptions] = useState<Date[] | null>(null);
-  const [rsvpQuestions, setRsvpQuestions] = useState<RsvpQuestionDraft[]>(() =>
-    mapEventQuestions(existing),
+  const [rsvpQuestions, setRsvpQuestions] = useState<RsvpQuestionDraft[]>(
+    () => existing?.rsvpQuestions ?? [],
   );
-  const [savedRsvpQuestions, setSavedRsvpQuestions] = useState<RsvpQuestionDraft[]>(() =>
-    mapEventQuestions(existing),
+  const [savedRsvpQuestions, setSavedRsvpQuestions] = useState<RsvpQuestionDraft[]>(
+    () => existing?.rsvpQuestions ?? [],
   );
 
   const create = useCreateEvent();
@@ -357,14 +343,21 @@ export function EventForm({ existing }: Props) {
 
         <CollapsibleCard
           title="rsvp"
-          summary={rsvpSectionSummary(values.rsvpEnabled)}
+          summary={values.rsvpEnabled ? 'enabled' : undefined}
           error={hasAnyError(errors, RSVP_FIELDS) ? 'needs attention' : undefined}
           forceOpen={hasAnyError(errors, RSVP_FIELDS)}
         >
           <EventFormRsvp values={values} onChange={patch} errors={errors} />
         </CollapsibleCard>
 
-        <CollapsibleCard title="questions" summary={questionsSectionSummary(rsvpQuestions.length)}>
+        <CollapsibleCard
+          title="questions"
+          summary={
+            rsvpQuestions.length > 0
+              ? `${String(rsvpQuestions.length)} question${rsvpQuestions.length === 1 ? '' : 's'}`
+              : undefined
+          }
+        >
           <EventFormQuestions
             rsvpEnabled={values.rsvpEnabled}
             questions={rsvpQuestions}

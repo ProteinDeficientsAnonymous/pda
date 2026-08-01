@@ -81,7 +81,7 @@ export function RsvpBox({
     if (showQuestions) {
       for (const q of questions) {
         const value = answers[q.id];
-        if (value !== undefined && (Array.isArray(value) ? value.length > 0 : value.trim())) {
+        if (value?.trim()) {
           filledAnswers[q.id] = value;
         }
       }

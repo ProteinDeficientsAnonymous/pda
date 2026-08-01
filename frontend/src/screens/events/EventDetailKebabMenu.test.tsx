@@ -14,9 +14,8 @@ vi.mock('./GroupTextDialog', () => ({
   GroupTextDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="group-text-dialog" /> : null,
 }));
-vi.mock('./QuestionResponsesDialog', () => ({
-  QuestionResponsesDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="question-responses-dialog" /> : null,
+vi.mock('./EventRsvpResponsesSection', () => ({
+  EventRsvpResponsesSection: () => <div data-testid="question-responses-dialog" />,
 }));
 
 import { useFlag } from '@/api/featureFlags';

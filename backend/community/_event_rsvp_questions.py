@@ -8,18 +8,13 @@ from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
 
-from community._event_rsvp_question_schemas import EventRsvpQuestionIn, EventRsvpQuestionOut
+from community._event_schemas import EventRsvpQuestionIn, EventRsvpQuestionOut
 from community._events import _can_edit_event
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventRsvpQuestion, EventRsvpQuestionType
+from community.models import RSVP_CHOICE_TYPES, Event, EventRsvpQuestion
 
 router = Router()
-
-_CHOICE_TYPES = {
-    EventRsvpQuestionType.DROPDOWN,
-    EventRsvpQuestionType.MULTISELECT,
-}
 
 
 def _question_out(q: EventRsvpQuestion) -> EventRsvpQuestionOut:
@@ -52,7 +47,7 @@ def _load_editable_event(request, event_id: UUID) -> Event:
 
 
 def _validate_question_payload(payload: EventRsvpQuestionIn) -> None:
-    if payload.field_type in _CHOICE_TYPES and len(payload.options) == 0:
+    if payload.field_type in RSVP_CHOICE_TYPES and len(payload.options) == 0:
         raise_validation(
             Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED,
             field="options",

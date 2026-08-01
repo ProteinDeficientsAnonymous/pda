@@ -18,11 +18,17 @@ export const QUESTION_TYPE_OPTIONS: {
 ];
 
 /** Subset hosts can attach to event RSVPs — same wire values as surveys. */
-export const RSVP_QUESTION_TYPE_OPTIONS = QUESTION_TYPE_OPTIONS.filter(
-  (o) => o.value === 'textarea' || o.value === 'dropdown' || o.value === 'multiselect',
-);
+export type RsvpQuestionType = 'textarea' | 'dropdown' | 'multiselect';
 
-export type RsvpQuestionType = (typeof RSVP_QUESTION_TYPE_OPTIONS)[number]['value'];
+export const RSVP_QUESTION_TYPE_OPTIONS: {
+  value: RsvpQuestionType;
+  label: string;
+  wantsOptions: boolean;
+}[] = [
+  { value: 'textarea', label: 'long text', wantsOptions: false },
+  { value: 'dropdown', label: 'dropdown', wantsOptions: true },
+  { value: 'multiselect', label: 'multiple choice', wantsOptions: true },
+];
 
 export function questionTypeWantsOptions(fieldType: SurveyQuestionType): boolean {
   return QUESTION_TYPE_OPTIONS.find((o) => o.value === fieldType)?.wantsOptions ?? false;

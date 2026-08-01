@@ -10,9 +10,9 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from community.models.choices import (
+    RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     EventFlagStatus,
-    EventRsvpQuestionType,
     EventStatus,
     EventType,
     InvitePermission,
@@ -299,7 +299,7 @@ class EventRsvpQuestion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvp_questions")
     label = models.CharField(max_length=300)
-    field_type = models.CharField(max_length=20, choices=EventRsvpQuestionType.choices)
+    field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
     options = models.JSONField(default=list, blank=True)
     required = models.BooleanField(default=False)
     display_order = models.PositiveIntegerField(default=0)

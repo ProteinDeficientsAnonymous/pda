@@ -45,16 +45,11 @@ class JoinRequestStatus(models.TextChoices):
 
 
 class JoinFormQuestionType(models.TextChoices):
+    """Subset of SurveyQuestionType wire values used on the join form."""
+
     TEXT = "text", "Text"
-    SELECT = "select", "Select"
-
-
-class EventRsvpQuestionType(models.TextChoices):
-    """Subset of SurveyQuestionType wire values — keep names aligned for shared UI."""
-
     TEXTAREA = "textarea", "Text area"
     DROPDOWN = "dropdown", "Dropdown"
-    MULTISELECT = "multiselect", "Multi select"
 
 
 class SurveyVisibility(models.TextChoices):
@@ -72,6 +67,17 @@ class SurveyQuestionType(models.TextChoices):
     YES_NO = "yes_no", "Yes / No"
     RATING = "rating", "Rating"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
+
+
+# RSVP questions reuse survey wire values; model choices stay a tight subset.
+RSVP_QUESTION_TYPE_CHOICES = [
+    (SurveyQuestionType.TEXTAREA, SurveyQuestionType.TEXTAREA.label),
+    (SurveyQuestionType.DROPDOWN, SurveyQuestionType.DROPDOWN.label),
+    (SurveyQuestionType.MULTISELECT, SurveyQuestionType.MULTISELECT.label),
+]
+RSVP_CHOICE_TYPES = frozenset(
+    {SurveyQuestionType.DROPDOWN, SurveyQuestionType.MULTISELECT},
+)
 
 
 class InvitePermission(models.TextChoices):

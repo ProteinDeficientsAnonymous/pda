@@ -134,7 +134,7 @@ def _find_my_rsvp_answers(rsvps, user) -> dict:
 
 
 def _rsvp_questions_out(event: Event) -> list:
-    from community._event_rsvp_question_schemas import EventRsvpQuestionOut
+    from community._event_schemas import EventRsvpQuestionOut
 
     return [
         EventRsvpQuestionOut(

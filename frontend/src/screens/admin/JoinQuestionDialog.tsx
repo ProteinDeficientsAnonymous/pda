@@ -29,7 +29,6 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
   const [label, setLabel] = useState(() => existing?.label ?? '');
   const [fieldType, setFieldType] = useState<JoinQuestionType>(() => existing?.fieldType ?? 'text');
   const [required, setRequired] = useState(() => existing?.required ?? false);
-  const [rows, setRows] = useState(() => String(existing?.rows ?? 1));
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
   const [error, setError] = useState<string | null>(null);
 
@@ -43,22 +42,14 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
       return;
     }
     const options =
-      fieldType === 'select'
+      fieldType === 'dropdown'
         ? optionsText
             .split('\n')
             .map((s) => s.trim())
             .filter(Boolean)
         : [];
-    if (fieldType === 'select' && options.length === 0) {
-      setError('add at least one option for a select question');
-      return;
-    }
-    const parsedRows = fieldType === 'text' ? Number.parseInt(rows, 10) : 1;
-    if (
-      fieldType === 'text' &&
-      (!Number.isInteger(parsedRows) || parsedRows < 1 || parsedRows > 30)
-    ) {
-      setError('rows must be a whole number from 1 to 30');
+    if (fieldType === 'dropdown' && options.length === 0) {
+      setError('add at least one option for a dropdown question');
       return;
     }
     const input: JoinQuestionInput = {
@@ -66,7 +57,6 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
       fieldType,
       options,
       required,
-      rows: parsedRows,
     };
     try {
       if (existing) await update.mutateAsync(input);
@@ -95,11 +85,12 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
             setFieldType(e.target.value as JoinQuestionType);
           }}
           options={[
-            { value: 'text', label: 'text' },
-            { value: 'select', label: 'select (one of)' },
+            { value: 'text', label: 'short text' },
+            { value: 'textarea', label: 'long text' },
+            { value: 'dropdown', label: 'dropdown' },
           ]}
         />
-        {fieldType === 'select' ? (
+        {fieldType === 'dropdown' ? (
           <Textarea
             label="options"
             value={optionsText}
@@ -109,19 +100,7 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
             hint="one per line"
             rows={5}
           />
-        ) : (
-          <TextField
-            label="rows"
-            type="number"
-            value={rows}
-            onChange={(e) => {
-              setRows(e.target.value);
-            }}
-            hint="1 = single line; higher values show a taller text box"
-            min={1}
-            max={30}
-          />
-        )}
+        ) : null}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

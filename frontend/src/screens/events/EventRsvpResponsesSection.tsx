@@ -92,15 +92,17 @@ function ChoiceTallyCard({
   for (const g of guests) {
     const snap = g.answers[question.id];
     if (!snap) continue;
-    const raw = snap.answer;
-    const values = Array.isArray(raw) ? raw : [raw];
-    let counted = false;
+    const values =
+      question.fieldType === 'multiselect'
+        ? snap.answer.split(',').filter(Boolean)
+        : snap.answer
+          ? [snap.answer]
+          : [];
+    if (values.length === 0) continue;
+    answered += 1;
     for (const v of values) {
-      if (!v) continue;
-      counted = true;
       counts.set(v, (counts.get(v) ?? 0) + 1);
     }
-    if (counted) answered += 1;
   }
 
   return (
@@ -128,9 +130,7 @@ function statusLabel(status: string): string {
   return status;
 }
 
-function renderAnswer(snap: { label: string; answer: string | string[] } | undefined): string {
+function renderAnswer(snap: { label: string; answer: string } | undefined): string {
   if (!snap) return '—';
-  const a = snap.answer;
-  if (Array.isArray(a)) return a.length > 0 ? a.join(', ') : '—';
-  return a.trim() || '—';
+  return snap.answer.trim().replaceAll(',', ', ') || '—';
 }

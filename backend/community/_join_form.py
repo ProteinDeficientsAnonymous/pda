@@ -25,15 +25,13 @@ class JoinFormQuestionOut(BaseModel):
     options: list[str] = []
     required: bool
     display_order: int
-    rows: int = 1
 
 
 class JoinFormQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
-    field_type: str = Field(default=JoinFormQuestionType.TEXT, max_length=FieldLimit.CHOICE)
+    field_type: JoinFormQuestionType = JoinFormQuestionType.TEXT
     options: list[str] = []
     required: bool = False
-    rows: int = Field(default=1, ge=1, le=30)
 
 
 class JoinFormQuestionOrderIn(BaseModel):
@@ -48,7 +46,6 @@ def _question_out(q: JoinFormQuestion) -> JoinFormQuestionOut:
         options=q.options or [],
         required=q.required,
         display_order=q.display_order,
-        rows=q.rows,
     )
 
 
@@ -81,7 +78,6 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
         field_type=payload.field_type,
         options=payload.options,
         required=payload.required,
-        rows=payload.rows if payload.field_type == JoinFormQuestionType.TEXT else 1,
         display_order=max_order,
     )
     audit_log(
@@ -146,7 +142,6 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
     q.field_type = payload.field_type
     q.options = payload.options
     q.required = payload.required
-    q.rows = payload.rows if payload.field_type == JoinFormQuestionType.TEXT else 1
     q.save()
     audit_log(
         logging.INFO,
