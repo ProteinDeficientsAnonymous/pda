@@ -1,3 +1,10 @@
+## [0.75.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.1...v0.75.2) (2026-08-01)
+
+
+### Bug Fixes
+
+* **events:** show rsvp status as locked on past events ([#1205](https://github.com/ProteinDeficientsAnonymous/pda/issues/1205)) ([c0c9208](https://github.com/ProteinDeficientsAnonymous/pda/commit/c0c9208344b0f3928c7fbbff61710448a53c20bf))
+
 ## [0.75.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.0...v0.75.1) (2026-08-01)
 
 
