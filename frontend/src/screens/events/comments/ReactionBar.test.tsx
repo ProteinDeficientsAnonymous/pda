@@ -1,5 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+// the voter popover links reactors only when authed; the bar's own behaviour
+// is auth-independent, so pin it signed-out to keep these tests router-free
+vi.mock('@/auth/store', () => ({
+  useAuthStore: (selector: (s: { status: string }) => unknown) => selector({ status: 'unauthed' }),
+}));
 
 import type { CommentReactionSummary, CommentReactor } from '@/models/eventComment';
 import { ReactionEmoji } from '@/models/eventComment';
@@ -41,6 +47,114 @@ describe('ReactionBar', () => {
     expect(onToggle).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog', { name: /who reacted with ❤️/u })).toBeInTheDocument();
     expect(screen.getByText('ash')).toBeInTheDocument();
+  });
+
+  it('lists every reactor in the popover', () => {
+    render(
+      <ReactionBar
+        reactions={[
+          summary(ReactionEmoji.Heart, 2, true, [
+            { userId: 'u1', name: 'ash', photoUrl: '' },
+            { userId: 'u2', name: 'robin', photoUrl: '' },
+          ]),
+        ]}
+        onToggle={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /who reacted with ❤️/u }));
+    expect(screen.getByText('ash')).toBeInTheDocument();
+    expect(screen.getByText('robin')).toBeInTheDocument();
+  });
+
+  it('opens the voters on long press without toggling the reaction', () => {
+    vi.useFakeTimers();
+    const onToggle = vi.fn();
+    render(
+      <ReactionBar
+        reactions={[
+          summary(ReactionEmoji.Heart, 1, true, [{ userId: 'u1', name: 'ash', photoUrl: '' }]),
+        ]}
+        onToggle={onToggle}
+      />,
+    );
+    const emoji = screen.getByRole('button', { name: /react with ❤️/u });
+    fireEvent.pointerDown(emoji, { clientX: 0, clientY: 0, button: 0 });
+    // the popover mounts mid-hold, so the rest of the gesture lands on it
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    fireEvent.mouseDown(emoji, { clientX: 0, clientY: 0, button: 0 });
+    fireEvent.pointerUp(emoji, { button: 0 });
+    fireEvent.mouseUp(emoji, { button: 0 });
+    fireEvent.click(emoji);
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(onToggle).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: /who reacted with ❤️/u })).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('keeps the voters open when the press drifts off the button', () => {
+    vi.useFakeTimers();
+    render(
+      <ReactionBar
+        reactions={[
+          summary(ReactionEmoji.Heart, 1, true, [{ userId: 'u1', name: 'ash', photoUrl: '' }]),
+        ]}
+        onToggle={vi.fn()}
+      />,
+    );
+    const emoji = screen.getByRole('button', { name: /react with ❤️/u });
+    fireEvent.pointerDown(emoji, { clientX: 0, clientY: 0, button: 0 });
+    fireEvent.pointerMove(emoji, { clientX: 3, clientY: 3 });
+    fireEvent.pointerLeave(emoji);
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByRole('dialog', { name: /who reacted with ❤️/u })).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('cancels the long press when the pointer moves away', () => {
+    vi.useFakeTimers();
+    const onToggle = vi.fn();
+    render(
+      <ReactionBar
+        reactions={[
+          summary(ReactionEmoji.Heart, 1, true, [{ userId: 'u1', name: 'ash', photoUrl: '' }]),
+        ]}
+        onToggle={onToggle}
+      />,
+    );
+    const emoji = screen.getByRole('button', { name: /react with ❤️/u });
+    fireEvent.pointerDown(emoji, { clientX: 0, clientY: 0, button: 0 });
+    fireEvent.pointerMove(emoji, { clientX: 60, clientY: 60 });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('toggles normally on a short press', () => {
+    vi.useFakeTimers();
+    const onToggle = vi.fn();
+    render(<ReactionBar reactions={[summary(ReactionEmoji.Heart, 1, true)]} onToggle={onToggle} />);
+    const emoji = screen.getByRole('button', { name: /react with ❤️/u });
+    fireEvent.pointerDown(emoji, { clientX: 0, clientY: 0, button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    fireEvent.pointerUp(emoji, { button: 0 });
+    fireEvent.click(emoji);
+
+    expect(onToggle).toHaveBeenCalledWith(ReactionEmoji.Heart);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('shows the add-reaction button', () => {

@@ -4,6 +4,7 @@ import type { CommentReactionSummary, ReactionEmojiValue } from '@/models/eventC
 import { REACTION_EMOJI_ORDER } from '@/models/eventComment';
 
 import { ReactionVoterPopover } from './ReactionVoterPopover';
+import { useLongPress } from './useLongPress';
 
 interface Props {
   reactions: CommentReactionSummary[];
@@ -41,46 +42,18 @@ export function ReactionBar({ reactions, onToggle }: Props) {
       ref={containerRef}
     >
       {reactions.map((r) => (
-        <div
+        <ReactionPill
           key={r.emoji}
-          className={[
-            'relative inline-flex items-center gap-1 rounded-full border pl-2 text-sm transition',
-            r.reactedByMe
-              ? 'bg-brand-50 border-brand-500 text-foreground'
-              : 'border-border-strong bg-surface text-foreground hover:bg-surface-dim',
-          ].join(' ')}
-        >
-          <button
-            type="button"
-            aria-pressed={r.reactedByMe}
-            aria-label={`react with ${r.emoji}`}
-            onClick={() => {
-              onToggle(r.emoji);
-            }}
-            className="py-0.5"
-          >
-            {r.emoji}
-          </button>
-          <button
-            type="button"
-            aria-label={`who reacted with ${r.emoji}`}
-            aria-expanded={openVotersEmoji === r.emoji}
-            className="py-0.5 pr-2 text-xs underline decoration-dotted underline-offset-2"
-            onClick={() => {
-              setOpenVotersEmoji((cur) => (cur === r.emoji ? null : r.emoji));
-            }}
-          >
-            {r.count}
-          </button>
-          {openVotersEmoji === r.emoji ? (
-            <ReactionVoterPopover
-              reaction={r}
-              onClose={() => {
-                setOpenVotersEmoji(null);
-              }}
-            />
-          ) : null}
-        </div>
+          reaction={r}
+          votersOpen={openVotersEmoji === r.emoji}
+          onToggle={onToggle}
+          onOpenVoters={() => {
+            setOpenVotersEmoji(r.emoji);
+          }}
+          onCloseVoters={() => {
+            setOpenVotersEmoji(null);
+          }}
+        />
       ))}
       <button
         type="button"
@@ -112,6 +85,65 @@ export function ReactionBar({ reactions, onToggle }: Props) {
           ))}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+interface PillProps {
+  reaction: CommentReactionSummary;
+  votersOpen: boolean;
+  onToggle: (emoji: ReactionEmojiValue) => void;
+  onOpenVoters: () => void;
+  onCloseVoters: () => void;
+}
+
+function ReactionPill({
+  reaction: r,
+  votersOpen,
+  onToggle,
+  onOpenVoters,
+  onCloseVoters,
+}: PillProps) {
+  const longPress = useLongPress(onOpenVoters);
+
+  return (
+    <div
+      className={[
+        'relative inline-flex items-center gap-1 rounded-full border pl-2 text-sm transition',
+        r.reactedByMe
+          ? 'bg-brand-50 border-brand-500 text-foreground'
+          : 'border-border-strong bg-surface text-foreground hover:bg-surface-dim',
+      ].join(' ')}
+    >
+      <button
+        type="button"
+        aria-pressed={r.reactedByMe}
+        aria-label={`react with ${r.emoji}`}
+        {...longPress.handlers}
+        onClick={() => {
+          if (longPress.didLongPress()) return;
+          onToggle(r.emoji);
+        }}
+        className="-my-1 inline-flex min-h-11 touch-none items-center select-none"
+      >
+        {r.emoji}
+      </button>
+      <button
+        type="button"
+        aria-label={`who reacted with ${r.emoji}`}
+        aria-expanded={votersOpen}
+        className="text-foreground-secondary hover:text-foreground -my-1 inline-flex min-h-11 cursor-pointer items-center pr-2 pl-0.5 text-xs"
+        onClick={() => {
+          if (votersOpen) {
+            onCloseVoters();
+            return;
+          }
+          onOpenVoters();
+        }}
+      >
+        {r.count}
+      </button>
+      {votersOpen ? <ReactionVoterPopover reaction={r} onClose={onCloseVoters} /> : null}
     </div>
   );
 }
