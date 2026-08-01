@@ -66,6 +66,18 @@ class TestEventRsvpQuestionCrud:
         assert data["display_order"] == 0
         assert EventRsvpQuestion.objects.filter(event=rsvp_event).count() == 1
 
+    def test_create_questions_assigns_distinct_orders(self, api_client, auth_headers, rsvp_event):
+        first = _create_question(api_client, auth_headers, rsvp_event.id)
+        second = _create_question(
+            api_client,
+            auth_headers,
+            rsvp_event.id,
+            label="dietary needs?",
+        )
+
+        assert first.json()["display_order"] == 0
+        assert second.json()["display_order"] == 1
+
     def test_non_host_cannot_create_question(self, api_client, other_headers, rsvp_event):
         response = _create_question(api_client, other_headers, rsvp_event.id)
         assert response.status_code == 403
@@ -215,15 +227,60 @@ class TestRsvpAnswerEdgeCases:
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_ANSWER_REQUIRED)
 
-    def test_option_with_comma_rejected(self, api_client, auth_headers, rsvp_event):
+    def test_multiselect_option_with_comma_rejected(self, api_client, auth_headers, rsvp_event):
         response = _create_question(
             api_client,
             auth_headers,
             rsvp_event.id,
+            field_type="multiselect",
             options=["a, b", "c"],
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Event.RSVP_QUESTION_OPTION_NO_COMMA)
+
+    def test_dropdown_option_with_comma_allowed(self, api_client, auth_headers, rsvp_event):
+        response = _create_question(
+            api_client,
+            auth_headers,
+            rsvp_event.id,
+            options=["yes, with a guest", "no"],
+        )
+
+        assert response.status_code == 201
+
+    def test_choice_option_over_max_length_rejected(self, api_client, auth_headers, rsvp_event):
+        response = _create_question(
+            api_client,
+            auth_headers,
+            rsvp_event.id,
+            options=["x" * 201],
+        )
+
+        assert response.status_code == 422
+
+    def test_answer_too_long_uses_question_label(
+        self, api_client, other_headers, auth_headers, rsvp_event
+    ):
+        q = _create_question(
+            api_client,
+            auth_headers,
+            rsvp_event.id,
+            field_type="textarea",
+            options=[],
+            label="travel details",
+        ).json()
+
+        response = api_client.post(
+            f"/api/community/events/{rsvp_event.id}/rsvp/",
+            {"status": RSVPStatus.ATTENDING, "answers": {q["id"]: "x" * 2001}},
+            content_type="application/json",
+            **other_headers,
+        )
+
+        assert response.status_code == 422
+        error = response.json()["detail"][0]
+        assert error["code"] == Code.Event.RSVP_ANSWER_TOO_LONG
+        assert error["params"]["label"] == "travel details"
 
     def test_host_sees_guests_when_rsvp_disabled(
         self, api_client, other_headers, auth_headers, rsvp_event, other_user

@@ -1,5 +1,6 @@
 """Validate and snapshot RSVP question answers."""
 
+from community._field_limits import FieldLimit
 from community._validation import Code, raise_validation
 from community.models import EventRsvpQuestion, RSVPStatus, SurveyQuestionType
 
@@ -66,6 +67,13 @@ def build_rsvp_answers(
             _require_if_needed(q, require_answers=require_answers)
             continue
         assert answer is not None
+        if len(answer) > FieldLimit.DESCRIPTION:
+            raise_validation(
+                Code.Event.RSVP_ANSWER_TOO_LONG,
+                field=f"answers.{key}",
+                label=q.label,
+                max=FieldLimit.DESCRIPTION,
+            )
         normalized = _normalize_answer(q, answer)
         # Multiselect ",,," normalizes to "" — treat as unanswered.
         if _is_empty(normalized):

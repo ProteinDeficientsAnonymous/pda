@@ -1087,7 +1087,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /** Replace Event Rsvp Questions */
+        put: operations["community__event_rsvp_questions_replace_event_rsvp_questions"];
         /** Create Event Rsvp Question */
         post: operations["community__event_rsvp_questions_create_event_rsvp_question"];
         delete?: never;
@@ -2763,6 +2764,11 @@ export interface components {
              * @default false
              */
             rsvp_enabled: boolean;
+            /**
+             * Rsvp Questions
+             * @default []
+             */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionIn"][];
             /** Start Datetime */
             start_datetime?: string | null;
             /**
@@ -3301,6 +3307,31 @@ export interface components {
                 [key: string]: string;
             };
         };
+        /** EventRsvpQuestionExpectedIn */
+        EventRsvpQuestionExpectedIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
         /** EventRsvpQuestionIn */
         EventRsvpQuestionIn: {
             /**
@@ -3341,6 +3372,35 @@ export interface components {
             options: string[];
             /** Required */
             required: boolean;
+        };
+        /** EventRsvpQuestionSyncIn */
+        EventRsvpQuestionSyncIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
+            /** Id */
+            id?: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionSyncPayload */
+        EventRsvpQuestionSyncPayload: {
+            /** Expected */
+            expected: components["schemas"]["EventRsvpQuestionExpectedIn"][];
+            /** Questions */
+            questions: components["schemas"]["EventRsvpQuestionSyncIn"][];
         };
         /** EventStatsOut */
         EventStatsOut: {
@@ -4086,9 +4146,9 @@ export interface components {
         PublicRsvpIn: {
             /**
              * Answers
-             * @default {}
+             * @description Question UUID to answer; multiselect values are comma-separated.
              */
-            answers: {
+            answers?: {
                 [key: string]: string;
             };
             /** Comment */
@@ -4124,11 +4184,11 @@ export interface components {
         PublicRsvpManageIn: {
             /**
              * Answers
-             * @default {}
+             * @description Question UUID to answer; omit or send null to preserve saved answers.
              */
-            answers: {
+            answers?: {
                 [key: string]: string;
-            };
+            } | null;
             /** Comment */
             comment?: string | null;
             /**
@@ -4230,9 +4290,9 @@ export interface components {
         RSVPIn: {
             /**
              * Answers
-             * @default {}
+             * @description Question UUID to answer; multiselect values are comma-separated.
              */
-            answers: {
+            answers?: {
                 [key: string]: string;
             };
             /** Comment */
@@ -6686,6 +6746,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Too Many Requests */
             429: {
                 headers: {
@@ -8164,6 +8233,68 @@ export interface operations {
             };
         };
     };
+    community__event_rsvp_questions_replace_event_rsvp_questions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRsvpQuestionSyncPayload"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventRsvpQuestionOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__event_rsvp_questions_create_event_rsvp_question: {
         parameters: {
             query?: never;
@@ -8208,6 +8339,24 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8308,6 +8457,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
         };
     };
     community__event_rsvps_upsert_rsvp: {
@@ -8354,6 +8512,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9669,6 +9836,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Too Many Requests */
             429: {
                 headers: {
@@ -9790,6 +9966,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

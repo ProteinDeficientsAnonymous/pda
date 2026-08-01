@@ -193,14 +193,15 @@ export function EventForm({ existing }: Props) {
           );
           setRsvpQuestions(synced);
           setSavedRsvpQuestions(synced);
-        } catch {
-          toast.error("event saved, but couldn't update questions — try again from edit");
+        } catch (err) {
+          setServerError(extractEventError(err));
+          return;
         }
         if (nextStatus === 'draft') toast.success('saved draft');
         void navigate(eventPath(existing));
         return;
       }
-      const created = await create.mutateAsync(merged);
+      const created = await create.mutateAsync({ ...merged, rsvpQuestions });
       if (pendingPhoto) {
         try {
           await uploadPhoto.mutateAsync({ eventId: created.id, blob: pendingPhoto });
@@ -217,13 +218,6 @@ export function EventForm({ existing }: Props) {
           });
         } catch {
           toast.error("event saved, but couldn't create the poll — try from the event page");
-        }
-      }
-      if (rsvpQuestions.length > 0) {
-        try {
-          await syncEventRsvpQuestions(created.id, rsvpQuestions, []);
-        } catch {
-          toast.error("event saved, but couldn't save questions — add them again from edit");
         }
       }
       if (nextStatus === 'draft') toast.success('saved draft');

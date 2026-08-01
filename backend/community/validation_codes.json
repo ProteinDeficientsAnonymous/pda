@@ -127,6 +127,16 @@
         "params": []
       },
       {
+        "name": "RSVP_QUESTION_DUPLICATE",
+        "value": "event.rsvp_question_duplicate",
+        "params": []
+      },
+      {
+        "name": "RSVP_QUESTION_CONFLICT",
+        "value": "event.rsvp_question_conflict",
+        "params": []
+      },
+      {
         "name": "RSVP_QUESTION_OPTIONS_REQUIRED",
         "value": "event.rsvp_question_options_required",
         "params": []

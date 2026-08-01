@@ -7,9 +7,7 @@ import { syncEventRsvpQuestions } from './eventRsvpQuestions';
 
 vi.mock('./client', () => ({
   apiClient: {
-    post: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
+    put: vi.fn(),
   },
 }));
 
@@ -25,30 +23,13 @@ const q = (
 
 describe('syncEventRsvpQuestions', () => {
   beforeEach(() => {
-    vi.mocked(apiClient.post).mockReset();
-    vi.mocked(apiClient.patch).mockReset();
-    vi.mocked(apiClient.delete).mockReset();
+    vi.mocked(apiClient.put).mockReset();
   });
 
-  it('should create and update before deleting so a later failure keeps old questions', async () => {
-    const order: string[] = [];
-    vi.mocked(apiClient.post).mockImplementation(async () => {
-      order.push('create');
-      return {
-        data: {
-          id: 'new',
-          label: 'new',
-          field_type: 'textarea',
-          options: [],
-          required: false,
-          display_order: 1,
-        },
-      };
-    });
-    vi.mocked(apiClient.patch).mockImplementation(async () => {
-      order.push('update');
-      return {
-        data: {
+  it('should replace all questions in one request', async () => {
+    vi.mocked(apiClient.put).mockResolvedValue({
+      data: [
+        {
           id: 'keep',
           label: 'updated',
           field_type: 'textarea',
@@ -56,18 +37,51 @@ describe('syncEventRsvpQuestions', () => {
           required: false,
           display_order: 0,
         },
-      };
-    });
-    vi.mocked(apiClient.delete).mockImplementation(async () => {
-      order.push('delete');
+        {
+          id: 'new',
+          label: 'new',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+          display_order: 1,
+        },
+      ],
     });
 
-    await syncEventRsvpQuestions(
+    const previous = [q({ id: 'keep', label: 'old' })];
+    const result = await syncEventRsvpQuestions(
       'evt',
-      [q({ id: 'keep', label: 'updated' }), q({ id: 'temp-new', label: 'new' })],
-      [q({ id: 'keep', label: 'old' }), q({ id: 'gone' })],
+      [q({ id: 'keep', label: 'updated' }), q({ id: 'q-temp-new', label: 'new' })],
+      previous,
     );
 
-    expect(order).toEqual(['update', 'create', 'delete']);
+    expect(apiClient.put).toHaveBeenCalledWith('/api/community/events/evt/rsvp-questions/', {
+      expected: [
+        {
+          id: 'keep',
+          label: 'old',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+        },
+      ],
+      questions: [
+        {
+          id: 'keep',
+          label: 'updated',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+        },
+        {
+          id: null,
+          label: 'new',
+          field_type: 'textarea',
+          options: [],
+          required: false,
+        },
+      ],
+    });
+    expect(result.map((question) => question.id)).toEqual(['keep', 'new']);
   });
 });

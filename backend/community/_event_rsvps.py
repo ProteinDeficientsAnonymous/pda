@@ -138,9 +138,32 @@ def _snapshot_rsvp_answers(
     final_status: str,
     answers: dict[str, str] | None,
 ) -> dict:
-    if answers_required_for_status(final_status):
-        return build_rsvp_answers(list(event.rsvp_questions.all()), answers, require_answers=True)
-    return dict(existing.answers or {}) if existing is not None else {}
+    existing_answers = dict(existing.answers or {}) if existing is not None else {}
+    if not answers_required_for_status(final_status):
+        return existing_answers
+
+    questions = list(event.rsvp_questions.all())
+    current_ids = {str(question.id) for question in questions}
+    if answers is None:
+        answers = {
+            question_id: snapshot["answer"]
+            for question_id, snapshot in existing_answers.items()
+            if question_id in current_ids
+        }
+        build_rsvp_answers(questions, answers, require_answers=True)
+        return existing_answers
+
+    current_answers = build_rsvp_answers(questions, answers, require_answers=True)
+    for question_id, snapshot in current_answers.items():
+        previous = existing_answers.get(question_id)
+        if previous is not None and previous["answer"] == snapshot["answer"]:
+            current_answers[question_id] = previous
+    historical_answers = {
+        question_id: snapshot
+        for question_id, snapshot in existing_answers.items()
+        if question_id not in current_ids
+    }
+    return historical_answers | current_answers
 
 
 def _apply_rsvp_in_transaction(
@@ -206,7 +229,14 @@ def _apply_rsvp_in_transaction(
 
 @router.post(
     "/events/{event_id}/rsvp/",
-    response={200: EventOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut, 429: ErrorOut},
+    response={
+        200: EventOut,
+        400: ErrorOut,
+        403: ErrorOut,
+        404: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/m")

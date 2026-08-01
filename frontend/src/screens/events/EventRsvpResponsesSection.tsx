@@ -1,14 +1,10 @@
 import type { Event, EventGuest, EventRsvpQuestion } from '@/models/event';
 import { RsvpServerStatus } from '@/models/event';
 
-/** Guests who typically answered questions (going / maybe / waitlisted). */
-const RESPONSE_STATUSES = new Set<string>([
-  RsvpServerStatus.Attending,
-  RsvpServerStatus.Maybe,
-  RsvpServerStatus.Waitlisted,
-]);
+import { isRsvpRespondentStatus } from './rsvpQuestions';
 
 interface ResponseColumn {
+  key: string;
   id: string;
   label: string;
   fieldType?: EventRsvpQuestion['fieldType'];
@@ -27,24 +23,26 @@ function responseColumns(
   guests: readonly EventGuest[],
 ): ResponseColumn[] {
   const cols: ResponseColumn[] = questions.map((q) => ({
+    key: `${q.id}:${q.label}`,
     id: q.id,
     label: q.label,
     fieldType: q.fieldType,
     options: q.options,
   }));
-  const seen = new Set(cols.map((c) => c.id));
+  const seen = new Set(cols.map((column) => column.key));
   for (const g of guests) {
     for (const [qid, snap] of Object.entries(g.answers)) {
-      if (seen.has(qid)) continue;
-      seen.add(qid);
-      cols.push({ id: qid, label: snap.label, options: [] });
+      const key = `${qid}:${snap.label}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      cols.push({ key, id: qid, label: snap.label, options: [] });
     }
   }
   return cols;
 }
 
 export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
-  const respondents = event.guests.filter((g) => RESPONSE_STATUSES.has(g.status));
+  const respondents = event.guests.filter((guest) => isRsvpRespondentStatus(guest.status));
   const columns = responseColumns(event.rsvpQuestions, respondents);
   if (columns.length === 0) return null;
 
@@ -66,7 +64,7 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
         <div className="flex flex-col gap-3">
           <h3 className="text-muted text-xs font-medium tracking-wide">tallies</h3>
           {choiceColumns.map((q) => (
-            <ChoiceTallyCard key={q.id} question={q} guests={respondents} />
+            <ChoiceTallyCard key={q.key} question={q} guests={respondents} />
           ))}
         </div>
       ) : null}
@@ -81,7 +79,7 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
                 <th className="px-3 py-2">guest</th>
                 <th className="px-3 py-2">status</th>
                 {columns.map((q) => (
-                  <th key={q.id} className="px-3 py-2">
+                  <th key={q.key} className="px-3 py-2">
                     {q.label}
                   </th>
                 ))}
@@ -93,8 +91,8 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
                   <td className="text-foreground px-3 py-2">{g.name}</td>
                   <td className="text-muted px-3 py-2 text-xs">{statusLabel(g.status)}</td>
                   {columns.map((q) => (
-                    <td key={q.id} className="text-foreground px-3 py-2 whitespace-pre-wrap">
-                      {renderAnswer(g.answers[q.id])}
+                    <td key={q.key} className="text-foreground px-3 py-2 whitespace-pre-wrap">
+                      {renderAnswerForColumn(g.answers[q.id], q)}
                     </td>
                   ))}
                 </tr>
@@ -114,7 +112,7 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
   let answered = 0;
   for (const g of guests) {
     const snap = g.answers[question.id];
-    if (!snap) continue;
+    if (snap?.label !== question.label) continue;
     const values =
       question.fieldType === 'multiselect'
         ? snap.answer.split(',').filter(Boolean)
@@ -153,7 +151,10 @@ function statusLabel(status: string): string {
   return status;
 }
 
-function renderAnswer(snap: { label: string; answer: string } | undefined): string {
-  if (!snap) return '—';
+function renderAnswerForColumn(
+  snap: { label: string; answer: string } | undefined,
+  column: ResponseColumn,
+): string {
+  if (snap?.label !== column.label) return '—';
   return snap.answer.trim().replaceAll(',', ', ') || '—';
 }

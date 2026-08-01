@@ -10,6 +10,7 @@ import { Feature } from '@/models/featureFlags';
 import { EmailBlastDialog } from './EmailBlastDialog';
 import { EventRsvpResponsesSection } from './EventRsvpResponsesSection';
 import { GroupTextDialog } from './GroupTextDialog';
+import { hasSavedRsvpAnswers } from './rsvpQuestions';
 
 interface Props {
   event: Event;
@@ -27,7 +28,8 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
   const reportFlagOn = useFlag(Feature.HostAttendanceReport);
   const showCheckInReport = eventHasEnded && reportFlagOn;
   const showManageRsvps = canManageRsvps && !eventHasEnded;
-  const showQuestionResponses = canManageRsvps && event.rsvpQuestions.length > 0;
+  const showQuestionResponses =
+    canManageRsvps && (event.rsvpQuestions.length > 0 || hasSavedRsvpAnswers(event));
   const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
 
   useEffect(() => {
@@ -139,7 +141,7 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
           setGroupTextOpen(false);
         }}
       />
-      {responsesOpen && event.rsvpQuestions.length > 0 ? (
+      {responsesOpen && showQuestionResponses ? (
         <Dialog
           open={responsesOpen}
           onClose={() => {

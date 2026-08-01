@@ -21,7 +21,7 @@ vi.mock('./EventRsvpResponsesSection', () => ({
 import { useFlag } from '@/api/featureFlags';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
-import { makeEvent } from '@/test/fixtures';
+import { makeEvent, makeGuest } from '@/test/fixtures';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 
@@ -145,6 +145,46 @@ describe('EventDetailKebabMenu', () => {
     expect(screen.queryByRole('menuitem', { name: /manage rsvps/i })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('menuitem', { name: /question responses/i }));
     expect(screen.getByTestId('question-responses-dialog')).toBeInTheDocument();
+  });
+
+  it('shows "question responses" when only saved answer snapshots remain', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: true,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [],
+        guests: [
+          makeGuest({
+            answers: { deleted: { label: 'deleted question', answer: 'saved answer' } },
+          }),
+        ],
+      },
+    });
+    await openMenu();
+
+    await userEvent.click(screen.getByRole('menuitem', { name: /question responses/i }));
+    expect(screen.getByTestId('question-responses-dialog')).toBeInTheDocument();
+  });
+
+  it('hides "question responses" when only declined snapshots remain', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    renderMenu({
+      eventHasEnded: true,
+      canManageRsvps: true,
+      event: {
+        rsvpQuestions: [],
+        guests: [
+          makeGuest({
+            status: 'cant_go',
+            answers: { deleted: { label: 'deleted question', answer: 'saved answer' } },
+          }),
+        ],
+      },
+    });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: /question responses/i })).not.toBeInTheDocument();
   });
 
   it('hides "manage rsvps" when the viewer cannot manage rsvps', async () => {

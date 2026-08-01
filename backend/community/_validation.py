@@ -30,6 +30,8 @@ class Code:
         MEMBER_CONTACT_MUST_SIGN_IN = "event.member_contact_must_sign_in"
         RSVP_COULD_NOT_BE_CREATED = "event.rsvp_could_not_be_created"  # generic, no-oracle
         RSVP_QUESTION_NOT_FOUND = "event.rsvp_question_not_found"
+        RSVP_QUESTION_DUPLICATE = "event.rsvp_question_duplicate"
+        RSVP_QUESTION_CONFLICT = "event.rsvp_question_conflict"
         RSVP_QUESTION_OPTIONS_REQUIRED = "event.rsvp_question_options_required"
         RSVP_QUESTION_OPTION_NO_COMMA = "event.rsvp_question_option_no_comma"
         RSVP_ANSWER_REQUIRED = "event.rsvp_answer_required"  # params: { label: str }

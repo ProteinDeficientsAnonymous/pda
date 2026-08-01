@@ -98,6 +98,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'looks like you already have an account — sign in to rsvp';
     case Code.Event.RsvpQuestionNotFound:
       return "that question wasn't found";
+    case Code.Event.RsvpQuestionDuplicate:
+      return 'each question can only appear once';
+    case Code.Event.RsvpQuestionConflict:
+      return 'questions changed elsewhere — reload and try again';
     case Code.Event.RsvpQuestionOptionsRequired:
       return 'add at least one option';
     case Code.Event.RsvpQuestionOptionNoComma:

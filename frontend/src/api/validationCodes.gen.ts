@@ -32,6 +32,8 @@ export const Code = {
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
     RsvpQuestionNotFound: 'event.rsvp_question_not_found',
+    RsvpQuestionDuplicate: 'event.rsvp_question_duplicate',
+    RsvpQuestionConflict: 'event.rsvp_question_conflict',
     RsvpQuestionOptionsRequired: 'event.rsvp_question_options_required',
     RsvpQuestionOptionNoComma: 'event.rsvp_question_option_no_comma',
     RsvpAnswerRequired: 'event.rsvp_answer_required',
@@ -258,6 +260,8 @@ export type ValidationCode =
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
   | 'event.rsvp_question_not_found'
+  | 'event.rsvp_question_duplicate'
+  | 'event.rsvp_question_conflict'
   | 'event.rsvp_question_options_required'
   | 'event.rsvp_question_option_no_comma'
   | 'event.rsvp_answer_required'
@@ -424,6 +428,8 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
   'event.rsvp_question_not_found': [],
+  'event.rsvp_question_duplicate': [],
+  'event.rsvp_question_conflict': [],
   'event.rsvp_question_options_required': [],
   'event.rsvp_question_option_no_comma': [],
   'event.rsvp_answer_required': ['label'],

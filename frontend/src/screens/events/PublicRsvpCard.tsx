@@ -11,6 +11,8 @@ import { formatEventDateTime } from '@/utils/datetime';
 import { buildEventLinks } from '@/utils/eventLinks';
 
 import { RsvpCommentField } from './RsvpCommentField';
+import { RsvpQuestionFields } from './RsvpQuestionFields';
+import { missingRequiredQuestionIds, type RsvpAnswerValue } from './rsvpQuestions';
 
 const UPDATED_TOAST = 'rsvp updated — check your email for an updated link';
 
@@ -40,16 +42,34 @@ export function PublicRsvpCard({ token, event, status }: Props) {
   const cancel = useCancelPublicMyRsvp(token);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState('');
+  const [answers, setAnswers] = useState<Record<string, RsvpAnswerValue>>(() =>
+    Object.fromEntries(
+      Object.entries(event.myRsvpAnswers).map(([questionId, snapshot]) => [
+        questionId,
+        snapshot.answer,
+      ]),
+    ),
+  );
+  const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
 
   async function applyRsvp(next: RsvpInputStatus, rsvpComment?: string) {
     setError(null);
+    const missing =
+      next === RsvpServerStatus.CantGo
+        ? []
+        : missingRequiredQuestionIds(event.rsvpQuestions, answers);
+    if (missing.length > 0) {
+      setAnswerErrors(Object.fromEntries(missing.map((id) => [id, 'required'])));
+      return;
+    }
     try {
       await update.mutateAsync({
         eventId: event.id,
         status: next,
         hasPlusOne: false,
+        answers,
         ...(rsvpComment !== undefined ? { comment: rsvpComment } : {}),
       });
       toast.success(UPDATED_TOAST);
@@ -115,6 +135,21 @@ export function PublicRsvpCard({ token, event, status }: Props) {
       </p>
       <div className="flex flex-col gap-3">
         <RsvpStatusPicker value={status} onSelect={changeStatus} disabled={busy} />
+
+        <RsvpQuestionFields
+          questions={event.rsvpQuestions}
+          answers={answers}
+          onChange={(id, value) => {
+            setAnswers((current) => ({ ...current, [id]: value }));
+            setAnswerErrors((current) => {
+              if (!(id in current)) return current;
+              const { [id]: _removed, ...rest } = current;
+              return rest;
+            });
+          }}
+          errors={answerErrors}
+          disabled={busy}
+        />
 
         <RsvpCommentField value={comment} onChange={setComment} disabled={busy} />
         <Button variant="ghost" onClick={saveComment} disabled={busy || !comment.trim()}>

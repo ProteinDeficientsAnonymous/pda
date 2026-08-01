@@ -11,7 +11,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field
 from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
 
 from community._event_helpers import _event_out, broadcast_capacity_change
@@ -20,6 +20,7 @@ from community._event_rsvps import (
     _post_rsvp_comment,
     _validate_rsvp_status,
 )
+from community._event_schemas import RsvpAnswer
 from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
     PublicRsvpOut,
@@ -44,23 +45,12 @@ class PublicRsvpIn(BaseModel):
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
-    # question_id → free text or selected option(s) (CSV for multiselect)
-    answers: dict[str, str] = {}
+    answers: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; multiselect values are comma-separated.",
+    )
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
-
-    @field_validator("answers")
-    @classmethod
-    def answers_within_limits(cls, value: dict[str, str]) -> dict[str, str]:
-        for key, answer in value.items():
-            if len(answer) > FieldLimit.DESCRIPTION:
-                raise_validation(
-                    Code.Event.RSVP_ANSWER_TOO_LONG,
-                    field=f"answers.{key}",
-                    label=key,
-                    max=FieldLimit.DESCRIPTION,
-                )
-        return value
 
 
 class PublicRsvpPhoneStatus(StrEnum):
@@ -218,7 +208,14 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
 
 @router.post(
     "/public/events/{event_id}/rsvp/",
-    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 409: ErrorOut, 429: ErrorOut},
+    response={
+        200: PublicRsvpOut,
+        400: ErrorOut,
+        404: ErrorOut,
+        409: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="5/h")

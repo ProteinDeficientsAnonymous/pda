@@ -1,15 +1,18 @@
 import re
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.parse import urlparse
+from uuid import UUID
 
 import phonenumbers
 from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic.json_schema import WithJsonSchema
 
 from community._field_limits import FieldLimit
 from community._shared import require_url_path, validate_whatsapp_url
 from community._validation import Code, raise_validation
 from community.models import (
+    RSVP_CHOICE_TYPES,
     AttendanceStatus,
     EventStatus,
     EventType,
@@ -18,11 +21,11 @@ from community.models import (
     RSVPStatus,
 )
 
-# Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
-# overkill for a free-text payment field, and we don't need DNS lookups.
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 RsvpQuestionFieldType = Literal["textarea", "dropdown", "multiselect"]
+RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
+RsvpAnswer = Annotated[str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})]
 
 
 class EventRsvpQuestionOut(BaseModel):
@@ -37,7 +40,7 @@ class EventRsvpQuestionOut(BaseModel):
 class EventRsvpQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
     field_type: RsvpQuestionFieldType
-    options: list[str] = []
+    options: list[RsvpQuestionOption] = []
     required: bool = False
 
     @field_validator("label")
@@ -51,7 +54,38 @@ class EventRsvpQuestionIn(BaseModel):
     @field_validator("options")
     @classmethod
     def trim_options(cls, value: list[str]) -> list[str]:
-        return [o.strip() for o in value if o.strip()]
+        trimmed = [o.strip() for o in value if o.strip()]
+        if any(len(option) > FieldLimit.OPTION_TEXT for option in trimmed):
+            raise ValueError(f"options must be {FieldLimit.OPTION_TEXT} characters or fewer")
+        return trimmed
+
+
+class EventRsvpQuestionSyncIn(EventRsvpQuestionIn):
+    id: UUID | None = None
+
+
+class EventRsvpQuestionExpectedIn(EventRsvpQuestionIn):
+    id: UUID
+
+
+class EventRsvpQuestionSyncPayload(BaseModel):
+    expected: list[EventRsvpQuestionExpectedIn]
+    questions: list[EventRsvpQuestionSyncIn]
+
+
+def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
+    if payload.field_type in RSVP_CHOICE_TYPES and not payload.options:
+        raise_validation(
+            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED,
+            field="options",
+            status_code=400,
+        )
+    if payload.field_type == "multiselect" and any("," in option for option in payload.options):
+        raise_validation(
+            Code.Event.RSVP_QUESTION_OPTION_NO_COMMA,
+            field="options",
+            status_code=400,
+        )
 
 
 def _looks_like_email(s: str) -> bool:
@@ -264,21 +298,10 @@ class RSVPIn(BaseModel):
     # Not persisted on the RSVP — a non-empty value is a one-time post: a
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
-    # question_id → free text or selected option(s) (CSV for multiselect)
-    answers: dict[str, str] = {}
-
-    @field_validator("answers")
-    @classmethod
-    def answers_within_limits(cls, value: dict[str, str]) -> dict[str, str]:
-        for key, answer in value.items():
-            if len(answer) > FieldLimit.DESCRIPTION:
-                raise_validation(
-                    Code.Event.RSVP_ANSWER_TOO_LONG,
-                    field=f"answers.{key}",
-                    label=key,
-                    max=FieldLimit.DESCRIPTION,
-                )
-        return value
+    answers: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; multiselect values are comma-separated.",
+    )
 
 
 class HostRSVPIn(BaseModel):
@@ -358,6 +381,7 @@ class EventIn(BaseModel):
     )
     co_host_ids: list[str] = []
     tag_ids: list[str] = []
+    rsvp_questions: list[EventRsvpQuestionIn] = []
     status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
 
     @model_validator(mode="after")

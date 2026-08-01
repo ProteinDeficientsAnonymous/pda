@@ -16,6 +16,8 @@ import {
   wantsOptions,
 } from '../rsvpQuestions';
 
+const MAX_OPTION_LENGTH = 200;
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -48,6 +50,14 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
     const options = wantsOptions(fieldType) ? parseOptionsText(optionsText) : [];
     if (wantsOptions(fieldType) && options.length === 0) {
       setError('add at least one option');
+      return;
+    }
+    if (options.some((option) => option.length > MAX_OPTION_LENGTH)) {
+      setError(`options must be ${String(MAX_OPTION_LENGTH)} characters or fewer`);
+      return;
+    }
+    if (fieldType === 'multiselect' && options.some((option) => option.includes(','))) {
+      setError('options cannot contain commas');
       return;
     }
     onSave({

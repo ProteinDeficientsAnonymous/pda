@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
-import { makeEvent, makeUser } from '@/test/fixtures';
+import { makeEvent, makeGuest, makeUser } from '@/test/fixtures';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -139,7 +139,29 @@ describe('EventManageRsvpsScreen', () => {
     renderScreen();
 
     expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
-    expect(screen.getByText(/reviewing saved question responses/i)).toBeInTheDocument();
+    expect(screen.getByText(/reviewing question responses/i)).toBeInTheDocument();
+  });
+
+  it('lets a host review responses when only saved answer snapshots remain', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: makeEvent({
+        createdById: 'user-creator',
+        rsvpEnabled: false,
+        rsvpQuestions: [],
+        guests: [
+          makeGuest({
+            answers: { deleted: { label: 'deleted question', answer: 'saved answer' } },
+          }),
+        ],
+      }),
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByText('saved answer')).toBeInTheDocument();
   });
 
   it('renders the panel heading for a host on a future rsvp-enabled event', () => {

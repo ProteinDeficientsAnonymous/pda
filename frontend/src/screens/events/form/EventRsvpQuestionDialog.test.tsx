@@ -62,4 +62,43 @@ describe('EventRsvpQuestionDialog', () => {
       required: false,
     });
   });
+
+  it('rejects commas in select multiple options', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'help' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'multiselect' } });
+    fireEvent.change(screen.getByLabelText('options'), { target: { value: 'yes, with a guest' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/options cannot contain commas/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('allows commas in select one options', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'bringing someone?' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'dropdown' } });
+    fireEvent.change(screen.getByLabelText('options'), {
+      target: { value: 'yes, with a guest\nno' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ options: ['yes, with a guest', 'no'] }),
+    );
+  });
+
+  it('rejects options over the answer length limit', () => {
+    const onSave = vi.fn();
+    render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('question'), { target: { value: 'pick one' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'dropdown' } });
+    fireEvent.change(screen.getByLabelText('options'), { target: { value: 'x'.repeat(201) } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/options must be 200 characters or fewer/i);
+    expect(onSave).not.toHaveBeenCalled();
+  });
 });

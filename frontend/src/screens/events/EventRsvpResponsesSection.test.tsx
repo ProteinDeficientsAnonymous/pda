@@ -113,4 +113,35 @@ describe('EventRsvpResponsesSection', () => {
     expect(screen.getByText('old dietary question')).toBeInTheDocument();
     expect(screen.getByText('vegan')).toBeInTheDocument();
   });
+
+  it('keeps edited-question answers under their snapshot labels', () => {
+    render(
+      <EventRsvpResponsesSection
+        event={makeEvent({
+          rsvpQuestions: [
+            {
+              id: 'q1',
+              label: 'new question',
+              fieldType: 'textarea',
+              options: [],
+              required: false,
+            },
+          ],
+          guests: [
+            makeGuest({
+              userId: 'a',
+              name: 'alice',
+              answers: {
+                q1: { label: 'old question', answer: 'old answer' },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByText('new question')).toBeInTheDocument();
+    expect(screen.getByText('old question')).toBeInTheDocument();
+    expect(screen.getByText('old answer')).toBeInTheDocument();
+  });
 });

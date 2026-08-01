@@ -13,7 +13,6 @@ export type PublicRsvpOut = components['schemas']['PublicRsvpOut'];
 export type PublicRsvpPhoneStatus = components['schemas']['PublicRsvpPhoneStatus'];
 export type PublicRsvpPhoneCheckOut = components['schemas']['PublicRsvpPhoneCheckOut'];
 export type ResendManageLinkOut = components['schemas']['ResendManageLinkOut'];
-type PublicRsvpManageIn = components['schemas']['PublicRsvpManageIn'];
 
 interface SubmitArgs {
   eventId: string;
@@ -127,11 +126,11 @@ export function useUpdatePublicMyRsvp(token: string) {
   const invalidate = useManageInvalidate(token);
   return useMutation({
     mutationFn: async ({ eventId, status, hasPlusOne, comment, answers }: UpdateArgs) => {
-      const body: PublicRsvpManageIn = {
+      const body = {
         status,
         has_plus_one: hasPlusOne,
         comment: comment ?? null,
-        answers: answers ?? {},
+        ...(answers === undefined ? {} : { answers }),
       };
       const { data } = await apiClient.post<PublicRsvpOut>(`${MANAGE_BASE}${eventId}/`, body, {
         params: { token },
