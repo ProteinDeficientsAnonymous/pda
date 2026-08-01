@@ -10,26 +10,20 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   const canManageEvents = user !== null && hasPermission(user, Permission.ManageEvents);
   const isHostOrEventManager = isCoHost || canManageEvents;
   const isCancelled = event.status === EventStatus.Cancelled;
-  const canEdit = isHostOrEventManager && !isCancelled && !event.isPast;
-  const rsvpDisabled = !event.rsvpEnabled;
+  const isOpen = !isCancelled && !event.isPast;
+  const canEdit = isHostOrEventManager && isOpen;
   const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
   const canInvite =
     user !== null &&
-    !isCancelled &&
-    !event.isPast &&
-    !rsvpDisabled &&
-    (isCoHost ||
-      canManageEvents ||
-      (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
-  const showRsvp = event.rsvpEnabled && event.status !== EventStatus.Cancelled;
+    isOpen &&
+    event.rsvpEnabled &&
+    (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
+  const showRsvp = event.rsvpEnabled && !isCancelled;
   const rsvpLocked = event.isPast;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
-    isCoHost,
     isHostOrEventManager,
     canEdit,
-    isCancelled,
-    rsvpDisabled,
     canInvite,
     showRsvp,
     rsvpLocked,
