@@ -74,8 +74,8 @@ export function DevTestEventsButton() {
           <div className="bg-surface text-foreground relative w-full max-w-xs rounded-lg p-5 shadow-xl">
             <h2 className="mb-1 text-base font-medium">dev test events</h2>
             <p className="text-muted-foreground mb-4 text-sm">
-              creates draft events titled <code>[test] ...</code> — {version?.environment ?? 'local'}{' '}
-              only
+              creates draft events titled <code>[test] ...</code> —{' '}
+              {version?.environment ?? 'local'} only
             </p>
             <label className="mb-4 flex items-center gap-2 text-sm">
               count
