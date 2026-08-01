@@ -1,3 +1,10 @@
+# [0.73.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.4...v0.73.0) (2026-08-01)
+
+
+### Features
+
+* add make shell target with model autoimport ([#1204](https://github.com/ProteinDeficientsAnonymous/pda/issues/1204)) ([ff45d17](https://github.com/ProteinDeficientsAnonymous/pda/commit/ff45d175c27ef93dc8095d480c4aa2cc6951aa51))
+
 ## [0.72.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.3...v0.72.4) (2026-08-01)
 
 
