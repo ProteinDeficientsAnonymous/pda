@@ -1,3 +1,10 @@
+# [0.75.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.74.0...v0.75.0) (2026-08-01)
+
+
+### Features
+
+* **devtools:** add "make me a guest" toggle to dev test events ([#1207](https://github.com/ProteinDeficientsAnonymous/pda/issues/1207)) ([45a4c07](https://github.com/ProteinDeficientsAnonymous/pda/commit/45a4c07b44fb2345e822cde527a262eac3bf81ee))
+
 # [0.74.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.73.0...v0.74.0) (2026-08-01)
 
 
