@@ -1,6 +1,7 @@
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
+import { RSVP_QUESTION_TYPE_OPTIONS } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
@@ -10,7 +11,6 @@ import { TextField } from '@/components/ui/TextField';
 import {
   newQuestionId,
   parseOptionsText,
-  RSVP_QUESTION_TYPE_LABELS,
   type RsvpQuestionDraft,
   type RsvpQuestionType,
   wantsOptions,
@@ -31,7 +31,7 @@ export function EventRsvpQuestionDialog(props: Props) {
 function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props) {
   const [label, setLabel] = useState(() => existing?.label ?? '');
   const [fieldType, setFieldType] = useState<RsvpQuestionType>(
-    () => existing?.fieldType ?? 'free_response',
+    () => existing?.fieldType ?? 'textarea',
   );
   const [required, setRequired] = useState(() => existing?.required ?? false);
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
@@ -77,9 +77,9 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
           onChange={(e) => {
             setFieldType(e.target.value as RsvpQuestionType);
           }}
-          options={(Object.keys(RSVP_QUESTION_TYPE_LABELS) as RsvpQuestionType[]).map((value) => ({
-            value,
-            label: RSVP_QUESTION_TYPE_LABELS[value],
+          options={RSVP_QUESTION_TYPE_OPTIONS.map((o) => ({
+            value: o.value,
+            label: o.label,
           }))}
         />
         {wantsOptions(fieldType) ? (

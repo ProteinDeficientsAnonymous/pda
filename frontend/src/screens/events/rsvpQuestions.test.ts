@@ -14,7 +14,7 @@ const q = (
   overrides: Partial<RsvpQuestionDraft> & Pick<RsvpQuestionDraft, 'id'>,
 ): RsvpQuestionDraft => ({
   label: 'q',
-  fieldType: 'free_response',
+  fieldType: 'textarea',
   options: [],
   required: false,
   ...overrides,
@@ -43,9 +43,9 @@ describe('questionsSectionSummary', () => {
 
 describe('wantsOptions', () => {
   it('is true only for choice types', () => {
-    expect(wantsOptions('free_response')).toBe(false);
-    expect(wantsOptions('select_one')).toBe(true);
-    expect(wantsOptions('select_multiple')).toBe(true);
+    expect(wantsOptions('textarea')).toBe(false);
+    expect(wantsOptions('dropdown')).toBe(true);
+    expect(wantsOptions('multiselect')).toBe(true);
   });
 });
 
@@ -71,7 +71,7 @@ describe('missingRequiredQuestionIds', () => {
     const questions = [
       q({ id: 'a', required: true }),
       q({ id: 'b', required: false }),
-      q({ id: 'c', required: true, fieldType: 'select_multiple' }),
+      q({ id: 'c', required: true, fieldType: 'multiselect' }),
     ];
     expect(missingRequiredQuestionIds(questions, { a: 'ok', c: [] })).toEqual(['c']);
     expect(missingRequiredQuestionIds(questions, { a: 'ok', c: ['x'] })).toEqual([]);

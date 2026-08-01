@@ -17,7 +17,7 @@ const base = {
 const requiredSelect: RsvpQuestionDraft = {
   id: 'q-transport',
   label: 'how are you getting there?',
-  fieldType: 'select_one',
+  fieldType: 'dropdown',
   options: ['driving', 'transit'],
   required: true,
 };
@@ -25,7 +25,7 @@ const requiredSelect: RsvpQuestionDraft = {
 const optionalText: RsvpQuestionDraft = {
   id: 'q-notes',
   label: 'anything else?',
-  fieldType: 'free_response',
+  fieldType: 'textarea',
   options: [],
   required: false,
 };

@@ -8,7 +8,7 @@ import { EventFormQuestions } from './EventFormQuestions';
 const sample: RsvpQuestionDraft = {
   id: 'q1',
   label: 'bring anything?',
-  fieldType: 'free_response',
+  fieldType: 'textarea',
   options: [],
   required: true,
 };
@@ -31,7 +31,7 @@ describe('EventFormQuestions', () => {
   it('lists questions with type and required marker', () => {
     render(<EventFormQuestions rsvpEnabled questions={[sample]} onQuestionsChange={vi.fn()} />);
     expect(screen.getByText('bring anything?')).toBeInTheDocument();
-    expect(screen.getByText(/free response/)).toBeInTheDocument();
+    expect(screen.getByText(/long text/)).toBeInTheDocument();
     expect(screen.getByText(/required/)).toBeInTheDocument();
   });
 

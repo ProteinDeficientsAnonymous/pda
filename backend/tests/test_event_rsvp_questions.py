@@ -40,7 +40,7 @@ def other_headers(other_user):
 def _create_question(api_client, auth_headers, event_id, **overrides):
     payload = {
         "label": "how are you getting there?",
-        "field_type": "select_one",
+        "field_type": "dropdown",
         "options": ["driving", "transit"],
         "required": True,
         **overrides,
@@ -60,7 +60,7 @@ class TestEventRsvpQuestionCrud:
         assert response.status_code == 201
         data = response.json()
         assert data["label"] == "how are you getting there?"
-        assert data["field_type"] == "select_one"
+        assert data["field_type"] == "dropdown"
         assert data["options"] == ["driving", "transit"]
         assert data["required"] is True
         assert data["display_order"] == 0
@@ -91,7 +91,7 @@ class TestEventRsvpQuestionCrud:
             f"/api/community/events/{rsvp_event.id}/rsvp-questions/{qid}/",
             {
                 "label": "transport?",
-                "field_type": "free_response",
+                "field_type": "textarea",
                 "options": [],
                 "required": False,
             },
@@ -100,7 +100,7 @@ class TestEventRsvpQuestionCrud:
         )
         assert patched.status_code == 200
         assert patched.json()["label"] == "transport?"
-        assert patched.json()["field_type"] == "free_response"
+        assert patched.json()["field_type"] == "textarea"
 
         deleted = api_client.delete(
             f"/api/community/events/{rsvp_event.id}/rsvp-questions/{qid}/",

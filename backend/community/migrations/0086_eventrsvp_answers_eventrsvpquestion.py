@@ -31,9 +31,9 @@ class Migration(migrations.Migration):
                     "field_type",
                     models.CharField(
                         choices=[
-                            ("free_response", "Free response"),
-                            ("select_one", "Select one"),
-                            ("select_multiple", "Select multiple"),
+                            ("textarea", "Text area"),
+                            ("dropdown", "Dropdown"),
+                            ("multiselect", "Multi select"),
                         ],
                         max_length=20,
                     ),

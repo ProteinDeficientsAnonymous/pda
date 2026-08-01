@@ -110,7 +110,7 @@ describe('EventDetailKebabMenu', () => {
           {
             id: 'q1',
             label: 'dietary?',
-            fieldType: 'free_response',
+            fieldType: 'textarea',
             options: [],
             required: false,
           },
@@ -134,7 +134,7 @@ describe('EventDetailKebabMenu', () => {
           {
             id: 'q1',
             label: 'dietary?',
-            fieldType: 'free_response',
+            fieldType: 'textarea',
             options: [],
             required: false,
           },

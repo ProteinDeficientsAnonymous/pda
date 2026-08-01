@@ -20,14 +20,14 @@ describe('EventRsvpResponsesSection', () => {
         {
           id: 'q1',
           label: 'how are you getting there?',
-          fieldType: 'select_one',
+          fieldType: 'dropdown',
           options: ['driving', 'transit'],
           required: true,
         },
         {
           id: 'q2',
           label: 'notes',
-          fieldType: 'free_response',
+          fieldType: 'textarea',
           options: [],
           required: false,
         },
@@ -80,7 +80,7 @@ describe('EventRsvpResponsesSection', () => {
             {
               id: 'q1',
               label: 'q',
-              fieldType: 'free_response',
+              fieldType: 'textarea',
               options: [],
               required: false,
             },

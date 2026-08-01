@@ -82,7 +82,7 @@ describe('EventManageRsvpsScreen', () => {
           {
             id: 'q1',
             label: 'dietary?',
-            fieldType: 'free_response',
+            fieldType: 'textarea',
             options: [],
             required: false,
           },

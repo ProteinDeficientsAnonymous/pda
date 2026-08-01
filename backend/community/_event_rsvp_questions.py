@@ -17,8 +17,8 @@ from community.models import Event, EventRsvpQuestion, EventRsvpQuestionType
 router = Router()
 
 _CHOICE_TYPES = {
-    EventRsvpQuestionType.SELECT_ONE,
-    EventRsvpQuestionType.SELECT_MULTIPLE,
+    EventRsvpQuestionType.DROPDOWN,
+    EventRsvpQuestionType.MULTISELECT,
 }
 
 

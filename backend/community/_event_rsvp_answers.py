@@ -24,7 +24,7 @@ def _is_empty(answer: AnswerRaw | None) -> bool:
 
 
 def _normalize_answer(q: EventRsvpQuestion, answer: AnswerRaw) -> str | list[str]:
-    if q.field_type == EventRsvpQuestionType.SELECT_MULTIPLE:
+    if q.field_type == EventRsvpQuestionType.MULTISELECT:
         values = answer if isinstance(answer, list) else [answer]
         cleaned = [str(v).strip() for v in values if str(v).strip()]
         options = set(q.options or [])
@@ -44,7 +44,7 @@ def _normalize_answer(q: EventRsvpQuestion, answer: AnswerRaw) -> str | list[str
             label=q.label,
         )
     text = str(answer).strip()
-    if q.field_type == EventRsvpQuestionType.SELECT_ONE and text not in (q.options or []):
+    if q.field_type == EventRsvpQuestionType.DROPDOWN and text not in (q.options or []):
         raise_validation(
             Code.Event.RSVP_ANSWER_INVALID_OPTION,
             field=f"answers.{q.id}",

@@ -20,7 +20,7 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
 
   const respondents = event.guests.filter((g) => RESPONSE_STATUSES.has(g.status));
   const choiceQuestions = questions.filter(
-    (q) => q.fieldType === 'select_one' || q.fieldType === 'select_multiple',
+    (q) => q.fieldType === 'dropdown' || q.fieldType === 'multiselect',
   );
 
   return (

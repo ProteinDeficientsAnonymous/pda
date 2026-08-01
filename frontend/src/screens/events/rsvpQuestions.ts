@@ -1,6 +1,12 @@
 /** Draft / wire-aligned RSVP question shape used by authoring + RSVP dialog. */
 
-export type RsvpQuestionType = 'free_response' | 'select_one' | 'select_multiple';
+import {
+  questionTypeWantsOptions,
+  RSVP_QUESTION_TYPE_OPTIONS,
+  type RsvpQuestionType,
+} from '@/components/questions/questionTypeOptions';
+
+export type { RsvpQuestionType };
 
 export interface RsvpQuestionDraft {
   id: string;
@@ -13,11 +19,9 @@ export interface RsvpQuestionDraft {
 /** Free text, single selected option, or multi-select list. */
 export type RsvpAnswerValue = string | string[];
 
-export const RSVP_QUESTION_TYPE_LABELS: Record<RsvpQuestionType, string> = {
-  free_response: 'free response',
-  select_one: 'select one',
-  select_multiple: 'select multiple',
-};
+export const RSVP_QUESTION_TYPE_LABELS: Record<RsvpQuestionType, string> = Object.fromEntries(
+  RSVP_QUESTION_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+) as Record<RsvpQuestionType, string>;
 
 export function rsvpSectionSummary(rsvpEnabled: boolean): string | undefined {
   return rsvpEnabled ? 'enabled' : undefined;
@@ -29,7 +33,7 @@ export function questionsSectionSummary(questionCount: number): string | undefin
 }
 
 export function wantsOptions(fieldType: RsvpQuestionType): boolean {
-  return fieldType === 'select_one' || fieldType === 'select_multiple';
+  return questionTypeWantsOptions(fieldType);
 }
 
 export function parseOptionsText(text: string): string[] {

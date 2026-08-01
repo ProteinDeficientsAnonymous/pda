@@ -9,23 +9,12 @@ import {
   useCreateSurveyQuestion,
   useUpdateSurveyQuestion,
 } from '@/api/surveyAdmin';
+import { QUESTION_TYPE_OPTIONS } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { TextField } from '@/components/ui/TextField';
-
-const TYPES: { value: SurveyQuestionType; label: string; wantsOptions: boolean }[] = [
-  { value: 'text', label: 'short text', wantsOptions: false },
-  { value: 'textarea', label: 'long text', wantsOptions: false },
-  { value: 'number', label: 'number', wantsOptions: false },
-  { value: 'select', label: 'single choice (radio)', wantsOptions: true },
-  { value: 'dropdown', label: 'dropdown', wantsOptions: true },
-  { value: 'multiselect', label: 'multiple choice', wantsOptions: true },
-  { value: 'yes_no', label: 'yes / no', wantsOptions: false },
-  { value: 'rating', label: '1–5 rating', wantsOptions: true },
-  { value: 'datetime_poll', label: 'datetime poll (iso options)', wantsOptions: true },
-];
 
 interface Props {
   surveyId: string;
@@ -53,7 +42,8 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  const wantsOptions = TYPES.find((t) => t.value === fieldType)?.wantsOptions ?? false;
+  const wantsOptions =
+    QUESTION_TYPE_OPTIONS.find((t) => t.value === fieldType)?.wantsOptions ?? false;
   const busy = create.isPending || update.isPending;
 
   async function submit(e: SyntheticEvent) {
@@ -112,7 +102,7 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
           onChange={(e) => {
             setFieldType(e.target.value as SurveyQuestionType);
           }}
-          options={TYPES.map((t) => ({ value: t.value, label: t.label }))}
+          options={QUESTION_TYPE_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
         />
         {wantsOptions ? (
           <Textarea

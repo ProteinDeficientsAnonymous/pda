@@ -50,9 +50,11 @@ class JoinFormQuestionType(models.TextChoices):
 
 
 class EventRsvpQuestionType(models.TextChoices):
-    FREE_RESPONSE = "free_response", "Free response"
-    SELECT_ONE = "select_one", "Select one"
-    SELECT_MULTIPLE = "select_multiple", "Select multiple"
+    """Subset of SurveyQuestionType wire values — keep names aligned for shared UI."""
+
+    TEXTAREA = "textarea", "Text area"
+    DROPDOWN = "dropdown", "Dropdown"
+    MULTISELECT = "multiselect", "Multi select"
 
 
 class SurveyVisibility(models.TextChoices):

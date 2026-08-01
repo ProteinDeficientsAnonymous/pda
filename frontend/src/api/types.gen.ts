@@ -3337,9 +3337,10 @@ export interface components {
         };
         /**
          * EventRsvpQuestionType
+         * @description Subset of SurveyQuestionType wire values — keep names aligned for shared UI.
          * @enum {string}
          */
-        EventRsvpQuestionType: "free_response" | "select_one" | "select_multiple";
+        EventRsvpQuestionType: "textarea" | "dropdown" | "multiselect";
         /** EventStatsOut */
         EventStatsOut: {
             /**

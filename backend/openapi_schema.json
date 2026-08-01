@@ -2859,10 +2859,11 @@
         "type": "object"
       },
       "EventRsvpQuestionType": {
+        "description": "Subset of SurveyQuestionType wire values \u2014 keep names aligned for shared UI.",
         "enum": [
-          "free_response",
-          "select_one",
-          "select_multiple"
+          "textarea",
+          "dropdown",
+          "multiselect"
         ],
         "title": "EventRsvpQuestionType",
         "type": "string"

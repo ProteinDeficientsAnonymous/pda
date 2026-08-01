@@ -17,7 +17,7 @@ describe('EventRsvpQuestionDialog', () => {
     const onSave = vi.fn();
     render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('question'), { target: { value: 'pick one' } });
-    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'select_one' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'dropdown' } });
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
     expect(screen.getByRole('alert')).toHaveTextContent(/at least one option/i);
     expect(onSave).not.toHaveBeenCalled();
@@ -33,7 +33,7 @@ describe('EventRsvpQuestionDialog', () => {
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({
         label: 'notes',
-        fieldType: 'free_response',
+        fieldType: 'textarea',
         options: [],
         required: true,
         id: expect.any(String) as string,
@@ -46,7 +46,7 @@ describe('EventRsvpQuestionDialog', () => {
     const existing: RsvpQuestionDraft = {
       id: 'q-existing',
       label: 'help',
-      fieldType: 'select_multiple',
+      fieldType: 'multiselect',
       options: ['a'],
       required: false,
     };
@@ -57,7 +57,7 @@ describe('EventRsvpQuestionDialog', () => {
     expect(onSave).toHaveBeenCalledWith({
       id: 'q-existing',
       label: 'help',
-      fieldType: 'select_multiple',
+      fieldType: 'multiselect',
       options: ['setup', 'cleanup'],
       required: false,
     });

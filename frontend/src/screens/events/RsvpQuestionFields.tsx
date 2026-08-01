@@ -1,7 +1,7 @@
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
+import type { AnswerValue, SurveyQuestion } from '@/api/surveys';
+import { QuestionField } from '@/components/questions/QuestionField';
 
-import type { RsvpAnswerValue, RsvpQuestionDraft } from './rsvpQuestions';
+import type { RsvpAnswerValue, RsvpQuestionDraft, RsvpQuestionType } from './rsvpQuestions';
 
 interface Props {
   questions: readonly RsvpQuestionDraft[];
@@ -11,6 +11,7 @@ interface Props {
   disabled?: boolean;
 }
 
+/** RSVP answers reuse the shared QuestionField so survey/RSVP UX stays aligned. */
 export function RsvpQuestionFields({
   questions,
   answers,
@@ -25,119 +26,45 @@ export function RsvpQuestionFields({
       {questions.map((question) => (
         <QuestionField
           key={question.id}
-          question={question}
-          value={answers[question.id]}
-          onChange={(value) => {
-            onChange(question.id, value);
+          question={toSurveyQuestion(question)}
+          value={toSurveyValue(question.fieldType, answers[question.id])}
+          onChange={(v) => {
+            onChange(question.id, fromSurveyValue(question.fieldType, v));
           }}
           error={errors[question.id]}
-          disabled={disabled}
+          readOnly={disabled}
         />
       ))}
     </div>
   );
 }
 
-function QuestionField({
-  question,
-  value,
-  onChange,
-  error,
-  disabled,
-}: {
-  question: RsvpQuestionDraft;
-  value: RsvpAnswerValue | undefined;
-  onChange: (value: RsvpAnswerValue) => void;
-  error?: string | undefined;
-  disabled: boolean;
-}) {
-  const label = question.required ? question.label : `${question.label} (optional)`;
-
-  if (question.fieldType === 'free_response') {
-    return (
-      <Textarea
-        label={label}
-        value={typeof value === 'string' ? value : ''}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-        error={error}
-        disabled={disabled}
-        rows={3}
-        maxLength={2000}
-      />
-    );
-  }
-
-  if (question.fieldType === 'select_one') {
-    return (
-      <Select
-        label={label}
-        value={typeof value === 'string' ? value : ''}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-        options={question.options.map((o) => ({ value: o, label: o }))}
-        placeholder="choose one"
-        error={error}
-        disabled={disabled}
-      />
-    );
-  }
-
-  const selected = Array.isArray(value) ? value : [];
-  return (
-    <CheckboxGroup
-      label={label}
-      options={question.options}
-      value={selected}
-      onChange={onChange}
-      error={error}
-      disabled={disabled}
-    />
-  );
+function toSurveyQuestion(q: RsvpQuestionDraft): SurveyQuestion {
+  return {
+    id: q.id,
+    label: q.label,
+    fieldType: q.fieldType,
+    options: q.options,
+    required: q.required,
+    displayOrder: 0,
+  };
 }
 
-function CheckboxGroup({
-  label,
-  options,
-  value,
-  onChange,
-  error,
-  disabled,
-}: {
-  label: string;
-  options: string[];
-  value: string[];
-  onChange: (v: string[]) => void;
-  error?: string | undefined;
-  disabled: boolean;
-}) {
-  function toggle(o: string) {
-    if (value.includes(o)) onChange(value.filter((v) => v !== o));
-    else onChange([...value, o]);
+function toSurveyValue(
+  fieldType: RsvpQuestionType,
+  value: RsvpAnswerValue | undefined,
+): AnswerValue | undefined {
+  if (value === undefined) return undefined;
+  if (fieldType === 'multiselect') {
+    return Array.isArray(value) ? value.join(',') : value;
   }
-  return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="text-foreground text-sm font-medium">{label}</legend>
-      {options.map((o) => (
-        <label key={o} className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={value.includes(o)}
-            disabled={disabled}
-            onChange={() => {
-              toggle(o);
-            }}
-          />
-          <span>{o}</span>
-        </label>
-      ))}
-      {error ? (
-        <p role="alert" className="text-destructive text-xs">
-          {error}
-        </p>
-      ) : null}
-    </fieldset>
-  );
+  return typeof value === 'string' ? value : '';
+}
+
+function fromSurveyValue(fieldType: RsvpQuestionType, value: AnswerValue): RsvpAnswerValue {
+  if (fieldType === 'multiselect') {
+    if (typeof value !== 'string' || !value) return [];
+    return value.split(',').filter(Boolean);
+  }
+  return typeof value === 'string' ? value : '';
 }

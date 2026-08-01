@@ -14,7 +14,7 @@ describe('QuestionResponsesDialog', () => {
             {
               id: 'q1',
               label: 'bringing?',
-              fieldType: 'select_one',
+              fieldType: 'dropdown',
               options: ['chips'],
               required: false,
             },
@@ -35,7 +35,7 @@ describe('QuestionResponsesDialog', () => {
             {
               id: 'q1',
               label: 'bringing?',
-              fieldType: 'select_one',
+              fieldType: 'dropdown',
               options: ['chips', 'dips'],
               required: false,
             },
