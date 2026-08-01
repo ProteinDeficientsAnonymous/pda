@@ -314,8 +314,6 @@ class TestSetAttendance:
             g["user_id"] for g in api_client.get(detail_url, **_auth(host_user)).json()["guests"]
         ] == expected
 
-        # Check in a guest from the middle of the list — the row rewrite is what
-        # used to bounce them out of position.
         api_client.post(
             f"/api/community/events/{open_check_in_event.id}/rsvps/{members[1].pk}/attendance/",
             {"attendance": AttendanceStatus.ATTENDED},

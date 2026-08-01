@@ -50,9 +50,6 @@ export const RsvpServerStatus = {
 
 export type RsvpServerStatusValue = (typeof RsvpServerStatus)[keyof typeof RsvpServerStatus];
 
-// Third-person labels for host-facing lists — RSVP_STATUS_LABELS is worded for
-// the member's own picker ("i'm going"). Waitlist last so callers that don't
-// support it can slice it off.
 export const RSVP_GROUP_LABELS: { status: RsvpServerStatusValue; label: string }[] = [
   { status: RsvpServerStatus.Attending, label: 'going' },
   { status: RsvpServerStatus.Maybe, label: 'maybe' },

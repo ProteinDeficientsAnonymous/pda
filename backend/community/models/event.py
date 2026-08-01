@@ -280,8 +280,6 @@ class EventRSVP(models.Model):
 
     class Meta:
         app_label = "community"
-        # Without this the DB returns rows in arbitrary order, so marking
-        # attendance rewrites a row and reshuffles the check-in list mid-use.
         ordering = ["created_at", "pk"]
         constraints = [
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
