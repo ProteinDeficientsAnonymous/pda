@@ -11,7 +11,7 @@ vi.mock('@/api/client', () => ({
 vi.mock('@/auth/store', () => {
   const state = {
     status: 'authed',
-    user: { id: 'u-me', profilePhotoUrl: null },
+    user: { id: 'u-me', fullName: 'Me', profilePhotoUrl: '' },
   };
   const useAuthStore = vi.fn((selector?: (s: typeof state) => unknown) =>
     selector ? selector(state) : state,
@@ -232,6 +232,7 @@ describe('useToggleReaction', () => {
       const reaction = cached?.items[0]?.reactions.find((r) => r.emoji === '👍');
       expect(reaction?.count).toBe(2);
       expect(reaction?.reactedByMe).toBe(true);
+      expect(reaction?.reactors.map((r) => r.userId)).toContain('u-me');
     });
 
     // Resolve with the server response (same as current state)
@@ -252,7 +253,14 @@ describe('useToggleReaction', () => {
           body: 'nice',
           is_deleted: false,
           created_at: '2026-01-01T00:00:00Z',
-          reactions: [{ emoji: '👍', count: 2, reacted_by_me: true, reactors: [] }],
+          reactions: [
+            {
+              emoji: '👍',
+              count: 2,
+              reacted_by_me: true,
+              reactors: [{ user_id: 'u-me', name: 'Me', photo_url: '' }],
+            },
+          ],
           can_delete: false,
           replies: [],
         },
@@ -279,6 +287,7 @@ describe('useToggleReaction', () => {
       const reaction = cached?.items[0]?.reactions.find((r) => r.emoji === '👍');
       expect(reaction?.count).toBe(1);
       expect(reaction?.reactedByMe).toBe(false);
+      expect(reaction?.reactors.map((r) => r.userId)).not.toContain('u-me');
     });
 
     resolvePost?.({ data: wireWithMyReaction.items[0] });
