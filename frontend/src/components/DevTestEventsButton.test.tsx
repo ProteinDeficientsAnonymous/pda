@@ -101,8 +101,6 @@ describe('DevTestEventsButton', () => {
     renderButton();
     await user.click(screen.getByLabelText('dev test events'));
 
-    expect(
-      screen.getByLabelText('going (non-members, official events only)'),
-    ).toBeDisabled();
+    expect(screen.getByLabelText('going (non-members, official events only)')).toBeDisabled();
   });
 });

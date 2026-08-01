@@ -15,6 +15,7 @@ class RsvpCounts:
     cant_go: int
     max_attendees: int | None
 
+
 FILLER_PHONE_PREFIX = "+1555"
 
 _FIRST_NAMES = [
@@ -81,9 +82,7 @@ def _create_filler_user(*, is_member: bool) -> User:
 def pick_filler_users(count: int, *, is_member: bool, exclude_ids: set) -> list[User]:
     """Fill `count` distinct users from the existing pool (members or non-members),
     creating new ones once the pool runs out."""
-    pool = list(
-        User.objects.filter(is_member=is_member).exclude(id__in=exclude_ids)[: count * 2]
-    )
+    pool = list(User.objects.filter(is_member=is_member).exclude(id__in=exclude_ids)[: count * 2])
     picked: list[User] = []
     for _ in range(count):
         if pool:
