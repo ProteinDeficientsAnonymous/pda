@@ -1,4 +1,5 @@
-import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { extractApiError, getApiStatus } from '@/api/apiErrors';
 import { useEvent } from '@/api/events';
@@ -30,6 +31,7 @@ export default function EventDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const isAuthed = useAuthStore((s) => s.status === 'authed');
   const user = useAuthStore((s) => s.user);
   // The emailed link carries ?rsvp_token=…; a returning non-member arrives with
@@ -37,6 +39,15 @@ export default function EventDetailScreen() {
   const urlToken = searchParams.get('rsvp_token') ?? undefined;
   const rsvpToken = isAuthed ? undefined : (urlToken ?? getStoredRsvpToken() ?? undefined);
   const { data: event, isPending, isError, error } = useEvent(id, undefined, rsvpToken);
+
+  // Canonicalize /events/<uuid> to /events/<slug> once the event resolves —
+  // old UUID links (emails, ICS files predating slugs) still work but settle
+  // on the pretty URL, matching what the backend now emits everywhere.
+  useEffect(() => {
+    if (event?.slug && id !== event.slug) {
+      void navigate(`/events/${event.slug}${location.search}`, { replace: true });
+    }
+  }, [event, id, location.search, navigate]);
 
   // We never clear the stored token here: viewerUserId is null both for a dead
   // token AND for a live token on an event that isn't public-rsvp-eligible, so
