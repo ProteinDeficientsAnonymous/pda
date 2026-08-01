@@ -54,7 +54,7 @@ export function ReplyItem({ reply, eventId, token }: Props) {
           </p>
         )}
         {!reply.isDeleted ? (
-          <div className="mt-1 flex items-center justify-between gap-2">
+          <div className="mt-1 flex flex-wrap items-center gap-3">
             <ReactionBar reactions={reply.reactions} onToggle={handleToggle} />
             {reply.canDelete ? (
               <button
