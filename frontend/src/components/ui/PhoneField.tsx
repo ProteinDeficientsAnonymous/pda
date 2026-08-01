@@ -61,7 +61,7 @@ export function PhoneField({
           'aria-label': label,
           ...numberInputProps,
           className: cn(
-            'h-10 w-full rounded-md border border-border-strong bg-surface px-3 text-sm transition-colors outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200',
+            'h-10 w-full rounded-md border border-border-strong bg-surface px-3 text-base transition-colors outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-200 md:text-sm',
             error && 'border-destructive-border focus:border-red-500 focus:ring-red-100',
             numberInputProps?.className,
           ),

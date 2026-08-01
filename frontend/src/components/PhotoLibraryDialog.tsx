@@ -175,7 +175,7 @@ export function PhotoLibraryDialog({ onCancel, onSelect }: Props) {
               }}
               placeholder="search gifs and photos"
               disabled={picking}
-              className="border-border bg-background text-foreground rounded-[var(--radius-md)] border px-3 py-2 text-sm"
+              className="border-border bg-background text-foreground rounded-[var(--radius-md)] border px-3 py-2 text-base md:text-sm"
             />
 
             <div className="grid max-h-80 grid-cols-3 gap-2 overflow-y-auto">

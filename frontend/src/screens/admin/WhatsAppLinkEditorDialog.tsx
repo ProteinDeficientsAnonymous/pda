@@ -59,7 +59,7 @@ function EditorForm({ initialLink, onClose }: { initialLink: string; onClose: ()
           setLink(e.target.value);
         }}
         placeholder="https://chat.whatsapp.com/…"
-        className="border-border bg-background text-foreground focus-visible:ring-brand-200 w-full rounded-md border p-3 font-mono text-sm focus-visible:ring-2 focus-visible:outline-none"
+        className="border-border bg-background text-foreground focus-visible:ring-brand-200 w-full rounded-md border p-3 font-mono text-base focus-visible:ring-2 focus-visible:outline-none md:text-sm"
         aria-label="whatsapp link"
       />
       {formError ? (
