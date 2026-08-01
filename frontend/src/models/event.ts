@@ -11,6 +11,8 @@ export const EventType = {
   Club: 'club',
 } as const;
 
+export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
+
 export const EventVisibility = {
   Public: 'public',
   MembersOnly: 'members_only',

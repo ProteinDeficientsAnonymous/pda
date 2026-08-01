@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 
 import type { ConsentTypeValue } from '@/models/consent';
+import type { EventTypeValue } from '@/models/event';
 import { normalizePermissions } from '@/models/permissions';
 import type { Birthday, Role, User } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
@@ -48,6 +49,7 @@ interface WireUser {
   weekly_digest_opt_out?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
+  calendar_feed_excluded_types?: EventTypeValue[];
   profile_photo_url?: string;
   photo_updated_at?: string | null;
   roles: WireRole[];
@@ -104,6 +106,7 @@ function mapUser(u: WireUser): User {
     weeklyDigestOptOut: u.weekly_digest_opt_out ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
+    calendarFeedExcludedTypes: u.calendar_feed_excluded_types ?? [],
     profilePhotoUrl: u.profile_photo_url ?? '',
     photoUpdatedAt: u.photo_updated_at ?? null,
     roles: u.roles.map(mapRole),
@@ -226,6 +229,7 @@ export interface ProfileUpdate {
   weeklyDigestOptOut?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
+  calendarFeedExcludedTypes?: EventTypeValue[];
 }
 
 export async function updateProfile(patch: ProfileUpdate): Promise<User> {
@@ -249,6 +253,8 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.weeklyDigestOptOut !== undefined) body.weekly_digest_opt_out = patch.weeklyDigestOptOut;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
+  if (patch.calendarFeedExcludedTypes !== undefined)
+    body.calendar_feed_excluded_types = patch.calendarFeedExcludedTypes;
   const { data } = await apiClient.patch<WireUser>('/api/auth/me/', body);
   return mapUser(data);
 }

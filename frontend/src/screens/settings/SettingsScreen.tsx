@@ -7,6 +7,8 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
+import { EventType, type EventTypeValue } from '@/models/event';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
@@ -103,6 +105,10 @@ export default function SettingsScreen() {
         <CalendarFeedScopeToggle
           value={user.calendarFeedScope}
           onChange={(v) => updateProfile({ calendarFeedScope: v })}
+        />
+        <CalendarFeedTypeToggles
+          excluded={user.calendarFeedExcludedTypes}
+          onChange={(v) => updateProfile({ calendarFeedExcludedTypes: v })}
         />
         <CalendarFeedSubscription />
       </Section>
@@ -280,6 +286,36 @@ function CalendarFeedScopeToggle({
       options={options}
       onChange={(v) => void onChange(v)}
     />
+  );
+}
+
+function CalendarFeedTypeToggles({
+  excluded,
+  onChange,
+}: {
+  excluded: EventTypeValue[];
+  onChange: (v: EventTypeValue[]) => Promise<void>;
+}) {
+  const options: { value: EventTypeValue; label: string }[] = [
+    { value: EventType.Official, label: 'official events' },
+    { value: EventType.Club, label: 'club events' },
+    { value: EventType.Community, label: 'community events' },
+  ];
+  return (
+    <div>
+      <div className="text-foreground mb-2 text-sm">event types in your feed</div>
+      {options.map((o) => (
+        <Toggle
+          key={o.value}
+          label={o.label}
+          checked={!excluded.includes(o.value)}
+          onChange={(checked) => {
+            const next = checked ? excluded.filter((t) => t !== o.value) : [...excluded, o.value];
+            void onChange(next);
+          }}
+        />
+      ))}
+    </div>
   );
 }
 

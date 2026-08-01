@@ -95,6 +95,10 @@ def calendar_feed(request, token: str = ""):
         .order_by("start_datetime")
     )
 
+    excluded_types = user.calendar_feed_excluded_types or []
+    if excluded_types:
+        events = events.exclude(event_type__in=excluded_types)
+
     if user.calendar_feed_scope == CalendarFeedScope.MINE:
         events = events.filter(
             Q(created_by=user)
