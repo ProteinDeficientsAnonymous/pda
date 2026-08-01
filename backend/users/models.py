@@ -55,6 +55,17 @@ class CalendarFeedScope:
     CHOICES = [(ALL, "all events"), (MINE, "my events")]
 
 
+class CalendarFeedTypes:
+    """Event types excluded from a user's subscription feed.
+
+    Stored as an exclusion list so an empty default keeps every existing
+    subscriber on today's behavior, and any event type added later is
+    included in existing feeds rather than silently dropped.
+    """
+
+    VALID = {"official", "community", "club"}
+
+
 class UserManager(BaseUserManager):
     def members(self):
         """Members only — excludes non-members created by public RSVP.
@@ -146,6 +157,7 @@ class User(AbstractUser):
         choices=CalendarFeedScope.CHOICES,
         default=CalendarFeedScope.ALL,
     )
+    calendar_feed_excluded_types = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Remove inherited AbstractUser fields

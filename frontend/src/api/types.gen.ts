@@ -3558,6 +3558,8 @@ export interface components {
             /** Bio */
             bio?: string | null;
             birthday?: components["schemas"]["BirthdayIn"] | null;
+            /** Calendar Feed Excluded Types */
+            calendar_feed_excluded_types?: ("official" | "community" | "club")[] | null;
             /** Calendar Feed Scope */
             calendar_feed_scope?: ("all" | "mine") | null;
             /** Email */
@@ -4372,6 +4374,11 @@ export interface components {
              */
             bio: string;
             birthday?: components["schemas"]["BirthdayOut"] | null;
+            /**
+             * Calendar Feed Excluded Types
+             * @default []
+             */
+            calendar_feed_excluded_types: string[];
             /**
              * Calendar Feed Scope
              * @default all

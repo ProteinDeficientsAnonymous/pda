@@ -128,6 +128,7 @@ _ME_PATCH_PASSTHROUGH_FIELDS = (
     "hide_last_name",
     "week_start",
     "calendar_feed_scope",
+    "calendar_feed_excluded_types",
 )
 # Passthrough fields that also get whitespace-stripped.
 _ME_PATCH_STRIPPED_FIELDS = ("bio", "pronouns", "nickname")
