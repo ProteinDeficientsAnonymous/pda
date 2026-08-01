@@ -1,3 +1,10 @@
+## [0.72.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.0...v0.72.1) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1139 - move reply/delete buttons next to reactions ([#1200](https://github.com/ProteinDeficientsAnonymous/pda/issues/1200)) ([d1f69cb](https://github.com/ProteinDeficientsAnonymous/pda/commit/d1f69cb0340697c41d9dd39bc99c062a534f7597))
+
 # [0.72.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.8...v0.72.0) (2026-08-01)
 
 
