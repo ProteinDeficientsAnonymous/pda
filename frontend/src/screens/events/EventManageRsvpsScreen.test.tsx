@@ -116,6 +116,32 @@ describe('EventManageRsvpsScreen', () => {
     expect(screen.getByText(/rsvps are off/i)).toBeInTheDocument();
   });
 
+  it('lets a host review responses when rsvps are off but questions remain', () => {
+    vi.mocked(useEvent).mockReturnValue({
+      data: makeEvent({
+        createdById: 'user-creator',
+        guests: [],
+        rsvpEnabled: false,
+        rsvpQuestions: [
+          {
+            id: 'q1',
+            label: 'dietary?',
+            fieldType: 'textarea',
+            options: [],
+            required: false,
+          },
+        ],
+      }),
+      isPending: false,
+      isError: false,
+    } as ReturnType<typeof useEvent>);
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderScreen();
+
+    expect(screen.getByRole('heading', { name: /manage rsvps/i })).toBeInTheDocument();
+    expect(screen.getByText(/reviewing saved question responses/i)).toBeInTheDocument();
+  });
+
   it('renders the panel heading for a host on a future rsvp-enabled event', () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderScreen();

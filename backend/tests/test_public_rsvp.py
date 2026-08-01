@@ -441,3 +441,41 @@ class TestPublicRsvpComment:
     def test_oversized_comment_is_rejected(self, api_client, official_event, fake_email_sender):
         response = post(api_client, official_event, comment="x" * 301)
         assert response.status_code == 422
+
+
+@pytest.mark.django_db
+class TestPublicRsvpAnswers:
+    def test_persists_required_answers(self, api_client, official_event, fake_email_sender):
+        from community.models import EventRsvpQuestion
+
+        q = EventRsvpQuestion.objects.create(
+            event=official_event,
+            label="transport?",
+            field_type="dropdown",
+            options=["driving", "transit"],
+            required=True,
+            display_order=0,
+        )
+        response = post(
+            api_client,
+            official_event,
+            answers={str(q.id): "driving"},
+        )
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=official_event)
+        assert rsvp.answers[str(q.id)]["answer"] == "driving"
+
+    def test_required_answer_missing_rejected(self, api_client, official_event, fake_email_sender):
+        from community.models import EventRsvpQuestion
+
+        EventRsvpQuestion.objects.create(
+            event=official_event,
+            label="transport?",
+            field_type="dropdown",
+            options=["driving", "transit"],
+            required=True,
+            display_order=0,
+        )
+        response = post(api_client, official_event)
+        assert response.status_code == 422
+        assert first_code(response) == Code.Event.RSVP_ANSWER_REQUIRED

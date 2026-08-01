@@ -28,7 +28,7 @@ RsvpQuestionFieldType = Literal["textarea", "dropdown", "multiselect"]
 class EventRsvpQuestionOut(BaseModel):
     id: str
     label: str
-    field_type: str
+    field_type: RsvpQuestionFieldType
     options: list[str] = []
     required: bool
     display_order: int
@@ -264,8 +264,21 @@ class RSVPIn(BaseModel):
     # Not persisted on the RSVP — a non-empty value is a one-time post: a
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
-    # question_id → free text or selected option(s)
+    # question_id → free text or selected option(s) (CSV for multiselect)
     answers: dict[str, str] = {}
+
+    @field_validator("answers")
+    @classmethod
+    def answers_within_limits(cls, value: dict[str, str]) -> dict[str, str]:
+        for key, answer in value.items():
+            if len(answer) > FieldLimit.DESCRIPTION:
+                raise_validation(
+                    Code.Event.RSVP_ANSWER_TOO_LONG,
+                    field=f"answers.{key}",
+                    label=key,
+                    max=FieldLimit.DESCRIPTION,
+                )
+        return value
 
 
 class HostRSVPIn(BaseModel):

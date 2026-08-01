@@ -43,7 +43,7 @@ export function Dialog({ open, onClose, title, children, wide = false }: Props) 
         className={
           wide
             ? 'bg-surface relative max-h-[min(90vh,40rem)] w-full max-w-2xl overflow-y-auto rounded-lg p-5 shadow-(--shadow-xl)'
-            : 'bg-surface relative max-h-[min(90vh,40rem)] w-full max-w-md overflow-hidden rounded-lg p-5 shadow-(--shadow-xl)'
+            : 'bg-surface relative max-h-[min(90vh,40rem)] w-full max-w-md overflow-y-auto rounded-lg p-5 shadow-(--shadow-xl)'
         }
       >
         <div className="mb-4 flex items-start justify-between gap-3">

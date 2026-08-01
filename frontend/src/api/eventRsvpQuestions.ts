@@ -61,12 +61,8 @@ export async function syncEventRsvpQuestions(
   const prevIds = new Set(previous.map((q) => q.id));
   const nextIds = new Set(next.map((q) => q.id));
 
-  for (const q of previous) {
-    if (!nextIds.has(q.id)) {
-      await deleteQuestion(eventId, q.id);
-    }
-  }
-
+  // Create/update first so a later failure does not leave deletes applied
+  // while the draft still expects those questions to exist.
   const synced: EventRsvpQuestion[] = [];
   for (const q of next) {
     if (prevIds.has(q.id)) {
@@ -84,6 +80,12 @@ export async function syncEventRsvpQuestions(
       }
     } else {
       synced.push(await createQuestion(eventId, q));
+    }
+  }
+
+  for (const q of previous) {
+    if (!nextIds.has(q.id)) {
+      await deleteQuestion(eventId, q.id);
     }
   }
   return synced;

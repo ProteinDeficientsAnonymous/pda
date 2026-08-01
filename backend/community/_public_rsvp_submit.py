@@ -11,7 +11,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_manage_link_email
 from notifications.email_sender import get_email_sender
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from users.models import PUBLIC_FORM_PHONE_REGION, NonMemberRsvpToken, User, validate_phone
 
 from community._event_helpers import _event_out, broadcast_capacity_change
@@ -44,8 +44,23 @@ class PublicRsvpIn(BaseModel):
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    # question_id → free text or selected option(s) (CSV for multiselect)
+    answers: dict[str, str] = {}
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
+
+    @field_validator("answers")
+    @classmethod
+    def answers_within_limits(cls, value: dict[str, str]) -> dict[str, str]:
+        for key, answer in value.items():
+            if len(answer) > FieldLimit.DESCRIPTION:
+                raise_validation(
+                    Code.Event.RSVP_ANSWER_TOO_LONG,
+                    field=f"answers.{key}",
+                    label=key,
+                    max=FieldLimit.DESCRIPTION,
+                )
+        return value
 
 
 class PublicRsvpPhoneStatus(StrEnum):
@@ -239,7 +254,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             phone=validated_phone,
         )
         final_status, promoted_user_ids, _rsvp_created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False
+            event.id, user, payload.status, False, answers=payload.answers
         )
         token = NonMemberRsvpToken.issue_or_extend(user)
 

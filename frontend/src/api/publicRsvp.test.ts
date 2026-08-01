@@ -42,6 +42,7 @@ describe('useSubmitPublicRsvp', () => {
       phone_number: '+15550001111',
       status: 'attending',
       has_plus_one: false,
+      answers: {},
       website: '',
     };
     result.current.mutate({ eventId: 'ev1', payload });

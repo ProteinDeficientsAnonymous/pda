@@ -3325,8 +3325,11 @@ export interface components {
         EventRsvpQuestionOut: {
             /** Display Order */
             display_order: number;
-            /** Field Type */
-            field_type: string;
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
             /** Id */
             id: string;
             /** Label */
@@ -4081,6 +4084,13 @@ export interface components {
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: string;
+            };
             /** Comment */
             comment?: string | null;
             /**
@@ -4112,6 +4122,13 @@ export interface components {
         };
         /** PublicRsvpManageIn */
         PublicRsvpManageIn: {
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: string;
+            };
             /** Comment */
             comment?: string | null;
             /**

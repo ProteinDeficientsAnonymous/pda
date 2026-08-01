@@ -16,6 +16,13 @@ def migrate_join_question_types(apps, schema_editor):
     ).update(field_type="textarea")
 
 
+def reverse_migrate_join_question_types(apps, schema_editor):
+    """Restore pre-unify join wire types before AlterField reverses choices."""
+    JoinFormQuestion = apps.get_model("community", "JoinFormQuestion")
+    JoinFormQuestion.objects.filter(field_type="dropdown").update(field_type="select")
+    JoinFormQuestion.objects.filter(field_type="textarea").update(field_type="text")
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("community", "0085_backfill_creator_as_cohost"),
@@ -77,5 +84,5 @@ class Migration(migrations.Migration):
                 max_length=10,
             ),
         ),
-        migrations.RunPython(migrate_join_question_types, migrations.RunPython.noop),
+        migrations.RunPython(migrate_join_question_types, reverse_migrate_join_question_types),
     ]

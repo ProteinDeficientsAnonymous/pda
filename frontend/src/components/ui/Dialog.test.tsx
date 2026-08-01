@@ -29,4 +29,15 @@ describe('Dialog', () => {
     await user.click(screen.getByRole('button', { name: /^close$/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('should allow the narrow panel body to scroll when content exceeds max height', () => {
+    render(
+      <Dialog open onClose={() => {}} title="tall">
+        <p>{'line\n'.repeat(80)}</p>
+      </Dialog>,
+    );
+    const panel = document.body.querySelector('[role="dialog"] > div.bg-surface');
+    expect(panel?.className).toMatch(/overflow-y-auto/);
+    expect(panel?.className).not.toMatch(/overflow-hidden/);
+  });
 });

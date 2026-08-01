@@ -100,6 +100,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return "that question wasn't found";
     case Code.Event.RsvpQuestionOptionsRequired:
       return 'add at least one option';
+    case Code.Event.RsvpQuestionOptionNoComma:
+      return 'options cannot contain commas';
     case Code.Event.RsvpAnswerRequired: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `answer required: ${label}` : 'answer required';
@@ -107,6 +109,10 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
     case Code.Event.RsvpAnswerInvalidOption: {
       const label = typeof err.params?.label === 'string' ? err.params.label : null;
       return label ? `invalid answer for ${label}` : 'invalid answer';
+    }
+    case Code.Event.RsvpAnswerTooLong: {
+      const label = typeof err.params?.label === 'string' ? err.params.label : null;
+      return label ? `answer too long for ${label}` : 'answer too long';
     }
     case Code.Event.RsvpCouldNotBeCreated:
       return "we couldn't set up your rsvp with those details — reach out and we'll help";

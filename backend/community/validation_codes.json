@@ -132,6 +132,11 @@
         "params": []
       },
       {
+        "name": "RSVP_QUESTION_OPTION_NO_COMMA",
+        "value": "event.rsvp_question_option_no_comma",
+        "params": []
+      },
+      {
         "name": "RSVP_ANSWER_REQUIRED",
         "value": "event.rsvp_answer_required",
         "params": [
@@ -143,6 +148,14 @@
         "value": "event.rsvp_answer_invalid_option",
         "params": [
           "label"
+        ]
+      },
+      {
+        "name": "RSVP_ANSWER_TOO_LONG",
+        "value": "event.rsvp_answer_too_long",
+        "params": [
+          "label",
+          "max"
         ]
       },
       {

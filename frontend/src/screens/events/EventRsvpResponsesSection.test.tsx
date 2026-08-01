@@ -91,4 +91,26 @@ describe('EventRsvpResponsesSection', () => {
     );
     expect(screen.getByText('no responses yet')).toBeInTheDocument();
   });
+
+  it('keeps deleted-question answers visible via snapshot labels', () => {
+    render(
+      <EventRsvpResponsesSection
+        event={makeEvent({
+          rsvpQuestions: [],
+          guests: [
+            makeGuest({
+              userId: 'a',
+              name: 'alice',
+              status: RsvpServerStatus.Attending,
+              answers: {
+                orphan: { label: 'old dietary question', answer: 'vegan' },
+              },
+            }),
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText('old dietary question')).toBeInTheDocument();
+    expect(screen.getByText('vegan')).toBeInTheDocument();
+  });
 });

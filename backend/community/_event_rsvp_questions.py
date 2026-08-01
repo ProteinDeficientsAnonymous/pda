@@ -5,6 +5,7 @@ from uuid import UUID
 
 from config.audit import audit_log
 from config.auth import gated_jwt
+from django.db.models import Max
 from ninja import Router
 from ninja.responses import Status
 
@@ -53,6 +54,12 @@ def _validate_question_payload(payload: EventRsvpQuestionIn) -> None:
             field="options",
             status_code=400,
         )
+    if any("," in o for o in payload.options):
+        raise_validation(
+            Code.Event.RSVP_QUESTION_OPTION_NO_COMMA,
+            field="options",
+            status_code=400,
+        )
 
 
 @router.post(
@@ -63,13 +70,14 @@ def _validate_question_payload(payload: EventRsvpQuestionIn) -> None:
 def create_event_rsvp_question(request, event_id: UUID, payload: EventRsvpQuestionIn):
     event = _load_editable_event(request, event_id)
     _validate_question_payload(payload)
+    next_order = (event.rsvp_questions.aggregate(m=Max("display_order"))["m"] or -1) + 1
     q = EventRsvpQuestion.objects.create(
         event=event,
         label=payload.label,
         field_type=payload.field_type,
         options=payload.options,
         required=payload.required,
-        display_order=event.rsvp_questions.count(),
+        display_order=next_order,
     )
     audit_log(
         logging.INFO,

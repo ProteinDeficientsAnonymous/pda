@@ -22,6 +22,8 @@ import { optionalEmail, optionalPersonName, personName } from '@/utils/validator
 
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
+import { RsvpQuestionFields } from './RsvpQuestionFields';
+import { missingRequiredQuestionIds, type RsvpAnswerValue } from './rsvpQuestions';
 
 const MAX_NAME = 100;
 const PUBLIC_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatus.Maybe];
@@ -70,6 +72,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const submit = useSubmitPublicRsvp();
   const navigate = useNavigate();
   const atCapacity = spotsLeft(event) === 0;
+  const questions = event.rsvpQuestions;
   const [status, setStatus] = useState<RsvpInputStatus | null>(null);
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
   const [isNonMember, setIsNonMember] = useState(false);
@@ -79,6 +82,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
   const [website, setWebsite] = useState('');
+  const [answers, setAnswers] = useState<Record<string, RsvpAnswerValue | undefined>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<SubmitError | null>(null);
   const submitErrorRef = useRef<HTMLDivElement | null>(null);
@@ -100,6 +104,9 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     else if (optionalEmail(email)) next.email = 'not a valid email';
     if (!phone.trim()) next.phone = 'phone required';
     else if (!isValidPhoneNumber(phone)) next.phone = 'invalid phone number';
+    for (const id of missingRequiredQuestionIds(questions, answers)) {
+      next[id] = 'required';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -107,6 +114,11 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   async function onSubmit() {
     setSubmitError(null);
     if (!status || !validate()) return;
+    const filledAnswers: Record<string, string> = {};
+    for (const q of questions) {
+      const value = answers[q.id];
+      if (value?.trim()) filledAnswers[q.id] = value;
+    }
     try {
       const result = await submit.mutateAsync({
         eventId: event.id,
@@ -118,6 +130,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           status,
           has_plus_one: false,
           comment: comment.trim() || null,
+          answers: filledAnswers,
           website,
         },
       });
@@ -238,6 +251,21 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           required
         />
         <PhoneField label="phone" value={phone} onChange={setPhone} error={errors.phone} />
+
+        <RsvpQuestionFields
+          questions={questions}
+          answers={answers}
+          onChange={(id, value) => {
+            setAnswers((prev) => ({ ...prev, [id]: value }));
+            setErrors((prev) => {
+              if (!(id in prev)) return prev;
+              const { [id]: _removed, ...rest } = prev;
+              return rest;
+            });
+          }}
+          errors={errors}
+          disabled={submit.isPending}
+        />
 
         <RsvpCommentField
           value={comment}

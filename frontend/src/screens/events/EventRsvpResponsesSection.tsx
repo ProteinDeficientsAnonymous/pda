@@ -8,18 +8,47 @@ const RESPONSE_STATUSES = new Set<string>([
   RsvpServerStatus.Waitlisted,
 ]);
 
+interface ResponseColumn {
+  id: string;
+  label: string;
+  fieldType?: EventRsvpQuestion['fieldType'];
+  options: string[];
+}
+
 interface Props {
   event: Event;
   /** Hide the section heading when shown inside a titled dialog. */
   embedded?: boolean;
 }
 
-export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
-  const questions = event.rsvpQuestions;
-  if (questions.length === 0) return null;
+/** Live questions plus orphaned snapshot keys so edits/deletes keep history visible. */
+function responseColumns(
+  questions: readonly EventRsvpQuestion[],
+  guests: readonly EventGuest[],
+): ResponseColumn[] {
+  const cols: ResponseColumn[] = questions.map((q) => ({
+    id: q.id,
+    label: q.label,
+    fieldType: q.fieldType,
+    options: q.options,
+  }));
+  const seen = new Set(cols.map((c) => c.id));
+  for (const g of guests) {
+    for (const [qid, snap] of Object.entries(g.answers)) {
+      if (seen.has(qid)) continue;
+      seen.add(qid);
+      cols.push({ id: qid, label: snap.label, options: [] });
+    }
+  }
+  return cols;
+}
 
+export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
   const respondents = event.guests.filter((g) => RESPONSE_STATUSES.has(g.status));
-  const choiceQuestions = questions.filter(
+  const columns = responseColumns(event.rsvpQuestions, respondents);
+  if (columns.length === 0) return null;
+
+  const choiceColumns = columns.filter(
     (q) => q.fieldType === 'dropdown' || q.fieldType === 'multiselect',
   );
 
@@ -33,10 +62,10 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
         </p>
       </div>
 
-      {choiceQuestions.length > 0 ? (
+      {choiceColumns.length > 0 ? (
         <div className="flex flex-col gap-3">
           <h3 className="text-muted text-xs font-medium tracking-wide">tallies</h3>
-          {choiceQuestions.map((q) => (
+          {choiceColumns.map((q) => (
             <ChoiceTallyCard key={q.id} question={q} guests={respondents} />
           ))}
         </div>
@@ -51,7 +80,7 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
               <tr>
                 <th className="px-3 py-2">guest</th>
                 <th className="px-3 py-2">status</th>
-                {questions.map((q) => (
+                {columns.map((q) => (
                   <th key={q.id} className="px-3 py-2">
                     {q.label}
                   </th>
@@ -63,7 +92,7 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
                 <tr key={g.userId} className="border-border border-t align-top">
                   <td className="text-foreground px-3 py-2">{g.name}</td>
                   <td className="text-muted px-3 py-2 text-xs">{statusLabel(g.status)}</td>
-                  {questions.map((q) => (
+                  {columns.map((q) => (
                     <td key={q.id} className="text-foreground px-3 py-2 whitespace-pre-wrap">
                       {renderAnswer(g.answers[q.id])}
                     </td>
@@ -78,13 +107,7 @@ export function EventRsvpResponsesSection({ event, embedded = false }: Props) {
   );
 }
 
-function ChoiceTallyCard({
-  question,
-  guests,
-}: {
-  question: EventRsvpQuestion;
-  guests: EventGuest[];
-}) {
+function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guests: EventGuest[] }) {
   const counts = new Map<string, number>();
   for (const opt of question.options) counts.set(opt, 0);
 

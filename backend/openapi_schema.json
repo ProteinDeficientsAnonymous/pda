@@ -2830,6 +2830,11 @@
             "type": "integer"
           },
           "field_type": {
+            "enum": [
+              "textarea",
+              "dropdown",
+              "multiselect"
+            ],
             "title": "Field Type",
             "type": "string"
           },
@@ -4495,6 +4500,14 @@
       },
       "PublicRsvpIn": {
         "properties": {
+          "answers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Answers",
+            "type": "object"
+          },
           "comment": {
             "anyOf": [
               {
@@ -4556,6 +4569,14 @@
       },
       "PublicRsvpManageIn": {
         "properties": {
+          "answers": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Answers",
+            "type": "object"
+          },
           "comment": {
             "anyOf": [
               {

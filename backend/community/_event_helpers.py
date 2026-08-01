@@ -337,7 +337,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
     answers_visible = _can_see_guest_answers(auth_user, creator, co_host_ids)
-    rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
+    rsvps = list(event.rsvps.all()) if is_authed and (event.rsvp_enabled or answers_visible) else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 

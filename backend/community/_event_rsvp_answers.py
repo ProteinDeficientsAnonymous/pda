@@ -18,6 +18,15 @@ def _is_empty(answer: str | None) -> bool:
     return answer is None or not str(answer).strip()
 
 
+def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
+    if require_answers and q.required:
+        raise_validation(
+            Code.Event.RSVP_ANSWER_REQUIRED,
+            field=f"answers.{q.id}",
+            label=q.label,
+        )
+
+
 def _normalize_answer(q: EventRsvpQuestion, answer: str) -> str:
     if q.field_type == SurveyQuestionType.MULTISELECT:
         cleaned = [v.strip() for v in str(answer).split(",") if v.strip()]
@@ -54,13 +63,13 @@ def build_rsvp_answers(
         key = str(q.id)
         answer = incoming.get(key)
         if _is_empty(answer):
-            if require_answers and q.required:
-                raise_validation(
-                    Code.Event.RSVP_ANSWER_REQUIRED,
-                    field=f"answers.{key}",
-                    label=q.label,
-                )
+            _require_if_needed(q, require_answers=require_answers)
             continue
         assert answer is not None
-        snapshot[key] = {"label": q.label, "answer": _normalize_answer(q, answer)}
+        normalized = _normalize_answer(q, answer)
+        # Multiselect ",,," normalizes to "" — treat as unanswered.
+        if _is_empty(normalized):
+            _require_if_needed(q, require_answers=require_answers)
+            continue
+        snapshot[key] = {"label": q.label, "answer": normalized}
     return snapshot

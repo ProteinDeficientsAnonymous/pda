@@ -9,7 +9,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_updated_email
 from notifications.email_sender import get_email_sender
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from users.models import NonMemberRsvpToken, User
 
 from community._event_helpers import _event_out, broadcast_capacity_change, promote_from_waitlist
@@ -57,6 +57,20 @@ class PublicRsvpManageIn(BaseModel):
     status: str
     has_plus_one: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    answers: dict[str, str] = {}
+
+    @field_validator("answers")
+    @classmethod
+    def answers_within_limits(cls, value: dict[str, str]) -> dict[str, str]:
+        for key, answer in value.items():
+            if len(answer) > FieldLimit.DESCRIPTION:
+                raise_validation(
+                    Code.Event.RSVP_ANSWER_TOO_LONG,
+                    field=f"answers.{key}",
+                    label=key,
+                    max=FieldLimit.DESCRIPTION,
+                )
+        return value
 
 
 def _resolve_token_user(token: str) -> User:
@@ -156,7 +170,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
     with transaction.atomic():
         final_status, promoted_user_ids, created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False
+            event.id, user, payload.status, payload.has_plus_one, answers=payload.answers
         )
         rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
 

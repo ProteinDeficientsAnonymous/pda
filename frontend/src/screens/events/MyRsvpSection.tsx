@@ -81,6 +81,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           eventId: event.id,
           status: args.status,
           hasPlusOne: args.hasPlusOne,
+          answers: args.answers,
           ...(args.comment !== undefined ? { comment: args.comment } : {}),
         });
       } else {
