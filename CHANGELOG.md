@@ -1,3 +1,10 @@
+## [0.75.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.0...v0.75.1) (2026-08-01)
+
+
+### Bug Fixes
+
+* stop check-in list reordering and show all rsvp statuses ([#1206](https://github.com/ProteinDeficientsAnonymous/pda/issues/1206)) ([82b4959](https://github.com/ProteinDeficientsAnonymous/pda/commit/82b49590ee1ee4c5755fe8907c3295b18d6ca2c7))
+
 # [0.75.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.74.0...v0.75.0) (2026-08-01)
 
 
