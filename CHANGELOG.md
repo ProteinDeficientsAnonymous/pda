@@ -1,3 +1,11 @@
+## [0.71.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.4...v0.71.5) (2026-08-01)
+
+
+### Bug Fixes
+
+* 1182 - remove co-host picker from event edit form ([#1185](https://github.com/ProteinDeficientsAnonymous/pda/issues/1185)) ([39d6506](https://github.com/ProteinDeficientsAnonymous/pda/commit/39d650644ea54f6d354b2dc0fe6430a0a4516b86))
+* **calendar:** stop the list view clipping before its last item (Issue 1167) ([#1180](https://github.com/ProteinDeficientsAnonymous/pda/issues/1180)) ([28f993b](https://github.com/ProteinDeficientsAnonymous/pda/commit/28f993b3feea45ab72ea62b4949b56cb66b81ac8))
+
 ## [0.71.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.3...v0.71.4) (2026-08-01)
 
 
