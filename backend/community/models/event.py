@@ -1,4 +1,5 @@
 import uuid
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from django.db import models
@@ -55,16 +56,34 @@ def public_rsvp_eligible_q(now, prefix: str = "") -> Q:
     )
 
 
+@dataclass(frozen=True)
+class EventRef:
+    """A parsed {event_id} path segment: exactly one of event_id or slug is set."""
+
+    event_id: uuid.UUID | None
+    slug: str | None
+
+    def as_q(self) -> Q:
+        if self.event_id is not None:
+            return Q(id=self.event_id)
+        return Q(slug=self.slug)
+
+
+def parse_event_ref(raw: str) -> EventRef:
+    """Parse the {event_id} path segment: a slug, or a UUID so pre-slug shared links keep resolving."""
+    try:
+        return EventRef(event_id=uuid.UUID(raw), slug=None)
+    except ValueError:
+        return EventRef(event_id=None, slug=raw)
+
+
 def event_lookup_q(event_ref: str) -> Q:
     """Match an event by slug, or by UUID so pre-slug shared links keep resolving.
 
     param event_ref(str): the {event_id} path segment — a slug or a UUID
     return(Q): lookup for exactly one of the two identifier forms
     """
-    try:
-        return Q(id=uuid.UUID(str(event_ref)))
-    except ValueError:
-        return Q(slug=event_ref)
+    return parse_event_ref(event_ref).as_q()
 
 
 def build_event_slug(title: str, manager, exclude_pk=None) -> str:

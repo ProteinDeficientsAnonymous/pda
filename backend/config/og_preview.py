@@ -1,4 +1,4 @@
-from community.models import Event, EventStatus, PageVisibility, event_lookup_q
+from community.models import Event, EventStatus, PageVisibility, parse_event_ref
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
@@ -36,7 +36,7 @@ def event_og_preview(request, event_id: str):
     anonymous user may see. Anything else 404s so member-only details never leak.
     """
     try:
-        event = Event.objects.get(event_lookup_q(event_id))
+        event = Event.objects.get(parse_event_ref(event_id).as_q())
     except Event.DoesNotExist:
         raise Http404
 

@@ -3,7 +3,14 @@
 from datetime import timedelta
 
 import pytest
-from community.models import Event, EventStatus, EventType, PageVisibility, event_lookup_q
+from community.models import (
+    Event,
+    EventStatus,
+    EventType,
+    PageVisibility,
+    event_lookup_q,
+    parse_event_ref,
+)
 from django.utils import timezone
 
 
@@ -73,6 +80,20 @@ class TestEventLookupQ:
     def test_slug_matches_by_slug(self):
         event = _make_event("Potluck in the Park")
         assert Event.objects.get(event_lookup_q(event.slug)).pk == event.pk
+
+
+@pytest.mark.django_db
+class TestParseEventRef:
+    def test_uuid_string_parses_to_event_id(self):
+        event = _make_event("Potluck in the Park")
+        ref = parse_event_ref(str(event.id))
+        assert ref.event_id == event.id
+        assert ref.slug is None
+
+    def test_non_uuid_string_parses_to_slug(self):
+        ref = parse_event_ref("potluck-in-the-park")
+        assert ref.event_id is None
+        assert ref.slug == "potluck-in-the-park"
 
 
 @pytest.mark.django_db

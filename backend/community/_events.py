@@ -48,7 +48,7 @@ from community.models import (
     EventStatus,
     EventType,
     PageVisibility,
-    event_lookup_q,
+    parse_event_ref,
 )
 
 router = Router()
@@ -282,6 +282,7 @@ def _enforce_event_read_visibility(event: Event, auth_user) -> None:
     auth=_optional_jwt,
 )
 def get_event(request, event_id: str):
+    ref = parse_event_ref(event_id)
     try:
         event = (
             Event.objects.select_related("created_by")
@@ -293,7 +294,7 @@ def get_event(request, event_id: str):
                     distinct=True,
                 )
             )
-            .get(event_lookup_q(event_id))
+            .get(ref.as_q())
         )
     except Event.DoesNotExist:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
