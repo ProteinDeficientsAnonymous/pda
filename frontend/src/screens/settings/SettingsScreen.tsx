@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { type TextScale, type ThemeMode, useAccessibilityStore } from '@/accessibility/store';
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -296,11 +296,29 @@ function CalendarFeedTypeToggles({
   excluded: EventTypeValue[];
   onChange: (v: EventTypeValue[]) => Promise<void>;
 }) {
+  const pendingRef = useRef(excluded);
+  pendingRef.current = excluded;
+  const [error, setError] = useState<string | null>(null);
+
   const options: { value: EventTypeValue; label: string }[] = [
     { value: EventType.Official, label: 'official events' },
     { value: EventType.Club, label: 'club events' },
     { value: EventType.Community, label: 'community events' },
   ];
+
+  async function toggle(value: EventTypeValue, checked: boolean) {
+    const next = checked
+      ? pendingRef.current.filter((t) => t !== value)
+      : [...pendingRef.current, value];
+    pendingRef.current = next;
+    setError(null);
+    try {
+      await onChange(next);
+    } catch (err) {
+      setError(extractApiErrorOr(err, "couldn't save — try again"));
+    }
+  }
+
   return (
     <div>
       <div className="text-foreground mb-2 text-sm">event types in your feed</div>
@@ -309,12 +327,10 @@ function CalendarFeedTypeToggles({
           key={o.value}
           label={o.label}
           checked={!excluded.includes(o.value)}
-          onChange={(checked) => {
-            const next = checked ? excluded.filter((t) => t !== o.value) : [...excluded, o.value];
-            void onChange(next);
-          }}
+          onChange={(checked) => void toggle(o.value, checked)}
         />
       ))}
+      {error && <div className="text-destructive mt-1 text-xs">{error}</div>}
     </div>
   );
 }
