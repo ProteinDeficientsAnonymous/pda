@@ -19,6 +19,7 @@ import { RsvpBox } from './RsvpBox';
 interface Props {
   event: Event;
   token?: string;
+  locked?: boolean;
 }
 
 const STATUS_LINES: Record<RsvpInputStatus, string> = {
@@ -38,7 +39,7 @@ interface BoxState {
   initialStatus: RsvpInputStatus;
 }
 
-export function RsvpSection({ event, token }: Props) {
+export function RsvpSection({ event, token, locked }: Props) {
   const setRsvp = useSetRsvp();
   const removeRsvp = useRemoveRsvp();
   const updatePublicRsvp = useUpdatePublicMyRsvp(token ?? '');
@@ -120,6 +121,14 @@ export function RsvpSection({ event, token }: Props) {
     removeRsvp.isPending ||
     updatePublicRsvp.isPending ||
     cancelPublicRsvp.isPending;
+
+  if (locked) {
+    return (
+      <section aria-label="rsvp" className="flex flex-col gap-3">
+        <LockedRsvpStatus onWaitlist={onWaitlist} myInputStatus={myInputStatus} />
+      </section>
+    );
+  }
 
   return (
     <section aria-label="rsvp" className="flex flex-col gap-3">
@@ -207,6 +216,37 @@ function RsvpControls({
     >
       {atCapacity ? 'join the waitlist' : 'rsvp'}
     </button>
+  );
+}
+
+function lockedRsvpLabel(onWaitlist: boolean, myInputStatus: RsvpInputStatus | null): string {
+  if (onWaitlist) return 'you were on the waitlist';
+  if (myInputStatus) return STATUS_LINES[myInputStatus];
+  return "you didn't rsvp";
+}
+
+function LockedRsvpStatus({
+  onWaitlist,
+  myInputStatus,
+}: {
+  onWaitlist: boolean;
+  myInputStatus: RsvpInputStatus | null;
+}) {
+  const label = lockedRsvpLabel(onWaitlist, myInputStatus);
+  return (
+    <div className="bg-surface-dim text-foreground-secondary mx-auto flex h-12 min-w-28 items-center justify-center gap-2 rounded-full px-5 text-base font-medium">
+      <LockIcon />
+      <span role="status">{label}</span>
+    </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="2" />
+    </svg>
   );
 }
 

@@ -21,7 +21,10 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     (isCoHost ||
       canManageEvents ||
       (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
-  const showRsvp = !event.isPast && event.rsvpEnabled && event.status !== EventStatus.Cancelled;
+  const showRsvp = event.rsvpEnabled && event.status !== EventStatus.Cancelled;
+  // Past events show RSVP for context (who attended) but lock edits so attendees
+  // can't change their answer retroactively.
+  const rsvpLocked = event.isPast;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
   return {
     isCoHost,
@@ -31,6 +34,7 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
     rsvpDisabled,
     canInvite,
     showRsvp,
+    rsvpLocked,
     showStandaloneInvited,
   };
 }

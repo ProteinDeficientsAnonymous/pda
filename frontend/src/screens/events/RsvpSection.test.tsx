@@ -47,12 +47,12 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
   });
 }
 
-function renderSection(event: Event, token?: string) {
+function renderSection(event: Event, token?: string, locked?: boolean) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <RsvpSection event={event} {...(token ? { token } : {})} />
+        <RsvpSection event={event} {...(token ? { token } : {})} {...(locked ? { locked } : {})} />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -160,6 +160,35 @@ describe('RsvpSection — after RSVPing', () => {
     expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "i'm going" })).not.toBeInTheDocument();
     expect(screen.queryByText("you're going")).not.toBeInTheDocument();
+  });
+});
+
+describe('RsvpSection — locked (past event)', () => {
+  it('shows a read-only status badge instead of an editable rsvp button', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }), undefined, true);
+
+    expect(screen.getByText("you're going")).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /edit RSVP/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'rsvp' })).not.toBeInTheDocument();
+  });
+
+  it("shows a fallback status when the member didn't rsvp", () => {
+    renderSection(makeEvent({ myRsvp: null }), undefined, true);
+
+    expect(screen.getByText("you didn't rsvp")).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'rsvp' })).not.toBeInTheDocument();
+  });
+
+  it('shows a locked waitlist status with no "leave waitlist" action', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Waitlisted }), undefined, true);
+
+    expect(screen.getByText('you were on the waitlist')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'leave waitlist' })).not.toBeInTheDocument();
+  });
+
+  it('never opens the RSVP box when locked', () => {
+    renderSection(makeEvent({ myRsvp: RsvpServerStatus.Attending }), undefined, true);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
 

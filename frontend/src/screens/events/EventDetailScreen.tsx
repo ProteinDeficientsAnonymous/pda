@@ -255,10 +255,16 @@ function MemberRsvpControl({
   const user = useAuthStore((s) => s.user);
   if (!isAuthed && !hasTokenUnlock) return null;
 
-  const { showRsvp } = eventMemberSectionFlags(event, isAuthed ? user : null);
+  const { showRsvp, rsvpLocked } = eventMemberSectionFlags(event, isAuthed ? user : null);
   if (!showRsvp) return null;
 
-  return <RsvpSection event={event} {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})} />;
+  return (
+    <RsvpSection
+      event={event}
+      locked={rsvpLocked}
+      {...(hasTokenUnlock ? { token: rsvpToken ?? '' } : {})}
+    />
+  );
 }
 
 function AnonSection({ event }: { event: Event }) {
