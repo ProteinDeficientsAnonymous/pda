@@ -616,11 +616,6 @@
       },
       "DevTestEventIn": {
         "properties": {
-          "allow_non_member_fillers": {
-            "default": false,
-            "title": "Allow Non Member Fillers",
-            "type": "boolean"
-          },
           "allow_plus_ones": {
             "default": false,
             "title": "Allow Plus Ones",
@@ -704,6 +699,13 @@
             "maximum": 50,
             "minimum": 0,
             "title": "Maybe Count",
+            "type": "integer"
+          },
+          "non_member_going_count": {
+            "default": 0,
+            "maximum": 50,
+            "minimum": 0,
+            "title": "Non Member Going Count",
             "type": "integer"
           },
           "price": {

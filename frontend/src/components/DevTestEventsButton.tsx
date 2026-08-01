@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { type DevTestEventOptions, useCreateDevTestEvents } from '@/api/devTools';
@@ -23,7 +24,7 @@ const DEFAULT_OPTIONS: DevTestEventOptions = {
   maybeCount: 5,
   cantGoCount: 5,
   invitedCount: 5,
-  allowNonMemberFillers: false,
+  nonMemberGoingCount: 0,
   rsvpEnabled: true,
   visibility: 'public',
   maxAttendees: null,
@@ -36,14 +37,16 @@ export function DevTestEventsButton() {
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<DevTestEventOptions>(DEFAULT_OPTIONS);
   const createEvents = useCreateDevTestEvents();
+  const navigate = useNavigate();
 
   if (!isAuthed || version?.environment === 'production') return null;
 
   async function onCreate() {
     try {
-      await createEvents.mutateAsync(options);
+      const event = await createEvents.mutateAsync(options);
       toast.success('created 1 test event 🌱');
       setOpen(false);
+      void navigate(`/events/${event.slug || event.id}`);
     } catch {
       toast.error("couldn't create test event — try again");
     }
@@ -92,7 +95,7 @@ export function DevTestEventsButton() {
 
             <DevTestEventOverrides options={options} onChange={setOptions} />
 
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-4 flex shrink-0 flex-col gap-2">
               <Button
                 onClick={() => {
                   void onCreate();

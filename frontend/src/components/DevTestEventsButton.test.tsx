@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/api/devTools', () => ({
@@ -29,7 +30,9 @@ function renderButton() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <DevTestEventsButton />
+      <MemoryRouter>
+        <DevTestEventsButton />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -38,7 +41,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockUseAuthStore.mockImplementation((selector) => selector({ status: 'authed' } as never));
   mockUseCreate.mockReturnValue({
-    mutateAsync: vi.fn().mockResolvedValue({ id: '1' }),
+    mutateAsync: vi.fn().mockResolvedValue({ id: '1', slug: 'test-event' }),
     isPending: false,
   } as unknown as ReturnType<typeof useCreateDevTestEvents>);
 });
@@ -74,7 +77,7 @@ describe('DevTestEventsButton', () => {
     mockUseVersion.mockReturnValue({
       data: { commitSha: 'a', commitShaShort: 'a', environment: 'local' },
     } as ReturnType<typeof useVersion>);
-    const mutateAsync = vi.fn().mockResolvedValue({ id: '1' });
+    const mutateAsync = vi.fn().mockResolvedValue({ id: '1', slug: 'test-event' });
     mockUseCreate.mockReturnValue({
       mutateAsync,
       isPending: false,
@@ -89,7 +92,7 @@ describe('DevTestEventsButton', () => {
     );
   });
 
-  it('disables non-member fillers toggle unless official is on', async () => {
+  it('disables non-member going count unless official is on', async () => {
     const user = userEvent.setup();
     mockUseVersion.mockReturnValue({
       data: { commitSha: 'a', commitShaShort: 'a', environment: 'local' },
@@ -98,6 +101,8 @@ describe('DevTestEventsButton', () => {
     renderButton();
     await user.click(screen.getByLabelText('dev test events'));
 
-    expect(screen.getByRole('switch', { name: 'allow non-member fillers' })).toBeDisabled();
+    expect(
+      screen.getByLabelText('going (non-members, official events only)'),
+    ).toBeDisabled();
   });
 });

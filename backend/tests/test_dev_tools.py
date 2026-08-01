@@ -178,16 +178,21 @@ class TestCreateDevTestEvent:
         assert event.co_hosts.count() == 3
         assert event.cohost_invites.count() == 1
 
-    def test_non_member_fillers_require_official_and_opt_in(
+    def test_non_member_going_adds_alongside_member_going(
         self, api_client, auth_headers, monkeypatch
     ):
+        """non_member_going_count must ADD non-member RSVPs, not replace the
+        member `going_count` pool — regression test for a bug where turning on
+        non-member fillers made every going RSVP non-member."""
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
         response = api_client.post(
             "/api/community/dev/test-events/",
             data={
-                "going_count": 2,
+                "going_count": 3,
+                "non_member_going_count": 2,
+                "maybe_count": 0,
+                "cant_go_count": 0,
                 "is_official": True,
-                "allow_non_member_fillers": True,
             },
             content_type="application/json",
             **auth_headers,
@@ -195,21 +200,28 @@ class TestCreateDevTestEvent:
         event = Event.objects.get(id=response.json()["id"])
         assert event.event_type == EventType.OFFICIAL
         rsvp_users = [rsvp.user for rsvp in event.rsvps.select_related("user").all()]
-        assert any(not u.is_member for u in rsvp_users)
+        assert sum(1 for u in rsvp_users if u.is_member) == 3
+        assert sum(1 for u in rsvp_users if not u.is_member) == 2
 
-    def test_non_member_fillers_ignored_without_official(
+    def test_non_member_going_ignored_without_official(
         self, api_client, auth_headers, monkeypatch
     ):
         monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
         response = api_client.post(
             "/api/community/dev/test-events/",
-            data={"going_count": 2, "allow_non_member_fillers": True},
+            data={
+                "going_count": 2,
+                "non_member_going_count": 3,
+                "maybe_count": 0,
+                "cant_go_count": 0,
+            },
             content_type="application/json",
             **auth_headers,
         )
         event = Event.objects.get(id=response.json()["id"])
         rsvp_users = [rsvp.user for rsvp in event.rsvps.select_related("user").all()]
         assert all(u.is_member for u in rsvp_users)
+        assert len(rsvp_users) == 2
 
     def test_filler_pool_reused_before_creating_new_users(
         self, api_client, auth_headers, monkeypatch, test_user

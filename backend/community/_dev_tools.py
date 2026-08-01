@@ -42,10 +42,10 @@ class DevTestEventIn(BaseModel):
     cohost_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
     invited_cohost_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
     going_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
+    non_member_going_count: int = Field(default=0, ge=0, le=MAX_PARTICIPANTS)
     maybe_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
     cant_go_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
     invited_count: int = Field(default=5, ge=0, le=MAX_PARTICIPANTS)
-    allow_non_member_fillers: bool = False
     rsvp_enabled: bool = True
     visibility: str = Field(default=PageVisibility.PUBLIC, max_length=FieldLimit.CHOICE)
     max_attendees: int | None = Field(default=None, ge=1)
@@ -94,14 +94,13 @@ def create_dev_test_event(request, payload: DevTestEventIn):
     # endpoint bypasses that validator, so mirror the constraint here directly.
     is_public_only_type = event_type in (EventType.OFFICIAL, EventType.CLUB)
     visibility = PageVisibility.PUBLIC if is_public_only_type else payload.visibility
-    # Non-member fillers mirror Event.is_public_rsvp_eligible: OFFICIAL + ACTIVE +
+    # Non-member RSVPs mirror Event.is_public_rsvp_eligible: OFFICIAL + ACTIVE +
     # rsvp_enabled. This dev endpoint bypasses the real tag-permission check
     # (_enforce_type_tag_permission) since the env + auth gate is the boundary here.
-    allow_non_members = (
-        payload.allow_non_member_fillers
-        and payload.is_official
-        and status == EventStatus.ACTIVE
-        and payload.rsvp_enabled
+    non_member_going_count = (
+        payload.non_member_going_count
+        if (payload.is_official and status == EventStatus.ACTIVE and payload.rsvp_enabled)
+        else 0
     )
 
     event = Event.objects.create(
@@ -135,15 +134,13 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         event,
         RsvpCounts(
             going=payload.going_count,
+            non_member_going=non_member_going_count,
             maybe=payload.maybe_count,
             cant_go=payload.cant_go_count,
             max_attendees=payload.max_attendees,
         ),
-        allow_non_members=allow_non_members,
     )
-    populate_invited_users(
-        event, count=payload.invited_count, allow_non_members=allow_non_members
-    )
+    populate_invited_users(event, count=payload.invited_count)
 
     audit_log(
         logging.INFO,

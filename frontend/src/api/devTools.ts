@@ -20,7 +20,7 @@ export interface DevTestEventOptions {
   maybeCount: number;
   cantGoCount: number;
   invitedCount: number;
-  allowNonMemberFillers: boolean;
+  nonMemberGoingCount: number;
   rsvpEnabled: boolean;
   visibility: DevEventVisibility;
   maxAttendees: number | null;
@@ -29,6 +29,7 @@ export interface DevTestEventOptions {
 
 interface CreateDevTestEventResponse {
   id: string;
+  slug: string;
 }
 
 export function useCreateDevTestEvents() {
@@ -52,7 +53,7 @@ export function useCreateDevTestEvents() {
           maybe_count: options.maybeCount,
           cant_go_count: options.cantGoCount,
           invited_count: options.invitedCount,
-          allow_non_member_fillers: options.allowNonMemberFillers,
+          non_member_going_count: options.nonMemberGoingCount,
           rsvp_enabled: options.rsvpEnabled,
           visibility: options.visibility,
           max_attendees: options.maxAttendees,

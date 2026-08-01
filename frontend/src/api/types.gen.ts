@@ -2269,11 +2269,6 @@ export interface components {
         /** DevTestEventIn */
         DevTestEventIn: {
             /**
-             * Allow Non Member Fillers
-             * @default false
-             */
-            allow_non_member_fillers: boolean;
-            /**
              * Allow Plus Ones
              * @default false
              */
@@ -2335,6 +2330,11 @@ export interface components {
              * @default 5
              */
             maybe_count: number;
+            /**
+             * Non Member Going Count
+             * @default 0
+             */
+            non_member_going_count: number;
             /**
              * Price
              * @default

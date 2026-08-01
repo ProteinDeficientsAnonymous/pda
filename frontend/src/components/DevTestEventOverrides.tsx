@@ -18,10 +18,12 @@ function NumberField({
   label,
   value,
   onChange,
+  disabled,
 }: {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <TextField
@@ -34,6 +36,7 @@ function NumberField({
       onChange={(e) => {
         onChange(Number(e.target.value));
       }}
+      disabled={disabled}
       className="[-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
     />
   );
@@ -45,7 +48,7 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
   }
 
   return (
-    <div className="flex max-h-80 flex-col gap-3 overflow-y-auto">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1">
       <div className="flex flex-col gap-1">
         <Toggle
           label="past event"
@@ -74,14 +77,6 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
           onChange={(v) => {
             onChange({ ...options, isClub: v, isOfficial: v ? false : options.isOfficial });
           }}
-        />
-        <Toggle
-          label="allow non-member fillers"
-          checked={options.allowNonMemberFillers}
-          onChange={(v) => {
-            set('allowNonMemberFillers', v);
-          }}
-          disabled={!options.isOfficial}
         />
         <Toggle
           label="rsvps enabled"
@@ -128,6 +123,14 @@ export function DevTestEventOverrides({ options, onChange }: Props) {
           onChange={(v) => {
             set('goingCount', v);
           }}
+        />
+        <NumberField
+          label="going (non-members, official events only)"
+          value={options.nonMemberGoingCount}
+          onChange={(v) => {
+            set('nonMemberGoingCount', v);
+          }}
+          disabled={!options.isOfficial}
         />
         <NumberField
           label="maybe"

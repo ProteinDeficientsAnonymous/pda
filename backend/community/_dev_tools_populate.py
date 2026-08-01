@@ -10,6 +10,7 @@ from community.models.choices import CoHostInviteStatus
 @dataclass
 class RsvpCounts:
     going: int
+    non_member_going: int
     maybe: int
     cant_go: int
     max_attendees: int | None
@@ -113,35 +114,53 @@ def populate_cohosts(event, *, accepted_count: int, invited_count: int, invited_
     )
 
 
-def populate_rsvps(event, counts: RsvpCounts, *, allow_non_members: bool) -> None:
-    """Fill RSVPs. When `max_attendees` caps `going`, the overflow lands as
-    WAITLISTED instead of ATTENDING — mirrors the real capacity-check outcome
-    (_apply_rsvp_in_transaction) without going through that endpoint."""
+def _split_by_capacity(going: int, max_attendees: int | None) -> tuple[int, int]:
+    """Returns (attending, waitlisted). Overflow past max_attendees waitlists,
+    mirroring the real capacity-check outcome (_apply_rsvp_in_transaction)
+    without going through that endpoint."""
+    if max_attendees is not None and going > max_attendees:
+        return max_attendees, going - max_attendees
+    return going, 0
+
+
+def populate_rsvps(event, counts: RsvpCounts) -> None:
+    """Fill RSVPs. `non_member_going` draws from a separate non-member pool —
+    non-members are RSVP-only, never cohosts or invitees (see
+    populate_cohosts/populate_invited_users)."""
     exclude_ids = {event.created_by_id} if event.created_by_id else set()
-    is_member = not allow_non_members
+    total_going = counts.going + counts.non_member_going
+    attending_total, waitlisted_total = _split_by_capacity(total_going, counts.max_attendees)
+    # Fill non-member going/waitlisted slots first so the member split absorbs
+    # any capacity overflow consistently regardless of which pool is larger.
+    non_member_attending = min(counts.non_member_going, attending_total)
+    non_member_waitlisted = counts.non_member_going - non_member_attending
+    member_attending = attending_total - non_member_attending
+    member_waitlisted = waitlisted_total - non_member_waitlisted
 
-    if counts.max_attendees is not None and counts.going > counts.max_attendees:
-        attending_count = counts.max_attendees
-        waitlisted_count = counts.going - counts.max_attendees
-    else:
-        attending_count, waitlisted_count = counts.going, 0
-
-    by_status = {
-        RSVPStatus.ATTENDING: attending_count,
-        RSVPStatus.WAITLISTED: waitlisted_count,
+    rows = []
+    member_counts = {
+        RSVPStatus.ATTENDING: member_attending,
+        RSVPStatus.WAITLISTED: member_waitlisted,
         RSVPStatus.MAYBE: counts.maybe,
         RSVPStatus.CANT_GO: counts.cant_go,
     }
-    rows = []
-    for status, count in by_status.items():
-        for user in pick_filler_users(count, is_member=is_member, exclude_ids=exclude_ids):
+    for status, count in member_counts.items():
+        for user in pick_filler_users(count, is_member=True, exclude_ids=exclude_ids):
             rows.append(EventRSVP(event=event, user=user, status=status))
+
+    non_member_counts = {
+        RSVPStatus.ATTENDING: non_member_attending,
+        RSVPStatus.WAITLISTED: non_member_waitlisted,
+    }
+    for status, count in non_member_counts.items():
+        for user in pick_filler_users(count, is_member=False, exclude_ids=exclude_ids):
+            rows.append(EventRSVP(event=event, user=user, status=status))
+
     EventRSVP.objects.bulk_create(rows)
 
 
-def populate_invited_users(event, *, count: int, allow_non_members: bool) -> None:
+def populate_invited_users(event, *, count: int) -> None:
     exclude_ids = {event.created_by_id} if event.created_by_id else set()
     exclude_ids |= set(event.rsvps.values_list("user_id", flat=True))
-    is_member = not allow_non_members
-    users = pick_filler_users(count, is_member=is_member, exclude_ids=exclude_ids)
+    users = pick_filler_users(count, is_member=True, exclude_ids=exclude_ids)
     event.invited_users.add(*users)
