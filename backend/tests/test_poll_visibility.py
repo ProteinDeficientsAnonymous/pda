@@ -1,5 +1,3 @@
-"""Visibility gating for the poll endpoints (Issue 1192)."""
-
 import json
 
 import pytest
