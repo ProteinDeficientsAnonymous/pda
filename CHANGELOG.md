@@ -1,3 +1,10 @@
+# [0.74.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.73.0...v0.74.0) (2026-08-01)
+
+
+### Features
+
+* 1183 - dev-only tab for quickly creating test events ([#1191](https://github.com/ProteinDeficientsAnonymous/pda/issues/1191)) ([6e65558](https://github.com/ProteinDeficientsAnonymous/pda/commit/6e65558d28533d7e06bda0dfeb3e954a60c4365d))
+
 # [0.73.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.72.4...v0.73.0) (2026-08-01)
 
 
