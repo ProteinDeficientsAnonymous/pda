@@ -1,3 +1,10 @@
+## [0.71.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.3...v0.71.4) (2026-08-01)
+
+
+### Bug Fixes
+
+* **mobile:** raise remaining text-sm inputs to 16px to stop ios safari zoom ([#1164](https://github.com/ProteinDeficientsAnonymous/pda/issues/1164)) ([5a0973d](https://github.com/ProteinDeficientsAnonymous/pda/commit/5a0973df4deb58bb1b073ed87a7190460b0f4e31))
+
 ## [0.71.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.71.2...v0.71.3) (2026-08-01)
 
 
