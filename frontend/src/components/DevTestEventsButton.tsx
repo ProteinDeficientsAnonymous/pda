@@ -15,6 +15,7 @@ const DEFAULT_OPTIONS: DevTestEventOptions = {
   isOfficial: false,
   isClub: false,
   makeMeHost: false,
+  makeMeGuest: false,
   price: '',
   venmoLink: '',
   cashappLink: '',

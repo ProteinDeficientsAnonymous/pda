@@ -24,7 +24,7 @@ from community._field_limits import FieldLimit
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.management.commands._seed_staging_data import is_seed_allowed
-from community.models import Event, EventStatus, EventType, PageVisibility
+from community.models import Event, EventRSVP, EventStatus, EventType, PageVisibility, RSVPStatus
 
 router = Router()
 
@@ -37,6 +37,7 @@ class DevTestEventIn(BaseModel):
     is_official: bool = False
     is_club: bool = False
     make_me_host: bool = False
+    make_me_guest: bool = False
     price: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
     venmo_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
     cashapp_link: str = Field(default="", max_length=FieldLimit.PAYMENT_HANDLE)
@@ -146,6 +147,11 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         ),
     )
     populate_invited_users(event, count=payload.invited_count)
+
+    if payload.make_me_guest:
+        EventRSVP.objects.update_or_create(
+            event=event, user=request.auth, defaults={"status": RSVPStatus.ATTENDING}
+        )
 
     audit_log(
         logging.INFO,

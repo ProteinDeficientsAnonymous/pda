@@ -11,6 +11,7 @@ export interface DevTestEventOptions {
   isOfficial: boolean;
   isClub: boolean;
   makeMeHost: boolean;
+  makeMeGuest: boolean;
   price: string;
   venmoLink: string;
   cashappLink: string;
@@ -45,6 +46,7 @@ export function useCreateDevTestEvents() {
           is_official: options.isOfficial,
           is_club: options.isClub,
           make_me_host: options.makeMeHost,
+          make_me_guest: options.makeMeGuest,
           price: options.price,
           venmo_link: options.venmoLink,
           cashapp_link: options.cashappLink,

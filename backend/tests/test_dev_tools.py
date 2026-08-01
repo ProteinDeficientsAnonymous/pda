@@ -230,6 +230,20 @@ class TestCreateDevTestEvent:
         event = Event.objects.get(id=response.json()["id"])
         assert list(event.co_hosts.values_list("id", flat=True)) == [dev_tools_user.id]
 
+    def test_make_me_guest_adds_creator_rsvp(
+        self, api_client, dev_tools_headers, dev_tools_user, monkeypatch
+    ):
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        response = api_client.post(
+            "/api/community/dev/test-events/",
+            data={"make_me_guest": True, "going_count": 0},
+            content_type="application/json",
+            **dev_tools_headers,
+        )
+        event = Event.objects.get(id=response.json()["id"])
+        rsvp = event.rsvps.get(user=dev_tools_user)
+        assert rsvp.status == RSVPStatus.ATTENDING
+
     def test_creator_not_a_cohost_by_default(
         self, api_client, dev_tools_headers, dev_tools_user, monkeypatch
     ):
