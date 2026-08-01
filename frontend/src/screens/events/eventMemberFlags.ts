@@ -12,12 +12,12 @@ export function eventMemberSectionFlags(event: Event, user: User | null) {
   const isCancelled = event.status === EventStatus.Cancelled;
   const isOpen = !isCancelled && !event.isPast;
   const canEdit = isHostOrEventManager && isOpen;
-  const hasRsvpd = event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe;
+  const hasRsvpd =
+    user !== null && (event.myRsvp === RsvpStatus.Attending || event.myRsvp === RsvpStatus.Maybe);
   const canInvite =
     isOpen &&
     event.rsvpEnabled &&
-    (isHostOrEventManager ||
-      (user !== null && event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
+    (isHostOrEventManager || (event.invitePermission === InvitePermission.AllMembers && hasRsvpd));
   const showRsvp = event.rsvpEnabled;
   const rsvpLocked = !isOpen;
   const showStandaloneInvited = !showRsvp && isHostOrEventManager && event.invitedCount > 0;
