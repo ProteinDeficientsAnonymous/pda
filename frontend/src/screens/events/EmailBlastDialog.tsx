@@ -6,7 +6,7 @@ import { useEmailBlast } from '@/api/eventBlast';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { TextField } from '@/components/ui/TextField';
-import { type Event, RsvpServerStatus } from '@/models/event';
+import { type Event, RSVP_GROUP_LABELS } from '@/models/event';
 
 interface Props {
   event: Event;
@@ -17,12 +17,6 @@ interface Props {
 const SUBJECT_MAX = 150;
 const MESSAGE_MAX = 5000;
 
-const AUDIENCE_LABELS: { value: string; label: string }[] = [
-  { value: RsvpServerStatus.Attending, label: 'going' },
-  { value: RsvpServerStatus.Maybe, label: 'maybe' },
-  { value: RsvpServerStatus.CantGo, label: "can't go" },
-  { value: RsvpServerStatus.Waitlisted, label: 'waitlisted' },
-];
 
 interface AudienceGroup {
   value: string;
@@ -31,10 +25,10 @@ interface AudienceGroup {
 }
 
 function availableAudiences(event: Event): AudienceGroup[] {
-  return AUDIENCE_LABELS.map(({ value, label }) => ({
-    value,
+  return RSVP_GROUP_LABELS.map(({ status, label }) => ({
+    value: status,
     label,
-    count: event.guests.filter((g) => g.status === value).length,
+    count: event.guests.filter((g) => g.status === status).length,
   })).filter((o) => o.count > 0);
 }
 

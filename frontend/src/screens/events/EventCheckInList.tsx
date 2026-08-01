@@ -1,15 +1,8 @@
 import { useState } from 'react';
 
-import type { AttendanceStatusValue, EventGuest, RsvpInputStatus } from '@/models/event';
-import { AttendanceStatus, RsvpStatus } from '@/models/event';
+import type { AttendanceStatusValue, EventGuest, RsvpServerStatusValue } from '@/models/event';
+import { AttendanceStatus, RSVP_GROUP_LABELS, rsvpGroupLabel } from '@/models/event';
 import { cn } from '@/utils/cn';
-
-// Third-person labels — RSVP_STATUS_LABELS is worded for the member's own picker ("i'm going").
-const CHECK_IN_FILTERS: { status: RsvpInputStatus; label: string }[] = [
-  { status: RsvpStatus.Attending, label: 'going' },
-  { status: RsvpStatus.Maybe, label: 'maybe' },
-  { status: RsvpStatus.CantGo, label: "can't go" },
-];
 
 export function EventCheckInList({
   guests,
@@ -20,7 +13,7 @@ export function EventCheckInList({
   onMark: (userId: string, attendance: AttendanceStatusValue) => void;
   isPending: boolean;
 }) {
-  const [statusFilter, setStatusFilter] = useState<RsvpInputStatus | null>(null);
+  const [statusFilter, setStatusFilter] = useState<RsvpServerStatusValue | null>(null);
 
   if (guests.length === 0) {
     return <p className="text-muted text-xs">no rsvps to check in</p>;
@@ -45,7 +38,7 @@ export function EventCheckInList({
             >
               <span className="flex min-w-0 items-center gap-2">
                 <span className="text-foreground truncate text-sm">{g.name}</span>
-                <span className="text-muted shrink-0 text-xs">{guestStatusLabel(g.status)}</span>
+                <span className="text-muted shrink-0 text-xs">{rsvpGroupLabel(g.status)}</span>
               </span>
               <div className="flex gap-1">
                 <AttendanceButton
@@ -73,16 +66,12 @@ export function EventCheckInList({
   );
 }
 
-function guestStatusLabel(status: string): string {
-  return CHECK_IN_FILTERS.find((s) => s.status === status)?.label ?? status;
-}
-
 function StatusFilter({
   value,
   onChange,
 }: {
-  value: RsvpInputStatus | null;
-  onChange: (v: RsvpInputStatus | null) => void;
+  value: RsvpServerStatusValue | null;
+  onChange: (v: RsvpServerStatusValue | null) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-1">
@@ -93,7 +82,7 @@ function StatusFilter({
           onChange(null);
         }}
       />
-      {CHECK_IN_FILTERS.map((s) => (
+      {RSVP_GROUP_LABELS.map((s) => (
         <FilterChip
           key={s.status}
           active={value === s.status}

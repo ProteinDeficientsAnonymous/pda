@@ -8,17 +8,7 @@ import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import type { Event, EventGuest, RsvpInputStatus } from '@/models/event';
-import { isRsvpInputStatus, RsvpServerStatus } from '@/models/event';
-
-const GROUPS: {
-  status: (typeof RsvpServerStatus)[keyof typeof RsvpServerStatus];
-  label: string;
-}[] = [
-  { status: RsvpServerStatus.Attending, label: 'going' },
-  { status: RsvpServerStatus.Maybe, label: 'maybe' },
-  { status: RsvpServerStatus.CantGo, label: "can't go" },
-  { status: RsvpServerStatus.Waitlisted, label: 'waitlist' },
-];
+import { isRsvpInputStatus, RSVP_GROUP_LABELS, RsvpServerStatus } from '@/models/event';
 
 export function EventManageRsvpsPanel({ event }: { event: Event }) {
   const setGuestRsvp = useSetGuestRsvp(event.id);
@@ -43,7 +33,7 @@ export function EventManageRsvpsPanel({ event }: { event: Event }) {
       {event.guests.length === 0 ? (
         <p className="text-muted text-sm">no one yet 🌿</p>
       ) : (
-        GROUPS.map((group) => {
+        RSVP_GROUP_LABELS.map((group) => {
           const guests = event.guests.filter((g) => g.status === group.status);
           if (guests.length === 0) return null;
           return (
