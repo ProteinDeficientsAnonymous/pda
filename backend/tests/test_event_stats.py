@@ -303,6 +303,29 @@ class TestSetAttendance:
         assert rsvp.attendance == AttendanceStatus.ATTENDED
         assert rsvp.checked_in_at is not None
 
+    def test_guest_order_is_stable_across_check_ins(
+        self, api_client, open_check_in_event, host_user, members
+    ):
+        for m in members:
+            EventRSVP.objects.create(event=open_check_in_event, user=m, status=RSVPStatus.ATTENDING)
+        detail_url = f"/api/community/events/{open_check_in_event.id}/"
+        expected = [str(m.pk) for m in members]
+        assert [
+            g["user_id"] for g in api_client.get(detail_url, **_auth(host_user)).json()["guests"]
+        ] == expected
+
+        # Check in a guest from the middle of the list — the row rewrite is what
+        # used to bounce them out of position.
+        api_client.post(
+            f"/api/community/events/{open_check_in_event.id}/rsvps/{members[1].pk}/attendance/",
+            {"attendance": AttendanceStatus.ATTENDED},
+            content_type="application/json",
+            **_auth(host_user),
+        )
+
+        after = api_client.get(detail_url, **_auth(host_user)).json()["guests"]
+        assert [g["user_id"] for g in after] == expected
+
     def test_no_show_does_not_stamp_checked_in_at(
         self, api_client, open_check_in_event, host_user, members
     ):
