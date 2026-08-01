@@ -142,9 +142,7 @@ export function EventForm({ existing }: Props) {
         // While a poll is active, the poll owns the time. Send a Partial
         // that omits start/end/tbd so useUpdateEvent's undefined-filter drops
         // them from the PATCH body (backend rejects those edits).
-        // On edit, never send coHostIds — co-host management happens on the
-        // event detail page only, not in this form. Omitting the key ensures
-        // the backend preserves existing invites and accepted co-hosts.
+        // On edit, omit coHostIds so the backend preserves existing invites/co-hosts.
         const patchBody: Partial<EventFormValues> = timeLocked
           ? (() => {
               const {
