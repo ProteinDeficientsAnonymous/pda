@@ -30,6 +30,9 @@ test('non-member with rsvp token can comment, reply, and react', async ({ page }
   await expect(postedComment.getByText(replyText)).toBeVisible();
 
   await postedComment.getByRole('button', { name: 'add reaction' }).click();
-  await postedComment.getByRole('button', { name: '❤️' }).click();
-  await expect(postedComment.getByRole('button', { name: '❤️ 1' })).toBeVisible();
+  await postedComment.getByRole('button', { name: '❤️', exact: true }).click();
+  await expect(postedComment.getByRole('button', { name: 'react with ❤️ 1' })).toBeVisible();
+
+  await postedComment.getByRole('button', { name: 'who reacted with ❤️' }).click();
+  await expect(postedComment.getByRole('dialog', { name: 'who reacted with ❤️' })).toBeVisible();
 });
