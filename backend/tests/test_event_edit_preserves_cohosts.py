@@ -35,9 +35,7 @@ def cohost(db) -> User:
 
 @pytest.mark.django_db
 class TestEventEditPreservesCohosts:
-    def test_patch_without_cohost_ids_preserves_accepted_cohosts(
-        self, api_client, creator, cohost
-    ):
+    def test_patch_without_cohost_ids_preserves_accepted_cohosts(self, api_client, creator, cohost):
         event_id = Event.objects.create(
             title="Potluck",
             start_datetime=future_iso(days=30),
@@ -68,9 +66,7 @@ class TestEventEditPreservesCohosts:
         invite.refresh_from_db()
         assert invite.status == CoHostInviteStatus.ACCEPTED
 
-    def test_patch_without_cohost_ids_preserves_pending_invites(
-        self, api_client, creator, cohost
-    ):
+    def test_patch_without_cohost_ids_preserves_pending_invites(self, api_client, creator, cohost):
         event_id = Event.objects.create(
             title="Potluck",
             start_datetime=future_iso(days=30),
