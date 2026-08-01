@@ -2324,6 +2324,11 @@ export interface components {
              */
             is_past: boolean;
             /**
+             * Make Me Guest
+             * @default false
+             */
+            make_me_guest: boolean;
+            /**
              * Make Me Host
              * @default false
              */

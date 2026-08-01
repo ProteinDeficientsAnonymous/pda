@@ -682,6 +682,11 @@
             "title": "Is Past",
             "type": "boolean"
           },
+          "make_me_guest": {
+            "default": false,
+            "title": "Make Me Guest",
+            "type": "boolean"
+          },
           "make_me_host": {
             "default": false,
             "title": "Make Me Host",
