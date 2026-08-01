@@ -127,8 +127,7 @@ def remove_cohost(request, event_id: UUID, user_id: UUID):
     is_self = str(user_id) == str(request.auth.pk)
     if not (is_self or _can_manage_cohost_invites(request.auth, co_host_ids)):
         raise_validation(Code.CoHostInvite.NOT_HOST, status_code=403)
-    if event.is_past:
-        raise_validation(Code.CoHostInvite.EVENT_IS_PAST, status_code=400)
+    # No past-event guard: cleaning up a stale roster after the fact is allowed.
     if co_host_ids <= {str(user_id)}:
         raise_validation(Code.CoHostInvite.WOULD_LEAVE_HOSTLESS, status_code=400)
 

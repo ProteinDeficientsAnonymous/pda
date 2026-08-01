@@ -247,7 +247,9 @@ class TestStepDown:
         )
         assert response.status_code == 403
 
-    def test_creator_cannot_step_down_on_past_event(self, api_client, creator, cohost, db):
+    def test_can_step_down_on_past_event(self, api_client, creator, cohost, db):
+        # Roster housekeeping stays available after the event — only the
+        # hostless guard blocks a removal.
         event = Event.objects.create(
             title="Past Potluck",
             start_datetime=past_iso(days=2),
@@ -259,7 +261,22 @@ class TestStepDown:
             f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
             **_auth_headers(creator),
         )
+        assert response.status_code == 200
+        assert not event.co_hosts.filter(pk=creator.pk).exists()
+
+    def test_sole_host_cannot_step_down_on_past_event(self, api_client, creator, db):
+        event = Event.objects.create(
+            title="Past Solo Potluck",
+            start_datetime=past_iso(days=2),
+            end_datetime=past_iso(days=2),
+            created_by=creator,
+        )
+        response = api_client.delete(
+            f"/api/community/events/{event.id}/cohosts/{creator.pk}/",
+            **_auth_headers(creator),
+        )
         assert response.status_code == 400
+        assert "would_leave_hostless" in response.content.decode()
         assert event.co_hosts.filter(pk=creator.pk).exists()
 
     def test_remaining_cohost_can_uncancel_after_creator_steps_down(

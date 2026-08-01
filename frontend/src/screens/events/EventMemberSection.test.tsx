@@ -246,6 +246,12 @@ describe('EventMemberSection — accepted host row', () => {
     expect(removeCohostMutate).not.toHaveBeenCalled();
   });
 
+  it('does NOT offer step-down when the viewer is the only host', () => {
+    useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
+    renderSection({ ...BASE_EVENT, coHostIds: ['user-creator'], coHostNames: ['Alice'] });
+    expect(screen.queryByRole('button', { name: /step down as host/i })).not.toBeInTheDocument();
+  });
+
   it('creator self-step-down shows confirm dialog and fires the removal mutation', async () => {
     useAuthStore.setState({ status: 'authed', user: CREATOR, accessToken: 'tok' });
     renderSection(ACCEPTED_COHOST_EVENT);

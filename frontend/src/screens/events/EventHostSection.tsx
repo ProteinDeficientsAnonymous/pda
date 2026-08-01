@@ -71,7 +71,9 @@ export function EventHostSection({
       <div className="flex flex-wrap items-center gap-2">
         {hosts.map((h) => {
           const isSelf = h.userId === viewerId;
-          const canRemove = (canEdit || isSelf) && !remove.isPending;
+          // hosts.length > 1 mirrors the backend's hostless guard — without it
+          // the × is offered on an action that can only fail.
+          const canRemove = (canEdit || isSelf) && hosts.length > 1 && !remove.isPending;
           return (
             <HostChip
               key={h.userId}
