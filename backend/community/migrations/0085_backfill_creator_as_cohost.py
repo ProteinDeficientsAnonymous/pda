@@ -2,6 +2,7 @@ from django.db import migrations
 
 
 def add_creators_to_cohosts(apps, schema_editor):
+    # Bulk insert via the through table instead of per-event .add() to avoid N+1 queries.
     Event = apps.get_model("community", "Event")
     through = Event.co_hosts.through
     existing = set(through.objects.values_list("event_id", "user_id"))
