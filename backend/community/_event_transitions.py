@@ -3,9 +3,11 @@
 import logging
 
 from config.audit import audit_log
+from django.db import transaction
 from django.utils import timezone
 from ninja.responses import Status
 from notifications.service import (
+    broadcast_event_created,
     create_cohost_invite_notifications,
     create_event_cancellation_notifications,
     create_event_invite_notifications,
@@ -59,6 +61,7 @@ def _uncancel_event(request, event: Event) -> None:
     """CANCELLED → ACTIVE. Permission check is the caller's responsibility."""
     event.status = EventStatus.ACTIVE
     event.save(update_fields=["status"])
+    transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
         logging.INFO,
         "event_uncancelled",
@@ -101,6 +104,7 @@ def _publish_draft(request, event: Event) -> None:
         )
     event.status = EventStatus.ACTIVE
     event.save(update_fields=["status"])
+    transaction.on_commit(lambda: broadcast_event_created(event))
     invited_ids = [str(u.id) for u in event.invited_users.all()]
     if invited_ids:
         create_event_invite_notifications(event, invited_ids, request.auth)
