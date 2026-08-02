@@ -77,3 +77,43 @@ class TestReorderJoinFormQuestions:
             content_type="application/json",
         )
         assert response.status_code == 401
+
+
+@pytest.mark.django_db
+class TestJoinFormQuestionTypes:
+    def test_create_textarea_question(self, api_client, form_admin_headers):
+        response = api_client.post(
+            "/api/community/join-form/questions/",
+            data=json.dumps(
+                {
+                    "label": "Why join?",
+                    "field_type": JoinFormQuestionType.TEXTAREA,
+                    "options": [],
+                    "required": True,
+                }
+            ),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 201
+        body = response.json()
+        assert body["field_type"] == "textarea"
+        assert JoinFormQuestion.objects.get(id=body["id"]).field_type == "textarea"
+
+    def test_create_dropdown_question(self, api_client, form_admin_headers):
+        response = api_client.post(
+            "/api/community/join-form/questions/",
+            data=json.dumps(
+                {
+                    "label": "Heard how?",
+                    "field_type": JoinFormQuestionType.DROPDOWN,
+                    "options": ["friend", "flyer"],
+                    "required": False,
+                }
+            ),
+            content_type="application/json",
+            **form_admin_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["field_type"] == "dropdown"
+        assert response.json()["options"] == ["friend", "flyer"]

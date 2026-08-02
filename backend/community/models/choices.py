@@ -45,8 +45,11 @@ class JoinRequestStatus(models.TextChoices):
 
 
 class JoinFormQuestionType(models.TextChoices):
+    """Subset of SurveyQuestionType wire values used on the join form."""
+
     TEXT = "text", "Text"
-    SELECT = "select", "Select"
+    TEXTAREA = "textarea", "Text area"
+    DROPDOWN = "dropdown", "Dropdown"
 
 
 class SurveyVisibility(models.TextChoices):

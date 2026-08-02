@@ -3272,10 +3272,12 @@
       "JoinFormQuestionIn": {
         "properties": {
           "field_type": {
-            "default": "text",
-            "maxLength": 20,
-            "title": "Field Type",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JoinFormQuestionType"
+              }
+            ],
+            "default": "text"
           },
           "label": {
             "maxLength": 300,
@@ -3358,6 +3360,16 @@
         ],
         "title": "JoinFormQuestionOut",
         "type": "object"
+      },
+      "JoinFormQuestionType": {
+        "description": "Subset of SurveyQuestionType wire values used on the join form.",
+        "enum": [
+          "text",
+          "textarea",
+          "dropdown"
+        ],
+        "title": "JoinFormQuestionType",
+        "type": "string"
       },
       "JoinRequestAnswerOut": {
         "properties": {

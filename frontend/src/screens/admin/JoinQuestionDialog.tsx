@@ -42,17 +42,22 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
       return;
     }
     const options =
-      fieldType === 'select'
+      fieldType === 'dropdown'
         ? optionsText
             .split('\n')
             .map((s) => s.trim())
             .filter(Boolean)
         : [];
-    if (fieldType === 'select' && options.length === 0) {
-      setError('add at least one option for a select question');
+    if (fieldType === 'dropdown' && options.length === 0) {
+      setError('add at least one option for a dropdown question');
       return;
     }
-    const input: JoinQuestionInput = { label: label.trim(), fieldType, options, required };
+    const input: JoinQuestionInput = {
+      label: label.trim(),
+      fieldType,
+      options,
+      required,
+    };
     try {
       if (existing) await update.mutateAsync(input);
       else await create.mutateAsync(input);
@@ -80,11 +85,12 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
             setFieldType(e.target.value as JoinQuestionType);
           }}
           options={[
-            { value: 'text', label: 'text' },
-            { value: 'select', label: 'select (one of)' },
+            { value: 'text', label: 'short text' },
+            { value: 'textarea', label: 'long text' },
+            { value: 'dropdown', label: 'dropdown' },
           ]}
         />
-        {fieldType === 'select' ? (
+        {fieldType === 'dropdown' ? (
           <Textarea
             label="options"
             value={optionsText}

@@ -29,7 +29,7 @@ class JoinFormQuestionOut(BaseModel):
 
 class JoinFormQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
-    field_type: str = Field(default=JoinFormQuestionType.TEXT, max_length=FieldLimit.CHOICE)
+    field_type: JoinFormQuestionType = JoinFormQuestionType.TEXT
     options: list[str] = []
     required: bool = False
 

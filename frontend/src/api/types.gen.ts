@@ -3488,11 +3488,8 @@ export interface components {
         };
         /** JoinFormQuestionIn */
         JoinFormQuestionIn: {
-            /**
-             * Field Type
-             * @default text
-             */
-            field_type: string;
+            /** @default text */
+            field_type: components["schemas"]["JoinFormQuestionType"];
             /** Label */
             label: string;
             /**
@@ -3529,6 +3526,12 @@ export interface components {
             /** Required */
             required: boolean;
         };
+        /**
+         * JoinFormQuestionType
+         * @description Subset of SurveyQuestionType wire values used on the join form.
+         * @enum {string}
+         */
+        JoinFormQuestionType: "text" | "textarea" | "dropdown";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */

@@ -4,7 +4,7 @@ import { hasErrorCode } from './apiErrors';
 import { apiClient } from './client';
 import { Code } from './validationCodes.gen';
 
-export type JoinQuestionType = 'text' | 'select';
+export type JoinQuestionType = 'text' | 'textarea' | 'dropdown';
 
 export interface JoinQuestion {
   id: string;
@@ -289,7 +289,7 @@ export function useUpdateJoinQuestion(questionId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: JoinQuestionInput) => {
-      // Backend PATCH has PUT semantics — send all four fields every time.
+      // Backend PATCH has PUT semantics — send all fields every time.
       const { data } = await apiClient.patch<WireQuestion>(
         `/api/community/join-form/questions/${questionId}/`,
         {

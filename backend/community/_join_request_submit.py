@@ -88,7 +88,7 @@ def _validate_answers(
                 label=q.label,
             )
         if (
-            q.field_type == JoinFormQuestionType.SELECT
+            q.field_type == JoinFormQuestionType.DROPDOWN
             and answer
             and answer not in (q.options or [])
         ):
