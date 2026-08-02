@@ -193,6 +193,49 @@ def _filter_invite_only(events, auth_user, status: str):
     ]
 
 
+def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
+    return EventListOut(
+        id=str(e.id),
+        slug=e.slug,
+        title=e.title,
+        description=e.description,
+        start_datetime=e.start_datetime,
+        end_datetime=e.end_datetime,
+        location=e.location,
+        latitude=float(e.latitude) if e.latitude is not None else None,
+        longitude=float(e.longitude) if e.longitude is not None else None,
+        event_type=e.event_type,
+        visibility=e.visibility,
+        photo_url=media_path(e.photo),
+        photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
+        whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
+        partiful_link=_members_only(e.partiful_link, "", is_authed),
+        other_link=_members_only(e.other_link, "", is_authed),
+        price=e.price,
+        venmo_link=_members_only(e.venmo_link, "", is_authed),
+        cashapp_link=_members_only(e.cashapp_link, "", is_authed),
+        zelle_info=_members_only(e.zelle_info, "", is_authed),
+        created_by_id=str(e.created_by_id) if e.created_by_id else None,
+        created_by_name=_get_creator_name(e.created_by, auth_user),
+        created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
+        co_host_photo_urls=[media_path(c.profile_photo) for c in e.co_hosts.all()],
+        datetime_tbd=e.datetime_tbd,
+        has_poll=hasattr(e, "poll"),
+        allow_plus_ones=e.allow_plus_ones,
+        max_attendees=e.max_attendees,
+        attending_count=_attending_headcount(e),
+        waitlisted_count=_waitlisted_count(e),
+        invited_count=e.invited_users.count(),
+        comment_count=e.comment_count,
+        my_rsvp=_find_my_rsvp(e.rsvps.all(), auth_user),
+        co_host_ids=[str(c.id) for c in e.co_hosts.all()],
+        co_host_names=[visible_display_name(c, auth_user) for c in e.co_hosts.all()],
+        is_past=e.is_past,
+        status=e.status,
+        tags=_tags_out(e),
+    )
+
+
 @router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
 def list_events(request, status: str = EventStatus.ACTIVE):
     auth_user = _authenticated_user(request.auth)
@@ -206,49 +249,7 @@ def list_events(request, status: str = EventStatus.ACTIVE):
     )
     return Status(
         200,
-        [
-            EventListOut(
-                id=str(e.id),
-                slug=e.slug,
-                title=e.title,
-                description=e.description,
-                start_datetime=e.start_datetime,
-                end_datetime=e.end_datetime,
-                location=e.location,
-                latitude=float(e.latitude) if e.latitude is not None else None,
-                longitude=float(e.longitude) if e.longitude is not None else None,
-                event_type=e.event_type,
-                visibility=e.visibility,
-                photo_url=media_path(e.photo),
-                photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
-                whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
-                partiful_link=_members_only(e.partiful_link, "", is_authed),
-                other_link=_members_only(e.other_link, "", is_authed),
-                price=e.price,
-                venmo_link=_members_only(e.venmo_link, "", is_authed),
-                cashapp_link=_members_only(e.cashapp_link, "", is_authed),
-                zelle_info=_members_only(e.zelle_info, "", is_authed),
-                created_by_id=str(e.created_by_id) if e.created_by_id else None,
-                created_by_name=_get_creator_name(e.created_by, auth_user),
-                created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
-                co_host_photo_urls=[media_path(c.profile_photo) for c in e.co_hosts.all()],
-                datetime_tbd=e.datetime_tbd,
-                has_poll=hasattr(e, "poll"),
-                allow_plus_ones=e.allow_plus_ones,
-                max_attendees=e.max_attendees,
-                attending_count=_attending_headcount(e),
-                waitlisted_count=_waitlisted_count(e),
-                invited_count=e.invited_users.count(),
-                comment_count=e.comment_count,
-                my_rsvp=_find_my_rsvp(e.rsvps.all(), auth_user),
-                co_host_ids=[str(c.id) for c in e.co_hosts.all()],
-                co_host_names=[visible_display_name(c, auth_user) for c in e.co_hosts.all()],
-                is_past=e.is_past,
-                status=e.status,
-                tags=_tags_out(e),
-            )
-            for e in events
-        ],
+        [_event_list_out(e, auth_user, is_authed) for e in events],
     )
 
 
