@@ -165,4 +165,35 @@ class TestEventOgPreview:
         assert response.status_code == 200
         html = response.content.decode()
         assert '<meta property="og:title" content="Skate w/ Meeee"' in html
-        assert '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
+        assert (
+            '<meta property="og:image" content="https://pda.example.com/media/event_photos/' in html
+        )
+
+
+@pytest.mark.django_db
+class TestStaticPageOgPreview:
+    def test_faq_renders_page_title_and_logo(self, api_client, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        response = api_client.get("/pages/faq/preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="faq · pda"' in html
+        assert '<meta property="og:url" content="https://pda.example.com/faq"' in html
+        assert (
+            '<meta property="og:image" content="https://pda.example.com/static/og/pda-logo.png"'
+            in html
+        )
+
+    def test_home_renders_bare_title(self, api_client, settings):
+        settings.FRONTEND_BASE_URL = "https://pda.example.com"
+        response = api_client.get("/pages//preview/")
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert '<meta property="og:title" content="pda"' in html
+        assert '<meta property="og:url" content="https://pda.example.com/"' in html
+
+    def test_unknown_page_returns_404(self, api_client):
+        response = api_client.get("/pages/not-a-real-page/preview/")
+        assert response.status_code == 404
