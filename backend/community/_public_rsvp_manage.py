@@ -56,6 +56,7 @@ class PublicRsvpManageOut(BaseModel):
 class PublicRsvpManageIn(BaseModel):
     status: str
     has_plus_one: bool = False
+    paid_confirmed: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
 
@@ -156,7 +157,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
     with transaction.atomic():
         final_status, promoted_user_ids, created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False
+            event.id, user, payload.status, False, payload.paid_confirmed
         )
         rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
 

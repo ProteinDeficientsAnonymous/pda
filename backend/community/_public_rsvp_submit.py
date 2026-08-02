@@ -43,6 +43,7 @@ class PublicRsvpIn(BaseModel):
     phone_number: str = Field(max_length=FieldLimit.PHONE)
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
+    paid_confirmed: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
@@ -239,7 +240,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             phone=validated_phone,
         )
         final_status, promoted_user_ids, _rsvp_created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False
+            event.id, user, payload.status, False, payload.paid_confirmed
         )
         token = NonMemberRsvpToken.issue_or_extend(user)
 
