@@ -24,6 +24,7 @@ from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import _attending_headcount_db
+from community._rsvp_payment import requires_payment_gate
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventComment, EventRSVP, RSVPStatus
@@ -131,8 +132,15 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
         )
 
 
+def _resolve_paid_confirmed_at(existing: EventRSVP | None, paid_confirmed: bool):
+    """Preserve an earlier confirmation; stamp a new one only on a fresh confirm."""
+    if existing is not None and existing.paid_confirmed_at is not None:
+        return existing.paid_confirmed_at
+    return timezone.now() if paid_confirmed else None
+
+
 def _apply_rsvp_in_transaction(
-    event_id, user, status: str, has_plus_one: bool
+    event_id, user, status: str, has_plus_one: bool, paid_confirmed: bool = False
 ) -> tuple[str, list[str], bool]:
     """Execute RSVP upsert inside a locked transaction.
 
@@ -160,6 +168,9 @@ def _apply_rsvp_in_transaction(
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
 
+    if not paid_confirmed and requires_payment_gate(event, existing, final_status):
+        raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
+
     if (
         existing is not None
         and existing.status == final_status
@@ -174,6 +185,7 @@ def _apply_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
+            "paid_confirmed_at": _resolve_paid_confirmed_at(existing, paid_confirmed),
         },
     )
 
@@ -201,7 +213,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
 
     with transaction.atomic():
         final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
-            event_id, request.auth, payload.status, payload.has_plus_one
+            event_id, request.auth, payload.status, payload.has_plus_one, payload.paid_confirmed
         )
 
     _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)

@@ -5,15 +5,21 @@ from community._rsvp_payment import (
     event_requires_payment_confirmation,
     requires_payment_gate,
 )
+from community._validation import Code
 from community.models import (
     Event,
     EventRSVP,
+    EventStatus,
     FeatureFlag,
     FeatureFlagState,
+    PageVisibility,
     RSVPStatus,
 )
 
+from tests._asserts import assert_error_code
 from tests.conftest import future_iso
+
+RSVP_URL = "/api/community/events/{event_id}/rsvp/"
 
 FLAG = FeatureFlag.EVENT_PAYMENT_CONFIRMATION
 
@@ -96,3 +102,107 @@ class TestRequiresPaymentGate:
     def test_flag_off_never_gates(self):
         FeatureFlagState.objects.update_or_create(key=FLAG, defaults={"enabled": False})
         assert requires_payment_gate(make_event(), None, RSVPStatus.ATTENDING) is False
+
+
+@pytest.fixture
+def paid_event(db, test_user):
+    return Event.objects.create(
+        title="Paid Event",
+        start_datetime=future_iso(days=10),
+        end_datetime=future_iso(days=10, hours=2),
+        rsvp_enabled=True,
+        status=EventStatus.ACTIVE,
+        visibility=PageVisibility.PUBLIC,
+        price="$10",
+        venmo_link="https://venmo.com/u/host",
+        created_by=test_user,
+    )
+
+
+@pytest.mark.django_db
+class TestMemberRsvpPaymentGate:
+    def test_attending_without_confirmation_is_rejected(self, api_client, paid_event, auth_headers):
+        response = api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 400
+        assert_error_code(response, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
+        assert not EventRSVP.objects.filter(event=paid_event).exists()
+
+    def test_attending_with_confirmation_succeeds_and_stamps(
+        self, api_client, paid_event, auth_headers
+    ):
+        response = api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False, "paid_confirmed": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        rsvp = EventRSVP.objects.get(event=paid_event)
+        assert rsvp.status == RSVPStatus.ATTENDING
+        assert rsvp.paid_confirmed_at is not None
+
+    def test_maybe_without_confirmation_succeeds(self, api_client, paid_event, auth_headers):
+        response = api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.MAYBE, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert EventRSVP.objects.get(event=paid_event).paid_confirmed_at is None
+
+    def test_already_attending_can_toggle_plus_one_without_confirmation(
+        self, api_client, paid_event, auth_headers, test_user
+    ):
+        paid_event.allow_plus_ones = True
+        paid_event.save(update_fields=["allow_plus_ones"])
+        EventRSVP.objects.create(event=paid_event, user=test_user, status=RSVPStatus.ATTENDING)
+        response = api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+
+    def test_confirmation_persists_across_later_status_changes(
+        self, api_client, paid_event, auth_headers
+    ):
+        api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False, "paid_confirmed": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        stamped = EventRSVP.objects.get(event=paid_event).paid_confirmed_at
+        api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.MAYBE, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        response = api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert EventRSVP.objects.get(event=paid_event).paid_confirmed_at == stamped
+
+    def test_free_event_needs_no_confirmation(self, api_client, paid_event, auth_headers):
+        paid_event.price = ""
+        paid_event.venmo_link = ""
+        paid_event.save(update_fields=["price", "venmo_link"])
+        response = api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": False},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
