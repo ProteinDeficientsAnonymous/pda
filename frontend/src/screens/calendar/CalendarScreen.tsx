@@ -90,7 +90,9 @@ export default function CalendarScreen() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const view = parseView(searchParams.get('view'));
-  const date = parseDate(searchParams.get('date'));
+  const rawDate = searchParams.get('date');
+  // Keyed on the raw param so an absent date doesn't mint a new Date each render.
+  const date = useMemo(() => parseDate(rawDate), [rawDate]);
 
   const setView = useCallback(
     (v: View) => {

@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { addDays, format } from 'date-fns';
-import { MemoryRouter } from 'react-router-dom';
+import { useEffect } from 'react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
@@ -36,11 +37,22 @@ function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
+let currentSearch = '';
+
+function SearchSpy() {
+  const { search } = useLocation();
+  useEffect(() => {
+    currentSearch = search;
+  }, [search]);
+  return null;
+}
+
 function renderCalendar(initialEntry = '/calendar') {
   return render(
     <QueryClientProvider client={makeQc()}>
       <MemoryRouter initialEntries={[initialEntry]}>
         <CalendarScreen />
+        <SearchSpy />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -137,6 +149,31 @@ describe('CalendarScreen', () => {
 
     await waitFor(() => {
       expect(screen.getByText(new RegExp(expectedLabel, 'i'))).toBeInTheDocument();
+    });
+  });
+
+  it('writes stepped-to date into the url, and a fresh mount there restores it', async () => {
+    const user = userEvent.setup();
+    const today = new Date();
+    const { unmount } = renderCalendar(`/calendar?view=day&date=${format(today, 'yyyy-MM-dd')}`);
+
+    await user.click(screen.getByRole('button', { name: /next day/i }));
+
+    const tomorrow = addDays(today, 1);
+    const tomorrowLabel = format(tomorrow, 'EEEE, MMM d').toLowerCase();
+    await waitFor(() => {
+      expect(screen.getByText(new RegExp(tomorrowLabel, 'i'))).toBeInTheDocument();
+    });
+
+    // The step must be persisted to the url, not just to component state — that
+    // url is what a browser-back lands on.
+    expect(currentSearch).toBe(`?view=day&date=${format(tomorrow, 'yyyy-MM-dd')}`);
+
+    unmount();
+    renderCalendar(`/calendar${currentSearch}`);
+
+    await waitFor(() => {
+      expect(screen.getByText(new RegExp(tomorrowLabel, 'i'))).toBeInTheDocument();
     });
   });
 
