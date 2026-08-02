@@ -12,6 +12,8 @@ interface Props {
   optional?: boolean;
   /** Disable calendar days before today (inclusive). For event start times. */
   disablePast?: boolean;
+  /** Minimum allowed datetime (ISO string). Disable calendar days before and disable time selection if on same day but before min time. */
+  min?: string | null;
 }
 
 function isoToDate(iso: string | null): Date | undefined {
@@ -34,6 +36,7 @@ export function DateTimePicker({
   error,
   optional,
   disablePast,
+  min,
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -44,6 +47,18 @@ export function DateTimePicker({
     d.setHours(0, 0, 0, 0);
     return d;
   })();
+  const minDate = min ? isoToDate(min) : undefined;
+  const minDateStart = min
+    ? (() => {
+        const d = new Date(min);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      })()
+    : undefined;
+  const minTime =
+    minDate && selectedDate && minDate.toDateString() === selectedDate.toDateString()
+      ? `${String(minDate.getHours()).padStart(2, '0')}:${String(minDate.getMinutes()).padStart(2, '0')}`
+      : undefined;
 
   // Close on outside click
   useEffect(() => {
@@ -120,7 +135,13 @@ export function DateTimePicker({
             }}
             defaultMonth={selectedDate ?? new Date()}
             locale={enUS}
-            {...(disablePast ? { disabled: { before: todayStart } } : {})}
+            {...(disablePast || minDateStart
+              ? {
+                  disabled: {
+                    before: minDateStart || todayStart,
+                  },
+                }
+              : {})}
           />
           <div className="border-border mt-2 flex items-center gap-2 border-t pt-2">
             <label htmlFor="dt-time" className="text-muted text-xs">
@@ -139,6 +160,7 @@ export function DateTimePicker({
                 const base = selectedDate ?? new Date();
                 onChange(dateToIso(base, h, m));
               }}
+              min={minTime}
               className="border-border bg-surface focus:border-brand-500 focus:ring-brand-200 h-8 rounded-md border px-2 text-base outline-none focus:ring-1 md:text-sm"
             />
           </div>

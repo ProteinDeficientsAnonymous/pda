@@ -112,6 +112,7 @@ export function EventFormBasics({
                 }}
                 error={errors.endDatetime}
                 optional
+                min={values.startDatetime}
               />
             </div>
           ) : null}
