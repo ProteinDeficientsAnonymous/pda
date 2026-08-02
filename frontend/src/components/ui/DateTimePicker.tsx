@@ -56,7 +56,7 @@ export function DateTimePicker({
       })()
     : undefined;
   const minTime =
-    minDate && selectedDate && minDate.toDateString() === selectedDate.toDateString()
+    minDate && minDate.toDateString() === selectedDate?.toDateString()
       ? `${String(minDate.getHours()).padStart(2, '0')}:${String(minDate.getMinutes()).padStart(2, '0')}`
       : undefined;
 
@@ -138,7 +138,7 @@ export function DateTimePicker({
             {...(disablePast || minDateStart
               ? {
                   disabled: {
-                    before: minDateStart || todayStart,
+                    before: minDateStart ?? todayStart,
                   },
                 }
               : {})}
