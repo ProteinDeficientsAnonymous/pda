@@ -162,6 +162,7 @@ export function InvitedList({ event }: { event: Event }) {
               hasPlusOne: false,
               attendance: AttendanceStatus.Unknown,
               isMember: true,
+              answers: {},
             }}
           />
         );

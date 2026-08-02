@@ -127,6 +127,33 @@ class TestRsvpWithAnswers:
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_ANSWER_INVALID_OPTION)
 
+    def test_host_sees_guest_answers_member_does_not(
+        self, api_client, other_headers, auth_headers, rsvp_event, other_user
+    ):
+        q = _create_question(rsvp_event)
+        assert (
+            api_client.post(
+                f"/api/community/events/{rsvp_event.id}/rsvp/",
+                {
+                    "status": RSVPStatus.ATTENDING,
+                    "answers": {q["id"]: "transit"},
+                },
+                content_type="application/json",
+                **other_headers,
+            ).status_code
+            == 200
+        )
+
+        host_view = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers).json()
+        host_guest = next(g for g in host_view["guests"] if g["user_id"] == str(other_user.pk))
+        assert host_guest["answers"][q["id"]]["answer"] == "transit"
+
+        member_view = api_client.get(
+            f"/api/community/events/{rsvp_event.id}/", **other_headers
+        ).json()
+        member_guest = next(g for g in member_view["guests"] if g["user_id"] == str(other_user.pk))
+        assert member_guest["answers"] == {}
+
 
 @pytest.mark.django_db
 class TestRsvpAnswerEdgeCases:
@@ -199,3 +226,22 @@ class TestRsvpAnswerEdgeCases:
         error = response.json()["detail"][0]
         assert error["code"] == Code.Event.RSVP_ANSWER_TOO_LONG
         assert error["params"]["label"] == "travel details"
+
+    def test_host_sees_guests_when_rsvp_disabled(
+        self, api_client, other_headers, auth_headers, rsvp_event, other_user
+    ):
+        q = _create_question(rsvp_event)
+        assert (
+            api_client.post(
+                f"/api/community/events/{rsvp_event.id}/rsvp/",
+                {"status": RSVPStatus.ATTENDING, "answers": {q["id"]: "driving"}},
+                content_type="application/json",
+                **other_headers,
+            ).status_code
+            == 200
+        )
+        rsvp_event.rsvp_enabled = False
+        rsvp_event.save(update_fields=["rsvp_enabled"])
+        host_view = api_client.get(f"/api/community/events/{rsvp_event.id}/", **auth_headers).json()
+        assert len(host_view["guests"]) == 1
+        assert host_view["guests"][0]["answers"][q["id"]]["answer"] == "driving"

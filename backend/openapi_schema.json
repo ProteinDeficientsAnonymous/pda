@@ -4897,6 +4897,12 @@
       },
       "RSVPGuestOut": {
         "properties": {
+          "answers": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Answers",
+            "type": "object"
+          },
           "attendance": {
             "allOf": [
               {

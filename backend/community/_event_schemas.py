@@ -182,6 +182,8 @@ class RSVPGuestOut(BaseModel):
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     checked_in_at: datetime | None = None
     is_member: bool = True
+    # Host/co-host/manage-events only — empty for other viewers.
+    answers: dict = {}
 
 
 class PendingCoHostInviteOut(BaseModel):

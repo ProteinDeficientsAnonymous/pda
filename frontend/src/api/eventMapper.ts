@@ -18,6 +18,7 @@ interface WireGuest {
   has_plus_one?: boolean;
   attendance?: string;
   is_member?: boolean;
+  answers?: Record<string, { label?: string; answer?: string }>;
 }
 
 export interface WireEvent {
@@ -116,6 +117,7 @@ function mapGuest(g: WireGuest): EventGuest {
     name: g.name,
     status: g.status,
     phone: g.phone ?? null,
+    answers: mapMyRsvpAnswers(g.answers),
     photoUrl: g.photo_url ?? '',
     hasPlusOne: g.has_plus_one ?? false,
     attendance: mapAttendance(g.attendance),

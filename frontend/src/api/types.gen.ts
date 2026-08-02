@@ -4238,6 +4238,13 @@ export interface components {
         QuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
         /** RSVPGuestOut */
         RSVPGuestOut: {
+            /**
+             * Answers
+             * @default {}
+             */
+            answers: {
+                [key: string]: unknown;
+            };
             /** @default unknown */
             attendance: components["schemas"]["AttendanceStatus"];
             /** Checked In At */

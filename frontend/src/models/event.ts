@@ -94,6 +94,8 @@ export interface EventGuest {
   hasPlusOne: boolean;
   attendance: AttendanceStatusValue;
   isMember: boolean;
+  /** Host-only RSVP question snapshots; empty for non-hosts. */
+  answers: Record<string, { label: string; answer: string }>;
 }
 
 export interface EventCancellation {

@@ -8,6 +8,7 @@ import { Feature } from '@/models/featureFlags';
 
 import { EmailBlastDialog } from './EmailBlastDialog';
 import { GroupTextDialog } from './GroupTextDialog';
+import { hasSavedRsvpAnswers } from './rsvpQuestions';
 
 interface Props {
   event: Event;
@@ -23,7 +24,8 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
   const rootRef = useRef<HTMLDivElement>(null);
   const reportFlagOn = useFlag(Feature.HostAttendanceReport);
   const showCheckInReport = eventHasEnded && reportFlagOn;
-  const showManageRsvps = canManageRsvps && !eventHasEnded;
+  const hasQuestionHistory = event.rsvpQuestions.length > 0 || hasSavedRsvpAnswers(event);
+  const showManageRsvps = canManageRsvps && (!eventHasEnded || hasQuestionHistory);
   const showEmailBlast = event.status !== EventStatus.Draft && event.guests.length > 0;
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export function EventDetailKebabMenu({ event, eventHasEnded, canManageRsvps }: P
                 setOpen(false);
               }}
             >
-              manage rsvps
+              {eventHasEnded ? 'question responses' : 'manage rsvps'}
             </MenuLink>
           ) : null}
           <MenuLink

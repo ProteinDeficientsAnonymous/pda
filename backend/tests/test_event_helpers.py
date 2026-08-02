@@ -57,6 +57,7 @@ class TestBuildGuestList:
             has_plus_one=False,
             attendance=AttendanceStatus.UNKNOWN,
             checked_in_at=None,
+            answers={},
         )
 
     def test_empty_rsvps(self):
@@ -81,6 +82,14 @@ class TestBuildGuestList:
         rsvp = self._make_rsvp("u1", None, RSVPStatus.ATTENDING, "+1555000", show_phone=False)
         result = _build_guest_list([rsvp], can_see_phones=False)
         assert result[0].name == "member"
+
+    def test_includes_answers_only_when_requested(self):
+        rsvp = self._make_rsvp("u1", "Alice", RSVPStatus.ATTENDING, "+1555000")
+        rsvp.answers = {"qid": {"label": "q", "answer": "yes"}}
+        hidden = _build_guest_list([rsvp], can_see_phones=False, include_answers=False)
+        assert hidden[0].answers == {}
+        shown = _build_guest_list([rsvp], can_see_phones=False, include_answers=True)
+        assert shown[0].answers == {"qid": {"label": "q", "answer": "yes"}}
 
 
 class TestFindMyRsvp:
