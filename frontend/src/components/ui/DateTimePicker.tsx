@@ -33,7 +33,7 @@ export function DateTimePicker({
   disabled,
   error,
   optional,
-  disablePast,
+  disablePast = true,
   min,
 }: Props) {
   const [open, setOpen] = useState(false);
