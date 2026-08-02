@@ -159,6 +159,17 @@ def _resolve_paid_confirmed_at(
     return None
 
 
+def _resolve_paid_confirmed_at(
+    existing: EventRSVP | None, paid_confirmed: bool, final_status: str
+) -> datetime | None:
+    """Preserve a standing stamp; otherwise stamp only on a confirmed attending/waitlisted write."""
+    if existing is not None and existing.paid_confirmed_at is not None:
+        return existing.paid_confirmed_at
+    if paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
+        return timezone.now()
+    return None
+
+
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool, paid_confirmed: bool = False
 ) -> tuple[str, list[str], bool]:
