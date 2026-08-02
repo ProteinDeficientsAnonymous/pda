@@ -31,11 +31,15 @@ export function EventHostSection({
   const { confirm, element: confirmElement } = useConfirm();
   const remove = useRemoveCohost();
 
-  const hosts: HostRow[] = event.coHostIds.map((id, i) => ({
-    userId: id,
-    name: event.coHostNames[i] ?? 'member',
-    photoUrl: event.coHostPhotoUrls[i] ?? '',
-  }));
+  const seenIds = new Set<string>();
+  const hosts: HostRow[] = event.coHostIds
+    .map((id, i) => ({ id, name: event.coHostNames[i] ?? 'member', photoUrl: event.coHostPhotoUrls[i] ?? '' }))
+    .filter((row) => {
+      if (seenIds.has(row.id)) return false;
+      seenIds.add(row.id);
+      return true;
+    })
+    .map((row) => ({ userId: row.id, name: row.name, photoUrl: row.photoUrl }));
   // backend already scopes pending invites to creator/accepted co-hosts; others get []
   const pending = event.pendingCohostInvites;
   if (hosts.length === 0 && pending.length === 0 && !isHostOrEventManager) return null;
