@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { type TextScale, type ThemeMode, useAccessibilityStore } from '@/accessibility/store';
 import { extractApiErrorOr } from '@/api/apiErrors';
@@ -296,8 +296,7 @@ function CalendarFeedTypeToggles({
   excluded: EventTypeValue[];
   onChange: (v: EventTypeValue[]) => Promise<void>;
 }) {
-  const pendingRef = useRef(excluded);
-  pendingRef.current = excluded;
+  const [pending, setPending] = useState<EventTypeValue[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const options: { value: EventTypeValue; label: string }[] = [
@@ -306,27 +305,34 @@ function CalendarFeedTypeToggles({
     { value: EventType.Community, label: 'community events' },
   ];
 
+  // Compose off the last requested value so rapid toggles don't clobber each
+  // other while an earlier save is still in flight.
+  const shown = pending ?? excluded;
+
   async function toggle(value: EventTypeValue, checked: boolean) {
-    const next = checked
-      ? pendingRef.current.filter((t) => t !== value)
-      : [...pendingRef.current, value];
-    pendingRef.current = next;
+    const next = checked ? shown.filter((t) => t !== value) : [...shown, value];
+    setPending(next);
     setError(null);
     try {
       await onChange(next);
     } catch (err) {
       setError(extractApiErrorOr(err, "couldn't save — try again"));
+    } finally {
+      setPending(null);
     }
   }
 
   return (
     <div>
-      <div className="text-foreground mb-2 text-sm">event types in your feed</div>
+      <div className="text-foreground text-sm">event types in your feed</div>
+      <div className="text-muted-foreground mb-2 text-xs">
+        events you're hosting, invited to, or going to always show up
+      </div>
       {options.map((o) => (
         <Toggle
           key={o.value}
           label={o.label}
-          checked={!excluded.includes(o.value)}
+          checked={!shown.includes(o.value)}
           onChange={(checked) => void toggle(o.value, checked)}
         />
       ))}

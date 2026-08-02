@@ -6,6 +6,7 @@ from community.models import (
     Event,
     EventRSVP,
     EventStatus,
+    EventType,
     PageVisibility,
     RSVPStatus,
 )
@@ -312,16 +313,19 @@ class TestCalendarFeedExcludedTypes:
     def _token_for(self, api_client, auth_headers):
         return api_client.post("/api/community/calendar/token/", **auth_headers).json()["token"]
 
-    def _make_events(self):
-        other = User.objects.create_user(
-            phone_number="+12025550401",
+    def _make_other(self, suffix="0401"):
+        return User.objects.create_user(
+            phone_number=f"+1202555{suffix}",
             password="testpass123",
-            first_name="Other",
+            first_name=f"Other {suffix}",
             last_name="",
         )
-        for event_type in ("official", "community", "club"):
+
+    def _make_events(self):
+        other = self._make_other()
+        for event_type in (EventType.OFFICIAL, EventType.COMMUNITY, EventType.CLUB):
             Event.objects.create(
-                title=f"{event_type.title()} Event",
+                title=f"{event_type.label} Event",
                 start_datetime=timezone.now(),
                 created_by=other,
                 status=EventStatus.ACTIVE,
@@ -349,13 +353,101 @@ class TestCalendarFeedExcludedTypes:
         assert "Community Event" in content
 
     def test_excluding_every_type_yields_empty_feed(self, api_client, auth_headers, test_user):
-        test_user.calendar_feed_excluded_types = ["official", "community", "club"]
+        test_user.calendar_feed_excluded_types = [
+            EventType.OFFICIAL,
+            EventType.COMMUNITY,
+            EventType.CLUB,
+        ]
         test_user.save(update_fields=["calendar_feed_excluded_types"])
         token = self._token_for(api_client, auth_headers)
         self._make_events()
 
         content = api_client.get(f"/api/community/calendar/feed/?token={token}").content.decode()
         assert "BEGIN:VEVENT" not in content
+
+    def test_excluded_type_still_includes_own_events(self, api_client, auth_headers, test_user):
+        test_user.calendar_feed_excluded_types = [EventType.CLUB]
+        test_user.save(update_fields=["calendar_feed_excluded_types"])
+        token = self._token_for(api_client, auth_headers)
+        other = self._make_other("0402")
+
+        Event.objects.create(
+            title="Mine Created",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+            event_type=EventType.CLUB,
+        )
+        cohost = Event.objects.create(
+            title="Mine Cohost",
+            start_datetime=timezone.now(),
+            created_by=other,
+            event_type=EventType.CLUB,
+        )
+        cohost.co_hosts.add(test_user)
+        invited = Event.objects.create(
+            title="Mine Invited",
+            start_datetime=timezone.now(),
+            created_by=other,
+            event_type=EventType.CLUB,
+        )
+        invited.invited_users.add(test_user)
+        rsvpd = Event.objects.create(
+            title="Mine Rsvpd",
+            start_datetime=timezone.now(),
+            created_by=other,
+            event_type=EventType.CLUB,
+        )
+        EventRSVP.objects.create(event=rsvpd, user=test_user, status=RSVPStatus.ATTENDING)
+        Event.objects.create(
+            title="Unrelated Club",
+            start_datetime=timezone.now(),
+            created_by=other,
+            event_type=EventType.CLUB,
+        )
+
+        content = api_client.get(f"/api/community/calendar/feed/?token={token}").content.decode()
+        assert "Mine Created" in content
+        assert "Mine Cohost" in content
+        assert "Mine Invited" in content
+        assert "Mine Rsvpd" in content
+        assert "Unrelated Club" not in content
+
+    def test_excluded_type_drops_declined_rsvp(self, api_client, auth_headers, test_user):
+        test_user.calendar_feed_excluded_types = [EventType.CLUB]
+        test_user.save(update_fields=["calendar_feed_excluded_types"])
+        token = self._token_for(api_client, auth_headers)
+        other = self._make_other("0403")
+
+        declined = Event.objects.create(
+            title="Declined Club",
+            start_datetime=timezone.now(),
+            created_by=other,
+            event_type=EventType.CLUB,
+        )
+        EventRSVP.objects.create(event=declined, user=test_user, status=RSVPStatus.CANT_GO)
+
+        content = api_client.get(f"/api/community/calendar/feed/?token={token}").content.decode()
+        assert "Declined Club" not in content
+
+    def test_excluded_type_exemption_applies_in_mine_scope(
+        self, api_client, auth_headers, test_user
+    ):
+        test_user.calendar_feed_scope = CalendarFeedScope.MINE
+        test_user.calendar_feed_excluded_types = [EventType.CLUB]
+        test_user.save(
+            update_fields=["calendar_feed_scope", "calendar_feed_excluded_types"],
+        )
+        token = self._token_for(api_client, auth_headers)
+
+        Event.objects.create(
+            title="Mine Club",
+            start_datetime=timezone.now(),
+            created_by=test_user,
+            event_type=EventType.CLUB,
+        )
+
+        content = api_client.get(f"/api/community/calendar/feed/?token={token}").content.decode()
+        assert "Mine Club" in content
 
     def test_patch_me_persists_excluded_types(self, api_client, auth_headers, test_user):
         resp = api_client.patch(
