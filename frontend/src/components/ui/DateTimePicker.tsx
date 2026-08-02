@@ -10,7 +10,6 @@ interface Props {
   disabled?: boolean;
   error?: string | undefined;
   optional?: boolean;
-  disablePast?: boolean;
   min?: string | null;
 }
 
@@ -26,28 +25,16 @@ function dateToIso(date: Date, hours: number, minutes: number): string {
   return copy.toISOString();
 }
 
-export function DateTimePicker({
-  label,
-  value,
-  onChange,
-  disabled,
-  error,
-  optional,
-  disablePast = true,
-  min,
-}: Props) {
+export function DateTimePicker({ label, value, onChange, disabled, error, optional, min }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
   const minDate = min ? isoToDate(min) : undefined;
-  const floorStart =
-    disablePast || minDate
-      ? (() => {
-          const d = new Date(minDate ?? new Date());
-          d.setHours(0, 0, 0, 0);
-          return d;
-        })()
-      : undefined;
+  const floorStart = (() => {
+    const d = new Date(minDate ?? new Date());
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
   const minTime =
     minDate && minDate.toDateString() === selectedDate?.toDateString()
       ? `${String(minDate.getHours()).padStart(2, '0')}:${String(minDate.getMinutes()).padStart(2, '0')}`
@@ -126,7 +113,7 @@ export function DateTimePicker({
             }}
             defaultMonth={selectedDate ?? new Date()}
             locale={enUS}
-            {...(floorStart ? { disabled: { before: floorStart } } : {})}
+            disabled={{ before: floorStart }}
           />
           <div className="border-border mt-2 flex items-center gap-2 border-t pt-2">
             <label htmlFor="dt-time" className="text-muted text-xs">
