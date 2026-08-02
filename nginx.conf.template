@@ -75,8 +75,7 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
-    # Same unfurl-bot routing as above, for public static pages (keep in
-    # sync with _STATIC_PAGES in backend/config/og_preview.py).
+    # Keep slugs in sync with _STATIC_PAGES in backend/config/og_preview.py.
     location "~^/(?<page>|join|calendar|donate|faq|sms-policy|guidelines)$" {
         if ($event_unfurl_bot) {
             return 418;

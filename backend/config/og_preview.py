@@ -80,7 +80,6 @@ def event_og_preview(request, event_id: str):
 
 
 def static_page_og_preview(request, page: str):
-    """Render OG/Twitter meta tags for a public static page (faq, guidelines, etc.)."""
     try:
         title, description = _STATIC_PAGES[page]
     except KeyError:
