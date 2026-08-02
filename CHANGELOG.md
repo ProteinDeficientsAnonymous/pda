@@ -1,3 +1,10 @@
+## [0.75.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.3...v0.75.4) (2026-08-02)
+
+
+### Bug Fixes
+
+* keep calendar month/view in URL so back button restores it (Issue 1144) ([#1210](https://github.com/ProteinDeficientsAnonymous/pda/issues/1210)) ([09a0e0d](https://github.com/ProteinDeficientsAnonymous/pda/commit/09a0e0d9fe4f71da9149fdeacd1fe6b6637c9a8a))
+
 ## [0.75.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.2...v0.75.3) (2026-08-02)
 
 
