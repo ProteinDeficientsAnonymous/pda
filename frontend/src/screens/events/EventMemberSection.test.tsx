@@ -78,6 +78,7 @@ const CREATOR: User = {
   hideLastName: false,
   weekStart: 'sunday',
   calendarFeedScope: 'all',
+  calendarFeedExcludedTypes: [],
   profilePhotoUrl: '',
   photoUpdatedAt: null,
   roles: [],

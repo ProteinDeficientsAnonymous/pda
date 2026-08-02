@@ -53,6 +53,7 @@ const baseUser: User = {
   hideLastName: false,
   weekStart: 'monday',
   calendarFeedScope: 'all',
+  calendarFeedExcludedTypes: [],
   profilePhotoUrl: '',
   photoUpdatedAt: null,
   roles: [],

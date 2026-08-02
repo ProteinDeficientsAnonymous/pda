@@ -1,3 +1,5 @@
+import type { EventTypeValue } from './event';
+
 export const CalendarFeedScope = {
   All: 'all',
   Mine: 'mine',
@@ -49,6 +51,7 @@ export interface User {
   hideLastName: boolean;
   weekStart: 'sunday' | 'monday';
   calendarFeedScope: CalendarFeedScopeValue;
+  calendarFeedExcludedTypes: EventTypeValue[];
   profilePhotoUrl: string;
   photoUpdatedAt: string | null;
   roles: Role[];

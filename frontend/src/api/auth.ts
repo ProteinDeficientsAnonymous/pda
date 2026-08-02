@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 
 import type { ConsentTypeValue } from '@/models/consent';
+import type { EventTypeValue } from '@/models/event';
 import { normalizePermissions } from '@/models/permissions';
 import type { Birthday, Role, User } from '@/models/user';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
@@ -46,6 +47,7 @@ interface WireUser {
   hide_last_name?: boolean;
   week_start?: 'sunday' | 'monday';
   calendar_feed_scope?: CalendarFeedScopeValue;
+  calendar_feed_excluded_types?: EventTypeValue[];
   profile_photo_url?: string;
   photo_updated_at?: string | null;
   roles: WireRole[];
@@ -101,6 +103,7 @@ function mapUser(u: WireUser): User {
     hideLastName: u.hide_last_name ?? false,
     weekStart: u.week_start ?? 'sunday',
     calendarFeedScope: u.calendar_feed_scope ?? CalendarFeedScope.All,
+    calendarFeedExcludedTypes: u.calendar_feed_excluded_types ?? [],
     profilePhotoUrl: u.profile_photo_url ?? '',
     photoUpdatedAt: u.photo_updated_at ?? null,
     roles: u.roles.map(mapRole),
@@ -214,6 +217,7 @@ export interface ProfileUpdate {
   hideLastName?: boolean;
   weekStart?: 'sunday' | 'monday';
   calendarFeedScope?: CalendarFeedScopeValue;
+  calendarFeedExcludedTypes?: EventTypeValue[];
 }
 
 export async function updateProfile(patch: ProfileUpdate): Promise<User> {
@@ -236,6 +240,8 @@ export async function updateProfile(patch: ProfileUpdate): Promise<User> {
   if (patch.hideLastName !== undefined) body.hide_last_name = patch.hideLastName;
   if (patch.weekStart !== undefined) body.week_start = patch.weekStart;
   if (patch.calendarFeedScope !== undefined) body.calendar_feed_scope = patch.calendarFeedScope;
+  if (patch.calendarFeedExcludedTypes !== undefined)
+    body.calendar_feed_excluded_types = patch.calendarFeedExcludedTypes;
   const { data } = await apiClient.patch<WireUser>('/api/auth/me/', body);
   return mapUser(data);
 }

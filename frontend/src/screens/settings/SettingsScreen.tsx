@@ -7,6 +7,8 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import { SegmentedControl as SharedSegmentedControl } from '@/components/ui/SegmentedControl';
 import { TextField } from '@/components/ui/TextField';
+import { Toggle } from '@/components/ui/Toggle';
+import { EventType, type EventTypeValue } from '@/models/event';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
@@ -97,6 +99,10 @@ export default function SettingsScreen() {
         <CalendarFeedScopeToggle
           value={user.calendarFeedScope}
           onChange={(v) => updateProfile({ calendarFeedScope: v })}
+        />
+        <CalendarFeedTypeToggles
+          excluded={user.calendarFeedExcludedTypes}
+          onChange={(v) => updateProfile({ calendarFeedExcludedTypes: v })}
         />
         <CalendarFeedSubscription />
       </Section>
@@ -272,6 +278,58 @@ function CalendarFeedScopeToggle({
       options={options}
       onChange={(v) => void onChange(v)}
     />
+  );
+}
+
+function CalendarFeedTypeToggles({
+  excluded,
+  onChange,
+}: {
+  excluded: EventTypeValue[];
+  onChange: (v: EventTypeValue[]) => Promise<void>;
+}) {
+  const [pending, setPending] = useState<EventTypeValue[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const options: { value: EventTypeValue; label: string }[] = [
+    { value: EventType.Official, label: 'official events' },
+    { value: EventType.Club, label: 'club events' },
+    { value: EventType.Community, label: 'community events' },
+  ];
+
+  // Compose off the last requested value so rapid toggles don't clobber each
+  // other while an earlier save is still in flight.
+  const shown = pending ?? excluded;
+
+  async function toggle(value: EventTypeValue, checked: boolean) {
+    const next = checked ? shown.filter((t) => t !== value) : [...shown, value];
+    setPending(next);
+    setError(null);
+    try {
+      await onChange(next);
+    } catch (err) {
+      setError(extractApiErrorOr(err, "couldn't save — try again"));
+    } finally {
+      setPending(null);
+    }
+  }
+
+  return (
+    <div>
+      <div className="text-foreground text-sm">event types in your feed</div>
+      <div className="text-muted-foreground mb-2 text-xs">
+        events you're hosting, invited to, or going to always show up
+      </div>
+      {options.map((o) => (
+        <Toggle
+          key={o.value}
+          label={o.label}
+          checked={!shown.includes(o.value)}
+          onChange={(checked) => void toggle(o.value, checked)}
+        />
+      ))}
+      {error && <div className="text-destructive mt-1 text-xs">{error}</div>}
+    </div>
   );
 }
 
