@@ -40,14 +40,14 @@ export function DateTimePicker({
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
   const minDate = min ? isoToDate(min) : undefined;
-  const floor = disablePast || min ? (minDate ?? new Date()) : undefined;
-  const floorStart = floor
-    ? (() => {
-        const d = new Date(floor);
-        d.setHours(0, 0, 0, 0);
-        return d;
-      })()
-    : undefined;
+  const floorStart =
+    disablePast || minDate
+      ? (() => {
+          const d = new Date(minDate ?? new Date());
+          d.setHours(0, 0, 0, 0);
+          return d;
+        })()
+      : undefined;
   const minTime =
     minDate && minDate.toDateString() === selectedDate?.toDateString()
       ? `${String(minDate.getHours()).padStart(2, '0')}:${String(minDate.getMinutes()).padStart(2, '0')}`
