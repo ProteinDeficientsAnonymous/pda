@@ -112,6 +112,8 @@ function messageForKnownCode(code: KnownCode, err: FieldError): string {
       return 'the check-in report is available once the event has ended';
     case Code.Event.CheckInReportInvalidColumn:
       return "one of those csv columns isn't recognized";
+    case Code.Event.PaymentConfirmationRequired:
+      return 'confirm you paid before rsvping to this event';
 
     // Poll
     case Code.Poll.NotFound:

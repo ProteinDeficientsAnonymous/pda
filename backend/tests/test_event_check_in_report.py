@@ -15,6 +15,8 @@ from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
 
+from tests.conftest import set_flag
+
 
 def _auth(user):
     refresh = RefreshToken.for_user(user)
@@ -23,7 +25,7 @@ def _auth(user):
 
 @pytest.fixture(autouse=True)
 def _flag_on(db):
-    FeatureFlagState.objects.create(key=FeatureFlag.HOST_ATTENDANCE_REPORT, enabled=True)
+    set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
 
 
 @pytest.fixture

@@ -10,18 +10,19 @@ from community.models import (
     EventStatus,
     EventType,
     FeatureFlag,
-    FeatureFlagState,
     JoinRequest,
     RSVPStatus,
 )
 from django.utils import timezone
+
+from tests.conftest import set_flag
 
 JOIN_REQUESTS_URL = "/api/community/join-requests/"
 
 
 @pytest.fixture
 def flag_on(db):
-    FeatureFlagState.objects.create(key=FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS, enabled=True)
+    set_flag(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS)
 
 
 @pytest.fixture

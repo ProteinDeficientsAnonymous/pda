@@ -35,6 +35,7 @@ class Code:
         BLAST_INVALID_AUDIENCE = "event.blast_invalid_audience"
         BLAST_NO_RECIPIENTS = "event.blast_no_recipients"
         WOULD_REMOVE_NON_MEMBERS = "event.would_remove_non_members"  # params: { count: int }
+        PAYMENT_CONFIRMATION_REQUIRED = "event.payment_confirmation_required"
         CHECK_IN_REPORT_NOT_YET_AVAILABLE = "event.check_in_report_not_yet_available"
         CHECK_IN_REPORT_INVALID_COLUMN = (
             "event.check_in_report_invalid_column"  # params: { column: str }

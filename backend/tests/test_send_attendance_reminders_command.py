@@ -11,6 +11,8 @@ from notifications import email_sender as email_sender_module
 from notifications.email_sender import SendResult
 from users.models import User
 
+from tests.conftest import set_flag
+
 _PAST_JOINED = datetime(2020, 1, 1, tzinfo=UTC)
 
 
@@ -38,7 +40,7 @@ def fake_sender(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _enable_flag(db):
-    FeatureFlagState.objects.create(key=FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS, enabled=True)
+    set_flag(FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS)
 
 
 @pytest.mark.django_db

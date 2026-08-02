@@ -37,6 +37,7 @@ export const Code = {
     BlastInvalidAudience: 'event.blast_invalid_audience',
     BlastNoRecipients: 'event.blast_no_recipients',
     WouldRemoveNonMembers: 'event.would_remove_non_members',
+    PaymentConfirmationRequired: 'event.payment_confirmation_required',
     CheckInReportNotYetAvailable: 'event.check_in_report_not_yet_available',
     CheckInReportInvalidColumn: 'event.check_in_report_invalid_column',
   },
@@ -257,6 +258,7 @@ export type ValidationCode =
   | 'event.blast_invalid_audience'
   | 'event.blast_no_recipients'
   | 'event.would_remove_non_members'
+  | 'event.payment_confirmation_required'
   | 'event.check_in_report_not_yet_available'
   | 'event.check_in_report_invalid_column'
   | 'poll.not_found'
@@ -417,6 +419,7 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.blast_invalid_audience': [],
   'event.blast_no_recipients': [],
   'event.would_remove_non_members': ['count'],
+  'event.payment_confirmation_required': [],
   'event.check_in_report_not_yet_available': [],
   'event.check_in_report_invalid_column': ['column'],
   'poll.not_found': [],
