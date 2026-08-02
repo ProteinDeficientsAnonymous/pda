@@ -12,7 +12,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-/** Shared answer field for surveys and join form questions. */
+/** Shared answer field for surveys, RSVP questions, and join form questions. */
 export function QuestionField({ question, value, onChange, error, readOnly }: Props) {
   const label = question.required ? question.label : `${question.label} (optional)`;
   const common = { label, error, disabled: readOnly };

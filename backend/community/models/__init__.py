@@ -1,5 +1,7 @@
 from community.models.attendance_reminder import AttendanceMilestone, AttendanceReminder
 from community.models.choices import (
+    RSVP_CHOICE_TYPES,
+    RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     CoHostInviteStatus,
     EventFlagStatus,
@@ -14,6 +16,7 @@ from community.models.choices import (
     PollAvailability,
     QuestionType,
     RSVPStatus,
+    RsvpQuestionType,
     SurveyQuestionType,
     SurveyVisibility,
 )
@@ -37,6 +40,7 @@ from community.models.event import (
     EventFlag,
     EventRef,
     EventRSVP,
+    EventRsvpQuestion,
     event_lookup_q,
     parse_event_ref,
 )
@@ -67,7 +71,10 @@ __all__ = [
     "PageVisibility",
     "PollAvailability",
     "QuestionType",
+    "RSVP_CHOICE_TYPES",
+    "RSVP_QUESTION_TYPE_CHOICES",
     "RSVPStatus",
+    "RsvpQuestionType",
     "SurveyQuestionType",
     "SurveyVisibility",
     "EventCoHostInvite",
@@ -86,6 +93,7 @@ __all__ = [
     "EventEmailBlast",
     "EventFlag",
     "EventRef",
+    "EventRsvpQuestion",
     "EventRSVP",
     "EventTag",
     "event_lookup_q",

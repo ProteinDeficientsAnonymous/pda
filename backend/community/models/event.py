@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from community.models.choices import (
+    RSVP_QUESTION_TYPE_CHOICES,
     AttendanceStatus,
     EventFlagStatus,
     EventStatus,
@@ -157,6 +158,7 @@ class Event(models.Model):
     if TYPE_CHECKING:
         created_by_id: uuid.UUID | None
         rsvps: "Manager[EventRSVP]"
+        rsvp_questions: "Manager[EventRsvpQuestion]"
         surveys: "Manager[Survey]"
         poll: "EventPoll"
         comments: "Manager[EventComment]"
@@ -275,6 +277,8 @@ class EventRSVP(models.Model):
     # member re-RSVPs going/maybe. Accurate cancellation lead-time (unlike the
     # lossy updated_at proxy, which any later save would overwrite).
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    # Snapshot of RSVP question answers: {question_id: {label, answer}}.
+    answers = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -289,6 +293,23 @@ class EventRSVP(models.Model):
         return (
             f"{self.user.full_name or self.user.phone_number} → {self.event.title}: {self.status}"
         )
+
+
+class EventRsvpQuestion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="rsvp_questions")
+    label = models.CharField(max_length=300)
+    field_type = models.CharField(max_length=20, choices=RSVP_QUESTION_TYPE_CHOICES)
+    options = models.JSONField(default=list, blank=True)
+    required = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        app_label = "community"
+        ordering = ["display_order"]
+
+    def __str__(self):
+        return f"{self.label} ({self.event.title})"
 
 
 class EventFlag(models.Model):

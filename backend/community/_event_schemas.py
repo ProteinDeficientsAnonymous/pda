@@ -1,14 +1,18 @@
 import re
 from datetime import datetime
+from typing import Annotated, Literal
 from urllib.parse import urlparse
+from uuid import UUID
 
 import phonenumbers
 from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic.json_schema import WithJsonSchema
 
 from community._field_limits import FieldLimit
 from community._shared import require_url_path, validate_whatsapp_url
 from community._validation import Code, raise_validation
 from community.models import (
+    RSVP_CHOICE_TYPES,
     AttendanceStatus,
     EventStatus,
     EventType,
@@ -17,9 +21,71 @@ from community.models import (
     RSVPStatus,
 )
 
-# Loose RFC-5322-ish email check — Pydantic's full EmailStr validator is
-# overkill for a free-text payment field, and we don't need DNS lookups.
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+RsvpQuestionFieldType = Literal["textarea", "dropdown", "multiselect"]
+RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
+RsvpAnswer = Annotated[str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})]
+
+
+class EventRsvpQuestionOut(BaseModel):
+    id: str
+    label: str
+    field_type: RsvpQuestionFieldType
+    options: list[str] = []
+    required: bool
+    display_order: int
+
+
+class EventRsvpQuestionIn(BaseModel):
+    label: str = Field(max_length=FieldLimit.SHORT_TEXT)
+    field_type: RsvpQuestionFieldType
+    options: list[RsvpQuestionOption] = []
+    required: bool = False
+
+    @field_validator("label")
+    @classmethod
+    def label_not_blank(cls, value: str) -> str:
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("label required")
+        return trimmed
+
+    @field_validator("options")
+    @classmethod
+    def trim_options(cls, value: list[str]) -> list[str]:
+        trimmed = [o.strip() for o in value if o.strip()]
+        if any(len(option) > FieldLimit.OPTION_TEXT for option in trimmed):
+            raise ValueError(f"options must be {FieldLimit.OPTION_TEXT} characters or fewer")
+        return trimmed
+
+
+class EventRsvpQuestionSyncIn(EventRsvpQuestionIn):
+    id: UUID | None = None
+
+
+class EventRsvpQuestionExpectedIn(EventRsvpQuestionIn):
+    id: UUID
+
+
+class EventRsvpQuestionSyncPayload(BaseModel):
+    expected: list[EventRsvpQuestionExpectedIn]
+    questions: list[EventRsvpQuestionSyncIn]
+
+
+def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
+    if payload.field_type in RSVP_CHOICE_TYPES and not payload.options:
+        raise_validation(
+            Code.Event.RSVP_QUESTION_OPTIONS_REQUIRED,
+            field="options",
+            status_code=400,
+        )
+    if payload.field_type == "multiselect" and any("," in option for option in payload.options):
+        raise_validation(
+            Code.Event.RSVP_QUESTION_OPTION_NO_COMMA,
+            field="options",
+            status_code=400,
+        )
 
 
 def _looks_like_email(s: str) -> bool:
@@ -193,6 +259,7 @@ class EventOut(BaseModel):
     co_host_photo_urls: list[str] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
+    my_rsvp_answers: dict = {}
     # Same gating as my_rsvp (both derive from the resolved viewer in
     # _event_out) — lets a token-holding, not-logged-in viewer identify their
     # own entry in `guests` without a real auth session to key off of.
@@ -220,6 +287,7 @@ class EventOut(BaseModel):
     pending_cohost_invites: list[PendingCoHostInviteOut] = []
     my_pending_cohost_invite_id: str | None = None
     tags: list[TagOut] = []
+    rsvp_questions: list[EventRsvpQuestionOut] = []
 
 
 class RSVPIn(BaseModel):
@@ -228,6 +296,10 @@ class RSVPIn(BaseModel):
     # Not persisted on the RSVP — a non-empty value is a one-time post: a
     # public EventComment (going/maybe) or a host-only notification (can't go).
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    answers: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; multiselect values are comma-separated.",
+    )
 
 
 class HostRSVPIn(BaseModel):
@@ -307,6 +379,7 @@ class EventIn(BaseModel):
     )
     co_host_ids: list[str] = []
     tag_ids: list[str] = []
+    rsvp_questions: list[EventRsvpQuestionIn] = []
     status: str = Field(default=EventStatus.ACTIVE, max_length=FieldLimit.CHOICE)
 
     @model_validator(mode="after")

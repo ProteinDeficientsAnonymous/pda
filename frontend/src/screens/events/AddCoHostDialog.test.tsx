@@ -56,6 +56,8 @@ const BASE_EVENT: Event = {
   coHostPhotoUrls: [],
   guests: [],
   myRsvp: null,
+  myRsvpAnswers: {},
+  rsvpQuestions: [],
   viewerUserId: null,
   surveySlugs: [],
   invitedUserIds: [],

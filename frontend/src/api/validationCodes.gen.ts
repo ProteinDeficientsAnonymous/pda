@@ -31,6 +31,14 @@ export const Code = {
     RsvpNotFound: 'event.rsvp_not_found',
     MemberContactMustSignIn: 'event.member_contact_must_sign_in',
     RsvpCouldNotBeCreated: 'event.rsvp_could_not_be_created',
+    RsvpQuestionNotFound: 'event.rsvp_question_not_found',
+    RsvpQuestionDuplicate: 'event.rsvp_question_duplicate',
+    RsvpQuestionConflict: 'event.rsvp_question_conflict',
+    RsvpQuestionOptionsRequired: 'event.rsvp_question_options_required',
+    RsvpQuestionOptionNoComma: 'event.rsvp_question_option_no_comma',
+    RsvpAnswerRequired: 'event.rsvp_answer_required',
+    RsvpAnswerInvalidOption: 'event.rsvp_answer_invalid_option',
+    RsvpAnswerTooLong: 'event.rsvp_answer_too_long',
     AttendanceOpensLater: 'event.attendance_opens_later',
     AttendanceOnlyForGoingRsvps: 'event.attendance_only_for_going_rsvps',
     PermDenied: 'event.perm_denied',
@@ -251,6 +259,14 @@ export type ValidationCode =
   | 'event.rsvp_not_found'
   | 'event.member_contact_must_sign_in'
   | 'event.rsvp_could_not_be_created'
+  | 'event.rsvp_question_not_found'
+  | 'event.rsvp_question_duplicate'
+  | 'event.rsvp_question_conflict'
+  | 'event.rsvp_question_options_required'
+  | 'event.rsvp_question_option_no_comma'
+  | 'event.rsvp_answer_required'
+  | 'event.rsvp_answer_invalid_option'
+  | 'event.rsvp_answer_too_long'
   | 'event.attendance_opens_later'
   | 'event.attendance_only_for_going_rsvps'
   | 'event.perm_denied'
@@ -411,6 +427,14 @@ export const CODE_PARAMS: Record<ValidationCode, readonly string[]> = {
   'event.rsvp_not_found': [],
   'event.member_contact_must_sign_in': [],
   'event.rsvp_could_not_be_created': [],
+  'event.rsvp_question_not_found': [],
+  'event.rsvp_question_duplicate': [],
+  'event.rsvp_question_conflict': [],
+  'event.rsvp_question_options_required': [],
+  'event.rsvp_question_option_no_comma': [],
+  'event.rsvp_answer_required': ['label'],
+  'event.rsvp_answer_invalid_option': ['label'],
+  'event.rsvp_answer_too_long': ['label', 'max'],
   'event.attendance_opens_later': [],
   'event.attendance_only_for_going_rsvps': [],
   'event.perm_denied': ['action'],

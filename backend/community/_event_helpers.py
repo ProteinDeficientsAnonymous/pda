@@ -25,6 +25,7 @@ from community._cohost_invite_helpers import (
 from community._event_schemas import (
     CancellationOut,
     EventOut,
+    EventRsvpQuestionOut,
     PendingCoHostInviteOut,
     RSVPGuestOut,
     TagOut,
@@ -38,6 +39,7 @@ from community._shared import _authenticated_user, _members_only
 from community.models import (
     Event,
     EventRSVP,
+    EventRsvpQuestion,
     EventTag,
     RSVPStatus,
     SurveyQuestionType,
@@ -50,7 +52,7 @@ if TYPE_CHECKING:
 def load_event_with_stats_prefetch(event_id: UUID) -> Event | None:
     return (
         Event.objects.select_related("created_by")
-        .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+        .prefetch_related("co_hosts", "invited_users", "rsvps__user", "rsvp_questions")
         .filter(id=event_id)
         .first()
     )
@@ -63,7 +65,7 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
     def _run() -> None:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "rsvp_questions")
             .filter(id=event_id)
             .first()
         )
@@ -108,6 +110,26 @@ def _find_my_rsvp(rsvps, user) -> str | None:
         if r.user_id == user.pk:
             return r.status
     return None
+
+
+def _find_my_rsvp_answers(rsvps, user) -> dict:
+    if user is None:
+        return {}
+    for r in rsvps:
+        if r.user_id == user.pk:
+            return dict(r.answers or {})
+    return {}
+
+
+def event_rsvp_question_out(question: EventRsvpQuestion) -> EventRsvpQuestionOut:
+    return EventRsvpQuestionOut(
+        id=str(question.id),
+        label=question.label,
+        field_type=question.field_type,
+        options=list(question.options or []),
+        required=question.required,
+        display_order=question.display_order,
+    )
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
@@ -338,6 +360,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
         my_rsvp=_find_my_rsvp(rsvps, auth_user),
+        my_rsvp_answers=_find_my_rsvp_answers(rsvps, auth_user),
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
         visibility=event.visibility,
@@ -355,6 +378,9 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         pending_cohost_invites=pending_invites_out,
         my_pending_cohost_invite_id=my_pending_invite_id,
         tags=_tags_out(event),
+        rsvp_questions=[
+            event_rsvp_question_out(question) for question in event.rsvp_questions.all()
+        ],
     )
 
 

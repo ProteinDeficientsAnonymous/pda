@@ -6,11 +6,18 @@ import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { type RsvpInputStatus, RsvpStatus } from '@/models/event';
 
 import { RsvpCommentField } from './RsvpCommentField';
+import { RsvpQuestionFields } from './RsvpQuestionFields';
+import {
+  missingRequiredQuestionIds,
+  type RsvpAnswerValue,
+  type RsvpQuestionDraft,
+} from './rsvpQuestions';
 
 interface ConfirmArgs {
   status: RsvpInputStatus;
   comment?: string;
   hasPlusOne: boolean;
+  answers: Record<string, RsvpAnswerValue>;
 }
 
 interface Props {
@@ -22,6 +29,8 @@ interface Props {
   allowComment?: boolean;
   atCapacity?: boolean;
   busy?: boolean;
+  questions?: readonly RsvpQuestionDraft[];
+  initialAnswers?: Readonly<Record<string, RsvpAnswerValue | undefined>>;
   onConfirm: (args: ConfirmArgs) => void;
   onRemove?: (() => void) | undefined;
   onClose: () => void;
@@ -36,6 +45,8 @@ export function RsvpBox({
   allowComment,
   atCapacity = false,
   busy = false,
+  questions = [],
+  initialAnswers = {},
   onConfirm,
   onRemove,
   onClose,
@@ -43,48 +54,92 @@ export function RsvpBox({
   const [status, setStatus] = useState<RsvpInputStatus>(initialStatus);
   const [comment, setComment] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(initialHasPlusOne);
+  const [answers, setAnswers] = useState<Record<string, RsvpAnswerValue | undefined>>(() => ({
+    ...initialAnswers,
+  }));
+  const [questionErrors, setQuestionErrors] = useState<Record<string, string | undefined>>({});
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
   const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
+  const showQuestions =
+    questions.length > 0 && (status === RsvpStatus.Attending || status === RsvpStatus.Maybe);
 
   function confirm() {
+    if (showQuestions) {
+      const missing = missingRequiredQuestionIds(questions, answers);
+      if (missing.length > 0) {
+        const next: Record<string, string | undefined> = {};
+        for (const id of missing) next[id] = 'required';
+        setQuestionErrors(next);
+        return;
+      }
+    }
+    setQuestionErrors({});
     const trimmed = comment.trim();
-    const args: ConfirmArgs = { status, hasPlusOne };
+    const filledAnswers: Record<string, RsvpAnswerValue> = {};
+    if (showQuestions) {
+      for (const q of questions) {
+        const value = answers[q.id];
+        if (value?.trim()) {
+          filledAnswers[q.id] = value;
+        }
+      }
+    }
+    const args: ConfirmArgs = { status, hasPlusOne, answers: filledAnswers };
     if (showComment && trimmed) args.comment = trimmed;
     onConfirm(args);
   }
 
   return (
     <Dialog open={open} onClose={onClose} title="rsvp">
-      <div className="flex flex-col gap-4">
-        <RsvpStatusPicker
-          value={status}
-          onSelect={setStatus}
-          disabled={busy}
-          labelFor={(s, defaultLabel) =>
-            s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
-          }
-        />
+      <div className="flex max-h-[min(70vh,32rem)] flex-col gap-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pe-1">
+          <RsvpStatusPicker
+            value={status}
+            onSelect={setStatus}
+            disabled={busy}
+            labelFor={(s, defaultLabel) =>
+              s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+            }
+          />
 
-        {showPlusOne ? (
-          <div className="flex justify-center">
-            <Button
-              type="button"
-              variant={hasPlusOne ? 'primary' : 'secondary'}
-              onClick={() => {
-                setHasPlusOne(!hasPlusOne);
-              }}
+          {showPlusOne ? (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant={hasPlusOne ? 'primary' : 'secondary'}
+                onClick={() => {
+                  setHasPlusOne(!hasPlusOne);
+                }}
+                disabled={busy}
+              >
+                {hasPlusOne ? 'remove +1' : 'add +1'}
+              </Button>
+            </div>
+          ) : null}
+
+          {showQuestions ? (
+            <RsvpQuestionFields
+              questions={questions}
+              answers={answers}
+              errors={questionErrors}
               disabled={busy}
-            >
-              {hasPlusOne ? 'remove +1' : 'add +1'}
-            </Button>
-          </div>
-        ) : null}
+              onChange={(questionId, value) => {
+                setAnswers((prev) => ({ ...prev, [questionId]: value }));
+                setQuestionErrors((prev) => {
+                  if (!prev[questionId]) return prev;
+                  const { [questionId]: _removed, ...rest } = prev;
+                  return rest;
+                });
+              }}
+            />
+          ) : null}
 
-        {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
+          {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
+        </div>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="border-border flex shrink-0 items-center justify-between gap-2 border-t pt-3">
           {mode === 'edit' && onRemove ? (
             <Button type="button" variant="secondary" onClick={onRemove} disabled={busy}>
               remove rsvp

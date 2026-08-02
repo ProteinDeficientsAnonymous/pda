@@ -1579,6 +1579,14 @@
             "title": "Rsvp Enabled",
             "type": "boolean"
           },
+          "rsvp_questions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionIn"
+            },
+            "title": "Rsvp Questions",
+            "type": "array"
+          },
           "start_datetime": {
             "anyOf": [
               {
@@ -2132,6 +2140,12 @@
             ],
             "title": "My Rsvp"
           },
+          "my_rsvp_answers": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "My Rsvp Answers",
+            "type": "object"
+          },
           "other_link": {
             "default": "",
             "title": "Other Link",
@@ -2175,6 +2189,14 @@
             "default": false,
             "title": "Rsvp Enabled",
             "type": "boolean"
+          },
+          "rsvp_questions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionOut"
+            },
+            "title": "Rsvp Questions",
+            "type": "array"
           },
           "slug": {
             "default": "",
@@ -2770,6 +2792,208 @@
           "votes"
         ],
         "title": "EventPollVoteIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionExpectedIn": {
+        "properties": {
+          "field_type": {
+            "enum": [
+              "textarea",
+              "dropdown",
+              "multiselect"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "field_type",
+          "id"
+        ],
+        "title": "EventRsvpQuestionExpectedIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionIn": {
+        "properties": {
+          "field_type": {
+            "enum": [
+              "textarea",
+              "dropdown",
+              "multiselect"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "field_type"
+        ],
+        "title": "EventRsvpQuestionIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionOut": {
+        "properties": {
+          "display_order": {
+            "title": "Display Order",
+            "type": "integer"
+          },
+          "field_type": {
+            "enum": [
+              "textarea",
+              "dropdown",
+              "multiselect"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "field_type",
+          "required",
+          "display_order"
+        ],
+        "title": "EventRsvpQuestionOut",
+        "type": "object"
+      },
+      "EventRsvpQuestionSyncIn": {
+        "properties": {
+          "field_type": {
+            "enum": [
+              "textarea",
+              "dropdown",
+              "multiselect"
+            ],
+            "title": "Field Type",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "label": {
+            "maxLength": 300,
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "items": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "field_type"
+        ],
+        "title": "EventRsvpQuestionSyncIn",
+        "type": "object"
+      },
+      "EventRsvpQuestionSyncPayload": {
+        "properties": {
+          "expected": {
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionExpectedIn"
+            },
+            "title": "Expected",
+            "type": "array"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/EventRsvpQuestionSyncIn"
+            },
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected",
+          "questions"
+        ],
+        "title": "EventRsvpQuestionSyncPayload",
         "type": "object"
       },
       "EventStatsOut": {
@@ -4716,6 +4940,15 @@
       },
       "RSVPIn": {
         "properties": {
+          "answers": {
+            "additionalProperties": {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            "description": "Question UUID to answer; multiselect values are comma-separated.",
+            "title": "Answers",
+            "type": "object"
+          },
           "comment": {
             "anyOf": [
               {
@@ -8641,6 +8874,16 @@
             },
             "description": "Forbidden"
           },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -10798,6 +11041,98 @@
         ]
       }
     },
+    "/api/community/events/{event_id}/rsvp-questions/": {
+      "put": {
+        "operationId": "community__event_rsvp_questions_replace_event_rsvp_questions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventRsvpQuestionSyncPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventRsvpQuestionOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Replace Event Rsvp Questions",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/community/events/{event_id}/rsvp/": {
       "delete": {
         "operationId": "community__event_rsvps_delete_rsvp",
@@ -10932,6 +11267,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
           },
           "429": {
             "content": {

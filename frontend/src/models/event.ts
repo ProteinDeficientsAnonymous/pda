@@ -75,6 +75,16 @@ export interface EventTag {
   slug: string;
 }
 
+export type EventRsvpQuestionType = 'textarea' | 'dropdown' | 'multiselect';
+
+export interface EventRsvpQuestion {
+  id: string;
+  label: string;
+  fieldType: EventRsvpQuestionType;
+  options: string[];
+  required: boolean;
+}
+
 export interface EventGuest {
   userId: string;
   name: string;
@@ -150,6 +160,9 @@ export interface Event {
 
   guests: EventGuest[];
   myRsvp: string | null;
+  /** Snapshot answers for the viewer's RSVP: questionId → { label, answer }. */
+  myRsvpAnswers: Record<string, { label: string; answer: string }>;
+  rsvpQuestions: EventRsvpQuestion[];
   // The resolved viewer's own user id — carried from the backend so a
   // token-holding (logged-out) viewer can find their own entry in `guests`,
   // since useAuthStore has no user for them.

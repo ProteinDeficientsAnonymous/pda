@@ -35,6 +35,7 @@ from community._event_schemas import (
     EventListOut,
     EventOut,
     EventPatchIn,
+    validate_event_rsvp_question,
 )
 from community._event_transitions import (
     _handle_status_update,
@@ -46,6 +47,7 @@ from community._shared import ErrorOut, _authenticated_user, _members_only, _opt
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
+    EventRsvpQuestion,
     EventStatus,
     EventType,
     PageVisibility,
@@ -287,7 +289,7 @@ def get_event(request, event_id: str):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .annotate(
                 comment_count=Count(
                     "comments",
@@ -306,10 +308,11 @@ def get_event(request, event_id: str):
 
 @router.post(
     "/events/",
-    response={201: EventOut, 400: ErrorOut, 403: ErrorOut, 429: ErrorOut},
+    response={201: EventOut, 400: ErrorOut, 403: ErrorOut, 422: ErrorOut, 429: ErrorOut},
     auth=gated_jwt,
 )
 @rate_limit(key_func=lambda r: str(r.auth.pk), rate="10/d")
+@transaction.atomic
 def create_event(request, payload: EventIn):
     # Any authenticated member can create community or draft events.
     # Official/club events require their respective tag permission.
@@ -332,6 +335,8 @@ def create_event(request, payload: EventIn):
             payload.datetime_tbd,
             check_past=True,
         )
+    for question in payload.rsvp_questions:
+        validate_event_rsvp_question(question)
 
     event = Event.objects.create(
         title=payload.title,
@@ -360,6 +365,19 @@ def create_event(request, payload: EventIn):
     )
     _set_event_participants(request, event, payload.co_host_ids)
     _set_event_tags(event, payload.tag_ids)
+    EventRsvpQuestion.objects.bulk_create(
+        [
+            EventRsvpQuestion(
+                event=event,
+                label=question.label,
+                field_type=question.field_type,
+                options=question.options,
+                required=question.required,
+                display_order=display_order,
+            )
+            for display_order, question in enumerate(payload.rsvp_questions)
+        ]
+    )
     if event.status == EventStatus.ACTIVE:
         transaction.on_commit(lambda: broadcast_event_created(event))
     audit_log(
@@ -416,7 +434,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
     try:
         event = (
             Event.objects.select_related("created_by")
-            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags")
+            .prefetch_related("co_hosts", "invited_users", "rsvps__user", "tags", "rsvp_questions")
             .get(id=event_id)
         )
     except Event.DoesNotExist:

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { RsvpStatus } from '@/models/event';
 
 import { RsvpBox } from './RsvpBox';
+import type { RsvpQuestionDraft } from './rsvpQuestions';
 
 const base = {
   open: true,
@@ -11,6 +12,22 @@ const base = {
   initialHasPlusOne: false,
   allowPlusOnes: true,
   onClose: () => {},
+};
+
+const requiredSelect: RsvpQuestionDraft = {
+  id: 'q-transport',
+  label: 'how are you getting there?',
+  fieldType: 'dropdown',
+  options: ['driving', 'transit'],
+  required: true,
+};
+
+const optionalText: RsvpQuestionDraft = {
+  id: 'q-notes',
+  label: 'anything else?',
+  fieldType: 'textarea',
+  options: [],
+  required: false,
 };
 
 describe('RsvpBox', () => {
@@ -34,6 +51,7 @@ describe('RsvpBox', () => {
         status: RsvpStatus.Attending,
         comment: 'snacks',
         hasPlusOne: false,
+        answers: {},
       }),
     );
   });
@@ -150,5 +168,55 @@ describe('RsvpBox', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Attending }),
     );
+  });
+
+  it('shows questions when attending', () => {
+    render(
+      <RsvpBox
+        {...base}
+        mode="create"
+        questions={[requiredSelect, optionalText]}
+        onConfirm={() => {}}
+      />,
+    );
+    expect(screen.getByText('how are you getting there?')).toBeInTheDocument();
+    expect(screen.getByLabelText('anything else? (optional)')).toBeInTheDocument();
+  });
+
+  it('hides questions when status is can’t go', () => {
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
+    expect(screen.queryByText('how are you getting there?')).not.toBeInTheDocument();
+  });
+
+  it('blocks confirm when a required question is unanswered', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(/required/i);
+  });
+
+  it('confirms after answering required questions', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'how are you getting there?' }), {
+      target: { value: 'driving' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: RsvpStatus.Attending,
+        answers: { 'q-transport': 'driving' },
+      }),
+    );
+  });
+
+  it('allows confirm for can’t go without answering required questions', () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" questions={[requiredSelect]} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: /can't go/i }));
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ status: RsvpStatus.CantGo }));
   });
 });

@@ -1079,6 +1079,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/rsvp-questions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace Event Rsvp Questions */
+        put: operations["community__event_rsvp_questions_replace_event_rsvp_questions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/rsvp/": {
         parameters: {
             query?: never;
@@ -2728,6 +2745,11 @@ export interface components {
              * @default false
              */
             rsvp_enabled: boolean;
+            /**
+             * Rsvp Questions
+             * @default []
+             */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionIn"][];
             /** Start Datetime */
             start_datetime?: string | null;
             /**
@@ -3034,6 +3056,13 @@ export interface components {
             /** My Rsvp */
             my_rsvp?: string | null;
             /**
+             * My Rsvp Answers
+             * @default {}
+             */
+            my_rsvp_answers: {
+                [key: string]: unknown;
+            };
+            /**
              * Other Link
              * @default
              */
@@ -3065,6 +3094,11 @@ export interface components {
              * @default false
              */
             rsvp_enabled: boolean;
+            /**
+             * Rsvp Questions
+             * @default []
+             */
+            rsvp_questions: components["schemas"]["EventRsvpQuestionOut"][];
             /**
              * Slug
              * @default
@@ -3253,6 +3287,101 @@ export interface components {
             votes: {
                 [key: string]: string;
             };
+        };
+        /** EventRsvpQuestionExpectedIn */
+        EventRsvpQuestionExpectedIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionIn */
+        EventRsvpQuestionIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionOut */
+        EventRsvpQuestionOut: {
+            /** Display Order */
+            display_order: number;
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /** Required */
+            required: boolean;
+        };
+        /** EventRsvpQuestionSyncIn */
+        EventRsvpQuestionSyncIn: {
+            /**
+             * Field Type
+             * @enum {string}
+             */
+            field_type: "textarea" | "dropdown" | "multiselect";
+            /** Id */
+            id?: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Options
+             * @default []
+             */
+            options: string[];
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+        };
+        /** EventRsvpQuestionSyncPayload */
+        EventRsvpQuestionSyncPayload: {
+            /** Expected */
+            expected: components["schemas"]["EventRsvpQuestionExpectedIn"][];
+            /** Questions */
+            questions: components["schemas"]["EventRsvpQuestionSyncIn"][];
         };
         /** EventStatsOut */
         EventStatsOut: {
@@ -4124,6 +4253,13 @@ export interface components {
         };
         /** RSVPIn */
         RSVPIn: {
+            /**
+             * Answers
+             * @description Question UUID to answer; multiselect values are comma-separated.
+             */
+            answers?: {
+                [key: string]: string;
+            };
             /** Comment */
             comment?: string | null;
             /**
@@ -6571,6 +6707,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Too Many Requests */
             429: {
                 headers: {
@@ -8049,6 +8194,68 @@ export interface operations {
             };
         };
     };
+    community__event_rsvp_questions_replace_event_rsvp_questions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRsvpQuestionSyncPayload"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventRsvpQuestionOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
     community__event_rsvps_upsert_rsvp: {
         parameters: {
             query?: never;
@@ -8093,6 +8300,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
