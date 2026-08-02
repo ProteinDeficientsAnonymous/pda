@@ -39,15 +39,11 @@ export function DateTimePicker({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
-  const todayStart = (() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
   const minDate = min ? isoToDate(min) : undefined;
-  const minDateStart = min
+  const floor = disablePast || min ? (minDate ?? new Date()) : undefined;
+  const floorStart = floor
     ? (() => {
-        const d = new Date(min);
+        const d = new Date(floor);
         d.setHours(0, 0, 0, 0);
         return d;
       })()
@@ -130,13 +126,7 @@ export function DateTimePicker({
             }}
             defaultMonth={selectedDate ?? new Date()}
             locale={enUS}
-            {...(disablePast || minDateStart
-              ? {
-                  disabled: {
-                    before: minDateStart ?? todayStart,
-                  },
-                }
-              : {})}
+            {...(floorStart ? { disabled: { before: floorStart } } : {})}
           />
           <div className="border-border mt-2 flex items-center gap-2 border-t pt-2">
             <label htmlFor="dt-time" className="text-muted text-xs">
