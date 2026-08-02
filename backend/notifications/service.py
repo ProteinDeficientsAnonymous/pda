@@ -454,19 +454,27 @@ def notify_event_comment(comment) -> None:
     _notify_users(recipient_id_list)
 
 
-def notify_rsvp_status_changed(event: Event, rsvper: User, status: str) -> None:
-    """Notify event creator + co-hosts when someone RSVPs with attending/maybe status.
+_RSVP_STATUS_WORDS: dict[str, str] = {
+    RSVPStatus.ATTENDING: "is going",
+    RSVPStatus.MAYBE: "might go",
+    RSVPStatus.CANT_GO: "can't go",
+    RSVPStatus.WAITLISTED: "joined the waitlist",
+}
 
-    No notification for can't_go or waitlisted (those have separate flows).
-    No-op if rsvper is an event creator or co-host (self-RSVP).
+
+def notify_rsvp_status_changed(event: Event, rsvper: User, status: str) -> None:
+    """Notify event creator + co-hosts of a member's RSVP status.
+
+    No-op if rsvper is an event creator or co-host (self-RSVP). Skip can't_go here
+    when a decline note was already sent via notify_rsvp_declined_note (caller's job).
     """
-    if status not in (RSVPStatus.ATTENDING, RSVPStatus.MAYBE):
+    status_word = _RSVP_STATUS_WORDS.get(status)
+    if status_word is None:
         return
     recipient_id_list = _event_recipient_ids(event, exclude=str(rsvper.pk))
     if not recipient_id_list:
         return
     rsvper_name = visible_display_name(rsvper, None)
-    status_word = "is going" if status == RSVPStatus.ATTENDING else "might go"
     message = f"{rsvper_name} {status_word} to {event.title}"
     Notification.objects.bulk_create(
         [

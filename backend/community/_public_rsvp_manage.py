@@ -169,14 +169,15 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         target_id=str(event.id),
         details={"user_id": str(user.pk), "status": final_status},
     )
-    _post_rsvp_comment(event.id, user, final_status, payload.comment)
+    sent_decline_note = _post_rsvp_comment(event.id, user, final_status, payload.comment)
     email_error = _send_manage_rsvp_email(
         event, user, rsvp_token.token, created=created, final_status=final_status
     )
     if email_error is not None:
         _log_email_failure(request, event, user, email_error)
     _email_promoted_non_members(request, event, promoted_user_ids)
-    notify_rsvp_status_changed(event, user, final_status)
+    if not sent_decline_note:
+        notify_rsvp_status_changed(event, user, final_status)
     broadcast_capacity_change(event.id)
 
     fresh_event = (
