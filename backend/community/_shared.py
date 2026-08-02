@@ -141,6 +141,6 @@ def _authenticated_user(requesting_user) -> "UserModel | None":
     return requesting_user
 
 
-def _members_only(value, default, is_authed: bool):
-    """Return value if user is authenticated, default otherwise."""
-    return value if is_authed else default
+def _gated(value, default, visible: bool):
+    """Return value if visible, default otherwise."""
+    return value if visible else default

@@ -2848,6 +2848,11 @@ export interface components {
             longitude?: number | null;
             /** Max Attendees */
             max_attendees?: number | null;
+            /**
+             * My Paid Confirmed
+             * @default false
+             */
+            my_paid_confirmed: boolean;
             /** My Rsvp */
             my_rsvp?: string | null;
             /**
@@ -3029,6 +3034,11 @@ export interface components {
             longitude?: number | null;
             /** Max Attendees */
             max_attendees?: number | null;
+            /**
+             * My Paid Confirmed
+             * @default false
+             */
+            my_paid_confirmed: boolean;
             /** My Pending Cohost Invite Id */
             my_pending_cohost_invite_id?: string | null;
             /** My Rsvp */
@@ -4113,6 +4123,11 @@ export interface components {
             is_member: boolean;
             /** Name */
             name: string;
+            /**
+             * Paid Confirmed
+             * @default false
+             */
+            paid_confirmed: boolean;
             /** Phone */
             phone?: string | null;
             /**

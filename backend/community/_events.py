@@ -20,8 +20,8 @@ from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
     _can_see_invite_only,
     _event_out,
-    _find_my_rsvp,
     _get_creator_name,
+    _my_rsvp_fields,
     _set_event_tags,
     _tags_out,
     _update_co_hosts,
@@ -42,7 +42,8 @@ from community._event_transitions import (
 )
 from community._event_viewer import resolve_event_viewer
 from community._rsvp_counts import _attending_headcount, _waitlisted_count
-from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
+from community._rsvp_payment import can_see_payment_details
+from community._shared import ErrorOut, _authenticated_user, _gated, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
@@ -194,6 +195,8 @@ def _filter_invite_only(events, auth_user, status: str):
 
 
 def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
+    show_payment_details = can_see_payment_details(e, is_authed)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(e.rsvps.all(), auth_user)
     return EventListOut(
         id=str(e.id),
         slug=e.slug,
@@ -208,13 +211,13 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         visibility=e.visibility,
         photo_url=media_path(e.photo),
         photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
-        whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
-        partiful_link=_members_only(e.partiful_link, "", is_authed),
-        other_link=_members_only(e.other_link, "", is_authed),
+        whatsapp_link=_gated(e.whatsapp_link, "", is_authed),
+        partiful_link=_gated(e.partiful_link, "", is_authed),
+        other_link=_gated(e.other_link, "", is_authed),
         price=e.price,
-        venmo_link=_members_only(e.venmo_link, "", is_authed),
-        cashapp_link=_members_only(e.cashapp_link, "", is_authed),
-        zelle_info=_members_only(e.zelle_info, "", is_authed),
+        venmo_link=_gated(e.venmo_link, "", show_payment_details),
+        cashapp_link=_gated(e.cashapp_link, "", show_payment_details),
+        zelle_info=_gated(e.zelle_info, "", show_payment_details),
         created_by_id=str(e.created_by_id) if e.created_by_id else None,
         created_by_name=_get_creator_name(e.created_by, auth_user),
         created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
@@ -227,7 +230,8 @@ def _event_list_out(e, auth_user, is_authed: bool) -> EventListOut:
         waitlisted_count=_waitlisted_count(e),
         invited_count=e.invited_users.count(),
         comment_count=e.comment_count,
-        my_rsvp=_find_my_rsvp(e.rsvps.all(), auth_user),
+        my_rsvp=my_rsvp_status,
+        my_paid_confirmed=my_paid_confirmed,
         co_host_ids=[str(c.id) for c in e.co_hosts.all()],
         co_host_names=[visible_display_name(c, auth_user) for c in e.co_hosts.all()],
         is_past=e.is_past,

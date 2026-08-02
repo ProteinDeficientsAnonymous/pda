@@ -116,6 +116,7 @@ class RSVPGuestOut(BaseModel):
     attendance: AttendanceStatus = AttendanceStatus.UNKNOWN
     checked_in_at: datetime | None = None
     is_member: bool = True
+    paid_confirmed: bool = False
 
 
 class PendingCoHostInviteOut(BaseModel):
@@ -162,6 +163,7 @@ class EventListOut(BaseModel):
     invited_count: int = 0
     comment_count: int = 0
     my_rsvp: str | None = None
+    my_paid_confirmed: bool = False
     is_past: bool = False
     status: str = "active"
     tags: list[TagOut] = []
@@ -193,9 +195,7 @@ class EventOut(BaseModel):
     co_host_photo_urls: list[str] = []
     guests: list[RSVPGuestOut] = []
     my_rsvp: str | None = None
-    # Same gating as my_rsvp (both derive from the resolved viewer in
-    # _event_out) — lets a token-holding, not-logged-in viewer identify their
-    # own entry in `guests` without a real auth session to key off of.
+    my_paid_confirmed: bool = False
     viewer_user_id: str | None = None
     event_type: str = EventType.COMMUNITY
     visibility: str = PageVisibility.PUBLIC
