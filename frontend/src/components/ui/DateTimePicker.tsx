@@ -10,9 +10,7 @@ interface Props {
   disabled?: boolean;
   error?: string | undefined;
   optional?: boolean;
-  /** Disable calendar days before today (inclusive). For event start times. */
   disablePast?: boolean;
-  /** Minimum allowed datetime (ISO string). Disable calendar days before and disable time selection if on same day but before min time. */
   min?: string | null;
 }
 
@@ -41,7 +39,6 @@ export function DateTimePicker({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
-  // Start-of-today so "today" itself is still selectable.
   const todayStart = (() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -60,7 +57,6 @@ export function DateTimePicker({
       ? `${String(minDate.getHours()).padStart(2, '0')}:${String(minDate.getMinutes()).padStart(2, '0')}`
       : undefined;
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     function onClick(e: MouseEvent) {
@@ -74,7 +70,6 @@ export function DateTimePicker({
     };
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
