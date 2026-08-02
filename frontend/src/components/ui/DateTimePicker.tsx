@@ -29,15 +29,15 @@ export function DateTimePicker({ label, value, onChange, disabled, error, option
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
-  const minDate = min ? isoToDate(min) : undefined;
+  const minInstant = min ? (isoToDate(min) ?? new Date()) : new Date();
   const floorStart = (() => {
-    const d = new Date(minDate ?? new Date());
+    const d = new Date(minInstant);
     d.setHours(0, 0, 0, 0);
     return d;
   })();
   const minTime =
-    minDate && minDate.toDateString() === selectedDate?.toDateString()
-      ? `${String(minDate.getHours()).padStart(2, '0')}:${String(minDate.getMinutes()).padStart(2, '0')}`
+    minInstant.toDateString() === selectedDate?.toDateString()
+      ? `${String(minInstant.getHours()).padStart(2, '0')}:${String(minInstant.getMinutes()).padStart(2, '0')}`
       : undefined;
 
   useEffect(() => {
