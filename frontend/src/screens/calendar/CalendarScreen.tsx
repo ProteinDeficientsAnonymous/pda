@@ -1,9 +1,9 @@
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-import { addDays, format as dfFormat, startOfWeek } from 'date-fns';
-import { useMemo, useState } from 'react';
+import { addDays, format as dfFormat, isValid, parseISO, startOfWeek } from 'date-fns';
+import { useCallback, useMemo } from 'react';
 import { Calendar, type View } from 'react-big-calendar';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
@@ -28,6 +28,16 @@ function toBigCalEvent(e: PdaEvent): BigCalEvent | null {
 }
 
 const lower = (d: Date, f: string) => dfFormat(d, f).toLowerCase();
+
+const VIEWS: View[] = ['month', 'week', 'day', 'agenda'];
+function parseView(raw: string | null): View {
+  return VIEWS.find((v) => v === raw) ?? 'month';
+}
+function parseDate(raw: string | null): Date {
+  if (!raw) return new Date();
+  const parsed = parseISO(raw);
+  return isValid(parsed) ? parsed : new Date();
+}
 
 const FORMATS = {
   weekdayFormat: (d: Date) => lower(d, 'EEE'),
@@ -78,16 +88,51 @@ export default function CalendarScreen() {
   );
   const datedEvents = useMemo(() => events.filter((e) => !e.datetimeTbd), [events]);
 
-  const [view, setView] = useState<View>('month');
-  const [date, setDate] = useState<Date>(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = parseView(searchParams.get('view'));
+  const date = parseDate(searchParams.get('date'));
+
+  const setView = useCallback(
+    (v: View) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('view', v);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+  const setDate = useCallback(
+    (d: Date) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('date', dfFormat(d, 'yyyy-MM-dd'));
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const useNarrowWeek = view === 'week' && !isWide;
   const useWideWeek = view === 'week' && isWide;
   const useDayList = view === 'day';
   const useAgendaList = view === 'agenda';
 
   const goToDay = (d: Date) => {
-    setDate(d);
-    setView('day');
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('date', dfFormat(d, 'yyyy-MM-dd'));
+        next.set('view', 'day');
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const goToEvent = (e: PdaEvent) => {

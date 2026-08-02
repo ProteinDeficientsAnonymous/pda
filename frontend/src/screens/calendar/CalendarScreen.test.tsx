@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { addDays, format } from 'date-fns';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,10 +36,10 @@ function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function renderCalendar() {
+function renderCalendar(initialEntry = '/calendar') {
   return render(
     <QueryClientProvider client={makeQc()}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <CalendarScreen />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -125,6 +126,20 @@ describe('CalendarScreen', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /go to today/i })).toBeInTheDocument();
+    });
+  });
+
+  it('restores the navigated-to day on a fresh mount at that URL (e.g. browser back)', async () => {
+    const tomorrow = addDays(new Date(), 1);
+    const expectedLabel = format(tomorrow, 'EEEE, MMM d').toLowerCase();
+
+    // CalendarScreen is lazy-loaded, so a back-button press re-mounts it
+    // fresh at whatever URL is in history — simulate that directly instead
+    // of relying on state carried over from a previous render.
+    renderCalendar(`/calendar?view=day&date=${format(tomorrow, 'yyyy-MM-dd')}`);
+
+    await waitFor(() => {
+      expect(screen.getByText(new RegExp(expectedLabel, 'i'))).toBeInTheDocument();
     });
   });
 
