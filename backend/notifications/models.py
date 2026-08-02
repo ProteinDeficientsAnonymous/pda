@@ -25,6 +25,7 @@ class NotificationType(models.TextChoices):
     COMMENT_REPLY = "comment_reply", "Comment Reply"
     EVENT_COMMENT = "event_comment", "Event Comment"
     COMMENT_REACTION = "comment_reaction", "Comment Reaction"
+    RSVP_STATUS_CHANGED = "rsvp_status_changed", "RSVP Status Changed"
     RSVP_DECLINED_NOTE = "rsvp_declined_note", "RSVP Declined Note"
     CHECKIN_NUDGE = "checkin_nudge", "Check-in Nudge"
 

@@ -9,6 +9,7 @@ from ninja import Router
 from ninja.responses import Status
 from notifications._email_helpers import send_rsvp_confirmation_email, send_rsvp_updated_email
 from notifications.email_sender import get_email_sender
+from notifications.service import notify_rsvp_status_changed
 from pydantic import BaseModel, Field
 from users.models import NonMemberRsvpToken, User
 
@@ -175,6 +176,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
     if email_error is not None:
         _log_email_failure(request, event, user, email_error)
     _email_promoted_non_members(request, event, promoted_user_ids)
+    notify_rsvp_status_changed(event, user, final_status)
     broadcast_capacity_change(event.id)
 
     fresh_event = (

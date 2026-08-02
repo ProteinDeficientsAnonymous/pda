@@ -12,6 +12,7 @@ from notifications.service import (
     broadcast_event_comment_update,
     notify_event_comment,
     notify_rsvp_declined_note,
+    notify_rsvp_status_changed,
 )
 
 from community._event_helpers import (
@@ -217,6 +218,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    notify_rsvp_status_changed(event, request.auth, final_status)
     # Actor already has the fresh event in this response, so exclude them.
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     _email_promoted_non_members(request, event, promoted_user_ids)
