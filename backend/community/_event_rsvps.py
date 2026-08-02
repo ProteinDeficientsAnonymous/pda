@@ -173,9 +173,7 @@ def _apply_rsvp_in_transaction(
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     created = existing is None
 
-    # Gate on the *requested* status, before capacity resolution downgrades it:
-    # an unconfirmed attending request at capacity must still be blocked here,
-    # not silently queued as an unconfirmed waitlist row for later promotion.
+    # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
     if not paid_confirmed and requires_payment_gate(event, existing, status):
         raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
 

@@ -26,7 +26,9 @@ def can_see_payment_details(
         gate_flag_enabled = flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
     if not gate_flag_enabled:
         return is_authed
-    return is_authed or event.is_public_rsvp_eligible
+    return is_authed or (
+        event.is_public_rsvp_eligible and event_requires_payment_confirmation(event)
+    )
 
 
 def waitlist_promotion_needs_payment(event: Event) -> bool:

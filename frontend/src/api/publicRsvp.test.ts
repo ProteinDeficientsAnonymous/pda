@@ -43,6 +43,7 @@ describe('useSubmitPublicRsvp', () => {
       status: 'attending',
       has_plus_one: false,
       website: '',
+      paid_confirmed: false,
     };
     result.current.mutate({ eventId: 'ev1', payload });
 

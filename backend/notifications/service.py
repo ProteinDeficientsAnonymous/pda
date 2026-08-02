@@ -317,13 +317,23 @@ def create_waitlist_promoted_notifications(
     event: Event,
     promoted_user_ids: Iterable[str],
     payment_pending: bool = False,
+    poll_seated: bool = False,
 ) -> None:
     user_ids = list(promoted_user_ids)
     if not user_ids:
         return
-    message = f"a spot opened up — you're going to {event.title}!"
-    if payment_pending:
-        message = f"a spot opened up for {event.title} — your spot isn't confirmed until you pay."
+    if poll_seated:
+        message = f"the time is set — you're going to {event.title}!"
+        if payment_pending:
+            message = (
+                f"the time is set for {event.title} — your spot isn't confirmed until you pay."
+            )
+    else:
+        message = f"a spot opened up — you're going to {event.title}!"
+        if payment_pending:
+            message = (
+                f"a spot opened up for {event.title} — your spot isn't confirmed until you pay."
+            )
     Notification.objects.bulk_create(
         [
             Notification(

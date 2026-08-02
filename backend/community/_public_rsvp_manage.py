@@ -30,7 +30,7 @@ from community._public_rsvp_shared import (
 )
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
-from community.models import Event, EventRSVP, RSVPStatus
+from community.models import Event, EventRSVP, FeatureFlag, RSVPStatus, flag_enabled
 from community.models.event import public_rsvp_eligible_q
 
 router = Router()
@@ -120,13 +120,14 @@ def _send_manage_rsvp_email(
 @rate_limit(key_func=client_ip, rate="30/h")
 def list_my_rsvps(request, token: str = ""):
     user = _resolve_token_user(token)
+    payment_gate_flag_enabled = flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
     items = []
     for rsvp in _eligible_event_rsvps(user):
         # Feed the annotation to _event_out's event.comment_count lookup, avoiding a per-event query.
         rsvp.event.comment_count = rsvp.event_comment_count
         items.append(
             PublicRsvpManageItemOut(
-                event=_event_out(rsvp.event, user),
+                event=_event_out(rsvp.event, user, payment_gate_flag_enabled),
                 status=rsvp.status,
                 has_plus_one=rsvp.has_plus_one,
             )

@@ -83,8 +83,10 @@ def _can_see_phones(requesting_user, creator, co_host_ids: set[str]) -> bool:
     return str(requesting_user.pk) in co_host_ids
 
 
-def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGuestOut]:
-    """Build guest list with optional phone visibility."""
+def _build_guest_list(
+    rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
+) -> list[RSVPGuestOut]:
+    """Build guest list with optional phone and payment-status visibility."""
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -96,7 +98,7 @@ def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGues
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             is_member=r.user.is_member,
-            paid_confirmed=r.paid_confirmed_at is not None,
+            paid_confirmed=r.paid_confirmed_at is not None if can_see_payment_status else False,
         )
         for r in rsvps
     ]
@@ -302,14 +304,17 @@ def _iso_or_none(value) -> str | None:
     return value.isoformat() if value else None
 
 
-def _event_out(event: Event, requesting_user=None) -> EventOut:
+def _event_out(
+    event: Event, requesting_user=None, gate_flag_enabled: bool | None = None
+) -> EventOut:
     co_hosts = list(event.co_hosts.all())
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
     is_authed = auth_user is not None
-    show_payment = can_see_payment_details(event, is_authed)
+    show_payment = can_see_payment_details(event, is_authed, gate_flag_enabled)
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
+    payment_status_visible = auth_user is not None and auth_user.is_member
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
@@ -350,7 +355,11 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
-        guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
+        guests=_members_only(
+            _build_guest_list(rsvps, phones_visible, auth_user, payment_status_visible),
+            [],
+            is_authed,
+        ),
         my_rsvp=my_rsvp_status,
         my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,

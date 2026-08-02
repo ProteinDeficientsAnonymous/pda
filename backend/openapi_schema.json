@@ -1796,6 +1796,11 @@
             ],
             "title": "Max Attendees"
           },
+          "my_paid_confirmed": {
+            "default": false,
+            "title": "My Paid Confirmed",
+            "type": "boolean"
+          },
           "my_rsvp": {
             "anyOf": [
               {
@@ -2109,6 +2114,11 @@
               }
             ],
             "title": "Max Attendees"
+          },
+          "my_paid_confirmed": {
+            "default": false,
+            "title": "My Paid Confirmed",
+            "type": "boolean"
           },
           "my_pending_cohost_invite_id": {
             "anyOf": [
@@ -3239,6 +3249,11 @@
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "paid_confirmed": {
+            "default": false,
+            "title": "Paid Confirmed",
             "type": "boolean"
           },
           "status": {
@@ -4424,6 +4439,11 @@
             "title": "Last Name",
             "type": "string"
           },
+          "paid_confirmed": {
+            "default": false,
+            "title": "Paid Confirmed",
+            "type": "boolean"
+          },
           "phone_number": {
             "maxLength": 20,
             "title": "Phone Number",
@@ -4467,6 +4487,11 @@
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "paid_confirmed": {
+            "default": false,
+            "title": "Paid Confirmed",
             "type": "boolean"
           },
           "status": {
@@ -4655,6 +4680,11 @@
             "title": "Name",
             "type": "string"
           },
+          "paid_confirmed": {
+            "default": false,
+            "title": "Paid Confirmed",
+            "type": "boolean"
+          },
           "phone": {
             "anyOf": [
               {
@@ -4704,6 +4734,11 @@
           "has_plus_one": {
             "default": false,
             "title": "Has Plus One",
+            "type": "boolean"
+          },
+          "paid_confirmed": {
+            "default": false,
+            "title": "Paid Confirmed",
             "type": "boolean"
           },
           "status": {

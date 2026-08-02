@@ -127,7 +127,11 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
         request,
         target_type="event",
         target_id=str(event_id),
-        details={"user_id": str(user_id), "status": final_status},
+        details={
+            "user_id": str(user_id),
+            "status": final_status,
+            "paid_confirmed": payload.paid_confirmed,
+        },
     )
     event = load_event_with_stats_prefetch(event_id)
     if event is None:

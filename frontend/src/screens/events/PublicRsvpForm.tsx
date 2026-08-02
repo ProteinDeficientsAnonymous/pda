@@ -119,6 +119,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           has_plus_one: false,
           comment: comment.trim() || null,
           website,
+          paid_confirmed: false,
         },
       });
       onSuccess(result);

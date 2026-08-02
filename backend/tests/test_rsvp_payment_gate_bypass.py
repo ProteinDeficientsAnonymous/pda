@@ -1,4 +1,4 @@
-"""Regression tests for the payment-gate bypasses found in review of PR #1213."""
+"""Regression tests for payment-gate bypasses caught in code review."""
 
 import pytest
 from community._event_helpers import promote_from_waitlist
