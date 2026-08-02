@@ -17,7 +17,6 @@ interface Props {
 const SUBJECT_MAX = 150;
 const MESSAGE_MAX = 5000;
 
-
 interface AudienceGroup {
   value: string;
   label: string;
