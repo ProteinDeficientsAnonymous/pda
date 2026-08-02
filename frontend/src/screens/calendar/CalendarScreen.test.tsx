@@ -133,9 +133,6 @@ describe('CalendarScreen', () => {
     const tomorrow = addDays(new Date(), 1);
     const expectedLabel = format(tomorrow, 'EEEE, MMM d').toLowerCase();
 
-    // CalendarScreen is lazy-loaded, so a back-button press re-mounts it
-    // fresh at whatever URL is in history — simulate that directly instead
-    // of relying on state carried over from a previous render.
     renderCalendar(`/calendar?view=day&date=${format(tomorrow, 'yyyy-MM-dd')}`);
 
     await waitFor(() => {
