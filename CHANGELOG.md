@@ -1,3 +1,10 @@
+## [0.75.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.2...v0.75.3) (2026-08-02)
+
+
+### Bug Fixes
+
+* hide cancel button on past events (Issue 1081) ([#1209](https://github.com/ProteinDeficientsAnonymous/pda/issues/1209)) ([1ab0472](https://github.com/ProteinDeficientsAnonymous/pda/commit/1ab0472a924dbf37ede5aa31fac1dc69d56a08ab))
+
 ## [0.75.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.1...v0.75.2) (2026-08-01)
 
 
