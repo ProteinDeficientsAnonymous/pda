@@ -13,7 +13,6 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from notifications.service import create_waitlist_promoted_notifications
 from users._helpers import visible_display_name
 from users.permissions import PermissionKey
 
@@ -28,7 +27,6 @@ from community._event_poll_schemas import (
 )
 from community._event_viewer import resolve_event_viewer
 from community._events import _enforce_event_read_visibility
-from community._rsvp_payment import waitlist_promotion_needs_payment
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
@@ -314,10 +312,8 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         event.start_datetime = winning_option.datetime
         event.datetime_tbd = False
         event.save(update_fields=["start_datetime", "datetime_tbd"])
-        yes_voter_ids = list(
-            winning_option.votes.filter(availability=PollAvailability.YES).values_list(
-                "user_id", flat=True
-            )
+        yes_voter_ids = winning_option.votes.filter(availability=PollAvailability.YES).values_list(
+            "user_id", flat=True
         )
         for user_id in yes_voter_ids:
             # paid_confirmed_at omitted from defaults: preserves an existing stamp, else unconfirmed.
@@ -327,12 +323,6 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
                 defaults={"status": RSVPStatus.ATTENDING, "cancelled_at": None},
             )
     broadcast_capacity_change(event_id)
-    create_waitlist_promoted_notifications(
-        event,
-        [str(user_id) for user_id in yes_voter_ids],
-        payment_pending=waitlist_promotion_needs_payment(event),
-        poll_seated=True,
-    )
     audit_log(
         logging.INFO,
         "poll_finalized",

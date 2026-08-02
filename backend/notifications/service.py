@@ -316,36 +316,45 @@ def create_event_invite_notifications(
 def create_waitlist_promoted_notifications(
     event: Event,
     promoted_user_ids: Iterable[str],
-    payment_pending: bool = False,
-    poll_seated: bool = False,
+    unpaid_user_ids: Iterable[str] = (),
 ) -> None:
+    """Notify promoted users. Only those in unpaid_user_ids are told to pay —
+    someone promoted with a standing confirmation already paid."""
     user_ids = list(promoted_user_ids)
     if not user_ids:
         return
-    if poll_seated:
-        message = f"the time is set — you're going to {event.title}!"
-        if payment_pending:
-            message = (
-                f"the time is set for {event.title} — your spot isn't confirmed until you pay."
-            )
-    else:
-        message = f"a spot opened up — you're going to {event.title}!"
-        if payment_pending:
-            message = (
-                f"a spot opened up for {event.title} — your spot isn't confirmed until you pay."
-            )
+    unpaid = set(unpaid_user_ids)
+    promoted_message = f"a spot opened up — you're going to {event.title}!"
+    unpaid_message = (
+        f"a spot opened up for {event.title} — your spot isn't confirmed until you pay."
+    )
     Notification.objects.bulk_create(
         [
             Notification(
                 recipient_id=user_id,
                 notification_type=NotificationType.WAITLIST_PROMOTED,
                 event=event,
-                message=message,
+                message=unpaid_message if user_id in unpaid else promoted_message,
             )
             for user_id in user_ids
         ]
     )
     _notify_users(user_ids)
+
+
+def create_payment_revoked_notification(event: Event, user_id: str) -> None:
+    """Tell a guest a host retracted their payment confirmation.
+
+    Silence here would leave them believing they're seated — they'd show up
+    unpaid, which is the outcome the whole gate exists to prevent.
+    """
+    Notification.objects.create(
+        recipient_id=user_id,
+        notification_type=NotificationType.PAYMENT_REVOKED,
+        event=event,
+        message=f"your payment for {event.title} needs attention — please confirm payment again.",
+    )
+    _notify_users([user_id])
 
 
 def notify_comment_reply(reply) -> None:

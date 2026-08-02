@@ -10,6 +10,17 @@ def event_requires_payment_confirmation(event: Event) -> bool:
     return has_price and has_payment_method
 
 
+def resolve_gate_flag(gate_flag_enabled: bool | None = None) -> bool:
+    """Resolve the payment-gate flag, honouring a value a list caller already fetched.
+
+    flag_enabled() is a query — callers serializing many events resolve it once
+    and pass it down rather than paying it per event.
+    """
+    if gate_flag_enabled is None:
+        return flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
+    return gate_flag_enabled
+
+
 def can_see_payment_details(
     event: Event, is_authed: bool, gate_flag_enabled: bool | None = None
 ) -> bool:
@@ -22,8 +33,7 @@ def can_see_payment_details(
     it in via gate_flag_enabled — flag_enabled() is a query, and calling it
     per-event in a loop reintroduces the N+1 this function otherwise avoids.
     """
-    if gate_flag_enabled is None:
-        gate_flag_enabled = flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
+    gate_flag_enabled = resolve_gate_flag(gate_flag_enabled)
     if not gate_flag_enabled:
         return is_authed
     return is_authed or (
@@ -53,6 +63,9 @@ def requires_payment_gate(event: Event, existing: EventRSVP | None, requested_st
     Keyed on the stamp, not the status transition: waitlist promotion seats a
     row as attending without ever passing this gate, so "already attending"
     cannot be treated as proof of payment.
+
+    A host-revoked confirmation re-gates (is_paid goes false), while an
+    ordinary cancel/re-rsvp leaves the standing confirmation intact.
     """
     if not flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION):
         return False
@@ -60,4 +73,4 @@ def requires_payment_gate(event: Event, existing: EventRSVP | None, requested_st
         return False
     if not event_requires_payment_confirmation(event):
         return False
-    return existing is None or existing.paid_confirmed_at is None
+    return existing is None or not existing.is_paid

@@ -132,20 +132,27 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
         )
 
 
-def _resolve_paid_confirmed_at(existing: EventRSVP | None, paid_confirmed: bool, final_status: str):
-    """Preserve an earlier confirmation; stamp a new one only on a fresh confirm.
+def _resolve_payment_stamps(existing: EventRSVP | None, paid_confirmed: bool, final_status: str):
+    """Resolve (paid_confirmed_at, paid_revoked_at) for this write.
 
     Attending or waitlisted both stamp: at capacity an attending request
     resolves to waitlisted, but it was still a gated, confirmed write and must
     keep its stamp through promotion. Maybe/can't-go are ungated statuses —
     `paid_confirmed` there must not bank a stamp that disarms a later
     attending write (see requires_payment_gate).
+
+    A standing confirmation is preserved untouched. A fresh confirm on a
+    host-revoked row re-stamps and clears the revocation, so paying again after
+    a host pulls the confirmation works without deleting the rsvp.
     """
-    if existing is not None and existing.paid_confirmed_at is not None:
-        return existing.paid_confirmed_at
-    if paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
-        return timezone.now()
-    return None
+    stampable = paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED)
+    if existing is not None and existing.is_paid:
+        return existing.paid_confirmed_at, None
+    if stampable:
+        return timezone.now(), None
+    if existing is not None:
+        return existing.paid_confirmed_at, existing.paid_revoked_at
+    return None, None
 
 
 def _apply_rsvp_in_transaction(
@@ -181,13 +188,16 @@ def _apply_rsvp_in_transaction(
 
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
-    new_paid_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
+    new_confirmed_at, new_revoked_at = _resolve_payment_stamps(
+        existing, paid_confirmed, final_status
+    )
 
     if (
         existing is not None
         and existing.status == final_status
         and existing.has_plus_one == final_plus_one
-        and existing.paid_confirmed_at == new_paid_confirmed_at
+        and existing.paid_confirmed_at == new_confirmed_at
+        and existing.paid_revoked_at == new_revoked_at
     ):
         return final_status, [], False
 
@@ -198,7 +208,8 @@ def _apply_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
-            "paid_confirmed_at": new_paid_confirmed_at,
+            "paid_confirmed_at": new_confirmed_at,
+            "paid_revoked_at": new_revoked_at,
         },
     )
 

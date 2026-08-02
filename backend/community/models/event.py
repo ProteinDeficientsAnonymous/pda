@@ -276,6 +276,10 @@ class EventRSVP(models.Model):
     # lossy updated_at proxy, which any later save would overwrite).
     cancelled_at = models.DateTimeField(null=True, blank=True)
     paid_confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Set when a host retracts a confirmation. Kept alongside paid_confirmed_at
+    # rather than nulling it, so "never paid" stays distinguishable from "paid,
+    # then the host pulled it" — only the latter re-gates a returning guest.
+    paid_revoked_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -285,6 +289,11 @@ class EventRSVP(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["event", "user"], name="unique_event_rsvp"),
         ]
+
+    @property
+    def is_paid(self) -> bool:
+        """True when a payment confirmation stands — stamped and not since revoked."""
+        return self.paid_confirmed_at is not None and self.paid_revoked_at is None
 
     def __str__(self):
         return (

@@ -1114,6 +1114,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/community/events/{event_id}/rsvps/{user_id}/payment/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Set Guest Payment
+         * @description Let a host confirm or retract a guest's payment without touching their rsvp status.
+         */
+        patch: operations["community__event_host_rsvps_set_guest_payment"];
+        trace?: never;
+    };
     "/api/community/events/{event_id}/rsvps/{user_id}/rsvp/": {
         parameters: {
             query?: never;
@@ -3495,6 +3515,11 @@ export interface components {
              */
             paid_confirmed: boolean;
             status: components["schemas"]["RSVPStatus"];
+        };
+        /** HostRSVPPaymentIn */
+        HostRSVPPaymentIn: {
+            /** Paid Confirmed */
+            paid_confirmed: boolean;
         };
         /** InviteIn */
         InviteIn: {
@@ -8230,6 +8255,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_host_rsvps_set_guest_payment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HostRSVPPaymentIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
                 };
             };
             /** @description Forbidden */

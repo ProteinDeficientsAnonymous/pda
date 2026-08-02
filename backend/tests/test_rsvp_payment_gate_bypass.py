@@ -14,6 +14,7 @@ from community.models import (
 )
 from django.utils import timezone
 from ninja_jwt.tokens import RefreshToken
+from notifications.models import NotificationType
 
 from tests._asserts import assert_error_code
 from tests.conftest import future_iso
@@ -122,6 +123,67 @@ class TestWaitlistPromotionBypass:
 
         message = Notification.objects.get(recipient=waiting).message
         assert "pay" not in message
+
+    def test_already_paid_promoted_user_is_not_told_to_pay(self, test_user, django_user_model):
+        from notifications.models import Notification
+
+        event = _paid_event(test_user, max_attendees=1)
+        paid = django_user_model.objects.create_user(
+            phone_number="+14155550114", first_name="Paid", is_member=True
+        )
+        EventRSVP.objects.create(
+            event=event,
+            user=paid,
+            status=RSVPStatus.WAITLISTED,
+            paid_confirmed_at=timezone.now(),
+        )
+        promote_from_waitlist(event)
+
+        message = Notification.objects.get(recipient=paid).message
+        assert "isn't confirmed until you pay" not in message
+
+    def test_mixed_promotion_tells_only_the_unpaid_user_to_pay(self, test_user, django_user_model):
+        from notifications.models import Notification
+
+        event = _paid_event(test_user, max_attendees=2)
+        paid = django_user_model.objects.create_user(
+            phone_number="+14155550115", first_name="Paid", is_member=True
+        )
+        unpaid = django_user_model.objects.create_user(
+            phone_number="+14155550116", first_name="Unpaid", is_member=True
+        )
+        EventRSVP.objects.create(
+            event=event, user=paid, status=RSVPStatus.WAITLISTED, paid_confirmed_at=timezone.now()
+        )
+        EventRSVP.objects.create(event=event, user=unpaid, status=RSVPStatus.WAITLISTED)
+        promote_from_waitlist(event)
+
+        assert "until you pay" not in Notification.objects.get(recipient=paid).message
+        assert "until you pay" in Notification.objects.get(recipient=unpaid).message
+
+
+@pytest.mark.django_db
+class TestPollFinalizeSendsNoWaitlistNotification:
+    def test_seating_yes_voters_does_not_notify(self, api_client, auth_headers, test_user):
+        """Poll finalize seats voters directly; it is not a waitlist promotion."""
+        from community.models import EventPoll, PollAvailability, PollOption, PollVote
+        from notifications.models import Notification
+
+        event = _paid_event(test_user, datetime_tbd=True)
+        poll = EventPoll.objects.create(event=event, created_by=test_user)
+        option = PollOption.objects.create(poll=poll, datetime=future_iso(days=120))
+        PollVote.objects.create(option=option, user=test_user, availability=PollAvailability.YES)
+
+        response = api_client.post(
+            f"/api/community/events/{event.id}/poll/finalize/",
+            {"winning_option_id": str(option.id)},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+        assert not Notification.objects.filter(
+            recipient=test_user, notification_type=NotificationType.WAITLIST_PROMOTED
+        ).exists()
 
 
 @pytest.mark.django_db

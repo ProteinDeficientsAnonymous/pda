@@ -14,4 +14,9 @@ class Migration(migrations.Migration):
             name="paid_confirmed_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
+        migrations.AddField(
+            model_name="eventrsvp",
+            name="paid_revoked_at",
+            field=models.DateTimeField(blank=True, null=True),
+        ),
     ]

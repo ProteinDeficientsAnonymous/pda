@@ -15,7 +15,7 @@ from community._event_schemas import EventOut
 from community._rsvp_payment import waitlist_promotion_needs_payment
 from community._shared import logger
 from community._validation import Code, raise_validation
-from community.models import Event
+from community.models import Event, EventRSVP
 
 
 class PublicRsvpStateOut(BaseModel):
@@ -83,13 +83,29 @@ def _log_email_failure(request, event: Event, user: User, exc: Exception) -> Non
     )
 
 
+def _unpaid_user_ids(event: Event, user_ids: list[str]) -> set:
+    """Of user_ids, those whose rsvp lacks a standing payment confirmation.
+
+    Empty when the event needs no payment. A confirmed rsvp can land on the
+    waitlist at capacity and keep its stamp, so promotion is not proof of debt.
+    """
+    if not waitlist_promotion_needs_payment(event):
+        return set()
+    paid = EventRSVP.objects.filter(
+        event=event,
+        user_id__in=user_ids,
+        paid_confirmed_at__isnull=False,
+        paid_revoked_at__isnull=True,
+    ).values_list("user_id", flat=True)
+    return {str(uid) for uid in user_ids} - {str(uid) for uid in paid}
+
+
 def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[str]) -> None:
     """Email any promoted non-members their manage link. Best-effort per user."""
     if not promoted_user_ids:
         return
     promoted = User.objects.filter(id__in=promoted_user_ids, is_member=False, email__isnull=False)
-    # Promotion never carries a confirmation, so on a paid event the seat is provisional.
-    payment_pending = waitlist_promotion_needs_payment(event)
+    unpaid = _unpaid_user_ids(event, promoted_user_ids)
     for user in promoted:
         if not user.email:
             continue
@@ -98,7 +114,7 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
             result = send_rsvp_waitlist_promoted_email(
                 sender=get_email_sender(),
                 details=_email_details(event, user, token.token),
-                payment_pending=payment_pending,
+                payment_pending=str(user.id) in unpaid,
             )
             if not result.success:
                 raise RuntimeError(result.error or "send returned failure")

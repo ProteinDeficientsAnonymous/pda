@@ -34,7 +34,11 @@ from community._rsvp_counts import (
     _attending_headcount_db,
     _waitlisted_count,
 )
-from community._rsvp_payment import can_see_payment_details, waitlist_promotion_needs_payment
+from community._rsvp_payment import (
+    can_see_payment_details,
+    resolve_gate_flag,
+    waitlist_promotion_needs_payment,
+)
 from community._shared import _authenticated_user, _members_only
 from community.models import (
     Event,
@@ -98,7 +102,7 @@ def _build_guest_list(
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             is_member=r.user.is_member,
-            paid_confirmed=r.paid_confirmed_at is not None if can_see_payment_status else False,
+            paid_confirmed=r.is_paid if can_see_payment_status else False,
         )
         for r in rsvps
     ]
@@ -119,7 +123,7 @@ def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
     my_rsvp = _find_my_rsvp(rsvps, user)
     if my_rsvp is None:
         return None, False
-    return my_rsvp.status, my_rsvp.paid_confirmed_at is not None
+    return my_rsvp.status, my_rsvp.is_paid
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
@@ -172,6 +176,8 @@ def promote_from_waitlist(event: Event) -> list[str]:
     if event.max_attendees is None:
         return []
     promoted_user_ids: list[str] = []
+    unpaid_user_ids: list[str] = []
+    needs_payment = waitlist_promotion_needs_payment(event)
     while True:
         headcount = _attending_headcount_db(event)
         if headcount >= event.max_attendees:
@@ -182,10 +188,10 @@ def promote_from_waitlist(event: Event) -> list[str]:
         oldest.status = RSVPStatus.ATTENDING
         oldest.save(update_fields=["status", "updated_at"])
         promoted_user_ids.append(str(oldest.user_id))
+        if needs_payment and not oldest.is_paid:
+            unpaid_user_ids.append(str(oldest.user_id))
     if promoted_user_ids:
-        create_waitlist_promoted_notifications(
-            event, promoted_user_ids, payment_pending=waitlist_promotion_needs_payment(event)
-        )
+        create_waitlist_promoted_notifications(event, promoted_user_ids, unpaid_user_ids)
     return promoted_user_ids
 
 
@@ -311,10 +317,13 @@ def _event_out(
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
     is_authed = auth_user is not None
+    gate_flag_enabled = resolve_gate_flag(gate_flag_enabled)
     show_payment = can_see_payment_details(event, is_authed, gate_flag_enabled)
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
-    payment_status_visible = auth_user is not None and auth_user.is_member
+    # Who has paid is host bookkeeping, same audience as guest phone numbers —
+    # not something the rest of the membership needs to see about each other.
+    payment_status_visible = phones_visible and gate_flag_enabled
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []

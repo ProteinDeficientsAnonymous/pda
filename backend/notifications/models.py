@@ -27,6 +27,7 @@ class NotificationType(models.TextChoices):
     COMMENT_REACTION = "comment_reaction", "Comment Reaction"
     RSVP_DECLINED_NOTE = "rsvp_declined_note", "RSVP Declined Note"
     CHECKIN_NUDGE = "checkin_nudge", "Check-in Nudge"
+    PAYMENT_REVOKED = "payment_revoked", "Payment Confirmation Revoked"
 
 
 class Notification(models.Model):

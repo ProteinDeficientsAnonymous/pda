@@ -168,7 +168,11 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         request,
         target_type="event",
         target_id=str(event.id),
-        details={"user_id": str(user.pk), "status": final_status},
+        details={
+            "user_id": str(user.pk),
+            "status": final_status,
+            "paid_confirmed": payload.paid_confirmed,
+        },
     )
     _post_rsvp_comment(event.id, user, final_status, payload.comment)
     email_error = _send_manage_rsvp_email(

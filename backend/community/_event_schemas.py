@@ -240,6 +240,10 @@ class HostRSVPIn(BaseModel):
     paid_confirmed: bool = False
 
 
+class HostRSVPPaymentIn(BaseModel):
+    paid_confirmed: bool
+
+
 class TextRecipientsOut(BaseModel):
     attending: list[str] = []
     maybe: list[str] = []
