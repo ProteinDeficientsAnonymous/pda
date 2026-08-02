@@ -2,6 +2,7 @@ from community.models import Event, EventStatus, PageVisibility, parse_event_ref
 from django.conf import settings
 from django.http import Http404
 from django.shortcuts import render
+from django.templatetags.static import static
 
 from config.media_proxy import media_path
 
@@ -13,6 +14,21 @@ _OG_DESCRIPTION_MAX = 200
 # app: public events that aren't drafts or deleted. Cancelled public events are
 # still viewable (and shareable), so they get a preview too.
 _PREVIEWABLE_STATUSES = frozenset({EventStatus.ACTIVE, EventStatus.CANCELLED})
+
+_LOGO_IMAGE = "og/pda-logo.png"
+
+# Static (non-event) public pages, keyed by their SPA slug. Only routes
+# reachable without login belong here — anything behind the EmailGate is
+# invisible to anonymous scrapers anyway (see frontend/src/router/routes.tsx).
+_STATIC_PAGES = {
+    "": ("pda", "vegan collective liberation community"),
+    "join": ("join pda", "vegan collective liberation community"),
+    "calendar": ("calendar · pda", "upcoming pda events"),
+    "donate": ("donate · pda", "support pda"),
+    "faq": ("faq · pda", "frequently asked questions"),
+    "sms-policy": ("sms policy · pda", "how pda uses text messaging"),
+    "guidelines": ("community guidelines · pda", "how we show up for each other"),
+}
 
 
 def _absolute(path: str) -> str:
@@ -57,6 +73,27 @@ def event_og_preview(request, event_id: str):
             "description": _truncate(event.description, _OG_DESCRIPTION_MAX),
             "url": url,
             "image": image,
+        },
+    )
+    response["X-Robots-Tag"] = "noindex"
+    return response
+
+
+def static_page_og_preview(request, page: str):
+    """Render OG/Twitter meta tags for a public static page (faq, guidelines, etc.)."""
+    try:
+        title, description = _STATIC_PAGES[page]
+    except KeyError:
+        raise Http404
+
+    response = render(
+        request,
+        "og/event_preview.html",
+        {
+            "title": title,
+            "description": description,
+            "url": _absolute(f"/{page}"),
+            "image": _absolute(static(_LOGO_IMAGE)),
         },
     )
     response["X-Robots-Tag"] = "noindex"
