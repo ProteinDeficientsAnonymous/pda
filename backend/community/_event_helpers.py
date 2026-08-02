@@ -34,7 +34,7 @@ from community._rsvp_counts import (
     _attending_headcount_db,
     _waitlisted_count,
 )
-from community._rsvp_payment import can_see_payment_details, event_requires_payment_confirmation
+from community._rsvp_payment import can_see_payment_details, waitlist_promotion_needs_payment
 from community._shared import _authenticated_user, _members_only
 from community.models import (
     Event,
@@ -96,19 +96,28 @@ def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGues
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             is_member=r.user.is_member,
+            paid_confirmed=r.paid_confirmed_at is not None,
         )
         for r in rsvps
     ]
 
 
-def _find_my_rsvp(rsvps, user) -> str | None:
-    """Find requesting user's RSVP status."""
+def _find_my_rsvp(rsvps, user):
+    """Find requesting user's own RSVP row."""
     if user is None:
         return None
     for r in rsvps:
         if r.user_id == user.pk:
-            return r.status
+            return r
     return None
+
+
+def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
+    """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
+    my_rsvp = _find_my_rsvp(rsvps, user)
+    if my_rsvp is None:
+        return None, False
+    return my_rsvp.status, my_rsvp.paid_confirmed_at is not None
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
@@ -173,7 +182,7 @@ def promote_from_waitlist(event: Event) -> list[str]:
         promoted_user_ids.append(str(oldest.user_id))
     if promoted_user_ids:
         create_waitlist_promoted_notifications(
-            event, promoted_user_ids, payment_pending=event_requires_payment_confirmation(event)
+            event, promoted_user_ids, payment_pending=waitlist_promotion_needs_payment(event)
         )
     return promoted_user_ids
 
@@ -309,6 +318,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     comment_count = _resolve_comment_count(event)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(rsvps, auth_user)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -341,7 +351,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
-        my_rsvp=_find_my_rsvp(rsvps, auth_user),
+        my_rsvp=my_rsvp_status,
+        my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
         visibility=event.visibility,

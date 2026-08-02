@@ -20,8 +20,8 @@ from community._cohost_invite_helpers import has_pending_cohost_invite
 from community._event_helpers import (
     _can_see_invite_only,
     _event_out,
-    _find_my_rsvp,
     _get_creator_name,
+    _my_rsvp_fields,
     _set_event_tags,
     _tags_out,
     _update_co_hosts,
@@ -49,7 +49,9 @@ from community.models import (
     Event,
     EventStatus,
     EventType,
+    FeatureFlag,
     PageVisibility,
+    flag_enabled,
     parse_event_ref,
 )
 
@@ -193,6 +195,52 @@ def _filter_invite_only(events, auth_user, status: str):
     ]
 
 
+def _event_list_out(e, auth_user, is_authed: bool, payment_gate_flag_enabled: bool) -> EventListOut:
+    show_payment = can_see_payment_details(e, is_authed, payment_gate_flag_enabled)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(e.rsvps.all(), auth_user)
+    return EventListOut(
+        id=str(e.id),
+        slug=e.slug,
+        title=e.title,
+        description=e.description,
+        start_datetime=e.start_datetime,
+        end_datetime=e.end_datetime,
+        location=e.location,
+        latitude=float(e.latitude) if e.latitude is not None else None,
+        longitude=float(e.longitude) if e.longitude is not None else None,
+        event_type=e.event_type,
+        visibility=e.visibility,
+        photo_url=media_path(e.photo),
+        photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
+        whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
+        partiful_link=_members_only(e.partiful_link, "", is_authed),
+        other_link=_members_only(e.other_link, "", is_authed),
+        price=e.price,
+        venmo_link=_members_only(e.venmo_link, "", show_payment),
+        cashapp_link=_members_only(e.cashapp_link, "", show_payment),
+        zelle_info=_members_only(e.zelle_info, "", show_payment),
+        created_by_id=str(e.created_by_id) if e.created_by_id else None,
+        created_by_name=_get_creator_name(e.created_by, auth_user),
+        created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
+        co_host_photo_urls=[media_path(c.profile_photo) for c in e.co_hosts.all()],
+        datetime_tbd=e.datetime_tbd,
+        has_poll=hasattr(e, "poll"),
+        allow_plus_ones=e.allow_plus_ones,
+        max_attendees=e.max_attendees,
+        attending_count=_attending_headcount(e),
+        waitlisted_count=_waitlisted_count(e),
+        invited_count=e.invited_users.count(),
+        comment_count=e.comment_count,
+        my_rsvp=my_rsvp_status,
+        my_paid_confirmed=my_paid_confirmed,
+        co_host_ids=[str(c.id) for c in e.co_hosts.all()],
+        co_host_names=[visible_display_name(c, auth_user) for c in e.co_hosts.all()],
+        is_past=e.is_past,
+        status=e.status,
+        tags=_tags_out(e),
+    )
+
+
 @router.get("/events/", response={200: list[EventListOut], 403: ErrorOut}, auth=_optional_jwt)
 def list_events(request, status: str = EventStatus.ACTIVE):
     auth_user = _authenticated_user(request.auth)
@@ -204,53 +252,10 @@ def list_events(request, status: str = EventStatus.ACTIVE):
     events = _filter_invite_only(
         list(_build_events_queryset(status, auth_user, is_authed)), auth_user, status
     )
+    payment_gate_flag_enabled = flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
     return Status(
         200,
-        [
-            EventListOut(
-                id=str(e.id),
-                slug=e.slug,
-                title=e.title,
-                description=e.description,
-                start_datetime=e.start_datetime,
-                end_datetime=e.end_datetime,
-                location=e.location,
-                latitude=float(e.latitude) if e.latitude is not None else None,
-                longitude=float(e.longitude) if e.longitude is not None else None,
-                event_type=e.event_type,
-                visibility=e.visibility,
-                photo_url=media_path(e.photo),
-                photo_updated_at=(e.photo_updated_at.isoformat() if e.photo_updated_at else None),
-                whatsapp_link=_members_only(e.whatsapp_link, "", is_authed),
-                partiful_link=_members_only(e.partiful_link, "", is_authed),
-                other_link=_members_only(e.other_link, "", is_authed),
-                price=e.price,
-                venmo_link=_members_only(e.venmo_link, "", can_see_payment_details(e, is_authed)),
-                cashapp_link=_members_only(
-                    e.cashapp_link, "", can_see_payment_details(e, is_authed)
-                ),
-                zelle_info=_members_only(e.zelle_info, "", can_see_payment_details(e, is_authed)),
-                created_by_id=str(e.created_by_id) if e.created_by_id else None,
-                created_by_name=_get_creator_name(e.created_by, auth_user),
-                created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",
-                co_host_photo_urls=[media_path(c.profile_photo) for c in e.co_hosts.all()],
-                datetime_tbd=e.datetime_tbd,
-                has_poll=hasattr(e, "poll"),
-                allow_plus_ones=e.allow_plus_ones,
-                max_attendees=e.max_attendees,
-                attending_count=_attending_headcount(e),
-                waitlisted_count=_waitlisted_count(e),
-                invited_count=e.invited_users.count(),
-                comment_count=e.comment_count,
-                my_rsvp=_find_my_rsvp(e.rsvps.all(), auth_user),
-                co_host_ids=[str(c.id) for c in e.co_hosts.all()],
-                co_host_names=[visible_display_name(c, auth_user) for c in e.co_hosts.all()],
-                is_past=e.is_past,
-                status=e.status,
-                tags=_tags_out(e),
-            )
-            for e in events
-        ],
+        [_event_list_out(e, auth_user, is_authed, payment_gate_flag_enabled) for e in events],
     )
 
 

@@ -57,6 +57,7 @@ class TestBuildGuestList:
             has_plus_one=False,
             attendance=AttendanceStatus.UNKNOWN,
             checked_in_at=None,
+            paid_confirmed_at=None,
         )
 
     def test_empty_rsvps(self):
@@ -94,9 +95,12 @@ class TestFindMyRsvp:
         user = SimpleNamespace(pk="u2")
         assert _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.ATTENDING)], user) is None
 
-    def test_returns_status_when_user_found(self):
+    def test_returns_row_when_user_found(self):
         user = SimpleNamespace(pk="u1")
-        assert _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.MAYBE)], user) == RSVPStatus.MAYBE
+        assert (
+            _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.MAYBE)], user).status
+            == RSVPStatus.MAYBE
+        )
 
     def test_returns_first_match(self):
         user = SimpleNamespace(pk="u1")
@@ -104,4 +108,4 @@ class TestFindMyRsvp:
             self._make_rsvp("u1", RSVPStatus.ATTENDING),
             self._make_rsvp("u1", RSVPStatus.MAYBE),
         ]
-        assert _find_my_rsvp(rsvps, user) == RSVPStatus.ATTENDING
+        assert _find_my_rsvp(rsvps, user).status == RSVPStatus.ATTENDING

@@ -135,12 +135,15 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
 def _resolve_paid_confirmed_at(existing: EventRSVP | None, paid_confirmed: bool, final_status: str):
     """Preserve an earlier confirmation; stamp a new one only on a fresh confirm.
 
-    Only attending stamps: otherwise `paid_confirmed` on an ungated status (maybe,
-    can't go) would bank a stamp that disarms the gate on a later attending write.
+    Attending or waitlisted both stamp: at capacity an attending request
+    resolves to waitlisted, but it was still a gated, confirmed write and must
+    keep its stamp through promotion. Maybe/can't-go are ungated statuses —
+    `paid_confirmed` there must not bank a stamp that disarms a later
+    attending write (see requires_payment_gate).
     """
     if existing is not None and existing.paid_confirmed_at is not None:
         return existing.paid_confirmed_at
-    if paid_confirmed and final_status == RSVPStatus.ATTENDING:
+    if paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
         return timezone.now()
     return None
 
@@ -167,20 +170,26 @@ def _apply_rsvp_in_transaction(
 
     _validate_rsvp_access(user, event)
 
-    final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
-
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     created = existing is None
+
+    # Gate on the *requested* status, before capacity resolution downgrades it:
+    # an unconfirmed attending request at capacity must still be blocked here,
+    # not silently queued as an unconfirmed waitlist row for later promotion.
+    if not paid_confirmed and requires_payment_gate(event, existing, status):
+        raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
+
+    final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
+
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
-
-    if not paid_confirmed and requires_payment_gate(event, existing, final_status):
-        raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
+    new_paid_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
 
     if (
         existing is not None
         and existing.status == final_status
         and existing.has_plus_one == final_plus_one
+        and existing.paid_confirmed_at == new_paid_confirmed_at
     ):
         return final_status, [], False
 
@@ -191,7 +200,7 @@ def _apply_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
-            "paid_confirmed_at": _resolve_paid_confirmed_at(existing, paid_confirmed, final_status),
+            "paid_confirmed_at": new_paid_confirmed_at,
         },
     )
 

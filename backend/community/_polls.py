@@ -316,6 +316,10 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             "user_id", flat=True
         )
         for user_id in yes_voter_ids:
+            # paid_confirmed_at deliberately omitted from defaults: update_or_create
+            # only touches listed fields on an update, so an existing stamp survives,
+            # and a new row defaults to unconfirmed — the payment gate still applies
+            # on that voter's next write, same as a waitlist-promoted attendee.
             EventRSVP.objects.update_or_create(
                 event=event,
                 user_id=user_id,

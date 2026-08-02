@@ -17,6 +17,7 @@ from community._event_helpers import (
 )
 from community._event_rsvps import (
     _resolve_cancelled_at,
+    _resolve_paid_confirmed_at,
     _resolve_rsvp_status,
     _validate_rsvp_status,
 )
@@ -31,13 +32,16 @@ router = Router()
 
 
 def _apply_host_rsvp_in_transaction(
-    event_id, target_user, status: str, has_plus_one: bool
+    event_id, target_user, status: str, has_plus_one: bool, paid_confirmed: bool = False
 ) -> tuple[str, list[str]]:
     """Execute a host-driven RSVP upsert for another user inside a locked transaction.
 
     Unlike _apply_rsvp_in_transaction, access is already gated on the acting
     host (_can_edit_event) by the caller — this only enforces that the event
-    still accepts RSVPs, not the target user's own read-visibility.
+    still accepts RSVPs, not the target user's own read-visibility. The gate
+    itself never applies here: a host seating a guest (e.g. paid in cash at
+    the door) is inherently a manual override, so paid_confirmed just lets the
+    host stamp it instead of leaving the guest gated on their next write.
 
     Returns (final_status, promoted_user_ids). Raises ValidationException on failure.
     """
@@ -57,11 +61,13 @@ def _apply_host_rsvp_in_transaction(
     existing = EventRSVP.objects.filter(event=event, user=target_user).first()
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
+    new_paid_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
 
     if (
         existing is not None
         and existing.status == final_status
         and existing.has_plus_one == final_plus_one
+        and existing.paid_confirmed_at == new_paid_confirmed_at
     ):
         return final_status, []
 
@@ -72,6 +78,7 @@ def _apply_host_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
+            "paid_confirmed_at": new_paid_confirmed_at,
         },
     )
 
@@ -111,7 +118,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
 
     with transaction.atomic():
         final_status, promoted_user_ids = _apply_host_rsvp_in_transaction(
-            event_id, target_user, payload.status, payload.has_plus_one
+            event_id, target_user, payload.status, payload.has_plus_one, payload.paid_confirmed
         )
 
     audit_log(
