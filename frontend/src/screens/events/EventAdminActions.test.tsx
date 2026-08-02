@@ -111,11 +111,10 @@ describe('EventAdminActions', () => {
     expect(screen.queryByRole('button', { name: /delete$/i })).not.toBeInTheDocument();
   });
 
-  it('creator sees no cancel button for a past event', () => {
+  it('creator sees no cancel button for an already-cancelled event', () => {
     const creator = makeUser(CREATOR_ID);
     useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
 
-    // isPast doesn't affect cancel — cancelled status does. Test cancelled event.
     const cancelledEvent: Event = { ...BASE_EVENT, status: EventStatus.Cancelled };
     renderActions(cancelledEvent);
 
@@ -123,6 +122,20 @@ describe('EventAdminActions', () => {
     expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /delete$/i })).toBeInTheDocument();
+  });
+
+  it('creator sees no cancel button for a past (ended) event', () => {
+    const creator = makeUser(CREATOR_ID);
+    useAuthStore.setState({ status: 'authed', user: creator, accessToken: 'tok' });
+
+    const pastEvent: Event = {
+      ...BASE_EVENT,
+      startDatetime: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      isPast: true,
+    };
+    renderActions(pastEvent);
+
+    expect(screen.queryByRole('button', { name: /cancel event/i })).not.toBeInTheDocument();
   });
 
   it('regular member (not creator, not co-host) sees no admin action buttons', () => {
