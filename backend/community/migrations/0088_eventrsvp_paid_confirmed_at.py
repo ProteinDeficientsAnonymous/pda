@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('community', '0087_alter_eventrsvp_options'),
+        ("community", "0087_alter_eventrsvp_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='eventrsvp',
-            name='paid_confirmed_at',
+            model_name="eventrsvp",
+            name="paid_confirmed_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

@@ -295,6 +295,9 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
     is_authed = auth_user is not None
+    # Payment details are wider than the other member-only links: a stranger who
+    # can publicly RSVP has to be able to see how to pay.
+    show_payment = is_authed or event.is_public_rsvp_eligible
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
@@ -319,9 +322,9 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         partiful_link=_members_only(event.partiful_link, "", is_authed),
         other_link=_members_only(event.other_link, "", is_authed),
         price=event.price,
-        venmo_link=_members_only(event.venmo_link, "", is_authed),
-        cashapp_link=_members_only(event.cashapp_link, "", is_authed),
-        zelle_info=_members_only(event.zelle_info, "", is_authed),
+        venmo_link=_members_only(event.venmo_link, "", show_payment),
+        cashapp_link=_members_only(event.cashapp_link, "", show_payment),
+        zelle_info=_members_only(event.zelle_info, "", show_payment),
         rsvp_enabled=event.rsvp_enabled,
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
