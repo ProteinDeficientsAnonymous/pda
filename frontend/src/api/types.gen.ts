@@ -4124,6 +4124,13 @@ export interface components {
         };
         /** PublicRsvpIn */
         PublicRsvpIn: {
+            /**
+             * Answers
+             * @description Question UUID to answer; multiselect values are comma-separated.
+             */
+            answers?: {
+                [key: string]: string;
+            };
             /** Comment */
             comment?: string | null;
             /**
@@ -4155,6 +4162,13 @@ export interface components {
         };
         /** PublicRsvpManageIn */
         PublicRsvpManageIn: {
+            /**
+             * Answers
+             * @description Question UUID to answer; omit or send null to preserve saved answers.
+             */
+            answers?: {
+                [key: string]: string;
+            } | null;
             /** Comment */
             comment?: string | null;
             /**
@@ -9624,6 +9638,15 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
             /** @description Too Many Requests */
             429: {
                 headers: {
@@ -9745,6 +9768,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

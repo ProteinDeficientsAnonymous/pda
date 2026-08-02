@@ -20,6 +20,7 @@ from community._event_rsvps import (
     _post_rsvp_comment,
     _validate_rsvp_status,
 )
+from community._event_schemas import RsvpAnswer
 from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
     PublicRsvpOut,
@@ -44,6 +45,10 @@ class PublicRsvpIn(BaseModel):
     status: str = Field(max_length=FieldLimit.CHOICE)
     has_plus_one: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
+    answers: dict[str, RsvpAnswer] = Field(
+        default_factory=dict,
+        description="Question UUID to answer; multiselect values are comma-separated.",
+    )
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)
 
@@ -203,7 +208,14 @@ def check_public_rsvp_phone(request, event_id, payload: PublicRsvpPhoneCheckIn):
 
 @router.post(
     "/public/events/{event_id}/rsvp/",
-    response={200: PublicRsvpOut, 400: ErrorOut, 404: ErrorOut, 409: ErrorOut, 429: ErrorOut},
+    response={
+        200: PublicRsvpOut,
+        400: ErrorOut,
+        404: ErrorOut,
+        409: ErrorOut,
+        422: ErrorOut,
+        429: ErrorOut,
+    },
     auth=None,
 )
 @rate_limit(key_func=client_ip, rate="5/h")
@@ -239,7 +251,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             phone=validated_phone,
         )
         final_status, promoted_user_ids, _rsvp_created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False
+            event.id, user, payload.status, False, answers=payload.answers
         )
         token = NonMemberRsvpToken.issue_or_extend(user)
 

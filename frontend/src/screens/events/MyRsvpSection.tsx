@@ -81,6 +81,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           eventId: event.id,
           status: args.status,
           hasPlusOne: args.hasPlusOne,
+          answers: args.answers,
           ...(args.comment !== undefined ? { comment: args.comment } : {}),
         });
       } else {
@@ -169,7 +170,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           allowComment={Boolean(token) || box.mode === 'create'}
           atCapacity={atCapacity}
           busy={busy}
-          questions={token ? [] : event.rsvpQuestions}
+          questions={event.rsvpQuestions}
           initialAnswers={Object.fromEntries(
             Object.entries(event.myRsvpAnswers).map(([id, snap]) => [id, snap.answer]),
           )}
