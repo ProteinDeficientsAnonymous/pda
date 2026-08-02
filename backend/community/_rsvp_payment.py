@@ -10,11 +10,18 @@ def event_requires_payment_confirmation(event: Event) -> bool:
     return has_price and has_payment_method
 
 
+def can_see_payment_details(event: Event, is_authed: bool) -> bool:
+    """Payment details are wider than the other member-only links: a stranger who
+    can publicly rsvp has to be able to see how to pay."""
+    return is_authed or event.is_public_rsvp_eligible
+
+
 def requires_payment_gate(event: Event, existing: EventRSVP | None, final_status: str) -> bool:
     """True when this RSVP write must carry a payment confirmation.
 
-    Fires only on a transition *into* attending, so an already-attending member
-    toggling a +1 or saving a comment is never re-prompted.
+    Keyed on the stamp, not the status transition: waitlist promotion seats a
+    row as attending without ever passing this gate, so "already attending"
+    cannot be treated as proof of payment.
     """
     if not flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION):
         return False
@@ -22,6 +29,4 @@ def requires_payment_gate(event: Event, existing: EventRSVP | None, final_status
         return False
     if not event_requires_payment_confirmation(event):
         return False
-    if existing is not None and existing.paid_confirmed_at is not None:
-        return False
-    return existing is None or existing.status != RSVPStatus.ATTENDING
+    return existing is None or existing.paid_confirmed_at is None

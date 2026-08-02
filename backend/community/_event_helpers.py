@@ -34,6 +34,7 @@ from community._rsvp_counts import (
     _attending_headcount_db,
     _waitlisted_count,
 )
+from community._rsvp_payment import can_see_payment_details, event_requires_payment_confirmation
 from community._shared import _authenticated_user, _members_only
 from community.models import (
     Event,
@@ -171,7 +172,9 @@ def promote_from_waitlist(event: Event) -> list[str]:
         oldest.save(update_fields=["status", "updated_at"])
         promoted_user_ids.append(str(oldest.user_id))
     if promoted_user_ids:
-        create_waitlist_promoted_notifications(event, promoted_user_ids)
+        create_waitlist_promoted_notifications(
+            event, promoted_user_ids, payment_pending=event_requires_payment_confirmation(event)
+        )
     return promoted_user_ids
 
 
@@ -295,9 +298,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
     is_authed = auth_user is not None
-    # Payment details are wider than the other member-only links: a stranger who
-    # can publicly RSVP has to be able to see how to pay.
-    show_payment = is_authed or event.is_public_rsvp_eligible
+    show_payment = can_see_payment_details(event, is_authed)
     co_host_ids = {str(u.id) for u in co_hosts}
     phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []

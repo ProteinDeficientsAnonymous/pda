@@ -42,6 +42,7 @@ from community._event_transitions import (
 )
 from community._event_viewer import resolve_event_viewer
 from community._rsvp_counts import _attending_headcount, _waitlisted_count
+from community._rsvp_payment import can_see_payment_details
 from community._shared import ErrorOut, _authenticated_user, _members_only, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
@@ -224,9 +225,11 @@ def list_events(request, status: str = EventStatus.ACTIVE):
                 partiful_link=_members_only(e.partiful_link, "", is_authed),
                 other_link=_members_only(e.other_link, "", is_authed),
                 price=e.price,
-                venmo_link=_members_only(e.venmo_link, "", is_authed),
-                cashapp_link=_members_only(e.cashapp_link, "", is_authed),
-                zelle_info=_members_only(e.zelle_info, "", is_authed),
+                venmo_link=_members_only(e.venmo_link, "", can_see_payment_details(e, is_authed)),
+                cashapp_link=_members_only(
+                    e.cashapp_link, "", can_see_payment_details(e, is_authed)
+                ),
+                zelle_info=_members_only(e.zelle_info, "", can_see_payment_details(e, is_authed)),
                 created_by_id=str(e.created_by_id) if e.created_by_id else None,
                 created_by_name=_get_creator_name(e.created_by, auth_user),
                 created_by_photo_url=media_path(e.created_by.profile_photo) if e.created_by else "",

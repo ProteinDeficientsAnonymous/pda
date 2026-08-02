@@ -66,9 +66,10 @@ def send_rsvp_waitlist_promoted_email(
     *,
     sender: EmailSender,
     details: RsvpEmailDetails,
+    payment_pending: bool = False,
 ) -> SendResult:
     """Render and send the non-member "you're off the waitlist" email."""
-    context = details.template_context()
+    context = {**details.template_context(), "payment_pending": payment_pending}
     html = render_to_string("emails/rsvp_waitlist_promoted.html", context)
     text = render_to_string("emails/rsvp_waitlist_promoted.txt", context)
     return sender.send(

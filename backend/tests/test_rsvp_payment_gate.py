@@ -16,6 +16,7 @@ from community.models import (
     PageVisibility,
     RSVPStatus,
 )
+from django.utils import timezone
 from users.models import NonMemberRsvpToken
 
 from tests._asserts import assert_error_code
@@ -92,12 +93,18 @@ class TestRequiresPaymentGate:
         existing = EventRSVP(status=RSVPStatus.MAYBE)
         assert requires_payment_gate(make_event(), existing, RSVPStatus.ATTENDING) is True
 
-    def test_already_attending_does_not_regate(self):
+    def test_attending_but_unconfirmed_still_gates(self):
+        """Waitlist promotion seats a row as attending without a confirmation, so
+        attending is not proof of payment."""
         existing = EventRSVP(status=RSVPStatus.ATTENDING)
-        assert requires_payment_gate(make_event(), existing, RSVPStatus.ATTENDING) is False
+        assert requires_payment_gate(make_event(), existing, RSVPStatus.ATTENDING) is True
 
     def test_already_confirmed_does_not_regate(self):
-        existing = EventRSVP(status=RSVPStatus.MAYBE, paid_confirmed_at=future_iso(days=0))
+        existing = EventRSVP(status=RSVPStatus.ATTENDING, paid_confirmed_at=timezone.now())
+        assert requires_payment_gate(make_event(), existing, RSVPStatus.ATTENDING) is False
+
+    def test_confirmed_on_earlier_status_does_not_regate(self):
+        existing = EventRSVP(status=RSVPStatus.MAYBE, paid_confirmed_at=timezone.now())
         assert requires_payment_gate(make_event(), existing, RSVPStatus.ATTENDING) is False
 
     def test_free_event_never_gates(self):
@@ -161,9 +168,29 @@ class TestMemberRsvpPaymentGate:
         assert response.status_code == 200
         assert EventRSVP.objects.get(event=paid_event).paid_confirmed_at is None
 
-    def test_already_attending_can_toggle_plus_one_without_confirmation(
+    def test_confirmed_attendee_can_toggle_plus_one_without_reconfirming(
         self, api_client, paid_event, auth_headers, test_user
     ):
+        paid_event.allow_plus_ones = True
+        paid_event.save(update_fields=["allow_plus_ones"])
+        EventRSVP.objects.create(
+            event=paid_event,
+            user=test_user,
+            status=RSVPStatus.ATTENDING,
+            paid_confirmed_at=timezone.now(),
+        )
+        response = api_client.post(
+            RSVP_URL.format(event_id=paid_event.id),
+            {"status": RSVPStatus.ATTENDING, "has_plus_one": True},
+            content_type="application/json",
+            **auth_headers,
+        )
+        assert response.status_code == 200
+
+    def test_unconfirmed_attendee_is_gated_on_next_write(
+        self, api_client, paid_event, auth_headers, test_user
+    ):
+        """A row seated by waitlist promotion carries no stamp and must still gate."""
         paid_event.allow_plus_ones = True
         paid_event.save(update_fields=["allow_plus_ones"])
         EventRSVP.objects.create(event=paid_event, user=test_user, status=RSVPStatus.ATTENDING)
@@ -173,7 +200,8 @@ class TestMemberRsvpPaymentGate:
             content_type="application/json",
             **auth_headers,
         )
-        assert response.status_code == 200
+        assert response.status_code == 400
+        assert_error_code(response, Code.Event.PAYMENT_CONFIRMATION_REQUIRED)
 
     def test_confirmation_persists_across_later_status_changes(
         self, api_client, paid_event, auth_headers

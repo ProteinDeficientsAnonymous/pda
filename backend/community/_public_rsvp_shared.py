@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from users.models import NonMemberRsvpToken, User
 
 from community._event_schemas import EventOut
+from community._rsvp_payment import event_requires_payment_confirmation
 from community._shared import logger
 from community._validation import Code, raise_validation
 from community.models import Event
@@ -87,6 +88,8 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
     if not promoted_user_ids:
         return
     promoted = User.objects.filter(id__in=promoted_user_ids, is_member=False, email__isnull=False)
+    # Promotion never carries a confirmation, so on a paid event the seat is provisional.
+    payment_pending = event_requires_payment_confirmation(event)
     for user in promoted:
         if not user.email:
             continue
@@ -95,6 +98,7 @@ def _email_promoted_non_members(request, event: Event, promoted_user_ids: list[s
             result = send_rsvp_waitlist_promoted_email(
                 sender=get_email_sender(),
                 details=_email_details(event, user, token.token),
+                payment_pending=payment_pending,
             )
             if not result.success:
                 raise RuntimeError(result.error or "send returned failure")
