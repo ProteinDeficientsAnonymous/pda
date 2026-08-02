@@ -7,7 +7,6 @@ interface Props {
   label: string;
   value: string | null;
   onChange: (iso: string | null) => void;
-  disabled?: boolean;
   error?: string | undefined;
   optional?: boolean;
   min?: string | null;
@@ -25,7 +24,7 @@ function dateToIso(date: Date, hours: number, minutes: number): string {
   return copy.toISOString();
 }
 
-export function DateTimePicker({ label, value, onChange, disabled, error, optional, min }: Props) {
+export function DateTimePicker({ label, value, onChange, error, optional, min }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const selectedDate = isoToDate(value);
@@ -83,9 +82,8 @@ export function DateTimePicker({ label, value, onChange, disabled, error, option
 
       <button
         type="button"
-        disabled={disabled}
         onClick={() => {
-          if (!disabled) setOpen((v) => !v);
+          setOpen((v) => !v);
         }}
         aria-expanded={open}
         className={[
@@ -94,7 +92,6 @@ export function DateTimePicker({ label, value, onChange, disabled, error, option
             ? 'border-brand-200 bg-brand-50 text-brand-900 font-medium'
             : 'border-border-strong bg-surface text-muted-foreground',
           error && 'border-destructive bg-destructive-subtle text-destructive',
-          disabled && 'bg-surface-dim text-muted-foreground',
         ].join(' ')}
       >
         {display || 'pick a date & time'}
