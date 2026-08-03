@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -84,7 +84,7 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
         logging.INFO,
         "join_form_question_created",
         request,
-        target_type="join_form_question",
+        target_type=AuditTargetType.JOIN_FORM_QUESTION,
         target_id=str(q.id),
         details={"label": q.label},
     )
@@ -126,7 +126,7 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="join_form_question",
+            target_type=AuditTargetType.JOIN_FORM_QUESTION,
             target_id=str(question_id),
             details={
                 "endpoint": "update_join_form_question",
@@ -147,7 +147,7 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
         logging.INFO,
         "join_form_question_updated",
         request,
-        target_type="join_form_question",
+        target_type=AuditTargetType.JOIN_FORM_QUESTION,
         target_id=str(question_id),
         details={"label": q.label},
     )
@@ -165,7 +165,7 @@ def delete_join_form_question(request, question_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="join_form_question",
+            target_type=AuditTargetType.JOIN_FORM_QUESTION,
             target_id=str(question_id),
             details={
                 "endpoint": "delete_join_form_question",
@@ -183,7 +183,7 @@ def delete_join_form_question(request, question_id: UUID):
         logging.INFO,
         "join_form_question_deleted",
         request,
-        target_type="join_form_question",
+        target_type=AuditTargetType.JOIN_FORM_QUESTION,
         target_id=str(question_id),
         details={"label": label},
     )

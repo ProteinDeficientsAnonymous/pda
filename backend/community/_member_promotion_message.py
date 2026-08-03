@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -70,6 +70,6 @@ def update_member_promotion_message(request, payload: MemberPromotionMessagePatc
         logging.INFO,
         "member_promotion_message_updated",
         request,
-        target_type="member_promotion_message",
+        target_type=AuditTargetType.MEMBER_PROMOTION_MESSAGE,
     )
     return Status(200, _out(template))

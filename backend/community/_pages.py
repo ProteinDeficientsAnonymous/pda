@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.contrib.auth.models import AnonymousUser
 from ninja import Router
@@ -68,7 +68,7 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="editable_page",
+            target_type=AuditTargetType.EDITABLE_PAGE,
             target_id=slug,
             details={
                 "endpoint": "update_page",
@@ -103,7 +103,7 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
         logging.INFO,
         "page_updated",
         request,
-        target_type="editable_page",
+        target_type=AuditTargetType.EDITABLE_PAGE,
         target_id=slug,
         details={"slug": slug, "fields_changed": changed},
     )

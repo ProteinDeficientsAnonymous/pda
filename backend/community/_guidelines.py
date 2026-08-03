@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -74,7 +74,7 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
         logging.INFO,
         "guidelines_updated",
         request,
-        target_type="guidelines",
+        target_type=AuditTargetType.GUIDELINES,
         details={"format": "prosemirror"},
     )
     return Status(200, _singleton_out(g))
@@ -101,7 +101,7 @@ def update_faq(request, payload: GuidelinesPatchIn):
         logging.INFO,
         "faq_updated",
         request,
-        target_type="faq",
+        target_type=AuditTargetType.FAQ,
         details={"format": "prosemirror"},
     )
     return Status(200, _singleton_out(f))

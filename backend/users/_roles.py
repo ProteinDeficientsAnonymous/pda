@@ -3,7 +3,7 @@
 import logging
 
 from community._validation import Code, raise_validation
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db.models import Count, Q
 from ninja import Router
@@ -74,7 +74,7 @@ def create_role(request, payload: RoleIn):
         logging.INFO,
         "role_created",
         request,
-        target_type="role",
+        target_type=AuditTargetType.ROLE,
         target_id=str(role.id),
         details={"name": role.name, "permissions": role.permissions},
     )
@@ -100,7 +100,7 @@ def update_role(request, role_id: str, payload: RolePatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="role",
+            target_type=AuditTargetType.ROLE,
             target_id=role_id,
             details={"endpoint": "update_role", "required_permission": PermissionKey.MANAGE_ROLES},
         )
@@ -133,7 +133,7 @@ def update_role(request, role_id: str, payload: RolePatchIn):
         logging.WARNING,
         "role_updated",
         request,
-        target_type="role",
+        target_type=AuditTargetType.ROLE,
         target_id=role_id,
         details={
             "old_name": old_name,
@@ -164,7 +164,7 @@ def delete_role(request, role_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="role",
+            target_type=AuditTargetType.ROLE,
             target_id=role_id,
             details={"endpoint": "delete_role", "required_permission": PermissionKey.MANAGE_ROLES},
         )
@@ -182,7 +182,7 @@ def delete_role(request, role_id: str):
         logging.WARNING,
         "role_deleted",
         request,
-        target_type="role",
+        target_type=AuditTargetType.ROLE,
         target_id=role_id,
         details={"name": role_name, "affected_user_count": affected_user_count},
     )

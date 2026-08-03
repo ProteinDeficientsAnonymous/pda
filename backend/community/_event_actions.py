@@ -2,7 +2,7 @@ import logging
 import time
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.utils import timezone
@@ -56,7 +56,7 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="event",
+            target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "upload_event_photo"},
         )
@@ -72,6 +72,10 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
     event.photo_updated_at = timezone.now()
     event.save(update_fields=["photo", "photo_updated_at"])
     audit_log(
-        logging.INFO, "event_photo_uploaded", request, target_type="event", target_id=str(event_id)
+        logging.INFO,
+        "event_photo_uploaded",
+        request,
+        target_type=AuditTargetType.EVENT,
+        target_id=str(event_id),
     )
     return Status(200, _event_out(event, request.auth))

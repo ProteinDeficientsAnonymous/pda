@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -79,7 +79,7 @@ def update_home(request, payload: HomePagePatchIn):
         logging.INFO,
         "homepage_updated",
         request,
-        target_type="homepage",
+        target_type=AuditTargetType.HOMEPAGE,
         details={"fields_changed": changed},
     )
     return Status(200, _home_out(h))

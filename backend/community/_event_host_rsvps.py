@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
@@ -118,7 +118,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
         logging.INFO,
         "guest_rsvp_changed",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
         details={"user_id": str(user_id), "status": final_status},
     )
@@ -161,7 +161,7 @@ def remove_guest_rsvp(request, event_id: UUID, user_id: UUID):
         logging.INFO,
         "guest_rsvp_removed",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
         details={"user_id": str(user_id)},
     )
