@@ -149,6 +149,24 @@ def _resolve_paid_confirmed_at(
     return None
 
 
+def payment_audit_details(event_id, user_id) -> dict:
+    """Audit fields describing the payment stamp actually stored for this rsvp.
+
+    Read back from the row rather than echoing the request payload — a
+    `paid_confirmed: true` on an already-stamped or ungated write changes
+    nothing, and the audit trail has to record what happened, not what was asked.
+    """
+    stamped_at = (
+        EventRSVP.objects.filter(event_id=event_id, user_id=user_id)
+        .values_list("paid_confirmed_at", flat=True)
+        .first()
+    )
+    return {
+        "paid_confirmed": stamped_at is not None,
+        "paid_confirmed_at": stamped_at.isoformat() if stamped_at else None,
+    }
+
+
 def _apply_rsvp_in_transaction(
     event_id, user, status: str, has_plus_one: bool, paid_confirmed: bool = False
 ) -> tuple[str, list[str], bool]:
@@ -238,7 +256,10 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         request,
         target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
-        details={"status": final_status},
+        details={
+            "status": final_status,
+            **payment_audit_details(event_id, request.auth.pk),
+        },
     )
     event = load_event_with_stats_prefetch(event_id)
     if event is None:

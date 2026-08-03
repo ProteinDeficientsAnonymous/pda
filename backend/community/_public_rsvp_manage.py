@@ -18,6 +18,7 @@ from community._event_rsvps import (
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
     _validate_rsvp_status,
+    payment_audit_details,
 )
 from community._event_schemas import EventOut
 from community._field_limits import FieldLimit
@@ -171,7 +172,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         details={
             "user_id": str(user.pk),
             "status": final_status,
-            "paid_confirmed": payload.paid_confirmed,
+            **payment_audit_details(event.id, user.pk),
         },
     )
     sent_decline_note = _post_rsvp_comment(event.id, user, final_status, payload.comment)

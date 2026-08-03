@@ -22,6 +22,7 @@ from community._event_rsvps import (
     _resolve_paid_confirmed_at,
     _resolve_rsvp_status,
     _validate_rsvp_status,
+    payment_audit_details,
 )
 from community._event_schemas import EventOut, HostRSVPIn, HostRSVPPaymentIn
 from community._events import _can_edit_event
@@ -122,7 +123,7 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
         details={
             "user_id": str(user_id),
             "status": final_status,
-            "paid_confirmed": payload.paid_confirmed,
+            **payment_audit_details(event_id, user_id),
         },
     )
     event = load_event_with_stats_prefetch(event_id)
@@ -173,15 +174,20 @@ def set_guest_payment(request, event_id: UUID, user_id: UUID, payload: HostRSVPP
     with transaction.atomic():
         was_paid = _apply_payment_change_in_transaction(event_id, user_id, payload.paid_confirmed)
 
+    is_revoke = was_paid and not payload.paid_confirmed
     audit_log(
         logging.INFO,
-        "guest_payment_changed",
+        "guest_payment_revoked" if is_revoke else "guest_payment_changed",
         request,
         target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
-        details={"user_id": str(user_id), "paid_confirmed": payload.paid_confirmed},
+        details={
+            "user_id": str(user_id),
+            "was_paid": was_paid,
+            **payment_audit_details(event_id, user_id),
+        },
     )
-    if was_paid and not payload.paid_confirmed:
+    if is_revoke:
         create_payment_revoked_notification(event, str(user_id))
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
