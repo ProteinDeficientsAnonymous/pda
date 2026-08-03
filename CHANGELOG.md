@@ -1,3 +1,10 @@
+# [0.78.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.77.0...v0.78.0) (2026-08-03)
+
+
+### Features
+
+* 1045 - enforce payment confirmation on rsvp write paths (2/6) ([#1225](https://github.com/ProteinDeficientsAnonymous/pda/issues/1225)) ([94e5a2f](https://github.com/ProteinDeficientsAnonymous/pda/commit/94e5a2fff8137ee99402ab67990ca0c69d5e4f94))
+
 # [0.77.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.76.1...v0.77.0) (2026-08-03)
 
 
