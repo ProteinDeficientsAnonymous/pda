@@ -34,7 +34,7 @@ from community._rsvp_counts import (
     _attending_headcount_db,
     _waitlisted_count,
 )
-from community._rsvp_payment import can_see_payment_details
+from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
 from community._shared import _authenticated_user, _gated
 from community.models import (
     Event,
@@ -172,6 +172,8 @@ def promote_from_waitlist(event: Event) -> list[str]:
     if event.max_attendees is None:
         return []
     promoted_user_ids: list[str] = []
+    unpaid_user_ids: list[str] = []
+    needs_payment = payment_enforced_for_event(event)
     while True:
         headcount = _attending_headcount_db(event)
         if headcount >= event.max_attendees:
@@ -182,8 +184,10 @@ def promote_from_waitlist(event: Event) -> list[str]:
         oldest.status = RSVPStatus.ATTENDING
         oldest.save(update_fields=["status", "updated_at"])
         promoted_user_ids.append(str(oldest.user_id))
+        if needs_payment and oldest.paid_confirmed_at is None:
+            unpaid_user_ids.append(str(oldest.user_id))
     if promoted_user_ids:
-        create_waitlist_promoted_notifications(event, promoted_user_ids)
+        create_waitlist_promoted_notifications(event, promoted_user_ids, unpaid_user_ids)
     return promoted_user_ids
 
 
