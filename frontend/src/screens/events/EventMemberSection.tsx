@@ -5,6 +5,7 @@ import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
 import { spotsLeft } from '@/models/event';
+import { formatPrice } from '@/utils/eventCost';
 import { buildEventLinks } from '@/utils/eventLinks';
 import { ensureHttps } from '@/utils/url';
 
@@ -190,17 +191,6 @@ export function CostSection({ event }: { event: Event }) {
       </ul>
     </Card>
   );
-}
-
-// "free" stays bare. Anything that starts with a digit gets "$" prepended
-// unless the user already typed one. Anything else (e.g. "sliding scale")
-// passes through as-written.
-function formatPrice(price: string): string {
-  const trimmed = price.trim();
-  if (!trimmed) return trimmed;
-  if (/^\$/.test(trimmed)) return trimmed;
-  if (/^\d/.test(trimmed)) return `$${trimmed}`;
-  return trimmed;
 }
 
 function InviteSection({ event }: { event: Event }) {
