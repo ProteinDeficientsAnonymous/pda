@@ -1,6 +1,8 @@
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
+import { DEFAULT_RSVP_QUESTION_TYPE } from '@/api/eventRsvpQuestions';
+import { questionOptionsError } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
@@ -33,7 +35,7 @@ export function EventRsvpQuestionDialog(props: Props) {
 function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props) {
   const [label, setLabel] = useState(() => existing?.label ?? '');
   const [fieldType, setFieldType] = useState<RsvpQuestionType>(
-    () => existing?.fieldType ?? 'textarea',
+    () => existing?.fieldType ?? DEFAULT_RSVP_QUESTION_TYPE,
   );
   const [required, setRequired] = useState(() => existing?.required ?? false);
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
@@ -47,9 +49,11 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
       setError('question required');
       return;
     }
-    const options = wantsOptions(fieldType) ? parseOptionsText(optionsText) : [];
-    if (wantsOptions(fieldType) && options.length === 0) {
-      setError('add at least one option');
+    const needsOptions = wantsOptions(fieldType);
+    const options = needsOptions ? parseOptionsText(optionsText) : [];
+    const optionsError = questionOptionsError(needsOptions, options);
+    if (optionsError) {
+      setError(optionsError);
       return;
     }
     if (options.some((option) => option.length > MAX_OPTION_LENGTH)) {
