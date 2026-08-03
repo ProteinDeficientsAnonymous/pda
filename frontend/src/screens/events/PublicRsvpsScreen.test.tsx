@@ -32,6 +32,8 @@ vi.mock('@/api/publicRsvp', () => ({
   useResendPublicRsvpManageLink: () => useResendPublicRsvpManageLink() as unknown,
 }));
 
+vi.mock('@/api/featureFlags', () => ({ useFlag: () => false }));
+
 // jsdom's default Storage isn't wired up for get/set round-trips — stub a real one.
 const storageMock = (() => {
   let store: Record<string, string> = {};

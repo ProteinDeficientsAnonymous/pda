@@ -18,7 +18,6 @@ vi.mock('@/api/publicRsvp', () => ({
 const mockUseFlag = vi.hoisted(() => vi.fn(() => true));
 vi.mock('@/api/featureFlags', () => ({ useFlag: mockUseFlag }));
 
-
 function renderCard(props: { status: string; event?: Partial<Event> }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
