@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
-import type { components } from './types.gen';
+import type { QuestionType } from './questionTypes';
 
-export type SurveyQuestionType = components['schemas']['SurveyQuestionType'];
+export type { QuestionType };
+/** Survey authors the full catalog, so its field types are the catalog itself. */
+export type SurveyQuestionType = QuestionType;
 export const DEFAULT_SURVEY_QUESTION_TYPE: SurveyQuestionType = 'text';
 
 export interface SurveyQuestion {

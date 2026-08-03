@@ -46,7 +46,7 @@ describe('QuestionAuthorDialog', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'save' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('add at least one option for this');
+    expect(screen.getByRole('alert')).toHaveTextContent('add at least one option');
 
     await user.type(screen.getByLabelText('options'), 'vegan\nomni');
     await user.click(screen.getByRole('button', { name: 'save' }));

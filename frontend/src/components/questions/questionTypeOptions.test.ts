@@ -1,28 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
-import type { JoinQuestionType } from '@/api/join';
+import type { QuestionType } from '@/api/questionTypes';
 import type { SurveyQuestionType } from '@/api/surveys';
 import type { components } from '@/api/types.gen';
 
 import {
-  JOIN_QUESTION_TYPE_OPTIONS,
   QUESTION_TYPE_OPTIONS,
   questionOptionsError,
   questionTypeWantsOptions,
 } from './questionTypeOptions';
 
 type AssertExtends<_A extends B, B> = true;
-type _JoinSubsetOfSurvey = AssertExtends<JoinQuestionType, SurveyQuestionType>;
-type _JoinMatchesOpenApi = AssertExtends<
-  JoinQuestionType,
-  components['schemas']['JoinFormQuestionType']
->;
-type _SurveyMatchesOpenApi = AssertExtends<
-  SurveyQuestionType,
+type _SurveyIsCatalog = AssertExtends<SurveyQuestionType, QuestionType>;
+type _CatalogMatchesOpenApi = AssertExtends<
+  QuestionType,
   components['schemas']['SurveyQuestionType']
 >;
 
-const FULL_TYPES: SurveyQuestionType[] = [
+const FULL_TYPES: QuestionType[] = [
   'text',
   'textarea',
   'select',
@@ -35,41 +30,17 @@ const FULL_TYPES: SurveyQuestionType[] = [
 ];
 
 describe('question type options', () => {
-  it('should expose metadata for every survey/catalog type', () => {
+  it('should expose metadata for every catalog type', () => {
     expect(QUESTION_TYPE_OPTIONS.map((o) => o.value).sort()).toEqual([...FULL_TYPES].sort());
   });
 
-  it('should expose the canonical join subset when rendering authoring controls', () => {
-    expect(JOIN_QUESTION_TYPE_OPTIONS).toEqual([
-      { value: 'text', label: 'short text', wantsOptions: false },
-      { value: 'textarea', label: 'long text', wantsOptions: false },
-      { value: 'dropdown', label: 'dropdown', wantsOptions: true },
-    ]);
-    expect(JOIN_QUESTION_TYPE_OPTIONS.map(({ value }) => questionTypeWantsOptions(value))).toEqual([
-      false,
-      false,
-      true,
-    ]);
-  });
-
-  it('should keep join option values inside the full catalog', () => {
-    const full = new Set(FULL_TYPES);
-    for (const option of JOIN_QUESTION_TYPE_OPTIONS) {
-      expect(full.has(option.value)).toBe(true);
-    }
-  });
-
-  it('should match backend join subset wire values', () => {
-    // Keep in lockstep with backend JoinFormQuestionType.
-    expect(JOIN_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
-      'text',
-      'textarea',
-      'dropdown',
-    ]);
+  it('should look up wantsOptions from the catalog', () => {
+    expect(questionTypeWantsOptions('text')).toBe(false);
+    expect(questionTypeWantsOptions('dropdown')).toBe(true);
   });
 
   it('should return generic validation copy when a question requires options', () => {
-    expect(questionOptionsError(true, [])).toBe('add at least one option for this');
+    expect(questionOptionsError(true, [])).toBe('add at least one option');
     expect(questionOptionsError(true, ['first'])).toBeNull();
     expect(questionOptionsError(false, [])).toBeNull();
   });

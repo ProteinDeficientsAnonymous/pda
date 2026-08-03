@@ -2,7 +2,7 @@ import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import type { SurveyQuestionType } from '@/api/surveys';
+import type { QuestionType } from '@/api/questionTypes';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
@@ -11,7 +11,7 @@ import { TextField } from '@/components/ui/TextField';
 
 import { questionOptionsError, questionTypeWantsOptions } from './questionTypeOptions';
 
-export interface QuestionAuthorValues<T extends string = SurveyQuestionType> {
+export interface QuestionAuthorValues<T extends string = QuestionType> {
   label: string;
   fieldType: T;
   options: string[];
@@ -57,7 +57,7 @@ function QuestionAuthorDialogBody<T extends string>({
   const [optionsText, setOptionsText] = useState(() => initial.options.join('\n'));
   const [error, setError] = useState<string | null>(null);
 
-  const wantsOptions = questionTypeWantsOptions(fieldType as SurveyQuestionType);
+  const wantsOptions = questionTypeWantsOptions(fieldType as QuestionType);
   const hint = typeof optionsHint === 'function' ? optionsHint(fieldType) : optionsHint;
 
   async function onSubmit(e: SyntheticEvent) {
