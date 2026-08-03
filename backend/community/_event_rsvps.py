@@ -12,6 +12,7 @@ from notifications.service import (
     broadcast_event_comment_update,
     notify_event_comment,
     notify_rsvp_declined_note,
+    notify_rsvp_status_changed,
 )
 
 from community._event_helpers import (
@@ -107,28 +108,32 @@ def _resolve_cancelled_at(existing: EventRSVP | None, final_status: str):
     return timezone.now()
 
 
-def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> None:
-    """Post a non-empty RSVP comment: an EventComment (going/maybe) or a decline notification (can't go)."""
+def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -> bool:
+    """Post a non-empty RSVP comment: an EventComment (going/maybe) or a decline notification (can't go).
+
+    Returns True if a decline notification was sent, so the caller can skip the
+    redundant "can't go" status notification.
+    """
     cleaned_comment = (comment or "").strip()
     if not cleaned_comment:
-        return
+        return False
     try:
         # Fresh fetch, not the row-locked event from _apply_rsvp_in_transaction — its co_hosts
         # prefetch predates this (already-committed) transaction and could be stale.
         event = Event.objects.prefetch_related("co_hosts").get(id=event_id)
         if final_status == RSVPStatus.CANT_GO:
             notify_rsvp_declined_note(event=event, author=user, note=cleaned_comment)
-        else:
-            posted_comment = EventComment.objects.create(
-                event=event, author=user, body=cleaned_comment
-            )
-            notify_event_comment(posted_comment)
-            broadcast_event_comment_update(event)
+            return True
+        posted_comment = EventComment.objects.create(event=event, author=user, body=cleaned_comment)
+        notify_event_comment(posted_comment)
+        broadcast_event_comment_update(event)
+        return False
     except Exception:
         # RSVP already committed — a failure here must not 500 an already-successful RSVP.
         logging.getLogger(__name__).exception(
             "rsvp_comment_post_failed", extra={"event_id": str(event_id), "user_id": str(user.pk)}
         )
+        return False
 
 
 def _apply_rsvp_in_transaction(
@@ -204,7 +209,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
             event_id, request.auth, payload.status, payload.has_plus_one
         )
 
-    _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
+    sent_decline_note = _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)
 
     audit_log(
         logging.INFO,
@@ -217,6 +222,8 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
         raise_validation(Code.Event.NOT_FOUND, status_code=404)
+    if not sent_decline_note:
+        notify_rsvp_status_changed(event, request.auth, final_status)
     # Actor already has the fresh event in this response, so exclude them.
     broadcast_capacity_change(event_id, exclude_user_ids={str(request.auth.pk)})
     _email_promoted_non_members(request, event, promoted_user_ids)
