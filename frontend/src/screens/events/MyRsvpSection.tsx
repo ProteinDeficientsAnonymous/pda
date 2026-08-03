@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-import { extractApiErrorOr } from '@/api/apiErrors';
+import { extractApiErrorOr, hasErrorCode } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
 import { useRemoveRsvp, useSetRsvp } from '@/api/rsvp';
+import { Code } from '@/api/validationCodes.gen';
 import { useAuthStore } from '@/auth/store';
 import { Button } from '@/components/ui/Button';
 import {
@@ -260,5 +261,8 @@ function SpotsLeft({ event }: { event: Event }) {
 }
 
 function extractError(err: unknown): string {
+  if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+    return 'confirm you paid before rsvping';
+  }
   return extractApiErrorOr(err, "couldn't update your rsvp — try again");
 }
