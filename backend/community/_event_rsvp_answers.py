@@ -1,8 +1,13 @@
 """Validate and snapshot RSVP question answers."""
 
 from community._field_limits import FieldLimit
+from community._question_answers import (
+    assert_single_choice_member,
+    is_answer_empty,
+    normalize_multiselect_csv,
+)
 from community._validation import Code, raise_validation
-from community.models import EventRsvpQuestion, RSVPStatus, SurveyQuestionType
+from community.models import EventRsvpQuestion, RSVPStatus, RsvpQuestionType
 
 AnswersIn = dict[str, str]
 
@@ -15,10 +20,6 @@ def answers_required_for_status(status: str) -> bool:
     }
 
 
-def _is_empty(answer: str | None) -> bool:
-    return answer is None or not str(answer).strip()
-
-
 def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
     if require_answers and q.required:
         raise_validation(
@@ -29,23 +30,23 @@ def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
 
 
 def _normalize_answer(q: EventRsvpQuestion, answer: str) -> str:
-    if q.field_type == SurveyQuestionType.MULTISELECT:
-        cleaned = [v.strip() for v in str(answer).split(",") if v.strip()]
-        options = set(q.options or [])
-        for val in cleaned:
-            if val not in options:
-                raise_validation(
-                    Code.Event.RSVP_ANSWER_INVALID_OPTION,
-                    field=f"answers.{q.id}",
-                    label=q.label,
-                )
-        return ",".join(cleaned)
+    field = f"answers.{q.id}"
+    if q.field_type == RsvpQuestionType.MULTISELECT:
+        return normalize_multiselect_csv(
+            answer,
+            q.options,
+            code=Code.Event.RSVP_ANSWER_INVALID_OPTION,
+            field=field,
+            label=q.label,
+        )
 
     text = str(answer).strip()
-    if q.field_type == SurveyQuestionType.DROPDOWN and text not in (q.options or []):
-        raise_validation(
-            Code.Event.RSVP_ANSWER_INVALID_OPTION,
-            field=f"answers.{q.id}",
+    if q.field_type == RsvpQuestionType.DROPDOWN:
+        assert_single_choice_member(
+            text,
+            q.options,
+            code=Code.Event.RSVP_ANSWER_INVALID_OPTION,
+            field=field,
             label=q.label,
         )
     return text
@@ -63,7 +64,7 @@ def build_rsvp_answers(
     for q in questions:
         key = str(q.id)
         answer = incoming.get(key)
-        if _is_empty(answer):
+        if is_answer_empty(answer):
             _require_if_needed(q, require_answers=require_answers)
             continue
         assert answer is not None
@@ -76,7 +77,7 @@ def build_rsvp_answers(
             )
         normalized = _normalize_answer(q, answer)
         # Multiselect ",,," normalizes to "" — treat as unanswered.
-        if _is_empty(normalized):
+        if is_answer_empty(normalized):
             _require_if_needed(q, require_answers=require_answers)
             continue
         snapshot[key] = {"label": q.label, "answer": normalized}
