@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
+import type { RsvpQuestionType } from '@/api/eventRsvpQuestions';
+import type { QuestionType } from '@/api/questionTypes';
+
 import {
   isAnswerFilled,
   missingRequiredQuestionIds,
   parseOptionsText,
+  RSVP_QUESTION_TYPE_OPTIONS,
   type RsvpQuestionDraft,
   wantsOptions,
 } from './rsvpQuestions';
+
+type AssertExtends<_A extends B, B> = true;
+type _RsvpSubsetOfCatalog = AssertExtends<RsvpQuestionType, QuestionType>;
 
 const q = (
   overrides: Partial<RsvpQuestionDraft> & Pick<RsvpQuestionDraft, 'id'>,
@@ -16,6 +23,16 @@ const q = (
   options: [],
   required: false,
   ...overrides,
+});
+
+describe('RSVP_QUESTION_TYPE_OPTIONS', () => {
+  it('should project the RSVP subset from catalog metadata', () => {
+    expect(RSVP_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
+      'textarea',
+      'dropdown',
+      'multiselect',
+    ]);
+  });
 });
 
 describe('wantsOptions', () => {
