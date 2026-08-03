@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
@@ -167,7 +167,7 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="event",
+            target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "create_event_poll"},
         )
@@ -193,7 +193,7 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
         logging.INFO,
         "poll_created",
         request,
-        target_type="event_poll",
+        target_type=AuditTargetType.EVENT_POLL,
         target_id=str(poll.id),
         details={"event_id": str(event_id), "option_count": len(payload.options)},
     )
@@ -266,7 +266,7 @@ def vote_on_event_poll(request, event_id: UUID, payload: EventPollVoteIn):
         logging.INFO,
         "poll_vote",
         request,
-        target_type="event_poll",
+        target_type=AuditTargetType.EVENT_POLL,
         target_id=str(poll.id),
         details={"event_id": str(event_id)},
     )
@@ -295,7 +295,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="event",
+            target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "finalize_event_poll"},
         )
@@ -326,7 +326,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         logging.INFO,
         "poll_finalized",
         request,
-        target_type="event_poll",
+        target_type=AuditTargetType.EVENT_POLL,
         target_id=str(poll.id),
         details={
             "event_id": str(event_id),
@@ -357,7 +357,7 @@ def delete_event_poll(request, event_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="event",
+            target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "delete_event_poll"},
         )
@@ -372,7 +372,7 @@ def delete_event_poll(request, event_id: UUID):
         logging.INFO,
         "poll_deleted",
         request,
-        target_type="event_poll",
+        target_type=AuditTargetType.EVENT_POLL,
         target_id=poll_id,
         details={"event_id": str(event_id)},
     )

@@ -1,6 +1,6 @@
 import logging
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from django.db.models import Count, Q
@@ -164,7 +164,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         logging.INFO,
         "public_rsvp_updated",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event.id),
         details={"user_id": str(user.pk), "status": final_status},
     )
@@ -216,7 +216,7 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         logging.INFO,
         "public_rsvp_deleted",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
         details={"user_id": str(user.pk)},
     )

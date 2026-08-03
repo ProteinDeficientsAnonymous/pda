@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import NamedTuple
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
 from django.db.models import Prefetch
@@ -341,7 +341,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="join_request",
+            target_type=AuditTargetType.JOIN_REQUEST,
             target_id=str(id),
             details={
                 "endpoint": "update_join_request_status",
@@ -380,7 +380,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         logging.INFO,
         action,
         request,
-        target_type="join_request",
+        target_type=AuditTargetType.JOIN_REQUEST,
         target_id=str(join_request.id),
         details={"full_name": join_request.full_name, "user_created": user_created},
     )
@@ -417,7 +417,7 @@ def unreject_join_request(request, id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="join_request",
+            target_type=AuditTargetType.JOIN_REQUEST,
             target_id=str(id),
             details={
                 "endpoint": "unreject_join_request",
@@ -441,7 +441,7 @@ def unreject_join_request(request, id: UUID):
         logging.INFO,
         "join_request_unrejected",
         request,
-        target_type="join_request",
+        target_type=AuditTargetType.JOIN_REQUEST,
         target_id=str(join_request.id),
         details={"full_name": join_request.full_name},
     )

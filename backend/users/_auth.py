@@ -3,7 +3,7 @@
 import logging
 
 from community._validation import Code, raise_validation
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
@@ -72,18 +72,32 @@ def login(request, payload: LoginIn, response: HttpResponse):
     user = User.objects.get(pk=auth_user.pk)
     if user.archived_at is not None:
         audit_log(
-            logging.WARNING, "login_archived", request, target_type="user", target_id=str(user.pk)
+            logging.WARNING,
+            "login_archived",
+            request,
+            target_type=AuditTargetType.USER,
+            target_id=str(user.pk),
         )
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if user.is_paused:
         audit_log(
-            logging.WARNING, "login_paused", request, target_type="user", target_id=str(user.pk)
+            logging.WARNING,
+            "login_paused",
+            request,
+            target_type=AuditTargetType.USER,
+            target_id=str(user.pk),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     refresh = RefreshToken.for_user(user)
     request.auth = user
     set_refresh_cookie(response, str(refresh))
-    audit_log(logging.INFO, "login_success", request, target_type="user", target_id=str(user.pk))
+    audit_log(
+        logging.INFO,
+        "login_success",
+        request,
+        target_type=AuditTargetType.USER,
+        target_id=str(user.pk),
+    )
     return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
 
@@ -179,7 +193,7 @@ def update_me(request, payload: MePatchIn):
             logging.INFO,
             "profile_updated",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=str(user.pk),
             details={"fields_changed": changed},
         )
@@ -211,7 +225,11 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
     user.photo_updated_at = timezone.now()
     user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(
-        logging.INFO, "profile_photo_uploaded", request, target_type="user", target_id=str(user.pk)
+        logging.INFO,
+        "profile_photo_uploaded",
+        request,
+        target_type=AuditTargetType.USER,
+        target_id=str(user.pk),
     )
     return Status(200, UserOut.from_user(user))
 
@@ -225,7 +243,11 @@ def delete_photo(request):
         user.photo_updated_at = None
         user.save(update_fields=["profile_photo", "photo_updated_at"])
     audit_log(
-        logging.INFO, "profile_photo_deleted", request, target_type="user", target_id=str(user.pk)
+        logging.INFO,
+        "profile_photo_deleted",
+        request,
+        target_type=AuditTargetType.USER,
+        target_id=str(user.pk),
     )
     return Status(200, UserOut.from_user(user))
 
@@ -265,7 +287,11 @@ def complete_onboarding(request, payload: OnboardingIn):
     stamp_consents(user, payload.consent_types)
     user.save()
     audit_log(
-        logging.INFO, "onboarding_completed", request, target_type="user", target_id=str(user.pk)
+        logging.INFO,
+        "onboarding_completed",
+        request,
+        target_type=AuditTargetType.USER,
+        target_id=str(user.pk),
     )
     return Status(200, UserOut.from_user(user))
 
@@ -282,7 +308,7 @@ def accept_consents(request, payload: AcceptConsentsIn):
         logging.INFO,
         "consents_accepted",
         request,
-        target_type="user",
+        target_type=AuditTargetType.USER,
         target_id=str(user.pk),
         details={"consent_types": [str(c) for c in payload.consent_types]},
     )
@@ -297,7 +323,7 @@ def change_password(request, payload: ChangePasswordIn):
             logging.WARNING,
             "password_change_failed",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=str(user.pk),
             details={"reason": "wrong_current_password"},
         )
@@ -317,5 +343,11 @@ def change_password(request, payload: ChangePasswordIn):
     # Setting a password also satisfies a pending forced reset.
     user.needs_password_reset = False
     user.save()
-    audit_log(logging.INFO, "password_changed", request, target_type="user", target_id=str(user.pk))
+    audit_log(
+        logging.INFO,
+        "password_changed",
+        request,
+        target_type=AuditTargetType.USER,
+        target_id=str(user.pk),
+    )
     return Status(200, ErrorOut(detail="Password updated successfully."))

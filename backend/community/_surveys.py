@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -114,7 +114,7 @@ def create_survey(request, payload: SurveyIn):
         logging.INFO,
         "survey_created",
         request,
-        target_type="survey",
+        target_type=AuditTargetType.SURVEY,
         target_id=str(survey.id),
         details={"title": survey.title, "slug": survey.slug},
     )
@@ -132,7 +132,7 @@ def get_survey_admin(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={
                 "endpoint": "get_survey_admin",
@@ -158,7 +158,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={
                 "endpoint": "update_survey",
@@ -183,7 +183,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
         logging.INFO,
         "survey_updated",
         request,
-        target_type="survey",
+        target_type=AuditTargetType.SURVEY,
         target_id=str(survey_id),
         details={"fields_changed": list(updates.keys())},
     )
@@ -201,7 +201,7 @@ def delete_survey(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={
                 "endpoint": "delete_survey",
@@ -219,7 +219,7 @@ def delete_survey(request, survey_id: UUID):
         logging.WARNING,
         "survey_deleted",
         request,
-        target_type="survey",
+        target_type=AuditTargetType.SURVEY,
         target_id=str(survey_id),
         details={"title": title},
     )
@@ -240,7 +240,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={
                 "endpoint": "create_survey_question",
@@ -265,7 +265,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         logging.INFO,
         "survey_question_created",
         request,
-        target_type="survey_question",
+        target_type=AuditTargetType.SURVEY_QUESTION,
         target_id=str(q.id),
         details={"survey_id": str(survey_id), "label": q.label},
     )
@@ -283,7 +283,7 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey_question",
+            target_type=AuditTargetType.SURVEY_QUESTION,
             target_id=str(question_id),
             details={
                 "endpoint": "update_survey_question",
@@ -304,7 +304,7 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
         logging.INFO,
         "survey_question_updated",
         request,
-        target_type="survey_question",
+        target_type=AuditTargetType.SURVEY_QUESTION,
         target_id=str(question_id),
         details={"survey_id": str(survey_id), "label": q.label},
     )
@@ -322,7 +322,7 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey_question",
+            target_type=AuditTargetType.SURVEY_QUESTION,
             target_id=str(question_id),
             details={
                 "endpoint": "delete_survey_question",
@@ -339,7 +339,7 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         logging.INFO,
         "survey_question_deleted",
         request,
-        target_type="survey_question",
+        target_type=AuditTargetType.SURVEY_QUESTION,
         target_id=str(question_id),
         details={"survey_id": str(survey_id)},
     )
@@ -357,7 +357,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={
                 "endpoint": "reorder_survey_questions",
@@ -375,7 +375,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
         logging.INFO,
         "survey_questions_reordered",
         request,
-        target_type="survey",
+        target_type=AuditTargetType.SURVEY,
         target_id=str(survey_id),
     )
     questions = SurveyQuestion.objects.filter(survey_id=survey_id)
@@ -396,7 +396,7 @@ def list_survey_responses(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={
                 "endpoint": "list_survey_responses",

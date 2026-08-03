@@ -12,7 +12,7 @@ Co-host invites are a different flow — see _event_cohost_invites.py.
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.shortcuts import get_object_or_404
 from ninja import Router
@@ -67,7 +67,7 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="event",
+            target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "invite_to_event"},
         )
@@ -94,7 +94,7 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
         logging.INFO,
         "event_invitations_added",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
         details={
             "requested_count": len(requested_ids),

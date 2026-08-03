@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -64,6 +64,6 @@ def update_whatsapp_link(request, payload: WhatsAppLinkPatchIn):
         logging.INFO,
         "whatsapp_link_updated",
         request,
-        target_type="whatsapp_link",
+        target_type=AuditTargetType.WHATSAPP_LINK,
     )
     return Status(200, _out(config))

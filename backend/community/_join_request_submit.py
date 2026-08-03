@@ -3,7 +3,7 @@
 import logging
 from enum import StrEnum
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.mail import send_mail
@@ -258,7 +258,7 @@ def submit_join_request(request, payload: JoinRequestIn):
         logging.INFO,
         "join_request_submitted",
         request,
-        target_type="join_request",
+        target_type=AuditTargetType.JOIN_REQUEST,
         target_id=str(join_request.id),
         details={"full_name": full_name},
     )

@@ -9,7 +9,7 @@ Django admin.
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import IntegrityError, transaction
@@ -33,7 +33,7 @@ def _require_manage_tags(request, endpoint: str, target_id: str = "") -> None:
         logging.WARNING,
         "permission_denied",
         request,
-        target_type="event_tag",
+        target_type=AuditTargetType.EVENT_TAG,
         target_id=target_id,
         details={
             "endpoint": endpoint,
@@ -75,7 +75,7 @@ def create_event_tag(request, payload: TagIn):
         logging.INFO,
         "event_tag_created",
         request,
-        target_type="event_tag",
+        target_type=AuditTargetType.EVENT_TAG,
         target_id=str(tag.id),
         details={"name": tag.name, "slug": tag.slug},
     )
@@ -99,7 +99,7 @@ def delete_event_tag(request, tag_id: UUID):
         logging.WARNING,
         "event_tag_deleted",
         request,
-        target_type="event_tag",
+        target_type=AuditTargetType.EVENT_TAG,
         target_id=str(tag_id),
         details={"name": name},
     )

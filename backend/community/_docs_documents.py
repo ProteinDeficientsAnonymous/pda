@@ -7,7 +7,7 @@ from there — single source of truth.
 
 import logging
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -68,7 +68,7 @@ def create_document(request, payload: DocumentIn):
         logging.INFO,
         "document_created",
         request,
-        target_type="document",
+        target_type=AuditTargetType.DOCUMENT,
         target_id=str(doc.id),
         details={"title": doc.title, "folder_id": str(folder.id)},
     )
@@ -135,7 +135,7 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="document",
+            target_type=AuditTargetType.DOCUMENT,
             target_id=doc_id,
             details={
                 "endpoint": "update_document",
@@ -171,7 +171,7 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
         logging.INFO,
         "document_updated",
         request,
-        target_type="document",
+        target_type=AuditTargetType.DOCUMENT,
         target_id=doc_id,
         details={"fields_changed": list(updates.keys())},
     )
@@ -189,7 +189,7 @@ def delete_document(request, doc_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="document",
+            target_type=AuditTargetType.DOCUMENT,
             target_id=doc_id,
             details={
                 "endpoint": "delete_document",
@@ -209,7 +209,7 @@ def delete_document(request, doc_id: str):
         logging.INFO,
         "document_deleted",
         request,
-        target_type="document",
+        target_type=AuditTargetType.DOCUMENT,
         target_id=doc_id,
         details={"title": title},
     )

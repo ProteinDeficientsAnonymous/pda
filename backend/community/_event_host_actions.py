@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
@@ -165,7 +165,7 @@ def set_attendance(request, event_id: UUID, user_id: UUID, payload: AttendanceIn
         logging.INFO,
         "attendance_marked",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
         details={"user_id": str(user_id), "attendance": payload.attendance},
     )

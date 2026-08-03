@@ -1,6 +1,6 @@
 import logging
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from django.conf import settings
 from django.utils import timezone
 from notifications._email_helpers import EventInviteEmailDetails, send_event_invite_email
@@ -54,7 +54,7 @@ def email_invited_members(request, event: Event, new_user_ids: list[str], invite
                 logging.WARNING,
                 "event_invite_email_failed",
                 request,
-                target_type="event",
+                target_type=AuditTargetType.EVENT,
                 target_id=str(event.id),
                 details={"user_id": str(user.pk), "error": str(exc)},
             )

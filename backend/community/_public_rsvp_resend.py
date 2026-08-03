@@ -1,6 +1,6 @@
 import logging
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from ninja import Router
@@ -65,7 +65,7 @@ def _send_manage_link(request, user: User) -> None:
             logging.WARNING,
             "public_rsvp_resend_email_failed",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=str(user.pk),
             details={"error": str(exc)},
         )
@@ -107,7 +107,7 @@ def resend_manage_link(request, payload: ResendManageLinkIn):
             logging.INFO,
             "public_rsvp_resend_sent",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=str(user.pk),
         )
     return _neutral()

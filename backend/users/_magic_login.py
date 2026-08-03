@@ -3,7 +3,7 @@
 import logging
 
 from community._validation import Code, raise_validation
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from django.http import HttpResponse
@@ -46,7 +46,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             logging.WARNING,
             "magic_login_cross_user_blocked",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=str(magic.user.pk),
             details={"current_user_id": str(current_user.pk)},
         )
@@ -56,7 +56,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             logging.WARNING,
             "magic_login_archived",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=str(magic.user.pk),
         )
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
@@ -65,7 +65,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             logging.WARNING,
             "magic_login_paused",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=str(magic.user.pk),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
@@ -93,7 +93,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                 logging.WARNING,
                 "magic_login_failed",
                 request,
-                target_type="user",
+                target_type=AuditTargetType.USER,
                 target_id=str(magic.user.pk),
                 details={"reason": "used_or_expired"},
             )
@@ -115,7 +115,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                 logging.INFO,
                 "magic_login_requires_password_reset",
                 request,
-                target_type="user",
+                target_type=AuditTargetType.USER,
                 target_id=str(magic.user.pk),
             )
     return magic
@@ -136,7 +136,7 @@ def magic_login(request, token: str, response: HttpResponse):
         logging.INFO,
         "magic_login_success",
         request,
-        target_type="user",
+        target_type=AuditTargetType.USER,
         target_id=str(magic.user.pk),
     )
     return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore

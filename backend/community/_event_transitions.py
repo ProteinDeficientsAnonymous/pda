@@ -2,7 +2,7 @@
 
 import logging
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from django.db import transaction
 from django.utils import timezone
 from ninja.responses import Status
@@ -34,7 +34,7 @@ def _cancel_event(request, event: Event, notify: bool) -> None:
         logging.INFO,
         "event_cancelled",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event.id),
         details={"title": event.title, "notify_attendees": notify},
     )
@@ -51,7 +51,7 @@ def _delete_event(request, event: Event) -> None:
         logging.INFO,
         "event_deleted",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event.id),
         details={"title": event.title},
     )
@@ -66,7 +66,7 @@ def _uncancel_event(request, event: Event) -> None:
         logging.INFO,
         "event_uncancelled",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event.id),
         details={"title": event.title},
     )
@@ -112,7 +112,7 @@ def _publish_draft(request, event: Event) -> None:
         logging.INFO,
         "event_published",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event.id),
         details={"title": event.title},
     )

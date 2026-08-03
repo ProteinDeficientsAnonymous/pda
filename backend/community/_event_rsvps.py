@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
@@ -210,7 +210,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         logging.INFO,
         "rsvp_changed",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
         details={"status": final_status},
     )
@@ -238,7 +238,13 @@ def delete_rsvp(request, event_id: UUID):
     with transaction.atomic():
         event, promoted_user_ids = _delete_rsvp_in_transaction(event_id, request.auth)
 
-    audit_log(logging.INFO, "rsvp_deleted", request, target_type="event", target_id=str(event_id))
+    audit_log(
+        logging.INFO,
+        "rsvp_deleted",
+        request,
+        target_type=AuditTargetType.EVENT,
+        target_id=str(event_id),
+    )
     _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(204, None)
 

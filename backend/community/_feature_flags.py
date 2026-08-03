@@ -1,6 +1,6 @@
 import logging
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -53,7 +53,7 @@ def update_feature_flag(request, key: str, payload: FeatureFlagPatchIn):
         logging.INFO,
         "feature_flag_updated",
         request,
-        target_type="feature_flag",
+        target_type=AuditTargetType.FEATURE_FLAG,
         target_id=key,
         details={"enabled": payload.enabled},
     )

@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
 from ninja import Router
@@ -86,7 +86,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
                 logging.INFO,
                 "survey_response_updated",
                 request,
-                target_type="survey",
+                target_type=AuditTargetType.SURVEY,
                 target_id=str(survey.id),
                 details={"slug": slug},
             )
@@ -96,7 +96,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
         logging.INFO,
         "survey_response_submitted",
         request,
-        target_type="survey",
+        target_type=AuditTargetType.SURVEY,
         target_id=str(survey.id),
         details={"slug": slug},
     )
@@ -129,7 +129,7 @@ def get_survey_tallies(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={"endpoint": "get_survey_tallies"},
         )
@@ -164,7 +164,7 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="survey",
+            target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={"endpoint": "finalize_poll"},
         )
@@ -201,7 +201,7 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
         logging.INFO,
         "survey_poll_finalized",
         request,
-        target_type="survey",
+        target_type=AuditTargetType.SURVEY,
         target_id=str(survey_id),
         details={
             "winning_datetime": payload.winning_datetime.isoformat(),

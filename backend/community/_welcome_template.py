@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -69,6 +69,6 @@ def update_welcome_template(request, payload: WelcomeTemplatePatchIn):
         logging.INFO,
         "welcome_template_updated",
         request,
-        target_type="welcome_template",
+        target_type=AuditTargetType.WELCOME_TEMPLATE,
     )
     return Status(200, _out(template))

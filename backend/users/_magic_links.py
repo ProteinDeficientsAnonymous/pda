@@ -4,7 +4,7 @@ import logging
 from datetime import timedelta
 
 from community._validation import Code, raise_validation
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
 from django.utils import timezone
@@ -32,7 +32,7 @@ def generate_magic_link(request, user_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=user_id,
             details={
                 "endpoint": "generate_magic_link",
@@ -64,7 +64,7 @@ def generate_magic_link(request, user_id: str):
                 logging.INFO,
                 "magic_link_already_handled",
                 request,
-                target_type="user",
+                target_type=AuditTargetType.USER,
                 target_id=user_id,
             )
             return Status(
@@ -103,7 +103,7 @@ def generate_magic_link(request, user_id: str):
             logging.INFO,
             "magic_link_notifications_cleared",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=user_id,
             details={"count": cleared_count},
         )
@@ -111,7 +111,7 @@ def generate_magic_link(request, user_id: str):
         logging.INFO,
         "magic_link_generated",
         request,
-        target_type="user",
+        target_type=AuditTargetType.USER,
         target_id=user_id,
     )
     return Status(

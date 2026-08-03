@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from ninja import Router, Schema
@@ -110,7 +110,7 @@ def send_email_blast(request, event_id: UUID, payload: EmailBlastIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="event",
+            target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "send_email_blast"},
         )
@@ -142,7 +142,7 @@ def send_email_blast(request, event_id: UUID, payload: EmailBlastIn):
         logging.INFO,
         "event_email_blast_sent",
         request,
-        target_type="event",
+        target_type=AuditTargetType.EVENT,
         target_id=str(event_id),
         details={
             "sent_count": sent_count,

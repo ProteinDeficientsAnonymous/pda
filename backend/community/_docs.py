@@ -8,7 +8,7 @@ helpers stay here so they're imported from a single place.
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -187,7 +187,7 @@ def create_folder(request, payload: FolderIn):
         logging.INFO,
         "doc_folder_created",
         request,
-        target_type="doc_folder",
+        target_type=AuditTargetType.DOC_FOLDER,
         target_id=str(folder.id),
         details={"name": folder.name, "parent_id": str(parent.id) if parent else None},
     )
@@ -229,7 +229,7 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="doc_folder",
+            target_type=AuditTargetType.DOC_FOLDER,
             target_id=folder_id,
             details={
                 "endpoint": "update_folder",
@@ -263,7 +263,7 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
         logging.INFO,
         "doc_folder_updated",
         request,
-        target_type="doc_folder",
+        target_type=AuditTargetType.DOC_FOLDER,
         target_id=folder_id,
         details={"fields_changed": list(updates.keys())},
     )
@@ -281,7 +281,7 @@ def delete_folder(request, folder_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="doc_folder",
+            target_type=AuditTargetType.DOC_FOLDER,
             target_id=folder_id,
             details={
                 "endpoint": "delete_folder",
@@ -301,7 +301,7 @@ def delete_folder(request, folder_id: str):
         logging.INFO,
         "doc_folder_deleted",
         request,
-        target_type="doc_folder",
+        target_type=AuditTargetType.DOC_FOLDER,
         target_id=folder_id,
         details={"name": folder_name},
     )

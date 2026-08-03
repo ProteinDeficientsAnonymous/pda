@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -72,6 +72,6 @@ def update_tentative_approval_message(request, payload: TentativeApprovalMessage
         logging.INFO,
         "tentative_approval_message_updated",
         request,
-        target_type="tentative_approval_message",
+        target_type=AuditTargetType.TENTATIVE_APPROVAL_MESSAGE,
     )
     return Status(200, _out(template))

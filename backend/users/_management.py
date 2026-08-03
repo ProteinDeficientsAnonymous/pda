@@ -7,7 +7,7 @@ from community._rsvp_counts import attendance_q, reportable_events_q
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from community.models import AttendanceStatus
-from config.audit import audit_log
+from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
 from django.utils import timezone
@@ -79,7 +79,7 @@ def create_user(request, payload: UserCreateIn):
         logging.INFO,
         "user_created",
         request,
-        target_type="user",
+        target_type=AuditTargetType.USER,
         target_id=str(user.id),
         details={
             "full_name": user.full_name,
@@ -276,7 +276,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=user_id,
             details={"endpoint": "update_user", "required_permission": PermissionKey.MANAGE_USERS},
         )
@@ -307,7 +307,12 @@ def _audit_user_update(
         action = "user_paused" if payload.is_paused else "user_unpaused"
         details = {"removed_role_ids": _strip_non_member_roles(user)} if payload.is_paused else None
         audit_log(
-            logging.WARNING, action, request, target_type="user", target_id=user_id, details=details
+            logging.WARNING,
+            action,
+            request,
+            target_type=AuditTargetType.USER,
+            target_id=user_id,
+            details=details,
         )
         return
 
@@ -321,7 +326,7 @@ def _audit_user_update(
             logging.INFO,
             "user_updated",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=user_id,
             details={"fields_changed": changed},
         )
@@ -366,7 +371,7 @@ def delete_user(request, user_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=user_id,
             details={"endpoint": "delete_user", "required_permission": PermissionKey.MANAGE_USERS},
         )
@@ -388,7 +393,7 @@ def delete_user(request, user_id: str):
         logging.WARNING,
         "user_archived",
         request,
-        target_type="user",
+        target_type=AuditTargetType.USER,
         target_id=user_id,
         details={"full_name": full_name},
     )
@@ -412,7 +417,7 @@ def hard_delete_user(request, user_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=user_id,
             details={
                 "endpoint": "hard_delete_user",
@@ -435,7 +440,7 @@ def hard_delete_user(request, user_id: str):
         logging.WARNING,
         "user_hard_deleted",
         request,
-        target_type="user",
+        target_type=AuditTargetType.USER,
         target_id=user_id,
         details={"full_name": full_name},
     )
@@ -456,7 +461,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type="user",
+            target_type=AuditTargetType.USER,
             target_id=user_id,
             details={
                 "endpoint": "update_user_roles",
@@ -483,7 +488,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
         logging.WARNING,
         "user_roles_changed",
         request,
-        target_type="user",
+        target_type=AuditTargetType.USER,
         target_id=user_id,
         details={"old_role_ids": old_role_ids, "new_role_ids": new_role_ids},
     )
