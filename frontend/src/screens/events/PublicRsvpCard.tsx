@@ -10,7 +10,9 @@ import { type Event, eventPath, type RsvpInputStatus, RsvpServerStatus } from '@
 import { formatEventDateTime } from '@/utils/datetime';
 import { buildEventLinks } from '@/utils/eventLinks';
 
+import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
+import { usePaymentGate } from './usePaymentGate';
 
 const UPDATED_TOAST = 'rsvp updated — check your email for an updated link';
 
@@ -40,10 +42,12 @@ export function PublicRsvpCard({ token, event, status }: Props) {
   const cancel = useCancelPublicMyRsvp(token);
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<RsvpInputStatus | null>(null);
   const links = buildEventLinks(event);
   const busy = update.isPending || cancel.isPending;
+  const needsPaymentFor = usePaymentGate(event);
 
-  async function applyRsvp(next: RsvpInputStatus, rsvpComment?: string) {
+  async function applyRsvp(next: RsvpInputStatus, rsvpComment?: string, paidConfirmed?: boolean) {
     setError(null);
     try {
       await update.mutateAsync({
@@ -51,6 +55,7 @@ export function PublicRsvpCard({ token, event, status }: Props) {
         status: next,
         hasPlusOne: false,
         ...(rsvpComment !== undefined ? { comment: rsvpComment } : {}),
+        ...(paidConfirmed ? { paidConfirmed: true } : {}),
       });
       toast.success(UPDATED_TOAST);
     } catch (err) {
@@ -60,6 +65,10 @@ export function PublicRsvpCard({ token, event, status }: Props) {
 
   function changeStatus(next: RsvpInputStatus) {
     if (next === status) return;
+    if (needsPaymentFor(next)) {
+      setPendingStatus(next);
+      return;
+    }
     void applyRsvp(next);
   }
 
@@ -114,16 +123,33 @@ export function PublicRsvpCard({ token, event, status }: Props) {
         {STATUS_LABELS[status] ?? 'your rsvp'}
       </p>
       <div className="flex flex-col gap-3">
-        <RsvpStatusPicker value={status} onSelect={changeStatus} disabled={busy} />
+        {pendingStatus ? (
+          <PaymentConfirmStep
+            event={event}
+            busy={busy}
+            onConfirm={() => {
+              const next = pendingStatus;
+              setPendingStatus(null);
+              void applyRsvp(next, undefined, true);
+            }}
+            onBack={() => {
+              setPendingStatus(null);
+            }}
+          />
+        ) : (
+          <>
+            <RsvpStatusPicker value={status} onSelect={changeStatus} disabled={busy} />
 
-        <RsvpCommentField value={comment} onChange={setComment} disabled={busy} />
-        <Button variant="ghost" onClick={saveComment} disabled={busy || !comment.trim()}>
-          save comment
-        </Button>
+            <RsvpCommentField value={comment} onChange={setComment} disabled={busy} />
+            <Button variant="ghost" onClick={saveComment} disabled={busy || !comment.trim()}>
+              save comment
+            </Button>
 
-        <Button variant="ghost" onClick={() => void cancelRsvp()} disabled={busy}>
-          cancel rsvp
-        </Button>
+            <Button variant="ghost" onClick={() => void cancelRsvp()} disabled={busy}>
+              cancel rsvp
+            </Button>
+          </>
+        )}
 
         {error ? (
           <p role="alert" className="text-destructive text-sm">
