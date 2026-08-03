@@ -12,8 +12,8 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import ErrorOut
 
-# Ninja resolves paths before methods: a second router owning /users/{user_id}/
-# would shadow /users/search/.
+# Ninja resolves paths before methods, so a second router here would shadow
+# /users/search/.
 router = management_router
 
 

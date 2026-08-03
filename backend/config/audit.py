@@ -22,7 +22,6 @@ def _valid_ip(value: str) -> str | None:
 
 
 def _persist(**fields) -> None:
-    # An audit write must never turn a successful user action into a 500.
     try:
         AuditLogEntry.objects.create(**fields)
     except Exception:

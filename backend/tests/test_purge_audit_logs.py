@@ -12,7 +12,6 @@ def make_entry(age_days: int) -> AuditLogEntry:
     entry = AuditLogEntry.objects.create(
         action="role_created", actor_label="someone", level=logging.INFO
     )
-    # created_at is auto_now_add, so backdating needs a direct update.
     AuditLogEntry.objects.filter(pk=entry.pk).update(
         created_at=timezone.now() - timedelta(days=age_days)
     )

@@ -38,7 +38,7 @@ class AuditLogEntry(models.Model):
         on_delete=models.SET_NULL,
         related_name="audit_entries",
     )
-    # Snapshot: actor goes NULL on hard delete, but "who did this" must survive.
+    # Snapshot: actor goes NULL on hard delete.
     actor_label = models.CharField(max_length=255)
     target_type = models.CharField(
         max_length=32, choices=AuditTargetType, blank=True, db_index=True
