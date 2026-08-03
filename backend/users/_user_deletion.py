@@ -1,5 +1,3 @@
-"""User deletion endpoints (soft archive + hard delete)."""
-
 import logging
 
 from community._validation import Code, raise_validation
@@ -14,9 +12,8 @@ from users.models import User
 from users.permissions import PermissionKey
 from users.schemas import ErrorOut
 
-# Shares _management's router rather than adding its own: Ninja resolves paths
-# across routers before methods, so a second router owning /users/{user_id}/
-# would shadow /users/search/ (or be shadowed itself, depending on order).
+# Ninja resolves paths before methods: a second router owning /users/{user_id}/
+# would shadow /users/search/.
 router = management_router
 
 

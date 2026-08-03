@@ -14,8 +14,7 @@ _audit_logger = logging.getLogger("pda.audit")
 
 
 def _valid_ip(value: str) -> str | None:
-    # client_ip can return 'anon' or an unvalidated XFF hop; Postgres rejects
-    # either, and _persist would swallow that as a silently lost audit row.
+    # client_ip can return 'anon' or an unvalidated XFF hop; Postgres rejects both.
     try:
         return str(ipaddress.ip_address(value))
     except ValueError:
@@ -49,8 +48,7 @@ def audit_log(  # noqa: PLR0913
         target_type: AuditTargetType member for the affected object
         target_id: string ID of the affected object
         details: optional context dict (avoid including raw phone numbers or tokens)
-        persist: write a row to the audit table; pass False for access-control
-            noise and bot traffic, which belong in the console log only
+        persist: write a row to the audit table; False for console-only noise
     """
     user = getattr(request, "auth", None)
     if user and hasattr(user, "pk"):
