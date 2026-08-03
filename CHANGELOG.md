@@ -1,3 +1,11 @@
+# [0.81.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.80.0...v0.81.0) (2026-08-03)
+
+
+### Features
+
+* 1045 - host payment confirm/revoke endpoint (5/6) ([#1228](https://github.com/ProteinDeficientsAnonymous/pda/issues/1228)) ([ba4a94d](https://github.com/ProteinDeficientsAnonymous/pda/commit/ba4a94dc29ba0eda10cd1cd60ec9dbde59bf9ec1))
+* 1045 - record payment confirmations in the audit trail (6/6) ([#1232](https://github.com/ProteinDeficientsAnonymous/pda/issues/1232)) ([bc4fbf3](https://github.com/ProteinDeficientsAnonymous/pda/commit/bc4fbf3cb833b8cbf1e117d095bfab6c39e3b478))
+
 # [0.80.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.79.0...v0.80.0) (2026-08-03)
 
 
