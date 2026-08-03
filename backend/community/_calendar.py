@@ -16,7 +16,7 @@ from users.models import User as UserModel
 
 from community._event_helpers import _can_see_invite_only
 from community._events import _enforce_event_read_visibility
-from community._shared import _authenticated_user, _members_only, _optional_jwt
+from community._shared import _authenticated_user, _gated, _optional_jwt
 from community._validation import ValidationException
 from community.models import Event, EventStatus, PageVisibility, RSVPStatus
 
@@ -197,9 +197,9 @@ def _event_ics_description(event, target_url: str, is_authed: bool) -> str:
     parts = []
     if event.description:
         parts.append(event.description)
-    whatsapp = _members_only(event.whatsapp_link, "", is_authed)
-    partiful = _members_only(event.partiful_link, "", is_authed)
-    other = _members_only(event.other_link, "", is_authed)
+    whatsapp = _gated(event.whatsapp_link, "", is_authed)
+    partiful = _gated(event.partiful_link, "", is_authed)
+    other = _gated(event.other_link, "", is_authed)
     if whatsapp:
         parts.append(f"WhatsApp: {whatsapp}")
     if partiful:

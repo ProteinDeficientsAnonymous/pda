@@ -34,13 +34,16 @@ from community._rsvp_counts import (
     _attending_headcount_db,
     _waitlisted_count,
 )
-from community._shared import _authenticated_user, _members_only
+from community._rsvp_payment import can_see_payment_details
+from community._shared import _authenticated_user, _gated
 from community.models import (
     Event,
     EventRSVP,
     EventTag,
+    FeatureFlag,
     RSVPStatus,
     SurveyQuestionType,
+    flag_enabled,
 )
 
 if TYPE_CHECKING:
@@ -73,17 +76,17 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
     transaction.on_commit(_run)
 
 
-def _can_see_phones(requesting_user, creator, co_host_ids: set[str]) -> bool:
-    """Check if requesting user can see guest phone numbers."""
+def _is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
+    """Creator is always a co-host (added on event creation), so this covers both."""
     if requesting_user is None:
         return False
-    if creator is not None and requesting_user.pk == creator.pk:
-        return True
     return str(requesting_user.pk) in co_host_ids
 
 
-def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGuestOut]:
-    """Build guest list with optional phone visibility."""
+def _build_guest_list(
+    rsvps, can_see_phones: bool, viewer=None, can_see_payment_status: bool = False
+) -> list[RSVPGuestOut]:
+    """Build guest list with optional phone and payment-status visibility."""
     return [
         RSVPGuestOut(
             user_id=str(r.user_id),
@@ -95,19 +98,28 @@ def _build_guest_list(rsvps, can_see_phones: bool, viewer=None) -> list[RSVPGues
             attendance=r.attendance,
             checked_in_at=r.checked_in_at,
             is_member=r.user.is_member,
+            paid_confirmed=bool(r.paid_confirmed_at) if can_see_payment_status else False,
         )
         for r in rsvps
     ]
 
 
-def _find_my_rsvp(rsvps, user) -> str | None:
-    """Find requesting user's RSVP status."""
+def _find_my_rsvp(rsvps, user):
+    """Find requesting user's own RSVP row."""
     if user is None:
         return None
     for r in rsvps:
         if r.user_id == user.pk:
-            return r.status
+            return r
     return None
+
+
+def _my_rsvp_fields(rsvps, user) -> tuple[str | None, bool]:
+    """(my_rsvp status, my_paid_confirmed) for the requesting user, or (None, False)."""
+    my_rsvp = _find_my_rsvp(rsvps, user)
+    if my_rsvp is None:
+        return None, False
+    return my_rsvp.status, bool(my_rsvp.paid_confirmed_at)
 
 
 def _cancellations(event: Event, viewer=None) -> list[CancellationOut]:
@@ -295,8 +307,10 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     creator = event.created_by
     auth_user = _authenticated_user(requesting_user)
     is_authed = auth_user is not None
+    show_payment_details = can_see_payment_details(event, is_authed)
     co_host_ids = {str(u.id) for u in co_hosts}
-    phones_visible = _can_see_phones(auth_user, creator, co_host_ids)
+    is_cohost = _is_cohost(auth_user, co_host_ids)
+    payment_status_visible = is_cohost and flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
@@ -305,6 +319,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     comment_count = _resolve_comment_count(event)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(rsvps, auth_user)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -315,13 +330,13 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         location=event.location,
         latitude=float(event.latitude) if event.latitude is not None else None,
         longitude=float(event.longitude) if event.longitude is not None else None,
-        whatsapp_link=_members_only(event.whatsapp_link, "", is_authed),
-        partiful_link=_members_only(event.partiful_link, "", is_authed),
-        other_link=_members_only(event.other_link, "", is_authed),
+        whatsapp_link=_gated(event.whatsapp_link, "", is_authed),
+        partiful_link=_gated(event.partiful_link, "", is_authed),
+        other_link=_gated(event.other_link, "", is_authed),
         price=event.price,
-        venmo_link=_members_only(event.venmo_link, "", is_authed),
-        cashapp_link=_members_only(event.cashapp_link, "", is_authed),
-        zelle_info=_members_only(event.zelle_info, "", is_authed),
+        venmo_link=_gated(event.venmo_link, "", show_payment_details),
+        cashapp_link=_gated(event.cashapp_link, "", show_payment_details),
+        zelle_info=_gated(event.zelle_info, "", show_payment_details),
         rsvp_enabled=event.rsvp_enabled,
         datetime_tbd=event.datetime_tbd,
         allow_plus_ones=event.allow_plus_ones,
@@ -336,8 +351,13 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_ids=[str(u.id) for u in co_hosts],
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
-        guests=_members_only(_build_guest_list(rsvps, phones_visible, auth_user), [], is_authed),
-        my_rsvp=_find_my_rsvp(rsvps, auth_user),
+        guests=_gated(
+            _build_guest_list(rsvps, is_cohost, auth_user, payment_status_visible),
+            [],
+            is_authed,
+        ),
+        my_rsvp=my_rsvp_status,
+        my_paid_confirmed=my_paid_confirmed,
         viewer_user_id=str(auth_user.pk) if auth_user else None,
         event_type=event.event_type,
         visibility=event.visibility,

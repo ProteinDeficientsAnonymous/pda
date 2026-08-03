@@ -1796,6 +1796,11 @@
             ],
             "title": "Max Attendees"
           },
+          "my_paid_confirmed": {
+            "default": false,
+            "title": "My Paid Confirmed",
+            "type": "boolean"
+          },
           "my_rsvp": {
             "anyOf": [
               {
@@ -2109,6 +2114,11 @@
               }
             ],
             "title": "Max Attendees"
+          },
+          "my_paid_confirmed": {
+            "default": false,
+            "title": "My Paid Confirmed",
+            "type": "boolean"
           },
           "my_pending_cohost_invite_id": {
             "anyOf": [
@@ -4664,6 +4674,11 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "paid_confirmed": {
+            "default": false,
+            "title": "Paid Confirmed",
+            "type": "boolean"
           },
           "phone": {
             "anyOf": [

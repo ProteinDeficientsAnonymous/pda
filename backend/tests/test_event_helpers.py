@@ -1,41 +1,25 @@
-"""Unit tests for event helper functions (_can_see_phones, _build_guest_list, _find_my_rsvp)."""
+"""Unit tests for event helper functions (_is_cohost, _build_guest_list, _find_my_rsvp)."""
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from community.api import _build_guest_list, _can_see_phones, _find_my_rsvp
+from community.api import _build_guest_list, _find_my_rsvp, _is_cohost
 from community.models import AttendanceStatus, RSVPStatus
 
 
-class TestCanSeePhones:
+class TestIsCohost:
     def test_returns_false_when_no_requesting_user(self):
-        assert _can_see_phones(None, MagicMock(), {"id1"}) is False
-
-    def test_returns_true_when_user_is_creator(self):
-        creator = MagicMock()
-        creator.pk = "user-1"
-        requesting = MagicMock()
-        requesting.pk = "user-1"
-        assert _can_see_phones(requesting, creator, set()) is True
+        assert _is_cohost(None, {"id1"}) is False
 
     def test_returns_true_when_user_is_co_host(self):
-        creator = MagicMock()
-        creator.pk = "user-1"
         requesting = MagicMock()
         requesting.pk = "user-2"
-        assert _can_see_phones(requesting, creator, {"user-2"}) is True
+        assert _is_cohost(requesting, {"user-2"}) is True
 
-    def test_returns_false_when_user_is_neither(self):
-        creator = MagicMock()
-        creator.pk = "user-1"
+    def test_returns_false_when_user_is_not_a_co_host(self):
         requesting = MagicMock()
         requesting.pk = "user-3"
-        assert _can_see_phones(requesting, creator, {"user-2"}) is False
-
-    def test_returns_false_when_creator_is_none(self):
-        requesting = MagicMock()
-        requesting.pk = "user-1"
-        assert _can_see_phones(requesting, None, set()) is False
+        assert _is_cohost(requesting, {"user-2"}) is False
 
 
 class TestBuildGuestList:
@@ -57,6 +41,7 @@ class TestBuildGuestList:
             has_plus_one=False,
             attendance=AttendanceStatus.UNKNOWN,
             checked_in_at=None,
+            paid_confirmed_at=None,
         )
 
     def test_empty_rsvps(self):
@@ -94,9 +79,12 @@ class TestFindMyRsvp:
         user = SimpleNamespace(pk="u2")
         assert _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.ATTENDING)], user) is None
 
-    def test_returns_status_when_user_found(self):
+    def test_returns_row_when_user_found(self):
         user = SimpleNamespace(pk="u1")
-        assert _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.MAYBE)], user) == RSVPStatus.MAYBE
+        assert (
+            _find_my_rsvp([self._make_rsvp("u1", RSVPStatus.MAYBE)], user).status
+            == RSVPStatus.MAYBE
+        )
 
     def test_returns_first_match(self):
         user = SimpleNamespace(pk="u1")
@@ -104,4 +92,4 @@ class TestFindMyRsvp:
             self._make_rsvp("u1", RSVPStatus.ATTENDING),
             self._make_rsvp("u1", RSVPStatus.MAYBE),
         ]
-        assert _find_my_rsvp(rsvps, user) == RSVPStatus.ATTENDING
+        assert _find_my_rsvp(rsvps, user).status == RSVPStatus.ATTENDING

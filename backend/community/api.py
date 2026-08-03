@@ -14,8 +14,8 @@ from community._event_flags import router as event_flags_router
 # Re-export symbols imported directly in tests
 from community._event_helpers import (  # noqa: F401
     _build_guest_list,
-    _can_see_phones,
     _find_my_rsvp,
+    _is_cohost,
 )
 from community._event_host_actions import router as event_host_actions_router
 from community._event_host_rsvps import router as event_host_rsvps_router
