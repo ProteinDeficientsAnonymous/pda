@@ -71,6 +71,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
     status: RsvpInputStatus;
     comment?: string;
     hasPlusOne: boolean;
+    paidConfirmed?: boolean;
   }) {
     setError(null);
     try {
@@ -80,6 +81,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           status: args.status,
           hasPlusOne: args.hasPlusOne,
           ...(args.comment !== undefined ? { comment: args.comment } : {}),
+          ...(args.paidConfirmed ? { paidConfirmed: true } : {}),
         });
       } else {
         await setRsvp.mutateAsync({
@@ -87,6 +89,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           status: args.status,
           hasPlusOne: args.hasPlusOne,
           ...(args.comment === undefined ? {} : { comment: args.comment }),
+          ...(args.paidConfirmed ? { paidConfirmed: true } : {}),
         });
       }
       setBox(null);
@@ -160,6 +163,7 @@ export function MyRsvpSection({ event, token, locked = false }: Props) {
           key={box.mode + box.initialStatus}
           open
           mode={box.mode}
+          event={event}
           initialStatus={box.initialStatus}
           initialHasPlusOne={hasPlusOne}
           allowPlusOnes={event.allowPlusOnes}

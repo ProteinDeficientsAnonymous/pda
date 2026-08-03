@@ -3,19 +3,23 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
-import { type RsvpInputStatus, RsvpStatus } from '@/models/event';
+import { type Event, type RsvpInputStatus, RsvpStatus } from '@/models/event';
 
+import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { RsvpCommentField } from './RsvpCommentField';
+import { usePaymentGate } from './usePaymentGate';
 
 interface ConfirmArgs {
   status: RsvpInputStatus;
   comment?: string;
   hasPlusOne: boolean;
+  paidConfirmed?: boolean;
 }
 
 interface Props {
   open: boolean;
   mode: 'create' | 'edit';
+  event: Event;
   initialStatus: RsvpInputStatus;
   initialHasPlusOne: boolean;
   allowPlusOnes: boolean;
@@ -30,6 +34,7 @@ interface Props {
 export function RsvpBox({
   open,
   mode,
+  event,
   initialStatus,
   initialHasPlusOne,
   allowPlusOnes,
@@ -43,65 +48,89 @@ export function RsvpBox({
   const [status, setStatus] = useState<RsvpInputStatus>(initialStatus);
   const [comment, setComment] = useState('');
   const [hasPlusOne, setHasPlusOne] = useState(initialHasPlusOne);
+  const [showPayment, setShowPayment] = useState(false);
+  const needsPaymentFor = usePaymentGate(event);
 
   const showComment = allowComment ?? mode === 'create';
   const showPlusOne = allowPlusOnes;
   const joiningWaitlist = status === RsvpStatus.Attending && atCapacity;
 
-  function confirm() {
+  function submit(paidConfirmed: boolean) {
     const trimmed = comment.trim();
     const args: ConfirmArgs = { status, hasPlusOne };
     if (showComment && trimmed) args.comment = trimmed;
+    if (paidConfirmed) args.paidConfirmed = true;
     onConfirm(args);
+  }
+
+  function confirm() {
+    if (needsPaymentFor(status)) {
+      setShowPayment(true);
+      return;
+    }
+    submit(false);
   }
 
   return (
     <Dialog open={open} onClose={onClose} title="rsvp">
-      <div className="flex flex-col gap-4">
-        <RsvpStatusPicker
-          value={status}
-          onSelect={setStatus}
-          disabled={busy}
-          labelFor={(s, defaultLabel) =>
-            s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
-          }
+      {showPayment ? (
+        <PaymentConfirmStep
+          event={event}
+          busy={busy}
+          onConfirm={() => {
+            submit(true);
+          }}
+          onBack={() => {
+            setShowPayment(false);
+          }}
         />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <RsvpStatusPicker
+            value={status}
+            onSelect={setStatus}
+            disabled={busy}
+            labelFor={(s, defaultLabel) =>
+              s === RsvpStatus.Attending && atCapacity ? 'join the waitlist' : defaultLabel
+            }
+          />
 
-        {showPlusOne ? (
-          <div className="flex justify-center">
-            <Button
-              type="button"
-              variant={hasPlusOne ? 'primary' : 'secondary'}
-              onClick={() => {
-                setHasPlusOne(!hasPlusOne);
-              }}
-              disabled={busy}
-            >
-              {hasPlusOne ? 'remove +1' : 'add +1'}
-            </Button>
-          </div>
-        ) : null}
+          {showPlusOne ? (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant={hasPlusOne ? 'primary' : 'secondary'}
+                onClick={() => {
+                  setHasPlusOne(!hasPlusOne);
+                }}
+                disabled={busy}
+              >
+                {hasPlusOne ? 'remove +1' : 'add +1'}
+              </Button>
+            </div>
+          ) : null}
 
-        {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
+          {showComment ? <RsvpCommentField value={comment} onChange={setComment} /> : null}
 
-        <div className="flex items-center justify-between gap-2">
-          {mode === 'edit' && onRemove ? (
-            <Button type="button" variant="secondary" onClick={onRemove} disabled={busy}>
-              remove rsvp
-            </Button>
-          ) : (
-            <span />
-          )}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
-              cancel
-            </Button>
-            <Button type="button" onClick={confirm} disabled={busy}>
-              {confirmLabel(mode, joiningWaitlist)}
-            </Button>
+          <div className="flex items-center justify-between gap-2">
+            {mode === 'edit' && onRemove ? (
+              <Button type="button" variant="secondary" onClick={onRemove} disabled={busy}>
+                remove rsvp
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
+                cancel
+              </Button>
+              <Button type="button" onClick={confirm} disabled={busy}>
+                {confirmLabel(mode, joiningWaitlist)}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </Dialog>
   );
 }
