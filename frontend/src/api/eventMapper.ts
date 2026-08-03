@@ -16,6 +16,7 @@ interface WireGuest {
   has_plus_one?: boolean;
   attendance?: string;
   is_member?: boolean;
+  paid_confirmed?: boolean;
 }
 
 export interface WireEvent {
@@ -58,6 +59,7 @@ export interface WireEvent {
 
   guests?: WireGuest[];
   my_rsvp?: string | null;
+  my_paid_confirmed?: boolean;
   viewer_user_id?: string | null;
   survey_slugs?: string[];
   invited_user_ids?: string[];

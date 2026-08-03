@@ -37,8 +37,8 @@ describe('mapEvent', () => {
         ],
       }),
     );
-    expect(result.guests[0].paidConfirmed).toBe(true);
-    expect(result.guests[1].paidConfirmed).toBe(false);
+    expect(result.guests[0]!.paidConfirmed).toBe(true);
+    expect(result.guests[1]!.paidConfirmed).toBe(false);
   });
 
   it('converts ISO start_datetime to Date', () => {

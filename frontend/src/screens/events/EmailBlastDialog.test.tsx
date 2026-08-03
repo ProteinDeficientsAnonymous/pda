@@ -37,6 +37,7 @@ function guest(status: string, i: number): EventGuest {
     hasPlusOne: false,
     attendance: 'unknown',
     isMember: true,
+    paidConfirmed: false,
   };
 }
 
