@@ -1,7 +1,6 @@
 import type { SyntheticEvent } from 'react';
 import { useState } from 'react';
 
-import { RSVP_QUESTION_TYPE_OPTIONS } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
@@ -11,6 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import {
   newQuestionId,
   parseOptionsText,
+  RSVP_QUESTION_TYPE_OPTIONS,
   type RsvpQuestionDraft,
   type RsvpQuestionType,
   wantsOptions,
