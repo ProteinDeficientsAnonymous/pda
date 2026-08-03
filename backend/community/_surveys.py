@@ -54,6 +54,7 @@ def list_surveys_admin(request):
                 "endpoint": "list_surveys_admin",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     surveys = Survey.objects.all()
@@ -90,6 +91,7 @@ def create_survey(request, payload: SurveyIn):
                 "endpoint": "create_survey",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     if Survey.objects.filter(slug=payload.slug).exists():
@@ -138,6 +140,7 @@ def get_survey_admin(request, survey_id: UUID):
                 "endpoint": "get_survey_admin",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -164,6 +167,7 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
                 "endpoint": "update_survey",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -207,6 +211,7 @@ def delete_survey(request, survey_id: UUID):
                 "endpoint": "delete_survey",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -246,6 +251,7 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
                 "endpoint": "create_survey_question",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -289,6 +295,7 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
                 "endpoint": "update_survey_question",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -328,6 +335,7 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
                 "endpoint": "delete_survey_question",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -363,6 +371,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
                 "endpoint": "reorder_survey_questions",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -402,6 +411,7 @@ def list_survey_responses(request, survey_id: UUID):
                 "endpoint": "list_survey_responses",
                 "required_permission": PermissionKey.MANAGE_SURVEYS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:

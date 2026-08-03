@@ -249,6 +249,7 @@ def list_join_requests(request):
                 "endpoint": "list_join_requests",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
@@ -347,6 +348,7 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
                 "endpoint": "update_join_request_status",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_join_request_status")
 
@@ -423,6 +425,7 @@ def unreject_join_request(request, id: UUID):
                 "endpoint": "unreject_join_request",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="unreject_join_request")
 

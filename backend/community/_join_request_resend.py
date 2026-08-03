@@ -48,6 +48,7 @@ def resend_magic_link(request, id: UUID):
                 "endpoint": "resend_magic_link",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="resend_magic_link")
 

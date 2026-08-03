@@ -87,6 +87,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             logging.INFO,
             "magic_link_request_skipped_invalid_phone",
             request,
+            persist=False,
         )
         return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
@@ -96,6 +97,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             logging.INFO,
             "magic_link_request_skipped_unknown_phone",
             request,
+            persist=False,
         )
         return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
 
@@ -119,6 +121,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             request,
             target_type=AuditTargetType.USER,
             target_id=str(user.pk),
+            persist=False,
         )
         retry_after = max(1, round((recent_token.created_at + _COOLDOWN - now).total_seconds()))
         return Status(

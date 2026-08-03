@@ -1,14 +1,37 @@
 """Audit logging helper for structured security and admin action logging."""
 
+import ipaddress
 import logging
 
-from audit.models import AuditTargetType
+from audit.models import AuditLogEntry, AuditTargetType
+from django.db import transaction
 
 from config.ratelimit import client_ip
 
 __all__ = ["AuditTargetType", "audit_log"]
 
 _audit_logger = logging.getLogger("pda.audit")
+
+
+def _valid_ip(value: str) -> str | None:
+    """client_ip can return 'anon' or an unvalidated XFF hop; Postgres would
+    reject either, and the failure would be swallowed as a lost audit row."""
+    try:
+        return str(ipaddress.ip_address(value))
+    except ValueError:
+        return None
+
+
+def _persist(**fields) -> None:
+    """Write one audit row, swallowing any failure.
+
+    An audit write must never turn a successful user action into a 500, so
+    every exception is logged and dropped rather than propagated.
+    """
+    try:
+        AuditLogEntry.objects.create(**fields)
+    except Exception:
+        _audit_logger.exception("audit_persist_failed", extra={"action": fields.get("action")})
 
 
 def audit_log(  # noqa: PLR0913
@@ -18,6 +41,7 @@ def audit_log(  # noqa: PLR0913
     target_type: AuditTargetType | str = "",
     target_id: str = "",
     details: dict | None = None,
+    persist: bool = True,
 ) -> None:
     """Emit a structured audit log entry.
 
@@ -28,6 +52,8 @@ def audit_log(  # noqa: PLR0913
         target_type: AuditTargetType member for the affected object
         target_id: string ID of the affected object
         details: optional context dict (avoid including raw phone numbers or tokens)
+        persist: write a row to the audit table; pass False for access-control
+            noise and bot traffic, which belong in the console log only
     """
     user = getattr(request, "auth", None)
     if user and hasattr(user, "pk"):
@@ -56,3 +82,20 @@ def audit_log(  # noqa: PLR0913
             "ip_address": ip_address,
         },
     )
+
+    if not persist:
+        return
+
+    fields = {
+        "action": action,
+        "actor": user if user and hasattr(user, "pk") else None,
+        "actor_label": actor_name,
+        "target_type": target_type,
+        "target_id": target_id,
+        "details": details or {},
+        "ip_address": _valid_ip(ip_address),
+        "level": level,
+    }
+    # on_commit so a rolled-back action leaves no row — the action didn't happen.
+    # Outside a transaction Django runs the callback immediately.
+    transaction.on_commit(lambda: _persist(**fields))

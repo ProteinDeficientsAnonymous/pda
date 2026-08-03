@@ -218,6 +218,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             request,
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
+            persist=False,
         )
         return Status(200, _public_rsvp_decoy(event, payload.status, False))
 

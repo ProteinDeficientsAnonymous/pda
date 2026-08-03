@@ -113,6 +113,7 @@ def send_email_blast(request, event_id: UUID, payload: EmailBlastIn):
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "send_email_blast"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="send_email_blast")
 

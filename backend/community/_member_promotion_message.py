@@ -53,6 +53,7 @@ def update_member_promotion_message(request, payload: MemberPromotionMessagePatc
                 "endpoint": "update_member_promotion_message",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="edit_member_promotion_message")
 

@@ -170,6 +170,7 @@ def create_event_poll(request, event_id: UUID, payload: EventPollIn):
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "create_event_poll"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_event_poll")
     if event.status == EventStatus.CANCELLED:
@@ -298,6 +299,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "finalize_event_poll"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_event_poll")
     if event.status == EventStatus.CANCELLED:
@@ -360,6 +362,7 @@ def delete_event_poll(request, event_id: UUID):
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "delete_event_poll"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="delete_event_poll")
     try:

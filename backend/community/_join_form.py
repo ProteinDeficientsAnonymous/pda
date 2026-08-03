@@ -70,6 +70,7 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
                 "endpoint": "create_join_form_question",
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     max_order = JoinFormQuestion.objects.count()
@@ -106,6 +107,7 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
                 "endpoint": "reorder_join_form_questions",
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     for idx, qid in enumerate(payload.question_ids):
@@ -132,6 +134,7 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
                 "endpoint": "update_join_form_question",
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     try:
@@ -171,6 +174,7 @@ def delete_join_form_question(request, question_id: UUID):
                 "endpoint": "delete_join_form_question",
                 "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     try:

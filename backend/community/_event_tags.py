@@ -39,6 +39,7 @@ def _require_manage_tags(request, endpoint: str, target_id: str = "") -> None:
             "endpoint": endpoint,
             "required_permission": PermissionKey.MANAGE_EVENTS,
         },
+        persist=False,
     )
     raise_validation(Code.Perm.DENIED, status_code=403, action="manage_events")
 

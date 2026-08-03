@@ -74,6 +74,7 @@ def update_page(request, slug: str, payload: EditablePagePatchIn):
                 "endpoint": "update_page",
                 "required_permission": PermissionKey.EDIT_GUIDELINES,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_page")
 

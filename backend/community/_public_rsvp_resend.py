@@ -92,6 +92,7 @@ def resend_manage_link(request, payload: ResendManageLinkIn):
             logging.WARNING,
             "public_rsvp_resend_honeypot_tripped",
             request,
+            persist=False,
         )
         return _neutral()
 

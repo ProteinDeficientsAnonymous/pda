@@ -132,6 +132,7 @@ def get_survey_tallies(request, survey_id: UUID):
             target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={"endpoint": "get_survey_tallies"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="get_survey_tallies")
 
@@ -167,6 +168,7 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
             target_type=AuditTargetType.SURVEY,
             target_id=str(survey_id),
             details={"endpoint": "finalize_poll"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_poll")
 

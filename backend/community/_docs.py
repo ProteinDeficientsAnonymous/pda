@@ -149,6 +149,7 @@ def list_folders(request):
                 "endpoint": "list_folders",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
     top_level = DocFolder.objects.filter(parent__isnull=True).prefetch_related(
@@ -172,6 +173,7 @@ def create_folder(request, payload: FolderIn):
                 "endpoint": "create_folder",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -209,6 +211,7 @@ def reorder_folders(request, payload: ReorderIn):
                 "endpoint": "reorder_folders",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -235,6 +238,7 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
                 "endpoint": "update_folder",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -287,6 +291,7 @@ def delete_folder(request, folder_id: str):
                 "endpoint": "delete_folder",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 

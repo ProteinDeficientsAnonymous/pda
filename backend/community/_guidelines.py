@@ -66,6 +66,7 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
                 "endpoint": "update_guidelines",
                 "required_permission": PermissionKey.EDIT_GUIDELINES,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_guidelines")
     g = CommunityGuidelines.get()
@@ -93,6 +94,7 @@ def update_faq(request, payload: GuidelinesPatchIn):
             "permission_denied",
             request,
             details={"endpoint": "update_faq", "required_permission": PermissionKey.EDIT_FAQ},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_guidelines")
     f = FAQ.get()
