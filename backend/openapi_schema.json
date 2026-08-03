@@ -3327,8 +3327,7 @@
             "type": "integer"
           },
           "field_type": {
-            "title": "Field Type",
-            "type": "string"
+            "$ref": "#/components/schemas/JoinFormQuestionType"
           },
           "id": {
             "title": "Id",
@@ -5329,10 +5328,12 @@
       "SurveyQuestionIn": {
         "properties": {
           "field_type": {
-            "default": "text",
-            "maxLength": 20,
-            "title": "Field Type",
-            "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SurveyQuestionType"
+              }
+            ],
+            "default": "text"
           },
           "label": {
             "maxLength": 300,
@@ -5382,8 +5383,7 @@
             "type": "integer"
           },
           "field_type": {
-            "title": "Field Type",
-            "type": "string"
+            "$ref": "#/components/schemas/SurveyQuestionType"
           },
           "id": {
             "title": "Id",
@@ -5415,6 +5415,21 @@
         ],
         "title": "SurveyQuestionOut",
         "type": "object"
+      },
+      "SurveyQuestionType": {
+        "enum": [
+          "text",
+          "textarea",
+          "select",
+          "multiselect",
+          "dropdown",
+          "number",
+          "yes_no",
+          "rating",
+          "datetime_poll"
+        ],
+        "title": "SurveyQuestionType",
+        "type": "string"
       },
       "SurveyResponseOut": {
         "properties": {

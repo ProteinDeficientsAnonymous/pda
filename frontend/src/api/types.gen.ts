@@ -3512,8 +3512,7 @@ export interface components {
         JoinFormQuestionOut: {
             /** Display Order */
             display_order: number;
-            /** Field Type */
-            field_type: string;
+            field_type: components["schemas"]["JoinFormQuestionType"];
             /** Id */
             id: string;
             /** Label */
@@ -4354,11 +4353,8 @@ export interface components {
         };
         /** SurveyQuestionIn */
         SurveyQuestionIn: {
-            /**
-             * Field Type
-             * @default text
-             */
-            field_type: string;
+            /** @default text */
+            field_type: components["schemas"]["SurveyQuestionType"];
             /** Label */
             label: string;
             /**
@@ -4381,8 +4377,7 @@ export interface components {
         SurveyQuestionOut: {
             /** Display Order */
             display_order: number;
-            /** Field Type */
-            field_type: string;
+            field_type: components["schemas"]["SurveyQuestionType"];
             /** Id */
             id: string;
             /** Label */
@@ -4395,6 +4390,11 @@ export interface components {
             /** Required */
             required: boolean;
         };
+        /**
+         * SurveyQuestionType
+         * @enum {string}
+         */
+        SurveyQuestionType: "text" | "textarea" | "select" | "multiselect" | "dropdown" | "number" | "yes_no" | "rating" | "datetime_poll";
         /** SurveyResponseOut */
         SurveyResponseOut: {
             /** Answers */

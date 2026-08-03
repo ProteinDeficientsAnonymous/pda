@@ -11,7 +11,7 @@ from community.models import SurveyQuestionType, SurveyVisibility
 class SurveyQuestionOut(BaseModel):
     id: str
     label: str
-    field_type: str
+    field_type: SurveyQuestionType
     options: list[str] = []
     required: bool
     display_order: int
@@ -92,7 +92,7 @@ class FinalizePollIn(BaseModel):
 
 class SurveyQuestionIn(BaseModel):
     label: str = Field(max_length=FieldLimit.SHORT_TEXT)
-    field_type: str = Field(default=SurveyQuestionType.TEXT, max_length=FieldLimit.CHOICE)
+    field_type: SurveyQuestionType = SurveyQuestionType.TEXT
     options: list[str] = []
     required: bool = False
 

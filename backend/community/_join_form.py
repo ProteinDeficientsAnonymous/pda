@@ -21,7 +21,7 @@ router = Router()
 class JoinFormQuestionOut(BaseModel):
     id: str
     label: str
-    field_type: str
+    field_type: JoinFormQuestionType
     options: list[str] = []
     required: bool
     display_order: int
