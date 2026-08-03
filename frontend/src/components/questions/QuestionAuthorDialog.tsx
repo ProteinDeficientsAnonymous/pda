@@ -58,8 +58,7 @@ function QuestionAuthorDialogBody<T extends string>({
   const [error, setError] = useState<string | null>(null);
 
   const wantsOptions = questionTypeWantsOptions(fieldType as SurveyQuestionType);
-  const hint =
-    typeof optionsHint === 'function' ? optionsHint(fieldType) : optionsHint;
+  const hint = typeof optionsHint === 'function' ? optionsHint(fieldType) : optionsHint;
 
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
