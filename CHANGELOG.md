@@ -1,3 +1,10 @@
+# [0.80.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.79.0...v0.80.0) (2026-08-03)
+
+
+### Features
+
+* 1045 - payment-aware waitlist promotion notices (4/6) ([#1227](https://github.com/ProteinDeficientsAnonymous/pda/issues/1227)) ([f0c4e56](https://github.com/ProteinDeficientsAnonymous/pda/commit/f0c4e565c878292114ac3a53f57d8410478e121a))
+
 # [0.79.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.78.0...v0.79.0) (2026-08-03)
 
 
