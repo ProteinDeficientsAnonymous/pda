@@ -39,7 +39,13 @@ from community.models.event import (
     event_lookup_q,
     parse_event_ref,
 )
-from community.models.feature_flag import FeatureFlagState, flag_enabled, resolve_flags
+from community.models.feature_flag import (
+    FeatureFlagState,
+    cached_flags,
+    clear_flag_cache,
+    flag_enabled,
+    resolve_flags,
+)
 from community.models.join_form import JoinFormQuestion, JoinRequest
 from community.models.poll import EventPoll, PollOption, PollVote
 from community.models.survey import (
@@ -89,6 +95,8 @@ __all__ = [
     "event_lookup_q",
     "parse_event_ref",
     "FeatureFlagState",
+    "cached_flags",
+    "clear_flag_cache",
     "flag_enabled",
     "resolve_flags",
     "JoinFormQuestion",
