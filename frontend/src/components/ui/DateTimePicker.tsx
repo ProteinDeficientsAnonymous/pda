@@ -127,7 +127,12 @@ export function DateTimePicker({ label, value, onChange, error, optional, min }:
               onChange={(e) => {
                 const [h, m] = e.target.value.split(':').map(Number) as [number, number];
                 const base = selectedDate ?? new Date();
-                onChange(dateToIso(base, h, m));
+                const picked = dateToIso(base, h, m);
+                const clamped =
+                  new Date(picked) < minInstant
+                    ? dateToIso(base, minInstant.getHours(), minInstant.getMinutes())
+                    : picked;
+                onChange(clamped);
               }}
               min={minTime}
               className="border-border bg-surface focus:border-brand-500 focus:ring-brand-200 h-8 rounded-md border px-2 text-base outline-none focus:ring-1 md:text-sm"
