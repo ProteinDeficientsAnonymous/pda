@@ -1,5 +1,7 @@
 """TextChoices enums and plain constants for the community app."""
 
+from typing import NamedTuple
+
 from django.db import models
 
 
@@ -49,24 +51,41 @@ class SurveyVisibility(models.TextChoices):
     MEMBERS_ONLY = "members_only", "Members only"
 
 
+class QuestionTypeDefinition(NamedTuple):
+    value: str
+    label: str
+
+
+class QuestionType:
+    TEXT = QuestionTypeDefinition("text", "Text")
+    TEXTAREA = QuestionTypeDefinition("textarea", "Text area")
+    SELECT = QuestionTypeDefinition("select", "Single select")
+    MULTISELECT = QuestionTypeDefinition("multiselect", "Multi select")
+    DROPDOWN = QuestionTypeDefinition("dropdown", "Dropdown")
+    NUMBER = QuestionTypeDefinition("number", "Number")
+    YES_NO = QuestionTypeDefinition("yes_no", "Yes / No")
+    RATING = QuestionTypeDefinition("rating", "Rating")
+    DATETIME_POLL = QuestionTypeDefinition("datetime_poll", "Datetime poll")
+
+
 class SurveyQuestionType(models.TextChoices):
-    TEXT = "text", "Text"
-    TEXTAREA = "textarea", "Text area"
-    SELECT = "select", "Single select"
-    MULTISELECT = "multiselect", "Multi select"
-    DROPDOWN = "dropdown", "Dropdown"
-    NUMBER = "number", "Number"
-    YES_NO = "yes_no", "Yes / No"
-    RATING = "rating", "Rating"
-    DATETIME_POLL = "datetime_poll", "Datetime poll"
+    TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
+    TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
+    SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
+    MULTISELECT = QuestionType.MULTISELECT.value, QuestionType.MULTISELECT.label
+    DROPDOWN = QuestionType.DROPDOWN.value, QuestionType.DROPDOWN.label
+    NUMBER = QuestionType.NUMBER.value, QuestionType.NUMBER.label
+    YES_NO = QuestionType.YES_NO.value, QuestionType.YES_NO.label
+    RATING = QuestionType.RATING.value, QuestionType.RATING.label
+    DATETIME_POLL = QuestionType.DATETIME_POLL.value, QuestionType.DATETIME_POLL.label
 
 
 class JoinFormQuestionType(models.TextChoices):
-    """Subset of SurveyQuestionType wire values used on the join form."""
+    """Question types supported by join forms."""
 
-    TEXT = SurveyQuestionType.TEXT.value, SurveyQuestionType.TEXT.label
-    TEXTAREA = SurveyQuestionType.TEXTAREA.value, SurveyQuestionType.TEXTAREA.label
-    DROPDOWN = SurveyQuestionType.DROPDOWN.value, SurveyQuestionType.DROPDOWN.label
+    TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
+    TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
+    DROPDOWN = QuestionType.DROPDOWN.value, QuestionType.DROPDOWN.label
 
 
 class InvitePermission(models.TextChoices):

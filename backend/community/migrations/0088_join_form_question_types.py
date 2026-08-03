@@ -5,6 +5,7 @@ from django.db.models.functions import Lower
 def migrate_join_question_types(apps, schema_editor):
     JoinFormQuestion = apps.get_model("community", "JoinFormQuestion")
     JoinFormQuestion.objects.filter(field_type="select").update(field_type="dropdown")
+    # Preserve the legacy UI heuristic that rendered "why" questions as multiline text.
     JoinFormQuestion.objects.annotate(label_l=Lower("label")).filter(
         field_type="text", label_l__contains="why"
     ).update(field_type="textarea")

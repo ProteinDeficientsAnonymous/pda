@@ -3528,7 +3528,7 @@ export interface components {
         };
         /**
          * JoinFormQuestionType
-         * @description Subset of SurveyQuestionType wire values used on the join form.
+         * @description Question types supported by join forms.
          * @enum {string}
          */
         JoinFormQuestionType: "text" | "textarea" | "dropdown";
