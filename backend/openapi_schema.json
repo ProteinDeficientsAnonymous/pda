@@ -4631,7 +4631,7 @@
               "maxLength": 2000,
               "type": "string"
             },
-            "description": "Question UUID to answer; multiselect values are comma-separated.",
+            "description": "Question UUID to answer; checkbox values are comma-separated.",
             "title": "Answers",
             "type": "object"
           },

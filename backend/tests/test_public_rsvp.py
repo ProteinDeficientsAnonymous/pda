@@ -451,7 +451,7 @@ class TestPublicRsvpAnswers:
         q = EventRsvpQuestion.objects.create(
             event=official_event,
             label="transport?",
-            field_type="dropdown",
+            field_type="select",
             options=["driving", "transit"],
             required=True,
             display_order=0,
@@ -471,7 +471,7 @@ class TestPublicRsvpAnswers:
         EventRsvpQuestion.objects.create(
             event=official_event,
             label="transport?",
-            field_type="dropdown",
+            field_type="select",
             options=["driving", "transit"],
             required=True,
             display_order=0,

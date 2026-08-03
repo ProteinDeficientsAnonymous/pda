@@ -47,7 +47,7 @@ class PublicRsvpIn(BaseModel):
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     answers: dict[str, RsvpAnswer] = Field(
         default_factory=dict,
-        description="Question UUID to answer; multiselect values are comma-separated.",
+        description="Question UUID to answer; checkbox values are comma-separated.",
     )
     # Honeypot: hidden field humans never fill in. A non-empty value is spam.
     website: str = Field(default="", max_length=FieldLimit.DISPLAY_NAME)

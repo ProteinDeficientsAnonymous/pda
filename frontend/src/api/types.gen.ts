@@ -4126,7 +4126,7 @@ export interface components {
         PublicRsvpIn: {
             /**
              * Answers
-             * @description Question UUID to answer; multiselect values are comma-separated.
+             * @description Question UUID to answer; checkbox values are comma-separated.
              */
             answers?: {
                 [key: string]: string;
