@@ -13,12 +13,12 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
-from notifications.service import (
-    broadcast_cohost_change,
+from notifications._cohost_notifications import (
     create_cohost_invite_accepted_notification,
     create_cohost_invite_declined_notification,
     create_cohost_removed_notification,
 )
+from notifications.service import broadcast_cohost_change
 
 from community._cohost_invite_helpers import expire_stale_cohost_invites
 from community._event_helpers import _can_manage_cohost_invites, _event_out

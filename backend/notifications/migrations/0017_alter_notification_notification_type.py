@@ -29,6 +29,7 @@ class Migration(migrations.Migration):
                     ("rsvp_status_changed", "RSVP Status Changed"),
                     ("rsvp_declined_note", "RSVP Declined Note"),
                     ("checkin_nudge", "Check-in Nudge"),
+                    ("payment_revoked", "Payment Confirmation Revoked"),
                 ],
                 default="event_invite",
                 max_length=32,

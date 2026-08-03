@@ -11,7 +11,7 @@ from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 from notifications.models import Notification, NotificationType
-from notifications.service import _notify_users
+from notifications.service import notify_users
 
 from users._helpers import _create_magic_token
 from users.models import MagicLoginToken, User
@@ -99,7 +99,7 @@ def generate_magic_link(request, user_id: str):
         magic_token = _create_magic_token(user)
 
     if recipient_ids:
-        _notify_users(str(rid) for rid in recipient_ids)
+        notify_users(str(rid) for rid in recipient_ids)
         audit_log(
             logging.INFO,
             "magic_link_notifications_cleared",
