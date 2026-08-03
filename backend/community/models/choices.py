@@ -88,6 +88,19 @@ class JoinFormQuestionType(models.TextChoices):
     DROPDOWN = QuestionType.DROPDOWN.value, QuestionType.DROPDOWN.label
 
 
+class RsvpQuestionType(models.TextChoices):
+    """Question types supported by event RSVP questions."""
+
+    TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
+    DROPDOWN = QuestionType.DROPDOWN.value, QuestionType.DROPDOWN.label
+    MULTISELECT = QuestionType.MULTISELECT.value, QuestionType.MULTISELECT.label
+
+
+RSVP_CHOICE_TYPES = frozenset(
+    {RsvpQuestionType.DROPDOWN, RsvpQuestionType.MULTISELECT},
+)
+
+
 class InvitePermission(models.TextChoices):
     ALL_MEMBERS = "all_members", "All members"
     CO_HOSTS_ONLY = "co_hosts_only", "Co-hosts only"
