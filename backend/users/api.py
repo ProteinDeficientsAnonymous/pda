@@ -13,7 +13,7 @@ from users._magic_login import router as magic_login_router
 from users._management import router as management_router
 from users._members import router as members_router
 from users._roles import router as roles_router
-from users._user_deletion import router as user_deletion_router  # registers onto management_router
+from users._user_deletion import router as user_deletion_router
 
 __all__ = [
     "_create_user_with_role",
