@@ -1,18 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from './client';
+import type { components } from './types.gen';
 
-export type SurveyQuestionType =
-  | 'text'
-  | 'textarea'
-  | 'select'
-  | 'multiselect'
-  | 'dropdown'
-  | 'number'
-  | 'yes_no'
-  | 'rating'
-  | 'datetime_poll';
-
+export type SurveyQuestionType = components['schemas']['SurveyQuestionType'];
 export const DEFAULT_SURVEY_QUESTION_TYPE: SurveyQuestionType = 'text';
 
 export interface SurveyQuestion {
