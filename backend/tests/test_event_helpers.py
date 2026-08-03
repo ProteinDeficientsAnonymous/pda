@@ -1,25 +1,25 @@
-"""Unit tests for event helper functions (_is_cohost, _build_guest_list, _find_my_rsvp)."""
+"""Unit tests for event helper functions (is_cohost, _build_guest_list, _find_my_rsvp)."""
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from community.api import _build_guest_list, _find_my_rsvp, _is_cohost
+from community.api import _build_guest_list, _find_my_rsvp, is_cohost
 from community.models import AttendanceStatus, RSVPStatus
 
 
 class TestIsCohost:
     def test_returns_false_when_no_requesting_user(self):
-        assert _is_cohost(None, {"id1"}) is False
+        assert is_cohost(None, {"id1"}) is False
 
     def test_returns_true_when_user_is_co_host(self):
         requesting = MagicMock()
         requesting.pk = "user-2"
-        assert _is_cohost(requesting, {"user-2"}) is True
+        assert is_cohost(requesting, {"user-2"}) is True
 
     def test_returns_false_when_user_is_not_a_co_host(self):
         requesting = MagicMock()
         requesting.pk = "user-3"
-        assert _is_cohost(requesting, {"user-2"}) is False
+        assert is_cohost(requesting, {"user-2"}) is False
 
 
 class TestBuildGuestList:

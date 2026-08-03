@@ -234,6 +234,11 @@ class RSVPIn(BaseModel):
 class HostRSVPIn(BaseModel):
     status: RSVPStatus
     has_plus_one: bool = False
+    paid_confirmed: bool = False
+
+
+class HostRSVPPaymentIn(BaseModel):
+    paid_confirmed: bool
 
 
 class TextRecipientsOut(BaseModel):

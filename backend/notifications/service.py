@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from community.models import Event
 
 
-def _notify_users(user_ids: Iterable[str]) -> None:
+def notify_users(user_ids: Iterable[str]) -> None:
     """Fire pg_notify on the notifications channel (for new notification rows)."""
     if connection.vendor != "postgresql":
         return
@@ -142,7 +142,7 @@ def create_join_request_notifications(full_name: str) -> None:
             for user in recipients
         ]
     )
-    _notify_users(str(user.pk) for user in recipients)
+    notify_users(str(user.pk) for user in recipients)
 
 
 def create_event_flag_notifications(event: Event, flagger: User) -> None:
@@ -160,7 +160,7 @@ def create_event_flag_notifications(event: Event, flagger: User) -> None:
             for user in recipients
         ]
     )
-    _notify_users(str(user.pk) for user in recipients)
+    notify_users(str(user.pk) for user in recipients)
 
 
 def create_magic_link_request_notifications(user: User) -> None:
@@ -178,92 +178,7 @@ def create_magic_link_request_notifications(user: User) -> None:
             for recipient in recipients
         ]
     )
-    _notify_users(str(recipient.pk) for recipient in recipients)
-
-
-def create_cohost_invite_notifications(
-    event: Event,
-    new_user_ids: Iterable[str],
-    invited_by: User,
-) -> None:
-    """Notify users who just received a co-host invite for this event."""
-    invited_by_id = str(invited_by.pk)
-    invited_by_name = visible_display_name(invited_by, None)
-    notified_ids = [str(uid) for uid in new_user_ids if str(uid) != invited_by_id]
-    if not notified_ids:
-        return
-    Notification.objects.bulk_create(
-        [
-            Notification(
-                recipient_id=user_id,
-                notification_type=NotificationType.COHOST_INVITE,
-                event=event,
-                related_user=invited_by,
-                message=(
-                    f"{invited_by_name} invited you to co-host {event.title} — tap to respond"
-                ),
-            )
-            for user_id in notified_ids
-        ]
-    )
-    _notify_users(notified_ids)
-
-
-def create_cohost_invite_accepted_notification(
-    event: Event,
-    invitee: User,
-    inviter_id: str | None,
-) -> None:
-    """Notify the inviter that an invitee accepted their co-host invite."""
-    if inviter_id is None or str(inviter_id) == str(invitee.pk):
-        return
-    invitee_name = visible_display_name(invitee, None)
-    Notification.objects.create(
-        recipient_id=str(inviter_id),
-        notification_type=NotificationType.COHOST_INVITE_ACCEPTED,
-        event=event,
-        related_user=invitee,
-        message=f"{invitee_name} accepted your co-host invite for {event.title}",
-    )
-    _notify_users([str(inviter_id)])
-
-
-def create_cohost_invite_declined_notification(
-    event: Event,
-    invitee: User,
-    inviter_id: str | None,
-) -> None:
-    """Notify the inviter that an invitee declined their co-host invite."""
-    if inviter_id is None or str(inviter_id) == str(invitee.pk):
-        return
-    invitee_name = visible_display_name(invitee, None)
-    Notification.objects.create(
-        recipient_id=str(inviter_id),
-        notification_type=NotificationType.COHOST_INVITE_DECLINED,
-        event=event,
-        related_user=invitee,
-        message=f"{invitee_name} declined your co-host invite for {event.title}",
-    )
-    _notify_users([str(inviter_id)])
-
-
-def create_cohost_removed_notification(event: Event, removed_user: User, remover: User) -> None:
-    """Notify a co-host that they've been removed from an event by someone else.
-
-    Caller is responsible for skipping self-removal — no need to notify
-    yourself that you stepped down.
-    """
-    if str(remover.pk) == str(removed_user.pk):
-        return
-    remover_name = visible_display_name(remover, None)
-    Notification.objects.create(
-        recipient_id=str(removed_user.pk),
-        notification_type=NotificationType.COHOST_REMOVED,
-        event=event,
-        related_user=remover,
-        message=f"{remover_name} removed you as a co-host of {event.title}",
-    )
-    _notify_users([str(removed_user.pk)])
+    notify_users(str(recipient.pk) for recipient in recipients)
 
 
 def create_event_cancellation_notifications(event: Event, canceller: User) -> None:
@@ -288,7 +203,7 @@ def create_event_cancellation_notifications(event: Event, canceller: User) -> No
             for user_id in recipient_ids
         ]
     )
-    _notify_users(recipient_ids)
+    notify_users(recipient_ids)
 
 
 def create_event_invite_notifications(
@@ -310,7 +225,7 @@ def create_event_invite_notifications(
             for user_id in notified_ids
         ]
     )
-    _notify_users(notified_ids)
+    notify_users(notified_ids)
 
 
 def create_waitlist_promoted_notifications(
@@ -339,7 +254,22 @@ def create_waitlist_promoted_notifications(
             for user_id in user_ids
         ]
     )
-    _notify_users(user_ids)
+    notify_users(user_ids)
+
+
+def create_payment_revoked_notification(event: Event, user_id: str) -> None:
+    """Tell a guest a host retracted their payment confirmation.
+
+    Silence here would leave them believing they're seated — they'd show up
+    unpaid, which is the outcome the whole gate exists to prevent.
+    """
+    Notification.objects.create(
+        recipient_id=user_id,
+        notification_type=NotificationType.PAYMENT_REVOKED,
+        event=event,
+        message=f"your payment for {event.title} needs attention — please confirm payment again.",
+    )
+    notify_users([user_id])
 
 
 def notify_comment_reply(reply) -> None:
@@ -362,7 +292,7 @@ def notify_comment_reply(reply) -> None:
         related_user=reply.author,
         message=f"{replier_name} replied to your comment on {event_title}",
     )
-    _notify_users([str(parent_author_id)])
+    notify_users([str(parent_author_id)])
 
 
 def notify_comment_reaction(comment, reactor: User) -> None:
@@ -378,7 +308,7 @@ def notify_comment_reaction(comment, reactor: User) -> None:
         related_user=reactor,
         message=f"{reactor_name} reacted to your comment on {event_title}",
     )
-    _notify_users([str(comment.author_id)])
+    notify_users([str(comment.author_id)])
 
 
 def _event_recipient_ids(event, *, exclude: str) -> list[str]:
@@ -414,7 +344,7 @@ def notify_rsvp_declined_note(event, author, note: str) -> None:
             for rid in recipient_id_list
         ]
     )
-    _notify_users(recipient_id_list)
+    notify_users(recipient_id_list)
 
 
 def notify_checkin_reminder(event: Event) -> None:
@@ -434,7 +364,7 @@ def notify_checkin_reminder(event: Event) -> None:
             for rid in recipient_id_list
         ]
     )
-    _notify_users(recipient_id_list)
+    notify_users(recipient_id_list)
 
 
 def notify_event_comment(comment) -> None:
@@ -459,7 +389,7 @@ def notify_event_comment(comment) -> None:
             for rid in recipient_id_list
         ]
     )
-    _notify_users(recipient_id_list)
+    notify_users(recipient_id_list)
 
 
 _RSVP_STATUS_WORDS: dict[str, str] = {
@@ -496,4 +426,4 @@ def notify_rsvp_status_changed(event: Event, rsvper: User, status: str) -> None:
             for rid in recipient_id_list
         ]
     )
-    _notify_users(recipient_id_list)
+    notify_users(recipient_id_list)

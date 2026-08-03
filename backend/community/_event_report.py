@@ -8,7 +8,7 @@ from ninja import Router
 from ninja.responses import Status
 from users._helpers import visible_display_name
 
-from community._event_helpers import _is_cohost, load_event_with_stats_prefetch
+from community._event_helpers import is_cohost, load_event_with_stats_prefetch
 from community._event_report_schemas import (
     REPORT_CSV_COLUMNS,
     AttendedPersonOut,
@@ -54,7 +54,7 @@ def _person(rsvp, viewer, can_see_phones: bool) -> CheckInReportPersonOut:
 
 def _build_report(event: Event, viewer) -> CheckInReportOut:
     co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-    can_see_phones = _is_cohost(viewer, co_host_ids)
+    can_see_phones = is_cohost(viewer, co_host_ids)
 
     attended, no_shows, canceled, unmarked = [], [], [], []
     for rsvp in _report_rsvps(event):
@@ -141,7 +141,7 @@ def get_check_in_report_csv(request, event_id: UUID, columns: str = ",".join(REP
     selected = _parse_columns(columns)
 
     co_host_ids = {str(c.id) for c in event.co_hosts.all()}
-    can_see_phones = _is_cohost(request.auth, co_host_ids)
+    can_see_phones = is_cohost(request.auth, co_host_ids)
 
     buf = io.StringIO()
     writer = csv.writer(buf)

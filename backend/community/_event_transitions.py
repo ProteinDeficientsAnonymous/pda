@@ -6,9 +6,9 @@ from config.audit import AuditTargetType, audit_log
 from django.db import transaction
 from django.utils import timezone
 from ninja.responses import Status
+from notifications._cohost_notifications import create_cohost_invite_notifications
 from notifications.service import (
     broadcast_event_created,
-    create_cohost_invite_notifications,
     create_event_cancellation_notifications,
     create_event_invite_notifications,
 )

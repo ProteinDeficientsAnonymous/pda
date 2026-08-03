@@ -5,10 +5,10 @@ from uuid import UUID
 
 from config.media_proxy import media_path
 from django.db import transaction
+from notifications._cohost_notifications import create_cohost_invite_notifications
 from notifications.service import (
     broadcast_cohost_change,
     broadcast_event_update,
-    create_cohost_invite_notifications,
     create_event_invite_notifications,
     create_waitlist_promoted_notifications,
 )
@@ -76,7 +76,7 @@ def broadcast_capacity_change(event_id: UUID, *, exclude_user_ids: set[str] | No
     transaction.on_commit(_run)
 
 
-def _is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
+def is_cohost(requesting_user, co_host_ids: set[str]) -> bool:
     """Creator is always a co-host (added on event creation), so this covers both."""
     if requesting_user is None:
         return False
@@ -313,8 +313,10 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     is_authed = auth_user is not None
     show_payment_details = can_see_payment_details(event, is_authed)
     co_host_ids = {str(u.id) for u in co_hosts}
-    is_cohost = _is_cohost(auth_user, co_host_ids)
-    payment_status_visible = is_cohost and flag_enabled(FeatureFlag.EVENT_PAYMENT_CONFIRMATION)
+    viewer_is_cohost = is_cohost(auth_user, co_host_ids)
+    payment_status_visible = viewer_is_cohost and flag_enabled(
+        FeatureFlag.EVENT_PAYMENT_CONFIRMATION
+    )
     rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
@@ -356,7 +358,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_gated(
-            _build_guest_list(rsvps, is_cohost, auth_user, payment_status_visible),
+            _build_guest_list(rsvps, viewer_is_cohost, auth_user, payment_status_visible),
             [],
             is_authed,
         ),

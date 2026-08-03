@@ -7,9 +7,9 @@ from community.models import Event, PageVisibility
 from ninja_jwt.tokens import RefreshToken
 from notifications.models import Notification, NotificationType
 from notifications.service import (
-    _notify_users,
     create_event_invite_notifications,
     create_join_request_notifications,
+    notify_users,
 )
 from users.models import User
 from users.permissions import PermissionKey
@@ -277,17 +277,17 @@ class TestCreateJoinRequestNotifications:
 
 @pytest.mark.django_db
 class TestPgNotifyIntegration:
-    """Verify that _notify_users is called when notifications are created."""
+    """Verify that notify_users is called when notifications are created."""
 
-    def test_event_invite_calls_notify_users(self, inviter, invitee, sample_event):
-        with patch("notifications.service._notify_users") as mock_notify:
+    def test_event_invite_callsnotify_users(self, inviter, invitee, sample_event):
+        with patch("notifications.service.notify_users") as mock_notify:
             create_event_invite_notifications(sample_event, [str(invitee.pk)], inviter)
         mock_notify.assert_called_once()
         called_ids = list(mock_notify.call_args[0][0])
         assert str(invitee.pk) in called_ids
 
     def test_event_invite_excludes_inviter_from_notify(self, inviter, invitee, sample_event):
-        with patch("notifications.service._notify_users") as mock_notify:
+        with patch("notifications.service.notify_users") as mock_notify:
             create_event_invite_notifications(
                 sample_event, [str(inviter.pk), str(invitee.pk)], inviter
             )
@@ -295,17 +295,17 @@ class TestPgNotifyIntegration:
         assert str(inviter.pk) not in called_ids
         assert str(invitee.pk) in called_ids
 
-    def test_join_request_calls_notify_users(self, db):
+    def test_join_request_callsnotify_users(self, db):
         user = _make_user("+12025550301")
         admin_role = Role.objects.get(name="admin", is_default=True)
         user.roles.add(admin_role)
-        with patch("notifications.service._notify_users") as mock_notify:
+        with patch("notifications.service.notify_users") as mock_notify:
             create_join_request_notifications("Sprout")
         mock_notify.assert_called_once()
         called_ids = list(mock_notify.call_args[0][0])
         assert str(user.pk) in called_ids
 
-    def test_notify_users_skips_on_non_postgresql(self, db):
-        """_notify_users is a no-op when not on PostgreSQL (e.g. SQLite in tests)."""
+    def testnotify_users_skips_on_non_postgresql(self, db):
+        """notify_users is a no-op when not on PostgreSQL (e.g. SQLite in tests)."""
         # Should not raise even though no pg_notify is available
-        _notify_users(["fake-uuid"])
+        notify_users(["fake-uuid"])
