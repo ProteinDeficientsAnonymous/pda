@@ -1,3 +1,10 @@
+# [0.76.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.4...v0.76.0) (2026-08-03)
+
+
+### Features
+
+* **audit:** persist audit log entries to a table ([#1230](https://github.com/ProteinDeficientsAnonymous/pda/issues/1230)) ([7e97a1c](https://github.com/ProteinDeficientsAnonymous/pda/commit/7e97a1c325e3c301d52bf88e22c190a66a2f967d))
+
 ## [0.75.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.3...v0.75.4) (2026-08-02)
 
 
