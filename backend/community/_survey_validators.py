@@ -3,7 +3,7 @@
 from collections.abc import Callable
 
 from community._question_answers import (
-    assert_multiselect_members,
+    assert_checkbox_members,
     assert_single_choice_member,
     is_answer_empty,
 )
@@ -21,8 +21,8 @@ def _validate_choice_answer(answer: str, q: SurveyQuestion) -> None:
     )
 
 
-def _validate_multiselect_answer(answer: str, q: SurveyQuestion) -> None:
-    assert_multiselect_members(
+def _validate_checkbox_answer(answer: str, q: SurveyQuestion) -> None:
+    assert_checkbox_members(
         answer,
         q.options,
         code=Code.Survey.ANSWER_INVALID_OPTION,
@@ -42,10 +42,10 @@ def _validate_number_answer(answer: str, q: SurveyQuestion) -> None:
         )
 
 
-def _validate_yes_no_answer(answer: str, q: SurveyQuestion) -> None:
+def _validate_boolean_answer(answer: str, q: SurveyQuestion) -> None:
     if answer not in ("yes", "no"):
         raise_validation(
-            Code.Survey.ANSWER_MUST_BE_YES_NO,
+            Code.Survey.ANSWER_MUST_BE_BOOLEAN,
             field=f"answers.{q.id}",
             label=q.label,
         )
@@ -88,11 +88,11 @@ def _validate_datetime_poll_answer(answer: dict[str, str], q: SurveyQuestion) ->
 
 
 _TEXT_VALIDATORS: dict[str, Callable[[str, SurveyQuestion], None]] = {
+    SurveyQuestionType.RADIO: _validate_choice_answer,
     SurveyQuestionType.SELECT: _validate_choice_answer,
-    SurveyQuestionType.DROPDOWN: _validate_choice_answer,
-    SurveyQuestionType.MULTISELECT: _validate_multiselect_answer,
+    SurveyQuestionType.CHECKBOX: _validate_checkbox_answer,
     SurveyQuestionType.NUMBER: _validate_number_answer,
-    SurveyQuestionType.YES_NO: _validate_yes_no_answer,
+    SurveyQuestionType.BOOLEAN: _validate_boolean_answer,
     SurveyQuestionType.RATING: _validate_rating_answer,
 }
 

@@ -61,11 +61,11 @@ def test_question_type_enums_match_canonical_definitions():
     }
 
     assert survey == canonical
-    assert join == {name: canonical[name] for name in ("TEXT", "TEXTAREA", "DROPDOWN")}
+    assert join == {name: canonical[name] for name in ("TEXT", "TEXTAREA", "SELECT")}
     assert [question_type.value for question_type in JoinFormQuestionType] == [
         "text",
         "textarea",
-        "dropdown",
+        "select",
     ]
 
 
@@ -126,13 +126,13 @@ class TestJoinFormQuestionTypes:
         assert body["field_type"] == "textarea"
         assert JoinFormQuestion.objects.get(id=body["id"]).field_type == "textarea"
 
-    def test_create_dropdown_question(self, api_client, form_admin_headers):
+    def test_create_select_question(self, api_client, form_admin_headers):
         response = api_client.post(
             "/api/community/join-form/questions/",
             data=json.dumps(
                 {
                     "label": "Heard how?",
-                    "field_type": JoinFormQuestionType.DROPDOWN,
+                    "field_type": JoinFormQuestionType.SELECT,
                     "options": ["friend", "flyer"],
                     "required": False,
                 }
@@ -141,5 +141,5 @@ class TestJoinFormQuestionTypes:
             **form_admin_headers,
         )
         assert response.status_code == 201
-        assert response.json()["field_type"] == "dropdown"
+        assert response.json()["field_type"] == "select"
         assert response.json()["options"] == ["friend", "flyer"]

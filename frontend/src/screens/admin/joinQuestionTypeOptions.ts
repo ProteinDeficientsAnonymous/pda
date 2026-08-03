@@ -7,7 +7,7 @@ import {
 const JOIN_QUESTION_TYPE_OPTION_BY_TYPE = {
   text: QUESTION_TYPE_OPTION_BY_TYPE.text,
   textarea: QUESTION_TYPE_OPTION_BY_TYPE.textarea,
-  dropdown: QUESTION_TYPE_OPTION_BY_TYPE.dropdown,
+  select: QUESTION_TYPE_OPTION_BY_TYPE.select,
 } satisfies Record<JoinQuestionType, QuestionTypeOption>;
 
 export const JOIN_QUESTION_TYPE_OPTIONS = Object.values(JOIN_QUESTION_TYPE_OPTION_BY_TYPE);

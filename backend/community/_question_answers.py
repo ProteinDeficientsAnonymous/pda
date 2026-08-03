@@ -25,7 +25,7 @@ def assert_single_choice_member(
         raise_validation(code, field=field, label=label)
 
 
-def assert_multiselect_members(
+def assert_checkbox_members(
     answer: str,
     options: Sequence[str] | None,
     *,
@@ -40,7 +40,7 @@ def assert_multiselect_members(
             raise_validation(code, field=field, label=label)
 
 
-def normalize_multiselect_csv(
+def normalize_checkbox_csv(
     answer: str,
     options: Sequence[str] | None,
     *,

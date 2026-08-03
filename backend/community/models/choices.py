@@ -57,13 +57,15 @@ class QuestionTypeDefinition(NamedTuple):
 
 
 class QuestionType:
+    """HTML-aligned question type catalog (wire values)."""
+
     TEXT = QuestionTypeDefinition("text", "Text")
     TEXTAREA = QuestionTypeDefinition("textarea", "Text area")
-    SELECT = QuestionTypeDefinition("select", "Single select")
-    MULTISELECT = QuestionTypeDefinition("multiselect", "Multi select")
-    DROPDOWN = QuestionTypeDefinition("dropdown", "Dropdown")
+    RADIO = QuestionTypeDefinition("radio", "Radio")
+    SELECT = QuestionTypeDefinition("select", "Select")
+    CHECKBOX = QuestionTypeDefinition("checkbox", "Checkbox")
     NUMBER = QuestionTypeDefinition("number", "Number")
-    YES_NO = QuestionTypeDefinition("yes_no", "Yes / No")
+    BOOLEAN = QuestionTypeDefinition("boolean", "Yes / No")
     RATING = QuestionTypeDefinition("rating", "Rating")
     DATETIME_POLL = QuestionTypeDefinition("datetime_poll", "Datetime poll")
 
@@ -71,11 +73,11 @@ class QuestionType:
 class SurveyQuestionType(models.TextChoices):
     TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
     TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
+    RADIO = QuestionType.RADIO.value, QuestionType.RADIO.label
     SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
-    MULTISELECT = QuestionType.MULTISELECT.value, QuestionType.MULTISELECT.label
-    DROPDOWN = QuestionType.DROPDOWN.value, QuestionType.DROPDOWN.label
+    CHECKBOX = QuestionType.CHECKBOX.value, QuestionType.CHECKBOX.label
     NUMBER = QuestionType.NUMBER.value, QuestionType.NUMBER.label
-    YES_NO = QuestionType.YES_NO.value, QuestionType.YES_NO.label
+    BOOLEAN = QuestionType.BOOLEAN.value, QuestionType.BOOLEAN.label
     RATING = QuestionType.RATING.value, QuestionType.RATING.label
     DATETIME_POLL = QuestionType.DATETIME_POLL.value, QuestionType.DATETIME_POLL.label
 
@@ -85,7 +87,7 @@ class JoinFormQuestionType(models.TextChoices):
 
     TEXT = QuestionType.TEXT.value, QuestionType.TEXT.label
     TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
-    DROPDOWN = QuestionType.DROPDOWN.value, QuestionType.DROPDOWN.label
+    SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
 
 
 class InvitePermission(models.TextChoices):

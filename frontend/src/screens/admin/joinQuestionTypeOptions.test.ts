@@ -19,7 +19,7 @@ describe('join question type options', () => {
     expect(JOIN_QUESTION_TYPE_OPTIONS).toEqual([
       { value: 'text', label: 'short text', wantsOptions: false },
       { value: 'textarea', label: 'long text', wantsOptions: false },
-      { value: 'dropdown', label: 'dropdown', wantsOptions: true },
+      { value: 'select', label: 'select', wantsOptions: true },
     ]);
     expect(JOIN_QUESTION_TYPE_OPTIONS.map(({ value }) => questionTypeWantsOptions(value))).toEqual([
       false,
@@ -29,10 +29,6 @@ describe('join question type options', () => {
   });
 
   it('should match backend join subset wire values', () => {
-    expect(JOIN_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
-      'text',
-      'textarea',
-      'dropdown',
-    ]);
+    expect(JOIN_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual(['text', 'textarea', 'select']);
   });
 });

@@ -3530,7 +3530,7 @@ export interface components {
          * @description Question types supported by join forms.
          * @enum {string}
          */
-        JoinFormQuestionType: "text" | "textarea" | "dropdown";
+        JoinFormQuestionType: "text" | "textarea" | "select";
         /** JoinRequestAnswerOut */
         JoinRequestAnswerOut: {
             /** Answer */
@@ -4394,7 +4394,7 @@ export interface components {
          * SurveyQuestionType
          * @enum {string}
          */
-        SurveyQuestionType: "text" | "textarea" | "select" | "multiselect" | "dropdown" | "number" | "yes_no" | "rating" | "datetime_poll";
+        SurveyQuestionType: "text" | "textarea" | "radio" | "select" | "checkbox" | "number" | "boolean" | "rating" | "datetime_poll";
         /** SurveyResponseOut */
         SurveyResponseOut: {
             /** Answers */

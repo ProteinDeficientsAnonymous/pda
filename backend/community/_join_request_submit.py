@@ -88,7 +88,7 @@ def _validate_answers(
                 field=f"answers.{q_id}",
                 label=q.label,
             )
-        if q.field_type == JoinFormQuestionType.DROPDOWN and not is_answer_empty(answer):
+        if q.field_type == JoinFormQuestionType.SELECT and not is_answer_empty(answer):
             assert_single_choice_member(
                 answer,
                 q.options,

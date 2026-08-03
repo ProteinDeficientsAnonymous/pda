@@ -6,7 +6,7 @@ import { QuestionAuthorDialog } from './QuestionAuthorDialog';
 
 const TYPE_OPTIONS = [
   { value: 'text', label: 'short text' },
-  { value: 'dropdown', label: 'dropdown' },
+  { value: 'select', label: 'select' },
 ] as const;
 
 describe('QuestionAuthorDialog', () => {
@@ -38,7 +38,7 @@ describe('QuestionAuthorDialog', () => {
         open
         onClose={() => undefined}
         title="add question"
-        initial={{ label: 'Meal', fieldType: 'dropdown', options: [], required: true }}
+        initial={{ label: 'Meal', fieldType: 'select', options: [], required: true }}
         typeOptions={[...TYPE_OPTIONS]}
         busy={false}
         onSave={onSave}
@@ -52,7 +52,7 @@ describe('QuestionAuthorDialog', () => {
     await user.click(screen.getByRole('button', { name: 'save' }));
     expect(onSave).toHaveBeenCalledWith({
       label: 'Meal',
-      fieldType: 'dropdown',
+      fieldType: 'select',
       options: ['vegan', 'omni'],
       required: true,
     });

@@ -20,11 +20,11 @@ type _CatalogMatchesOpenApi = AssertExtends<
 const FULL_TYPES: QuestionType[] = [
   'text',
   'textarea',
+  'radio',
   'select',
-  'multiselect',
-  'dropdown',
+  'checkbox',
   'number',
-  'yes_no',
+  'boolean',
   'rating',
   'datetime_poll',
 ];
@@ -36,7 +36,7 @@ describe('question type options', () => {
 
   it('should look up wantsOptions from the catalog', () => {
     expect(questionTypeWantsOptions('text')).toBe(false);
-    expect(questionTypeWantsOptions('dropdown')).toBe(true);
+    expect(questionTypeWantsOptions('select')).toBe(true);
   });
 
   it('should return generic validation copy when a question requires options', () => {

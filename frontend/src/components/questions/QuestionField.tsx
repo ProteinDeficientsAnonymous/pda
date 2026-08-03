@@ -41,7 +41,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           }}
         />
       );
-    case 'select':
+    case 'radio':
       return (
         <RadioGroup
           {...common}
@@ -50,7 +50,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           onChange={onChange}
         />
       );
-    case 'dropdown':
+    case 'select':
       return (
         <Select
           {...common}
@@ -62,7 +62,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           placeholder="select one"
         />
       );
-    case 'multiselect':
+    case 'checkbox':
       return (
         <CheckboxGroup
           {...common}
@@ -73,7 +73,7 @@ export function QuestionField({ question, value, onChange, error, readOnly }: Pr
           }}
         />
       );
-    case 'yes_no':
+    case 'boolean':
       return (
         <RadioGroup
           {...common}

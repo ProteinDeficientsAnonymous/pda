@@ -3365,7 +3365,7 @@
         "enum": [
           "text",
           "textarea",
-          "dropdown"
+          "select"
         ],
         "title": "JoinFormQuestionType",
         "type": "string"
@@ -5420,11 +5420,11 @@
         "enum": [
           "text",
           "textarea",
+          "radio",
           "select",
-          "multiselect",
-          "dropdown",
+          "checkbox",
           "number",
-          "yes_no",
+          "boolean",
           "rating",
           "datetime_poll"
         ],
