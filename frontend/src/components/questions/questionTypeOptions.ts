@@ -1,22 +1,40 @@
+import type { JoinQuestionType } from '@/api/join';
 import type { SurveyQuestionType } from '@/api/surveys';
 
-/** Canonical authoring metadata for question types. */
-export const QUESTION_TYPE_OPTIONS: {
+interface QuestionTypeOption {
   value: SurveyQuestionType;
   label: string;
   wantsOptions: boolean;
-}[] = [
-  { value: 'text', label: 'short text', wantsOptions: false },
-  { value: 'textarea', label: 'long text', wantsOptions: false },
-  { value: 'number', label: 'number', wantsOptions: false },
-  { value: 'select', label: 'single choice (radio)', wantsOptions: true },
-  { value: 'dropdown', label: 'dropdown', wantsOptions: true },
-  { value: 'multiselect', label: 'multiple choice', wantsOptions: true },
-  { value: 'yes_no', label: 'yes / no', wantsOptions: false },
-  { value: 'rating', label: '1–5 rating', wantsOptions: true },
-  { value: 'datetime_poll', label: 'datetime poll (iso options)', wantsOptions: true },
-];
+}
+
+const QUESTION_TYPE_OPTION_BY_TYPE = {
+  text: { value: 'text', label: 'short text', wantsOptions: false },
+  textarea: { value: 'textarea', label: 'long text', wantsOptions: false },
+  number: { value: 'number', label: 'number', wantsOptions: false },
+  select: { value: 'select', label: 'single choice (radio)', wantsOptions: true },
+  dropdown: { value: 'dropdown', label: 'dropdown', wantsOptions: true },
+  multiselect: { value: 'multiselect', label: 'multiple choice', wantsOptions: true },
+  yes_no: { value: 'yes_no', label: 'yes / no', wantsOptions: false },
+  rating: { value: 'rating', label: '1–5 rating', wantsOptions: true },
+  datetime_poll: {
+    value: 'datetime_poll',
+    label: 'datetime poll (iso options)',
+    wantsOptions: true,
+  },
+} satisfies Record<SurveyQuestionType, QuestionTypeOption>;
+
+/** Canonical authoring metadata for question types. */
+export const QUESTION_TYPE_OPTIONS = Object.values(QUESTION_TYPE_OPTION_BY_TYPE);
+
+const JOIN_QUESTION_TYPE_OPTION_BY_TYPE = {
+  text: QUESTION_TYPE_OPTION_BY_TYPE.text,
+  textarea: QUESTION_TYPE_OPTION_BY_TYPE.textarea,
+  dropdown: QUESTION_TYPE_OPTION_BY_TYPE.dropdown,
+} satisfies Record<JoinQuestionType, QuestionTypeOption>;
+
+export const JOIN_QUESTION_TYPE_OPTIONS = Object.values(JOIN_QUESTION_TYPE_OPTION_BY_TYPE);
+export const DEFAULT_JOIN_QUESTION_TYPE: JoinQuestionType = 'text';
 
 export function questionTypeWantsOptions(fieldType: SurveyQuestionType): boolean {
-  return QUESTION_TYPE_OPTIONS.find((o) => o.value === fieldType)?.wantsOptions ?? false;
+  return QUESTION_TYPE_OPTION_BY_TYPE[fieldType].wantsOptions;
 }

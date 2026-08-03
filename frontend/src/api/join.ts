@@ -2,9 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { hasErrorCode } from './apiErrors';
 import { apiClient } from './client';
+import type { components } from './types.gen';
 import { Code } from './validationCodes.gen';
 
-export type JoinQuestionType = 'text' | 'textarea' | 'dropdown';
+export type JoinQuestionType = components['schemas']['JoinFormQuestionType'];
 
 export interface JoinQuestion {
   id: string;

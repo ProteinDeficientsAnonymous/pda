@@ -44,14 +44,6 @@ class JoinRequestStatus(models.TextChoices):
     REJECTED = "rejected", "Rejected"
 
 
-class JoinFormQuestionType(models.TextChoices):
-    """Subset of SurveyQuestionType wire values used on the join form."""
-
-    TEXT = "text", "Text"
-    TEXTAREA = "textarea", "Text area"
-    DROPDOWN = "dropdown", "Dropdown"
-
-
 class SurveyVisibility(models.TextChoices):
     PUBLIC = "public", "Public"
     MEMBERS_ONLY = "members_only", "Members only"
@@ -67,6 +59,14 @@ class SurveyQuestionType(models.TextChoices):
     YES_NO = "yes_no", "Yes / No"
     RATING = "rating", "Rating"
     DATETIME_POLL = "datetime_poll", "Datetime poll"
+
+
+class JoinFormQuestionType(models.TextChoices):
+    """Subset of SurveyQuestionType wire values used on the join form."""
+
+    TEXT = SurveyQuestionType.TEXT.value, SurveyQuestionType.TEXT.label
+    TEXTAREA = SurveyQuestionType.TEXTAREA.value, SurveyQuestionType.TEXTAREA.label
+    DROPDOWN = SurveyQuestionType.DROPDOWN.value, SurveyQuestionType.DROPDOWN.label
 
 
 class InvitePermission(models.TextChoices):

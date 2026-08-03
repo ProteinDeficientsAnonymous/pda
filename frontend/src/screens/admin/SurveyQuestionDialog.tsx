@@ -9,7 +9,10 @@ import {
   useCreateSurveyQuestion,
   useUpdateSurveyQuestion,
 } from '@/api/surveyAdmin';
-import { QUESTION_TYPE_OPTIONS } from '@/components/questions/questionTypeOptions';
+import {
+  QUESTION_TYPE_OPTIONS,
+  questionTypeWantsOptions,
+} from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
@@ -42,8 +45,7 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  const wantsOptions =
-    QUESTION_TYPE_OPTIONS.find((t) => t.value === fieldType)?.wantsOptions ?? false;
+  const wantsOptions = questionTypeWantsOptions(fieldType);
   const busy = create.isPending || update.isPending;
 
   async function submit(e: SyntheticEvent) {

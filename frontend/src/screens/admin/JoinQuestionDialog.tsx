@@ -4,6 +4,11 @@ import { useState } from 'react';
 import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion, JoinQuestionInput, JoinQuestionType } from '@/api/join';
 import { useCreateJoinQuestion, useUpdateJoinQuestion } from '@/api/join';
+import {
+  DEFAULT_JOIN_QUESTION_TYPE,
+  JOIN_QUESTION_TYPE_OPTIONS,
+  questionTypeWantsOptions,
+} from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Select } from '@/components/ui/Select';
@@ -27,12 +32,15 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
   const update = useUpdateJoinQuestion(existing?.id ?? '');
 
   const [label, setLabel] = useState(() => existing?.label ?? '');
-  const [fieldType, setFieldType] = useState<JoinQuestionType>(() => existing?.fieldType ?? 'text');
+  const [fieldType, setFieldType] = useState<JoinQuestionType>(
+    () => existing?.fieldType ?? DEFAULT_JOIN_QUESTION_TYPE,
+  );
   const [required, setRequired] = useState(() => existing?.required ?? false);
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const busy = create.isPending || update.isPending;
+  const wantsOptions = questionTypeWantsOptions(fieldType);
 
   async function onSubmit(e: SyntheticEvent) {
     e.preventDefault();
@@ -41,14 +49,13 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
       setError('label required');
       return;
     }
-    const options =
-      fieldType === 'dropdown'
-        ? optionsText
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [];
-    if (fieldType === 'dropdown' && options.length === 0) {
+    const options = wantsOptions
+      ? optionsText
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+    if (wantsOptions && options.length === 0) {
       setError('add at least one option for a dropdown question');
       return;
     }
@@ -84,13 +91,9 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
           onChange={(e) => {
             setFieldType(e.target.value as JoinQuestionType);
           }}
-          options={[
-            { value: 'text', label: 'short text' },
-            { value: 'textarea', label: 'long text' },
-            { value: 'dropdown', label: 'dropdown' },
-          ]}
+          options={JOIN_QUESTION_TYPE_OPTIONS}
         />
-        {fieldType === 'dropdown' ? (
+        {wantsOptions ? (
           <Textarea
             label="options"
             value={optionsText}
