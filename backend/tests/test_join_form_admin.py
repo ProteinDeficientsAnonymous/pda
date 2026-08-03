@@ -4,9 +4,9 @@ import json
 
 import pytest
 from community.models import (
+    RSVP_CHOICE_TYPES,
     JoinFormQuestion,
     JoinFormQuestionType,
-    RSVP_CHOICE_TYPES,
     RsvpQuestionType,
     SurveyQuestionType,
 )
@@ -72,9 +72,7 @@ def test_question_type_enums_match_canonical_definitions():
 
     assert survey == canonical
     assert join == {name: canonical[name] for name in ("TEXT", "TEXTAREA", "DROPDOWN")}
-    assert rsvp == {
-        name: canonical[name] for name in ("TEXTAREA", "DROPDOWN", "MULTISELECT")
-    }
+    assert rsvp == {name: canonical[name] for name in ("TEXTAREA", "DROPDOWN", "MULTISELECT")}
     assert [question_type.value for question_type in JoinFormQuestionType] == [
         "text",
         "textarea",
