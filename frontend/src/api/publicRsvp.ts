@@ -130,6 +130,7 @@ export function useUpdatePublicMyRsvp(token: string) {
         status,
         has_plus_one: hasPlusOne,
         comment: comment ?? null,
+        paid_confirmed: false,
       };
       const { data } = await apiClient.post<PublicRsvpOut>(`${MANAGE_BASE}${eventId}/`, body, {
         params: { token },

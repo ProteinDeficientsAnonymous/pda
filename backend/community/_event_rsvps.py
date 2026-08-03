@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from config.audit import AuditTargetType, audit_log
@@ -25,6 +26,7 @@ from community._event_schemas import EventOut, RSVPIn
 from community._events import _can_edit_event, _enforce_event_read_visibility
 from community._public_rsvp_shared import _email_promoted_non_members
 from community._rsvp_counts import _attending_headcount_db
+from community._rsvp_payment import requires_payment_gate
 from community._shared import ErrorOut
 from community._validation import Code, raise_validation
 from community.models import Event, EventComment, EventRSVP, RSVPStatus
@@ -136,8 +138,40 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
         return False
 
 
+def _resolve_paid_confirmed_at(
+    existing: EventRSVP | None, paid_confirmed: bool, final_status: str
+) -> datetime | None:
+    """Resolve paid_confirmed_at for this write.
+
+    Attending or waitlisted both stamp: at capacity an attending request
+    resolves to waitlisted, but it was still a gated, confirmed write and must
+    keep its stamp through promotion. Maybe/can't-go are ungated statuses —
+    `paid_confirmed` there must not bank a stamp that disarms a later
+    attending write (see requires_payment_gate).
+
+    A standing confirmation is preserved untouched, so a host-revoked row that
+    pays again re-stamps without needing the rsvp deleted.
+    """
+    if existing is not None and existing.paid_confirmed_at is not None:
+        return existing.paid_confirmed_at
+    if paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
+        return timezone.now()
+    return None
+
+
+def _resolve_paid_confirmed_at(
+    existing: EventRSVP | None, paid_confirmed: bool, final_status: str
+) -> datetime | None:
+    """Preserve a standing stamp; otherwise stamp only on a confirmed attending/waitlisted write."""
+    if existing is not None and existing.paid_confirmed_at is not None:
+        return existing.paid_confirmed_at
+    if paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
+        return timezone.now()
+    return None
+
+
 def _apply_rsvp_in_transaction(
-    event_id, user, status: str, has_plus_one: bool
+    event_id, user, status: str, has_plus_one: bool, paid_confirmed: bool = False
 ) -> tuple[str, list[str], bool]:
     """Execute RSVP upsert inside a locked transaction.
 
@@ -158,17 +192,24 @@ def _apply_rsvp_in_transaction(
 
     _validate_rsvp_access(user, event)
 
-    final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
-
     existing = EventRSVP.objects.filter(event=event, user=user).first()
     created = existing is None
+
+    # Gate on the *requested* status, not the post-capacity one — else it slips through unconfirmed.
+    if not paid_confirmed and requires_payment_gate(event, existing, status):
+        raise_validation(Code.Event.PAYMENT_CONFIRMATION_REQUIRED, status_code=400)
+
+    final_status, final_plus_one = _resolve_rsvp_status(event, user, status, has_plus_one)
+
     was_attending = existing is not None and existing.status == RSVPStatus.ATTENDING
     had_plus_one = existing is not None and existing.has_plus_one
+    new_confirmed_at = _resolve_paid_confirmed_at(existing, paid_confirmed, final_status)
 
     if (
         existing is not None
         and existing.status == final_status
         and existing.has_plus_one == final_plus_one
+        and existing.paid_confirmed_at == new_confirmed_at
     ):
         return final_status, [], False
 
@@ -179,6 +220,7 @@ def _apply_rsvp_in_transaction(
             "status": final_status,
             "has_plus_one": final_plus_one,
             "cancelled_at": _resolve_cancelled_at(existing, final_status),
+            "paid_confirmed_at": new_confirmed_at,
         },
     )
 
@@ -206,7 +248,7 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
 
     with transaction.atomic():
         final_status, promoted_user_ids, _created = _apply_rsvp_in_transaction(
-            event_id, request.auth, payload.status, payload.has_plus_one
+            event_id, request.auth, payload.status, payload.has_plus_one, payload.paid_confirmed
         )
 
     sent_decline_note = _post_rsvp_comment(event_id, request.auth, final_status, payload.comment)

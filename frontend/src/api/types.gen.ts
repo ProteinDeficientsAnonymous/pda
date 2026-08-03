@@ -4012,6 +4012,11 @@ export interface components {
              * @default
              */
             last_name: string;
+            /**
+             * Paid Confirmed
+             * @default false
+             */
+            paid_confirmed: boolean;
             /** Phone Number */
             phone_number: string;
             /** Status */
@@ -4031,6 +4036,11 @@ export interface components {
              * @default false
              */
             has_plus_one: boolean;
+            /**
+             * Paid Confirmed
+             * @default false
+             */
+            paid_confirmed: boolean;
             /** Status */
             status: string;
         };
@@ -4123,6 +4133,11 @@ export interface components {
              * @default false
              */
             has_plus_one: boolean;
+            /**
+             * Paid Confirmed
+             * @default false
+             */
+            paid_confirmed: boolean;
             status: components["schemas"]["RSVPStatus"];
         };
         /**

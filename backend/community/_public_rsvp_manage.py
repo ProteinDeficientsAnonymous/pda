@@ -57,6 +57,7 @@ class PublicRsvpManageOut(BaseModel):
 class PublicRsvpManageIn(BaseModel):
     status: str
     has_plus_one: bool = False
+    paid_confirmed: bool = False
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
 
 
@@ -157,7 +158,7 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
 
     with transaction.atomic():
         final_status, promoted_user_ids, created = _apply_rsvp_in_transaction(
-            event.id, user, payload.status, False
+            event.id, user, payload.status, False, payload.paid_confirmed
         )
         rsvp_token = NonMemberRsvpToken.issue_or_extend(user)
 
@@ -167,7 +168,11 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         request,
         target_type=AuditTargetType.EVENT,
         target_id=str(event.id),
-        details={"user_id": str(user.pk), "status": final_status},
+        details={
+            "user_id": str(user.pk),
+            "status": final_status,
+            "paid_confirmed": payload.paid_confirmed,
+        },
     )
     sent_decline_note = _post_rsvp_comment(event.id, user, final_status, payload.comment)
     email_error = _send_manage_rsvp_email(
