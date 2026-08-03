@@ -45,7 +45,7 @@ export function EventRsvpResponsesSection({ event }: Props) {
   if (columns.length === 0) return null;
 
   const choiceColumns = columns.filter(
-    (q) => q.fieldType === 'dropdown' || q.fieldType === 'multiselect',
+    (q) => q.fieldType === 'select' || q.fieldType === 'checkbox',
   );
 
   return (
@@ -112,7 +112,7 @@ function ChoiceTallyCard({ question, guests }: { question: ResponseColumn; guest
     const snap = g.answers[question.id];
     if (snap?.label !== question.label) continue;
     const values =
-      question.fieldType === 'multiselect'
+      question.fieldType === 'checkbox'
         ? snap.answer.split(',').filter(Boolean)
         : snap.answer
           ? [snap.answer]

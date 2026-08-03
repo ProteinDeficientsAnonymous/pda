@@ -20,7 +20,7 @@ describe('EventRsvpResponsesSection', () => {
         {
           id: 'q1',
           label: 'how are you getting there?',
-          fieldType: 'dropdown',
+          fieldType: 'select',
           options: ['driving', 'transit'],
           required: true,
         },
