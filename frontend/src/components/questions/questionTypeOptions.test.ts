@@ -1,14 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
+import type { JoinQuestionType } from '@/api/join';
 import type { SurveyQuestionType } from '@/api/surveys';
+import type { components } from '@/api/types.gen';
 
 import {
   JOIN_QUESTION_TYPE_OPTIONS,
   QUESTION_TYPE_OPTIONS,
-  RSVP_QUESTION_TYPE_OPTIONS,
   questionOptionsError,
   questionTypeWantsOptions,
+  RSVP_QUESTION_TYPE_OPTIONS,
+  type RsvpQuestionType,
 } from './questionTypeOptions';
+
+type AssertExtends<_A extends B, B> = true;
+type _JoinSubsetOfSurvey = AssertExtends<JoinQuestionType, SurveyQuestionType>;
+type _RsvpSubsetOfSurvey = AssertExtends<RsvpQuestionType, SurveyQuestionType>;
+type _JoinMatchesOpenApi = AssertExtends<
+  JoinQuestionType,
+  components['schemas']['JoinFormQuestionType']
+>;
+type _SurveyMatchesOpenApi = AssertExtends<
+  SurveyQuestionType,
+  components['schemas']['SurveyQuestionType']
+>;
 
 const FULL_TYPES: SurveyQuestionType[] = [
   'text',
@@ -54,6 +69,20 @@ describe('question type options', () => {
     for (const option of [...JOIN_QUESTION_TYPE_OPTIONS, ...RSVP_QUESTION_TYPE_OPTIONS]) {
       expect(full.has(option.value)).toBe(true);
     }
+  });
+
+  it('should match backend subset wire values for join and RSVP', () => {
+    // Keep in lockstep with backend JoinFormQuestionType / RsvpQuestionType.
+    expect(JOIN_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
+      'text',
+      'textarea',
+      'dropdown',
+    ]);
+    expect(RSVP_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
+      'textarea',
+      'dropdown',
+      'multiselect',
+    ]);
   });
 
   it('should return generic validation copy when a question requires options', () => {

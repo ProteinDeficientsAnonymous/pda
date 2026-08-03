@@ -75,6 +75,16 @@ def test_question_type_enums_match_canonical_definitions():
     assert rsvp == {
         name: canonical[name] for name in ("TEXTAREA", "DROPDOWN", "MULTISELECT")
     }
+    assert [question_type.value for question_type in JoinFormQuestionType] == [
+        "text",
+        "textarea",
+        "dropdown",
+    ]
+    assert [question_type.value for question_type in RsvpQuestionType] == [
+        "textarea",
+        "dropdown",
+        "multiselect",
+    ]
     assert RSVP_CHOICE_TYPES == frozenset(
         {RsvpQuestionType.DROPDOWN, RsvpQuestionType.MULTISELECT},
     )
