@@ -84,6 +84,7 @@ export interface EventGuest {
   hasPlusOne: boolean;
   attendance: AttendanceStatusValue;
   isMember: boolean;
+  paidConfirmed: boolean;
 }
 
 export interface EventCancellation {
@@ -150,9 +151,7 @@ export interface Event {
 
   guests: EventGuest[];
   myRsvp: string | null;
-  // The resolved viewer's own user id — carried from the backend so a
-  // token-holding (logged-out) viewer can find their own entry in `guests`,
-  // since useAuthStore has no user for them.
+  myPaidConfirmed: boolean;
   viewerUserId: string | null;
   surveySlugs: string[];
   invitedUserIds: string[];

@@ -109,6 +109,7 @@ function mapGuest(g: WireGuest): EventGuest {
     hasPlusOne: g.has_plus_one ?? false,
     attendance: mapAttendance(g.attendance),
     isMember: g.is_member ?? true,
+    paidConfirmed: g.paid_confirmed ?? false,
   };
 }
 
@@ -167,6 +168,7 @@ export function mapEvent(e: WireEvent): Event {
 
     guests: (e.guests ?? []).map(mapGuest),
     myRsvp: e.my_rsvp ?? null,
+    myPaidConfirmed: e.my_paid_confirmed ?? false,
     viewerUserId: e.viewer_user_id ?? null,
     surveySlugs: e.survey_slugs ?? [],
     invitedUserIds: e.invited_user_ids ?? [],
