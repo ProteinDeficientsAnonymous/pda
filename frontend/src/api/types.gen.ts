@@ -300,7 +300,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Delete User */
-        delete: operations["users__management_delete_user"];
+        delete: operations["users__user_deletion_delete_user"];
         options?: never;
         head?: never;
         /** Update User */
@@ -325,7 +325,7 @@ export interface paths {
          *     gone for good. Restricted to never-logged-in accounts — an approved entry the
          *     person never actually claimed — so a real member's data is never destroyed.
          */
-        delete: operations["users__management_hard_delete_user"];
+        delete: operations["users__user_deletion_hard_delete_user"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5478,7 +5478,7 @@ export interface operations {
             };
         };
     };
-    users__management_delete_user: {
+    users__user_deletion_delete_user: {
         parameters: {
             query?: never;
             header?: never;
@@ -5587,7 +5587,7 @@ export interface operations {
             };
         };
     };
-    users__management_hard_delete_user: {
+    users__user_deletion_hard_delete_user: {
         parameters: {
             query?: never;
             header?: never;

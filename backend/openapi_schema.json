@@ -7097,7 +7097,7 @@
     },
     "/api/auth/users/{user_id}/": {
       "delete": {
-        "operationId": "users__management_delete_user",
+        "operationId": "users__user_deletion_delete_user",
         "parameters": [
           {
             "in": "path",
@@ -7243,7 +7243,7 @@
     "/api/auth/users/{user_id}/hard/": {
       "delete": {
         "description": "Permanently remove a member who has never logged in.\n\nUnlike ``delete_user`` (which soft-archives via ``archived_at``), this row is\ngone for good. Restricted to never-logged-in accounts \u2014 an approved entry the\nperson never actually claimed \u2014 so a real member's data is never destroyed.",
-        "operationId": "users__management_hard_delete_user",
+        "operationId": "users__user_deletion_hard_delete_user",
         "parameters": [
           {
             "in": "path",
