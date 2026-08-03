@@ -1,9 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { RsvpStatus } from '@/models/event';
+import { makeEvent, makePaidEvent } from '@/test/fixtures';
 
 import { RsvpBox } from './RsvpBox';
+
+const mockUseFlag = vi.hoisted(() => vi.fn(() => true));
+vi.mock('@/api/featureFlags', () => ({ useFlag: mockUseFlag }));
 
 const base = {
   open: true,
@@ -11,6 +16,7 @@ const base = {
   initialHasPlusOne: false,
   allowPlusOnes: true,
   onClose: () => {},
+  event: makeEvent(),
 };
 
 describe('RsvpBox', () => {
@@ -150,5 +156,78 @@ describe('RsvpBox', () => {
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ status: RsvpStatus.Attending }),
     );
+  });
+});
+
+describe('RsvpBox payment confirmation gate', () => {
+  const paidEvent = makePaidEvent();
+
+  it('shows the payment step before confirming attending on a paid event', async () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} event={paidEvent} mode="create" onConfirm={onConfirm} />);
+    await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /yes, i paid/i })).toBeInTheDocument();
+  });
+
+  it('submits with paidConfirmed after the payment step', async () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} event={paidEvent} mode="create" onConfirm={onConfirm} />);
+    await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
+    await userEvent.click(screen.getByRole('button', { name: /yes, i paid/i }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ status: RsvpStatus.Attending, paidConfirmed: true }),
+    );
+  });
+
+  it('skips the payment step for maybe', async () => {
+    const onConfirm = vi.fn();
+    render(
+      <RsvpBox
+        {...base}
+        event={paidEvent}
+        mode="create"
+        initialStatus={RsvpStatus.Maybe}
+        onConfirm={onConfirm}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it('skips the payment step on a free event', async () => {
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} mode="create" onConfirm={onConfirm} />);
+    await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it('skips the payment step when the flag is off', async () => {
+    mockUseFlag.mockReturnValueOnce(false);
+    const onConfirm = vi.fn();
+    render(<RsvpBox {...base} event={paidEvent} mode="create" onConfirm={onConfirm} />);
+    await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it('skips the payment step when the viewer already confirmed', async () => {
+    const onConfirm = vi.fn();
+    render(
+      <RsvpBox
+        {...base}
+        event={makePaidEvent({ myPaidConfirmed: true })}
+        mode="edit"
+        onConfirm={onConfirm}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it('returns to the picker from the payment step', async () => {
+    render(<RsvpBox {...base} event={paidEvent} mode="create" onConfirm={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
+    await userEvent.click(screen.getByRole('button', { name: /back/i }));
+    expect(screen.getByRole('button', { name: /^confirm$/i })).toBeInTheDocument();
   });
 });
