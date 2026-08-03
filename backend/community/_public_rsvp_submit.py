@@ -19,6 +19,7 @@ from community._event_rsvps import (
     _apply_rsvp_in_transaction,
     _post_rsvp_comment,
     _validate_rsvp_status,
+    payment_audit_details,
 )
 from community._field_limits import FieldLimit
 from community._public_rsvp_shared import (
@@ -254,7 +255,7 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         details={
             "user_id": str(user.pk),
             "status": final_status,
-            "paid_confirmed": payload.paid_confirmed,
+            **payment_audit_details(event.id, user.pk),
         },
     )
 
