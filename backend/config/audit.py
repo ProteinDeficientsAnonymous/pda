@@ -14,8 +14,8 @@ _audit_logger = logging.getLogger("pda.audit")
 
 
 def _valid_ip(value: str) -> str | None:
-    """client_ip can return 'anon' or an unvalidated XFF hop; Postgres would
-    reject either, and the failure would be swallowed as a lost audit row."""
+    # client_ip can return 'anon' or an unvalidated XFF hop; Postgres rejects
+    # either, and _persist would swallow that as a silently lost audit row.
     try:
         return str(ipaddress.ip_address(value))
     except ValueError:
@@ -23,11 +23,7 @@ def _valid_ip(value: str) -> str | None:
 
 
 def _persist(**fields) -> None:
-    """Write one audit row, swallowing any failure.
-
-    An audit write must never turn a successful user action into a 500, so
-    every exception is logged and dropped rather than propagated.
-    """
+    # An audit write must never turn a successful user action into a 500.
     try:
         AuditLogEntry.objects.create(**fields)
     except Exception:
@@ -98,5 +94,4 @@ def audit_log(  # noqa: PLR0913
         "level": level,
     }
     # on_commit so a rolled-back action leaves no row — the action didn't happen.
-    # Outside a transaction Django runs the callback immediately.
     transaction.on_commit(lambda: _persist(**fields))

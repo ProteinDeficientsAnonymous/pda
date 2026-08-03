@@ -22,7 +22,6 @@ __all__ = [
     "router",
 ]
 
-# _user_deletion registers its endpoints onto management_router at import time.
 assert user_deletion_router is management_router
 
 router = Router()

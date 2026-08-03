@@ -26,8 +26,7 @@ def anon_request():
 
 @pytest.fixture
 def commit(django_capture_on_commit_callbacks):
-    """audit rows are written via transaction.on_commit, which pytest's
-    non-committing test transaction would otherwise never fire."""
+    # pytest's test transaction never commits, so on_commit callbacks never fire.
 
     def run(fn):
         with django_capture_on_commit_callbacks(execute=True):
@@ -129,8 +128,7 @@ class TestAuditPersistence:
 
 class TestAuditTargetTypeCoverage:
     def test_every_call_site_uses_a_valid_enum_member(self):
-        """target_type must never drift back to a raw string — a typo would
-        silently miss rows in any filter built on it."""
+        # A raw string typo would silently miss rows in any filter on target_type.
         backend = Path(__file__).resolve().parent.parent
         literals = []
         for path in backend.rglob("*.py"):
