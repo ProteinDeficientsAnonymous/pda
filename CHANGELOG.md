@@ -1,3 +1,10 @@
+# [0.79.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.78.0...v0.79.0) (2026-08-03)
+
+
+### Features
+
+* 1045 - payment link + status visibility in serializers (3/6) ([#1226](https://github.com/ProteinDeficientsAnonymous/pda/issues/1226)) ([9edac1b](https://github.com/ProteinDeficientsAnonymous/pda/commit/9edac1be0860852c7bc5f27702dbf33cce0ac175))
+
 # [0.78.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.77.0...v0.78.0) (2026-08-03)
 
 
