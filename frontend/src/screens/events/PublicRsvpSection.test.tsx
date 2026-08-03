@@ -15,6 +15,8 @@ vi.mock('react-router-dom', async (importActual) => {
 
 const mockSubmit = vi.fn();
 const mockCheckPhone = vi.fn();
+vi.mock('@/api/featureFlags', () => ({ useFlag: () => false }));
+
 vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: mockSubmit, isPending: false }),
   useCheckPublicRsvpPhone: () => ({ mutateAsync: mockCheckPhone, isPending: false }),

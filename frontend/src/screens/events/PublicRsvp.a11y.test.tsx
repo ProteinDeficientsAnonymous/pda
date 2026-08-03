@@ -12,6 +12,8 @@ vi.mock('@/api/publicRsvp', () => ({
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
 
+vi.mock('@/api/featureFlags', () => ({ useFlag: () => false }));
+
 import { PublicRsvpForm } from './PublicRsvpForm';
 
 function renderForm(event: Event) {
