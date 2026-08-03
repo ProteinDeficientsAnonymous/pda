@@ -39,6 +39,9 @@ interface SubmitError {
 }
 
 function messageForStatus(status: number | null, err: unknown): SubmitError {
+  if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+    return { text: 'confirm you paid before rsvping', showSignIn: false };
+  }
   if (hasErrorCode(err, Code.Event.RsvpCouldNotBeCreated)) {
     return {
       text: "we couldn't set up your rsvp with those details — reach out and we'll help",
