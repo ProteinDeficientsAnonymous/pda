@@ -3,13 +3,7 @@
 import json
 
 import pytest
-from community.models import (
-    RSVP_CHOICE_TYPES,
-    JoinFormQuestion,
-    JoinFormQuestionType,
-    RsvpQuestionType,
-    SurveyQuestionType,
-)
+from community.models import JoinFormQuestion, JoinFormQuestionType, SurveyQuestionType
 from community.models.choices import QuestionType, QuestionTypeDefinition
 from ninja_jwt.tokens import RefreshToken
 from users.models import User
@@ -65,27 +59,14 @@ def test_question_type_enums_match_canonical_definitions():
         question_type.name: (question_type.value, question_type.label)
         for question_type in JoinFormQuestionType
     }
-    rsvp = {
-        question_type.name: (question_type.value, question_type.label)
-        for question_type in RsvpQuestionType
-    }
 
     assert survey == canonical
     assert join == {name: canonical[name] for name in ("TEXT", "TEXTAREA", "DROPDOWN")}
-    assert rsvp == {name: canonical[name] for name in ("TEXTAREA", "DROPDOWN", "MULTISELECT")}
     assert [question_type.value for question_type in JoinFormQuestionType] == [
         "text",
         "textarea",
         "dropdown",
     ]
-    assert [question_type.value for question_type in RsvpQuestionType] == [
-        "textarea",
-        "dropdown",
-        "multiselect",
-    ]
-    assert RSVP_CHOICE_TYPES == frozenset(
-        {RsvpQuestionType.DROPDOWN, RsvpQuestionType.MULTISELECT},
-    )
 
 
 @pytest.mark.django_db

@@ -34,16 +34,6 @@ const JOIN_QUESTION_TYPE_OPTION_BY_TYPE = {
 
 export const JOIN_QUESTION_TYPE_OPTIONS = Object.values(JOIN_QUESTION_TYPE_OPTION_BY_TYPE);
 
-export type RsvpQuestionType = Extract<SurveyQuestionType, 'textarea' | 'dropdown' | 'multiselect'>;
-
-const RSVP_QUESTION_TYPE_OPTION_BY_TYPE = {
-  textarea: QUESTION_TYPE_OPTION_BY_TYPE.textarea,
-  dropdown: QUESTION_TYPE_OPTION_BY_TYPE.dropdown,
-  multiselect: QUESTION_TYPE_OPTION_BY_TYPE.multiselect,
-} satisfies Record<RsvpQuestionType, QuestionTypeOption>;
-
-export const RSVP_QUESTION_TYPE_OPTIONS = Object.values(RSVP_QUESTION_TYPE_OPTION_BY_TYPE);
-
 export function questionTypeWantsOptions(fieldType: SurveyQuestionType): boolean {
   return QUESTION_TYPE_OPTION_BY_TYPE[fieldType].wantsOptions;
 }

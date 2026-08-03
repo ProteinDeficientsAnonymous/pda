@@ -1,4 +1,4 @@
-"""Shared answer validation helpers for join, survey, and RSVP questions."""
+"""Shared answer validation helpers for question surfaces."""
 
 from collections.abc import Sequence
 

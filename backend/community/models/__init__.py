@@ -1,6 +1,5 @@
 from community.models.attendance_reminder import AttendanceMilestone, AttendanceReminder
 from community.models.choices import (
-    RSVP_CHOICE_TYPES,
     AttendanceStatus,
     CoHostInviteStatus,
     EventFlagStatus,
@@ -13,7 +12,6 @@ from community.models.choices import (
     JoinRequestStatus,
     PageVisibility,
     PollAvailability,
-    RsvpQuestionType,
     RSVPStatus,
     SurveyQuestionType,
     SurveyVisibility,
@@ -67,9 +65,7 @@ __all__ = [
     "JoinRequestStatus",
     "PageVisibility",
     "PollAvailability",
-    "RSVP_CHOICE_TYPES",
     "RSVPStatus",
-    "RsvpQuestionType",
     "SurveyQuestionType",
     "SurveyVisibility",
     "EventCoHostInvite",

@@ -9,13 +9,10 @@ import {
   QUESTION_TYPE_OPTIONS,
   questionOptionsError,
   questionTypeWantsOptions,
-  RSVP_QUESTION_TYPE_OPTIONS,
-  type RsvpQuestionType,
 } from './questionTypeOptions';
 
 type AssertExtends<_A extends B, B> = true;
 type _JoinSubsetOfSurvey = AssertExtends<JoinQuestionType, SurveyQuestionType>;
-type _RsvpSubsetOfSurvey = AssertExtends<RsvpQuestionType, SurveyQuestionType>;
 type _JoinMatchesOpenApi = AssertExtends<
   JoinQuestionType,
   components['schemas']['JoinFormQuestionType']
@@ -55,33 +52,19 @@ describe('question type options', () => {
     ]);
   });
 
-  it('should expose the RSVP subset projected from catalog metadata', () => {
-    expect(RSVP_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
-      'textarea',
-      'dropdown',
-      'multiselect',
-    ]);
-    expect(RSVP_QUESTION_TYPE_OPTIONS.every((o) => FULL_TYPES.includes(o.value))).toBe(true);
-  });
-
-  it('should keep join and RSVP option values inside the full catalog', () => {
+  it('should keep join option values inside the full catalog', () => {
     const full = new Set(FULL_TYPES);
-    for (const option of [...JOIN_QUESTION_TYPE_OPTIONS, ...RSVP_QUESTION_TYPE_OPTIONS]) {
+    for (const option of JOIN_QUESTION_TYPE_OPTIONS) {
       expect(full.has(option.value)).toBe(true);
     }
   });
 
-  it('should match backend subset wire values for join and RSVP', () => {
-    // Keep in lockstep with backend JoinFormQuestionType / RsvpQuestionType.
+  it('should match backend join subset wire values', () => {
+    // Keep in lockstep with backend JoinFormQuestionType.
     expect(JOIN_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
       'text',
       'textarea',
       'dropdown',
-    ]);
-    expect(RSVP_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
-      'textarea',
-      'dropdown',
-      'multiselect',
     ]);
   });
 
