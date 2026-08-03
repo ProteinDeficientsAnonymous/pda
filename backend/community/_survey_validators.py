@@ -2,27 +2,33 @@
 
 from collections.abc import Callable
 
+from community._question_answers import (
+    assert_multiselect_members,
+    assert_single_choice_member,
+    is_answer_empty,
+)
 from community._validation import Code, raise_validation
 from community.models import PollAvailability, SurveyQuestion, SurveyQuestionType
 
 
 def _validate_choice_answer(answer: str, q: SurveyQuestion) -> None:
-    if answer not in (q.options or []):
-        raise_validation(
-            Code.Survey.ANSWER_INVALID_OPTION,
-            field=f"answers.{q.id}",
-            label=q.label,
-        )
+    assert_single_choice_member(
+        answer,
+        q.options,
+        code=Code.Survey.ANSWER_INVALID_OPTION,
+        field=f"answers.{q.id}",
+        label=q.label,
+    )
 
 
 def _validate_multiselect_answer(answer: str, q: SurveyQuestion) -> None:
-    for val in answer.split(","):
-        if val.strip() and val.strip() not in (q.options or []):
-            raise_validation(
-                Code.Survey.ANSWER_INVALID_OPTION,
-                field=f"answers.{q.id}",
-                label=q.label,
-            )
+    assert_multiselect_members(
+        answer,
+        q.options,
+        code=Code.Survey.ANSWER_INVALID_OPTION,
+        field=f"answers.{q.id}",
+        label=q.label,
+    )
 
 
 def _validate_number_answer(answer: str, q: SurveyQuestion) -> None:
@@ -95,12 +101,6 @@ _DICT_VALIDATORS: dict[str, Callable[[dict[str, str], SurveyQuestion], None]] = 
 }
 
 
-def _is_answer_empty(answer: str | dict) -> bool:
-    if isinstance(answer, dict):
-        return len(answer) == 0
-    return not answer.strip()
-
-
 def _validate_one_answer(answer: str | dict[str, str], q: SurveyQuestion) -> None:
     if q.field_type in _DICT_VALIDATORS:
         if not isinstance(answer, dict):
@@ -129,7 +129,7 @@ def _validate_survey_answers(
     """Raise ValidationException if any answer fails validation."""
     for q_id, q in questions.items():
         answer = answers.get(q_id)
-        if answer is None or _is_answer_empty(answer):
+        if answer is None or is_answer_empty(answer):
             if q.required:
                 raise_validation(
                     Code.Survey.ANSWER_REQUIRED,
@@ -147,7 +147,7 @@ def _build_survey_answers(
     result = {}
     for q_id, q in questions.items():
         answer = answers.get(q_id)
-        if answer is None or _is_answer_empty(answer):
+        if answer is None or is_answer_empty(answer):
             continue
         result[q_id] = {"label": q.label, "answer": answer}
     return result
