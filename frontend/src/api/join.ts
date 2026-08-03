@@ -6,6 +6,7 @@ import type { components } from './types.gen';
 import { Code } from './validationCodes.gen';
 
 export type JoinQuestionType = components['schemas']['JoinFormQuestionType'];
+export const DEFAULT_JOIN_QUESTION_TYPE: JoinQuestionType = 'text';
 
 export interface JoinQuestion {
   id: string;

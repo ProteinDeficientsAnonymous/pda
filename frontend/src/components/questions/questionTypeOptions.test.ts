@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { JOIN_QUESTION_TYPE_OPTIONS, questionTypeWantsOptions } from './questionTypeOptions';
+import {
+  JOIN_QUESTION_TYPE_OPTIONS,
+  questionOptionsError,
+  questionTypeWantsOptions,
+} from './questionTypeOptions';
 
 describe('join question type options', () => {
   it('should expose the canonical join subset when rendering authoring controls', () => {
@@ -14,5 +18,11 @@ describe('join question type options', () => {
       false,
       true,
     ]);
+  });
+
+  it('should return generic validation copy when a question requires options', () => {
+    expect(questionOptionsError(true, [])).toBe('add at least one option for this');
+    expect(questionOptionsError(true, ['first'])).toBeNull();
+    expect(questionOptionsError(false, [])).toBeNull();
   });
 });

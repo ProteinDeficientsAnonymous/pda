@@ -9,8 +9,10 @@ import {
   useCreateSurveyQuestion,
   useUpdateSurveyQuestion,
 } from '@/api/surveyAdmin';
+import { DEFAULT_SURVEY_QUESTION_TYPE } from '@/api/surveys';
 import {
   QUESTION_TYPE_OPTIONS,
+  questionOptionsError,
   questionTypeWantsOptions,
 } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
@@ -39,7 +41,7 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
 
   const [label, setLabel] = useState(() => existing?.label ?? '');
   const [fieldType, setFieldType] = useState<SurveyQuestionType>(
-    () => existing?.fieldType ?? 'text',
+    () => existing?.fieldType ?? DEFAULT_SURVEY_QUESTION_TYPE,
   );
   const [required, setRequired] = useState(() => existing?.required ?? false);
   const [optionsText, setOptionsText] = useState(() => existing?.options.join('\n') ?? '');
@@ -61,8 +63,9 @@ function SurveyQuestionDialogBody({ surveyId, open, onClose, existing }: Props) 
           .map((s) => s.trim())
           .filter(Boolean)
       : [];
-    if (wantsOptions && options.length === 0) {
-      setError('add at least one option');
+    const optionsError = questionOptionsError(wantsOptions, options);
+    if (optionsError) {
+      setError(optionsError);
       return;
     }
     const input: SurveyQuestionInput = {

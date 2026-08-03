@@ -13,6 +13,8 @@ export type SurveyQuestionType =
   | 'rating'
   | 'datetime_poll';
 
+export const DEFAULT_SURVEY_QUESTION_TYPE: SurveyQuestionType = 'text';
+
 export interface SurveyQuestion {
   id: string;
   label: string;

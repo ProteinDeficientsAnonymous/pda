@@ -33,8 +33,14 @@ const JOIN_QUESTION_TYPE_OPTION_BY_TYPE = {
 } satisfies Record<JoinQuestionType, QuestionTypeOption>;
 
 export const JOIN_QUESTION_TYPE_OPTIONS = Object.values(JOIN_QUESTION_TYPE_OPTION_BY_TYPE);
-export const DEFAULT_JOIN_QUESTION_TYPE: JoinQuestionType = 'text';
 
 export function questionTypeWantsOptions(fieldType: SurveyQuestionType): boolean {
   return QUESTION_TYPE_OPTION_BY_TYPE[fieldType].wantsOptions;
+}
+
+export function questionOptionsError(
+  wantsOptions: boolean,
+  options: readonly string[],
+): string | null {
+  return wantsOptions && options.length === 0 ? 'add at least one option for this' : null;
 }

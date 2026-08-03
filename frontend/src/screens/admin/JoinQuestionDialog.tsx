@@ -3,10 +3,14 @@ import { useState } from 'react';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
 import type { JoinQuestion, JoinQuestionInput, JoinQuestionType } from '@/api/join';
-import { useCreateJoinQuestion, useUpdateJoinQuestion } from '@/api/join';
 import {
   DEFAULT_JOIN_QUESTION_TYPE,
+  useCreateJoinQuestion,
+  useUpdateJoinQuestion,
+} from '@/api/join';
+import {
   JOIN_QUESTION_TYPE_OPTIONS,
+  questionOptionsError,
   questionTypeWantsOptions,
 } from '@/components/questions/questionTypeOptions';
 import { Button } from '@/components/ui/Button';
@@ -55,8 +59,9 @@ function JoinQuestionDialogBody({ open, onClose, existing }: Props) {
           .map((s) => s.trim())
           .filter(Boolean)
       : [];
-    if (wantsOptions && options.length === 0) {
-      setError('add at least one option for a dropdown question');
+    const optionsError = questionOptionsError(wantsOptions, options);
+    if (optionsError) {
+      setError(optionsError);
       return;
     }
     const input: JoinQuestionInput = {
