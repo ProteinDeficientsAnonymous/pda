@@ -2799,8 +2799,8 @@
           "field_type": {
             "enum": [
               "textarea",
-              "dropdown",
-              "multiselect"
+              "select",
+              "checkbox"
             ],
             "title": "Field Type",
             "type": "string"
@@ -2843,8 +2843,8 @@
           "field_type": {
             "enum": [
               "textarea",
-              "dropdown",
-              "multiselect"
+              "select",
+              "checkbox"
             ],
             "title": "Field Type",
             "type": "string"
@@ -2885,8 +2885,8 @@
           "field_type": {
             "enum": [
               "textarea",
-              "dropdown",
-              "multiselect"
+              "select",
+              "checkbox"
             ],
             "title": "Field Type",
             "type": "string"
@@ -2927,8 +2927,8 @@
           "field_type": {
             "enum": [
               "textarea",
-              "dropdown",
-              "multiselect"
+              "select",
+              "checkbox"
             ],
             "title": "Field Type",
             "type": "string"
@@ -4945,7 +4945,7 @@
               "maxLength": 2000,
               "type": "string"
             },
-            "description": "Question UUID to answer; multiselect values are comma-separated.",
+            "description": "Question UUID to answer; checkbox values are comma-separated.",
             "title": "Answers",
             "type": "object"
           },

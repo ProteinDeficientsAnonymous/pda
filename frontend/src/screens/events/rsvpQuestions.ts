@@ -3,8 +3,8 @@
 import type { RsvpQuestionType } from '@/api/eventRsvpQuestions';
 import {
   QUESTION_TYPE_OPTION_BY_TYPE,
-  questionTypeWantsOptions,
   type QuestionTypeOption,
+  questionTypeWantsOptions,
 } from '@/components/questions/questionTypeOptions';
 import type { EventRsvpQuestion } from '@/models/event';
 
@@ -14,8 +14,8 @@ export type RsvpAnswerValue = string;
 
 const RSVP_QUESTION_TYPE_OPTION_BY_TYPE = {
   textarea: QUESTION_TYPE_OPTION_BY_TYPE.textarea,
-  dropdown: QUESTION_TYPE_OPTION_BY_TYPE.dropdown,
-  multiselect: QUESTION_TYPE_OPTION_BY_TYPE.multiselect,
+  select: QUESTION_TYPE_OPTION_BY_TYPE.select,
+  checkbox: QUESTION_TYPE_OPTION_BY_TYPE.checkbox,
 } satisfies Record<RsvpQuestionType, QuestionTypeOption>;
 
 export const RSVP_QUESTION_TYPE_OPTIONS = Object.values(RSVP_QUESTION_TYPE_OPTION_BY_TYPE);

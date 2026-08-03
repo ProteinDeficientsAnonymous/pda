@@ -79,13 +79,13 @@ class RsvpQuestionType(models.TextChoices):
     """Question types supported by event RSVP questions."""
 
     TEXTAREA = QuestionType.TEXTAREA.value, QuestionType.TEXTAREA.label
-    DROPDOWN = QuestionType.DROPDOWN.value, QuestionType.DROPDOWN.label
-    MULTISELECT = QuestionType.MULTISELECT.value, QuestionType.MULTISELECT.label
+    SELECT = QuestionType.SELECT.value, QuestionType.SELECT.label
+    CHECKBOX = QuestionType.CHECKBOX.value, QuestionType.CHECKBOX.label
 
 
 RSVP_QUESTION_TYPE_CHOICES = RsvpQuestionType.choices
 RSVP_CHOICE_TYPES = frozenset(
-    {RsvpQuestionType.DROPDOWN, RsvpQuestionType.MULTISELECT},
+    {RsvpQuestionType.SELECT, RsvpQuestionType.CHECKBOX},
 )
 
 

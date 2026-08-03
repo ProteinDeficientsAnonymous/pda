@@ -15,14 +15,14 @@ const questions: RsvpQuestionDraft[] = [
   {
     id: 'q-one',
     label: 'transport',
-    fieldType: 'dropdown',
+    fieldType: 'select',
     options: ['car', 'bus'],
     required: true,
   },
   {
     id: 'q-multi',
     label: 'help with',
-    fieldType: 'multiselect',
+    fieldType: 'checkbox',
     options: ['setup', 'cleanup'],
     required: false,
   },
@@ -36,7 +36,7 @@ describe('RsvpQuestionFields', () => {
     expect(screen.getByLabelText('notes (optional)')).toBeInTheDocument();
   });
 
-  it('renders select one as a dropdown and reports changes', () => {
+  it('renders select one as a select and reports changes', () => {
     const onChange = vi.fn();
     render(
       <RsvpQuestionFields questions={questions} answers={{}} onChange={onChange} errors={{}} />,
@@ -46,7 +46,7 @@ describe('RsvpQuestionFields', () => {
     expect(onChange).toHaveBeenCalledWith('q-one', 'car');
   });
 
-  it('toggles multiselect options as csv', () => {
+  it('toggles checkbox options as csv', () => {
     const onChange = vi.fn();
     render(
       <RsvpQuestionFields

@@ -60,7 +60,7 @@ function EventRsvpQuestionDialogBody({ open, onClose, onSave, existing }: Props)
       setError(`options must be ${String(MAX_OPTION_LENGTH)} characters or fewer`);
       return;
     }
-    if (fieldType === 'multiselect' && options.some((option) => option.includes(','))) {
+    if (fieldType === 'checkbox' && options.some((option) => option.includes(','))) {
       setError('options cannot contain commas');
       return;
     }

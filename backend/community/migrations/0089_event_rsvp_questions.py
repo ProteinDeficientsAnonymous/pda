@@ -30,8 +30,8 @@ class Migration(migrations.Migration):
                     models.CharField(
                         choices=[
                             ("textarea", "Text area"),
-                            ("dropdown", "Dropdown"),
-                            ("multiselect", "Multi select"),
+                            ("select", "Select"),
+                            ("checkbox", "Checkbox"),
                         ],
                         max_length=20,
                     ),

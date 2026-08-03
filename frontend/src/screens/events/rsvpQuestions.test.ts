@@ -29,8 +29,8 @@ describe('RSVP_QUESTION_TYPE_OPTIONS', () => {
   it('should project the RSVP subset from catalog metadata', () => {
     expect(RSVP_QUESTION_TYPE_OPTIONS.map((o) => o.value)).toEqual([
       'textarea',
-      'dropdown',
-      'multiselect',
+      'select',
+      'checkbox',
     ]);
   });
 });
@@ -38,8 +38,8 @@ describe('RSVP_QUESTION_TYPE_OPTIONS', () => {
 describe('wantsOptions', () => {
   it('is true only for choice types', () => {
     expect(wantsOptions('textarea')).toBe(false);
-    expect(wantsOptions('dropdown')).toBe(true);
-    expect(wantsOptions('multiselect')).toBe(true);
+    expect(wantsOptions('select')).toBe(true);
+    expect(wantsOptions('checkbox')).toBe(true);
   });
 });
 
@@ -63,7 +63,7 @@ describe('missingRequiredQuestionIds', () => {
     const questions = [
       q({ id: 'a', required: true }),
       q({ id: 'b', required: false }),
-      q({ id: 'c', required: true, fieldType: 'multiselect' }),
+      q({ id: 'c', required: true, fieldType: 'checkbox' }),
     ];
     expect(missingRequiredQuestionIds(questions, { a: 'ok', c: '' })).toEqual(['c']);
     expect(missingRequiredQuestionIds(questions, { a: 'ok', c: 'x' })).toEqual([]);

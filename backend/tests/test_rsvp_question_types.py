@@ -22,12 +22,12 @@ def test_rsvp_question_type_enum_matches_canonical_subset():
     }
 
     assert survey == canonical
-    assert rsvp == {name: canonical[name] for name in ("TEXTAREA", "DROPDOWN", "MULTISELECT")}
+    assert rsvp == {name: canonical[name] for name in ("TEXTAREA", "SELECT", "CHECKBOX")}
     assert [question_type.value for question_type in RsvpQuestionType] == [
         "textarea",
-        "dropdown",
-        "multiselect",
+        "select",
+        "checkbox",
     ]
     assert RSVP_CHOICE_TYPES == frozenset(
-        {RsvpQuestionType.DROPDOWN, RsvpQuestionType.MULTISELECT},
+        {RsvpQuestionType.SELECT, RsvpQuestionType.CHECKBOX},
     )

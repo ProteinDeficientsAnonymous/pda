@@ -64,7 +64,7 @@ export interface WireEvent {
   rsvp_questions?: {
     id: string;
     label: string;
-    field_type: 'textarea' | 'dropdown' | 'multiselect';
+    field_type: 'textarea' | 'select' | 'checkbox';
     options?: string[];
     required: boolean;
     display_order?: number;

@@ -22,7 +22,7 @@ def rsvp_event(db, test_user):
 def _create_question(event, **overrides):
     data = {
         "label": "how are you getting there?",
-        "field_type": "dropdown",
+        "field_type": "select",
         "options": ["driving", "transit"],
         "required": True,
         "display_order": event.rsvp_questions.count(),
@@ -56,7 +56,7 @@ class TestEventRsvpQuestionSync:
                     {
                         "id": None,
                         "label": "new",
-                        "field_type": "dropdown",
+                        "field_type": "select",
                         "options": ["a", "b"],
                         "required": True,
                     },

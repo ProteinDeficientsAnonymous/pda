@@ -4,10 +4,10 @@ from community._field_limits import FieldLimit
 from community._question_answers import (
     assert_single_choice_member,
     is_answer_empty,
-    normalize_multiselect_csv,
+    normalize_checkbox_csv,
 )
 from community._validation import Code, raise_validation
-from community.models import EventRsvpQuestion, RSVPStatus, RsvpQuestionType
+from community.models import EventRsvpQuestion, RsvpQuestionType, RSVPStatus
 
 AnswersIn = dict[str, str]
 
@@ -31,8 +31,8 @@ def _require_if_needed(q: EventRsvpQuestion, *, require_answers: bool) -> None:
 
 def _normalize_answer(q: EventRsvpQuestion, answer: str) -> str:
     field = f"answers.{q.id}"
-    if q.field_type == RsvpQuestionType.MULTISELECT:
-        return normalize_multiselect_csv(
+    if q.field_type == RsvpQuestionType.CHECKBOX:
+        return normalize_checkbox_csv(
             answer,
             q.options,
             code=Code.Event.RSVP_ANSWER_INVALID_OPTION,
@@ -41,7 +41,7 @@ def _normalize_answer(q: EventRsvpQuestion, answer: str) -> str:
         )
 
     text = str(answer).strip()
-    if q.field_type == RsvpQuestionType.DROPDOWN:
+    if q.field_type == RsvpQuestionType.SELECT:
         assert_single_choice_member(
             text,
             q.options,
@@ -76,7 +76,7 @@ def build_rsvp_answers(
                 max=FieldLimit.DESCRIPTION,
             )
         normalized = _normalize_answer(q, answer)
-        # Multiselect ",,," normalizes to "" — treat as unanswered.
+        # Checkbox ",,," normalizes to "" — treat as unanswered.
         if is_answer_empty(normalized):
             _require_if_needed(q, require_answers=require_answers)
             continue

@@ -40,7 +40,7 @@ def other_headers(other_user):
 def _question_data(**overrides):
     return {
         "label": "how are you getting there?",
-        "field_type": "dropdown",
+        "field_type": "select",
         "options": ["driving", "transit"],
         "required": True,
         **overrides,
@@ -130,12 +130,12 @@ class TestRsvpWithAnswers:
 
 @pytest.mark.django_db
 class TestRsvpAnswerEdgeCases:
-    def test_multiselect_comma_only_required_rejected(
+    def test_checkbox_comma_only_required_rejected(
         self, api_client, other_headers, auth_headers, rsvp_event
     ):
         q = _create_question(
             rsvp_event,
-            field_type="multiselect",
+            field_type="checkbox",
             options=["a", "b"],
         )
         response = api_client.post(
@@ -147,18 +147,18 @@ class TestRsvpAnswerEdgeCases:
         assert response.status_code == 422
         assert_error_code(response, Code.Event.RSVP_ANSWER_REQUIRED)
 
-    def test_multiselect_option_with_comma_rejected(self, api_client, auth_headers, rsvp_event):
+    def test_checkbox_option_with_comma_rejected(self, api_client, auth_headers, rsvp_event):
         response = _replace_question(
             api_client,
             auth_headers,
             rsvp_event.id,
-            field_type="multiselect",
+            field_type="checkbox",
             options=["a, b", "c"],
         )
         assert response.status_code == 400
         assert_error_code(response, Code.Event.RSVP_QUESTION_OPTION_NO_COMMA)
 
-    def test_dropdown_option_with_comma_allowed(self, api_client, auth_headers, rsvp_event):
+    def test_select_option_with_comma_allowed(self, api_client, auth_headers, rsvp_event):
         response = _replace_question(
             api_client,
             auth_headers,

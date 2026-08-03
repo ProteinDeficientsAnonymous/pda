@@ -17,7 +17,7 @@ describe('EventRsvpQuestionDialog', () => {
     const onSave = vi.fn();
     render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('question'), { target: { value: 'pick one' } });
-    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'dropdown' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'select' } });
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
     expect(screen.getByRole('alert')).toHaveTextContent(/at least one option/i);
     expect(onSave).not.toHaveBeenCalled();
@@ -46,7 +46,7 @@ describe('EventRsvpQuestionDialog', () => {
     const existing: RsvpQuestionDraft = {
       id: 'q-existing',
       label: 'help',
-      fieldType: 'multiselect',
+      fieldType: 'checkbox',
       options: ['a'],
       required: false,
     };
@@ -57,7 +57,7 @@ describe('EventRsvpQuestionDialog', () => {
     expect(onSave).toHaveBeenCalledWith({
       id: 'q-existing',
       label: 'help',
-      fieldType: 'multiselect',
+      fieldType: 'checkbox',
       options: ['setup', 'cleanup'],
       required: false,
     });
@@ -67,7 +67,7 @@ describe('EventRsvpQuestionDialog', () => {
     const onSave = vi.fn();
     render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('question'), { target: { value: 'help' } });
-    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'multiselect' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'checkbox' } });
     fireEvent.change(screen.getByLabelText('options'), { target: { value: 'yes, with a guest' } });
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
 
@@ -79,7 +79,7 @@ describe('EventRsvpQuestionDialog', () => {
     const onSave = vi.fn();
     render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('question'), { target: { value: 'bringing someone?' } });
-    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'dropdown' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'select' } });
     fireEvent.change(screen.getByLabelText('options'), {
       target: { value: 'yes, with a guest\nno' },
     });
@@ -94,7 +94,7 @@ describe('EventRsvpQuestionDialog', () => {
     const onSave = vi.fn();
     render(<EventRsvpQuestionDialog open onClose={() => {}} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('question'), { target: { value: 'pick one' } });
-    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'dropdown' } });
+    fireEvent.change(screen.getByLabelText('type'), { target: { value: 'select' } });
     fireEvent.change(screen.getByLabelText('options'), { target: { value: 'x'.repeat(201) } });
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
 

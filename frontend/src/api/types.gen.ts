@@ -3294,7 +3294,7 @@ export interface components {
              * Field Type
              * @enum {string}
              */
-            field_type: "textarea" | "dropdown" | "multiselect";
+            field_type: "textarea" | "select" | "checkbox";
             /**
              * Id
              * Format: uuid
@@ -3319,7 +3319,7 @@ export interface components {
              * Field Type
              * @enum {string}
              */
-            field_type: "textarea" | "dropdown" | "multiselect";
+            field_type: "textarea" | "select" | "checkbox";
             /** Label */
             label: string;
             /**
@@ -3341,7 +3341,7 @@ export interface components {
              * Field Type
              * @enum {string}
              */
-            field_type: "textarea" | "dropdown" | "multiselect";
+            field_type: "textarea" | "select" | "checkbox";
             /** Id */
             id: string;
             /** Label */
@@ -3360,7 +3360,7 @@ export interface components {
              * Field Type
              * @enum {string}
              */
-            field_type: "textarea" | "dropdown" | "multiselect";
+            field_type: "textarea" | "select" | "checkbox";
             /** Id */
             id?: string | null;
             /** Label */
@@ -4255,7 +4255,7 @@ export interface components {
         RSVPIn: {
             /**
              * Answers
-             * @description Question UUID to answer; multiselect values are comma-separated.
+             * @description Question UUID to answer; checkbox values are comma-separated.
              */
             answers?: {
                 [key: string]: string;

@@ -17,7 +17,7 @@ const base = {
 const requiredSelect: RsvpQuestionDraft = {
   id: 'q-transport',
   label: 'how are you getting there?',
-  fieldType: 'dropdown',
+  fieldType: 'select',
   options: ['driving', 'transit'],
   required: true,
 };

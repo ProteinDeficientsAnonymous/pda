@@ -23,7 +23,7 @@ from community.models import (
 
 _EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
-RsvpQuestionFieldType = Literal["textarea", "dropdown", "multiselect"]
+RsvpQuestionFieldType = Literal["textarea", "select", "checkbox"]
 RsvpQuestionOption = Annotated[str, Field(max_length=FieldLimit.OPTION_TEXT)]
 RsvpAnswer = Annotated[str, WithJsonSchema({"type": "string", "maxLength": FieldLimit.DESCRIPTION})]
 
@@ -80,7 +80,7 @@ def validate_event_rsvp_question(payload: EventRsvpQuestionIn) -> None:
             field="options",
             status_code=400,
         )
-    if payload.field_type == "multiselect" and any("," in option for option in payload.options):
+    if payload.field_type == "checkbox" and any("," in option for option in payload.options):
         raise_validation(
             Code.Event.RSVP_QUESTION_OPTION_NO_COMMA,
             field="options",
@@ -298,7 +298,7 @@ class RSVPIn(BaseModel):
     comment: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
     answers: dict[str, RsvpAnswer] = Field(
         default_factory=dict,
-        description="Question UUID to answer; multiselect values are comma-separated.",
+        description="Question UUID to answer; checkbox values are comma-separated.",
     )
 
 

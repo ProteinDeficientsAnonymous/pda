@@ -75,7 +75,7 @@ export interface EventTag {
   slug: string;
 }
 
-export type EventRsvpQuestionType = 'textarea' | 'dropdown' | 'multiselect';
+export type EventRsvpQuestionType = 'textarea' | 'select' | 'checkbox';
 
 export interface EventRsvpQuestion {
   id: string;
