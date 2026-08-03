@@ -41,6 +41,7 @@ def audit_log(  # noqa: PLR0913
     target_type: AuditTargetType | str = "",
     target_id: str = "",
     details: dict | None = None,
+    *,
     persist: bool = True,
 ) -> None:
     """Emit a structured audit log entry.
