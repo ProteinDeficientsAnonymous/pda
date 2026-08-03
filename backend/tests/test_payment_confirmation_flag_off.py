@@ -3,19 +3,18 @@ from community.models import (
     Event,
     EventRSVP,
     FeatureFlag,
-    FeatureFlagState,
     RSVPStatus,
     resolve_flags,
 )
 
 from tests._public_rsvp_helpers import make_official_event, post, url
-from tests.conftest import future_iso
+from tests.conftest import future_iso, set_flag
 
 FLAG = FeatureFlag.EVENT_PAYMENT_CONFIRMATION
 
 
 def disable_flag():
-    FeatureFlagState.objects.update_or_create(key=FLAG, defaults={"enabled": False})
+    set_flag(FLAG, False)
 
 
 @pytest.fixture

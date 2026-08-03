@@ -4,10 +4,12 @@ from community._checkin_nudge import (
     send_checkin_nudge,
     send_due_checkin_nudges,
 )
-from community.models import Event, EventStatus, EventType, FeatureFlag, FeatureFlagState
+from community.models import Event, EventStatus, EventType, FeatureFlag
 from django.utils import timezone
 from notifications.models import Notification, NotificationType
 from users.models import User
+
+from tests.conftest import set_flag
 
 
 def _make_event(**kwargs):
@@ -157,7 +159,7 @@ class TestSendDueCheckinNudges:
         )
 
     def test_sends_and_stamps_when_flag_on(self, test_user, fake_email_sender, db):
-        FeatureFlagState.objects.create(key=FeatureFlag.HOST_ATTENDANCE_REPORT, enabled=True)
+        set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
         event = _make_event(created_by=test_user)
 
         count = send_due_checkin_nudges()
@@ -167,7 +169,7 @@ class TestSendDueCheckinNudges:
         assert event.checkin_nudge_sent_at is not None
 
     def test_idempotent_across_runs(self, test_user, fake_email_sender, db):
-        FeatureFlagState.objects.create(key=FeatureFlag.HOST_ATTENDANCE_REPORT, enabled=True)
+        set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
         _make_event(created_by=test_user)
 
         assert send_due_checkin_nudges() == 1

@@ -1,7 +1,9 @@
 import pytest
-from community.models import Event, EventStatus, EventType, FeatureFlag, FeatureFlagState
+from community.models import Event, EventStatus, EventType, FeatureFlag
 from django.core.management import call_command
 from django.utils import timezone
+
+from tests.conftest import set_flag
 
 
 @pytest.mark.django_db
@@ -20,7 +22,7 @@ def test_command_noop_when_flag_off(test_user, fake_email_sender, capsys):
 
 @pytest.mark.django_db
 def test_command_sends_when_flag_on(test_user, fake_email_sender, capsys):
-    FeatureFlagState.objects.create(key=FeatureFlag.HOST_ATTENDANCE_REPORT, enabled=True)
+    set_flag(FeatureFlag.HOST_ATTENDANCE_REPORT)
     event = Event.objects.create(
         title="Club Meetup",
         event_type=EventType.CLUB,
