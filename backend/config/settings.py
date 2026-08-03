@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "users",
     "community",
     "notifications",
+    "audit",
 ]
 
 MIDDLEWARE = [
