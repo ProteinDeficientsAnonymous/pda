@@ -1,3 +1,10 @@
+## [0.76.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.76.0...v0.76.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* notify host when member rsvps to event ([#1211](https://github.com/ProteinDeficientsAnonymous/pda/issues/1211)) ([#1217](https://github.com/ProteinDeficientsAnonymous/pda/issues/1217)) ([57b0a7e](https://github.com/ProteinDeficientsAnonymous/pda/commit/57b0a7ef263eb4a73e3234bceb16a929a29d9496))
+
 # [0.76.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.75.4...v0.76.0) (2026-08-03)
 
 
