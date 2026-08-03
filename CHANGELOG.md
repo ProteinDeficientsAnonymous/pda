@@ -1,3 +1,10 @@
+# [0.77.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.76.1...v0.77.0) (2026-08-03)
+
+
+### Features
+
+* 1045 - payment confirmation model + helpers (1/6) ([#1224](https://github.com/ProteinDeficientsAnonymous/pda/issues/1224)) ([bcbcda8](https://github.com/ProteinDeficientsAnonymous/pda/commit/bcbcda8cef6d86b0d875249a5ad671bde115d233))
+
 ## [0.76.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.76.0...v0.76.1) (2026-08-03)
 
 
