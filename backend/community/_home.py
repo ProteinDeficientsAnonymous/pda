@@ -68,6 +68,7 @@ def update_home(request, payload: HomePagePatchIn):
             "permission_denied",
             request,
             details={"endpoint": "update_home", "required_permission": PermissionKey.EDIT_HOMEPAGE},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_home")
     h = HomePage.get()

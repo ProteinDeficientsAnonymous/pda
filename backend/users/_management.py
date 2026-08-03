@@ -10,7 +10,6 @@ from community.models import AttendanceStatus
 from config.audit import AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
-from django.utils import timezone
 from ninja import Router
 from ninja.responses import Status
 
@@ -19,7 +18,6 @@ from users._helpers import (
     _create_magic_token,
     _create_user_with_role,
     _is_admin,
-    _is_last_admin,
     _resolve_name_fields,
     _strip_non_member_roles,
     _validate_admin_role_change,
@@ -57,6 +55,7 @@ def create_user(request, payload: UserCreateIn):
             "permission_denied",
             request,
             details={"endpoint": "create_user", "required_permission": PermissionKey.CREATE_USER},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
@@ -114,6 +113,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
                 "endpoint": "bulk_create_users",
                 "required_permission": PermissionKey.MANAGE_USERS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="bulk_create_users")
 
@@ -244,6 +244,7 @@ def list_users(request, include_non_members: bool = False):
             "permission_denied",
             request,
             details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
@@ -279,6 +280,7 @@ def update_user(request, user_id: str, payload: UserPatchIn):
             target_type=AuditTargetType.USER,
             target_id=user_id,
             details={"endpoint": "update_user", "required_permission": PermissionKey.MANAGE_USERS},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user")
     try:
@@ -360,96 +362,6 @@ def _apply_user_patch(user: User, user_id: str, payload: UserPatchIn, requester_
         user.is_paused = payload.is_paused
 
 
-@router.delete(
-    "/users/{user_id}/",
-    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def delete_user(request, user_id: str):
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details={"endpoint": "delete_user", "required_permission": PermissionKey.MANAGE_USERS},
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="delete_user")
-    try:
-        user = User.objects.members().get(pk=user_id)
-    except User.DoesNotExist:
-        raise_validation(Code.User.NOT_FOUND, status_code=404)
-    if str(user.pk) == str(request.auth.pk):
-        raise_validation(Code.User.CANNOT_DELETE_SELF, status_code=400)
-    if _is_last_admin(user):
-        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
-    if user.archived_at is not None:
-        raise_validation(Code.User.ALREADY_ARCHIVED, status_code=400)
-    full_name = user.full_name
-    user.archived_at = timezone.now()
-    user.save(update_fields=["archived_at"])
-    audit_log(
-        logging.WARNING,
-        "user_archived",
-        request,
-        target_type=AuditTargetType.USER,
-        target_id=user_id,
-        details={"full_name": full_name},
-    )
-    return Status(204, None)
-
-
-@router.delete(
-    "/users/{user_id}/hard/",
-    response={204: None, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
-    auth=gated_jwt,
-)
-def hard_delete_user(request, user_id: str):
-    """Permanently remove a member who has never logged in.
-
-    Unlike ``delete_user`` (which soft-archives via ``archived_at``), this row is
-    gone for good. Restricted to never-logged-in accounts — an approved entry the
-    person never actually claimed — so a real member's data is never destroyed.
-    """
-    if not request.auth.has_permission(PermissionKey.MANAGE_USERS):
-        audit_log(
-            logging.WARNING,
-            "permission_denied",
-            request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details={
-                "endpoint": "hard_delete_user",
-                "required_permission": PermissionKey.MANAGE_USERS,
-            },
-        )
-        raise_validation(Code.Perm.DENIED, status_code=403, action="hard_delete_user")
-    try:
-        user = User.objects.members().get(pk=user_id)
-    except User.DoesNotExist:
-        raise_validation(Code.User.NOT_FOUND, status_code=404)
-    if str(user.pk) == str(request.auth.pk):
-        raise_validation(Code.User.CANNOT_DELETE_SELF, status_code=400)
-    if _is_last_admin(user):
-        raise_validation(Code.User.CANNOT_DELETE_LAST_ADMIN, status_code=400)
-    if user.last_login is not None:
-        raise_validation(Code.User.CANNOT_HARD_DELETE_LOGGED_IN, status_code=400)
-    full_name = user.full_name
-    audit_log(
-        logging.WARNING,
-        "user_hard_deleted",
-        request,
-        target_type=AuditTargetType.USER,
-        target_id=user_id,
-        details={"full_name": full_name},
-    )
-    # Safe because last_login is None: a never-logged-in user has authored no
-    # EventComments (author is on_delete=PROTECT), so the cascade can't raise.
-    user.delete()
-    return Status(204, None)
-
-
 @router.patch(
     "/users/{user_id}/roles/",
     response={200: UserOut, 400: ErrorOut, 403: ErrorOut, 404: ErrorOut},
@@ -467,6 +379,7 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
                 "endpoint": "update_user_roles",
                 "required_permission": PermissionKey.MANAGE_USERS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user_roles")
     try:

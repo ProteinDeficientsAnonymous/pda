@@ -49,6 +49,7 @@ def update_whatsapp_link(request, payload: WhatsAppLinkPatchIn):
                 "endpoint": "update_whatsapp_link",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="edit_whatsapp_link")
 

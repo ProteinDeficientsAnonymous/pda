@@ -47,6 +47,7 @@ def create_document(request, payload: DocumentIn):
                 "endpoint": "create_document",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -90,6 +91,7 @@ def reorder_documents(request, payload: ReorderIn):
                 "endpoint": "reorder_documents",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -114,6 +116,7 @@ def get_document(request, doc_id: str):
                 "endpoint": "get_document",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
     try:
@@ -141,6 +144,7 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
                 "endpoint": "update_document",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -195,6 +199,7 @@ def delete_document(request, doc_id: str):
                 "endpoint": "delete_document",
                 "required_permission": PermissionKey.MANAGE_DOCUMENTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 

@@ -38,6 +38,7 @@ def generate_magic_link(request, user_id: str):
                 "endpoint": "generate_magic_link",
                 "required_permission": PermissionKey.MANAGE_USERS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="generate_magic_link")
 

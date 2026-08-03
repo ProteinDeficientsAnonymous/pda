@@ -91,9 +91,10 @@ def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details=details,
+            persist=False,
         )
     else:
-        audit_log(logging.WARNING, "permission_denied", request, details=details)
+        audit_log(logging.WARNING, "permission_denied", request, details=details, persist=False)
     raise_validation(Code.Perm.DENIED, status_code=403, action=required)
 
 
@@ -433,6 +434,7 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "update_event"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
 

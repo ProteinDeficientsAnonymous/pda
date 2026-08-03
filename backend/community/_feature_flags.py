@@ -42,6 +42,7 @@ def update_feature_flag(request, key: str, payload: FeatureFlagPatchIn):
                 "endpoint": "update_feature_flag",
                 "required_permission": PermissionKey.MANAGE_FEATURE_FLAGS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_feature_flags")
     if key not in FeatureFlag.values:

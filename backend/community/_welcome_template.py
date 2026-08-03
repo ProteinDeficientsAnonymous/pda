@@ -52,6 +52,7 @@ def update_welcome_template(request, payload: WelcomeTemplatePatchIn):
                 "endpoint": "update_welcome_template",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="edit_welcome_message")
 

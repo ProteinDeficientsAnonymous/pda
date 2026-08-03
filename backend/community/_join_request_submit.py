@@ -211,6 +211,7 @@ def submit_join_request(request, payload: JoinRequestIn):
             "join_request_honeypot_tripped",
             request,
             details={"full_name": full_name},
+            persist=False,
         )
         return Status(201, _honeypot_decoy_response(first_name, full_name, payload.phone_number))
 

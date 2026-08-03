@@ -70,6 +70,7 @@ def invite_to_event(request, event_id: UUID, payload: InviteIn):
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "invite_to_event"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="invite_to_event")
 

@@ -53,6 +53,7 @@ def update_tentative_approval_message(request, payload: TentativeApprovalMessage
                 "endpoint": "update_tentative_approval_message",
                 "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
             },
+            persist=False,
         )
         raise_validation(
             Code.Perm.DENIED, status_code=403, action="edit_tentative_approval_message"

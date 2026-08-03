@@ -59,6 +59,7 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
             target_type=AuditTargetType.EVENT,
             target_id=str(event_id),
             details={"endpoint": "upload_event_photo"},
+            persist=False,
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="upload_event_photo")
     if event.is_cancelled:

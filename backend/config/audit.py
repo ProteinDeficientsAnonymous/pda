@@ -1,35 +1,31 @@
 """Audit logging helper for structured security and admin action logging."""
 
+import ipaddress
 import logging
 
-from django.db import models
+from audit.models import AuditLogEntry, AuditTargetType
+from django.db import transaction
 
 from config.ratelimit import client_ip
+
+__all__ = ["AuditTargetType", "audit_log"]
 
 _audit_logger = logging.getLogger("pda.audit")
 
 
-class AuditTargetType(models.TextChoices):
-    DOC_FOLDER = "doc_folder", "Doc folder"
-    DOCUMENT = "document", "Document"
-    EDITABLE_PAGE = "editable_page", "Editable page"
-    EVENT = "event", "Event"
-    EVENT_POLL = "event_poll", "Event poll"
-    EVENT_TAG = "event_tag", "Event tag"
-    FAQ = "faq", "FAQ"
-    FEATURE_FLAG = "feature_flag", "Feature flag"
-    GUIDELINES = "guidelines", "Guidelines"
-    HOMEPAGE = "homepage", "Homepage"
-    JOIN_FORM_QUESTION = "join_form_question", "Join form question"
-    JOIN_REQUEST = "join_request", "Join request"
-    MEMBER_PROMOTION_MESSAGE = "member_promotion_message", "Member promotion message"
-    ROLE = "role", "Role"
-    SURVEY = "survey", "Survey"
-    SURVEY_QUESTION = "survey_question", "Survey question"
-    TENTATIVE_APPROVAL_MESSAGE = "tentative_approval_message", "Tentative approval message"
-    USER = "user", "User"
-    WELCOME_TEMPLATE = "welcome_template", "Welcome template"
-    WHATSAPP_LINK = "whatsapp_link", "WhatsApp link"
+def _valid_ip(value: str) -> str | None:
+    # client_ip can return 'anon' or an unvalidated XFF hop; Postgres rejects both.
+    try:
+        return str(ipaddress.ip_address(value))
+    except ValueError:
+        return None
+
+
+def _persist(**fields) -> None:
+    try:
+        AuditLogEntry.objects.create(**fields)
+    except Exception:
+        _audit_logger.exception("audit_persist_failed", extra={"action": fields.get("action")})
 
 
 def audit_log(  # noqa: PLR0913
@@ -39,6 +35,8 @@ def audit_log(  # noqa: PLR0913
     target_type: AuditTargetType | str = "",
     target_id: str = "",
     details: dict | None = None,
+    *,
+    persist: bool = True,
 ) -> None:
     """Emit a structured audit log entry.
 
@@ -49,6 +47,7 @@ def audit_log(  # noqa: PLR0913
         target_type: AuditTargetType member for the affected object
         target_id: string ID of the affected object
         details: optional context dict (avoid including raw phone numbers or tokens)
+        persist: write a row to the audit table; False for console-only noise
     """
     user = getattr(request, "auth", None)
     if user and hasattr(user, "pk"):
@@ -77,3 +76,19 @@ def audit_log(  # noqa: PLR0913
             "ip_address": ip_address,
         },
     )
+
+    if not persist:
+        return
+
+    fields = {
+        "action": action,
+        "actor": user if user and hasattr(user, "pk") else None,
+        "actor_label": actor_name,
+        "target_type": target_type,
+        "target_id": target_id,
+        "details": details or {},
+        "ip_address": _valid_ip(ip_address),
+        "level": level,
+    }
+    # on_commit so a rolled-back action leaves no row — the action didn't happen.
+    transaction.on_commit(lambda: _persist(**fields))
