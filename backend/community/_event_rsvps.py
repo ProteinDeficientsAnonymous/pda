@@ -141,27 +141,6 @@ def _post_rsvp_comment(event_id, user, final_status: str, comment: str | None) -
 def _resolve_paid_confirmed_at(
     existing: EventRSVP | None, paid_confirmed: bool, final_status: str
 ) -> datetime | None:
-    """Resolve paid_confirmed_at for this write.
-
-    Attending or waitlisted both stamp: at capacity an attending request
-    resolves to waitlisted, but it was still a gated, confirmed write and must
-    keep its stamp through promotion. Maybe/can't-go are ungated statuses —
-    `paid_confirmed` there must not bank a stamp that disarms a later
-    attending write (see requires_payment_gate).
-
-    A standing confirmation is preserved untouched, so a host-revoked row that
-    pays again re-stamps without needing the rsvp deleted.
-    """
-    if existing is not None and existing.paid_confirmed_at is not None:
-        return existing.paid_confirmed_at
-    if paid_confirmed and final_status in (RSVPStatus.ATTENDING, RSVPStatus.WAITLISTED):
-        return timezone.now()
-    return None
-
-
-def _resolve_paid_confirmed_at(
-    existing: EventRSVP | None, paid_confirmed: bool, final_status: str
-) -> datetime | None:
     """Preserve a standing stamp; otherwise stamp only on a confirmed attending/waitlisted write."""
     if existing is not None and existing.paid_confirmed_at is not None:
         return existing.paid_confirmed_at

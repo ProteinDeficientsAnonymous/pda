@@ -318,6 +318,7 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
             "user_id", flat=True
         )
         for user_id in yes_voter_ids:
+            # paid_confirmed_at omitted from defaults: preserves an existing stamp, else unconfirmed.
             EventRSVP.objects.update_or_create(
                 event=event,
                 user_id=user_id,

@@ -316,17 +316,25 @@ def create_event_invite_notifications(
 def create_waitlist_promoted_notifications(
     event: Event,
     promoted_user_ids: Iterable[str],
+    unpaid_user_ids: Iterable[str] = (),
 ) -> None:
+    """Notify promoted users. Only those in unpaid_user_ids are told to pay —
+    someone promoted with a standing confirmation already paid."""
     user_ids = list(promoted_user_ids)
     if not user_ids:
         return
+    unpaid = set(unpaid_user_ids)
+    promoted_message = f"a spot opened up — you're going to {event.title}!"
+    unpaid_message = (
+        f"a spot opened up for {event.title} — your spot isn't confirmed until you pay."
+    )
     Notification.objects.bulk_create(
         [
             Notification(
                 recipient_id=user_id,
                 notification_type=NotificationType.WAITLIST_PROMOTED,
                 event=event,
-                message=f"a spot opened up — you're going to {event.title}!",
+                message=unpaid_message if user_id in unpaid else promoted_message,
             )
             for user_id in user_ids
         ]
