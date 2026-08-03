@@ -2,19 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { makeEvent } from '@/test/fixtures';
+import { makePaidEvent } from '@/test/fixtures';
 
 import { PaymentConfirmStep } from './PaymentConfirmStep';
-
-function makePaidEvent(overrides: Parameters<typeof makeEvent>[0] = {}) {
-  return makeEvent({
-    price: '$10',
-    venmoLink: 'https://venmo.com/u/host',
-    cashappLink: '',
-    zelleInfo: '',
-    ...overrides,
-  });
-}
 
 describe('PaymentConfirmStep', () => {
   it('shows the price', () => {

@@ -2,23 +2,12 @@ import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RsvpStatus } from '@/models/event';
-import { makeEvent } from '@/test/fixtures';
+import { makePaidEvent } from '@/test/fixtures';
 
 import { usePaymentGate } from './usePaymentGate';
 
 const mockUseFlag = vi.hoisted(() => vi.fn());
 vi.mock('@/api/featureFlags', () => ({ useFlag: mockUseFlag }));
-
-function makePaidEvent(overrides: Parameters<typeof makeEvent>[0] = {}) {
-  return makeEvent({
-    price: '$10',
-    venmoLink: 'https://venmo.com/u/host',
-    cashappLink: '',
-    zelleInfo: '',
-    myPaidConfirmed: false,
-    ...overrides,
-  });
-}
 
 describe('usePaymentGate', () => {
   beforeEach(() => {

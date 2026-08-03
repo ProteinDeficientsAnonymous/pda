@@ -1,18 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { makeEvent } from '@/test/fixtures';
+import { makePaidEvent } from '@/test/fixtures';
 
 import { eventRequiresPaymentConfirmation, formatPrice } from './eventCost';
-
-function makePaidEvent(overrides: Parameters<typeof makeEvent>[0] = {}) {
-  return makeEvent({
-    price: '$10',
-    venmoLink: 'https://venmo.com/u/host',
-    cashappLink: '',
-    zelleInfo: '',
-    ...overrides,
-  });
-}
 
 describe('eventRequiresPaymentConfirmation', () => {
   it('requires confirmation with a price and venmo', () => {

@@ -1,8 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Event } from '@/models/event';
-import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
 
 const updateMutateAsync = vi.fn();
 
@@ -22,46 +21,17 @@ vi.mock('@/api/userSearch', () => ({
 
 import { AddCoHostDialog } from './AddCoHostDialog';
 
-const BASE_EVENT: Event = {
+const BASE_EVENT = makeEvent({
   id: 'ev1',
   slug: 'spring-potluck',
   title: 'Spring Potluck',
-  description: '',
   startDatetime: new Date('2099-06-01T18:00:00Z'),
-  endDatetime: null,
-  location: '',
-  latitude: null,
-  longitude: null,
-  whatsappLink: '',
-  partifulLink: '',
-  otherLink: '',
-  venmoLink: '',
-  cashappLink: '',
-  zelleInfo: '',
-  price: '',
   rsvpEnabled: false,
-  allowPlusOnes: false,
-  maxAttendees: null,
   attendingCount: 0,
-  waitlistedCount: 0,
-  invitedCount: 0,
-  datetimeTbd: false,
-  hasPoll: false,
-  datetimePollSlug: null,
   createdById: 'user-creator',
   createdByName: 'Alice',
-  createdByPhotoUrl: '',
   coHostIds: ['user-creator', 'user-accepted'],
-  coHostNames: [],
-  coHostPhotoUrls: [],
   guests: [],
-  myRsvp: null,
-  viewerUserId: null,
-  surveySlugs: [],
-  invitedUserIds: [],
-  invitedUserNames: [],
-  invitedUserPhotoUrls: [],
-  invitePermission: InvitePermission.AllMembers,
   pendingCohostInvites: [
     {
       id: 'inv1',
@@ -71,15 +41,7 @@ const BASE_EVENT: Event = {
       invitedAt: new Date(),
     },
   ],
-  myPendingCohostInviteId: null,
-  eventType: EventType.Community,
-  visibility: EventVisibility.Public,
-  photoUrl: '',
-  photoUpdatedAt: null,
-  tags: [],
-  isPast: false,
-  status: EventStatus.Active,
-};
+});
 
 describe('AddCoHostDialog', () => {
   it('excludes members with a pending cohost invite from search results', () => {
