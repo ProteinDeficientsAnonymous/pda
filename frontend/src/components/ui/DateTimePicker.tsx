@@ -24,6 +24,13 @@ function dateToIso(date: Date, hours: number, minutes: number): string {
   return copy.toISOString();
 }
 
+function clampToMin(date: Date, hours: number, minutes: number, minInstant: Date): string {
+  const picked = dateToIso(date, hours, minutes);
+  return new Date(picked) < minInstant
+    ? dateToIso(date, minInstant.getHours(), minInstant.getMinutes())
+    : picked;
+}
+
 export function DateTimePicker({ label, value, onChange, error, optional, min }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -106,7 +113,7 @@ export function DateTimePicker({ label, value, onChange, error, optional, min }:
               if (!day) return;
               const h = selectedDate?.getHours() ?? 12;
               const m = selectedDate?.getMinutes() ?? 0;
-              onChange(dateToIso(day, h, m));
+              onChange(clampToMin(day, h, m, minInstant));
             }}
             defaultMonth={selectedDate ?? new Date()}
             locale={enUS}
@@ -127,12 +134,7 @@ export function DateTimePicker({ label, value, onChange, error, optional, min }:
               onChange={(e) => {
                 const [h, m] = e.target.value.split(':').map(Number) as [number, number];
                 const base = selectedDate ?? new Date();
-                const picked = dateToIso(base, h, m);
-                const clamped =
-                  new Date(picked) < minInstant
-                    ? dateToIso(base, minInstant.getHours(), minInstant.getMinutes())
-                    : picked;
-                onChange(clamped);
+                onChange(clampToMin(base, h, m, minInstant));
               }}
               min={minTime}
               className="border-border bg-surface focus:border-brand-500 focus:ring-brand-200 h-8 rounded-md border px-2 text-base outline-none focus:ring-1 md:text-sm"
