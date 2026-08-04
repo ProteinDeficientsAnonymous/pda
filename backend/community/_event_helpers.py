@@ -317,7 +317,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     payment_status_visible = viewer_is_cohost and flag_enabled(
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
-    rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
+    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled else []
+    rsvps = all_rsvps if is_authed else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 
@@ -325,8 +326,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     comment_count = _resolve_comment_count(event)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(rsvps, auth_user)
-    can_see_guests = is_authed and (viewer_is_cohost or my_rsvp_status is not None)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(all_rsvps, auth_user)
+    can_see_guests = viewer_is_cohost or my_rsvp_status is not None
     return EventOut(
         id=str(event.id),
         slug=event.slug,

@@ -1,9 +1,3 @@
-"""Tests for guest list visibility on event detail endpoint.
-
-Unauthenticated users should NOT see the guest list, even on public RSVP-eligible events.
-Only hosts and people who have RSVP'd should see guests.
-"""
-
 import pytest
 from community.models import RSVPStatus
 from ninja_jwt.tokens import RefreshToken
