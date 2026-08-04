@@ -84,7 +84,12 @@ export function EventForm({ existing }: Props) {
   // draft whose start is now in the past) are visible immediately instead of
   // waiting for the first save attempt.
   const [errors, setErrors] = useState<Partial<Record<keyof EventFormValues, string>>>(() =>
-    existing ? validateEventForm(eventToFormValues(existing)) : {},
+    existing
+      ? validateEventForm(
+          eventToFormValues(existing),
+          existing.startDatetime ? existing.startDatetime.toISOString() : null,
+        )
+      : {},
   );
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<Blob | null>(null);
@@ -124,7 +129,10 @@ export function EventForm({ existing }: Props) {
       coHostIds,
       status: nextStatus,
     };
-    const errs = validateEventForm(merged);
+    const errs = validateEventForm(
+      merged,
+      existing?.startDatetime ? existing.startDatetime.toISOString() : undefined,
+    );
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       // Let the sections open first (via forceOpen), then scroll to the

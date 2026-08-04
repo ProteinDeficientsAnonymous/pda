@@ -112,6 +112,19 @@ describe('validateEventForm', () => {
       const errors = validateEventForm(validValues({ startDatetime: past, status: 'draft' }));
       expect(errors.startDatetime).toBe('start must be in the future');
     });
+
+    it('allows an unchanged past startDatetime when editing (ongoing event)', () => {
+      const past = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const errors = validateEventForm(validValues({ startDatetime: past }), past);
+      expect(errors.startDatetime).toBeUndefined();
+    });
+
+    it('rejects a new past startDatetime when editing, even with an original', () => {
+      const originalPast = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const newPast = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const errors = validateEventForm(validValues({ startDatetime: newPast }), originalPast);
+      expect(errors.startDatetime).toBe('start must be in the future');
+    });
   });
 
   describe('endDatetime', () => {

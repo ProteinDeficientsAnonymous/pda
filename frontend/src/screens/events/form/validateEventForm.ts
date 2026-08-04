@@ -3,7 +3,10 @@ import { DESCRIPTION_MAX_LENGTH } from '@/screens/events/form/EventFormDetails';
 
 type Errors = Partial<Record<keyof EventFormValues, string>>;
 
-export function validateEventForm(values: EventFormValues): Errors {
+export function validateEventForm(
+  values: EventFormValues,
+  originalStartDatetime?: string | null,
+): Errors {
   const errors: Errors = {};
   if (!values.title.trim()) errors.title = 'required';
   else if (values.title.length > 200) errors.title = 'under 200 chars';
@@ -12,11 +15,16 @@ export function validateEventForm(values: EventFormValues): Errors {
   if (values.location.length > 300) errors.location = 'under 300 chars';
 
   // Drafts can save without a start date (progress-capture). Active events
-  // must have one. Either way, if a start is present it must be in the future.
+  // must have one. Either way, if a start is present it must be in the future
+  // — unless it's unchanged from what was loaded, so editing an ongoing or
+  // just-ended event doesn't get blocked for a start time nobody touched.
   if (!values.datetimeTbd) {
     if (!values.startDatetime) {
       if (values.status !== 'draft') errors.startDatetime = 'required';
-    } else if (new Date(values.startDatetime).getTime() < Date.now() - 60_000) {
+    } else if (
+      values.startDatetime !== originalStartDatetime &&
+      new Date(values.startDatetime).getTime() < Date.now() - 60_000
+    ) {
       errors.startDatetime = 'start must be in the future';
     }
   }
