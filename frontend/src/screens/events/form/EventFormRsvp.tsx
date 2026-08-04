@@ -46,9 +46,7 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
           />
           <TextField
             label="max attendees (optional)"
-            // Deliberately not type="number": its spinners can't be styled, and
-            // a focused number input steps on wheel/arrow keys, silently
-            // rewriting the typed capacity (issue 1264).
+            // Not type="number": a focused one steps on wheel/arrow keys (issue 1264).
             type="text"
             inputMode="numeric"
             value={values.maxAttendees === null ? '' : String(values.maxAttendees)}

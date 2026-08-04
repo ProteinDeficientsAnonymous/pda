@@ -35,8 +35,6 @@ function Harness() {
 }
 
 describe('max attendees field (issue 1264)', () => {
-  // A focused type="number" steps on wheel/arrow keys, so scrolling the page
-  // silently rewrote the typed capacity. Its spinners are also unstyleable.
   it('is not a number input, so scrolling cannot step it', () => {
     const { input } = renderRsvp({ maxAttendees: 15 });
     expect(input).toHaveAttribute('type', 'text');
