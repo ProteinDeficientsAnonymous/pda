@@ -5,6 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
+import { useAuthStore } from '@/auth/store';
+
+import LoginScreen from './LoginScreen';
+
 vi.mock('@/api/join', () => ({
   checkPhone: vi.fn(),
 }));
@@ -14,10 +18,6 @@ vi.mock('@/api/client', () => ({
   authClient: { post: vi.fn() },
   setAuthBridge: vi.fn(),
 }));
-
-import { useAuthStore } from '@/auth/store';
-
-import LoginScreen from './LoginScreen';
 
 function renderWith(component: ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

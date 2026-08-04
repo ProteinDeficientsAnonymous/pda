@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
+import { ImageCropDialog } from './ImageCropDialog';
+
 vi.mock('react-image-crop', () => ({
   default: ({ circularCrop, children }: { circularCrop?: boolean; children?: ReactNode }) => (
     <div data-testid="cropper" data-circular={String(Boolean(circularCrop))}>
@@ -16,8 +18,6 @@ vi.mock('react-image-crop', () => ({
 vi.mock('@/utils/cropImage', () => ({
   cropImage: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),
 }));
-
-import { ImageCropDialog } from './ImageCropDialog';
 
 beforeEach(() => {
   vi.stubGlobal('URL', {

@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useCreateDevTestEvents } from '@/api/devTools';
+import { useVersion } from '@/api/version';
+import { useAuthStore } from '@/auth/store';
+
+import { DevTestEventsButton } from './DevTestEventsButton';
+
 vi.mock('@/api/devTools', () => ({
   useCreateDevTestEvents: vi.fn(),
 }));
@@ -15,12 +21,6 @@ vi.mock('@/api/version', () => ({
 vi.mock('@/auth/store', () => ({
   useAuthStore: vi.fn(),
 }));
-
-import { useCreateDevTestEvents } from '@/api/devTools';
-import { useVersion } from '@/api/version';
-import { useAuthStore } from '@/auth/store';
-
-import { DevTestEventsButton } from './DevTestEventsButton';
 
 const mockUseVersion = vi.mocked(useVersion);
 const mockUseAuthStore = vi.mocked(useAuthStore);

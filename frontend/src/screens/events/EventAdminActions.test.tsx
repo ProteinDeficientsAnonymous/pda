@@ -9,6 +9,8 @@ import { EventStatus, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
 import { makeEvent, makeUser as makeBaseUser } from '@/test/fixtures';
 
+import { EventAdminActions } from './EventAdminActions';
+
 // Mock network-touching dependencies
 vi.mock('@/api/eventWrites', () => ({
   useUpdateEvent: vi.fn().mockReturnValue({ mutateAsync: vi.fn(), isPending: false }),
@@ -17,8 +19,6 @@ vi.mock('@/api/eventWrites', () => ({
 }));
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-
-import { EventAdminActions } from './EventAdminActions';
 
 const CREATOR_ID = 'creator-user';
 const COHOST_ID = 'cohost-user';

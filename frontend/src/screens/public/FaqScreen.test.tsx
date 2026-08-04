@@ -4,8 +4,11 @@ import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useFaq } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+
+import FaqScreen from './FaqScreen';
 
 vi.mock('@/api/content', () => ({
   useFaq: vi.fn(),
@@ -15,10 +18,6 @@ vi.mock('@/api/content', () => ({
 vi.mock('@/components/RichEditor/RichEditor', () => ({
   RichEditor: () => <div data-testid="rich-editor" />,
 }));
-
-import { useFaq } from '@/api/content';
-
-import FaqScreen from './FaqScreen';
 
 const mockUseFaq = vi.mocked(useFaq);
 

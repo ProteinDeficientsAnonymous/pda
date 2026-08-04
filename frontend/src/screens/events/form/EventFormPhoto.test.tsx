@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { EventFormPhoto } from './EventFormPhoto';
+
 vi.mock('@/components/ImageCropDialog', () => ({
   ImageCropDialog: ({ file, onCrop }: { file: File; onCrop: (blob: Blob) => Promise<void> }) => (
     <div data-testid="crop-dialog" data-filename={file.name}>
@@ -41,8 +43,6 @@ vi.mock('@/components/PhotoLibraryDialog', () => ({
     </div>
   ),
 }));
-
-import { EventFormPhoto } from './EventFormPhoto';
 
 describe('EventFormPhoto', () => {
   it('opens the tabbed picker from the change-photo button', async () => {

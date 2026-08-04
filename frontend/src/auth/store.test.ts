@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as authApi from '@/api/auth';
 import type { User } from '@/models/user';
 
 import { useAuthStore } from './store';
@@ -25,8 +26,6 @@ vi.mock('@/api/client', () => ({
   authClient: { post: vi.fn(), get: vi.fn() },
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
-
-import * as authApi from '@/api/auth';
 
 const mockUser: User = {
   id: 'user-1',

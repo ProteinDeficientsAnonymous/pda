@@ -4,8 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+  useUnreadCount,
+} from '@/api/notifications';
 import { useAuthStore } from '@/auth/store';
 import { NotificationType } from '@/models/notification';
+
+import { NotificationBell } from './NotificationBell';
 
 // Mock the notifications API hooks (but NOT the stores)
 vi.mock('@/api/notifications', () => ({
@@ -31,15 +39,6 @@ vi.mock('@/hooks/useEventSource', () => ({
 vi.mock('@/utils/errorReporter', () => ({
   reportError: vi.fn().mockResolvedValue(undefined),
 }));
-
-import {
-  useMarkAllNotificationsRead,
-  useMarkNotificationRead,
-  useNotifications,
-  useUnreadCount,
-} from '@/api/notifications';
-
-import { NotificationBell } from './NotificationBell';
 
 const mockUseUnreadCount = vi.mocked(useUnreadCount);
 const mockUseNotifications = vi.mocked(useNotifications);

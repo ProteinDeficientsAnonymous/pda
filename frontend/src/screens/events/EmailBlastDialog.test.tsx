@@ -6,9 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Event, EventGuest } from '@/models/event';
 import { makeEvent as makeEventFixture } from '@/test/fixtures';
 
-const mutateAsyncMock = vi.fn();
-const toastSuccessMock = vi.fn();
-const toastErrorMock = vi.fn();
+import { EmailBlastDialog } from './EmailBlastDialog';
+
+const mutateAsyncMock = vi.hoisted(() => vi.fn());
+const toastSuccessMock = vi.hoisted(() => vi.fn());
+const toastErrorMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/eventBlast', () => ({
   useEmailBlast: () => ({ mutateAsync: mutateAsyncMock, isPending: false }),
@@ -24,8 +26,6 @@ vi.mock('sonner', () => ({
     },
   },
 }));
-
-import { EmailBlastDialog } from './EmailBlastDialog';
 
 function guest(status: string, i: number): EventGuest {
   return {

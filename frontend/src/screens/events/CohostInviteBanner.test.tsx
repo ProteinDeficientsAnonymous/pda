@@ -5,16 +5,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Event } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
 
-const acceptMutate = vi.fn();
-const declineMutate = vi.fn();
+import { CohostInviteBanner } from './CohostInviteBanner';
+
+const acceptMutate = vi.hoisted(() => vi.fn());
+const declineMutate = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/cohostInvites', () => ({
   useAcceptCohostInvite: () => ({ mutate: acceptMutate, isPending: false }),
   useDeclineCohostInvite: () => ({ mutate: declineMutate, isPending: false }),
   useRescindCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
 }));
-
-import { CohostInviteBanner } from './CohostInviteBanner';
 
 const BASE_EVENT = makeEvent({
   slug: 'spring-potluck',

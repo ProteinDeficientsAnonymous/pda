@@ -4,10 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useUsers } from '@/api/users';
 import { useAuthStore } from '@/auth/store';
 import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 import { makeMember } from '@/test/fixtures';
+
+import MembersScreen from './MembersScreen';
 
 // Mock the users API module so we can drive loading / error / data states
 // without hitting the network. useCreateUser is only pulled in transitively
@@ -20,10 +23,6 @@ vi.mock('@/api/users', () => ({
     reset: vi.fn(),
   })),
 }));
-
-import { useUsers } from '@/api/users';
-
-import MembersScreen from './MembersScreen';
 
 const mockUseUsers = vi.mocked(useUsers);
 

@@ -5,6 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 
+import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+
+import JoinScreen from './JoinScreen';
+
 vi.mock('@/api/join', () => ({
   useJoinQuestions: vi.fn(),
   useSubmitJoinRequest: vi.fn(),
@@ -15,10 +19,6 @@ vi.mock('@/api/join', () => ({
     }
   },
 }));
-
-import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
-
-import JoinScreen from './JoinScreen';
 
 const mockUseJoinQuestions = vi.mocked(useJoinQuestions);
 const mockUseSubmitJoinRequest = vi.mocked(useSubmitJoinRequest);

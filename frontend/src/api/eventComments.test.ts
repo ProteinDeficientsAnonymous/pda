@@ -4,6 +4,14 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '@/api/client';
+
+import { type WireCommentList } from './eventCommentMapper';
+import { mapCommentList } from './eventCommentMapper';
+import { eventCommentKeys, useEventComments } from './eventComments';
+import { useDeleteComment } from './eventComments';
+import { useToggleReaction } from './eventComments';
+
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
@@ -22,11 +30,6 @@ vi.mock('@/auth/store', () => {
   useAuthStore.getState = () => state;
   return { useAuthStore };
 });
-
-import { apiClient } from '@/api/client';
-
-import { type WireCommentList } from './eventCommentMapper';
-import { eventCommentKeys, useEventComments } from './eventComments';
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);
@@ -109,9 +112,6 @@ describe('useEventComments', () => {
 // useDeleteComment — optimistic update + rollback
 // ---------------------------------------------------------------------------
 
-import { mapCommentList } from './eventCommentMapper';
-import { useDeleteComment } from './eventComments';
-
 const wireWithComment: WireCommentList = {
   can_post: true,
   cannot_post_reason: null,
@@ -188,8 +188,6 @@ describe('useDeleteComment', () => {
 // ---------------------------------------------------------------------------
 // useToggleReaction — optimistic update + rollback
 // ---------------------------------------------------------------------------
-
-import { useToggleReaction } from './eventComments';
 
 const wireWithReaction: WireCommentList = {
   can_post: true,

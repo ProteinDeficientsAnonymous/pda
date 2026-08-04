@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Event } from '@/models/event';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
 
-const updateMutateAsync = vi.fn();
+import { AddCoHostDialog } from './AddCoHostDialog';
+
+const updateMutateAsync = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/eventWrites', () => ({
   useUpdateEvent: () => ({ mutateAsync: updateMutateAsync, isPending: false }),
@@ -19,8 +21,6 @@ vi.mock('@/api/userSearch', () => ({
     ],
   }),
 }));
-
-import { AddCoHostDialog } from './AddCoHostDialog';
 
 const BASE_EVENT: Event = {
   id: 'ev1',
