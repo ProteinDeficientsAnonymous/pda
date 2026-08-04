@@ -10,9 +10,11 @@ import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
 
 const setGuestRsvpMutate = vi.hoisted(() => vi.fn());
 const removeGuestRsvpMutate = vi.hoisted(() => vi.fn());
+const setGuestPaymentMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/eventStats', () => ({
   useSetGuestRsvp: () => ({ mutate: setGuestRsvpMutate, isPending: false }),
   useRemoveGuestRsvp: () => ({ mutate: removeGuestRsvpMutate, isPending: false }),
+  useSetGuestPayment: () => ({ mutate: setGuestPaymentMutate, isPending: false }),
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/api/userSearch', () => ({
@@ -33,6 +35,7 @@ function renderPanel(event = makeEvent({})) {
 beforeEach(() => {
   setGuestRsvpMutate.mockReset();
   removeGuestRsvpMutate.mockReset();
+  setGuestPaymentMutate.mockReset();
   vi.mocked(toast.error).mockReset();
 });
 
@@ -138,5 +141,93 @@ describe('EventManageRsvpsPanel', () => {
     );
     fireEvent.change(screen.getByLabelText(/add a member/i), { target: { value: 'new' } });
     expect(screen.queryByRole('button', { name: /^new member/i })).not.toBeInTheDocument();
+  });
+
+  it('does not show a paid indicator for events that do not require payment', () => {
+    renderPanel(
+      makeEvent({
+        price: '',
+        guests: [makeGuest({ userId: 'u1', name: 'Alex', status: RsvpServerStatus.Attending })],
+      }),
+    );
+    expect(screen.queryByText(/unpaid/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^paid$/i)).not.toBeInTheDocument();
+  });
+
+  it('shows an unpaid indicator for a paid event guest who has not confirmed', () => {
+    renderPanel(
+      makeEvent({
+        price: '$10',
+        venmoLink: 'https://venmo.com/u/host',
+        guests: [
+          makeGuest({
+            userId: 'u1',
+            name: 'Alex',
+            status: RsvpServerStatus.Attending,
+            paidConfirmed: false,
+          }),
+        ],
+      }),
+    );
+    expect(screen.getByRole('button', { name: /unpaid/i })).toBeInTheDocument();
+  });
+
+  it('shows a paid indicator for a paid event guest who has confirmed', () => {
+    renderPanel(
+      makeEvent({
+        price: '$10',
+        venmoLink: 'https://venmo.com/u/host',
+        guests: [
+          makeGuest({
+            userId: 'u1',
+            name: 'Alex',
+            status: RsvpServerStatus.Attending,
+            paidConfirmed: true,
+          }),
+        ],
+      }),
+    );
+    expect(screen.getByRole('button', { name: /^✓ paid$/i })).toBeInTheDocument();
+  });
+
+  it('toggles a guest payment status when the indicator is clicked', () => {
+    renderPanel(
+      makeEvent({
+        price: '$10',
+        venmoLink: 'https://venmo.com/u/host',
+        guests: [
+          makeGuest({
+            userId: 'u1',
+            name: 'Alex',
+            status: RsvpServerStatus.Attending,
+            paidConfirmed: false,
+          }),
+        ],
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /unpaid/i }));
+    expect(setGuestPaymentMutate).toHaveBeenCalledWith(
+      { userId: 'u1', paidConfirmed: true },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
+  it('shows a paid indicator for non-member guests on a paid event', () => {
+    renderPanel(
+      makeEvent({
+        price: '$10',
+        venmoLink: 'https://venmo.com/u/host',
+        guests: [
+          makeGuest({
+            userId: 'u1',
+            name: 'Walkin',
+            status: RsvpServerStatus.Attending,
+            isMember: false,
+            paidConfirmed: true,
+          }),
+        ],
+      }),
+    );
+    expect(screen.getByRole('button', { name: /^✓ paid$/i })).toBeInTheDocument();
   });
 });

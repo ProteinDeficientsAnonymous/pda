@@ -109,6 +109,22 @@ export function useSetGuestRsvp(eventId: string) {
   });
 }
 
+export function useSetGuestPayment(eventId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: { userId: string; paidConfirmed: boolean }) => {
+      const { data } = await apiClient.patch<WireEvent>(
+        `/api/community/events/${eventId}/rsvps/${args.userId}/payment/`,
+        { paid_confirmed: args.paidConfirmed },
+      );
+      return mapEvent(data);
+    },
+    onSuccess: (event) => {
+      qc.setQueryData(eventKeys.detail(event.id, true), event);
+    },
+  });
+}
+
 export function useRemoveGuestRsvp(eventId: string) {
   const qc = useQueryClient();
   return useMutation({
