@@ -51,7 +51,12 @@ export function RsvpGuestList({ event, canSeeInvited }: Props) {
   const visible = active === 'invited' ? [] : buckets[active];
 
   if (tabs.every((t) => counts[t.key] === 0)) {
-    return <p className="text-muted text-xs">no one yet</p>;
+    const guestListHidden = event.guests.length === 0 && event.attendingCount > 0;
+    return (
+      <p className="text-muted text-xs">
+        {guestListHidden ? "rsvp to see who's going" : 'no one yet'}
+      </p>
+    );
   }
 
   return (
