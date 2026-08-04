@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
@@ -9,7 +10,12 @@ import { CostSection, LinksSection, LocationSection } from './EventMemberSection
 const LONG_TOKEN = 'x'.repeat(200);
 
 function renderIn(node: React.ReactElement) {
-  return render(<MemoryRouter>{node}</MemoryRouter>);
+  const queryClient = new QueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{node}</MemoryRouter>
+    </QueryClientProvider>,
+  );
 }
 
 describe('event detail — long user content wraps (issue 1131)', () => {
