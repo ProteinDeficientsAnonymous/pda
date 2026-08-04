@@ -1,0 +1,9 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "cd backend && uv run python manage.py send_attendance_reminders"
+cronSchedule = "0 4 * * *"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
