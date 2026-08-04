@@ -1,3 +1,10 @@
+# [0.84.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.83.0...v0.84.0) (2026-08-04)
+
+
+### Features
+
+* prefill cashapp amount on event pay link (Issue 1214) ([#1256](https://github.com/ProteinDeficientsAnonymous/pda/issues/1256)) ([2667baf](https://github.com/ProteinDeficientsAnonymous/pda/commit/2667baf9b704f8fa2743084c7ee94b6a27790c8c))
+
 # [0.83.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.82.0...v0.83.0) (2026-08-04)
 
 
