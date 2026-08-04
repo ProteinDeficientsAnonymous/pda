@@ -153,6 +153,7 @@ export function makeMember(overrides: Partial<Member> = {}): Member {
     needsOnboarding: false,
     loginLinkRequested: false,
     lastAttendedAt: null,
+    dateJoined: new Date('2026-01-01T00:00:00Z'),
     roles: [],
     ...overrides,
   };
