@@ -46,14 +46,15 @@ export function EventFormRsvp({ values, onChange, errors }: Props) {
           />
           <TextField
             label="max attendees (optional)"
-            type="number"
+            // Deliberately not type="number": its spinners can't be styled, and
+            // a focused number input steps on wheel/arrow keys, silently
+            // rewriting the typed capacity (issue 1264).
+            type="text"
             inputMode="numeric"
-            min={1}
-            max={200}
             value={values.maxAttendees === null ? '' : String(values.maxAttendees)}
             onChange={(e) => {
-              const v = e.target.value;
-              onChange({ maxAttendees: v === '' ? null : Number(v) });
+              const digits = e.target.value.replace(/\D/g, '');
+              onChange({ maxAttendees: digits === '' ? null : Number(digits) });
             }}
             error={errors.maxAttendees}
           />
