@@ -3,8 +3,11 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { makeEvent, makeUser } from '@/test/fixtures';
+
+import EventAttendanceScreen from './EventAttendanceScreen';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -15,10 +18,6 @@ vi.mock('@/api/eventStats', () => ({
   useEventStats: vi.fn().mockReturnValue({ data: undefined, isLoading: true, isError: false }),
   useSetAttendance: () => ({ mutate: vi.fn(), isPending: false }),
 }));
-
-import { useEvent } from '@/api/events';
-
-import EventAttendanceScreen from './EventAttendanceScreen';
 
 const BASE_EVENT = makeEvent({
   title: 'Spring Potluck',

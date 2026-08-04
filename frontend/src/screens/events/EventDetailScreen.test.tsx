@@ -4,10 +4,13 @@ import { AxiosError, type AxiosResponse } from 'axios';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { EventType, InvitePermission } from '@/models/event';
 import type { User } from '@/models/user';
 import { makeEvent } from '@/test/fixtures';
+
+import EventDetailScreen from './EventDetailScreen';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -30,10 +33,6 @@ vi.mock('./InviteDialog', () => ({
 vi.mock('@/utils/datetime', () => ({
   formatEventDateTime: vi.fn().mockReturnValue('Saturday, Jan 1 · 6:00 PM'),
 }));
-
-import { useEvent } from '@/api/events';
-
-import EventDetailScreen from './EventDetailScreen';
 
 const mockUseEvent = vi.mocked(useEvent);
 

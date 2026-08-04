@@ -3,8 +3,11 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { makeEvent, makeUser } from '@/test/fixtures';
+
+import EventCheckInReportScreen from './EventCheckInReportScreen';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
@@ -19,10 +22,6 @@ vi.mock('@/api/eventCheckInReport', () => ({
     { key: 'attendance', label: 'attendance' },
   ],
 }));
-
-import { useEvent } from '@/api/events';
-
-import EventCheckInReportScreen from './EventCheckInReportScreen';
 
 const BASE_EVENT = makeEvent({
   title: 'Spring Potluck',

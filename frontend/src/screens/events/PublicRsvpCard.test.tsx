@@ -6,14 +6,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { type Event, RsvpServerStatus } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
 
-const updateMutate = vi.fn();
-const cancelMutate = vi.fn();
+import { PublicRsvpCard } from './PublicRsvpCard';
+
+const updateMutate = vi.hoisted(() => vi.fn());
+const cancelMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/publicRsvp', () => ({
   useUpdatePublicMyRsvp: () => ({ mutateAsync: updateMutate, isPending: false }),
   useCancelPublicMyRsvp: () => ({ mutateAsync: cancelMutate, isPending: false }),
 }));
-
-import { PublicRsvpCard } from './PublicRsvpCard';
 
 function renderCard(props: { status: string; event?: Partial<Event> }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

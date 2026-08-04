@@ -5,6 +5,11 @@ import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
+
+import JoinScreen from './JoinScreen';
+import JoinSuccessScreen from './JoinSuccessScreen';
+
 vi.mock('@/api/join', () => ({
   useJoinQuestions: vi.fn(),
   useSubmitJoinRequest: vi.fn(),
@@ -15,11 +20,6 @@ vi.mock('@/api/join', () => ({
     }
   },
 }));
-
-import { useJoinQuestions, useSubmitJoinRequest } from '@/api/join';
-
-import JoinScreen from './JoinScreen';
-import JoinSuccessScreen from './JoinSuccessScreen';
 
 const mockUseJoinQuestions = vi.mocked(useJoinQuestions);
 const mockUseSubmitJoinRequest = vi.mocked(useSubmitJoinRequest);

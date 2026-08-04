@@ -4,6 +4,10 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '@/api/client';
+
+import { useGuidelines, useHome, useUpdateGuidelines, useUpdateHome } from './content';
+
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
@@ -14,10 +18,6 @@ vi.mock('@/auth/store', () => ({
     selector({ status: 'authed' }),
   ),
 }));
-
-import { apiClient } from '@/api/client';
-
-import { useGuidelines, useHome, useUpdateGuidelines, useUpdateHome } from './content';
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPatch = vi.mocked(apiClient.patch);

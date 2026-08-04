@@ -1,16 +1,16 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { CommentReactionSummary, CommentReactor } from '@/models/eventComment';
+import { ReactionEmoji } from '@/models/eventComment';
+
+import { ReactionBar } from './ReactionBar';
+
 // the voter popover links reactors only when authed; the bar's own behaviour
 // is auth-independent, so pin it signed-out to keep these tests router-free
 vi.mock('@/auth/store', () => ({
   useAuthStore: (selector: (s: { status: string }) => unknown) => selector({ status: 'unauthed' }),
 }));
-
-import type { CommentReactionSummary, CommentReactor } from '@/models/eventComment';
-import { ReactionEmoji } from '@/models/eventComment';
-
-import { ReactionBar } from './ReactionBar';
 
 const summary = (
   emoji: string,

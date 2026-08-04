@@ -3,17 +3,17 @@ import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { CommentReactionSummary } from '@/models/eventComment';
+import { ReactionEmoji } from '@/models/eventComment';
+
+import { ReactionVoterPopover } from './ReactionVoterPopover';
+
 const { authStatus } = vi.hoisted(() => ({ authStatus: { value: 'authed' } }));
 
 vi.mock('@/auth/store', () => ({
   useAuthStore: (selector: (s: { status: string }) => unknown) =>
     selector({ status: authStatus.value }),
 }));
-
-import type { CommentReactionSummary } from '@/models/eventComment';
-import { ReactionEmoji } from '@/models/eventComment';
-
-import { ReactionVoterPopover } from './ReactionVoterPopover';
 
 const reaction: CommentReactionSummary = {
   emoji: ReactionEmoji.Heart,

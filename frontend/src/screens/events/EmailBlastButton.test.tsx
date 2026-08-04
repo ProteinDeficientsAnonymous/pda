@@ -5,12 +5,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { EventStatus } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
 
+import { EmailBlastButton } from './EmailBlastButton';
+
 vi.mock('./EmailBlastDialog', () => ({
   EmailBlastDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="email-blast-dialog" /> : null,
 }));
-
-import { EmailBlastButton } from './EmailBlastButton';
 
 describe('EmailBlastButton', () => {
   it('renders the email-blast button when the event has guests', () => {

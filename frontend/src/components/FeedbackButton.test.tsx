@@ -3,10 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useSubmitFeedback } from '@/api/feedback';
 import { clearStoredRsvpToken, setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
+
+import { FeedbackButton } from './FeedbackButton';
 
 const submitFeedbackMock = vi.fn();
 
@@ -14,8 +17,8 @@ vi.mock('@/api/feedback', () => ({
   useSubmitFeedback: vi.fn(),
 }));
 
-const toastSuccessMock = vi.fn();
-const toastErrorMock = vi.fn();
+const toastSuccessMock = vi.hoisted(() => vi.fn());
+const toastErrorMock = vi.hoisted(() => vi.fn());
 vi.mock('sonner', () => ({
   toast: {
     success: (msg: string, opts?: unknown) => {
@@ -26,10 +29,6 @@ vi.mock('sonner', () => ({
     },
   },
 }));
-
-import { useSubmitFeedback } from '@/api/feedback';
-
-import { FeedbackButton } from './FeedbackButton';
 
 const mockedUseSubmitFeedback = vi.mocked(useSubmitFeedback);
 

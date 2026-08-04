@@ -3,6 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useMarkNotificationRead, useNotificationHistory } from '@/api/notifications';
+import { makeNotification } from '@/test/fixtures';
+
+import NotificationsScreen from './NotificationsScreen';
+
 vi.mock('@/api/notifications', () => ({
   useNotificationHistory: vi.fn(),
   useMarkNotificationRead: vi.fn(),
@@ -11,11 +16,6 @@ vi.mock('@/api/notifications', () => ({
 vi.mock('@/utils/errorReporter', () => ({
   reportError: vi.fn().mockResolvedValue(undefined),
 }));
-
-import { useMarkNotificationRead, useNotificationHistory } from '@/api/notifications';
-import { makeNotification } from '@/test/fixtures';
-
-import NotificationsScreen from './NotificationsScreen';
 
 const mockUseHistory = vi.mocked(useNotificationHistory);
 const mockUseMarkRead = vi.mocked(useMarkNotificationRead);

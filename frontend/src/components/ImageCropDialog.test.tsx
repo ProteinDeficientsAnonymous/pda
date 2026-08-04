@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cropImage } from '@/utils/cropImage';
 
+import { ImageCropDialog } from './ImageCropDialog';
+
 // react-image-crop uses pointer events + ResizeObserver that jsdom doesn't
 // fully support. Stub it so it renders a simple sentinel element that
 // still exposes the props we care about (circularCrop, aspect).
@@ -44,8 +46,6 @@ vi.mock('react-image-crop', () => ({
 vi.mock('@/utils/cropImage', () => ({
   cropImage: vi.fn().mockResolvedValue(new Blob(['img'], { type: 'image/png' })),
 }));
-
-import { ImageCropDialog } from './ImageCropDialog';
 
 // jsdom doesn't implement createObjectURL/revokeObjectURL
 beforeEach(() => {

@@ -4,8 +4,11 @@ import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useGuidelines } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+
+import GuidelinesScreen from './GuidelinesScreen';
 
 vi.mock('@/api/content', () => ({
   useGuidelines: vi.fn(),
@@ -15,10 +18,6 @@ vi.mock('@/api/content', () => ({
 vi.mock('@/components/RichEditor/RichEditor', () => ({
   RichEditor: () => <div data-testid="rich-editor" />,
 }));
-
-import { useGuidelines } from '@/api/content';
-
-import GuidelinesScreen from './GuidelinesScreen';
 
 const mockUseGuidelines = vi.mocked(useGuidelines);
 

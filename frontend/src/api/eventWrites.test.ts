@@ -4,8 +4,17 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '@/api/client';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
+
+import {
+  eventToFormValues,
+  toPartialWireBody,
+  useInviteToEvent,
+  useUploadEventPhoto,
+} from './eventWrites';
+import { textRecipientsKeys } from './textRecipients';
 
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -18,16 +27,6 @@ vi.mock('@/auth/store', () => {
   );
   return { useAuthStore };
 });
-
-import { apiClient } from '@/api/client';
-
-import {
-  eventToFormValues,
-  toPartialWireBody,
-  useInviteToEvent,
-  useUploadEventPhoto,
-} from './eventWrites';
-import { textRecipientsKeys } from './textRecipients';
 
 describe('eventToFormValues enum validation', () => {
   it('passes through known enum values', () => {

@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from '@/auth/store';
 
+import { AppShell } from './AppShell';
+
 // Stub modules that reach out to the network or browser APIs the AppShell
 // pulls in transitively.
 vi.mock('@/api/notifications', () => ({
@@ -24,8 +26,6 @@ vi.mock('@/auth/useAuth', () => ({
   useHasAnyAdminPermission: vi.fn().mockReturnValue(false),
   useHasPermission: vi.fn().mockReturnValue(false),
 }));
-
-import { AppShell } from './AppShell';
 
 function makeQc() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });

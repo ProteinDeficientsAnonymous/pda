@@ -6,13 +6,13 @@ import { axe } from 'vitest-axe';
 import type { Event } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
 
-const checkPhoneMutate = vi.fn();
+import { PublicRsvpForm } from './PublicRsvpForm';
+
+const checkPhoneMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
-
-import { PublicRsvpForm } from './PublicRsvpForm';
 
 function renderForm(event: Event) {
   return render(

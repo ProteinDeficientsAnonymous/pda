@@ -5,20 +5,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeEvent } from '@/test/fixtures';
 
-const submitMutate = vi.fn();
-const checkPhoneMutate = vi.fn();
+import { PublicRsvpForm } from './PublicRsvpForm';
+
+const submitMutate = vi.hoisted(() => vi.fn());
+const checkPhoneMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: submitMutate, isPending: false }),
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
 
-const navigateMock = vi.fn();
+const navigateMock = vi.hoisted(() => vi.fn());
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof ReactRouterDom>();
   return { ...actual, useNavigate: () => navigateMock };
 });
-
-import { PublicRsvpForm } from './PublicRsvpForm';
 
 function renderForm(event = makeEvent(), onSuccess = vi.fn()) {
   return render(

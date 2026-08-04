@@ -7,7 +7,9 @@ import type { ManageRsvps } from '@/api/publicRsvp';
 import { RsvpServerStatus, RsvpStatus } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
 
-const toastSuccess = vi.fn();
+import PublicRsvpsScreen from './PublicRsvpsScreen';
+
+const toastSuccess = vi.hoisted(() => vi.fn());
 vi.mock('sonner', () => ({
   toast: {
     success: (m: string) => {
@@ -17,11 +19,11 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const updateAsync = vi.fn();
-const cancelAsync = vi.fn();
-const resendAsync = vi.fn();
-const usePublicMyRsvps = vi.fn();
-const useResendPublicRsvpManageLink = vi.fn();
+const updateAsync = vi.hoisted(() => vi.fn());
+const cancelAsync = vi.hoisted(() => vi.fn());
+const resendAsync = vi.hoisted(() => vi.fn());
+const usePublicMyRsvps = vi.hoisted(() => vi.fn());
+const useResendPublicRsvpManageLink = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/publicRsvp', () => ({
   usePublicMyRsvps: (token: string) => usePublicMyRsvps(token) as unknown,
@@ -51,8 +53,6 @@ const storageMock = (() => {
   };
 })();
 Object.defineProperty(window, 'localStorage', { value: storageMock, writable: true });
-
-import PublicRsvpsScreen from './PublicRsvpsScreen';
 
 function renderAt(token: string | null) {
   const path = token === null ? '/my-rsvps' : `/my-rsvps?token=${token}`;

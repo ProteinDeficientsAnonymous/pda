@@ -4,6 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useAttendanceReport } from '@/api/attendanceReport';
+import { useFlag } from '@/api/featureFlags';
+import { Feature } from '@/models/featureFlags';
+import { makeRow } from '@/test/fixtures';
+
+import AttendanceReportScreen from './AttendanceReportScreen';
+
 vi.mock('@/api/attendanceReport', () => ({
   useAttendanceReport: vi.fn(),
 }));
@@ -14,13 +21,6 @@ vi.mock('@/api/featureFlags', () => ({
 vi.mock('./MemberAttendanceTab', () => ({
   MemberAttendanceTab: () => <div>members tab content</div>,
 }));
-
-import { useAttendanceReport } from '@/api/attendanceReport';
-import { useFlag } from '@/api/featureFlags';
-import { Feature } from '@/models/featureFlags';
-import { makeRow } from '@/test/fixtures';
-
-import AttendanceReportScreen from './AttendanceReportScreen';
 
 const mockUseReport = vi.mocked(useAttendanceReport);
 const mockUseFlag = vi.mocked(useFlag);

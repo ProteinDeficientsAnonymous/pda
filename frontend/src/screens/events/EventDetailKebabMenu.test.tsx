@@ -3,6 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import { useFlag } from '@/api/featureFlags';
+import type { Event } from '@/models/event';
+import { EventStatus } from '@/models/event';
+import { makeEvent } from '@/test/fixtures';
+
+import { EventDetailKebabMenu } from './EventDetailKebabMenu';
+
 vi.mock('@/api/featureFlags', () => ({
   useFlag: vi.fn(),
 }));
@@ -14,13 +21,6 @@ vi.mock('./GroupTextDialog', () => ({
   GroupTextDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="group-text-dialog" /> : null,
 }));
-
-import { useFlag } from '@/api/featureFlags';
-import type { Event } from '@/models/event';
-import { EventStatus } from '@/models/event';
-import { makeEvent } from '@/test/fixtures';
-
-import { EventDetailKebabMenu } from './EventDetailKebabMenu';
 
 function renderMenu(
   overrides: {
