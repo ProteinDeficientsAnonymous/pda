@@ -5748,6 +5748,11 @@
             "title": "Calendar Feed Scope",
             "type": "string"
           },
+          "date_joined": {
+            "format": "date-time",
+            "title": "Date Joined",
+            "type": "string"
+          },
           "email": {
             "default": "",
             "title": "Email",
@@ -5900,6 +5905,7 @@
         "required": [
           "id",
           "phone_number",
+          "date_joined",
           "roles"
         ],
         "title": "UserOut",

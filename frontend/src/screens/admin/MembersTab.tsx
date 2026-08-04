@@ -348,9 +348,8 @@ function sortMembers(members: Member[], sort: SortKey): Member[] {
     sorted.sort((a, b) => (b.lastAttendedAt?.getTime() ?? 0) - (a.lastAttendedAt?.getTime() ?? 0));
     return sorted;
   }
-  // 'newest' — the list arrives oldest-first (phone_number order ≈ creation),
-  // so reverse approximates newest-first, matching the prior behavior.
-  return sorted.reverse();
+  sorted.sort((a, b) => b.dateJoined.getTime() - a.dateJoined.getTime());
+  return sorted;
 }
 
 function MemberRow({ member }: { member: Member }) {

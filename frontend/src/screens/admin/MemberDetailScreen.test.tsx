@@ -45,6 +45,7 @@ const member: Member = {
   needsOnboarding: false,
   loginLinkRequested: false,
   lastAttendedAt: null,
+  dateJoined: new Date('2026-01-01T00:00:00Z'),
   roles: [],
 };
 

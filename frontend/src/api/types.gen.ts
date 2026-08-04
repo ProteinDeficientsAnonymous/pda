@@ -4597,6 +4597,11 @@ export interface components {
              */
             calendar_feed_scope: string;
             /**
+             * Date Joined
+             * Format: date-time
+             */
+            date_joined: string;
+            /**
              * Email
              * @default
              */
