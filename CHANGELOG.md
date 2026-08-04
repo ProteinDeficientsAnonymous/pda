@@ -1,3 +1,11 @@
+# [0.82.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.81.0...v0.82.0) (2026-08-04)
+
+
+### Features
+
+* 1045 - payment confirmation frontend foundation (1/2) ([#1240](https://github.com/ProteinDeficientsAnonymous/pda/issues/1240)) ([a27c3d0](https://github.com/ProteinDeficientsAnonymous/pda/commit/a27c3d03952523279d07e376349f2308379cc5ab))
+* 1045 - wire payment confirmation into rsvp surfaces (2/2) ([#1241](https://github.com/ProteinDeficientsAnonymous/pda/issues/1241)) ([0fad18c](https://github.com/ProteinDeficientsAnonymous/pda/commit/0fad18c4a7d17b44bc0b59f48de90e6ea9c8298d))
+
 # [0.81.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.80.0...v0.81.0) (2026-08-03)
 
 
