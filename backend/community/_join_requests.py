@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import NamedTuple
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import transaction
 from django.db.models import Prefetch
@@ -245,11 +245,13 @@ def list_join_requests(request):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "list_join_requests",
-                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "list_join_requests",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_join_requests")
 
@@ -342,13 +344,15 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.JOIN_REQUEST,
-            target_id=str(id),
-            details={
-                "endpoint": "update_join_request_status",
-                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_REQUEST,
+                id=str(id),
+                details={
+                    "endpoint": "update_join_request_status",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_join_request_status")
 
@@ -382,9 +386,11 @@ def update_join_request_status(request, id: UUID, payload: JoinRequestStatusIn):
         logging.INFO,
         action,
         request,
-        target_type=AuditTargetType.JOIN_REQUEST,
-        target_id=str(join_request.id),
-        details={"full_name": join_request.full_name, "user_created": user_created},
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_REQUEST,
+            id=str(join_request.id),
+            details={"full_name": join_request.full_name, "user_created": user_created},
+        ),
     )
 
     # A promoted non-member is the linked User itself (which may have been
@@ -419,13 +425,15 @@ def unreject_join_request(request, id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.JOIN_REQUEST,
-            target_id=str(id),
-            details={
-                "endpoint": "unreject_join_request",
-                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_REQUEST,
+                id=str(id),
+                details={
+                    "endpoint": "unreject_join_request",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="unreject_join_request")
 
@@ -444,9 +452,11 @@ def unreject_join_request(request, id: UUID):
         logging.INFO,
         "join_request_unrejected",
         request,
-        target_type=AuditTargetType.JOIN_REQUEST,
-        target_id=str(join_request.id),
-        details={"full_name": join_request.full_name},
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_REQUEST,
+            id=str(join_request.id),
+            details={"full_name": join_request.full_name},
+        ),
     )
 
     return Status(200, _join_request_out(join_request))

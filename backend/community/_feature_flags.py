@@ -1,6 +1,6 @@
 import logging
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -38,11 +38,13 @@ def update_feature_flag(request, key: str, payload: FeatureFlagPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "update_feature_flag",
-                "required_permission": PermissionKey.MANAGE_FEATURE_FLAGS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_feature_flag",
+                    "required_permission": PermissionKey.MANAGE_FEATURE_FLAGS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_feature_flags")
     if key not in FeatureFlag.values:
@@ -54,8 +56,8 @@ def update_feature_flag(request, key: str, payload: FeatureFlagPatchIn):
         logging.INFO,
         "feature_flag_updated",
         request,
-        target_type=AuditTargetType.FEATURE_FLAG,
-        target_id=key,
-        details={"enabled": payload.enabled},
+        target=AuditTarget(
+            type=AuditTargetType.FEATURE_FLAG, id=key, details={"enabled": payload.enabled}
+        ),
     )
     return Status(200, FeatureFlagsOut(flags=resolve_flags()))

@@ -2,7 +2,7 @@ import logging
 from enum import StrEnum
 from typing import NoReturn
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.cache import cache
@@ -79,7 +79,7 @@ def _reject_email_collision(request, email: str) -> NoReturn:
         logging.WARNING,
         "public_rsvp_email_collision",
         request,
-        details={"email": email},
+        target=AuditTarget(details={"email": email}),
     )
     raise_validation(Code.Event.RSVP_COULD_NOT_BE_CREATED, status_code=409)
 
@@ -173,9 +173,9 @@ def _send_recognized_login_link(request, user: User) -> None:
             logging.WARNING,
             "public_rsvp_recognized_email_failed",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(user.pk),
-            details={"error": str(exc)},
+            target=AuditTarget(
+                type=AuditTargetType.USER, id=str(user.pk), details={"error": str(exc)}
+            ),
         )
 
 
@@ -218,9 +218,8 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
             logging.WARNING,
             "public_rsvp_honeypot_tripped",
             request,
-            target_type=AuditTargetType.EVENT,
-            target_id=str(event_id),
             persist=False,
+            target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id)),
         )
         return Status(200, _public_rsvp_decoy(event, payload.status, False))
 
@@ -250,13 +249,15 @@ def submit_public_rsvp(request, event_id, payload: PublicRsvpIn):
         logging.INFO,
         "public_rsvp_created",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event.id),
-        details={
-            "user_id": str(user.pk),
-            "status": final_status,
-            **payment_audit_details(event.id, user.pk),
-        },
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event.id),
+            details={
+                "user_id": str(user.pk),
+                "status": final_status,
+                **payment_audit_details(event.id, user.pk),
+            },
+        ),
     )
 
     _post_rsvp_comment(event.id, user, final_status, payload.comment)

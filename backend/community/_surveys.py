@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -50,11 +50,13 @@ def list_surveys_admin(request):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "list_surveys_admin",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "list_surveys_admin",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     surveys = Survey.objects.all()
@@ -87,11 +89,13 @@ def create_survey(request, payload: SurveyIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "create_survey",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_survey",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     if Survey.objects.filter(slug=payload.slug).exists():
@@ -116,9 +120,11 @@ def create_survey(request, payload: SurveyIn):
         logging.INFO,
         "survey_created",
         request,
-        target_type=AuditTargetType.SURVEY,
-        target_id=str(survey.id),
-        details={"title": survey.title, "slug": survey.slug},
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY,
+            id=str(survey.id),
+            details={"title": survey.title, "slug": survey.slug},
+        ),
     )
     return Status(201, _survey_out(survey, include_questions=True))
 
@@ -134,13 +140,15 @@ def get_survey_admin(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={
-                "endpoint": "get_survey_admin",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "get_survey_admin",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -161,13 +169,15 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={
-                "endpoint": "update_survey",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "update_survey",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -187,9 +197,11 @@ def update_survey(request, survey_id: UUID, payload: SurveyPatchIn):
         logging.INFO,
         "survey_updated",
         request,
-        target_type=AuditTargetType.SURVEY,
-        target_id=str(survey_id),
-        details={"fields_changed": list(updates.keys())},
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY,
+            id=str(survey_id),
+            details={"fields_changed": list(updates.keys())},
+        ),
     )
     return Status(200, _survey_out(survey, include_questions=True))
 
@@ -205,13 +217,15 @@ def delete_survey(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={
-                "endpoint": "delete_survey",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "delete_survey",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -224,9 +238,9 @@ def delete_survey(request, survey_id: UUID):
         logging.WARNING,
         "survey_deleted",
         request,
-        target_type=AuditTargetType.SURVEY,
-        target_id=str(survey_id),
-        details={"title": title},
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY, id=str(survey_id), details={"title": title}
+        ),
     )
     return Status(204, None)
 
@@ -245,13 +259,15 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={
-                "endpoint": "create_survey_question",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "create_survey_question",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -271,9 +287,11 @@ def create_survey_question(request, survey_id: UUID, payload: SurveyQuestionIn):
         logging.INFO,
         "survey_question_created",
         request,
-        target_type=AuditTargetType.SURVEY_QUESTION,
-        target_id=str(q.id),
-        details={"survey_id": str(survey_id), "label": q.label},
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY_QUESTION,
+            id=str(q.id),
+            details={"survey_id": str(survey_id), "label": q.label},
+        ),
     )
     return Status(201, _survey_question_out(q))
 
@@ -289,13 +307,15 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY_QUESTION,
-            target_id=str(question_id),
-            details={
-                "endpoint": "update_survey_question",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "update_survey_question",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -311,9 +331,11 @@ def update_survey_question(request, survey_id: UUID, question_id: UUID, payload:
         logging.INFO,
         "survey_question_updated",
         request,
-        target_type=AuditTargetType.SURVEY_QUESTION,
-        target_id=str(question_id),
-        details={"survey_id": str(survey_id), "label": q.label},
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY_QUESTION,
+            id=str(question_id),
+            details={"survey_id": str(survey_id), "label": q.label},
+        ),
     )
     return Status(200, _survey_question_out(q))
 
@@ -329,13 +351,15 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY_QUESTION,
-            target_id=str(question_id),
-            details={
-                "endpoint": "delete_survey_question",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "delete_survey_question",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -347,9 +371,11 @@ def delete_survey_question(request, survey_id: UUID, question_id: UUID):
         logging.INFO,
         "survey_question_deleted",
         request,
-        target_type=AuditTargetType.SURVEY_QUESTION,
-        target_id=str(question_id),
-        details={"survey_id": str(survey_id)},
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY_QUESTION,
+            id=str(question_id),
+            details={"survey_id": str(survey_id)},
+        ),
     )
     return Status(204, None)
 
@@ -365,13 +391,15 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={
-                "endpoint": "reorder_survey_questions",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "reorder_survey_questions",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:
@@ -384,8 +412,7 @@ def reorder_survey_questions(request, survey_id: UUID, payload: SurveyQuestionOr
         logging.INFO,
         "survey_questions_reordered",
         request,
-        target_type=AuditTargetType.SURVEY,
-        target_id=str(survey_id),
+        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey_id)),
     )
     questions = SurveyQuestion.objects.filter(survey_id=survey_id)
     return Status(200, [_survey_question_out(q) for q in questions])
@@ -405,13 +432,15 @@ def list_survey_responses(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={
-                "endpoint": "list_survey_responses",
-                "required_permission": PermissionKey.MANAGE_SURVEYS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={
+                    "endpoint": "list_survey_responses",
+                    "required_permission": PermissionKey.MANAGE_SURVEYS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_surveys")
     try:

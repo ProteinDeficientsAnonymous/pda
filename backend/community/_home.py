@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -67,8 +67,13 @@ def update_home(request, payload: HomePagePatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={"endpoint": "update_home", "required_permission": PermissionKey.EDIT_HOMEPAGE},
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_home",
+                    "required_permission": PermissionKey.EDIT_HOMEPAGE,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_home")
     h = HomePage.get()
@@ -80,7 +85,6 @@ def update_home(request, payload: HomePagePatchIn):
         logging.INFO,
         "homepage_updated",
         request,
-        target_type=AuditTargetType.HOMEPAGE,
-        details={"fields_changed": changed},
+        target=AuditTarget(type=AuditTargetType.HOMEPAGE, details={"fields_changed": changed}),
     )
     return Status(200, _home_out(h))

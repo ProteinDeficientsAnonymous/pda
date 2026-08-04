@@ -1,6 +1,6 @@
 import logging
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from django.conf import settings
 from django.utils import timezone
 from notifications._email_helpers import (
@@ -77,9 +77,11 @@ def _log_email_failure(request, event: Event, user: User, exc: Exception) -> Non
         logging.WARNING,
         "public_rsvp_email_failed",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event.id),
-        details={"user_id": str(user.pk), "error": str(exc)},
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event.id),
+            details={"user_id": str(user.pk), "error": str(exc)},
+        ),
     )
 
 

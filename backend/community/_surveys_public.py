@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import auth_or_ip_key, rate_limit
 from ninja import Router
@@ -86,9 +86,9 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
                 logging.INFO,
                 "survey_response_updated",
                 request,
-                target_type=AuditTargetType.SURVEY,
-                target_id=str(survey.id),
-                details={"slug": slug},
+                target=AuditTarget(
+                    type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}
+                ),
             )
             return Status(200, _response_out(existing, user_name))
     response = SurveyResponse.objects.create(survey=survey, user=auth_user, answers=answers)
@@ -96,9 +96,7 @@ def submit_survey_response(request, slug: str, payload: SurveyAnswersIn):
         logging.INFO,
         "survey_response_submitted",
         request,
-        target_type=AuditTargetType.SURVEY,
-        target_id=str(survey.id),
-        details={"slug": slug},
+        target=AuditTarget(type=AuditTargetType.SURVEY, id=str(survey.id), details={"slug": slug}),
     )
     return Status(201, _response_out(response, user_name))
 
@@ -129,10 +127,12 @@ def get_survey_tallies(request, survey_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={"endpoint": "get_survey_tallies"},
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={"endpoint": "get_survey_tallies"},
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="get_survey_tallies")
 
@@ -165,10 +165,12 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.SURVEY,
-            target_id=str(survey_id),
-            details={"endpoint": "finalize_poll"},
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.SURVEY,
+                id=str(survey_id),
+                details={"endpoint": "finalize_poll"},
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="finalize_poll")
 
@@ -203,12 +205,14 @@ def finalize_poll(request, survey_id: UUID, payload: FinalizePollIn):
         logging.INFO,
         "survey_poll_finalized",
         request,
-        target_type=AuditTargetType.SURVEY,
-        target_id=str(survey_id),
-        details={
-            "winning_datetime": payload.winning_datetime.isoformat(),
-            "linked_event_id": str(event.id) if event else None,
-        },
+        target=AuditTarget(
+            type=AuditTargetType.SURVEY,
+            id=str(survey_id),
+            details={
+                "winning_datetime": payload.winning_datetime.isoformat(),
+                "linked_event_id": str(event.id) if event else None,
+            },
+        ),
     )
     survey.refresh_from_db()
     return Status(200, _survey_out(survey, include_questions=True, requesting_user=request.auth))

@@ -3,7 +3,7 @@
 import logging
 
 from community._validation import Code, raise_validation
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import client_ip, rate_limit
 from django.contrib.auth import authenticate
@@ -66,7 +66,10 @@ def login(request, payload: LoginIn, response: HttpResponse):
     if auth_user is None:
         logger.warning("Authentication failure: invalid credentials")
         audit_log(
-            logging.WARNING, "login_failed", request, details={"reason": "invalid_credentials"}
+            logging.WARNING,
+            "login_failed",
+            request,
+            target=AuditTarget(details={"reason": "invalid_credentials"}),
         )
         raise_validation(Code.Auth.INVALID_CREDENTIALS, status_code=401)
     user = User.objects.get(pk=auth_user.pk)
@@ -75,8 +78,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
             logging.WARNING,
             "login_archived",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(user.pk),
+            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
         )
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if user.is_paused:
@@ -84,8 +86,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
             logging.WARNING,
             "login_paused",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(user.pk),
+            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
     refresh = RefreshToken.for_user(user)
@@ -95,8 +96,7 @@ def login(request, payload: LoginIn, response: HttpResponse):
         logging.INFO,
         "login_success",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
     return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore
 
@@ -193,9 +193,9 @@ def update_me(request, payload: MePatchIn):
             logging.INFO,
             "profile_updated",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(user.pk),
-            details={"fields_changed": changed},
+            target=AuditTarget(
+                type=AuditTargetType.USER, id=str(user.pk), details={"fields_changed": changed}
+            ),
         )
     return Status(200, UserOut.from_user(user))
 
@@ -228,8 +228,7 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
         logging.INFO,
         "profile_photo_uploaded",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
     return Status(200, UserOut.from_user(user))
 
@@ -246,8 +245,7 @@ def delete_photo(request):
         logging.INFO,
         "profile_photo_deleted",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
     return Status(200, UserOut.from_user(user))
 
@@ -290,8 +288,7 @@ def complete_onboarding(request, payload: OnboardingIn):
         logging.INFO,
         "onboarding_completed",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
     return Status(200, UserOut.from_user(user))
 
@@ -308,9 +305,11 @@ def accept_consents(request, payload: AcceptConsentsIn):
         logging.INFO,
         "consents_accepted",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
-        details={"consent_types": [str(c) for c in payload.consent_types]},
+        target=AuditTarget(
+            type=AuditTargetType.USER,
+            id=str(user.pk),
+            details={"consent_types": [str(c) for c in payload.consent_types]},
+        ),
     )
     return Status(200, UserOut.from_user(user))
 
@@ -323,9 +322,11 @@ def change_password(request, payload: ChangePasswordIn):
             logging.WARNING,
             "password_change_failed",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(user.pk),
-            details={"reason": "wrong_current_password"},
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=str(user.pk),
+                details={"reason": "wrong_current_password"},
+            ),
         )
         raise_validation(
             Code.Auth.CURRENT_PASSWORD_INCORRECT, field="current_password", status_code=400
@@ -347,7 +348,6 @@ def change_password(request, payload: ChangePasswordIn):
         logging.INFO,
         "password_changed",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
     return Status(200, ErrorOut(detail="Password updated successfully."))

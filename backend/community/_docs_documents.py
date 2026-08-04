@@ -7,7 +7,7 @@ from there — single source of truth.
 
 import logging
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -43,11 +43,13 @@ def create_document(request, payload: DocumentIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "create_document",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_document",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -69,9 +71,11 @@ def create_document(request, payload: DocumentIn):
         logging.INFO,
         "document_created",
         request,
-        target_type=AuditTargetType.DOCUMENT,
-        target_id=str(doc.id),
-        details={"title": doc.title, "folder_id": str(folder.id)},
+        target=AuditTarget(
+            type=AuditTargetType.DOCUMENT,
+            id=str(doc.id),
+            details={"title": doc.title, "folder_id": str(folder.id)},
+        ),
     )
     return Status(201, _doc_to_out(doc))
 
@@ -87,11 +91,13 @@ def reorder_documents(request, payload: ReorderIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "reorder_documents",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "reorder_documents",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -112,11 +118,13 @@ def get_document(request, doc_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "get_document",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "get_document",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
     try:
@@ -138,13 +146,15 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.DOCUMENT,
-            target_id=doc_id,
-            details={
-                "endpoint": "update_document",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.DOCUMENT,
+                id=doc_id,
+                details={
+                    "endpoint": "update_document",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -175,9 +185,11 @@ def update_document(request, doc_id: str, payload: DocumentPatchIn):
         logging.INFO,
         "document_updated",
         request,
-        target_type=AuditTargetType.DOCUMENT,
-        target_id=doc_id,
-        details={"fields_changed": list(updates.keys())},
+        target=AuditTarget(
+            type=AuditTargetType.DOCUMENT,
+            id=doc_id,
+            details={"fields_changed": list(updates.keys())},
+        ),
     )
     return Status(200, _doc_to_out(doc))
 
@@ -193,13 +205,15 @@ def delete_document(request, doc_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.DOCUMENT,
-            target_id=doc_id,
-            details={
-                "endpoint": "delete_document",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.DOCUMENT,
+                id=doc_id,
+                details={
+                    "endpoint": "delete_document",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -214,8 +228,6 @@ def delete_document(request, doc_id: str):
         logging.INFO,
         "document_deleted",
         request,
-        target_type=AuditTargetType.DOCUMENT,
-        target_id=doc_id,
-        details={"title": title},
+        target=AuditTarget(type=AuditTargetType.DOCUMENT, id=doc_id, details={"title": title}),
     )
     return Status(200, {"detail": "Document deleted."})

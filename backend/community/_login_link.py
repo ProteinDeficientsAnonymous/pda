@@ -3,7 +3,7 @@
 import logging
 from datetime import timedelta
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.utils import timezone
@@ -119,9 +119,8 @@ def request_login_link(request, payload: RequestLoginLinkIn):
             logging.INFO,
             "magic_link_request_skipped_recent_token",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(user.pk),
             persist=False,
+            target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
         )
         retry_after = max(1, round((recent_token.created_at + _COOLDOWN - now).total_seconds()))
         return Status(
@@ -163,8 +162,7 @@ def request_login_link(request, payload: RequestLoginLinkIn):
         logging.INFO,
         "magic_link_requested",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.pk),
+        target=AuditTarget(type=AuditTargetType.USER, id=str(user.pk)),
     )
 
     return Status(200, RequestLoginLinkOut(detail=_ADMIN_RESPONSE, delivery=_DELIVERY_ADMIN))
@@ -192,18 +190,20 @@ def _try_email_delivery(*, request, user, magic_token) -> bool:
                 logging.INFO,
                 "magic_link_email_sent",
                 request,
-                target_type=AuditTargetType.USER,
-                target_id=str(user.pk),
-                details={"provider_message_id": send_result.provider_message_id},
+                target=AuditTarget(
+                    type=AuditTargetType.USER,
+                    id=str(user.pk),
+                    details={"provider_message_id": send_result.provider_message_id},
+                ),
             )
             return True
         audit_log(
             logging.WARNING,
             "magic_link_email_failed",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(user.pk),
-            details={"error": send_result.error},
+            target=AuditTarget(
+                type=AuditTargetType.USER, id=str(user.pk), details={"error": send_result.error}
+            ),
         )
         return False
     except Exception:

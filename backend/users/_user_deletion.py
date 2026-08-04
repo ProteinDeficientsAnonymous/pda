@@ -1,7 +1,7 @@
 import logging
 
 from community._validation import Code, raise_validation
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.utils import timezone
 from ninja.responses import Status
@@ -28,10 +28,15 @@ def delete_user(request, user_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details={"endpoint": "delete_user", "required_permission": PermissionKey.MANAGE_USERS},
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=user_id,
+                details={
+                    "endpoint": "delete_user",
+                    "required_permission": PermissionKey.MANAGE_USERS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="delete_user")
     try:
@@ -51,9 +56,7 @@ def delete_user(request, user_id: str):
         logging.WARNING,
         "user_archived",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=user_id,
-        details={"full_name": full_name},
+        target=AuditTarget(type=AuditTargetType.USER, id=user_id, details={"full_name": full_name}),
     )
     return Status(204, None)
 
@@ -75,13 +78,15 @@ def hard_delete_user(request, user_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details={
-                "endpoint": "hard_delete_user",
-                "required_permission": PermissionKey.MANAGE_USERS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=user_id,
+                details={
+                    "endpoint": "hard_delete_user",
+                    "required_permission": PermissionKey.MANAGE_USERS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="hard_delete_user")
     try:
@@ -99,9 +104,7 @@ def hard_delete_user(request, user_id: str):
         logging.WARNING,
         "user_hard_deleted",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=user_id,
-        details={"full_name": full_name},
+        target=AuditTarget(type=AuditTargetType.USER, id=user_id, details={"full_name": full_name}),
     )
     # Safe because last_login is None: a never-logged-in user has authored no
     # EventComments (author is on_delete=PROTECT), so the cascade can't raise.

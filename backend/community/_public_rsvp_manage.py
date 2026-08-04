@@ -1,6 +1,6 @@
 import logging
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from django.db.models import Count, Q
@@ -167,13 +167,15 @@ def update_my_rsvp(request, event_id, payload: PublicRsvpManageIn, token: str = 
         logging.INFO,
         "public_rsvp_updated",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event.id),
-        details={
-            "user_id": str(user.pk),
-            "status": final_status,
-            **payment_audit_details(event.id, user.pk),
-        },
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event.id),
+            details={
+                "user_id": str(user.pk),
+                "status": final_status,
+                **payment_audit_details(event.id, user.pk),
+            },
+        ),
     )
     sent_decline_note = _post_rsvp_comment(event.id, user, final_status, payload.comment)
     email_error = _send_manage_rsvp_email(
@@ -225,9 +227,9 @@ def delete_my_rsvp(request, event_id, token: str = ""):
         logging.INFO,
         "public_rsvp_deleted",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event_id),
-        details={"user_id": str(user.pk)},
+        target=AuditTarget(
+            type=AuditTargetType.EVENT, id=str(event_id), details={"user_id": str(user.pk)}
+        ),
     )
     _email_promoted_non_members(request, event, promoted_user_ids)
     broadcast_capacity_change(event.id)

@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -62,11 +62,13 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "update_guidelines",
-                "required_permission": PermissionKey.EDIT_GUIDELINES,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_guidelines",
+                    "required_permission": PermissionKey.EDIT_GUIDELINES,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_guidelines")
     g = CommunityGuidelines.get()
@@ -75,8 +77,7 @@ def update_guidelines(request, payload: GuidelinesPatchIn):
         logging.INFO,
         "guidelines_updated",
         request,
-        target_type=AuditTargetType.GUIDELINES,
-        details={"format": "prosemirror"},
+        target=AuditTarget(type=AuditTargetType.GUIDELINES, details={"format": "prosemirror"}),
     )
     return Status(200, _singleton_out(g))
 
@@ -93,8 +94,10 @@ def update_faq(request, payload: GuidelinesPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={"endpoint": "update_faq", "required_permission": PermissionKey.EDIT_FAQ},
             persist=False,
+            target=AuditTarget(
+                details={"endpoint": "update_faq", "required_permission": PermissionKey.EDIT_FAQ}
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_guidelines")
     f = FAQ.get()
@@ -103,7 +106,6 @@ def update_faq(request, payload: GuidelinesPatchIn):
         logging.INFO,
         "faq_updated",
         request,
-        target_type=AuditTargetType.FAQ,
-        details={"format": "prosemirror"},
+        target=AuditTarget(type=AuditTargetType.FAQ, details={"format": "prosemirror"}),
     )
     return Status(200, _singleton_out(f))

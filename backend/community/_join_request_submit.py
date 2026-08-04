@@ -3,7 +3,7 @@
 import logging
 from enum import StrEnum
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.conf import settings
 from django.core.mail import send_mail
@@ -210,8 +210,8 @@ def submit_join_request(request, payload: JoinRequestIn):
             logging.WARNING,
             "join_request_honeypot_tripped",
             request,
-            details={"full_name": full_name},
             persist=False,
+            target=AuditTarget(details={"full_name": full_name}),
         )
         return Status(201, _honeypot_decoy_response(first_name, full_name, payload.phone_number))
 
@@ -259,9 +259,11 @@ def submit_join_request(request, payload: JoinRequestIn):
         logging.INFO,
         "join_request_submitted",
         request,
-        target_type=AuditTargetType.JOIN_REQUEST,
-        target_id=str(join_request.id),
-        details={"full_name": full_name},
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_REQUEST,
+            id=str(join_request.id),
+            details={"full_name": full_name},
+        ),
     )
     _send_join_request_email(full_name, validated_phone, custom_answers)
     try:

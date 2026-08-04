@@ -7,7 +7,7 @@ from community._rsvp_counts import attendance_q, reportable_events_q
 from community._shared import validate_display_name
 from community._validation import Code, ValidationException, raise_validation
 from community.models import AttendanceStatus
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db import models as dj_models
 from ninja import Router
@@ -54,8 +54,13 @@ def create_user(request, payload: UserCreateIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={"endpoint": "create_user", "required_permission": PermissionKey.CREATE_USER},
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_user",
+                    "required_permission": PermissionKey.CREATE_USER,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_user")
 
@@ -78,12 +83,14 @@ def create_user(request, payload: UserCreateIn):
         logging.INFO,
         "user_created",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(user.id),
-        details={
-            "full_name": user.full_name,
-            "role_id": str(payload.role_id) if payload.role_id else None,
-        },
+        target=AuditTarget(
+            type=AuditTargetType.USER,
+            id=str(user.id),
+            details={
+                "full_name": user.full_name,
+                "role_id": str(payload.role_id) if payload.role_id else None,
+            },
+        ),
     )
     return Status(
         201,
@@ -109,11 +116,13 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "bulk_create_users",
-                "required_permission": PermissionKey.MANAGE_USERS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "bulk_create_users",
+                    "required_permission": PermissionKey.MANAGE_USERS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="bulk_create_users")
 
@@ -172,7 +181,7 @@ def bulk_create_users(request, payload: BulkUserCreateIn):
         logging.INFO,
         "users_bulk_created",
         request,
-        details={"count_created": created, "count_failed": failed},
+        target=AuditTarget(details={"count_created": created, "count_failed": failed}),
     )
     return Status(
         200,
@@ -243,8 +252,13 @@ def list_users(request, include_non_members: bool = False):
             logging.WARNING,
             "permission_denied",
             request,
-            details={"endpoint": "list_users", "required_permission": PermissionKey.MANAGE_USERS},
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "list_users",
+                    "required_permission": PermissionKey.MANAGE_USERS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_users")
     # shares attendance_q + reportable_events_q with the report so the surfaces can't drift.
@@ -277,10 +291,15 @@ def update_user(request, user_id: str, payload: UserPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details={"endpoint": "update_user", "required_permission": PermissionKey.MANAGE_USERS},
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=user_id,
+                details={
+                    "endpoint": "update_user",
+                    "required_permission": PermissionKey.MANAGE_USERS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user")
     try:
@@ -312,9 +331,7 @@ def _audit_user_update(
             logging.WARNING,
             action,
             request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details=details,
+            target=AuditTarget(type=AuditTargetType.USER, id=user_id, details=details),
         )
         return
 
@@ -328,9 +345,9 @@ def _audit_user_update(
             logging.INFO,
             "user_updated",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details={"fields_changed": changed},
+            target=AuditTarget(
+                type=AuditTargetType.USER, id=user_id, details={"fields_changed": changed}
+            ),
         )
 
 
@@ -373,13 +390,15 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=user_id,
-            details={
-                "endpoint": "update_user_roles",
-                "required_permission": PermissionKey.MANAGE_USERS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=user_id,
+                details={
+                    "endpoint": "update_user_roles",
+                    "required_permission": PermissionKey.MANAGE_USERS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_user_roles")
     try:
@@ -401,9 +420,11 @@ def update_user_roles(request, user_id: str, payload: UserRolesIn):
         logging.WARNING,
         "user_roles_changed",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=user_id,
-        details={"old_role_ids": old_role_ids, "new_role_ids": new_role_ids},
+        target=AuditTarget(
+            type=AuditTargetType.USER,
+            id=user_id,
+            details={"old_role_ids": old_role_ids, "new_role_ids": new_role_ids},
+        ),
     )
     user = User.objects.members().prefetch_related("roles").get(pk=user.pk)
     return Status(200, UserOut.from_user(user))
