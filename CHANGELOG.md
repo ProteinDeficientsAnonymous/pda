@@ -1,3 +1,10 @@
+## [0.85.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.4...v0.85.5) (2026-08-04)
+
+
+### Bug Fixes
+
+* **admin:** sort members by actual join date ([#1286](https://github.com/ProteinDeficientsAnonymous/pda/issues/1286)) ([1bab346](https://github.com/ProteinDeficientsAnonymous/pda/commit/1bab346101c1e398f4f42f30f70af31eb8fa40f1))
+
 ## [0.85.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.3...v0.85.4) (2026-08-04)
 
 
