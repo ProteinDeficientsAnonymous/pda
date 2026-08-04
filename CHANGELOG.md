@@ -1,3 +1,10 @@
+## [0.85.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.2...v0.85.3) (2026-08-04)
+
+
+### Bug Fixes
+
+* **ui:** use design tokens instead of hardcoded colors for dark mode ([#1285](https://github.com/ProteinDeficientsAnonymous/pda/issues/1285)) ([c1a2409](https://github.com/ProteinDeficientsAnonymous/pda/commit/c1a2409598620d9d06332b81931cfd9817d734e6))
+
 ## [0.85.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.1...v0.85.2) (2026-08-04)
 
 
