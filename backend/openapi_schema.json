@@ -1489,7 +1489,7 @@
           },
           "description": {
             "default": "",
-            "maxLength": 2000,
+            "maxLength": 3000,
             "title": "Description",
             "type": "string"
           },
@@ -2327,7 +2327,7 @@
           "description": {
             "anyOf": [
               {
-                "maxLength": 2000,
+                "maxLength": 3000,
                 "type": "string"
               },
               {
