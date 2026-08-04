@@ -22,11 +22,7 @@ interface SetRsvpArgs {
   paidConfirmed?: boolean;
 }
 
-// EventDetailScreen's :id route param can be the event's UUID or its slug
-// (old links, or navigating in via a slug URL) — eventKeys.detail() keys the
-// query cache on whichever one was used, and it can also carry a non-member
-// rsvp token, so a plain setQueryData(eventKeys.detail(event.id, ...)) can
-// miss the entry actually backing the visible screen. Match by data instead.
+// EventDetailScreen's :id route param can be the event's uuid or slug, so the cache key varies.
 function isDetailQueryForEvent(queryKey: readonly unknown[], event: Pick<Event, 'id' | 'slug'>) {
   return queryKey[1] === 'detail' && (queryKey[2] === event.id || queryKey[2] === event.slug);
 }
@@ -85,8 +81,6 @@ export function useRemoveRsvp() {
     },
     onSuccess: (eventId) => {
       // DELETE returns 204, so we can't patch from the response — invalidate instead.
-      // eventId is always the UUID here, but the visible screen may be keyed by
-      // slug (see isDetailQueryForEvent), so also match by the cached event's id.
       void qc.invalidateQueries({
         queryKey: eventKeys.all,
         predicate: (query) =>
