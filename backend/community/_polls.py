@@ -27,17 +27,16 @@ from community._event_poll_schemas import (
 )
 from community._event_viewer import resolve_event_viewer
 from community._events import _enforce_event_read_visibility
+from community._poll_finalize import seat_yes_voters
 from community._shared import ErrorOut, _authenticated_user, _optional_jwt
 from community._validation import Code, raise_validation
 from community.models import (
     Event,
     EventPoll,
-    EventRSVP,
     EventStatus,
     PollAvailability,
     PollOption,
     PollVote,
-    RSVPStatus,
 )
 
 router = Router()
@@ -320,16 +319,9 @@ def finalize_event_poll(request, event_id: UUID, payload: EventPollFinalizeIn):
         event.start_datetime = winning_option.datetime
         event.datetime_tbd = False
         event.save(update_fields=["start_datetime", "datetime_tbd"])
-        yes_voter_ids = winning_option.votes.filter(availability=PollAvailability.YES).values_list(
-            "user_id", flat=True
-        )
-        for user_id in yes_voter_ids:
-            # paid_confirmed_at omitted from defaults: preserves an existing stamp, else unconfirmed.
-            EventRSVP.objects.update_or_create(
-                event=event,
-                user_id=user_id,
-                defaults={"status": RSVPStatus.ATTENDING, "cancelled_at": None},
-            )
+        # Save the date first: seating re-reads the event, and its past/upcoming
+        # check has to see the finalized start, not the pre-finalize TBD one.
+        seat_yes_voters(event, winning_option)
     broadcast_capacity_change(event_id)
     audit_log(
         logging.INFO,
