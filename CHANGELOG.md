@@ -1,3 +1,11 @@
+## [0.85.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.3...v0.85.4) (2026-08-04)
+
+
+### Bug Fixes
+
+* 1264 - stop scroll silently rewriting event capacity ([#1265](https://github.com/ProteinDeficientsAnonymous/pda/issues/1265)) ([7635518](https://github.com/ProteinDeficientsAnonymous/pda/commit/7635518695d1875748819e606b19d1f61e548bae))
+* **calendar:** default no-end events to 2h duration ([#1284](https://github.com/ProteinDeficientsAnonymous/pda/issues/1284)) ([60c7710](https://github.com/ProteinDeficientsAnonymous/pda/commit/60c77100927751e7e32a67ad93731094ca4a6184))
+
 ## [0.85.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.2...v0.85.3) (2026-08-04)
 
 
