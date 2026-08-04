@@ -1,3 +1,10 @@
+## [0.84.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.3...v0.84.4) (2026-08-04)
+
+
+### Bug Fixes
+
+* tidy event payment confirmation UX ([#1262](https://github.com/ProteinDeficientsAnonymous/pda/issues/1262)) ([f8d1630](https://github.com/ProteinDeficientsAnonymous/pda/commit/f8d1630fe02a8116c4c7136dd6a5fb83dcb70eb3))
+
 ## [0.84.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.2...v0.84.3) (2026-08-04)
 
 
