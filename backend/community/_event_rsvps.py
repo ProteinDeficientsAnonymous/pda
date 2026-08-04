@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
@@ -254,12 +254,14 @@ def upsert_rsvp(request, event_id: UUID, payload: RSVPIn):
         logging.INFO,
         "rsvp_changed",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event_id),
-        details={
-            "status": final_status,
-            **payment_audit_details(event_id, request.auth.pk),
-        },
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event_id),
+            details={
+                "status": final_status,
+                **payment_audit_details(event_id, request.auth.pk),
+            },
+        ),
     )
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
@@ -291,8 +293,7 @@ def delete_rsvp(request, event_id: UUID):
         logging.INFO,
         "rsvp_deleted",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event_id),
+        target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id)),
     )
     _email_promoted_non_members(request, event, promoted_user_ids)
     return Status(204, None)

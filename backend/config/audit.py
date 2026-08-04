@@ -2,13 +2,23 @@
 
 import ipaddress
 import logging
+from typing import NamedTuple
 
 from audit.models import AuditLogEntry, AuditTargetType
 from django.db import transaction
 
 from config.ratelimit import client_ip
 
-__all__ = ["AuditTargetType", "audit_log"]
+__all__ = ["AuditTarget", "AuditTargetType", "audit_log"]
+
+
+class AuditTarget(NamedTuple):
+    """The audited object and what happened to it: type, id, and context details."""
+
+    type: AuditTargetType | str = ""
+    id: str = ""
+    details: dict | None = None
+
 
 _audit_logger = logging.getLogger("pda.audit")
 
@@ -28,13 +38,11 @@ def _persist(**fields) -> None:
         _audit_logger.exception("audit_persist_failed", extra={"action": fields.get("action")})
 
 
-def audit_log(  # noqa: PLR0913
+def audit_log(
     level: int,
     action: str,
     request,
-    target_type: AuditTargetType | str = "",
-    target_id: str = "",
-    details: dict | None = None,
+    target: AuditTarget | None = None,
     *,
     persist: bool = True,
 ) -> None:
@@ -44,11 +52,10 @@ def audit_log(  # noqa: PLR0913
         level: logging.INFO or logging.WARNING
         action: verb describing the event (e.g. 'login_success', 'user_deleted')
         request: the Django/Ninja HttpRequest (used for actor and IP)
-        target_type: AuditTargetType member for the affected object
-        target_id: string ID of the affected object
-        details: optional context dict (avoid including raw phone numbers or tokens)
+        target: AuditTarget(type, id, details) for the affected object
         persist: write a row to the audit table; False for console-only noise
     """
+    target_type, target_id, details = target or AuditTarget()
     user = getattr(request, "auth", None)
     if user and hasattr(user, "pk"):
         actor_id = str(user.pk)

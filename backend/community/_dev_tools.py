@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import timedelta
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.utils import timezone
@@ -157,7 +157,6 @@ def create_dev_test_event(request, payload: DevTestEventIn):
         logging.INFO,
         "dev_test_event_created",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event.id),
+        target=AuditTarget(type=AuditTargetType.EVENT, id=str(event.id)),
     )
     return Status(201, _event_out(event, request.auth))

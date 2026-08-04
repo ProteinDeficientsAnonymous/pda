@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.media_proxy import media_path
 from config.ratelimit import rate_limit
@@ -89,13 +89,17 @@ def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.EVENT,
-            target_id=str(event_id),
-            details=details,
             persist=False,
+            target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id), details=details),
         )
     else:
-        audit_log(logging.WARNING, "permission_denied", request, details=details, persist=False)
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(details=details),
+        )
     raise_validation(Code.Perm.DENIED, status_code=403, action=required)
 
 
@@ -372,14 +376,16 @@ def create_event(request, payload: EventIn):
         logging.INFO,
         "event_created_draft" if event.is_draft else "event_created",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event.id),
-        details={
-            "title": event.title,
-            "event_type": event.event_type,
-            "visibility": event.visibility,
-            "status": event.status,
-        },
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event.id),
+            details={
+                "title": event.title,
+                "event_type": event.event_type,
+                "visibility": event.visibility,
+                "status": event.status,
+            },
+        ),
     )
     return Status(201, _event_out(event, request.auth))
 
@@ -407,9 +413,9 @@ def _apply_field_updates(request, event: Event, event_id: UUID, updates: dict) -
         logging.INFO,
         "event_updated",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event_id),
-        details={"fields_changed": changed_fields},
+        target=AuditTarget(
+            type=AuditTargetType.EVENT, id=str(event_id), details={"fields_changed": changed_fields}
+        ),
     )
 
 
@@ -436,10 +442,10 @@ def update_event(request, event_id: UUID, payload: EventPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.EVENT,
-            target_id=str(event_id),
-            details={"endpoint": "update_event"},
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.EVENT, id=str(event_id), details={"endpoint": "update_event"}
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_event")
 

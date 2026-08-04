@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -66,11 +66,13 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "create_join_form_question",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_join_form_question",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     max_order = JoinFormQuestion.objects.count()
@@ -85,9 +87,9 @@ def create_join_form_question(request, payload: JoinFormQuestionIn):
         logging.INFO,
         "join_form_question_created",
         request,
-        target_type=AuditTargetType.JOIN_FORM_QUESTION,
-        target_id=str(q.id),
-        details={"label": q.label},
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_FORM_QUESTION, id=str(q.id), details={"label": q.label}
+        ),
     )
     return Status(201, _question_out(q))
 
@@ -103,11 +105,13 @@ def reorder_join_form_questions(request, payload: JoinFormQuestionOrderIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "reorder_join_form_questions",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "reorder_join_form_questions",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     for idx, qid in enumerate(payload.question_ids):
@@ -128,13 +132,15 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.JOIN_FORM_QUESTION,
-            target_id=str(question_id),
-            details={
-                "endpoint": "update_join_form_question",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_FORM_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "update_join_form_question",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     try:
@@ -150,9 +156,9 @@ def update_join_form_question(request, question_id: UUID, payload: JoinFormQuest
         logging.INFO,
         "join_form_question_updated",
         request,
-        target_type=AuditTargetType.JOIN_FORM_QUESTION,
-        target_id=str(question_id),
-        details={"label": q.label},
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_FORM_QUESTION, id=str(question_id), details={"label": q.label}
+        ),
     )
     return Status(200, _question_out(q))
 
@@ -168,13 +174,15 @@ def delete_join_form_question(request, question_id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.JOIN_FORM_QUESTION,
-            target_id=str(question_id),
-            details={
-                "endpoint": "delete_join_form_question",
-                "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_FORM_QUESTION,
+                id=str(question_id),
+                details={
+                    "endpoint": "delete_join_form_question",
+                    "required_permission": PermissionKey.EDIT_JOIN_QUESTIONS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_join_form")
     try:
@@ -187,8 +195,8 @@ def delete_join_form_question(request, question_id: UUID):
         logging.INFO,
         "join_form_question_deleted",
         request,
-        target_type=AuditTargetType.JOIN_FORM_QUESTION,
-        target_id=str(question_id),
-        details={"label": label},
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_FORM_QUESTION, id=str(question_id), details={"label": label}
+        ),
     )
     return Status(204, None)

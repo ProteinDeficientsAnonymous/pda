@@ -8,7 +8,7 @@ helpers stay here so they're imported from a single place.
 import logging
 from datetime import datetime
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -145,11 +145,13 @@ def list_folders(request):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "list_folders",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "list_folders",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
     top_level = DocFolder.objects.filter(parent__isnull=True).prefetch_related(
@@ -169,11 +171,13 @@ def create_folder(request, payload: FolderIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "create_folder",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_folder",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -189,9 +193,11 @@ def create_folder(request, payload: FolderIn):
         logging.INFO,
         "doc_folder_created",
         request,
-        target_type=AuditTargetType.DOC_FOLDER,
-        target_id=str(folder.id),
-        details={"name": folder.name, "parent_id": str(parent.id) if parent else None},
+        target=AuditTarget(
+            type=AuditTargetType.DOC_FOLDER,
+            id=str(folder.id),
+            details={"name": folder.name, "parent_id": str(parent.id) if parent else None},
+        ),
     )
     return Status(201, _folder_to_out(folder))
 
@@ -207,11 +213,13 @@ def reorder_folders(request, payload: ReorderIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "reorder_folders",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "reorder_folders",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -232,13 +240,15 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.DOC_FOLDER,
-            target_id=folder_id,
-            details={
-                "endpoint": "update_folder",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.DOC_FOLDER,
+                id=folder_id,
+                details={
+                    "endpoint": "update_folder",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -267,9 +277,11 @@ def update_folder(request, folder_id: str, payload: FolderPatchIn):
         logging.INFO,
         "doc_folder_updated",
         request,
-        target_type=AuditTargetType.DOC_FOLDER,
-        target_id=folder_id,
-        details={"fields_changed": list(updates.keys())},
+        target=AuditTarget(
+            type=AuditTargetType.DOC_FOLDER,
+            id=folder_id,
+            details={"fields_changed": list(updates.keys())},
+        ),
     )
     return Status(200, _folder_to_out(folder))
 
@@ -285,13 +297,15 @@ def delete_folder(request, folder_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.DOC_FOLDER,
-            target_id=folder_id,
-            details={
-                "endpoint": "delete_folder",
-                "required_permission": PermissionKey.MANAGE_DOCUMENTS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.DOC_FOLDER,
+                id=folder_id,
+                details={
+                    "endpoint": "delete_folder",
+                    "required_permission": PermissionKey.MANAGE_DOCUMENTS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="manage_documents")
 
@@ -306,8 +320,8 @@ def delete_folder(request, folder_id: str):
         logging.INFO,
         "doc_folder_deleted",
         request,
-        target_type=AuditTargetType.DOC_FOLDER,
-        target_id=folder_id,
-        details={"name": folder_name},
+        target=AuditTarget(
+            type=AuditTargetType.DOC_FOLDER, id=folder_id, details={"name": folder_name}
+        ),
     )
     return Status(200, {"detail": "Folder deleted."})

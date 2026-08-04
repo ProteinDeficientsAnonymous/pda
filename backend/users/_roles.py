@@ -3,7 +3,7 @@
 import logging
 
 from community._validation import Code, raise_validation
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from django.db.models import Count, Q
 from ninja import Router
@@ -29,8 +29,13 @@ def list_roles(request):
             logging.WARNING,
             "permission_denied",
             request,
-            details={"endpoint": "list_roles", "required_permission": PermissionKey.MANAGE_ROLES},
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "list_roles",
+                    "required_permission": PermissionKey.MANAGE_ROLES,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="list_roles")
     roles = Role.objects.annotate(
@@ -65,8 +70,13 @@ def create_role(request, payload: RoleIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={"endpoint": "create_role", "required_permission": PermissionKey.MANAGE_ROLES},
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "create_role",
+                    "required_permission": PermissionKey.MANAGE_ROLES,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="create_role")
     if Role.objects.filter(name=payload.name).exists():
@@ -76,9 +86,11 @@ def create_role(request, payload: RoleIn):
         logging.INFO,
         "role_created",
         request,
-        target_type=AuditTargetType.ROLE,
-        target_id=str(role.id),
-        details={"name": role.name, "permissions": role.permissions},
+        target=AuditTarget(
+            type=AuditTargetType.ROLE,
+            id=str(role.id),
+            details={"name": role.name, "permissions": role.permissions},
+        ),
     )
     return Status(
         201,
@@ -102,10 +114,15 @@ def update_role(request, role_id: str, payload: RolePatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.ROLE,
-            target_id=role_id,
-            details={"endpoint": "update_role", "required_permission": PermissionKey.MANAGE_ROLES},
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.ROLE,
+                id=role_id,
+                details={
+                    "endpoint": "update_role",
+                    "required_permission": PermissionKey.MANAGE_ROLES,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="update_role")
     try:
@@ -136,14 +153,16 @@ def update_role(request, role_id: str, payload: RolePatchIn):
         logging.WARNING,
         "role_updated",
         request,
-        target_type=AuditTargetType.ROLE,
-        target_id=role_id,
-        details={
-            "old_name": old_name,
-            "new_name": role.name,
-            "old_permissions": old_permissions,
-            "new_permissions": role.permissions,
-        },
+        target=AuditTarget(
+            type=AuditTargetType.ROLE,
+            id=role_id,
+            details={
+                "old_name": old_name,
+                "new_name": role.name,
+                "old_permissions": old_permissions,
+                "new_permissions": role.permissions,
+            },
+        ),
     )
     return Status(
         200,
@@ -167,10 +186,15 @@ def delete_role(request, role_id: str):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.ROLE,
-            target_id=role_id,
-            details={"endpoint": "delete_role", "required_permission": PermissionKey.MANAGE_ROLES},
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.ROLE,
+                id=role_id,
+                details={
+                    "endpoint": "delete_role",
+                    "required_permission": PermissionKey.MANAGE_ROLES,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="delete_role")
     try:
@@ -186,8 +210,10 @@ def delete_role(request, role_id: str):
         logging.WARNING,
         "role_deleted",
         request,
-        target_type=AuditTargetType.ROLE,
-        target_id=role_id,
-        details={"name": role_name, "affected_user_count": affected_user_count},
+        target=AuditTarget(
+            type=AuditTargetType.ROLE,
+            id=role_id,
+            details={"name": role_name, "affected_user_count": affected_user_count},
+        ),
     )
     return Status(204, None)

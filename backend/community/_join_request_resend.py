@@ -6,7 +6,7 @@ Split from ``_join_requests.py`` to keep that file under the 500-line cap.
 import logging
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
@@ -42,13 +42,15 @@ def resend_magic_link(request, id: UUID):
             logging.WARNING,
             "permission_denied",
             request,
-            target_type=AuditTargetType.JOIN_REQUEST,
-            target_id=str(id),
-            details={
-                "endpoint": "resend_magic_link",
-                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
-            },
             persist=False,
+            target=AuditTarget(
+                type=AuditTargetType.JOIN_REQUEST,
+                id=str(id),
+                details={
+                    "endpoint": "resend_magic_link",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                },
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="resend_magic_link")
 
@@ -79,15 +81,17 @@ def resend_magic_link(request, id: UUID):
         logging.INFO,
         "join_request_magic_link_resent",
         request,
-        target_type=AuditTargetType.JOIN_REQUEST,
-        target_id=str(join_request.id),
-        details={
-            "full_name": join_request.full_name,
-            "first_name": join_request.first_name,
-            "last_name": join_request.last_name,
-            "user_id": str(user.id),
-            "invalidated_token_count": invalidated,
-        },
+        target=AuditTarget(
+            type=AuditTargetType.JOIN_REQUEST,
+            id=str(join_request.id),
+            details={
+                "full_name": join_request.full_name,
+                "first_name": join_request.first_name,
+                "last_name": join_request.last_name,
+                "user_id": str(user.id),
+                "invalidated_token_count": invalidated,
+            },
+        ),
     )
     return Status(
         200,

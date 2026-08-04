@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -49,11 +49,13 @@ def update_member_promotion_message(request, payload: MemberPromotionMessagePatc
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "update_member_promotion_message",
-                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_member_promotion_message",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="edit_member_promotion_message")
 
@@ -71,6 +73,6 @@ def update_member_promotion_message(request, payload: MemberPromotionMessagePatc
         logging.INFO,
         "member_promotion_message_updated",
         request,
-        target_type=AuditTargetType.MEMBER_PROMOTION_MESSAGE,
+        target=AuditTarget(type=AuditTargetType.MEMBER_PROMOTION_MESSAGE),
     )
     return Status(200, _out(template))

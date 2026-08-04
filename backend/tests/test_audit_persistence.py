@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from audit.models import AuditLogEntry, AuditTargetType
-from config.audit import audit_log
+from config.audit import AuditTarget, audit_log
 from django.db import transaction
 from django.test import RequestFactory
 
@@ -41,9 +41,7 @@ class TestAuditPersistence:
                 logging.INFO,
                 "role_created",
                 request_with_actor,
-                target_type=AuditTargetType.ROLE,
-                target_id="abc",
-                details={"name": "vettor"},
+                target=AuditTarget(type=AuditTargetType.ROLE, id="abc", details={"name": "vettor"}),
             )
         )
 
@@ -62,8 +60,8 @@ class TestAuditPersistence:
                 logging.WARNING,
                 "permission_denied",
                 request_with_actor,
-                target_type=AuditTargetType.ROLE,
                 persist=False,
+                target=AuditTarget(type=AuditTargetType.ROLE),
             )
         )
 
@@ -132,7 +130,9 @@ class TestAuditTargetTypeCoverage:
         for path in backend.rglob("*.py"):
             if "tests" in path.parts or "migrations" in path.parts:
                 continue
-            for match in re.finditer(r'target_type=(["\'])([^"\']*)\1', path.read_text()):
+            for match in re.finditer(
+                r'AuditTarget\([^)]*type=(["\'])([^"\']*)\1', path.read_text()
+            ):
                 literals.append((path.name, match.group(2)))
 
         assert literals == [], f"raw target_type literals found: {literals}"

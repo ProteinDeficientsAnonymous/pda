@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from django.db import transaction
@@ -118,13 +118,15 @@ def set_guest_rsvp(request, event_id: UUID, user_id: UUID, payload: HostRSVPIn):
         logging.INFO,
         "guest_rsvp_changed",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event_id),
-        details={
-            "user_id": str(user_id),
-            "status": final_status,
-            **payment_audit_details(event_id, user_id),
-        },
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event_id),
+            details={
+                "user_id": str(user_id),
+                "status": final_status,
+                **payment_audit_details(event_id, user_id),
+            },
+        ),
     )
     event = load_event_with_stats_prefetch(event_id)
     if event is None:
@@ -179,13 +181,15 @@ def set_guest_payment(request, event_id: UUID, user_id: UUID, payload: HostRSVPP
         logging.INFO,
         "guest_payment_revoked" if is_revoke else "guest_payment_changed",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event_id),
-        details={
-            "user_id": str(user_id),
-            "was_paid": was_paid,
-            **payment_audit_details(event_id, user_id),
-        },
+        target=AuditTarget(
+            type=AuditTargetType.EVENT,
+            id=str(event_id),
+            details={
+                "user_id": str(user_id),
+                "was_paid": was_paid,
+                **payment_audit_details(event_id, user_id),
+            },
+        ),
     )
     if is_revoke:
         create_payment_revoked_notification(event, str(user_id))
@@ -226,9 +230,9 @@ def remove_guest_rsvp(request, event_id: UUID, user_id: UUID):
         logging.INFO,
         "guest_rsvp_removed",
         request,
-        target_type=AuditTargetType.EVENT,
-        target_id=str(event_id),
-        details={"user_id": str(user_id)},
+        target=AuditTarget(
+            type=AuditTargetType.EVENT, id=str(event_id), details={"user_id": str(user_id)}
+        ),
     )
     event = load_event_with_stats_prefetch(event_id)
     if event is None:

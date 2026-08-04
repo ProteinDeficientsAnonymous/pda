@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from ninja import Router
 from ninja.responses import Status
@@ -45,11 +45,13 @@ def update_whatsapp_link(request, payload: WhatsAppLinkPatchIn):
             logging.WARNING,
             "permission_denied",
             request,
-            details={
-                "endpoint": "update_whatsapp_link",
-                "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
-            },
             persist=False,
+            target=AuditTarget(
+                details={
+                    "endpoint": "update_whatsapp_link",
+                    "required_permission": PermissionKey.APPROVE_JOIN_REQUESTS,
+                }
+            ),
         )
         raise_validation(Code.Perm.DENIED, status_code=403, action="edit_whatsapp_link")
 
@@ -65,6 +67,6 @@ def update_whatsapp_link(request, payload: WhatsAppLinkPatchIn):
         logging.INFO,
         "whatsapp_link_updated",
         request,
-        target_type=AuditTargetType.WHATSAPP_LINK,
+        target=AuditTarget(type=AuditTargetType.WHATSAPP_LINK),
     )
     return Status(200, _out(config))

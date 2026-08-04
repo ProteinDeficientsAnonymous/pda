@@ -3,7 +3,7 @@
 import logging
 
 from community._validation import Code, raise_validation
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.ratelimit import client_ip, rate_limit
 from django.db import transaction
 from django.http import HttpResponse
@@ -46,9 +46,11 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             logging.WARNING,
             "magic_login_cross_user_blocked",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(magic.user.pk),
-            details={"current_user_id": str(current_user.pk)},
+            target=AuditTarget(
+                type=AuditTargetType.USER,
+                id=str(magic.user.pk),
+                details={"current_user_id": str(current_user.pk)},
+            ),
         )
         raise_validation(Code.Auth.ALREADY_SIGNED_IN_AS_DIFFERENT_USER, status_code=403)
     if magic.user.archived_at is not None:
@@ -56,8 +58,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             logging.WARNING,
             "magic_login_archived",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(magic.user.pk),
+            target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
         )
         raise_validation(Code.Auth.ACCOUNT_ARCHIVED, status_code=403)
     if magic.user.is_paused:
@@ -65,8 +66,7 @@ def _validate_magic_user(request, magic: MagicLoginToken) -> None:
             logging.WARNING,
             "magic_login_paused",
             request,
-            target_type=AuditTargetType.USER,
-            target_id=str(magic.user.pk),
+            target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
         )
         raise_validation(Code.Auth.ACCOUNT_PAUSED, status_code=403)
 
@@ -84,7 +84,10 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
             )
         except MagicLoginToken.DoesNotExist:
             audit_log(
-                logging.WARNING, "magic_login_failed", request, details={"reason": "invalid_token"}
+                logging.WARNING,
+                "magic_login_failed",
+                request,
+                target=AuditTarget(details={"reason": "invalid_token"}),
             )
             raise_validation(Code.Auth.MAGIC_LINK_INVALID_OR_EXPIRED, status_code=400)
         _validate_magic_user(request, magic)
@@ -93,9 +96,11 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                 logging.WARNING,
                 "magic_login_failed",
                 request,
-                target_type=AuditTargetType.USER,
-                target_id=str(magic.user.pk),
-                details={"reason": "used_or_expired"},
+                target=AuditTarget(
+                    type=AuditTargetType.USER,
+                    id=str(magic.user.pk),
+                    details={"reason": "used_or_expired"},
+                ),
             )
             raise_validation(Code.Auth.MAGIC_LINK_ALREADY_USED, status_code=400)
         magic.used = True
@@ -115,8 +120,7 @@ def _consume_magic_token(request, token: str) -> MagicLoginToken:
                 logging.INFO,
                 "magic_login_requires_password_reset",
                 request,
-                target_type=AuditTargetType.USER,
-                target_id=str(magic.user.pk),
+                target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
             )
     return magic
 
@@ -136,7 +140,6 @@ def magic_login(request, token: str, response: HttpResponse):
         logging.INFO,
         "magic_login_success",
         request,
-        target_type=AuditTargetType.USER,
-        target_id=str(magic.user.pk),
+        target=AuditTarget(type=AuditTargetType.USER, id=str(magic.user.pk)),
     )
     return Status(200, TokenOut(access=str(refresh.access_token)))  # type: ignore

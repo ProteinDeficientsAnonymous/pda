@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from config.audit import AuditTargetType, audit_log
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
 from config.ratelimit import rate_limit
 from ninja import Router
@@ -62,9 +62,9 @@ def add_poll_option(request, event_id: UUID, payload: PollOptionIn):
         logging.INFO,
         "poll_option_added",
         request,
-        target_type=AuditTargetType.EVENT_POLL,
-        target_id=str(poll.id),
-        details={"event_id": str(event_id)},
+        target=AuditTarget(
+            type=AuditTargetType.EVENT_POLL, id=str(poll.id), details={"event_id": str(event_id)}
+        ),
     )
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
@@ -94,9 +94,11 @@ def update_poll_option(request, event_id: UUID, payload: PollOptionIn, option_id
         logging.INFO,
         "poll_option_updated",
         request,
-        target_type=AuditTargetType.EVENT_POLL,
-        target_id=str(poll.id),
-        details={"event_id": str(event_id), "option_id": str(option_id)},
+        target=AuditTarget(
+            type=AuditTargetType.EVENT_POLL,
+            id=str(poll.id),
+            details={"event_id": str(event_id), "option_id": str(option_id)},
+        ),
     )
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
@@ -125,9 +127,11 @@ def delete_poll_option(request, event_id: UUID, option_id: UUID):
         logging.INFO,
         "poll_option_deleted",
         request,
-        target_type=AuditTargetType.EVENT_POLL,
-        target_id=str(poll.id),
-        details={"event_id": str(event_id), "option_id": str(option_id)},
+        target=AuditTarget(
+            type=AuditTargetType.EVENT_POLL,
+            id=str(poll.id),
+            details={"event_id": str(event_id), "option_id": str(option_id)},
+        ),
     )
     poll_fresh = (
         EventPoll.objects.select_related("winning_option")
