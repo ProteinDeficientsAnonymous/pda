@@ -34,10 +34,24 @@ describe('PaymentConfirmStep', () => {
     );
   });
 
-  it('normalizes a bare cashapp handle into a url', () => {
+  it('normalizes a bare cashapp handle into a url with the price prefilled', () => {
     render(
       <PaymentConfirmStep
         event={makePaidEvent({ venmoLink: '', cashappLink: '$host' })}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('link', { name: /cashapp/i })).toHaveAttribute(
+      'href',
+      'https://cash.app/$host/10',
+    );
+  });
+
+  it('falls back to a bare cashapp url when the price is non-numeric', () => {
+    render(
+      <PaymentConfirmStep
+        event={makePaidEvent({ venmoLink: '', cashappLink: '$host', price: 'sliding scale' })}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
       />,
