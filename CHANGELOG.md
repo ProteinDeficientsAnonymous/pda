@@ -1,3 +1,10 @@
+# [0.83.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.82.0...v0.83.0) (2026-08-04)
+
+
+### Features
+
+* **events:** raise description limit to 3000 chars, show remaining count ([#1257](https://github.com/ProteinDeficientsAnonymous/pda/issues/1257)) ([ef6194c](https://github.com/ProteinDeficientsAnonymous/pda/commit/ef6194c399b409a1e2b73dd7afef098bd7c95e82))
+
 # [0.82.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.81.0...v0.82.0) (2026-08-04)
 
 
