@@ -1,9 +1,9 @@
-import { type Event, eventPath } from '@/models/event';
+import { DEFAULT_EVENT_DURATION_MS, type Event, eventPath } from '@/models/event';
 
 export function googleCalendarUrl(event: Event): string | null {
   if (!event.startDatetime) return null;
   const start = event.startDatetime;
-  const end = event.endDatetime ?? new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  const end = event.endDatetime ?? new Date(start.getTime() + DEFAULT_EVENT_DURATION_MS);
   const dates = `${formatIcsDate(start)}/${formatIcsDate(end)}`;
   const details = buildDescription(event);
   const params = new URLSearchParams({

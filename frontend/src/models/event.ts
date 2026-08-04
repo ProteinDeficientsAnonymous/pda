@@ -1,6 +1,8 @@
 import { hasPermission, Permission } from './permissions';
 import type { User } from './user';
 
+export const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
+
 export const EventType = {
   Community: 'community',
   Official: 'official',

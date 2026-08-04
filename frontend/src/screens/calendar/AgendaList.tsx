@@ -2,7 +2,12 @@ import { format, isSameDay } from 'date-fns';
 import { useMemo, useState } from 'react';
 
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { type Event as PdaEvent, eventClass, EventType } from '@/models/event';
+import {
+  DEFAULT_EVENT_DURATION_MS,
+  type Event as PdaEvent,
+  eventClass,
+  EventType,
+} from '@/models/event';
 import { EventBadge } from '@/screens/events/EventBadge';
 import { EventCardBadges } from '@/screens/events/EventCardBadges';
 import { cn } from '@/utils/cn';
@@ -44,7 +49,7 @@ function upcomingEvents(events: PdaEvent[]): PdaEvent[] {
   return events
     .filter((e) => {
       if (!e.startDatetime) return false;
-      const end = e.endDatetime ?? e.startDatetime;
+      const end = e.endDatetime ?? new Date(e.startDatetime.getTime() + DEFAULT_EVENT_DURATION_MS);
       return end >= now;
     })
     .sort((a, b) => (a.startDatetime?.getTime() ?? 0) - (b.startDatetime?.getTime() ?? 0));
