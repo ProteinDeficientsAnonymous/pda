@@ -24,10 +24,7 @@ interface SetRsvpArgs {
 
 function updateCaches(qc: ReturnType<typeof useQueryClient>, event: Event, isAuthed: boolean) {
   qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
-  // The live route may have queried by slug rather than event.id (EventDetailScreen
-  // canonicalizes the URL to the slug), so the write above can miss the cache entry
-  // actually backing the screen. Patch every detail query for this event regardless
-  // of which id shape keyed it.
+  // EventDetailScreen canonicalizes the URL to slug, so also patch detail queries keyed by slug.
   qc.setQueriesData<Event | undefined>(
     { queryKey: eventKeys.all, predicate: (query) => query.queryKey[1] === 'detail' },
     (prev) => (prev && (prev.id === event.id || prev.slug === event.slug) ? event : prev),
@@ -79,11 +76,9 @@ export function useRemoveRsvp() {
       return eventId;
     },
     onSuccess: (eventId) => {
-      // DELETE returns 204, so we can't patch from the response. Just
-      // invalidate — cheaper than a second round-trip. The live route may have
-      // queried by slug rather than eventId (EventDetailScreen canonicalizes the
-      // URL to the slug), so match on cached data id too, not just the key.
+      // DELETE returns 204, so we can't patch from the response — invalidate instead.
       void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed) });
+      // Also matches detail queries keyed by slug (EventDetailScreen canonicalizes to slug).
       void qc.invalidateQueries({
         queryKey: eventKeys.all,
         predicate: (query) =>
