@@ -4,6 +4,8 @@ A flag is a kill switch, so caching it ambiently would let a long-lived process
 (a management command, a worker loop) serve a stale value indefinitely.
 """
 
+import threading
+
 import pytest
 from community.models import (
     FeatureFlag,
@@ -13,6 +15,7 @@ from community.models import (
     flag_enabled,
     resolve_flags,
 )
+from community.models import feature_flag as feature_flag_module
 
 FLAG = FeatureFlag.EVENT_PAYMENT_CONFIRMATION
 
@@ -78,6 +81,43 @@ class TestCachedFlagsScope:
             with cached_flags():
                 resolve_flags()
             resolve_flags()
+
+    def test_inner_scope_exit_does_not_clear_the_outer_cache(self, django_assert_num_queries):
+        with cached_flags():
+            with cached_flags():
+                pass
+            with django_assert_num_queries(0):
+                resolve_flags()
+
+    def test_clear_inside_a_nested_scope_only_clears_for_that_read(self):
+        with cached_flags():
+            assert flag_enabled(FLAG) is False
+            with cached_flags():
+                FeatureFlagState.objects.update_or_create(key=FLAG, defaults={"enabled": True})
+                clear_flag_cache()
+                assert flag_enabled(FLAG) is True
+
+    def test_resolve_flags_result_is_a_copy_not_the_live_cache(self):
+        with cached_flags():
+            resolve_flags()[FLAG] = True
+            assert flag_enabled(FLAG) is False
+
+    def test_cache_does_not_leak_across_threads(self):
+        other_thread_saw_cache = {}
+
+        def read_from_other_thread():
+            other_thread_saw_cache["flags"] = getattr(feature_flag_module._cache, "flags", None)
+
+        with cached_flags():
+            assert feature_flag_module._cache.flags is not None
+
+            thread = threading.Thread(target=read_from_other_thread)
+            thread.start()
+            thread.join()
+
+            assert feature_flag_module._cache.flags is not None
+
+        assert other_thread_saw_cache["flags"] is None
 
     def test_an_exception_still_clears_the_cache(self, django_assert_num_queries):
         with pytest.raises(RuntimeError), cached_flags():

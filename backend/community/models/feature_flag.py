@@ -21,32 +21,28 @@ class FeatureFlagState(models.Model):
         return f"FeatureFlagState({self.key}={self.enabled})"
 
 
-# Opt-in rather than ambient: a flag is a kill switch, so anything that caches
-# it must have a bounded lifetime. Local() keeps threads and async tasks from
-# sharing an entry; entering the scope again inside one reuses it.
+# Local(), not a module global: a cached flag must never leak across threads/tasks.
 _cache = Local()
+_cache_depth = Local()
 
 
 @contextmanager
 def cached_flags():
-    """Serve resolve_flags() from one query for the duration of this block.
-
-    Only for a bounded unit of work that tolerates a flag frozen for its
-    lifetime — a request, not a worker loop. Nesting is safe; the outermost
-    block owns the entry.
-    """
-    if getattr(_cache, "flags", None) is not None:
-        yield
-        return
-    _cache.flags = resolve_flags()
+    """Serve resolve_flags() from one query for the duration of this block."""
+    depth = getattr(_cache_depth, "value", 0)
+    _cache_depth.value = depth + 1
+    if depth == 0:
+        _cache.flags = resolve_flags()
     try:
         yield
     finally:
-        clear_flag_cache()
+        _cache_depth.value = depth
+        if depth == 0:
+            clear_flag_cache()
 
 
 def clear_flag_cache() -> None:
-    """Drop any cached entry, so the next read re-queries."""
+    """Drop the cached entry, so the next read re-queries."""
     try:
         del _cache.flags
     except AttributeError:
@@ -54,14 +50,10 @@ def clear_flag_cache() -> None:
 
 
 def resolve_flags() -> dict[str, bool]:
-    """All known flags resolved: DB row overrides the code default if present.
-
-    Cached only inside cached_flags(); uncached everywhere else, so a long-lived
-    process can never hold a stale flag.
-    """
+    """All known flags resolved: DB row overrides the code default if present."""
     cached = getattr(_cache, "flags", None)
     if cached is not None:
-        return cached
+        return dict(cached)
     resolved = dict(FLAG_DEFAULTS)
     overrides = FeatureFlagState.objects.filter(key__in=resolved.keys()).values_list(
         "key", "enabled"
