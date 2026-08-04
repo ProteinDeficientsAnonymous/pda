@@ -1,3 +1,10 @@
+## [0.84.3](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.2...v0.84.3) (2026-08-04)
+
+
+### Bug Fixes
+
+* prefill cashapp amount on rsvp payment confirm step ([#1260](https://github.com/ProteinDeficientsAnonymous/pda/issues/1260)) ([24529e3](https://github.com/ProteinDeficientsAnonymous/pda/commit/24529e36e5424c5b08002467ca672a514ee3988b))
+
 ## [0.84.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.1...v0.84.2) (2026-08-04)
 
 
