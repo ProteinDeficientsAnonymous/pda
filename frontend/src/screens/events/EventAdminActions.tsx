@@ -10,7 +10,7 @@ import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
-import { canEditEventWindow } from './eventEditGate';
+import { isEventEditable } from './eventEditGate';
 
 interface Props {
   event: Event;
@@ -54,7 +54,7 @@ function AdminActionRow({
   const hasNoAttendees = event.attendingCount === 0;
   const canDelete = (isHost || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees && !event.isPast;
-  const canEditEvent = canEditEventWindow(event);
+  const canEditEvent = isEventEditable(event);
 
   async function onCancel() {
     setCancelError(null);

@@ -12,10 +12,10 @@ function isEditWindowOpen(event: Event): boolean {
 }
 
 // drafts have no published history to protect, so the edit-window cutoff doesn't apply
-export function canEditEventWindow(event: Event): boolean {
+export function isEventEditable(event: Event): boolean {
   return event.status === EventStatus.Draft || isEditWindowOpen(event);
 }
 
 export function canEditEvent(event: Event, user: User | null): boolean {
-  return canManageEvent(event, user) && canEditEventWindow(event);
+  return canManageEvent(event, user) && isEventEditable(event);
 }
