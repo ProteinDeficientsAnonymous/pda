@@ -7,8 +7,9 @@ Only hosts and people who have RSVP'd should see guests.
 import pytest
 from community.models import RSVPStatus
 from ninja_jwt.tokens import RefreshToken
-from tests._public_rsvp_helpers import make_official_event
 from users.models import User
+
+from tests._public_rsvp_helpers import make_official_event
 
 
 @pytest.fixture
