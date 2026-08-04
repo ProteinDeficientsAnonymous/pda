@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { extractApiErrorOr, getApiStatus, hasErrorCode } from '@/api/apiErrors';
+import { extractApiErrorOr, getApiStatus } from '@/api/apiErrors';
 import { useCancelPublicMyRsvp, useUpdatePublicMyRsvp } from '@/api/publicRsvp';
-import { Code } from '@/api/validationCodes.gen';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import { type Event, eventPath, type RsvpInputStatus, RsvpServerStatus } from '@/models/event';
@@ -25,9 +24,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function errorMessage(err: unknown): string {
-  if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
-    return 'confirm you paid before rsvping';
-  }
   const status = getApiStatus(err);
   if (status === 429) return "you're going too fast — try again in a few minutes";
   if (status === 404) return "this rsvp isn't available anymore — refresh";
