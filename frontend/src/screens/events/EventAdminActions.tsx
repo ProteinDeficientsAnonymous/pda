@@ -54,7 +54,7 @@ function AdminActionRow({
   const hasNoAttendees = event.attendingCount === 0;
   const canDelete = (isHost || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees && !event.isPast;
-  const canEditEvent = isEventEditable(event);
+  const eventIsEditable = isEventEditable(event);
 
   async function onCancel() {
     setCancelError(null);
@@ -88,7 +88,7 @@ function AdminActionRow({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap justify-center gap-2">
-        {canEditEvent ? (
+        {eventIsEditable ? (
           <Button variant="secondary" onClick={() => void navigate(`/events/${event.id}/edit`)}>
             edit
           </Button>
@@ -125,7 +125,7 @@ function AdminActionRow({
           </Button>
         ) : null}
       </div>
-      {!canEditEvent && !isCancelled ? (
+      {!eventIsEditable && !isCancelled ? (
         <p className="text-foreground-tertiary text-center text-xs">
           editing closes 6 hours after the event ends
         </p>
