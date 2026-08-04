@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import type { Event } from '@/models/event';
 import { formatPrice } from '@/utils/eventCost';
-import { toCashAppUrl, toVenmoUrl } from '@/utils/paymentHandle';
+import { toCashAppPayUrl, toVenmoUrl } from '@/utils/paymentHandle';
 
 interface Props {
   event: Event;
@@ -13,7 +13,12 @@ interface Props {
 export function PaymentConfirmStep({ event, busy = false, onConfirm, onBack }: Props) {
   const links: { label: string; url?: string }[] = [];
   if (event.venmoLink) links.push({ label: 'venmo', url: toVenmoUrl(event.venmoLink) });
-  if (event.cashappLink) links.push({ label: 'cashapp', url: toCashAppUrl(event.cashappLink) });
+  if (event.cashappLink) {
+    links.push({
+      label: 'cashapp',
+      url: toCashAppPayUrl(event.cashappLink, { price: event.price }),
+    });
+  }
   if (event.zelleInfo) links.push({ label: `zelle: ${event.zelleInfo}` });
 
   return (
