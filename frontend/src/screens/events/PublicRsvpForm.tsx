@@ -285,7 +285,10 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           <div role="alert" tabIndex={-1} ref={submitErrorRef} className="text-destructive text-sm">
             <p>{submitError.text}</p>
             {submitError.showSignIn ? (
-              <Link to="/login" className="text-info hover:underline">
+              <Link
+                to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
+                className="text-info hover:underline"
+              >
                 sign in
               </Link>
             ) : null}

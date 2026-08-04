@@ -6,7 +6,7 @@ import { useEvent } from '@/api/events';
 import { getStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
-import { canManageEvent, canPublicRsvp } from '@/models/event';
+import { canManageEvent, canPublicRsvp, eventPath } from '@/models/event';
 import { ContentContainer, ContentError, ContentLoading } from '@/screens/public/ContentContainer';
 import { formatEventDateTime } from '@/utils/datetime';
 import { linkifyText } from '@/utils/linkifyText';
@@ -269,10 +269,10 @@ function MemberRsvpControl({
 
 function AnonSection({ event }: { event: Event }) {
   if (canPublicRsvp(event)) return <PublicRsvpSection event={event} />;
-  return <LoginOrJoinSection />;
+  return <LoginOrJoinSection event={event} />;
 }
 
-function LoginOrJoinSection() {
+function LoginOrJoinSection({ event }: { event: Event }) {
   // Unauthed users miss: hosts, location, links, cost, invite, RSVP.
   return (
     <section className="border-border bg-surface mt-8 rounded-lg border p-6">
@@ -282,7 +282,7 @@ function LoginOrJoinSection() {
       </p>
       <div className="flex flex-wrap gap-3">
         <Link
-          to="/login"
+          to={`/login?redirect=${encodeURIComponent(eventPath(event))}`}
           className="bg-brand-600 text-brand-on hover:bg-brand-700 inline-flex h-10 items-center rounded-md px-4 text-sm font-medium"
         >
           sign in
