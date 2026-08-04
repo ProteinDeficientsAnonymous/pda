@@ -1,3 +1,10 @@
+# [0.85.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.4...v0.85.0) (2026-08-04)
+
+
+### Features
+
+* add edit to event detail kebab menu ([#1263](https://github.com/ProteinDeficientsAnonymous/pda/issues/1263)) ([50f8b6e](https://github.com/ProteinDeficientsAnonymous/pda/commit/50f8b6e361d8e6a029ab926dcf739b47143f17a1))
+
 ## [0.84.4](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.3...v0.84.4) (2026-08-04)
 
 
