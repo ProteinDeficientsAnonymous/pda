@@ -112,7 +112,7 @@ class Event(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=300)
     slug = models.SlugField(max_length=80, unique=True, blank=True)
-    description = models.TextField(blank=True, max_length=2000)
+    description = models.TextField(blank=True, max_length=3000)
     start_datetime = models.DateTimeField(null=True, blank=True)
     end_datetime = models.DateTimeField(null=True, blank=True)
     location = models.CharField(max_length=300, blank=True)

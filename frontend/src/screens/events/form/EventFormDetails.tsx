@@ -11,6 +11,8 @@ const VISIBILITY_OPTIONS: { value: Visibility; label: string }[] = [
   { value: EventVisibility.InviteOnly, label: 'invite only' },
 ];
 
+export const DESCRIPTION_MAX_LENGTH = 3000;
+
 const VISIBILITY_HELPER: Record<Visibility, string> = {
   members_only: 'only signed-in members can see this event',
   public:
@@ -41,9 +43,10 @@ export function EventFormDetails({ values, onChange, errors, typeLocked }: Props
         onChange={(e) => {
           onChange({ description: e.target.value });
         }}
-        maxLength={2000}
+        maxLength={DESCRIPTION_MAX_LENGTH}
         placeholder="tell people what this is about"
         error={errors.description}
+        hint={`${String(DESCRIPTION_MAX_LENGTH - values.description.length)} characters left`}
       />
 
       {typeLocked ? (

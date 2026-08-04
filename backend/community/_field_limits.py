@@ -2,6 +2,7 @@ class FieldLimit:
     TITLE = 200
     SHORT_TEXT = 300
     DESCRIPTION = 2000
+    EVENT_DESCRIPTION = 3000
     CONTENT = 50000
     CONTENT_HTML = 100000  # HTML is more verbose than Delta JSON
     URL = 200

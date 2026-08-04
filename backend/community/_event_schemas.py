@@ -289,7 +289,7 @@ class AttendanceIn(BaseModel):
 
 class EventIn(BaseModel):
     title: str = Field(max_length=FieldLimit.TITLE)
-    description: str = Field(default="", max_length=FieldLimit.DESCRIPTION)
+    description: str = Field(default="", max_length=FieldLimit.EVENT_DESCRIPTION)
     start_datetime: datetime | None = None
     end_datetime: datetime | None = None
     location: str = Field(default="", max_length=FieldLimit.SHORT_TEXT)
@@ -356,7 +356,7 @@ class EventIn(BaseModel):
 
 class EventPatchIn(BaseModel):
     title: str | None = Field(default=None, max_length=FieldLimit.TITLE)
-    description: str | None = Field(default=None, max_length=FieldLimit.DESCRIPTION)
+    description: str | None = Field(default=None, max_length=FieldLimit.EVENT_DESCRIPTION)
     start_datetime: datetime | None = None
     end_datetime: datetime | None = None
     location: str | None = Field(default=None, max_length=FieldLimit.SHORT_TEXT)
