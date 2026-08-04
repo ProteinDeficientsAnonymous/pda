@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { setStoredRsvpToken } from '@/api/rsvpTokenStorage';
 import type { Event } from '@/models/event';
 
+import { CostSection } from './EventMemberSection';
 import { PublicRsvpForm } from './PublicRsvpForm';
 
 interface Props {
@@ -19,11 +20,14 @@ export function PublicRsvpSection({ event }: Props) {
   }
 
   return (
-    <PublicRsvpForm
-      event={event}
-      onSuccess={(result) => {
-        unlockWithToken(result.rsvp_token);
-      }}
-    />
+    <div className="mt-8 flex flex-col gap-6">
+      <CostSection event={event} />
+      <PublicRsvpForm
+        event={event}
+        onSuccess={(result) => {
+          unlockWithToken(result.rsvp_token);
+        }}
+      />
+    </div>
   );
 }

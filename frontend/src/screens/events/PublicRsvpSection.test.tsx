@@ -69,6 +69,24 @@ describe('PublicRsvpSection', () => {
     expect(screen.getByRole('heading', { name: 'rsvp' })).toBeInTheDocument();
   });
 
+  it('shows the price to a public visitor before they rsvp', () => {
+    render(
+      <MemoryRouter>
+        <PublicRsvpSection event={officialEvent({ price: '$10' })} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('$10')).toBeInTheDocument();
+  });
+
+  it('shows no cost section when the event has no price or payment links', () => {
+    render(
+      <MemoryRouter>
+        <PublicRsvpSection event={officialEvent({ price: '' })} />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText('cost')).not.toBeInTheDocument();
+  });
+
   it('persists the rsvp token and refreshes without putting it in the url', async () => {
     mockCheckPhone.mockResolvedValue({ status: 'new' });
     mockSubmit.mockResolvedValue({
