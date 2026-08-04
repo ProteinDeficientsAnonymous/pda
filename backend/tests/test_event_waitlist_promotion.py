@@ -273,3 +273,50 @@ class TestWaitlistPromotionNotification:
         assert not Notification.objects.filter(
             notification_type=NotificationType.WAITLIST_PROMOTED,
         ).exists()
+
+
+# ---------------------------------------------------------------------------
+# TestPromoteOnCapacityIncrease
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestPromoteOnCapacityIncrease:
+    def test_promote_on_max_attendees_increase(  # noqa: PLR0913
+        self, api_client, capped_event, test_user, user3, headers1, headers2, headers3
+    ):
+        _rsvp(api_client, capped_event, headers1)
+        _rsvp(api_client, capped_event, headers2)
+        _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
+
+        host_headers = _jwt_headers(test_user)
+        response = api_client.patch(
+            f"/api/community/events/{capped_event.id}/",
+            {"max_attendees": 3},
+            content_type="application/json",
+            **host_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["attending_count"] == 3
+
+        rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
+        assert rsvp3.status == RSVPStatus.ATTENDING
+
+    def test_no_promotion_on_max_attendees_decrease(  # noqa: PLR0913
+        self, api_client, capped_event, test_user, user3, headers1, headers2, headers3
+    ):
+        _rsvp(api_client, capped_event, headers1)
+        _rsvp(api_client, capped_event, headers2)
+        _rsvp(api_client, capped_event, headers3)  # waitlisted, cap=2
+
+        host_headers = _jwt_headers(test_user)
+        response = api_client.patch(
+            f"/api/community/events/{capped_event.id}/",
+            {"max_attendees": 1},
+            content_type="application/json",
+            **host_headers,
+        )
+        assert response.status_code == 200
+
+        rsvp3 = EventRSVP.objects.get(event=capped_event, user=user3)
+        assert rsvp3.status == RSVPStatus.WAITLISTED
