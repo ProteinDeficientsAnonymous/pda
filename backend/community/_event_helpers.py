@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.media_proxy import media_path
 from django.db import transaction
 from notifications._cohost_notifications import create_cohost_invite_notifications
@@ -36,11 +38,14 @@ from community._rsvp_counts import (
 )
 from community._rsvp_payment import can_see_payment_details, payment_enforced_for_event
 from community._shared import _authenticated_user, _gated
+from community._validation import Code, raise_validation
 from community.models import (
     Event,
     EventRSVP,
     EventTag,
+    EventType,
     FeatureFlag,
+    PageVisibility,
     RSVPStatus,
     SurveyQuestionType,
     flag_enabled,
@@ -424,3 +429,50 @@ def _update_invited_users(
     new_ids = {str(uid) for uid in id_list} - {str(uid) for uid in old_ids}
     if new_ids:
         create_event_invite_notifications(event, new_ids, inviter)
+
+
+def _can_edit_event(user, event: Event) -> bool:
+    """Check if user can edit/delete this event (host or manager)."""
+    if user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    return event.co_hosts.filter(pk=user.pk).exists()
+
+
+_PUBLIC_ONLY_TYPES = frozenset({EventType.OFFICIAL, EventType.CLUB})
+
+# Event types that require an explicit permission to tag. Community events need
+# none. Maps type → the permission that gates it.
+_TYPE_TAG_PERMISSIONS = {
+    EventType.OFFICIAL: PermissionKey.TAG_OFFICIAL_EVENT,
+    EventType.CLUB: PermissionKey.TAG_CLUB_EVENT,
+}
+
+
+def _is_invalid_typed_visibility(event_type: str, visibility: str) -> bool:
+    """Public-only event types (official, club) must have public visibility."""
+    return event_type in _PUBLIC_ONLY_TYPES and visibility != PageVisibility.PUBLIC
+
+
+def _enforce_type_tag_permission(request, event_type: str, endpoint: str, event_id=None) -> None:
+    """Raise 403 if the event type requires a tag permission the user lacks."""
+    required = _TYPE_TAG_PERMISSIONS.get(event_type)
+    if required is None or request.auth.has_permission(required):
+        return
+    details = {"endpoint": endpoint, "required_permission": required}
+    if event_id is not None:
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(type=AuditTargetType.EVENT, id=str(event_id), details=details),
+        )
+    else:
+        audit_log(
+            logging.WARNING,
+            "permission_denied",
+            request,
+            persist=False,
+            target=AuditTarget(details=details),
+        )
+    raise_validation(Code.Perm.DENIED, status_code=403, action=required)
