@@ -99,7 +99,9 @@ export function PollManageDialog({ open, onClose, poll }: Props) {
         <div className="border-border flex flex-col gap-2 border-t pt-3">
           {confirmDelete ? (
             <>
-              <p className="text-sm text-red-700">delete the whole poll? this can't be undone.</p>
+              <p className="text-destructive text-sm">
+                delete the whole poll? this can't be undone.
+              </p>
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
@@ -115,7 +117,7 @@ export function PollManageDialog({ open, onClose, poll }: Props) {
                     void onDeletePoll();
                   }}
                   disabled={busy}
-                  className="bg-red-600 hover:bg-red-700"
+                  className="bg-destructive hover:bg-destructive/90"
                 >
                   {deletePoll.isPending ? 'deleting…' : 'yes, delete'}
                 </Button>
@@ -128,7 +130,7 @@ export function PollManageDialog({ open, onClose, poll }: Props) {
                 setConfirmDelete(true);
               }}
               disabled={busy}
-              className="self-start text-red-700"
+              className="text-destructive self-start"
             >
               delete poll
             </Button>
@@ -209,7 +211,7 @@ function OptionRow({
               void remove();
             }}
             disabled={disabled}
-            className="text-red-700"
+            className="text-destructive"
           >
             remove
           </Button>
