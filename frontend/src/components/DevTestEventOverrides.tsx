@@ -37,7 +37,6 @@ function NumberField({
         onChange(Number(e.target.value));
       }}
       disabled={disabled}
-      className="[-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
     />
   );
 }
