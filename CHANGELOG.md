@@ -1,3 +1,10 @@
+## [0.84.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.0...v0.84.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* 1242 - going list not updating after own rsvp ([#1252](https://github.com/ProteinDeficientsAnonymous/pda/issues/1252)) ([e5c8929](https://github.com/ProteinDeficientsAnonymous/pda/commit/e5c892925bda433c90ac09aac3850164c3519244))
+
 # [0.84.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.83.0...v0.84.0) (2026-08-04)
 
 
