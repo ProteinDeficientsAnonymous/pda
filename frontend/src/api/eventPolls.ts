@@ -6,7 +6,7 @@ import { type EventPoll, VoteChoice } from '@/models/eventPoll';
 import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { apiClient } from './client';
 import { mapEventPoll, type WireEventPoll } from './eventPollMapper';
-import { eventKeys } from './events';
+import { eventKeys, invalidateEventDetail } from './events';
 
 export const eventPollKeys = {
   all: ['event-poll'] as const,
@@ -51,7 +51,7 @@ function invalidateEventAndPoll(
   if (poll) qc.setQueryData(eventPollKeys.detail(eventId, isAuthed), poll);
   else qc.removeQueries({ queryKey: eventPollKeys.detail(eventId, isAuthed) });
   // Finalize + create + delete all change event.hasPoll / event.startDatetime.
-  void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed) });
+  invalidateEventDetail(qc, eventId);
   void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
 }
 

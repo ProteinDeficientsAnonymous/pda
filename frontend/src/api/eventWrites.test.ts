@@ -5,6 +5,7 @@ import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from '@/api/client';
+import { eventKeys } from '@/api/events';
 import { EventStatus, EventType, EventVisibility, InvitePermission } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
 
@@ -12,6 +13,7 @@ import {
   eventToFormValues,
   toPartialWireBody,
   useInviteToEvent,
+  useUpdateEvent,
   useUploadEventPhoto,
 } from './eventWrites';
 import { textRecipientsKeys } from './textRecipients';
@@ -181,5 +183,40 @@ describe('useUploadEventPhoto', () => {
       expect.any(FormData),
       expect.objectContaining({ headers: { 'Content-Type': 'multipart/form-data' } }),
     );
+  });
+});
+
+describe('useUpdateEvent cache patching', () => {
+  const EVENT_ID = '33333333-3333-3333-3333-333333333333';
+  const EVENT_SLUG = 'blue-mountain-hike';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Routes link by slug (eventPath), so a uuid-only cache write leaves the open
+  // page showing the pre-save value until a hard refresh.
+  it('writes the updated event to the slug key the detail route reads from', async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const Wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    qc.setQueryData(
+      eventKeys.detail(EVENT_SLUG, true),
+      makeEvent({ id: EVENT_ID, slug: EVENT_SLUG, maxAttendees: 8 }),
+    );
+    vi.mocked(apiClient.patch).mockResolvedValue({
+      data: { ...makeEvent({ id: EVENT_ID, slug: EVENT_SLUG }), max_attendees: 12 },
+    });
+
+    const { result } = renderHook(() => useUpdateEvent(EVENT_ID), { wrapper: Wrapper });
+    result.current.mutate({ maxAttendees: 12 });
+
+    await waitFor(() => {
+      expect(qc.getQueryData(eventKeys.detail(EVENT_SLUG, true))).toMatchObject({
+        maxAttendees: 12,
+      });
+    });
+    expect(qc.getQueryData(eventKeys.detail(EVENT_ID, true))).toMatchObject({ maxAttendees: 12 });
   });
 });

@@ -14,7 +14,7 @@ import { fromCashAppUrl, fromVenmoUrl, toCashAppUrl, toVenmoUrl } from '@/utils/
 import { extractApiErrorOr, getApiStatus } from './apiErrors';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys } from './events';
+import { eventKeys, setEventDetailData } from './events';
 import { textRecipientsKeys } from './textRecipients';
 
 const ROUTE = '/events';
@@ -136,7 +136,7 @@ export function useCreateEvent() {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -161,7 +161,7 @@ export function useInviteToEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
       void qc.invalidateQueries({ queryKey: textRecipientsKeys.detail(event.id) });
     },
@@ -185,7 +185,7 @@ export function useUpdateEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -209,7 +209,7 @@ export function useCancelEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -230,7 +230,7 @@ export function useDeleteEvent(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err) => {
@@ -258,7 +258,7 @@ export function useUploadEventPhoto() {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+      setEventDetailData(qc, event, isAuthed);
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
     },
     onError: (err, { eventId }) => {

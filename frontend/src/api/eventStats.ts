@@ -10,7 +10,7 @@ import type {
 import { attendanceReportKey } from './attendanceReport';
 import { apiClient } from './client';
 import { mapEvent, type WireEvent } from './eventMapper';
-import { eventKeys } from './events';
+import { invalidateEventDetail, setEventDetailData } from './events';
 import { USERS_KEY } from './users';
 
 interface WireCancellation {
@@ -83,7 +83,7 @@ export function useSetAttendance(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, true) });
+      invalidateEventDetail(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
       // attendance marks feed the admin report + members-list last_attended.
       void qc.invalidateQueries({ queryKey: attendanceReportKey });
@@ -103,7 +103,7 @@ export function useSetGuestRsvp(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, true), event);
+      setEventDetailData(qc, event, true);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });
@@ -120,7 +120,7 @@ export function useSetGuestPayment(eventId: string) {
       return mapEvent(data);
     },
     onSuccess: (event) => {
-      qc.setQueryData(eventKeys.detail(event.id, true), event);
+      setEventDetailData(qc, event, true);
     },
   });
 }
@@ -132,7 +132,7 @@ export function useRemoveGuestRsvp(eventId: string) {
       await apiClient.delete(`/api/community/events/${eventId}/rsvps/${args.userId}/rsvp/`);
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, true) });
+      invalidateEventDetail(qc, eventId);
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
     },
   });
