@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { makeEvent } from '@/test/fixtures';
 
-const updateMutateAsync = vi.fn();
+import { AddCoHostDialog } from './AddCoHostDialog';
+
+const updateMutateAsync = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/eventWrites', () => ({
   useUpdateEvent: () => ({ mutateAsync: updateMutateAsync, isPending: false }),
@@ -18,8 +20,6 @@ vi.mock('@/api/userSearch', () => ({
     ],
   }),
 }));
-
-import { AddCoHostDialog } from './AddCoHostDialog';
 
 const BASE_EVENT = makeEvent({
   id: 'ev1',

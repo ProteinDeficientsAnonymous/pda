@@ -6,7 +6,10 @@ import { useEffect } from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useEvents } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
+
+import CalendarScreen from './CalendarScreen';
 
 // react-big-calendar is a heavy component that requires CSS imports and relies
 // on browser layout. Stub it so tests focus on CalendarScreen logic.
@@ -26,10 +29,6 @@ vi.mock('@/api/events', () => ({
   useEvents: vi.fn(),
   eventKeys: { all: ['events'], list: vi.fn(), detail: vi.fn() },
 }));
-
-import { useEvents } from '@/api/events';
-
-import CalendarScreen from './CalendarScreen';
 
 const mockUseEvents = vi.mocked(useEvents);
 

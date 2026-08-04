@@ -9,6 +9,8 @@ import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
 import { makeUser as makeSharedUser } from '@/test/fixtures';
 
+import { FeedbackButton } from './FeedbackButton';
+
 const submitFeedbackMock = vi.fn();
 const useSubmitFeedbackMock =
   vi.fn<() => { mutateAsync: typeof submitFeedbackMock; isPending: boolean }>();
@@ -26,8 +28,6 @@ vi.mock('@/api/client', () => ({
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
-
-import { FeedbackButton } from './FeedbackButton';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return makeSharedUser({

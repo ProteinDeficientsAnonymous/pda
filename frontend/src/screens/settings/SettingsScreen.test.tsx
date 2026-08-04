@@ -29,8 +29,11 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAccessibilityStore } from '@/accessibility/store';
+import * as authApi from '@/api/auth';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+
+import SettingsScreen from './SettingsScreen';
 
 // Stub heavy sub-components that have their own API/DOM dependencies
 vi.mock('./AvatarUpload', () => ({
@@ -63,10 +66,6 @@ vi.mock('@/api/auth', () => ({
   uploadProfilePhoto: vi.fn(),
   deleteProfilePhoto: vi.fn(),
 }));
-
-import * as authApi from '@/api/auth';
-
-import SettingsScreen from './SettingsScreen';
 
 const TEST_USER: User = {
   id: 'u1',

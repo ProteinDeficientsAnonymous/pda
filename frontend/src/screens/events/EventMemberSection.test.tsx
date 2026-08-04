@@ -10,10 +10,12 @@ import { Permission } from '@/models/permissions';
 import type { User } from '@/models/user';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
-const rescindMutate = vi.fn();
-const removeCohostMutate = vi.fn();
-const updatePublicRsvpMutate = vi.fn();
-const cancelPublicRsvpMutate = vi.fn();
+import { EventMemberSection } from './EventMemberSection';
+
+const rescindMutate = vi.hoisted(() => vi.fn());
+const removeCohostMutate = vi.hoisted(() => vi.fn());
+const updatePublicRsvpMutate = vi.hoisted(() => vi.fn());
+const cancelPublicRsvpMutate = vi.hoisted(() => vi.fn());
 
 vi.mock('@/api/cohostInvites', () => ({
   useAcceptCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
@@ -39,8 +41,6 @@ vi.mock('./AddCoHostDialog', () => ({ AddCoHostDialog: () => null }));
 vi.mock('./comments/EventCommentsCard', () => ({
   EventCommentsCard: () => <div data-testid="comments-card" />,
 }));
-
-import { EventMemberSection } from './EventMemberSection';
 
 const BASE_EVENT = makeEvent({
   slug: 'spring-potluck',

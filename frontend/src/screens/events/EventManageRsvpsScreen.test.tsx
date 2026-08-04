@@ -3,17 +3,16 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useEvent } from '@/api/events';
 import { useAuthStore } from '@/auth/store';
 import { makeEvent, makeUser } from '@/test/fixtures';
+
+import EventManageRsvpsScreen from './EventManageRsvpsScreen';
 
 vi.mock('@/api/events', () => ({
   useEvent: vi.fn(),
   eventKeys: { all: ['events'], list: vi.fn(), detail: vi.fn() },
 }));
-
-import { useEvent } from '@/api/events';
-
-import EventManageRsvpsScreen from './EventManageRsvpsScreen';
 
 const BASE_EVENT = makeEvent({
   title: 'Spring Potluck',

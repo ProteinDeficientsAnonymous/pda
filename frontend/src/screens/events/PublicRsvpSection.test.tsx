@@ -7,20 +7,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { canPublicRsvp, EventStatus, EventType, EventVisibility } from '@/models/event';
 import { makeEvent } from '@/test/fixtures';
 
-const mockNavigate = vi.fn();
+import { PublicRsvpSection } from './PublicRsvpSection';
+
+const mockNavigate = vi.hoisted(() => vi.fn());
 vi.mock('react-router-dom', async (importActual) => {
   const actual = await importActual<typeof RouterDom>();
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-const mockSubmit = vi.fn();
-const mockCheckPhone = vi.fn();
+const mockSubmit = vi.hoisted(() => vi.fn());
+const mockCheckPhone = vi.hoisted(() => vi.fn());
 vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: mockSubmit, isPending: false }),
   useCheckPublicRsvpPhone: () => ({ mutateAsync: mockCheckPhone, isPending: false }),
 }));
-
-import { PublicRsvpSection } from './PublicRsvpSection';
 
 function officialEvent(overrides: Partial<Parameters<typeof makeEvent>[0]> = {}) {
   return makeEvent({

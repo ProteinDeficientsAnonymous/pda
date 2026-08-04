@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useFeatureFlags, useSetFeatureFlag } from '@/api/featureFlags';
+import { useVersion } from '@/api/version';
+
+import FeatureFlagsScreen from './FeatureFlagsScreen';
+
 vi.mock('@/api/featureFlags', () => ({
   useFeatureFlags: vi.fn(),
   useSetFeatureFlag: vi.fn(),
@@ -12,11 +17,6 @@ vi.mock('@/api/featureFlags', () => ({
 vi.mock('@/api/version', () => ({
   useVersion: vi.fn(),
 }));
-
-import { useFeatureFlags, useSetFeatureFlag } from '@/api/featureFlags';
-import { useVersion } from '@/api/version';
-
-import FeatureFlagsScreen from './FeatureFlagsScreen';
 
 const mockUseFlags = vi.mocked(useFeatureFlags);
 const mockUseSetFlag = vi.mocked(useSetFeatureFlag);

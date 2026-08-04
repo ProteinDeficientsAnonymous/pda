@@ -2,12 +2,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useEventStats } from '@/api/eventStats';
 import type { Event, EventStats } from '@/models/event';
 import { AttendanceStatus, RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
-const setAttendanceMutate = vi.fn();
-const toastError = vi.fn();
+import { EventAttendancePanel } from './EventAttendancePanel';
+
+const setAttendanceMutate = vi.hoisted(() => vi.fn());
+const toastError = vi.hoisted(() => vi.fn());
 
 vi.mock('sonner', () => ({
   toast: {
@@ -21,10 +24,6 @@ vi.mock('@/api/eventStats', () => ({
   useEventStats: vi.fn(),
   useSetAttendance: () => ({ mutate: setAttendanceMutate, isPending: false }),
 }));
-
-import { useEventStats } from '@/api/eventStats';
-
-import { EventAttendancePanel } from './EventAttendancePanel';
 
 const BASE_EVENT = makeEvent({
   invitedCount: 2,

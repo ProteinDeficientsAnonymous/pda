@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { EventComment } from '@/models/eventComment';
+
+import { CommentItem } from './CommentItem';
+
 const { mockPost } = vi.hoisted(() => ({ mockPost: vi.fn().mockResolvedValue({ data: {} }) }));
 
 vi.mock('@/api/client', () => ({
@@ -17,10 +21,6 @@ vi.mock('@/api/client', () => ({
 vi.mock('@/auth/store', () => ({
   useAuthStore: (selector: (s: { status: string }) => unknown) => selector({ status: 'authed' }),
 }));
-
-import type { EventComment } from '@/models/eventComment';
-
-import { CommentItem } from './CommentItem';
 
 function wrap(ui: ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

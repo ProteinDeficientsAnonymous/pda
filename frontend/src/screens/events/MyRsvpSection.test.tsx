@@ -7,15 +7,17 @@ import { useAuthStore } from '@/auth/store';
 import { type Event, RsvpServerStatus } from '@/models/event';
 import { makeEvent as makeBaseEvent, makeGuest, makeUser } from '@/test/fixtures';
 
-const setRsvpMutate = vi.fn();
-const removeRsvpMutate = vi.fn();
+import { MyRsvpSection } from './MyRsvpSection';
+
+const setRsvpMutate = vi.hoisted(() => vi.fn());
+const removeRsvpMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/rsvp', () => ({
   useSetRsvp: () => ({ mutateAsync: setRsvpMutate, isPending: false }),
   useRemoveRsvp: () => ({ mutateAsync: removeRsvpMutate, isPending: false }),
 }));
 
-const updatePublicRsvpMutate = vi.fn();
-const cancelPublicRsvpMutate = vi.fn();
+const updatePublicRsvpMutate = vi.hoisted(() => vi.fn());
+const cancelPublicRsvpMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/publicRsvp', () => ({
   useUpdatePublicMyRsvp: () => ({ mutateAsync: updatePublicRsvpMutate, isPending: false }),
   useCancelPublicMyRsvp: () => ({ mutateAsync: cancelPublicRsvpMutate, isPending: false }),
@@ -32,8 +34,6 @@ vi.mock('./RsvpCommentField', () => ({
     />
   ),
 }));
-
-import { MyRsvpSection } from './MyRsvpSection';
 
 const ME = makeUser({ id: 'user-me', firstName: 'Me', lastName: '', fullName: 'Me' });
 

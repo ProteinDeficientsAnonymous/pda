@@ -6,7 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as JoinApi from '@/api/join';
 import { JoinRequestStatus, type JoinRequestSummary } from '@/api/join';
+import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
 import { makeRequest } from '@/test/fixtures';
+
+import JoinRequestsScreen from './JoinRequestsScreen';
 
 vi.mock('@/api/join', async (importOriginal) => {
   const actual = await importOriginal<typeof JoinApi>();
@@ -25,10 +28,6 @@ vi.mock('@/api/content', () => ({
   useMemberPromotionMessage: () => ({ data: undefined, isPending: false, isError: false }),
   useWhatsAppLink: () => ({ data: undefined, isPending: false, isError: false }),
 }));
-
-import { useDecideJoinRequest, useJoinRequests } from '@/api/join';
-
-import JoinRequestsScreen from './JoinRequestsScreen';
 
 const mockUseJoinRequests = vi.mocked(useJoinRequests);
 

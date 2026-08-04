@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TextRecipients } from '@/api/textRecipients';
 
-const toastSuccess = vi.fn();
-const toastError = vi.fn();
+import { GroupTextDialog } from './GroupTextDialog';
+
+const toastSuccess = vi.hoisted(() => vi.fn());
+const toastError = vi.hoisted(() => vi.fn());
 vi.mock('sonner', () => ({
   toast: {
     success: (m: string) => {
@@ -25,8 +27,6 @@ const useTextRecipients = vi.fn<() => RecipientsQueryResult>();
 vi.mock('@/api/textRecipients', () => ({
   useTextRecipients: () => useTextRecipients(),
 }));
-
-import { GroupTextDialog } from './GroupTextDialog';
 
 function recipients(overrides: Partial<TextRecipients> = {}): TextRecipients {
   return {

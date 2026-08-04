@@ -4,6 +4,16 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { apiClient } from '@/api/client';
+
+import {
+  notificationKeys,
+  useMarkAllNotificationsRead,
+  useNotificationHistory,
+  useNotifications,
+  useUnreadCount,
+} from './notifications';
+
 vi.mock('@/api/client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
@@ -16,16 +26,6 @@ vi.mock('@/auth/store', () => ({
     selector({ status: mockAuthStatus }),
   ),
 }));
-
-import { apiClient } from '@/api/client';
-
-import {
-  notificationKeys,
-  useMarkAllNotificationsRead,
-  useNotificationHistory,
-  useNotifications,
-  useUnreadCount,
-} from './notifications';
 
 const mockedGet = vi.mocked(apiClient.get);
 const mockedPost = vi.mocked(apiClient.post);

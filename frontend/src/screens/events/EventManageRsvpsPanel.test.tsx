@@ -6,8 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RsvpServerStatus } from '@/models/event';
 import { makeEvent, makeGuest } from '@/test/fixtures';
 
-const setGuestRsvpMutate = vi.fn();
-const removeGuestRsvpMutate = vi.fn();
+import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
+
+const setGuestRsvpMutate = vi.hoisted(() => vi.fn());
+const removeGuestRsvpMutate = vi.hoisted(() => vi.fn());
 vi.mock('@/api/eventStats', () => ({
   useSetGuestRsvp: () => ({ mutate: setGuestRsvpMutate, isPending: false }),
   useRemoveGuestRsvp: () => ({ mutate: removeGuestRsvpMutate, isPending: false }),
@@ -18,8 +20,6 @@ vi.mock('@/api/userSearch', () => ({
     data: [{ id: 'new-1', fullName: 'New Member', phoneNumber: '+15551234567' }],
   }),
 }));
-
-import { EventManageRsvpsPanel } from './EventManageRsvpsPanel';
 
 function renderPanel(event = makeEvent({})) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

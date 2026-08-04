@@ -4,8 +4,11 @@ import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useHome } from '@/api/content';
 import { useAuthStore } from '@/auth/store';
 import type { User } from '@/models/user';
+
+import HomeScreen from './HomeScreen';
 
 // Mock API before importing the screen
 vi.mock('@/api/content', () => ({
@@ -17,10 +20,6 @@ vi.mock('@/api/content', () => ({
 vi.mock('@/components/RichEditor/RichEditor', () => ({
   RichEditor: () => <div data-testid="rich-editor" />,
 }));
-
-import { useHome } from '@/api/content';
-
-import HomeScreen from './HomeScreen';
 
 const mockUseHome = vi.mocked(useHome);
 
