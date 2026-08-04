@@ -265,10 +265,10 @@ describe('EventMemberSection — manage events permission holder (Issue 1189)', 
 describe('EventMemberSection — rsvp-disabled gates (#666, #667)', () => {
   const RSVP_ENABLED_EVENT: Event = { ...BASE_EVENT, rsvpEnabled: true };
 
-  it("renders the comments card regardless of rsvpEnabled — gating is the card's own job", () => {
+  it('hides the comments card when rsvp is disabled for the event', () => {
     useAuthStore.setState({ status: 'authed', user: STRANGER, accessToken: 'tok' });
     renderSection({ ...BASE_EVENT, rsvpEnabled: false });
-    expect(screen.getByTestId('comments-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('comments-card')).not.toBeInTheDocument();
   });
 
   it('shows the comments section when rsvp is enabled', () => {
