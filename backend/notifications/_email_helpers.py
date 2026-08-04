@@ -279,6 +279,33 @@ def send_checkin_reminder_email(
     )
 
 
+def send_weekly_digest_email(
+    *,
+    sender: EmailSender,
+    to: str,
+    display_name: str,
+    events: list[dict],
+    calendar_url: str,
+) -> SendResult:
+    """Render and send the weekly "what's coming up" digest to one member.
+
+    param events(list[dict]): upcoming events, each with title/when/location/url keys
+    """
+    context = {
+        "display_name": display_name or "",
+        "events": events,
+        "calendar_url": calendar_url,
+    }
+    html = render_to_string("emails/weekly_digest.html", context)
+    text = render_to_string("emails/weekly_digest.txt", context)
+    return sender.send(
+        to=to,
+        subject="what's coming up this week at pda",
+        html=html,
+        text=text,
+    )
+
+
 def send_event_blast_email(
     *,
     sender: EmailSender,
