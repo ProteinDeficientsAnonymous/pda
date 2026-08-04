@@ -1,4 +1,5 @@
 import type { EventFormValues } from '@/api/eventWrites';
+import { DESCRIPTION_MAX_LENGTH } from '@/screens/events/form/EventFormDetails';
 
 type Errors = Partial<Record<keyof EventFormValues, string>>;
 
@@ -7,7 +8,7 @@ export function validateEventForm(values: EventFormValues): Errors {
   if (!values.title.trim()) errors.title = 'required';
   else if (values.title.length > 200) errors.title = 'under 200 chars';
 
-  if (values.description.length > 2000) errors.description = 'too long';
+  if (values.description.length > DESCRIPTION_MAX_LENGTH) errors.description = 'too long';
   if (values.location.length > 300) errors.location = 'under 300 chars';
 
   // Drafts can save without a start date (progress-capture). Active events

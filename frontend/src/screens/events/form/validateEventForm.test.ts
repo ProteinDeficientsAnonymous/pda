@@ -63,13 +63,13 @@ describe('validateEventForm', () => {
   });
 
   describe('description', () => {
-    it('rejects description over 2000 characters', () => {
-      const errors = validateEventForm(validValues({ description: 'a'.repeat(2001) }));
+    it('rejects description over 3000 characters', () => {
+      const errors = validateEventForm(validValues({ description: 'a'.repeat(3001) }));
       expect(errors.description).toBe('too long');
     });
 
-    it('accepts description at exactly 2000 characters', () => {
-      const errors = validateEventForm(validValues({ description: 'a'.repeat(2000) }));
+    it('accepts description at exactly 3000 characters', () => {
+      const errors = validateEventForm(validValues({ description: 'a'.repeat(3000) }));
       expect(errors.description).toBeUndefined();
     });
   });
