@@ -1,3 +1,10 @@
+## [0.84.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.1...v0.84.2) (2026-08-04)
+
+
+### Bug Fixes
+
+* show event price to public rsvp visitors ([#1261](https://github.com/ProteinDeficientsAnonymous/pda/issues/1261)) ([7162839](https://github.com/ProteinDeficientsAnonymous/pda/commit/7162839c085a73c976243886880adc90f3724526))
+
 ## [0.84.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.0...v0.84.1) (2026-08-04)
 
 
