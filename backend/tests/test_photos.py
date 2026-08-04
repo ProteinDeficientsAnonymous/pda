@@ -115,6 +115,14 @@ class TestProfilePhoto:
         response = api_client.post("/api/auth/me/photo/", {"photo": photo})
         assert response.status_code == 401
 
+    def test_upload_resizes_oversized_image(self, api_client, member):
+        photo = _make_test_image(size=(2000, 1500))
+        response = api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
+        assert response.status_code == 200
+        member.refresh_from_db()
+        with Image.open(member.profile_photo) as stored:
+            assert max(stored.size) <= 512
+
 
 @pytest.mark.django_db
 class TestEventPhoto:
@@ -173,6 +181,18 @@ class TestEventPhoto:
             **_auth(member),
         )
         assert response.status_code == 400
+
+    def test_upload_resizes_oversized_image(self, api_client, member, event):
+        photo = _make_test_image(size=(3000, 2000))
+        response = api_client.post(
+            f"/api/community/events/{event.id}/photo/",
+            {"photo": photo},
+            **_auth(member),
+        )
+        assert response.status_code == 200
+        event.refresh_from_db()
+        with Image.open(event.photo) as stored:
+            assert max(stored.size) <= 1600
 
     def test_photo_url_in_event_detail(self, api_client, member, event):
         photo = _make_test_image()

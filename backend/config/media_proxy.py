@@ -2,14 +2,22 @@ import logging
 import mimetypes
 import os
 import posixpath
+from io import BytesIO
 
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import FileResponse, Http404, HttpResponse
 from django.utils._os import safe_join
+from PIL import Image, UnidentifiedImageError
 
 logger = logging.getLogger("pda.media")
+
+# Max display dimensions per photo kind — resize on upload so every consumer
+# isn't downloading a multi-MB original just to shrink it with CSS.
+AVATAR_MAX_DIMENSION = 512
+EVENT_PHOTO_MAX_DIMENSION = 1600
 
 # Content types we're willing to serve inline. Everything else (notably
 # text/html and image/svg+xml, which can execute JS on the app origin) is
@@ -31,6 +39,36 @@ def media_path(field) -> str:
     if not field:
         return ""
     return f"/media/{field.name}"
+
+
+def resize_image(photo: InMemoryUploadedFile, max_dimension: int) -> InMemoryUploadedFile:
+    """Downscale an uploaded image to fit max_dimension. Best-effort: formats
+    Pillow can't process (e.g. HEIC without a plugin) pass through unchanged
+    rather than failing the upload.
+    """
+    try:
+        image = Image.open(photo)
+        image.verify()
+        photo.seek(0)
+        image = Image.open(photo)
+    except (UnidentifiedImageError, OSError):
+        return photo
+
+    fmt = image.format
+    if image.width <= max_dimension and image.height <= max_dimension:
+        photo.seek(0)
+        return photo
+
+    if image.mode not in ("RGB", "RGBA", "L"):
+        image = image.convert("RGBA" if "A" in image.mode else "RGB")
+    image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
+
+    buffer = BytesIO()
+    image.save(buffer, format=fmt)
+    buffer.seek(0)
+    return InMemoryUploadedFile(
+        buffer, photo.field_name, photo.name, photo.content_type, buffer.getbuffer().nbytes, None
+    )
 
 
 def _is_safe_path(path: str) -> bool:
