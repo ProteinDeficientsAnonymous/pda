@@ -32,6 +32,7 @@ export interface Member {
   loginLinkRequested: boolean;
   // Most recent event the member was checked in as attended. null if never.
   lastAttendedAt: Date | null;
+  dateJoined: Date;
   roles: MemberRole[];
 }
 
@@ -61,6 +62,7 @@ interface WireMember {
   needs_onboarding?: boolean;
   login_link_requested?: boolean;
   last_attended?: string | null;
+  date_joined: string;
   roles: WireRole[];
 }
 
@@ -91,6 +93,7 @@ function fromWire(w: WireMember): Member {
     needsOnboarding: w.needs_onboarding ?? false,
     loginLinkRequested: w.login_link_requested ?? false,
     lastAttendedAt: w.last_attended ? new Date(w.last_attended) : null,
+    dateJoined: new Date(w.date_joined),
     roles: w.roles.map(mapRole),
   };
 }

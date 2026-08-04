@@ -146,6 +146,7 @@ class UserOut(BaseModel):
     calendar_feed_scope: str = "all"
     # Only populated by the list_users annotation; None everywhere else.
     last_attended: datetime | None = None
+    date_joined: datetime
     roles: list[RoleOut]
 
     @classmethod
@@ -180,6 +181,7 @@ class UserOut(BaseModel):
             week_start=user.week_start,
             calendar_feed_scope=user.calendar_feed_scope,
             last_attended=getattr(user, "last_attended", None),
+            date_joined=user.date_joined,
             roles=[
                 RoleOut(
                     id=str(r.id),
