@@ -2,17 +2,21 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { extractApiErrorOr } from '@/api/apiErrors';
-import { useRemoveGuestRsvp, useSetGuestRsvp } from '@/api/eventStats';
+import { useRemoveGuestRsvp, useSetGuestPayment, useSetGuestRsvp } from '@/api/eventStats';
 import type { MemberSearchResult } from '@/api/userSearch';
 import { MemberPicker } from '@/components/MemberPicker';
 import { Button } from '@/components/ui/Button';
 import { RsvpStatusPicker } from '@/components/ui/RsvpStatusPicker';
 import type { Event, EventGuest, RsvpInputStatus } from '@/models/event';
 import { isRsvpInputStatus, RSVP_GROUP_LABELS, RsvpServerStatus } from '@/models/event';
+import { cn } from '@/utils/cn';
+import { eventRequiresPaymentConfirmation } from '@/utils/eventCost';
 
 export function EventManageRsvpsPanel({ event }: { event: Event }) {
   const setGuestRsvp = useSetGuestRsvp(event.id);
   const removeGuestRsvp = useRemoveGuestRsvp(event.id);
+  const setGuestPayment = useSetGuestPayment(event.id);
+  const showPaymentStatus = eventRequiresPaymentConfirmation(event);
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,7 +65,25 @@ export function EventManageRsvpsPanel({ event }: { event: Event }) {
                   },
                 );
               }}
-              isPending={setGuestRsvp.isPending || removeGuestRsvp.isPending}
+              onTogglePaid={
+                showPaymentStatus
+                  ? (userId, paidConfirmed) => {
+                      setGuestPayment.mutate(
+                        { userId, paidConfirmed },
+                        {
+                          onError: (err) => {
+                            toast.error(
+                              extractApiErrorOr(err, "couldn't update payment — try again"),
+                            );
+                          },
+                        },
+                      );
+                    }
+                  : undefined
+              }
+              isPending={
+                setGuestRsvp.isPending || removeGuestRsvp.isPending || setGuestPayment.isPending
+              }
             />
           );
         })
@@ -110,12 +132,14 @@ function GuestGroup({
   guests,
   onChangeStatus,
   onRemove,
+  onTogglePaid,
   isPending,
 }: {
   label: string;
   guests: EventGuest[];
   onChangeStatus: (userId: string, status: RsvpInputStatus, hasPlusOne: boolean) => void;
   onRemove: (userId: string) => void;
+  onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   isPending: boolean;
 }) {
   return (
@@ -130,6 +154,7 @@ function GuestGroup({
             guest={g}
             onChangeStatus={onChangeStatus}
             onRemove={onRemove}
+            onTogglePaid={onTogglePaid}
             isPending={isPending}
           />
         ))}
@@ -138,15 +163,57 @@ function GuestGroup({
   );
 }
 
+function PaidBadge({
+  paidConfirmed,
+  onToggle,
+  isPending,
+}: {
+  paidConfirmed: boolean;
+  onToggle?: () => void;
+  isPending: boolean;
+}) {
+  const label = paidConfirmed ? 'paid' : 'unpaid';
+  const classes = paidConfirmed
+    ? 'bg-info/15 text-info'
+    : 'bg-surface-dim text-foreground-secondary';
+
+  if (!onToggle) {
+    return (
+      <span
+        className={cn('inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs', classes)}
+      >
+        {paidConfirmed ? '✓' : '○'} {label}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={isPending}
+      aria-pressed={paidConfirmed}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+        classes,
+      )}
+    >
+      {paidConfirmed ? '✓' : '○'} {label}
+    </button>
+  );
+}
+
 function GuestRow({
   guest,
   onChangeStatus,
   onRemove,
+  onTogglePaid,
   isPending,
 }: {
   guest: EventGuest;
   onChangeStatus: (userId: string, status: RsvpInputStatus, hasPlusOne: boolean) => void;
   onRemove: (userId: string) => void;
+  onTogglePaid?: ((userId: string, paidConfirmed: boolean) => void) | undefined;
   isPending: boolean;
 }) {
   const currentStatus = isRsvpInputStatus(guest.status) ? guest.status : null;
@@ -155,6 +222,15 @@ function GuestRow({
     return (
       <li className="border-border flex items-center justify-between gap-2 rounded-md border p-2 opacity-60">
         <span className="text-foreground text-sm">{guest.name} (not a member)</span>
+        {onTogglePaid ? (
+          <PaidBadge
+            paidConfirmed={guest.paidConfirmed}
+            isPending={isPending}
+            onToggle={() => {
+              onTogglePaid(guest.userId, !guest.paidConfirmed);
+            }}
+          />
+        ) : null}
       </li>
     );
   }
@@ -162,7 +238,18 @@ function GuestRow({
   return (
     <li className="border-border flex flex-col gap-2 rounded-md border p-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-foreground text-sm">{guest.name}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-foreground text-sm">{guest.name}</span>
+          {onTogglePaid ? (
+            <PaidBadge
+              paidConfirmed={guest.paidConfirmed}
+              isPending={isPending}
+              onToggle={() => {
+                onTogglePaid(guest.userId, !guest.paidConfirmed);
+              }}
+            />
+          ) : null}
+        </div>
         <button
           type="button"
           aria-label={`remove ${guest.name}`}
