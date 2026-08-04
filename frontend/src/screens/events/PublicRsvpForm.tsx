@@ -20,8 +20,10 @@ import {
 } from '@/models/event';
 import { optionalEmail, optionalPersonName, personName } from '@/utils/validators';
 
+import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
 import { RsvpCommentField } from './RsvpCommentField';
+import { usePaymentGate } from './usePaymentGate';
 
 const MAX_NAME = 100;
 const PUBLIC_RSVP_STATUSES: RsvpInputStatus[] = [RsvpStatus.Attending, RsvpStatus.Maybe];
@@ -37,6 +39,9 @@ interface SubmitError {
 }
 
 function messageForStatus(status: number | null, err: unknown): SubmitError {
+  if (hasErrorCode(err, Code.Event.PaymentConfirmationRequired)) {
+    return { text: extractApiErrorOr(err, 'confirm you paid before rsvping'), showSignIn: false };
+  }
   if (hasErrorCode(err, Code.Event.RsvpCouldNotBeCreated)) {
     return {
       text: "we couldn't set up your rsvp with those details — reach out and we'll help",
@@ -81,7 +86,9 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
   const [website, setWebsite] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<SubmitError | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
   const submitErrorRef = useRef<HTMLDivElement | null>(null);
+  const needsPaymentFor = usePaymentGate(event);
 
   useEffect(() => {
     if (!submitError) return;
@@ -104,7 +111,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     return Object.keys(next).length === 0;
   }
 
-  async function onSubmit() {
+  async function onSubmit(paidConfirmed: boolean) {
     setSubmitError(null);
     if (!status || !validate()) return;
     try {
@@ -119,13 +126,22 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           has_plus_one: false,
           comment: comment.trim() || null,
           website,
-          paid_confirmed: false,
+          paid_confirmed: paidConfirmed,
         },
       });
       onSuccess(result);
     } catch (err) {
       setSubmitError(messageForStatus(getApiStatus(err), err));
     }
+  }
+
+  function handleSubmitClick() {
+    if (!status || !validate()) return;
+    if (needsPaymentFor(status)) {
+      setShowPayment(true);
+      return;
+    }
+    void onSubmit(false);
   }
 
   function renderStep() {
@@ -179,11 +195,25 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
         />
       );
     }
+    if (showPayment) {
+      return (
+        <PaymentConfirmStep
+          event={event}
+          busy={submit.isPending}
+          onConfirm={() => {
+            void onSubmit(true);
+          }}
+          onBack={() => {
+            setShowPayment(false);
+          }}
+        />
+      );
+    }
     return (
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void onSubmit();
+          handleSubmitClick();
         }}
         className="flex flex-col gap-4"
         noValidate
@@ -244,7 +274,7 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
           value={comment}
           onChange={setComment}
           disabled={submit.isPending}
-          onSubmitShortcut={() => void onSubmit()}
+          onSubmitShortcut={handleSubmitClick}
         />
 
         <Button type="submit" disabled={submit.isPending} fullWidth>

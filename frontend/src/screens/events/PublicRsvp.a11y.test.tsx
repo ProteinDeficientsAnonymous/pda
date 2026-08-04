@@ -14,6 +14,8 @@ vi.mock('@/api/publicRsvp', () => ({
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
 
+vi.mock('@/api/featureFlags', () => ({ useFlag: () => false }));
+
 function renderForm(event: Event) {
   return render(
     <MemoryRouter>

@@ -3,7 +3,7 @@ import type * as ReactRouterDom from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { makeEvent } from '@/test/fixtures';
+import { makeEvent, makePaidEvent } from '@/test/fixtures';
 
 import { PublicRsvpForm } from './PublicRsvpForm';
 
@@ -13,6 +13,9 @@ vi.mock('@/api/publicRsvp', () => ({
   useSubmitPublicRsvp: () => ({ mutateAsync: submitMutate, isPending: false }),
   useCheckPublicRsvpPhone: () => ({ mutateAsync: checkPhoneMutate, isPending: false }),
 }));
+
+const mockUseFlag = vi.hoisted(() => vi.fn(() => true));
+vi.mock('@/api/featureFlags', () => ({ useFlag: mockUseFlag }));
 
 const navigateMock = vi.hoisted(() => vi.fn());
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -51,6 +54,8 @@ describe('PublicRsvpForm', () => {
     });
     checkPhoneMutate.mockReset();
     navigateMock.mockReset();
+    mockUseFlag.mockReset();
+    mockUseFlag.mockReturnValue(true);
   });
 
   it('submits the correct payload shape', async () => {
@@ -414,5 +419,83 @@ describe('PublicRsvpForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
     await screen.findByText('invalid phone number');
     expect(submitMutate).not.toHaveBeenCalled();
+  });
+});
+
+describe('PublicRsvpForm payment confirmation gate', () => {
+  const paidEvent = makePaidEvent();
+
+  beforeEach(() => {
+    submitMutate.mockReset();
+    submitMutate.mockResolvedValue({
+      event: { id: 'ev1' },
+      rsvp: { status: 'attending', has_plus_one: false },
+    });
+    checkPhoneMutate.mockReset();
+    navigateMock.mockReset();
+    mockUseFlag.mockReset();
+    mockUseFlag.mockReturnValue(true);
+  });
+
+  it('shows the payment step instead of submitting on a paid event', async () => {
+    const onSuccess = vi.fn();
+    renderForm(paidEvent, onSuccess);
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    expect(await screen.findByRole('button', { name: /yes, i paid/i })).toBeInTheDocument();
+    expect(submitMutate).not.toHaveBeenCalled();
+  });
+
+  it('submits with paid_confirmed after the payment step', async () => {
+    const onSuccess = vi.fn();
+    renderForm(paidEvent, onSuccess);
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    fireEvent.click(await screen.findByRole('button', { name: /yes, i paid/i }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+    expect(submitMutate).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      payload: expect.objectContaining({ status: 'attending', paid_confirmed: true }),
+    });
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+  });
+
+  it('returns to the form from the payment step', async () => {
+    renderForm(paidEvent);
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    fireEvent.click(await screen.findByRole('button', { name: /back/i }));
+    expect(screen.getByRole('button', { name: 'rsvp' })).toBeInTheDocument();
+    expect(submitMutate).not.toHaveBeenCalled();
+  });
+
+  it('skips the payment step for maybe', async () => {
+    checkPhoneMutate.mockResolvedValue({ status: 'new' });
+    renderForm(paidEvent);
+    fireEvent.click(screen.getByRole('button', { name: 'maybe' }));
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: '4155550123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'continue' }));
+    await waitFor(() => expect(screen.getByLabelText('first name')).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText('first name'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('email'), { target: { value: 'ada@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+  });
+
+  it('skips the payment step on a free event', async () => {
+    renderForm(makeEvent());
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
+  });
+
+  it('skips the payment step when the flag is off', async () => {
+    mockUseFlag.mockReturnValue(false);
+    renderForm(paidEvent);
+    await fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: 'rsvp' }));
+    await waitFor(() => expect(submitMutate).toHaveBeenCalled());
   });
 });
