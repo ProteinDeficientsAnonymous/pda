@@ -1,3 +1,10 @@
+## [0.85.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.0...v0.85.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* **events:** hide comments card when rsvp is disabled ([#1269](https://github.com/ProteinDeficientsAnonymous/pda/issues/1269)) ([7c55d5b](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c55d5b27222aa932cfa354f326a72ee58c9001b))
+
 # [0.85.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.84.4...v0.85.0) (2026-08-04)
 
 
