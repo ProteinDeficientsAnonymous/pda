@@ -1,3 +1,10 @@
+## [0.85.2](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.1...v0.85.2) (2026-08-04)
+
+
+### Bug Fixes
+
+* **events:** allow saving an ongoing event without a future start time ([#1283](https://github.com/ProteinDeficientsAnonymous/pda/issues/1283)) ([ab2ebf7](https://github.com/ProteinDeficientsAnonymous/pda/commit/ab2ebf7b4e6b69ae87e41b061795d773482cdc59))
+
 ## [0.85.1](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.0...v0.85.1) (2026-08-04)
 
 
