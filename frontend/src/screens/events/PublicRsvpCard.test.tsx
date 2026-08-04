@@ -93,8 +93,7 @@ describe('PublicRsvpCard', () => {
 });
 
 describe('PublicRsvpCard payment confirmation gate', () => {
-  const { price, venmoLink } = makePaidEvent();
-  const paidEventOverrides: Partial<Event> = { price, venmoLink };
+  const paidEvent = makePaidEvent();
 
   beforeEach(() => {
     updateMutate.mockReset();
@@ -105,7 +104,7 @@ describe('PublicRsvpCard payment confirmation gate', () => {
 
   it('shows the payment step before switching to attending on a paid event', () => {
     mockUseFlag.mockReturnValue(true);
-    renderCard({ status: RsvpServerStatus.Maybe, event: paidEventOverrides });
+    renderCard({ status: RsvpServerStatus.Maybe, event: paidEvent });
     fireEvent.click(screen.getByRole('button', { name: /^i'm going$/i }));
     expect(updateMutate).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /yes, i paid/i })).toBeInTheDocument();
@@ -114,7 +113,7 @@ describe('PublicRsvpCard payment confirmation gate', () => {
   it('submits with paidConfirmed after the payment step', async () => {
     mockUseFlag.mockReturnValue(true);
     updateMutate.mockResolvedValue(undefined);
-    renderCard({ status: RsvpServerStatus.Maybe, event: paidEventOverrides });
+    renderCard({ status: RsvpServerStatus.Maybe, event: paidEvent });
     fireEvent.click(screen.getByRole('button', { name: /^i'm going$/i }));
     fireEvent.click(screen.getByRole('button', { name: /yes, i paid/i }));
     await waitFor(() => expect(updateMutate).toHaveBeenCalled());
@@ -125,7 +124,7 @@ describe('PublicRsvpCard payment confirmation gate', () => {
 
   it('returns to the status picker from the payment step', () => {
     mockUseFlag.mockReturnValue(true);
-    renderCard({ status: RsvpServerStatus.Maybe, event: paidEventOverrides });
+    renderCard({ status: RsvpServerStatus.Maybe, event: paidEvent });
     fireEvent.click(screen.getByRole('button', { name: /^i'm going$/i }));
     fireEvent.click(screen.getByRole('button', { name: /back/i }));
     expect(screen.getByRole('button', { name: /^i'm going$/i })).toBeInTheDocument();
@@ -134,7 +133,7 @@ describe('PublicRsvpCard payment confirmation gate', () => {
 
   it('does not gate switching to maybe', () => {
     mockUseFlag.mockReturnValue(true);
-    renderCard({ status: RsvpServerStatus.Attending, event: paidEventOverrides });
+    renderCard({ status: RsvpServerStatus.Attending, event: paidEvent });
     fireEvent.click(screen.getByRole('button', { name: /^maybe$/i }));
     expect(updateMutate).toHaveBeenCalledOnce();
   });
@@ -142,7 +141,7 @@ describe('PublicRsvpCard payment confirmation gate', () => {
   it('does not gate saving a comment while already attending', async () => {
     mockUseFlag.mockReturnValue(true);
     updateMutate.mockResolvedValue(undefined);
-    renderCard({ status: RsvpServerStatus.Attending, event: paidEventOverrides });
+    renderCard({ status: RsvpServerStatus.Attending, event: paidEvent });
     fireEvent.change(screen.getByLabelText('comment (optional)'), {
       target: { value: 'see you there' },
     });
@@ -159,7 +158,7 @@ describe('PublicRsvpCard payment confirmation gate', () => {
 
   it('does not gate when the flag is off', () => {
     mockUseFlag.mockReturnValue(false);
-    renderCard({ status: RsvpServerStatus.Maybe, event: paidEventOverrides });
+    renderCard({ status: RsvpServerStatus.Maybe, event: paidEvent });
     fireEvent.click(screen.getByRole('button', { name: /^i'm going$/i }));
     expect(updateMutate).toHaveBeenCalledOnce();
   });
