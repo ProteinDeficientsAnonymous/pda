@@ -326,6 +326,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     comment_count = _resolve_comment_count(event)
     my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(rsvps, auth_user)
+    can_see_guests = is_authed and (viewer_is_cohost or my_rsvp_status is not None)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -360,7 +361,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         guests=_gated(
             _build_guest_list(rsvps, viewer_is_cohost, auth_user, payment_status_visible),
             [],
-            is_authed,
+            can_see_guests,
         ),
         my_rsvp=my_rsvp_status,
         my_paid_confirmed=my_paid_confirmed,
