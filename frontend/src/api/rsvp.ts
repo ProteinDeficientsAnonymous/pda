@@ -24,6 +24,14 @@ interface SetRsvpArgs {
 
 function updateCaches(qc: ReturnType<typeof useQueryClient>, event: Event, isAuthed: boolean) {
   qc.setQueryData(eventKeys.detail(event.id, isAuthed), event);
+  // The live route may have queried by slug rather than event.id (EventDetailScreen
+  // canonicalizes the URL to the slug), so the write above can miss the cache entry
+  // actually backing the screen. Patch every detail query for this event regardless
+  // of which id shape keyed it.
+  qc.setQueriesData<Event | undefined>(
+    { queryKey: eventKeys.all, predicate: (query) => query.queryKey[1] === 'detail' },
+    (prev) => (prev && (prev.id === event.id || prev.slug === event.slug) ? event : prev),
+  );
   // Also patch the list cache if we've got it. The list endpoint returns
   // fewer fields than detail, so we merge conservatively.
   qc.setQueryData<Event[] | undefined>(eventKeys.list(isAuthed), (prev) => {
@@ -72,8 +80,15 @@ export function useRemoveRsvp() {
     },
     onSuccess: (eventId) => {
       // DELETE returns 204, so we can't patch from the response. Just
-      // invalidate — cheaper than a second round-trip.
+      // invalidate — cheaper than a second round-trip. The live route may have
+      // queried by slug rather than eventId (EventDetailScreen canonicalizes the
+      // URL to the slug), so match on cached data id too, not just the key.
       void qc.invalidateQueries({ queryKey: eventKeys.detail(eventId, isAuthed) });
+      void qc.invalidateQueries({
+        queryKey: eventKeys.all,
+        predicate: (query) =>
+          query.queryKey[1] === 'detail' && (query.state.data as Event | undefined)?.id === eventId,
+      });
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
       // can_post on the comments list depends on RSVP existence — refresh it.
