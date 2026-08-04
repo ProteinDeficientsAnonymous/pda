@@ -70,7 +70,9 @@ export function EventMemberSection({ event, token }: Props) {
           <InvitedList event={event} />
         </Card>
       ) : null}
-      <EventCommentsCard eventId={event.id} {...(token ? { token } : {})} />
+      {event.rsvpEnabled ? (
+        <EventCommentsCard eventId={event.id} {...(token ? { token } : {})} />
+      ) : null}
       <EventAdminActions event={event} />
       <ReportEventButton eventId={event.id} />
     </div>
