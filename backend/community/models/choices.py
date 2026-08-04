@@ -131,10 +131,12 @@ class FeatureFlag(models.TextChoices):
     HOST_ATTENDANCE_REPORT = "host_attendance_report", "Host attendance report"
     ADMIN_ATTENDANCE_ANALYTICS = "admin_attendance_analytics", "Admin attendance analytics"
     EVENT_PAYMENT_CONFIRMATION = "event_payment_confirmation", "Event payment confirmation"
+    WEEKLY_DIGEST_EMAIL = "weekly_digest_email", "Weekly digest email"
 
 
 FLAG_DEFAULTS: dict[str, bool] = {
     FeatureFlag.HOST_ATTENDANCE_REPORT: False,
     FeatureFlag.ADMIN_ATTENDANCE_ANALYTICS: False,
     FeatureFlag.EVENT_PAYMENT_CONFIRMATION: False,
+    FeatureFlag.WEEKLY_DIGEST_EMAIL: False,
 }
