@@ -85,7 +85,8 @@ export function useRemoveRsvp() {
         queryKey: eventKeys.all,
         predicate: (query) =>
           query.queryKey[1] === 'detail' &&
-          (query.queryKey[2] === eventId || (query.state.data as Event | undefined)?.id === eventId),
+          (query.queryKey[2] === eventId ||
+            (query.state.data as Event | undefined)?.id === eventId),
       });
       void qc.invalidateQueries({ queryKey: eventKeys.list(isAuthed) });
       void qc.invalidateQueries({ queryKey: eventStatsKeys.detail(eventId) });
