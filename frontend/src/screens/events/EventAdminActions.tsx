@@ -10,6 +10,8 @@ import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
+import { canEditEventWindow } from './eventEditGate';
+
 interface Props {
   event: Event;
 }
@@ -52,9 +54,7 @@ function AdminActionRow({
   const hasNoAttendees = event.attendingCount === 0;
   const canDelete = (isHost || canManage) && (isDraft || isCancelled || hasNoAttendees);
   const showCancel = !isCancelled && !isDraft && !hasNoAttendees && !event.isPast;
-  // Drafts are always editable — the edit-window cutoff protects the
-  // historical record of published events, which drafts don't have.
-  const canEditEvent = isDraft || isEditWindowOpen(event);
+  const canEditEvent = canEditEventWindow(event);
 
   async function onCancel() {
     setCancelError(null);
@@ -214,17 +214,6 @@ function AdminActionRow({
       </Dialog>
     </div>
   );
-}
-
-// Editing stays open until 6 hours after the event's end (or start, if no end
-// set) — gives hosts room to fix typos, post follow-ups, or tweak details
-// during and right after the event without hitting a stale-data wall.
-const EDIT_GRACE_MS = 6 * 60 * 60 * 1000;
-
-function isEditWindowOpen(event: Event): boolean {
-  const reference = event.endDatetime ?? event.startDatetime;
-  if (!reference) return true;
-  return Date.now() <= reference.getTime() + EDIT_GRACE_MS;
 }
 
 function extractMutationError(err: unknown): string {

@@ -1,14 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useFlag } from '@/api/featureFlags';
+import { useAuthStore } from '@/auth/store';
 import type { Event } from '@/models/event';
 import { EventStatus } from '@/models/event';
-import { makeEvent } from '@/test/fixtures';
+import { makeEvent, makeUser } from '@/test/fixtures';
 
 import { EventDetailKebabMenu } from './EventDetailKebabMenu';
+
+const HOST_ID = 'host-user';
 
 vi.mock('@/api/featureFlags', () => ({
   useFlag: vi.fn(),
@@ -44,7 +47,58 @@ async function openMenu() {
   await userEvent.click(screen.getByRole('button', { name: /event settings/i }));
 }
 
+beforeEach(() => {
+  useAuthStore.setState({ status: 'unauthed', user: null, accessToken: null });
+});
+
 describe('EventDetailKebabMenu', () => {
+  it('shows an edit item for a co-host, linking to the edit route', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    useAuthStore.setState({
+      status: 'authed',
+      user: makeUser({ id: HOST_ID }),
+      accessToken: 'tok',
+    });
+    renderMenu({ event: { coHostIds: [HOST_ID] } });
+    await openMenu();
+
+    const edit = screen.getByRole('menuitem', { name: 'edit' });
+    expect(edit).toHaveAttribute('href', '/events/ev1/edit');
+  });
+
+  it('hides the edit item for a member who is not a host', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    useAuthStore.setState({
+      status: 'authed',
+      user: makeUser({ id: 'regular-user' }),
+      accessToken: 'tok',
+    });
+    renderMenu({ event: { coHostIds: [HOST_ID] } });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'edit' })).not.toBeInTheDocument();
+  });
+
+  it('hides the edit item once the edit window has closed', async () => {
+    vi.mocked(useFlag).mockReturnValue(false);
+    useAuthStore.setState({
+      status: 'authed',
+      user: makeUser({ id: HOST_ID }),
+      accessToken: 'tok',
+    });
+    renderMenu({
+      event: {
+        coHostIds: [HOST_ID],
+        status: EventStatus.Active,
+        startDatetime: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        endDatetime: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      },
+    });
+    await openMenu();
+
+    expect(screen.queryByRole('menuitem', { name: 'edit' })).not.toBeInTheDocument();
+  });
+
   it('shows a check-in item linking to the attendance route', async () => {
     vi.mocked(useFlag).mockReturnValue(false);
     renderMenu();
