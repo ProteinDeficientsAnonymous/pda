@@ -20,6 +20,27 @@ describe('mapEvent', () => {
     expect(result.startDatetime!.getUTCHours()).toBe(18);
   });
 
+  it('maps my_paid_confirmed', () => {
+    expect(mapEvent(wireEvent({ my_paid_confirmed: true })).myPaidConfirmed).toBe(true);
+  });
+
+  it('defaults myPaidConfirmed to false when absent', () => {
+    expect(mapEvent(wireEvent()).myPaidConfirmed).toBe(false);
+  });
+
+  it('maps paid_confirmed on guests', () => {
+    const result = mapEvent(
+      wireEvent({
+        guests: [
+          { user_id: 'u1', name: 'Paid Guest', status: 'attending', paid_confirmed: true },
+          { user_id: 'u2', name: 'Unpaid Guest', status: 'attending' },
+        ],
+      }),
+    );
+    expect(result.guests[0]!.paidConfirmed).toBe(true);
+    expect(result.guests[1]!.paidConfirmed).toBe(false);
+  });
+
   it('converts ISO start_datetime to Date', () => {
     const result = mapEvent(wireEvent({ start_datetime: '2026-01-05T09:05:03Z' }));
     expect(result.startDatetime!.getUTCFullYear()).toBe(2026);

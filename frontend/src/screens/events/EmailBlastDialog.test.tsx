@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Event, EventGuest } from '@/models/event';
-import { makeEvent as makeEventFixture } from '@/test/fixtures';
+import { makeEvent as makeEventFixture, makeGuest } from '@/test/fixtures';
 
 import { EmailBlastDialog } from './EmailBlastDialog';
 
@@ -28,16 +28,7 @@ vi.mock('sonner', () => ({
 }));
 
 function guest(status: string, i: number): EventGuest {
-  return {
-    userId: `u${String(i)}`,
-    name: `Guest ${String(i)}`,
-    status,
-    phone: null,
-    photoUrl: '',
-    hasPlusOne: false,
-    attendance: 'unknown',
-    isMember: true,
-  };
+  return makeGuest({ userId: `u${String(i)}`, name: `Guest ${String(i)}`, status });
 }
 
 function makeEvent(guests: EventGuest[]): Event {

@@ -25,6 +25,7 @@ export function makeGuest(overrides: Partial<EventGuest> = {}): EventGuest {
     hasPlusOne: false,
     attendance: AttendanceStatus.Unknown,
     isMember: true,
+    paidConfirmed: false,
     ...overrides,
   };
 }
@@ -63,28 +64,16 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     coHostNames: [],
     coHostPhotoUrls: [],
     guests: [
-      {
-        userId: 'a',
-        name: 'alice',
-        status: RsvpServerStatus.Attending,
-        phone: '+15551112222',
-        photoUrl: '',
-        hasPlusOne: false,
-        attendance: AttendanceStatus.Unknown,
-        isMember: true,
-      },
-      {
+      makeGuest({ userId: 'a', name: 'alice', phone: '+15551112222' }),
+      makeGuest({
         userId: 'b',
         name: 'bob',
         status: RsvpServerStatus.CantGo,
         phone: '+15553334444',
-        photoUrl: '',
-        hasPlusOne: false,
-        isMember: true,
-        attendance: AttendanceStatus.Unknown,
-      },
+      }),
     ],
     myRsvp: null,
+    myPaidConfirmed: false,
     viewerUserId: null,
     surveySlugs: [],
     invitedUserIds: [],
@@ -102,6 +91,16 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     status: EventStatus.Active,
     ...overrides,
   };
+}
+
+export function makePaidEvent(overrides: Partial<Event> = {}): Event {
+  return makeEvent({
+    price: '$10',
+    venmoLink: 'https://venmo.com/u/host',
+    cashappLink: '',
+    zelleInfo: '',
+    ...overrides,
+  });
 }
 
 export function makeUser(overrides: Partial<User> = {}): User {
