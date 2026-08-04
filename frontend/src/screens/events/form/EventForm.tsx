@@ -79,7 +79,14 @@ export function EventForm({ existing }: Props) {
   const [values, setValues] = useState<EventFormValues>(() =>
     existing ? eventToFormValues(existing) : emptyEventFormValues(),
   );
-  const [coHosts, setCoHosts] = useState<MemberSearchResult[]>([]);
+  const [coHosts, setCoHosts] = useState<MemberSearchResult[]>(() => {
+    if (!existing) return [];
+    return existing.coHostIds.map((id, idx) => ({
+      id,
+      fullName: existing.coHostNames[idx] ?? '',
+      phoneNumber: '',
+    }));
+  });
   // On edit, pre-run validation so issues in the loaded values (e.g. a stale
   // draft whose start is now in the past) are visible immediately instead of
   // waiting for the first save attempt.
@@ -271,29 +278,22 @@ export function EventForm({ existing }: Props) {
           onBufferPoll={setBufferedPollOptions}
         />
 
-        {!existing && (
-          <CollapsibleCard
-            title="hosts"
-            summary={
-              hostsCount > 0
-                ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
-                : undefined
-            }
-          >
-            <MemberPicker
-              label="co-hosts"
-              selected={coHosts}
-              onChange={setCoHosts}
-              excludeIds={user ? [user.id] : []}
-              hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
-            />
-          </CollapsibleCard>
-        )}
-        {existing && (
-          <CollapsibleCard title="hosts">
-            <p className="text-foreground-tertiary text-sm">manage co-hosts on the event page</p>
-          </CollapsibleCard>
-        )}
+        <CollapsibleCard
+          title="hosts"
+          summary={
+            hostsCount > 0
+              ? `${String(hostsCount)} ${hostsCount === 1 ? 'person' : 'people'}`
+              : undefined
+          }
+        >
+          <MemberPicker
+            label="co-hosts"
+            selected={coHosts}
+            onChange={setCoHosts}
+            excludeIds={user ? [user.id] : []}
+            hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
+          />
+        </CollapsibleCard>
 
         <CollapsibleCard
           title="details"
