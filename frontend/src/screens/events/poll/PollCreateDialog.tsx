@@ -140,7 +140,7 @@ function PollCreateDialogBody({ onClose, eventId, onBuffer, initialOptions }: Pr
         {error ? (
           <p
             role="alert"
-            className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700"
+            className="border-destructive-border bg-destructive-subtle text-destructive rounded-md border p-2 text-sm"
           >
             {error}
           </p>

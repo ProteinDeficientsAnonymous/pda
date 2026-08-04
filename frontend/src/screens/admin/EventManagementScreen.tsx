@@ -180,7 +180,9 @@ function EventRow({ event }: { event: Event }) {
       </div>
       <div className="flex shrink-0 items-center gap-2 text-xs">
         {event.eventType === EventType.Official ? (
-          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">official</span>
+          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200">
+            official
+          </span>
         ) : null}
         {event.eventType === EventType.Club ? (
           <span

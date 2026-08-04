@@ -341,7 +341,7 @@ export function EventForm({ existing }: Props) {
         {serverError ? (
           <p
             role="alert"
-            className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            className="border-destructive-border bg-destructive-subtle text-destructive rounded-[var(--radius-md)] border p-3 text-sm"
           >
             {serverError}
           </p>
