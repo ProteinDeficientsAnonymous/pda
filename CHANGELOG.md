@@ -1,3 +1,10 @@
+## [0.85.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.9...v0.85.10) (2026-08-05)
+
+
+### Bug Fixes
+
+* **events:** restrict guest list visibility to RSVPs and hosts (Issue 1267) ([#1268](https://github.com/ProteinDeficientsAnonymous/pda/issues/1268)) ([3b01a34](https://github.com/ProteinDeficientsAnonymous/pda/commit/3b01a342c5a9ed4bd905ed26cca9762688857b59))
+
 ## [0.85.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.8...v0.85.9) (2026-08-05)
 
 
