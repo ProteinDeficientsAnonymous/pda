@@ -27,6 +27,24 @@
         "title": "AccessOut",
         "type": "object"
       },
+      "AddCoHostsIn": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "User Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "user_ids"
+        ],
+        "title": "AddCoHostsIn",
+        "type": "object"
+      },
       "ApproveJoinRequestOut": {
         "properties": {
           "first_name": {
@@ -8903,6 +8921,85 @@
           }
         ],
         "summary": "Update Event",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/community/events/{event_id}/cohost-invites/": {
+      "post": {
+        "description": "Invite co-hosts with set-union semantics \u2014 nobody already on the event\nis touched. PATCH co_host_ids treats its list as a replacement set, so a\ncaller that didn't resend pending invitees silently rescinded them.",
+        "operationId": "community__event_cohost_invites_add_cohosts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCoHostsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "GatedJWTAuth": []
+          }
+        ],
+        "summary": "Add Cohosts",
         "tags": [
           "community"
         ]

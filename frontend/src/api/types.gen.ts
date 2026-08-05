@@ -722,6 +722,28 @@ export interface paths {
         patch: operations["community__events_update_event"];
         trace?: never;
     };
+    "/api/community/events/{event_id}/cohost-invites/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Cohosts
+         * @description Invite co-hosts with set-union semantics — nobody already on the event
+         *     is touched. PATCH co_host_ids treats its list as a replacement set, so a
+         *     caller that didn't resend pending invitees silently rescinded them.
+         */
+        post: operations["community__event_cohost_invites_add_cohosts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/community/events/{event_id}/cohost-invites/{invite_id}/": {
         parameters: {
             query?: never;
@@ -2040,6 +2062,11 @@ export interface components {
         AccessOut: {
             /** Access */
             access: string;
+        };
+        /** AddCoHostsIn */
+        AddCoHostsIn: {
+            /** User Ids */
+            user_ids: string[];
         };
         /** ApproveJoinRequestOut */
         ApproveJoinRequestOut: {
@@ -6794,6 +6821,59 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    community__event_cohost_invites_add_cohosts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddCoHostsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
