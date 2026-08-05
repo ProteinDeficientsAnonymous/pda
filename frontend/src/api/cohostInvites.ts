@@ -47,6 +47,20 @@ async function deleteCohost({
   return mapEvent(data);
 }
 
+async function postAddCohosts({
+  eventId,
+  userIds,
+}: {
+  eventId: string;
+  userIds: string[];
+}): Promise<Event> {
+  const { data } = await apiClient.post<WireEvent>(
+    `/api/community/events/${eventId}/cohost-invites/`,
+    { user_ids: userIds },
+  );
+  return mapEvent(data);
+}
+
 function useCohostInviteMutation<TArgs extends { eventId: string }>(
   fn: (args: TArgs) => Promise<Event>,
 ) {
@@ -75,4 +89,8 @@ export function useRescindCohostInvite() {
 
 export function useRemoveCohost() {
   return useCohostInviteMutation(deleteCohost);
+}
+
+export function useAddCohosts() {
+  return useCohostInviteMutation(postAddCohosts);
 }

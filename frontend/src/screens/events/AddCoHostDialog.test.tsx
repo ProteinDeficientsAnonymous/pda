@@ -7,8 +7,8 @@ import { AddCoHostDialog } from './AddCoHostDialog';
 
 const updateMutateAsync = vi.hoisted(() => vi.fn());
 
-vi.mock('@/api/eventWrites', () => ({
-  useUpdateEvent: () => ({ mutateAsync: updateMutateAsync, isPending: false }),
+vi.mock('@/api/cohostInvites', () => ({
+  useAddCohosts: () => ({ mutateAsync: updateMutateAsync, isPending: false }),
 }));
 
 vi.mock('@/api/userSearch', () => ({
@@ -54,7 +54,7 @@ describe('AddCoHostDialog', () => {
     expect(screen.queryByText('Accepted Host')).not.toBeInTheDocument();
   });
 
-  it('resends pending invitees so adding a co-host does not rescind them', async () => {
+  it('sends only the newly added members, never the existing roster', async () => {
     updateMutateAsync.mockClear();
     updateMutateAsync.mockResolvedValue(undefined);
     render(<AddCoHostDialog event={BASE_EVENT} open onClose={() => {}} />);
@@ -66,12 +66,9 @@ describe('AddCoHostDialog', () => {
     await vi.waitFor(() => {
       expect(updateMutateAsync).toHaveBeenCalledTimes(1);
     });
-    const sent = updateMutateAsync.mock.calls[0]?.[0] as { coHostIds: string[] };
-    expect([...sent.coHostIds].sort()).toEqual([
-      'user-accepted',
-      'user-available',
-      'user-creator',
-      'user-pending',
-    ]);
+    expect(updateMutateAsync).toHaveBeenCalledWith({
+      eventId: 'ev1',
+      userIds: ['user-available'],
+    });
   });
 });

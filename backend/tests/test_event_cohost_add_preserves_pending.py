@@ -64,9 +64,10 @@ class TestAddCohostPreservesPendingInvites:
         self, api_client, event, creator, first_invitee, second_invitee
     ):
         _patch_cohosts(api_client, event, creator, [first_invitee.id])
-        assert EventCoHostInvite.objects.get(
-            event=event, user=first_invitee
-        ).status == CoHostInviteStatus.PENDING
+        assert (
+            EventCoHostInvite.objects.get(event=event, user=first_invitee).status
+            == CoHostInviteStatus.PENDING
+        )
 
         # Adding a second co-host must not drop the first, still-pending invite.
         _patch_cohosts(api_client, event, creator, [first_invitee.id, second_invitee.id])

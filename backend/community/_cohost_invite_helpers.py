@@ -135,6 +135,31 @@ def diff_cohost_invites(
     return newly_invited, accepted_co_host_ids_to_remove
 
 
+def add_cohost_invites(
+    event: Event,
+    co_host_ids: Iterable[str],
+    inviter: UserModel,
+) -> list[str]:
+    """Invite the given users without touching anyone already on the event.
+
+    Set-union counterpart to ``diff_cohost_invites``: ids absent from the input
+    are left alone rather than rescinded, so a caller can add a co-host without
+    first knowing the full current roster.
+
+    Returns the newly-invited user ids so the caller can fire notifications.
+    """
+    next_ids = _next_ids_excluding_creator(event, co_host_ids)
+    existing_by_user = {str(inv.user_id): inv for inv in event.cohost_invites.all()}
+    _check_past_event_guard(event, next_ids, existing_by_user)
+
+    newly_invited: list[str] = []
+    with transaction.atomic():
+        for user_id in next_ids:
+            if _upsert_pending_invite(event, user_id, inviter, existing_by_user.get(user_id)):
+                newly_invited.append(user_id)
+    return newly_invited
+
+
 def _next_ids_excluding_creator(event: Event, co_host_ids: Iterable[str]) -> set[str]:
     """Normalize requested ids, dropping the creator only while they're still a
     host — once they step down they're re-invitable like anyone else."""

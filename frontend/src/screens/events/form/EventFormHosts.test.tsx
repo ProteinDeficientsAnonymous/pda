@@ -16,6 +16,7 @@ vi.mock('@/api/cohostInvites', () => ({
   useDeclineCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useRescindCohostInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveCohost: () => ({ mutate: vi.fn(), isPending: false }),
+  useAddCohosts: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/api/eventWrites', async () => {
