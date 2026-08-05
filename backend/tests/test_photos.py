@@ -2,7 +2,7 @@ import io
 
 import pytest
 from community.models import Event
-from config.media_proxy import serve_media
+from config.media_proxy import resize_image, serve_media
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import Http404
@@ -229,6 +229,46 @@ class TestEventPhoto:
             **_auth(member),
         )
         assert response.status_code == 404
+
+
+class TestResizeImage:
+    def test_animated_gif_kept_unresized_to_preserve_animation(self):
+        buf = io.BytesIO()
+        frames = [Image.new("RGB", (2000, 2000), color) for color in ("red", "blue")]
+        frames[0].save(buf, format="GIF", save_all=True, append_images=frames[1:])
+        buf.seek(0)
+        photo = SimpleUploadedFile("anim.gif", buf.read(), content_type="image/gif")
+
+        result = resize_image(photo, 512)
+
+        with Image.open(result) as out:
+            assert out.is_animated
+            assert out.n_frames == 2
+
+    def test_exif_orientation_applied_before_resize(self):
+        buf = io.BytesIO()
+        image = Image.new("RGB", (2000, 1000))
+        exif = image.getexif()
+        exif[0x0112] = 6  # rotate 90 CW
+        image.save(buf, format="JPEG", exif=exif)
+        buf.seek(0)
+        photo = SimpleUploadedFile("rotated.jpg", buf.read(), content_type="image/jpeg")
+
+        result = resize_image(photo, 512)
+
+        with Image.open(result) as out:
+            # orientation baked in and stripped -> width/height swap
+            assert out.width < out.height
+
+    def test_decompression_bomb_falls_back_to_original(self):
+        buf = io.BytesIO()
+        Image.new("RGB", (30000, 30000), "white").save(buf, format="PNG", optimize=True)
+        buf.seek(0)
+        photo = SimpleUploadedFile("bomb.png", buf.read(), content_type="image/png")
+
+        result = resize_image(photo, 512)
+
+        assert result is photo
 
 
 @pytest.mark.django_db

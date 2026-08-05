@@ -10,15 +10,14 @@ from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import FileResponse, Http404, HttpResponse
 from django.utils._os import safe_join
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 from pillow_heif import register_heif_opener
 
 register_heif_opener()
 
 logger = logging.getLogger("pda.media")
 
-# Max display dimensions per photo kind — resize on upload so every consumer
-# isn't downloading a multi-MB original just to shrink it with CSS.
+# Resize targets per photo kind.
 AVATAR_MAX_DIMENSION = 512
 EVENT_PHOTO_MAX_DIMENSION = 1600
 
@@ -59,16 +58,23 @@ def _normalize_mode(image: Image.Image, fmt: str) -> Image.Image:
 
 
 def resize_image(photo: InMemoryUploadedFile, max_dimension: int) -> InMemoryUploadedFile:
-    """Downscale an uploaded image to fit max_dimension. Best-effort: formats
-    Pillow can't process pass through unchanged rather than failing the upload.
-    HEIC/HEIF is always converted to JPEG since browsers can't render it.
+    """Downscale an uploaded image to fit max_dimension.
+    param photo(InMemoryUploadedFile): the uploaded file
+    param max_dimension(int): max width/height in pixels
+    return(InMemoryUploadedFile): resized file, or the original if unprocessable/animated
     """
     try:
         image = Image.open(photo)
         image.verify()
         photo.seek(0)
         image = Image.open(photo)
-    except (UnidentifiedImageError, OSError):
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+        return photo
+
+    # Animated formats would be flattened to a single frame by thumbnail()+save();
+    # leave them at original size rather than destroy the animation.
+    if getattr(image, "is_animated", False):
+        photo.seek(0)
         return photo
 
     fmt = "JPEG" if image.format in ("HEIF", "HEIC") else image.format
@@ -77,6 +83,7 @@ def resize_image(photo: InMemoryUploadedFile, max_dimension: int) -> InMemoryUpl
         photo.seek(0)
         return photo
 
+    image = ImageOps.exif_transpose(image)
     image = _normalize_mode(image, fmt)
     if needs_resize:
         image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
