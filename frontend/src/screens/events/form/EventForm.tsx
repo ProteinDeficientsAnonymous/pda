@@ -22,6 +22,7 @@ import { CollapsibleCard } from '@/components/ui/CollapsibleCard';
 import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventHostCount, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
+import type { User } from '@/models/user';
 
 import { EventHostSection } from '../EventHostSection';
 import { eventMemberSectionFlags } from '../eventMemberFlags';
@@ -233,9 +234,6 @@ export function EventForm({ existing }: Props) {
     values.venmoLink.trim().length > 0 ||
     values.cashappLink.trim().length > 0 ||
     values.zelleInfo.trim().length > 0;
-  const existingHosts = existing
-    ? { event: existing, flags: eventMemberSectionFlags(existing, user) }
-    : null;
   const hostsCount = existing ? eventHostCount(existing) : coHosts.length;
 
   return (
@@ -284,13 +282,8 @@ export function EventForm({ existing }: Props) {
               : undefined
           }
         >
-          {existingHosts ? (
-            <EventHostSection
-              event={existingHosts.event}
-              isHostOrEventManager={existingHosts.flags.isHostOrEventManager}
-              canEdit={existingHosts.flags.canEdit}
-              viewerId={user?.id ?? null}
-            />
+          {existing ? (
+            <ExistingEventHosts event={existing} user={user} />
           ) : (
             <MemberPicker
               label="co-hosts"
@@ -390,5 +383,17 @@ export function EventForm({ existing }: Props) {
       </div>
       {confirmElement}
     </form>
+  );
+}
+
+function ExistingEventHosts({ event, user }: { event: Event; user: User | null }) {
+  const { isHostOrEventManager, canEdit } = eventMemberSectionFlags(event, user);
+  return (
+    <EventHostSection
+      event={event}
+      isHostOrEventManager={isHostOrEventManager}
+      canEdit={canEdit}
+      viewerId={user?.id ?? null}
+    />
   );
 }
