@@ -38,6 +38,16 @@ export function optionalEmail(value: string | null | undefined): string | null {
   return null;
 }
 
+export function email(value: string | null | undefined): string | null {
+  if (!value || value.trim() === '') {
+    return 'Required';
+  }
+  if (!emailRe.test(value.trim())) {
+    return 'enter a valid email address';
+  }
+  return null;
+}
+
 export function optionalUrl(
   value: string | null | undefined,
   options?: { httpsOnly?: boolean; requirePath?: boolean },
