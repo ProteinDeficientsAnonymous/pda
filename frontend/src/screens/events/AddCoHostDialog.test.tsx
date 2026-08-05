@@ -53,4 +53,25 @@ describe('AddCoHostDialog', () => {
     expect(screen.queryByText('Pending Invitee')).not.toBeInTheDocument();
     expect(screen.queryByText('Accepted Host')).not.toBeInTheDocument();
   });
+
+  it('resends pending invitees so adding a co-host does not rescind them', async () => {
+    updateMutateAsync.mockClear();
+    updateMutateAsync.mockResolvedValue(undefined);
+    render(<AddCoHostDialog event={BASE_EVENT} open onClose={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText('search members'), { target: { value: 'me' } });
+    fireEvent.click(screen.getByText('Available Member'));
+    fireEvent.click(screen.getByRole('button', { name: 'add 1' }));
+
+    await vi.waitFor(() => {
+      expect(updateMutateAsync).toHaveBeenCalledTimes(1);
+    });
+    const sent = updateMutateAsync.mock.calls[0]?.[0] as { coHostIds: string[] };
+    expect([...sent.coHostIds].sort()).toEqual([
+      'user-accepted',
+      'user-available',
+      'user-creator',
+      'user-pending',
+    ]);
+  });
 });

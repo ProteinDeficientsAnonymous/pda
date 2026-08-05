@@ -25,7 +25,9 @@ export function AddCoHostDialog({ event, open, onClose }: Props) {
 
   async function submit() {
     setError(null);
-    const combined = Array.from(new Set([...event.coHostIds, ...added.map((m) => m.id)]));
+    // co_host_ids is a replacement set — pending invitees must be resent or
+    // the backend reads their absence as a rescind.
+    const combined = Array.from(new Set([...excludeIds, ...added.map((m) => m.id)]));
     try {
       await update.mutateAsync({ coHostIds: combined });
       setAdded([]);
