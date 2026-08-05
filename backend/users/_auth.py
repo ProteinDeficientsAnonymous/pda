@@ -220,9 +220,9 @@ def upload_photo(request, photo: UploadedFile = File(...)):  # ty: ignore[call-n
     user = User.objects.prefetch_related("roles").get(pk=request.auth.pk)
     if user.profile_photo:
         user.profile_photo.delete(save=False)
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
     resized = resize_image(photo, AVATAR_MAX_DIMENSION)
+    name = resized.name or ""
+    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
     user.profile_photo.save(f"{user.pk}.{ext}", resized, save=False)
     user.photo_updated_at = timezone.now()
     user.save(update_fields=["profile_photo", "photo_updated_at"])

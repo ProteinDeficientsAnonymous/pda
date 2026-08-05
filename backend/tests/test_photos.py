@@ -123,6 +123,19 @@ class TestProfilePhoto:
         with Image.open(member.profile_photo) as stored:
             assert max(stored.size) <= 512
 
+    def test_upload_converts_heic_to_jpeg(self, api_client, member):
+        buf = io.BytesIO()
+        Image.new("RGB", (2000, 1500)).save(buf, format="HEIF")
+        buf.seek(0)
+        photo = SimpleUploadedFile("test.heic", buf.read(), content_type="image/heic")
+        response = api_client.post("/api/auth/me/photo/", {"photo": photo}, **_auth(member))
+        assert response.status_code == 200
+        member.refresh_from_db()
+        assert member.profile_photo.name.endswith(".jpg")
+        with Image.open(member.profile_photo) as stored:
+            assert stored.format == "JPEG"
+            assert max(stored.size) <= 512
+
 
 @pytest.mark.django_db
 class TestEventPhoto:

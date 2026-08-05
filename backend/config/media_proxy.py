@@ -11,6 +11,9 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import FileResponse, Http404, HttpResponse
 from django.utils._os import safe_join
 from PIL import Image, UnidentifiedImageError
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 
 logger = logging.getLogger("pda.media")
 
@@ -41,10 +44,24 @@ def media_path(field) -> str:
     return f"/media/{field.name}"
 
 
+def _jpeg_name(name: str) -> str:
+    if name and not name.lower().endswith((".jpg", ".jpeg")):
+        return f"{name.rsplit('.', 1)[0]}.jpg"
+    return name
+
+
+def _normalize_mode(image: Image.Image, fmt: str) -> Image.Image:
+    if fmt == "JPEG":
+        return image.convert("RGB")
+    if image.mode not in ("RGB", "RGBA", "L"):
+        return image.convert("RGBA" if "A" in image.mode else "RGB")
+    return image
+
+
 def resize_image(photo: InMemoryUploadedFile, max_dimension: int) -> InMemoryUploadedFile:
     """Downscale an uploaded image to fit max_dimension. Best-effort: formats
-    Pillow can't process (e.g. HEIC without a plugin) pass through unchanged
-    rather than failing the upload.
+    Pillow can't process pass through unchanged rather than failing the upload.
+    HEIC/HEIF is always converted to JPEG since browsers can't render it.
     """
     try:
         image = Image.open(photo)
@@ -54,20 +71,23 @@ def resize_image(photo: InMemoryUploadedFile, max_dimension: int) -> InMemoryUpl
     except (UnidentifiedImageError, OSError):
         return photo
 
-    fmt = image.format
-    if image.width <= max_dimension and image.height <= max_dimension:
+    fmt = "JPEG" if image.format in ("HEIF", "HEIC") else image.format
+    needs_resize = image.width > max_dimension or image.height > max_dimension
+    if fmt == image.format and not needs_resize:
         photo.seek(0)
         return photo
 
-    if image.mode not in ("RGB", "RGBA", "L"):
-        image = image.convert("RGBA" if "A" in image.mode else "RGB")
-    image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
+    image = _normalize_mode(image, fmt)
+    if needs_resize:
+        image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
 
     buffer = BytesIO()
     image.save(buffer, format=fmt)
     buffer.seek(0)
+    name = _jpeg_name(photo.name) if fmt == "JPEG" else photo.name
+    content_type = "image/jpeg" if fmt == "JPEG" else photo.content_type
     return InMemoryUploadedFile(
-        buffer, photo.field_name, photo.name, photo.content_type, buffer.getbuffer().nbytes, None
+        buffer, photo.field_name, name, content_type, buffer.getbuffer().nbytes, None
     )
 
 
