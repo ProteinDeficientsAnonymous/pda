@@ -54,18 +54,12 @@ server {
         try_files $uri =404;
     }
 
-    # Event detail pages: link-unfurling scrapers (iMessage, Slack, WhatsApp,
-    # Facebook, Twitter, etc.) don't run JS, so the SPA can't hand them OG tags.
-    # Route just those bots to Django's server-rendered preview; humans keep the
-    # SPA. Matched on the event UUID path only (Issue 652).
-    # Social link-unfurl bots (matched by $event_unfurl_bot) get Django's
-    # server-rendered preview; humans get the SPA. NOT search-engine crawlers
-    # (googlebot, bingbot, applebot) — the preview is noindex, so routing them
-    # here would deindex real public event pages (Issue 652). The regex must be
-    # quoted: an unquoted {36} makes nginx mis-tokenize the block and refuse to
-    # start. proxy_pass lives in a named location because it is not allowed
-    # inside an if inside a regex location.
-    location "~^/events/(?<event_uuid>[0-9a-fA-F-]{36})$" {
+    # Route social link-unfurl bots to Django's server-rendered OG preview;
+    # everyone else (humans, search crawlers) gets the SPA — crawlers must
+    # NOT get the preview since it's noindex (Issue 652). Regex must stay
+    # quoted or nginx refuses to start; proxy_pass needs a named location
+    # since it's not allowed inside an if inside a regex location.
+    location "~^/events/(?<event_id>[0-9a-fA-F\-]{36}|[a-z0-9\-]+)$" {
         if ($event_unfurl_bot) {
             return 418;
         }
@@ -74,7 +68,24 @@ server {
     }
 
     location @event_preview {
-        proxy_pass http://127.0.0.1:8000/events/$event_uuid/preview/;
+        proxy_pass http://127.0.0.1:8000/events/$event_id/preview/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Keep slugs in sync with _STATIC_PAGES in backend/config/og_preview.py.
+    location "~^/(?<page>|join|calendar|donate|faq|sms-policy|guidelines)$" {
+        if ($event_unfurl_bot) {
+            return 418;
+        }
+        error_page 418 = @static_page_preview;
+        try_files $uri /index.html;
+    }
+
+    location @static_page_preview {
+        proxy_pass http://127.0.0.1:8000/pages/$page/preview/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
