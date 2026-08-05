@@ -10,7 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { CalendarFeedScope, type CalendarFeedScopeValue } from '@/models/user';
 import { ContentContainer } from '@/screens/public/ContentContainer';
 import { formatPhone } from '@/utils/formatPhone';
-import { email, optionalPersonName, personName } from '@/utils/validators';
+import { email, optionalPersonName, personName, ValidationMessage } from '@/utils/validators';
 
 import { AvatarUpload } from './AvatarUpload';
 import { CalendarFeedSubscription } from './CalendarFeedSubscription';
@@ -163,7 +163,9 @@ function InlineText({
     }
     const validationError = validate?.(draft);
     if (validationError) {
-      setError(validationError === 'Required' ? `${label} required` : validationError);
+      setError(
+        validationError === ValidationMessage.REQUIRED ? `${label} required` : validationError,
+      );
       return;
     }
     if (draft.trim() === value) {

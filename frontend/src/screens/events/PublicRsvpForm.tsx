@@ -18,7 +18,12 @@ import {
   RsvpStatus,
   spotsLeft,
 } from '@/models/event';
-import { optionalEmail, optionalPersonName, personName } from '@/utils/validators';
+import {
+  optionalEmail,
+  optionalPersonName,
+  personName,
+  ValidationMessage,
+} from '@/utils/validators';
 
 import { PaymentConfirmStep } from './PaymentConfirmStep';
 import { PublicRsvpPhoneStep } from './PublicRsvpPhoneStep';
@@ -100,7 +105,8 @@ export function PublicRsvpForm({ event, onSuccess }: Props) {
     const next: Record<string, string> = {};
     const firstNameErr = personName(firstName);
     if (firstNameErr)
-      next.firstName = firstNameErr === 'Required' ? 'first name required' : firstNameErr;
+      next.firstName =
+        firstNameErr === ValidationMessage.REQUIRED ? 'first name required' : firstNameErr;
     const lastNameErr = optionalPersonName(lastName);
     if (lastNameErr) next.lastName = lastNameErr;
     if (!email.trim()) next.email = 'email required';
