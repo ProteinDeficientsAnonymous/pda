@@ -32,6 +32,9 @@ vi.mock('@/api/publicRsvp', () => ({
 // Stub heavy sub-sections so we focus on the host row.
 vi.mock('./RsvpGuestList', () => ({
   RsvpGuestList: () => <div data-testid="guest-list" />,
+}));
+vi.mock('./GuestChip', () => ({
+  GuestChip: () => null,
   InvitedList: () => null,
 }));
 vi.mock('./EventAdminActions', () => ({ EventAdminActions: () => null }));

@@ -20,8 +20,9 @@ import { EventFlagDialog } from './EventFlagDialog';
 import { EventHostSection } from './EventHostSection';
 import { eventMemberSectionFlags } from './eventMemberFlags';
 import { GroupTextButton } from './GroupTextButton';
+import { InvitedList } from './GuestChip';
 import { InviteDialog } from './InviteDialog';
-import { InvitedList, RsvpGuestList } from './RsvpGuestList';
+import { RsvpGuestList } from './RsvpGuestList';
 
 interface Props {
   event: Event;
