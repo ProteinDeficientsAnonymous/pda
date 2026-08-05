@@ -290,7 +290,7 @@ export function EventForm({ existing }: Props) {
               isHostOrEventManager={hostFlags.isHostOrEventManager}
               canEdit={hostFlags.canEdit}
               viewerId={user?.id ?? null}
-              bare
+              headless
             />
           ) : (
             <MemberPicker
