@@ -91,6 +91,7 @@ export function AgendaList({ events, onSelectEvent }: Props) {
 
 function emptyMessage(filter: TypeFilter): string {
   if (filter === EventType.Official) return 'no pda official events coming up';
+  if (filter === EventType.Club) return 'no pda club events coming up';
   if (filter === EventType.Community) return 'no community events coming up';
   return 'nothing on the horizon — pop back later';
 }
