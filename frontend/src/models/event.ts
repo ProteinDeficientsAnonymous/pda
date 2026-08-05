@@ -188,6 +188,10 @@ export function isHosting(event: Event, userId: string): boolean {
   return event.coHostIds.includes(userId);
 }
 
+export function eventHostCount(event: Event): number {
+  return event.coHostIds.length + event.pendingCohostInvites.length;
+}
+
 export function canManageEvent(event: Event, user: User | null): boolean {
   if (!user) return false;
   if (isHosting(event, user.id)) return true;
