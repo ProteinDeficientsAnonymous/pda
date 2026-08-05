@@ -33,7 +33,11 @@ export function EventHostSection({
 
   const seenIds = new Set<string>();
   const hosts: HostRow[] = event.coHostIds
-    .map((id, i) => ({ id, name: event.coHostNames[i] ?? 'member', photoUrl: event.coHostPhotoUrls[i] ?? '' }))
+    .map((id, i) => ({
+      id,
+      name: event.coHostNames[i] ?? 'member',
+      photoUrl: event.coHostPhotoUrls[i] ?? '',
+    }))
     .filter((row) => {
       if (seenIds.has(row.id)) return false;
       seenIds.add(row.id);
