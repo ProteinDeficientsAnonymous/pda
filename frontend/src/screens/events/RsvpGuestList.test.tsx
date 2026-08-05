@@ -38,6 +38,18 @@ describe('RsvpGuestList', () => {
     expect(screen.queryByRole('link', { name: /sam/i })).not.toBeInTheDocument();
     expect(screen.getByText('Sam')).toBeInTheDocument();
   });
+
+  it('shows a genuinely-empty message when there are no attendees', () => {
+    const event = makeEvent({ guests: [], attendingCount: 0 });
+    renderList(event);
+    expect(screen.getByText('no one yet')).toBeInTheDocument();
+  });
+
+  it('shows a gated message when guests are hidden but attendees exist', () => {
+    const event = makeEvent({ guests: [], attendingCount: 3 });
+    renderList(event);
+    expect(screen.getByText("rsvp to see who's going")).toBeInTheDocument();
+  });
 });
 
 describe('RsvpGuestList — cant go / waitlist visibility (Issue 1042)', () => {

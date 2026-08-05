@@ -178,13 +178,14 @@ def hidden_headers(hidden_user):
 
 @pytest.mark.django_db
 class TestEventGuestListHidesLastName:
-    def test_non_admin_sees_first_name_only(self, api_client, auth_headers, hidden_user):
+    def test_non_admin_sees_first_name_only(self, api_client, auth_headers, test_user, hidden_user):
         event = Event.objects.create(
             title="Guest List Event",
             start_datetime=future_iso(days=10),
             rsvp_enabled=True,
         )
         EventRSVP.objects.create(event=event, user=hidden_user, status=RSVPStatus.ATTENDING)
+        EventRSVP.objects.create(event=event, user=test_user, status=RSVPStatus.ATTENDING)
         response = api_client.get(f"/api/community/events/{event.id}/", **auth_headers)
         assert response.status_code == 200
         guest = next(g for g in response.json()["guests"] if g["user_id"] == str(hidden_user.pk))

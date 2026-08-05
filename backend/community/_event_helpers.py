@@ -222,6 +222,22 @@ def _can_see_invited(
     return requesting_user.has_permission(PermissionKey.MANAGE_EVENTS)
 
 
+_INACTIVE_RSVP_STATUSES = {RSVPStatus.CANT_GO, RSVPStatus.REMOVED}
+
+
+def _can_see_guests(requesting_user, viewer_is_cohost: bool, my_rsvp_status: str | None) -> bool:
+    """Hosts, event managers, and active RSVPs can see the guest list.
+
+    A cancelled (CANT_GO) or host-removed (REMOVED) RSVP row still exists, so
+    my_rsvp_status is checked against active statuses rather than just None.
+    """
+    if requesting_user is None:
+        return False
+    if viewer_is_cohost or requesting_user.has_permission(PermissionKey.MANAGE_EVENTS):
+        return True
+    return my_rsvp_status is not None and my_rsvp_status not in _INACTIVE_RSVP_STATUSES
+
+
 def _can_manage_cohost_invites(
     requesting_user,
     co_host_ids: set[str],
@@ -322,7 +338,7 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     payment_status_visible = viewer_is_cohost and flag_enabled(
         FeatureFlag.EVENT_PAYMENT_CONFIRMATION
     )
-    rsvps = list(event.rsvps.all()) if (event.rsvp_enabled and is_authed) else []
+    all_rsvps = list(event.rsvps.all()) if event.rsvp_enabled else []
     all_invited = list(event.invited_users.all())
     invited = all_invited if _can_see_invited(auth_user, creator, co_host_ids) else []
 
@@ -330,7 +346,8 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
     my_pending_invite = get_my_pending_invite(event, auth_user)
     my_pending_invite_id = str(my_pending_invite.id) if my_pending_invite else None
     comment_count = _resolve_comment_count(event)
-    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(rsvps, auth_user)
+    my_rsvp_status, my_paid_confirmed = _my_rsvp_fields(all_rsvps, auth_user)
+    can_see_guests = _can_see_guests(auth_user, viewer_is_cohost, my_rsvp_status)
     return EventOut(
         id=str(event.id),
         slug=event.slug,
@@ -363,9 +380,9 @@ def _event_out(event: Event, requesting_user=None) -> EventOut:
         co_host_names=[visible_display_name(u, auth_user) for u in co_hosts],
         co_host_photo_urls=[media_path(u.profile_photo) for u in co_hosts],
         guests=_gated(
-            _build_guest_list(rsvps, viewer_is_cohost, auth_user, payment_status_visible),
+            _build_guest_list(all_rsvps, viewer_is_cohost, auth_user, payment_status_visible),
             [],
-            is_authed,
+            can_see_guests,
         ),
         my_rsvp=my_rsvp_status,
         my_paid_confirmed=my_paid_confirmed,

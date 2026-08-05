@@ -258,6 +258,7 @@ class TestPaymentStatusVisibility:
         nosy = django_user_model.objects.create_user(
             phone_number="+14155550403", first_name="Nosy", is_member=True
         )
+        EventRSVP.objects.create(event=event, user=nosy, status=RSVPStatus.ATTENDING)
         assert self._guests(api_client, event, _headers(nosy))["Payer"] is False
 
     def test_flag_off_hides_payment_status_from_the_host_too(
