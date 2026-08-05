@@ -21,11 +21,14 @@ export function EventHostSection({
   isHostOrEventManager,
   canEdit,
   viewerId,
+  bare = false,
 }: {
   event: Event;
   isHostOrEventManager: boolean;
   canEdit: boolean;
   viewerId: string | null;
+  /** Render chips only — the edit form supplies its own section heading. */
+  bare?: boolean;
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const { confirm, element: confirmElement } = useConfirm();
@@ -46,7 +49,7 @@ export function EventHostSection({
     .map((row) => ({ userId: row.id, name: row.name, photoUrl: row.photoUrl }));
   // backend already scopes pending invites to creator/accepted co-hosts; others get []
   const pending = event.pendingCohostInvites;
-  if (hosts.length === 0 && pending.length === 0 && !isHostOrEventManager) return null;
+  if (hosts.length === 0 && pending.length === 0 && !isHostOrEventManager && !bare) return null;
   const totalChips = hosts.length + pending.length;
   const label = totalChips > 1 ? 'hosts' : 'host';
 
@@ -74,8 +77,8 @@ export function EventHostSection({
     );
   }
 
-  return (
-    <Card label={label}>
+  const body = (
+    <>
       <div className="flex flex-wrap items-center gap-2">
         {hosts.map((h) => {
           const isSelf = h.userId === viewerId;
@@ -133,8 +136,10 @@ export function EventHostSection({
         />
       ) : null}
       {confirmElement}
-    </Card>
+    </>
   );
+
+  return bare ? body : <Card label={label}>{body}</Card>;
 }
 
 function HostChip({

@@ -23,6 +23,8 @@ import { useConfirm } from '@/components/ui/useConfirm';
 import { type Event, eventPath, EventType } from '@/models/event';
 import { hasPermission, Permission } from '@/models/permissions';
 
+import { EventHostSection } from '../EventHostSection';
+import { eventMemberSectionFlags } from '../eventMemberFlags';
 import { EventFormBasics } from './EventFormBasics';
 import { EventFormDetails } from './EventFormDetails';
 import { EventFormLinks, EventFormMoney } from './EventFormLinksAndCost';
@@ -79,14 +81,7 @@ export function EventForm({ existing }: Props) {
   const [values, setValues] = useState<EventFormValues>(() =>
     existing ? eventToFormValues(existing) : emptyEventFormValues(),
   );
-  const [coHosts, setCoHosts] = useState<MemberSearchResult[]>(() => {
-    if (!existing) return [];
-    return existing.coHostIds.map((id, idx) => ({
-      id,
-      fullName: existing.coHostNames[idx] ?? '',
-      phoneNumber: '',
-    }));
-  });
+  const [coHosts, setCoHosts] = useState<MemberSearchResult[]>([]);
   // On edit, pre-run validation so issues in the loaded values (e.g. a stale
   // draft whose start is now in the past) are visible immediately instead of
   // waiting for the first save attempt.
@@ -238,7 +233,10 @@ export function EventForm({ existing }: Props) {
     values.venmoLink.trim().length > 0 ||
     values.cashappLink.trim().length > 0 ||
     values.zelleInfo.trim().length > 0;
-  const hostsCount = coHosts.length;
+  const hostFlags = existing ? eventMemberSectionFlags(existing, user) : null;
+  const hostsCount = existing
+    ? existing.coHostIds.length + existing.pendingCohostInvites.length
+    : coHosts.length;
 
   return (
     <form
@@ -286,13 +284,23 @@ export function EventForm({ existing }: Props) {
               : undefined
           }
         >
-          <MemberPicker
-            label="co-hosts"
-            selected={coHosts}
-            onChange={setCoHosts}
-            excludeIds={user ? [user.id] : []}
-            hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
-          />
+          {existing && hostFlags ? (
+            <EventHostSection
+              event={existing}
+              isHostOrEventManager={hostFlags.isHostOrEventManager}
+              canEdit={hostFlags.canEdit}
+              viewerId={user?.id ?? null}
+              bare
+            />
+          ) : (
+            <MemberPicker
+              label="co-hosts"
+              selected={coHosts}
+              onChange={setCoHosts}
+              excludeIds={user ? [user.id] : []}
+              hint="co-hosts get an invite — once they accept, they can edit the event and manage rsvps"
+            />
+          )}
         </CollapsibleCard>
 
         <CollapsibleCard
