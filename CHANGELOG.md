@@ -1,3 +1,10 @@
+# [0.86.0](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.10...v0.86.0) (2026-08-05)
+
+
+### Features
+
+* manage co-hosts from the event edit screen (Issue 1251) ([#1266](https://github.com/ProteinDeficientsAnonymous/pda/issues/1266)) ([7c960db](https://github.com/ProteinDeficientsAnonymous/pda/commit/7c960db683bb043efc2f818cfc0012877f135c97))
+
 ## [0.85.10](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.9...v0.85.10) (2026-08-05)
 
 
