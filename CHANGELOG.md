@@ -1,3 +1,10 @@
+## [0.85.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.7...v0.85.8) (2026-08-05)
+
+
+### Bug Fixes
+
+* **settings:** validate email client-side before saving ([#1292](https://github.com/ProteinDeficientsAnonymous/pda/issues/1292)) ([17fffe6](https://github.com/ProteinDeficientsAnonymous/pda/commit/17fffe63243a949467f069de2e6a7fb724acff5b))
+
 ## [0.85.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.6...v0.85.7) (2026-08-05)
 
 
