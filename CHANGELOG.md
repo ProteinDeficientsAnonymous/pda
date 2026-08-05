@@ -1,3 +1,10 @@
+## [0.85.7](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.6...v0.85.7) (2026-08-05)
+
+
+### Bug Fixes
+
+* **auth:** preserve event redirect on sign-in links ([#1293](https://github.com/ProteinDeficientsAnonymous/pda/issues/1293)) ([ee57a2f](https://github.com/ProteinDeficientsAnonymous/pda/commit/ee57a2f47344733d50c2bf163402529a260e210b))
+
 ## [0.85.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.5...v0.85.6) (2026-08-05)
 
 
