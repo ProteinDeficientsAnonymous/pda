@@ -1,3 +1,10 @@
+## [0.85.6](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.5...v0.85.6) (2026-08-05)
+
+
+### Bug Fixes
+
+* **calendar:** add club-specific empty state to agenda filter ([#1290](https://github.com/ProteinDeficientsAnonymous/pda/issues/1290)) ([d78f53a](https://github.com/ProteinDeficientsAnonymous/pda/commit/d78f53a9ba09ea0416e62dc20da082620ecb5472))
+
 ## [0.85.5](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.4...v0.85.5) (2026-08-04)
 
 
