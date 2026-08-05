@@ -1,3 +1,10 @@
+## [0.85.9](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.8...v0.85.9) (2026-08-05)
+
+
+### Bug Fixes
+
+* prevent duplicate host name on newly created event ([#1212](https://github.com/ProteinDeficientsAnonymous/pda/issues/1212)) ([#1218](https://github.com/ProteinDeficientsAnonymous/pda/issues/1218)) ([a3105ad](https://github.com/ProteinDeficientsAnonymous/pda/commit/a3105adbc26ab8b2ba673b6b747ceeb2a6a99aaa))
+
 ## [0.85.8](https://github.com/ProteinDeficientsAnonymous/pda/compare/v0.85.7...v0.85.8) (2026-08-05)
 
 
