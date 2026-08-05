@@ -4,6 +4,7 @@ from uuid import UUID
 
 from config.audit import AuditTarget, AuditTargetType, audit_log
 from config.auth import gated_jwt
+from config.media_proxy import EVENT_PHOTO_MAX_DIMENSION, resize_image
 from config.ratelimit import rate_limit
 from django.utils import timezone
 from ninja import File, Router
@@ -68,10 +69,11 @@ def upload_event_photo(request, event_id: UUID, photo: UploadedFile = File(...))
         raise_validation(Code.Event.CANCELLED_CANNOT_BE_EDITED, status_code=400)
     if event.photo:
         event.photo.delete(save=False)
-    name = photo.name or ""
-    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
     ts = int(time.time())
-    event.photo.save(f"{event_id}_{ts}.{ext}", photo, save=False)
+    resized = resize_image(photo, EVENT_PHOTO_MAX_DIMENSION)
+    name = resized.name or ""
+    ext = name.rsplit(".", 1)[-1] if "." in name else "jpg"
+    event.photo.save(f"{event_id}_{ts}.{ext}", resized, save=False)
     event.photo_updated_at = timezone.now()
     event.save(update_fields=["photo", "photo_updated_at"])
     audit_log(

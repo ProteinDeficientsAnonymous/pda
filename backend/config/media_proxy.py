@@ -2,14 +2,24 @@ import logging
 import mimetypes
 import os
 import posixpath
+from io import BytesIO
 
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import FileResponse, Http404, HttpResponse
 from django.utils._os import safe_join
+from PIL import Image, ImageOps, UnidentifiedImageError
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 
 logger = logging.getLogger("pda.media")
+
+# Resize targets per photo kind.
+AVATAR_MAX_DIMENSION = 512
+EVENT_PHOTO_MAX_DIMENSION = 1600
 
 # Content types we're willing to serve inline. Everything else (notably
 # text/html and image/svg+xml, which can execute JS on the app origin) is
@@ -31,6 +41,61 @@ def media_path(field) -> str:
     if not field:
         return ""
     return f"/media/{field.name}"
+
+
+def _jpeg_name(name: str) -> str:
+    if name and not name.lower().endswith((".jpg", ".jpeg")):
+        return f"{name.rsplit('.', 1)[0]}.jpg"
+    return name
+
+
+def _normalize_mode(image: Image.Image, fmt: str) -> Image.Image:
+    if fmt == "JPEG":
+        return image.convert("RGB")
+    if image.mode not in ("RGB", "RGBA", "L"):
+        return image.convert("RGBA" if "A" in image.mode else "RGB")
+    return image
+
+
+def resize_image(photo: InMemoryUploadedFile, max_dimension: int) -> InMemoryUploadedFile:
+    """Downscale an uploaded image to fit max_dimension.
+    param photo(InMemoryUploadedFile): the uploaded file
+    param max_dimension(int): max width/height in pixels
+    return(InMemoryUploadedFile): resized file, or the original if unprocessable/animated
+    """
+    try:
+        image = Image.open(photo)
+        image.verify()
+        photo.seek(0)
+        image = Image.open(photo)
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+        return photo
+
+    # Animated formats would be flattened to a single frame by thumbnail()+save();
+    # leave them at original size rather than destroy the animation.
+    if getattr(image, "is_animated", False):
+        photo.seek(0)
+        return photo
+
+    fmt = "JPEG" if image.format in ("HEIF", "HEIC") else image.format
+    needs_resize = image.width > max_dimension or image.height > max_dimension
+    if fmt == image.format and not needs_resize:
+        photo.seek(0)
+        return photo
+
+    image = ImageOps.exif_transpose(image)
+    image = _normalize_mode(image, fmt)
+    if needs_resize:
+        image.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
+
+    buffer = BytesIO()
+    image.save(buffer, format=fmt)
+    buffer.seek(0)
+    name = _jpeg_name(photo.name) if fmt == "JPEG" else photo.name
+    content_type = "image/jpeg" if fmt == "JPEG" else photo.content_type
+    return InMemoryUploadedFile(
+        buffer, photo.field_name, name, content_type, buffer.getbuffer().nbytes, None
+    )
 
 
 def _is_safe_path(path: str) -> bool:
