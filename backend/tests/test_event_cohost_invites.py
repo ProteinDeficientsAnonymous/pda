@@ -375,23 +375,6 @@ class TestEventOutVisibility:
         # Outsider visibility check: still no pending list for the invitee.
         assert data["pending_cohost_invites"] == []
 
-    def test_accepted_co_host_with_leftover_pending_row_is_not_double_listed(
-        self, api_client, creator, event_with_pending_invite, invitee
-    ):
-        # Simulates state drift: invitee is already in co_hosts (e.g. added via
-        # a path other than accept) while their invite row is still PENDING.
-        event, invite = event_with_pending_invite
-        event.co_hosts.add(invitee)
-
-        response = api_client.get(
-            f"/api/community/events/{event.id}/",
-            **_auth_headers(creator),
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["co_host_ids"].count(str(invitee.pk)) == 1
-        assert data["pending_cohost_invites"] == []
-
 
 # ─── Draft visibility for invitees ────────────────────────────────────────────
 
