@@ -204,14 +204,21 @@ def send_cohost_invite_emails(
 def get_pending_invites_for_event(event: Event) -> list[EventCoHostInvite]:
     """Return the event's pending invites after running lazy expiration.
 
+    Excludes users already in event.co_hosts — an accepted co-host can end up
+    with a leftover PENDING row (e.g. added to co_hosts by a path other than
+    invite-accept), which would otherwise render as a duplicate host chip.
+
     Caller must have already verified the viewer is allowed to see them.
     """
     expire_stale_cohost_invites(event)
-    return list(
-        EventCoHostInvite.objects.filter(
+    co_host_ids = set(event.co_hosts.values_list("pk", flat=True))
+    return [
+        inv
+        for inv in EventCoHostInvite.objects.filter(
             event=event, status=CoHostInviteStatus.PENDING
         ).select_related("user")
-    )
+        if inv.user_id not in co_host_ids
+    ]
 
 
 def get_my_pending_invite(event: Event, user) -> EventCoHostInvite | None:
